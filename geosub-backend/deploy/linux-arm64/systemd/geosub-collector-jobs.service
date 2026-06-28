@@ -1,0 +1,18 @@
+[Unit]
+Description=GeoSub collector job runner
+Wants=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/geosub-backend
+ExecStart=/usr/bin/env bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh
+User=geosub
+Group=geosub
+NoNewPrivileges=true
+MemoryMax=1800M
+CPUQuota=120%
+
+[Install]
+WantedBy=multi-user.target

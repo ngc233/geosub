@@ -1,0 +1,24 @@
+[Unit]
+Description=GeoSub public Next.js website
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/ai-price-site
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+TimeoutStartSec=60
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+MemoryMax=2200M
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

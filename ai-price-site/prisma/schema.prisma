@@ -1,0 +1,1163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Locale {
+  ZH @map("zh")
+  EN @map("en")
+  ES @map("es")
+  JA @map("ja")
+  KO @map("ko")
+  DE @map("de")
+
+  @@map("locale")
+}
+
+enum PublishStatus {
+  DRAFT     @map("draft")
+  REVIEW    @map("review")
+  PUBLISHED @map("published")
+  ARCHIVED  @map("archived")
+
+  @@map("publish_status")
+}
+
+enum ArticleStatus {
+  DRAFT     @map("draft")
+  REVIEW    @map("review")
+  PUBLISHED @map("published")
+  SCHEDULED @map("scheduled")
+  ARCHIVED  @map("archived")
+
+  @@map("article_status")
+}
+
+enum ProductCategory {
+  AI        @map("ai")
+  STREAMING @map("streaming")
+  SOFTWARE  @map("software")
+  GAME      @map("game")
+  GIFT_CARD @map("gift_card")
+  VPN       @map("vpn")
+  PAYMENT   @map("payment")
+  OTHER     @map("other")
+
+  @@map("product_category")
+}
+
+enum BillingCycle {
+  MONTHLY   @map("monthly")
+  YEARLY    @map("yearly")
+  WEEKLY    @map("weekly")
+  QUARTERLY @map("quarterly")
+  ONE_TIME  @map("one_time")
+  LIFETIME  @map("lifetime")
+  UNKNOWN   @map("unknown")
+
+  @@map("billing_cycle")
+}
+
+enum BillingPlatform {
+  WEB       @map("web")
+  IOS       @map("ios")
+  ANDROID   @map("android")
+  STEAM     @map("steam")
+  GIFT_CARD @map("gift_card")
+  UNKNOWN   @map("unknown")
+
+  @@map("billing_platform")
+}
+
+enum PriceType {
+  LIST_PRICE  @map("list_price")
+  PROMO_PRICE @map("promo_price")
+  STUDENT     @map("student_price")
+  FAMILY      @map("family_price")
+  BUNDLE      @map("bundle_price")
+  UNKNOWN     @map("unknown")
+
+  @@map("price_type")
+}
+
+enum DataQuality {
+  VERIFIED       @map("verified")
+  ESTIMATED      @map("estimated")
+  STALE          @map("stale")
+  PENDING_REVIEW @map("pending_review")
+
+  @@map("data_quality")
+}
+
+enum SourceLevel {
+  A @map("A")
+  B @map("B")
+  C @map("C")
+  D @map("D")
+  E @map("E")
+
+  @@map("source_level")
+}
+
+enum PriceSourceType {
+  OFFICIAL_PAGE   @map("official_page")
+  HELP_CENTER     @map("help_center")
+  API             @map("api")
+  APP_STORE       @map("app_store")
+  GOOGLE_PLAY     @map("google_play")
+  CRAWLER         @map("crawler")
+  THIRD_PARTY     @map("third_party")
+  MANUAL          @map("manual")
+  USER_SUBMISSION @map("user_submission")
+
+  @@map("price_source_type")
+}
+
+enum SourceStatus {
+  ACTIVE     @map("active")
+  PAUSED     @map("paused")
+  DEPRECATED @map("deprecated")
+
+  @@map("source_status")
+}
+
+enum RiskLevel {
+  LOW    @map("low")
+  MEDIUM @map("medium")
+  HIGH   @map("high")
+
+  @@map("risk_level")
+}
+
+enum ObservationStatus {
+  PENDING  @map("pending")
+  APPROVED @map("approved")
+  REJECTED @map("rejected")
+  IGNORED  @map("ignored")
+
+  @@map("observation_status")
+}
+
+enum TaxIncluded {
+  TRUE    @map("true")
+  FALSE   @map("false")
+  UNKNOWN @map("unknown")
+
+  @@map("tax_included")
+}
+
+enum EvidenceType {
+  HTML          @map("html")
+  JSON          @map("json")
+  SCREENSHOT    @map("screenshot")
+  TEXT_SNAPSHOT @map("text_snapshot")
+  OTHER         @map("other")
+
+  @@map("evidence_type")
+}
+
+enum ReviewTargetType {
+  REGION_PRICE @map("region_price")
+  OBSERVATION  @map("observation")
+  PRODUCT      @map("product")
+  SEO          @map("seo")
+  AFFILIATE    @map("affiliate")
+  AD_SLOT      @map("ad_slot")
+  ARTICLE      @map("article")
+
+  @@map("review_target_type")
+}
+
+enum ReviewStatus {
+  PENDING  @map("pending")
+  APPROVED @map("approved")
+  REJECTED @map("rejected")
+  RESOLVED @map("resolved")
+
+  @@map("review_status")
+}
+
+enum Severity {
+  LOW    @map("low")
+  MEDIUM @map("medium")
+  HIGH   @map("high")
+
+  @@map("severity")
+}
+
+enum ArticleType {
+  GUIDE        @map("guide")
+  HOW_TO       @map("how_to")
+  COMPARISON   @map("comparison")
+  RANKING      @map("ranking")
+  NEWS         @map("news")
+  METHODOLOGY  @map("methodology")
+  FAQ_HUB      @map("faq_hub")
+  REVIEW       @map("review")
+  ANNOUNCEMENT @map("announcement")
+  OTHER        @map("other")
+
+  @@map("article_type")
+}
+
+enum BlockType {
+  PARAGRAPH        @map("paragraph")
+  HEADING          @map("heading")
+  IMAGE            @map("image")
+  TABLE            @map("table")
+  CALLOUT          @map("callout")
+  QUOTE            @map("quote")
+  CODE             @map("code")
+  PRICE_TABLE      @map("price_table")
+  PRODUCT_CARD     @map("product_card")
+  COUNTRY_CARD     @map("country_card")
+  AFFILIATE_BOX    @map("affiliate_box")
+  AD_SLOT          @map("ad_slot")
+  FAQ              @map("faq")
+  TOC              @map("toc")
+  RELATED_ARTICLES @map("related_articles")
+  CUSTOM_HTML      @map("custom_html")
+
+  @@map("block_type")
+}
+
+enum RelationType {
+  RELATED_PRODUCT           @map("related_product")
+  RELATED_PLAN              @map("related_plan")
+  RELATED_COUNTRY           @map("related_country")
+  RELATED_ARTICLE           @map("related_article")
+  RECOMMENDED_READING       @map("recommended_reading")
+  SOURCE_REFERENCE          @map("source_reference")
+  COMMERCIAL_RECOMMENDATION @map("commercial_recommendation")
+
+  @@map("relation_type")
+}
+
+enum AdProvider {
+  ADSENSE   @map("adsense")
+  EZOIC     @map("ezoic")
+  CUSTOM    @map("custom")
+  AFFILIATE @map("affiliate")
+  NONE      @map("none")
+
+  @@map("ad_provider")
+}
+
+enum PageType {
+  HOME     @map("home")
+  CATEGORY @map("category")
+  PRODUCT  @map("product")
+  RANKING  @map("ranking")
+  COMPARE  @map("compare")
+  ARTICLE  @map("article")
+  GLOBAL   @map("global")
+
+  @@map("page_type")
+}
+
+enum AffiliateCategory {
+  VPN       @map("vpn")
+  PAYMENT   @map("payment")
+  OFFICIAL  @map("official")
+  SERVICE   @map("service")
+  GIFT_CARD @map("gift_card")
+  SOFTWARE  @map("software")
+  OTHER     @map("other")
+
+  @@map("affiliate_category")
+}
+
+enum NavigationPosition {
+  HEADER      @map("header")
+  FOOTER      @map("footer")
+  SIDEBAR     @map("sidebar")
+  MOBILE      @map("mobile")
+  ARTICLE_TOC @map("article_toc")
+  OTHER       @map("other")
+
+  @@map("navigation_position")
+}
+
+enum StructuredDataType {
+  ARTICLE      @map("Article")
+  BLOG_POSTING @map("BlogPosting")
+  HOW_TO       @map("HowTo")
+  FAQ_PAGE     @map("FAQPage")
+  NEWS_ARTICLE @map("NewsArticle")
+  TECH_ARTICLE @map("TechArticle")
+  NONE         @map("None")
+
+  @@map("structured_data_type")
+}
+
+enum AdminRole {
+  OWNER  @map("owner")
+  EDITOR @map("editor")
+  VIEWER @map("viewer")
+
+  @@map("admin_role")
+}
+
+enum AdminStatus {
+  ACTIVE   @map("active")
+  DISABLED @map("disabled")
+
+  @@map("admin_status")
+}
+
+model AdminUser {
+  id           String      @id @default(uuid()) @db.Uuid
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  name         String?
+  role         AdminRole   @default(OWNER)
+  status       AdminStatus @default(ACTIVE)
+
+  sessions      AdminSession[]
+  auditLogs     AuditLog[]
+  uploadedMedia MediaAsset[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("admin_users")
+}
+
+model AdminSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@map("admin_sessions")
+}
+
+model MediaAsset {
+  id           String  @id @default(uuid()) @db.Uuid
+  fileName     String  @map("file_name")
+  originalName String? @map("original_name")
+  mimeType     String  @map("mime_type")
+  sizeBytes    Int?    @map("size_bytes")
+  storagePath  String  @map("storage_path")
+  publicUrl    String  @map("public_url")
+  altText      String? @map("alt_text")
+  caption      String?
+
+  uploadedById String?    @map("uploaded_by_id") @db.Uuid
+  uploadedBy   AdminUser? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  productLogos    Product[]      @relation("ProductLogoAsset")
+  articleCovers   Article[]      @relation("ArticleCoverAsset")
+  articleOgImages Article[]      @relation("ArticleOgAsset")
+  blockImages     ArticleBlock[] @relation("ArticleBlockImageAsset")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("media_assets")
+}
+
+model Country {
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique
+  nameZh      String  @map("name_zh")
+  nameEn      String  @map("name_en")
+  nameEs      String? @map("name_es")
+  nameJa      String? @map("name_ja")
+  currency    String
+  region      String?
+  isReference Boolean @default(false) @map("is_reference")
+  isSupported Boolean @default(true) @map("is_supported")
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  regionPrices      RegionPrice[]
+  priceObservations PriceObservation[]
+  articleBlocks     ArticleBlock[]
+  articleRelations  ArticleRelation[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([code])
+  @@map("countries")
+}
+
+model Product {
+  id       String          @id @default(uuid()) @db.Uuid
+  slug     String          @unique
+  name     String
+  category ProductCategory @default(AI)
+  provider String?
+
+  logoAssetId String?     @map("logo_asset_id") @db.Uuid
+  logoAsset   MediaAsset? @relation("ProductLogoAsset", fields: [logoAssetId], references: [id], onDelete: SetNull)
+
+  logoUrl     String? @map("logo_url")
+  description String?
+  officialUrl String? @map("official_url")
+
+  status    PublishStatus @default(DRAFT)
+  featured  Boolean       @default(false)
+  sortOrder Int           @default(0) @map("sort_order")
+
+  plans             Plan[]
+  regionPrices      RegionPrice[]
+  priceObservations PriceObservation[]
+  seoMetas          SeoMeta[]
+  faqs              Faq[]
+  affiliateLinks    AffiliateLink[]
+  collectorJobs     CollectorJob[]
+  articleBlocks     ArticleBlock[]
+  articleRelations  ArticleRelation[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([category, status])
+  @@map("products")
+}
+
+model Plan {
+  id           String        @id @default(uuid()) @db.Uuid
+  productId    String        @map("product_id") @db.Uuid
+  slug         String
+  name         String
+  billingCycle BillingCycle  @default(MONTHLY) @map("billing_cycle")
+  description  String?
+  status       PublishStatus @default(DRAFT)
+  sortOrder    Int           @default(0) @map("sort_order")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  regionPrices      RegionPrice[]
+  priceObservations PriceObservation[]
+  seoMetas          SeoMeta[]
+  faqs              Faq[]
+  articleBlocks     ArticleBlock[]
+  articleRelations  ArticleRelation[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([productId, slug])
+  @@index([productId, status])
+  @@map("plans")
+}
+
+model RegionPrice {
+  id        String @id @default(uuid()) @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  planId    String @map("plan_id") @db.Uuid
+  countryId String @map("country_id") @db.Uuid
+
+  localPrice      Decimal  @map("local_price") @db.Decimal(12, 2)
+  currency        String
+  priceUsd        Decimal  @map("price_usd") @db.Decimal(12, 2)
+  usBasePrice     Decimal? @map("us_base_price") @db.Decimal(12, 2)
+  diffVsUsPercent Decimal? @map("diff_vs_us_percent") @db.Decimal(8, 2)
+
+  billingPlatform BillingPlatform @default(WEB) @map("billing_platform")
+  priceType       PriceType       @default(LIST_PRICE) @map("price_type")
+
+  taxNote          String? @map("tax_note")
+  availabilityNote String? @map("availability_note")
+  sourceSummary    String? @map("source_summary")
+
+  primarySourceId String?      @map("primary_source_id") @db.Uuid
+  primarySource   PriceSource? @relation(fields: [primarySourceId], references: [id], onDelete: SetNull)
+
+  confidenceScore Int           @default(60) @map("confidence_score")
+  dataQuality     DataQuality   @default(PENDING_REVIEW) @map("data_quality")
+  status          PublishStatus @default(DRAFT)
+
+  lastCheckedAt DateTime? @map("last_checked_at") @db.Timestamptz(6)
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz(6)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([planId, countryId, billingPlatform, priceType])
+  @@index([productId])
+  @@index([planId, countryId])
+  @@index([status])
+  @@map("region_prices")
+}
+
+model PriceSource {
+  id                String          @id @default(uuid()) @db.Uuid
+  sourceKey         String          @unique @map("source_key")
+  name              String
+  sourceLevel       SourceLevel     @default(C) @map("source_level")
+  type              PriceSourceType @default(MANUAL)
+  provider          String?
+  baseUrl           String?         @map("base_url")
+  countryUrlPattern String?         @map("country_url_pattern")
+
+  requiresJavascript Boolean      @default(false) @map("requires_javascript")
+  requiresAccount    Boolean      @default(false) @map("requires_account")
+  requiresGeo        Boolean      @default(false) @map("requires_geo")
+  termsRisk          RiskLevel    @default(LOW) @map("terms_risk")
+  reliabilityScore   Int          @default(60) @map("reliability_score")
+  status             SourceStatus @default(ACTIVE)
+  note               String?
+
+  regionPrices  RegionPrice[]
+  observations  PriceObservation[]
+  collectorJobs CollectorJob[]
+  parserRules   ParserRule[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("price_sources")
+}
+
+model PriceObservation {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  planId    String? @map("plan_id") @db.Uuid
+  countryId String? @map("country_id") @db.Uuid
+  sourceId  String? @map("source_id") @db.Uuid
+
+  sourceLevel SourceLevel @default(C) @map("source_level")
+
+  rawPrice     Decimal? @map("raw_price") @db.Decimal(12, 2)
+  currency     String?
+  convertedUsd Decimal? @map("converted_usd") @db.Decimal(12, 2)
+
+  observedAt DateTime @default(now()) @map("observed_at") @db.Timestamptz(6)
+  sourceUrl  String?  @map("source_url")
+  locale     String?
+  ipCountry  String?  @map("ip_country")
+
+  billingPlatform BillingPlatform @default(UNKNOWN) @map("billing_platform")
+  priceType       PriceType       @default(LIST_PRICE) @map("price_type")
+  taxIncluded     TaxIncluded     @default(UNKNOWN) @map("tax_included")
+
+  rawPayload      Json?             @map("raw_payload")
+  parserVersion   String?           @map("parser_version")
+  confidenceScore Int               @default(0) @map("confidence_score")
+  anomalyFlag     Boolean           @default(false) @map("anomaly_flag")
+  anomalyReason   String?           @map("anomaly_reason")
+  status          ObservationStatus @default(PENDING)
+
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan    Plan?        @relation(fields: [planId], references: [id], onDelete: SetNull)
+  country Country?     @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  source  PriceSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  evidence SourceEvidence[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([productId, countryId])
+  @@index([status])
+  @@map("price_observations")
+}
+
+model SourceEvidence {
+  id             String       @id @default(uuid()) @db.Uuid
+  observationId  String       @map("observation_id") @db.Uuid
+  evidenceType   EvidenceType @default(HTML) @map("evidence_type")
+  storageUrl     String?      @map("storage_url")
+  contentHash    String?      @map("content_hash")
+  capturedAt     DateTime     @default(now()) @map("captured_at") @db.Timestamptz(6)
+  httpStatus     Int?         @map("http_status")
+  finalUrl       String?      @map("final_url")
+  userAgent      String?      @map("user_agent")
+  countryContext String?      @map("country_context")
+  note           String?
+
+  observation PriceObservation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([observationId])
+  @@map("source_evidence")
+}
+
+model ReviewQueue {
+  id         String           @id @default(uuid()) @db.Uuid
+  targetType ReviewTargetType @map("target_type")
+  targetId   String           @map("target_id") @db.Uuid
+  reason     String
+  oldValue   Json?            @map("old_value")
+  newValue   Json?            @map("new_value")
+  severity   Severity         @default(MEDIUM)
+  status     ReviewStatus     @default(PENDING)
+  assignedTo String?          @map("assigned_to")
+  note       String?
+  resolvedAt DateTime?        @map("resolved_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@map("review_queue")
+}
+
+model ExchangeRate {
+  id            String   @id @default(uuid()) @db.Uuid
+  baseCurrency  String   @map("base_currency")
+  quoteCurrency String   @map("quote_currency")
+  rate          Decimal  @db.Decimal(18, 8)
+  source        String?
+  rateDate      DateTime @map("rate_date") @db.Date
+  fetchedAt     DateTime @default(now()) @map("fetched_at") @db.Timestamptz(6)
+  status        String   @default("active")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([baseCurrency, quoteCurrency, rateDate, source])
+  @@map("exchange_rates")
+}
+
+model SeoMeta {
+  id String @id @default(uuid()) @db.Uuid
+
+  productId  String? @map("product_id") @db.Uuid
+  planId     String? @map("plan_id") @db.Uuid
+  articleId  String? @map("article_id") @db.Uuid
+  categoryId String? @map("category_id") @db.Uuid
+
+  locale Locale @default(ZH)
+
+  title        String
+  description  String?
+  h1           String?
+  canonicalUrl String?            @map("canonical_url")
+  schemaType   StructuredDataType @default(NONE) @map("schema_type")
+  status       PublishStatus      @default(DRAFT)
+
+  product  Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan     Plan?            @relation(fields: [planId], references: [id], onDelete: Cascade)
+  article  Article?         @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  category ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([locale, status])
+  @@index([productId])
+  @@index([articleId])
+  @@map("seo_meta")
+}
+
+model Faq {
+  id String @id @default(uuid()) @db.Uuid
+
+  productId String? @map("product_id") @db.Uuid
+  planId    String? @map("plan_id") @db.Uuid
+  articleId String? @map("article_id") @db.Uuid
+
+  locale    Locale        @default(ZH)
+  question  String
+  answer    String
+  sortOrder Int           @default(0) @map("sort_order")
+  status    PublishStatus @default(DRAFT)
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan    Plan?    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  article Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([locale, status])
+  @@map("faqs")
+}
+
+model AffiliateLink {
+  id String @id @default(uuid()) @db.Uuid
+
+  productId String?  @map("product_id") @db.Uuid
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  category    AffiliateCategory @default(OFFICIAL)
+  title       String
+  description String?
+  buttonText  String?           @map("button_text")
+  url         String
+  placement   String            @default("product_after_map")
+  locale      Locale            @default(ZH)
+  priority    Int               @default(0)
+  status      PublishStatus     @default(DRAFT)
+
+  articleBlocks    ArticleBlock[]
+  articleRelations ArticleRelation[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@map("affiliate_links")
+}
+
+model AdSlot {
+  id String @id @default(uuid()) @db.Uuid
+
+  slotKey       String        @unique @map("slot_key")
+  name          String
+  position      String
+  pageType      PageType      @default(PRODUCT) @map("page_type")
+  provider      AdProvider    @default(ADSENSE)
+  code          String?
+  status        PublishStatus @default(DRAFT)
+  priority      Int           @default(0)
+  showOnMobile  Boolean       @default(true) @map("show_on_mobile")
+  showOnDesktop Boolean       @default(true) @map("show_on_desktop")
+
+  articleBlocks ArticleBlock[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("ad_slots")
+}
+
+model ArticleCategory {
+  id String @id @default(uuid()) @db.Uuid
+
+  slug        String
+  locale      Locale  @default(ZH)
+  name        String
+  description String?
+
+  parentId String?           @map("parent_id") @db.Uuid
+  parent   ArticleCategory?  @relation("ArticleCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children ArticleCategory[] @relation("ArticleCategoryTree")
+
+  seoTitle       String?       @map("seo_title")
+  seoDescription String?       @map("seo_description")
+  status         PublishStatus @default(DRAFT)
+  sortOrder      Int           @default(0) @map("sort_order")
+
+  articles Article[]
+  seoMetas SeoMeta[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([slug, locale])
+  @@index([locale, status])
+  @@map("article_categories")
+}
+
+model Article {
+  id String @id @default(uuid()) @db.Uuid
+
+  slug   String
+  locale Locale @default(ZH)
+
+  title    String
+  subtitle String?
+  excerpt  String?
+
+  articleType ArticleType @default(GUIDE) @map("article_type")
+
+  categoryId String?          @map("category_id") @db.Uuid
+  category   ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  coverAssetId  String?     @map("cover_asset_id") @db.Uuid
+  coverAsset    MediaAsset? @relation("ArticleCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  coverImageUrl String?     @map("cover_image_url")
+
+  authorName String? @default("GeoSub 编辑部") @map("author_name")
+
+  bodyMarkdown String? @map("body_markdown")
+  bodyHtml     String? @map("body_html")
+  bodyJson     Json?   @map("body_json")
+
+  status      ArticleStatus @default(DRAFT)
+  isFeatured  Boolean       @default(false) @map("is_featured")
+  readingTime Int?          @map("reading_time")
+
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
+  scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz(6)
+
+  canonicalUrl String? @map("canonical_url")
+
+  seoTitle       String? @map("seo_title")
+  seoDescription String? @map("seo_description")
+  seoKeywords    String? @map("seo_keywords")
+
+  ogTitle       String? @map("og_title")
+  ogDescription String? @map("og_description")
+
+  ogAssetId  String?     @map("og_asset_id") @db.Uuid
+  ogAsset    MediaAsset? @relation("ArticleOgAsset", fields: [ogAssetId], references: [id], onDelete: SetNull)
+  ogImageUrl String?     @map("og_image_url")
+
+  structuredDataType StructuredDataType @default(ARTICLE) @map("structured_data_type")
+
+  tocEnabled Boolean @default(true) @map("toc_enabled")
+  noindex    Boolean @default(false)
+  nofollow   Boolean @default(false)
+
+  sortOrder Int @default(0) @map("sort_order")
+
+  blocks      ArticleBlock[]
+  tagLinks    ArticleTagLink[]
+  relations   ArticleRelation[] @relation("ArticleRelationsSource")
+  relatedFrom ArticleRelation[] @relation("ArticleRelationsTarget")
+  seoMetas    SeoMeta[]
+  faqs        Faq[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([slug, locale])
+  @@index([locale, status])
+  @@index([articleType, status])
+  @@index([categoryId, status])
+  @@index([publishedAt])
+  @@map("articles")
+}
+
+model ArticleBlock {
+  id String @id @default(uuid()) @db.Uuid
+
+  articleId String  @map("article_id") @db.Uuid
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  blockType    BlockType @default(PARAGRAPH) @map("block_type")
+  sortOrder    Int       @default(0) @map("sort_order")
+  headingLevel Int?      @map("heading_level")
+
+  title           String?
+  contentMarkdown String? @map("content_markdown")
+  contentHtml     String? @map("content_html")
+  contentJson     Json?   @map("content_json")
+
+  imageAssetId String?     @map("image_asset_id") @db.Uuid
+  imageAsset   MediaAsset? @relation("ArticleBlockImageAsset", fields: [imageAssetId], references: [id], onDelete: SetNull)
+  imageUrl     String?     @map("image_url")
+  imageAlt     String?     @map("image_alt")
+  imageCaption String?     @map("image_caption")
+
+  linkedProductId String? @map("linked_product_id") @db.Uuid
+  linkedPlanId    String? @map("linked_plan_id") @db.Uuid
+  linkedCountryId String? @map("linked_country_id") @db.Uuid
+  adSlotId        String? @map("ad_slot_id") @db.Uuid
+  affiliateLinkId String? @map("affiliate_link_id") @db.Uuid
+
+  linkedProduct Product?       @relation(fields: [linkedProductId], references: [id], onDelete: SetNull)
+  linkedPlan    Plan?          @relation(fields: [linkedPlanId], references: [id], onDelete: SetNull)
+  linkedCountry Country?       @relation(fields: [linkedCountryId], references: [id], onDelete: SetNull)
+  adSlot        AdSlot?        @relation(fields: [adSlotId], references: [id], onDelete: SetNull)
+  affiliateLink AffiliateLink? @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+
+  status PublishStatus @default(PUBLISHED)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([articleId, sortOrder])
+  @@map("article_blocks")
+}
+
+model ArticleTag {
+  id String @id @default(uuid()) @db.Uuid
+
+  slug        String
+  locale      Locale        @default(ZH)
+  name        String
+  description String?
+  status      PublishStatus @default(PUBLISHED)
+
+  articleLinks ArticleTagLink[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([slug, locale])
+  @@index([locale, status])
+  @@map("article_tags")
+}
+
+model ArticleTagLink {
+  id String @id @default(uuid()) @db.Uuid
+
+  articleId String @map("article_id") @db.Uuid
+  tagId     String @map("tag_id") @db.Uuid
+
+  article Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag     ArticleTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([articleId, tagId])
+  @@map("article_tag_links")
+}
+
+model ArticleRelation {
+  id String @id @default(uuid()) @db.Uuid
+
+  articleId String  @map("article_id") @db.Uuid
+  article   Article @relation("ArticleRelationsSource", fields: [articleId], references: [id], onDelete: Cascade)
+
+  relationType RelationType @default(RECOMMENDED_READING) @map("relation_type")
+
+  productId        String? @map("product_id") @db.Uuid
+  planId           String? @map("plan_id") @db.Uuid
+  countryId        String? @map("country_id") @db.Uuid
+  relatedArticleId String? @map("related_article_id") @db.Uuid
+  affiliateLinkId  String? @map("affiliate_link_id") @db.Uuid
+
+  product        Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan           Plan?          @relation(fields: [planId], references: [id], onDelete: Cascade)
+  country        Country?       @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  relatedArticle Article?       @relation("ArticleRelationsTarget", fields: [relatedArticleId], references: [id], onDelete: Cascade)
+  affiliateLink  AffiliateLink? @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+
+  title       String?
+  description String?
+  sortOrder   Int           @default(0) @map("sort_order")
+  status      PublishStatus @default(PUBLISHED)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([articleId, relationType])
+  @@index([productId])
+  @@map("article_relations")
+}
+
+model SiteSetting {
+  id String @id @default(uuid()) @db.Uuid
+
+  settingKey String  @unique @map("setting_key")
+  groupName  String  @default("general") @map("group_name")
+  label      String
+  valueText  String? @map("value_text")
+  valueJson  Json?   @map("value_json")
+  isPublic   Boolean @default(false) @map("is_public")
+  note       String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("site_settings")
+}
+
+model Redirect {
+  id String @id @default(uuid()) @db.Uuid
+
+  sourcePath String  @unique @map("source_path")
+  targetPath String  @map("target_path")
+  statusCode Int     @default(301) @map("status_code")
+  locale     Locale?
+  reason     String?
+  isActive   Boolean @default(true) @map("is_active")
+  hitCount   Int     @default(0) @map("hit_count")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([isActive])
+  @@map("redirects")
+}
+
+model NavigationItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  locale   Locale             @default(ZH)
+  label    String
+  href     String
+  position NavigationPosition @default(HEADER)
+
+  parentId String?          @map("parent_id") @db.Uuid
+  parent   NavigationItem?  @relation("NavigationTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children NavigationItem[] @relation("NavigationTree")
+
+  icon      String?
+  external  Boolean       @default(false)
+  status    PublishStatus @default(PUBLISHED)
+  sortOrder Int           @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([locale, position, status])
+  @@map("navigation_items")
+}
+
+model InternalLink {
+  id String @id @default(uuid()) @db.Uuid
+
+  sourceType String  @map("source_type")
+  sourceId   String? @map("source_id") @db.Uuid
+
+  targetType String  @map("target_type")
+  targetId   String? @map("target_id") @db.Uuid
+  targetUrl  String? @map("target_url")
+
+  anchorText String        @map("anchor_text")
+  locale     Locale        @default(ZH)
+  priority   Int           @default(0)
+  status     PublishStatus @default(PUBLISHED)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([sourceType, sourceId, locale])
+  @@index([targetType, targetId, locale])
+  @@map("internal_links")
+}
+
+model TrackingEvent {
+  id String @id @default(uuid()) @db.Uuid
+
+  eventKey    String  @unique @map("event_key")
+  eventName   String  @map("event_name")
+  description String?
+  enabled     Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("tracking_events")
+}
+
+model CollectorJob {
+  id String @id @default(uuid()) @db.Uuid
+
+  sourceId  String? @map("source_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+
+  source  PriceSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  product Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  jobType  String  @default("price_check") @map("job_type")
+  schedule String?
+  status   String  @default("active")
+
+  lastRunAt DateTime? @map("last_run_at") @db.Timestamptz(6)
+  nextRunAt DateTime? @map("next_run_at") @db.Timestamptz(6)
+
+  successCount Int     @default(0) @map("success_count")
+  errorCount   Int     @default(0) @map("error_count")
+  lastError    String? @map("last_error")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("collector_jobs")
+}
+
+model ParserRule {
+  id String @id @default(uuid()) @db.Uuid
+
+  sourceId String?      @map("source_id") @db.Uuid
+  source   PriceSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  name           String
+  version        String @default("v1")
+  selectorConfig Json?  @map("selector_config")
+  regexConfig    Json?  @map("regex_config")
+  status         String @default("draft")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("parser_rules")
+}
+
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  actorId String?    @map("actor_id") @db.Uuid
+  actor   AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action     String
+  targetType String  @map("target_type")
+  targetId   String? @map("target_id") @db.Uuid
+
+  oldValue Json?   @map("old_value")
+  newValue Json?   @map("new_value")
+  note     String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+model EventLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  eventKey  String  @map("event_key")
+  eventName String? @map("event_name")
+
+  pagePath  String? @map("page_path")
+  pageTitle String? @map("page_title")
+  referrer  String?
+
+  locale      String? @default("zh")
+  sessionId   String? @map("session_id")
+  anonymousId String? @map("anonymous_id")
+
+  productId String? @map("product_id") @db.Uuid
+  planId    String? @map("plan_id") @db.Uuid
+  countryId String? @map("country_id") @db.Uuid
+  articleId String? @map("article_id") @db.Uuid
+
+  buttonKey  String? @map("button_key")
+  placement  String?
+  source     String?
+  deviceType String? @map("device_type")
+
+  userAgent String? @map("user_agent")
+  ipCountry String? @map("ip_country")
+
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([eventKey, createdAt])
+  @@index([pagePath])
+  @@index([productId])
+  @@index([planId])
+  @@index([countryId])
+  @@index([articleId])
+  @@index([createdAt])
+  @@map("event_logs")
+}
+
+model DailyStat {
+  id String @id @default(uuid()) @db.Uuid
+
+  statDate DateTime @map("stat_date") @db.Date
+
+  metricKey   String @map("metric_key")
+  metricValue Int    @default(0) @map("metric_value")
+
+  dimensionType String @default("global") @map("dimension_type")
+  dimensionKey  String @default("global") @map("dimension_key")
+
+  label    String?
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([statDate, metricKey, dimensionType, dimensionKey])
+  @@index([statDate])
+  @@index([metricKey])
+  @@index([dimensionType, dimensionKey])
+  @@map("daily_stats")
+}

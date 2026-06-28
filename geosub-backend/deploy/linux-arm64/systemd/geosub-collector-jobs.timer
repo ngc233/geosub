@@ -1,0 +1,12 @@
+[Unit]
+Description=Run GeoSub collector jobs every 30 minutes
+
+[Timer]
+OnBootSec=8min
+OnUnitActiveSec=30min
+RandomizedDelaySec=5min
+Persistent=true
+Unit=geosub-collector-jobs.service
+
+[Install]
+WantedBy=timers.target

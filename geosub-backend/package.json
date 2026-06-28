@@ -1,0 +1,12 @@
+{
+  "name": "geosub-backend-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render:app-store": "node scripts/render-app-store-prices.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.57.0"
+  }
+}

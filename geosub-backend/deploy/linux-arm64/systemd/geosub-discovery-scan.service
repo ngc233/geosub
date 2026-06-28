@@ -1,0 +1,21 @@
+[Unit]
+Description=GeoSub discovery source scanner
+Wants=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/geosub-backend
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-discovery-scan.sh
+TimeoutStartSec=20m
+Nice=10
+CPUQuota=80%
+MemoryMax=900M
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

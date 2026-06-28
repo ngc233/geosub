@@ -1,0 +1,21 @@
+[Unit]
+Description=GeoSub price collection and auto-review pipeline
+Wants=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/geosub-backend
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-price-pipeline.sh
+TimeoutStartSec=35m
+Nice=10
+CPUQuota=120%
+MemoryMax=1800M
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run GeoSub discovery source scanner
+
+[Timer]
+OnCalendar=*:17:00
+RandomizedDelaySec=8m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

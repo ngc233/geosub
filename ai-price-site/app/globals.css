@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf8f3;
+  --foreground: #18181b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --foreground: #f4f4f5;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+  overflow-x: hidden;
+}
+
+/* 页面整体背景，偏接近 opentherank 那种浅米色 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top left, rgba(132, 204, 22, 0.08), transparent 28rem),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 24rem),
+    #faf8f3;
+}
+
+@media (prefers-color-scheme: dark) {
+  body::before {
+    background:
+      radial-gradient(circle at top left, rgba(132, 204, 22, 0.08), transparent 28rem),
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 24rem),
+      #09090b;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+}
+
+/* 卡片 hover：只轻微膨胀，不连续呼吸 */
+.pricing-card-hover {
+  position: relative;
+  z-index: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+  will-change: transform, box-shadow;
+}
+
+.pricing-card-hover:hover {
+  z-index: 10;
+  transform: translateY(-3px) scale(1.01);
+  border-color: rgba(132, 204, 22, 0.35);
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .pricing-card-hover,
+  .pricing-card-hover:hover {
+    transition: none;
+    transform: none;
+  }
+}
+/* GeoSub Admin UI polish */
+.admin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.35) rgba(24, 24, 27, 0.5);
+}
+
+.admin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.5);
+  border-radius: 999px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.35);
+  border-radius: 999px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.55);
+}
+
+.admin-number-input::-webkit-outer-spin-button,
+.admin-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.admin-number-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* GeoSub Admin Design System v1 */
+.admin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.admin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.admin-number-input::-webkit-outer-spin-button,
+.admin-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.admin-number-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* GeoSub frontend typography system */
+.gs-page-title {
+  font-size: 30px;
+  line-height: 1.12;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  color: #09090b;
+}
+
+.gs-section-title {
+  font-size: 22px;
+  line-height: 1.28;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #18181b;
+}
+
+.gs-card-title {
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #18181b;
+}
+
+.gs-body {
+  font-size: 14px;
+  line-height: 1.72;
+  font-weight: 500;
+  color: #71717a;
+}
+
+.gs-meta {
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 700;
+  color: #a1a1aa;
+}
+
+.gs-badge {
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.dark .gs-page-title,
+.dark .gs-section-title,
+.dark .gs-card-title {
+  color: #ffffff;
+}
+
+.dark .gs-body {
+  color: #a1a1aa;
+}
+
+.dark .gs-meta {
+  color: #71717a;
+}
+
+@media (min-width: 768px) {
+  .gs-page-title {
+    font-size: 40px;
+    line-height: 1.12;
+  }
+
+  .gs-section-title {
+    font-size: 28px;
+    line-height: 1.28;
+  }
+
+  .gs-card-title {
+    font-size: 20px;
+    line-height: 1.4;
+  }
+
+  .gs-body {
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .gs-meta {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+}

@@ -1,0 +1,7 @@
+product_slug,plan_slug,country_code,platform,source_type,source_url,observed_local_price,observed_currency,observed_price_text,observed_billing_cycle,observed_price_usd,confidence_score,review_note,screenshot_url
+chatgpt,plus,US,app_store_ios,app_store_page,https://apps.apple.com/us/app/chatgpt/id6448311069,20,USD,$20/mo,monthly,20,80,Manual App Store observation for ChatGPT Plus in US.,
+chatgpt,pro,US,app_store_ios,app_store_page,https://apps.apple.com/us/app/chatgpt/id6448311069,200,USD,$200/mo,monthly,200,80,Manual App Store observation for ChatGPT Pro in US.,
+chatgpt,plus,JP,app_store_ios,app_store_page,https://apps.apple.com/jp/app/chatgpt/id6448311069,3000,JPY,"¥3,000/月",monthly,19.10,80,Manual App Store observation for ChatGPT Plus in JP.,
+chatgpt,pro,JP,app_store_ios,app_store_page,https://apps.apple.com/jp/app/chatgpt/id6448311069,,,,monthly,,70,Manual App Store observation for ChatGPT Pro in JP.,
+chatgpt,plus,PH,app_store_ios,app_store_page,https://apps.apple.com/ph/app/chatgpt/id6448311069,1100,PHP,"₱1,100/mo",monthly,18.80,80,Manual App Store observation for ChatGPT Plus in PH.,
+chatgpt,pro,PH,app_store_ios,app_store_page,https://apps.apple.com/ph/app/chatgpt/id6448311069,,,,monthly,,70,Manual App Store observation for ChatGPT Pro in PH.,

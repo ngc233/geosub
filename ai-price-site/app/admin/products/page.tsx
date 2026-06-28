@@ -1,0 +1,611 @@
+import Link from "next/link";
+import type { ProductCategory } from "@prisma/client";
+import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
+import SegmentedControl from "../../../components/ui/SegmentedControl";
+import { prisma } from "../../../lib/prisma";
+
+type CategoryValue =
+  | "all"
+  | "ai"
+  | "software"
+  | "streaming"
+  | "game"
+  | "gift_card"
+  | "payment"
+  | "vpn"
+  | "other";
+
+const categoryConfigs: Array<{
+  value: CategoryValue;
+  label: string;
+  shortLabel: string;
+  dbValue?: ProductCategory;
+  description: string;
+}> = [
+  {
+    value: "all",
+    label: "全部服务",
+    shortLabel: "全部",
+    description: "所有已录入的数字服务、订阅、游戏平台、礼品卡和虚拟服务。",
+  },
+  {
+    value: "ai",
+    label: "AI 订阅",
+    shortLabel: "AI",
+    dbValue: "AI" as ProductCategory,
+    description: "ChatGPT、Claude、Gemini、Perplexity、Midjourney 等 AI 服务。",
+  },
+  {
+    value: "software",
+    label: "软件订阅",
+    shortLabel: "软件",
+    dbValue: "SOFTWARE" as ProductCategory,
+    description: "Microsoft 365、Adobe、Canva、Notion、JetBrains 等软件服务。",
+  },
+  {
+    value: "streaming",
+    label: "流媒体",
+    shortLabel: "流媒体",
+    dbValue: "STREAMING" as ProductCategory,
+    description: "Netflix、Disney+、Spotify、YouTube Premium 等内容订阅。",
+  },
+  {
+    value: "game",
+    label: "游戏 / Steam",
+    shortLabel: "游戏",
+    dbValue: "GAME" as ProductCategory,
+    description: "Steam、Xbox Game Pass、PlayStation Plus、Nintendo 等游戏服务。",
+  },
+  {
+    value: "gift_card",
+    label: "礼品卡 / 充值卡",
+    shortLabel: "礼品卡",
+    dbValue: "GIFT_CARD" as ProductCategory,
+    description: "Apple、Google Play、Steam、Xbox、PlayStation 等数字礼品卡。",
+  },
+  {
+    value: "payment",
+    label: "支付 / 虚拟服务",
+    shortLabel: "支付",
+    dbValue: "PAYMENT" as ProductCategory,
+    description: "支付、账号、虚拟服务相关数据。",
+  },
+  {
+    value: "vpn",
+    label: "网络工具",
+    shortLabel: "网络工具",
+    dbValue: "VPN" as ProductCategory,
+    description: "后台保留数据分类，简体中文前台不作为主导航展示。",
+  },
+  {
+    value: "other",
+    label: "其他 / 待归类",
+    shortLabel: "其他",
+    dbValue: "OTHER" as ProductCategory,
+    description: "暂时无法归入明确业务线的服务。",
+  },
+];
+
+function getSelectedCategory(value?: string) {
+  const normalized = String(value || "all").toLowerCase();
+
+  return (
+    categoryConfigs.find((category) => category.value === normalized) ||
+    categoryConfigs[0]
+  );
+}
+
+function statusLabel(status: string) {
+  if (status === "PUBLISHED") return "已发布";
+  if (status === "DRAFT") return "草稿";
+  if (status === "REVIEW") return "待审核";
+  if (status === "ARCHIVED") return "已归档";
+  return status;
+}
+
+function statusClassName(status: string) {
+  if (status === "PUBLISHED") {
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+
+  if (status === "DRAFT") {
+    return "bg-amber-50 text-amber-700 ring-amber-200";
+  }
+
+  if (status === "REVIEW") {
+    return "bg-blue-50 text-blue-700 ring-blue-200";
+  }
+
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function getHealth(product: {
+  plans: Array<unknown>;
+  regionPrices: Array<{
+    dataQuality: unknown;
+    primarySourceId: string | null;
+  }>;
+}) {
+  if (product.plans.length === 0) {
+    return {
+      label: "无套餐",
+      tone: "danger",
+      detail: "该服务还没有套餐，无法形成可用价格页。",
+    };
+  }
+
+  if (product.regionPrices.length === 0) {
+    return {
+      label: "无价格",
+      tone: "danger",
+      detail: "该服务已有套餐，但还没有区域价格。",
+    };
+  }
+
+  const staleCount = product.regionPrices.filter(
+    (price) => String(price.dataQuality) === "STALE"
+  ).length;
+
+  if (staleCount > 0) {
+    return {
+      label: `过期 ${staleCount}`,
+      tone: "danger",
+      detail: "存在过期价格，需要优先更新。",
+    };
+  }
+
+  const noSourceCount = product.regionPrices.filter(
+    (price) => !price.primarySourceId
+  ).length;
+
+  if (noSourceCount > 0) {
+    return {
+      label: `缺来源 ${noSourceCount}`,
+      tone: "warning",
+      detail: "部分价格缺少主来源，后续需要补来源。",
+    };
+  }
+
+  const pendingCount = product.regionPrices.filter(
+    (price) => String(price.dataQuality) === "PENDING_REVIEW"
+  ).length;
+
+  if (pendingCount > 0) {
+    return {
+      label: `待审核 ${pendingCount}`,
+      tone: "warning",
+      detail: "部分价格仍处于待审核状态。",
+    };
+  }
+
+  return {
+    label: "正常",
+    tone: "success",
+    detail: "该服务已有套餐、价格和可用数据质量。",
+  };
+}
+
+function healthClassName(tone: string) {
+  if (tone === "success") {
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+
+  if (tone === "danger") {
+    return "bg-red-50 text-red-700 ring-red-200";
+  }
+
+  if (tone === "warning") {
+    return "bg-amber-50 text-amber-700 ring-amber-200";
+  }
+
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function formatDate(value: Date | null) {
+  if (!value) return "—";
+
+  return value.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
+function formatUsd(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return `$${value.toFixed(2)}`;
+}
+
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    category?: string;
+  }>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const selectedCategory = getSelectedCategory(params?.category);
+
+  const allProducts = await prisma.product.findMany({
+    orderBy: [
+      {
+        sortOrder: "asc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
+    include: {
+      plans: {
+        orderBy: [
+          {
+            sortOrder: "asc",
+          },
+          {
+            createdAt: "asc",
+          },
+        ],
+      },
+      regionPrices: {
+        include: {
+          country: true,
+          plan: true,
+          primarySource: true,
+        },
+      },
+    },
+  });
+
+  const products =
+    selectedCategory.value === "all"
+      ? allProducts
+      : allProducts.filter(
+          (product) => product.category === selectedCategory.dbValue
+        );
+
+  const categoryStats = categoryConfigs
+    .filter((category) => category.value !== "all")
+    .map((category) => {
+      const categoryProducts = allProducts.filter(
+        (product) => product.category === category.dbValue
+      );
+
+      const planCount = categoryProducts.reduce(
+        (sum, product) => sum + product.plans.length,
+        0
+      );
+
+      const priceCount = categoryProducts.reduce(
+        (sum, product) => sum + product.regionPrices.length,
+        0
+      );
+
+      const issueCount = categoryProducts.filter((product) => {
+        const health = getHealth(product);
+        return health.tone !== "success";
+      }).length;
+
+      return {
+        ...category,
+        productCount: categoryProducts.length,
+        planCount,
+        priceCount,
+        issueCount,
+      };
+    });
+
+  const totalPlans = products.reduce(
+    (sum, product) => sum + product.plans.length,
+    0
+  );
+
+  const totalPrices = products.reduce(
+    (sum, product) => sum + product.regionPrices.length,
+    0
+  );
+
+  const countryCoverage = new Set(
+    products.flatMap((product) =>
+      product.regionPrices.map((price) => price.country.code)
+    )
+  );
+
+  const issueProducts = products.filter((product) => {
+    const health = getHealth(product);
+    return health.tone !== "success";
+  });
+
+  return (
+    <div>
+      <AdminPageHeader
+        eyebrow="Products"
+        title="产品 / 服务库"
+        description="按业务分类管理 GeoSub 的数字服务资产，重点查看套餐、国家覆盖、价格数据、数据健康和后续维护优先级。"
+      />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <AdminCard>
+          <div className="text-sm font-bold text-slate-500">当前分类</div>
+          <div className="mt-2 text-2xl font-black text-slate-950">
+            {selectedCategory.shortLabel}
+          </div>
+          <div className="mt-2 text-sm text-slate-500">
+            {selectedCategory.description}
+          </div>
+        </AdminCard>
+
+        <AdminCard>
+          <div className="text-sm font-bold text-slate-500">产品 / 套餐</div>
+          <div className="mt-2 text-2xl font-black text-slate-950">
+            {products.length} / {totalPlans}
+          </div>
+          <div className="mt-2 text-sm text-slate-500">
+            当前筛选范围内的产品与套餐数量。
+          </div>
+        </AdminCard>
+
+        <AdminCard>
+          <div className="text-sm font-bold text-slate-500">价格 / 国家</div>
+          <div className="mt-2 text-2xl font-black text-slate-950">
+            {totalPrices} / {countryCoverage.size}
+          </div>
+          <div className="mt-2 text-sm text-slate-500">
+            当前分类的区域价格和国家覆盖。
+          </div>
+        </AdminCard>
+
+        <AdminCard>
+          <div className="text-sm font-bold text-slate-500">需处理服务</div>
+          <div className="mt-2 text-2xl font-black text-slate-950">
+            {issueProducts.length}
+          </div>
+          <div className="mt-2 text-sm text-slate-500">
+            无套餐、无价格、缺来源或价格过期的服务。
+          </div>
+        </AdminCard>
+      </div>
+
+      <AdminCard className="mb-6">
+        <div className="mb-5 flex flex-col gap-2">
+          <h2 className="text-lg font-black text-slate-950">
+            分类总览
+          </h2>
+          <p className="text-sm text-slate-500">
+            产品库后期不按大表平铺，而是先看分类资产健康度。点击卡片可快速进入对应分类。
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {categoryStats.map((category) => {
+            const active = selectedCategory.value === category.value;
+
+            return (
+              <Link
+                key={category.value}
+                href={`/admin/products?category=${category.value}`}
+                className={[
+                  "rounded-3xl border p-5 transition",
+                  active
+                    ? "border-blue-200 bg-blue-50 shadow-sm ring-1 ring-blue-100"
+                    : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50",
+                ].join(" ")}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-base font-black text-slate-950">
+                      {category.label}
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                      {category.description}
+                    </div>
+                  </div>
+
+                  {category.issueCount > 0 ? (
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+                      问题 {category.issueCount}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-200">
+                      正常
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+                  <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
+                    <div className="text-lg font-black text-slate-950">
+                      {category.productCount}
+                    </div>
+                    <div className="mt-1 text-[11px] font-bold text-slate-400">
+                      产品
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
+                    <div className="text-lg font-black text-slate-950">
+                      {category.planCount}
+                    </div>
+                    <div className="mt-1 text-[11px] font-bold text-slate-400">
+                      套餐
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
+                    <div className="text-lg font-black text-slate-950">
+                      {category.priceCount}
+                    </div>
+                    <div className="mt-1 text-[11px] font-bold text-slate-400">
+                      价格
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </AdminCard>
+
+      <AdminCard>
+        <div className="mb-5 flex flex-col gap-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-lg font-black text-slate-950">
+                服务资产列表
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                这里重点不是最低价，而是判断每个服务是否有套餐、是否有国家覆盖、是否缺来源、是否可以进入前台展示。
+              </p>
+            </div>
+
+            <div className="flex gap-4">
+              <Link
+                href="/admin/plans"
+                className="text-sm font-black text-blue-700 hover:text-blue-900"
+              >
+                套餐库 →
+              </Link>
+
+              <Link
+                href="/admin/prices"
+                className="text-sm font-black text-blue-700 hover:text-blue-900"
+              >
+                价格库 →
+              </Link>
+            </div>
+          </div>
+
+          <SegmentedControl
+            ariaLabel="产品分类"
+            value={selectedCategory.value}
+            tone="blue"
+            items={categoryConfigs.map((category) => ({
+              label: category.shortLabel,
+              value: category.value,
+              href:
+                category.value === "all"
+                  ? "/admin/products"
+                  : `/admin/products?category=${category.value}`,
+            }))}
+          />
+        </div>
+
+        <div className="overflow-hidden rounded-3xl border border-slate-200">
+          <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_90px_90px_100px_120px_110px_110px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+            <div>服务</div>
+            <div>分类</div>
+            <div>服务商</div>
+            <div>套餐</div>
+            <div>国家</div>
+            <div>价格</div>
+            <div>数据健康</div>
+            <div>最后检查</div>
+            <div>状态</div>
+          </div>
+
+          <div className="divide-y divide-slate-100 bg-white">
+            {products.map((product) => {
+              const countries = new Set(
+                product.regionPrices.map((price) => price.country.code)
+              );
+
+              const prices = product.regionPrices
+                .map((price) => Number(price.priceUsd))
+                .filter((value) => !Number.isNaN(value));
+
+              const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+              const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
+
+              const lastChecked =
+                product.regionPrices
+                  .map((price) => price.lastCheckedAt || price.updatedAt)
+                  .filter(Boolean)
+                  .sort((a, b) => b.getTime() - a.getTime())[0] || null;
+
+              const health = getHealth(product);
+              const category = categoryConfigs.find(
+                (item) => item.dbValue === product.category
+              );
+
+              return (
+                <div
+                  key={product.id}
+                  className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_90px_90px_100px_120px_110px_110px] items-center gap-0 px-5 py-4 text-sm"
+                >
+                  <div>
+                    <div className="font-black text-slate-950">
+                      {product.name}
+                    </div>
+                    <div className="mt-1 font-mono text-xs text-slate-400">
+                      {product.slug}
+                    </div>
+                    {minPrice !== null || maxPrice !== null ? (
+                      <div className="mt-2 text-xs font-bold text-slate-400">
+                        {formatUsd(minPrice)} - {formatUsd(maxPrice)}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="text-slate-600">
+                    {category?.shortLabel || String(product.category)}
+                  </div>
+
+                  <div className="text-slate-500">
+                    {product.provider || "—"}
+                  </div>
+
+                  <div className="font-bold text-slate-700">
+                    {product.plans.length}
+                  </div>
+
+                  <div className="font-bold text-slate-700">
+                    {countries.size}
+                  </div>
+
+                  <div className="font-bold text-slate-700">
+                    {product.regionPrices.length}
+                  </div>
+
+                  <div>
+                    <span
+                      title={health.detail}
+                      className={[
+                        "inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1",
+                        healthClassName(health.tone),
+                      ].join(" ")}
+                    >
+                      {health.label}
+                    </span>
+                  </div>
+
+                  <div className="text-xs font-bold text-slate-500">
+                    {formatDate(lastChecked)}
+                  </div>
+
+                  <div>
+                    <span
+                      className={[
+                        "inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1",
+                        statusClassName(String(product.status)),
+                      ].join(" ")}
+                    >
+                      {statusLabel(String(product.status))}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {products.length === 0 ? (
+              <div className="px-5 py-12 text-center text-sm font-bold text-slate-400">
+                当前分类暂无服务。后续可以从新增产品开始补齐。
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </AdminCard>
+    </div>
+  );
+}
