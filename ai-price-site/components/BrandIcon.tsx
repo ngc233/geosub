@@ -1,11 +1,13 @@
 'use client';
 
 import type { SVGProps } from 'react';
-import type { SubscriptionProduct } from '../lib/ai-pricing-model';
 import * as icons from 'simple-icons/icons';
 
 type BrandIconProps = {
-  product: SubscriptionProduct;
+  product: {
+    slug: string;
+    name?: string;
+  };
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 };

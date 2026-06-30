@@ -1,15 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { PackagePlus, Radar } from "lucide-react";
-import { createDiscoverySource, createManualCandidate } from "./actions";
+import {
+  createDiscoverySource,
+  createManualCandidate,
+  type DiscoveryActionState,
+} from "./actions";
 
 type IntakeMode = "candidate" | "source";
+
+const initialState: DiscoveryActionState = {
+  ok: false,
+  message: "",
+};
 
 const inputClassName =
   "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
 const labelClassName = "text-xs font-semibold text-slate-500";
+
+function ActionMessage({ state }: { state: DiscoveryActionState }) {
+  if (!state.message) return null;
+
+  return (
+    <div
+      className={[
+        "rounded-lg border px-3 py-2 text-sm",
+        state.ok
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-red-200 bg-red-50 text-red-700",
+      ].join(" ")}
+    >
+      {state.message}
+    </div>
+  );
+}
 
 function ModeButton({
   active,
@@ -54,8 +80,17 @@ function ModeButton({
 }
 
 function ProductCandidateForm() {
+  const [state, formAction, pending] = useActionState(
+    createManualCandidate,
+    initialState
+  );
+
   return (
-    <form action={createManualCandidate} className="grid gap-4 md:grid-cols-2">
+    <form action={formAction} className="grid gap-4 md:grid-cols-2">
+      <div className="md:col-span-2">
+        <ActionMessage state={state} />
+      </div>
+
       <label className="block">
         <span className={labelClassName}>产品名</span>
         <input
@@ -83,7 +118,7 @@ function ProductCandidateForm() {
           className={inputClassName}
         >
           <option value="ai">AI 订阅</option>
-          <option value="software">软件</option>
+          <option value="software">软件订阅</option>
           <option value="streaming">流媒体</option>
           <option value="game">游戏</option>
           <option value="gift_card">礼品卡</option>
@@ -164,9 +199,10 @@ function ProductCandidateForm() {
       <div className="md:col-span-2">
         <button
           type="submit"
-          className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+          disabled={pending}
+          className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          添加到候选池
+          {pending ? "正在添加..." : "添加到候选池"}
         </button>
       </div>
     </form>
@@ -174,8 +210,17 @@ function ProductCandidateForm() {
 }
 
 function DiscoverySourceForm() {
+  const [state, formAction, pending] = useActionState(
+    createDiscoverySource,
+    initialState
+  );
+
   return (
-    <form action={createDiscoverySource} className="grid gap-4 md:grid-cols-2">
+    <form action={formAction} className="grid gap-4 md:grid-cols-2">
+      <div className="md:col-span-2">
+        <ActionMessage state={state} />
+      </div>
+
       <label className="block">
         <span className={labelClassName}>来源名称</span>
         <input
@@ -219,7 +264,7 @@ function DiscoverySourceForm() {
         <span className={labelClassName}>分类提示</span>
         <select name="categoryHint" defaultValue="ai" className={inputClassName}>
           <option value="ai">AI 订阅</option>
-          <option value="software">软件</option>
+          <option value="software">软件订阅</option>
           <option value="streaming">流媒体</option>
           <option value="game">游戏</option>
           <option value="other">其他</option>
@@ -308,9 +353,10 @@ function DiscoverySourceForm() {
       <div className="md:col-span-2">
         <button
           type="submit"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          disabled={pending}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          保存来源配置
+          {pending ? "正在保存..." : "保存来源配置"}
         </button>
       </div>
     </form>
@@ -324,13 +370,13 @@ export default function DiscoveryIntakeForms() {
     <section className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="mb-5">
         <p className="text-sm font-bold tracking-tight text-blue-700">
-          INTAKE
+          线索入口
         </p>
         <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-          添加线索
+          添加发现线索
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-          先判断你手里的信息属于哪一类：如果已经是具体产品，就进入候选池等待审核；如果是值得长期盯着的网站或频道，就保存为发现来源，后续由扫描器自动检查。
+          已经明确是某个产品时，先放进候选池等待审核；如果只是一个值得长期监控的网站、频道或应用市场入口，就保存为发现来源，后续由扫描器定期检查。
         </p>
       </div>
 
@@ -339,21 +385,19 @@ export default function DiscoveryIntakeForms() {
           active={mode === "candidate"}
           icon={<PackagePlus size={18} strokeWidth={2} />}
           title="具体产品线索"
-          description="你已经知道某个产品、模型、套餐或定价页，先放入候选池。"
+          description="你已经知道某个产品、模型、套餐或定价页，先进入候选池。"
           onClick={() => setMode("candidate")}
         />
         <ModeButton
           active={mode === "source"}
           icon={<Radar size={18} strokeWidth={2} />}
-          title="长期监控来源"
-          description="你想让系统持续盯着某个官网、RSS、竞品页或应用市场。"
+          title="长期发现来源"
+          description="配置一个后续自动扫描的来源，例如官网、博客、应用市场或竞品页。"
           onClick={() => setMode("source")}
         />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 md:p-5">
-        {mode === "candidate" ? <ProductCandidateForm /> : <DiscoverySourceForm />}
-      </div>
+      {mode === "candidate" ? <ProductCandidateForm /> : <DiscoverySourceForm />}
     </section>
   );
 }

@@ -38,9 +38,9 @@ type PricingPlatformViewProps = {
 
 const platformOptions: Array<{ value: PlatformFilter; label: string }> = [
   { value: "ios", label: "App Store" },
-  { value: "web", label: "Web" },
-  { value: "android", label: "Google Play" },
-  { value: "all", label: "全部来源" },
+  { value: "web", label: "Web 线索" },
+  { value: "android", label: "Google Play 线索" },
+  { value: "all", label: "全部来源诊断" },
 ];
 
 const currencyOptions: Array<{ value: DisplayCurrency; label: string }> = [
@@ -377,13 +377,16 @@ function PricingLead({
   return (
     <PublicSection>
       <div className="p-5 md:p-6">
+        <div className="mb-3 inline-flex rounded-md bg-lime-50 px-2.5 py-1 text-xs font-semibold text-lime-700 ring-1 ring-lime-200 dark:bg-lime-950/30 dark:text-lime-300 dark:ring-lime-900">
+          V1 正式价格源：App Store
+        </div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
           <h2 className="text-[24px] font-semibold leading-tight text-zinc-950 md:whitespace-nowrap md:text-[28px] dark:text-white">
             {productName} {plan.name} 全球价格结论
           </h2>
           <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
-            当前 {platformLabel} 数据下，{stats.minRegion.country} 最便宜，约{" "}
+            当前以 {platformLabel} 正式价格比较，{stats.minRegion.country} 最便宜，约{" "}
             <strong className="font-semibold text-lime-700 dark:text-lime-300">
               {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}
             </strong>
@@ -428,6 +431,9 @@ function PricingLead({
               : displayCurrencyLabel}
           </div>
         </div>
+        <p className="mt-3 text-xs leading-5 text-zinc-400">
+          Web 与 Google Play 暂作为采集诊断和未来补充来源；前台排名、地图和购买力判断优先以 App Store 正式价格为准。
+        </p>
       </div>
 
       <MetricStrip>

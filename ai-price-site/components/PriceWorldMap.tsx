@@ -59,6 +59,15 @@ type DragState = {
   viewY: number;
 };
 
+type KeyMarker = {
+  key: string;
+  kind: "min" | "max" | "reference";
+  region: RegionPrice;
+  x: number;
+  y: number;
+  diffPercent: number;
+};
+
 const WIDTH = 900;
 const HEIGHT = 430;
 
@@ -192,6 +201,36 @@ function getSummaryLabel({
   return copy.recorded;
 }
 
+function getMarkerMeta(kind: KeyMarker["kind"]) {
+  if (kind === "min") {
+    return {
+      label: "最低",
+      dot: "#16a34a",
+      border: "#16a34a",
+      fill: "#ecfccb",
+      text: "#166534",
+    };
+  }
+
+  if (kind === "max") {
+    return {
+      label: "最高",
+      dot: "#f97316",
+      border: "#f97316",
+      fill: "#fff7ed",
+      text: "#c2410c",
+    };
+  }
+
+  return {
+    label: "基准",
+    dot: "#71717a",
+    border: "#d4d4d8",
+    fill: "#ffffff",
+    text: "#3f3f46",
+  };
+}
+
 export default function PriceWorldMap({
   plan,
   locale = "zh",
@@ -224,6 +263,7 @@ export default function PriceWorldMap({
     return {
       countries,
       features,
+      projection,
       pathGenerator,
     };
   }, []);
@@ -255,6 +295,62 @@ export default function PriceWorldMap({
   const referencePrice = referenceRegion?.priceUsd;
   const minRegion = sortedRegions[0];
   const maxRegion = sortedRegions[sortedRegions.length - 1];
+
+  const keyMarkers = useMemo(() => {
+    if (!referencePrice) return [];
+
+    const selected = [
+      minRegion ? { kind: "min" as const, region: minRegion } : null,
+      maxRegion &&
+      (!minRegion || maxRegion.code.toUpperCase() !== minRegion.code.toUpperCase())
+        ? { kind: "max" as const, region: maxRegion }
+        : null,
+      referenceRegion &&
+      (!minRegion ||
+        referenceRegion.code.toUpperCase() !== minRegion.code.toUpperCase()) &&
+      (!maxRegion ||
+        referenceRegion.code.toUpperCase() !== maxRegion.code.toUpperCase())
+        ? { kind: "reference" as const, region: referenceRegion }
+        : null,
+    ].filter(Boolean) as Array<{
+      kind: KeyMarker["kind"];
+      region: RegionPrice;
+    }>;
+
+    return selected
+      .map(({ kind, region }) => {
+        const numericCode = getCountryNumericCode(region.code);
+        const geo = mapData.features.find((featureItem) => {
+          const id =
+            typeof featureItem.id === "number" ||
+            typeof featureItem.id === "string"
+              ? Number(featureItem.id)
+              : undefined;
+
+          return id === numericCode;
+        });
+
+        if (!geo) return null;
+
+        const centroid = mapData.pathGenerator.centroid(
+          geo as unknown as GeoPermissibleObjects
+        );
+
+        if (!Number.isFinite(centroid[0]) || !Number.isFinite(centroid[1])) {
+          return null;
+        }
+
+        return {
+          key: `${kind}-${region.code}`,
+          kind,
+          region,
+          x: centroid[0],
+          y: centroid[1],
+          diffPercent: getDiffPercent(region.priceUsd, referencePrice),
+        };
+      })
+      .filter(Boolean) as KeyMarker[];
+  }, [mapData.features, mapData.pathGenerator, maxRegion, minRegion, referencePrice, referenceRegion]);
 
   const zoomIn = () => {
     setView((current) => ({
@@ -403,6 +499,18 @@ export default function PriceWorldMap({
             setDragState(null);
           }}
         >
+          <style>{`
+            @keyframes geosub-map-pulse {
+              0% { opacity: 0.28; r: 7px; }
+              70% { opacity: 0; r: 23px; }
+              100% { opacity: 0; r: 23px; }
+            }
+
+            .geosub-map-pulse {
+              animation: geosub-map-pulse 2.4s ease-out infinite;
+            }
+          `}</style>
+
           <rect
             width={WIDTH}
             height={HEIGHT}
@@ -492,6 +600,109 @@ export default function PriceWorldMap({
                     });
                   }}
                 />
+              );
+            })}
+
+            {keyMarkers.map((marker) => {
+              const meta = getMarkerMeta(marker.kind);
+              const isRightSide = marker.x > WIDTH * 0.58;
+              const tagWidth = marker.kind === "reference" ? 94 : 118;
+              const tagHeight = 44;
+              const tagX = isRightSide ? -tagWidth - 12 : 12;
+              const tagY = -tagHeight - 10;
+
+              return (
+                <g
+                  key={marker.key}
+                  className={marker.kind === "reference" ? "hidden md:block" : ""}
+                  transform={`translate(${marker.x} ${marker.y})`}
+                  pointerEvents="none"
+                >
+                  {marker.kind === "min" ? (
+                    <circle
+                      className="geosub-map-pulse motion-reduce:hidden"
+                      cx="0"
+                      cy="0"
+                      r="7"
+                      fill={meta.dot}
+                    />
+                  ) : null}
+
+                  <line
+                    x1={isRightSide ? -4 : 4}
+                    y1="-4"
+                    x2={isRightSide ? tagX + tagWidth : tagX}
+                    y2={tagY + tagHeight}
+                    stroke={meta.border}
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    opacity="0.75"
+                    vectorEffect="non-scaling-stroke"
+                  />
+
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r="4.5"
+                    fill={meta.dot}
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    vectorEffect="non-scaling-stroke"
+                  />
+
+                  <g transform={`translate(${tagX} ${tagY})`}>
+                    <rect
+                      x="0"
+                      y="0"
+                      width={tagWidth}
+                      height={tagHeight}
+                      rx="9"
+                      fill={meta.fill}
+                      stroke={meta.border}
+                      strokeWidth="1.2"
+                      vectorEffect="non-scaling-stroke"
+                      filter="drop-shadow(0 6px 12px rgba(24,24,27,0.12))"
+                    />
+
+                    <text
+                      x="10"
+                      y="17"
+                      fill={meta.text}
+                      fontSize="10"
+                      fontWeight="800"
+                      letterSpacing="0"
+                    >
+                      {meta.label} · {marker.region.code.toUpperCase()}
+                    </text>
+
+                    <text
+                      x="10"
+                      y="34"
+                      fill="#18181b"
+                      fontSize={marker.kind === "reference" ? "12" : "13"}
+                      fontWeight="900"
+                      letterSpacing="0"
+                    >
+                      {formatUsd(marker.region.priceUsd)}
+                    </text>
+
+                    {marker.kind !== "reference" ? (
+                      <text
+                        x={tagWidth - 10}
+                        y="34"
+                        textAnchor="end"
+                        fill={meta.text}
+                        fontSize="10"
+                        fontWeight="800"
+                        letterSpacing="0"
+                      >
+                        {marker.diffPercent > 0
+                          ? `+${marker.diffPercent}%`
+                          : `${marker.diffPercent}%`}
+                      </text>
+                    ) : null}
+                  </g>
+                </g>
               );
             })}
           </g>

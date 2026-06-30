@@ -323,7 +323,23 @@ export default async function AdminProductsPage({
       <AdminPageHeader
         eyebrow="Products"
         title="产品 / 服务库"
-        description="按业务分类管理 GeoSub 的数字服务资产，重点查看套餐、国家覆盖、价格数据、数据健康和后续维护优先级。"
+        description="管理 GeoSub 的数字服务资产。先录入产品，再补套餐、价格和来源，最终进入前台展示。"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/discovery"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+            >
+              从发现线索导入
+            </Link>
+            <Link
+              href="/admin/products/new"
+              className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-800"
+            >
+              新增产品
+            </Link>
+          </div>
+        }
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
@@ -453,14 +469,21 @@ export default async function AdminProductsPage({
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-lg font-black text-slate-950">
-                服务资产列表
+                产品资产列表
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                这里重点不是最低价，而是判断每个服务是否有套餐、是否有国家覆盖、是否缺来源、是否可以进入前台展示。
+                这里重点不是最低价，而是判断每个产品是否有套餐、是否有国家覆盖、是否缺来源、是否可以进入前台展示。
               </p>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/admin/products/new"
+                className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-black text-white transition hover:bg-slate-800"
+              >
+                新增产品
+              </Link>
+
               <Link
                 href="/admin/plans"
                 className="text-sm font-black text-blue-700 hover:text-blue-900"
@@ -492,8 +515,9 @@ export default async function AdminProductsPage({
           />
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-200">
-          <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_90px_90px_100px_120px_110px_110px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+        <div className="overflow-x-auto rounded-3xl border border-slate-200">
+          <div className="min-w-[1120px]">
+          <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
             <div>服务</div>
             <div>分类</div>
             <div>服务商</div>
@@ -503,6 +527,7 @@ export default async function AdminProductsPage({
             <div>数据健康</div>
             <div>最后检查</div>
             <div>状态</div>
+            <div>操作</div>
           </div>
 
           <div className="divide-y divide-slate-100 bg-white">
@@ -532,12 +557,15 @@ export default async function AdminProductsPage({
               return (
                 <div
                   key={product.id}
-                  className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_90px_90px_100px_120px_110px_110px] items-center gap-0 px-5 py-4 text-sm"
+                  className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] items-center gap-0 px-5 py-4 text-sm"
                 >
                   <div>
-                    <div className="font-black text-slate-950">
+                    <Link
+                      href={`/admin/products/${product.id}/edit`}
+                      className="font-black text-slate-950 transition hover:text-blue-700"
+                    >
                       {product.name}
-                    </div>
+                    </Link>
                     <div className="mt-1 font-mono text-xs text-slate-400">
                       {product.slug}
                     </div>
@@ -594,15 +622,44 @@ export default async function AdminProductsPage({
                       {statusLabel(String(product.status))}
                     </span>
                   </div>
+
+                  <div>
+                    <Link
+                      href={`/admin/products/${product.id}/edit`}
+                      className="text-xs font-black text-blue-700 transition hover:text-blue-900"
+                    >
+                      编辑
+                    </Link>
+                  </div>
                 </div>
               );
             })}
 
             {products.length === 0 ? (
-              <div className="px-5 py-12 text-center text-sm font-bold text-slate-400">
-                当前分类暂无服务。后续可以从新增产品开始补齐。
+              <div className="px-5 py-12 text-center">
+                <div className="text-sm font-bold text-slate-500">
+                  当前分类暂无产品。
+                </div>
+                <div className="mt-2 text-sm text-slate-400">
+                  可以手动新增产品，也可以先去发现线索里把候选产品导入产品库。
+                </div>
+                <div className="mt-5 flex justify-center gap-3">
+                  <Link
+                    href="/admin/products/new"
+                    className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-800"
+                  >
+                    新增产品
+                  </Link>
+                  <Link
+                    href="/admin/discovery"
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    去发现线索
+                  </Link>
+                </div>
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       </AdminCard>

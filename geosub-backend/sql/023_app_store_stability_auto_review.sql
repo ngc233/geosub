@@ -1,0 +1,327 @@
+-- V1 App Store stability auto-review.
+-- Auto-approve pending App Store observations only after the latest N samples
+-- for the same product + plan + country + platform + price type have the same
+-- local currency and raw local price.
+
+CREATE OR REPLACE FUNCTION run_app_store_stability_auto_review(
+  p_dry_run BOOLEAN DEFAULT TRUE,
+  p_required_samples INTEGER DEFAULT 3,
+  p_min_confidence INTEGER DEFAULT 80,
+  p_max_sample_age_days INTEGER DEFAULT 14
+)
+RETURNS TABLE (
+  run_id UUID,
+  decision TEXT,
+  reason_code TEXT,
+  reason TEXT,
+  product_slug TEXT,
+  plan_slug TEXT,
+  country_code TEXT,
+  source_count INTEGER,
+  platforms TEXT[],
+  observation_count INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_run_id UUID;
+  v_group RECORD;
+  v_reason_code TEXT;
+  v_reason TEXT;
+  v_decision TEXT;
+  v_checked_groups INTEGER := 0;
+  v_auto_approved_count INTEGER := 0;
+  v_manual_review_count INTEGER := 0;
+  v_region_price_id UUID;
+  v_observation_id UUID;
+BEGIN
+  IF p_required_samples < 2 THEN
+    RAISE EXCEPTION 'p_required_samples must be at least 2';
+  END IF;
+
+  INSERT INTO price_auto_review_runs (
+    dry_run,
+    min_sources,
+    abs_usd_tolerance,
+    percent_tolerance,
+    max_change_percent
+  )
+  VALUES (
+    p_dry_run,
+    p_required_samples,
+    0,
+    0,
+    100
+  )
+  RETURNING id INTO v_run_id;
+
+  FOR v_group IN
+    WITH candidate_groups AS (
+      SELECT DISTINCT
+        po.product_id,
+        po.plan_id,
+        po.country_id,
+        po.billing_platform,
+        po.price_type
+      FROM price_observations po
+      LEFT JOIN price_sources ps ON ps.id = po.source_id
+      WHERE po.status = 'pending'::observation_status
+        AND po.billing_platform = 'ios'::billing_platform
+        AND (
+          po.source_level = 'A'::source_level
+          OR ps.type = 'app_store'::price_source_type
+        )
+    ),
+    ranked AS (
+      SELECT
+        po.*,
+        ROW_NUMBER() OVER (
+          PARTITION BY
+            po.product_id,
+            po.plan_id,
+            po.country_id,
+            po.billing_platform,
+            po.price_type
+          ORDER BY po.observed_at DESC, po.created_at DESC
+        ) AS sample_rank
+      FROM price_observations po
+      JOIN candidate_groups cg
+        ON cg.product_id = po.product_id
+       AND cg.plan_id = po.plan_id
+       AND cg.country_id = po.country_id
+       AND cg.billing_platform = po.billing_platform
+       AND cg.price_type = po.price_type
+      LEFT JOIN price_sources ps ON ps.id = po.source_id
+      WHERE po.status IN (
+          'pending'::observation_status,
+          'approved'::observation_status
+        )
+        AND po.billing_platform = 'ios'::billing_platform
+        AND (
+          po.source_level = 'A'::source_level
+          OR ps.type = 'app_store'::price_source_type
+        )
+    ),
+    latest_samples AS (
+      SELECT *
+      FROM ranked
+      WHERE sample_rank <= p_required_samples
+    ),
+    grouped AS (
+      SELECT
+        ls.product_id,
+        ls.plan_id,
+        ls.country_id,
+        ls.billing_platform,
+        ls.price_type,
+        ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC) AS observation_ids,
+        ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC)
+          FILTER (WHERE ls.status = 'pending'::observation_status) AS pending_observation_ids,
+        COUNT(*) AS observation_count,
+        COUNT(*) FILTER (WHERE ls.status = 'pending'::observation_status) AS pending_count,
+        COUNT(DISTINCT ls.raw_price) AS raw_price_count,
+        COUNT(DISTINCT ls.currency) AS currency_count,
+        MIN(ls.confidence_score) AS min_confidence,
+        MIN(ls.observed_at) AS oldest_observed_at,
+        MAX(ls.observed_at) AS newest_observed_at,
+        MIN(ls.raw_price) AS stable_raw_price,
+        MIN(ls.currency) AS stable_currency,
+        MIN(ls.converted_usd) AS min_converted_usd,
+        BOOL_OR(
+          ls.product_id IS NULL
+          OR ls.plan_id IS NULL
+          OR ls.country_id IS NULL
+          OR ls.raw_price IS NULL
+          OR ls.currency IS NULL
+          OR ls.converted_usd IS NULL
+        ) AS has_incomplete
+      FROM latest_samples ls
+      GROUP BY
+        ls.product_id,
+        ls.plan_id,
+        ls.country_id,
+        ls.billing_platform,
+        ls.price_type
+    )
+    SELECT
+      g.*,
+      p.slug AS product_slug,
+      pl.slug AS plan_slug,
+      c.code AS country_code
+    FROM grouped g
+    JOIN products p ON p.id = g.product_id
+    JOIN plans pl ON pl.id = g.plan_id
+    JOIN countries c ON c.id = g.country_id
+    WHERE g.pending_count > 0
+    ORDER BY p.slug, pl.slug, c.code
+  LOOP
+    v_checked_groups := v_checked_groups + 1;
+
+    IF v_group.has_incomplete THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'incomplete_observation';
+      v_reason := 'App Store 观察记录缺少产品、套餐、地区、原价、币种或美元折算价，需要人工补全。';
+    ELSIF v_group.observation_count < p_required_samples THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'waiting_for_more_app_store_samples';
+      v_reason := FORMAT(
+        '当前只有 %s 次 App Store 观察，需要最近 %s 次原币价格一致后才自动通过。',
+        v_group.observation_count,
+        p_required_samples
+      );
+    ELSIF v_group.oldest_observed_at < NOW() - MAKE_INTERVAL(days => p_max_sample_age_days) THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'app_store_samples_too_old';
+      v_reason := FORMAT(
+        '最近 %s 次 App Store 观察跨度超过 %s 天，需要等待新的采集样本。',
+        p_required_samples,
+        p_max_sample_age_days
+      );
+    ELSIF v_group.min_confidence < p_min_confidence THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'low_confidence';
+      v_reason := FORMAT(
+        '最近 App Store 观察的最低置信度为 %s，低于自动通过阈值 %s。',
+        v_group.min_confidence,
+        p_min_confidence
+      );
+    ELSIF v_group.raw_price_count <> 1 OR v_group.currency_count <> 1 THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'app_store_price_changed';
+      v_reason := FORMAT(
+        '最近 %s 次 App Store 原币价格不一致，需要人工确认或继续观察。',
+        p_required_samples
+      );
+    ELSIF v_group.min_converted_usd < 1 THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'app_store_price_suspiciously_low';
+      v_reason := FORMAT(
+        'App Store converted price is below 1 USD (%s USD). This may indicate currency or price-text parsing error, so it requires manual review.',
+        v_group.min_converted_usd
+      );
+    ELSE
+      v_decision := 'auto_approve';
+      v_reason_code := 'app_store_three_sample_consensus';
+      v_reason := FORMAT(
+        '最近 %s 次 App Store 原币价格一致：%s %s，自动通过。',
+        p_required_samples,
+        v_group.stable_currency,
+        v_group.stable_raw_price
+      );
+    END IF;
+
+    INSERT INTO price_auto_review_decisions (
+      run_id,
+      product_id,
+      plan_id,
+      country_id,
+      price_type,
+      decision,
+      reason_code,
+      reason,
+      source_count,
+      observation_ids,
+      platforms,
+      min_usd,
+      max_usd,
+      spread_usd,
+      spread_percent
+    )
+    SELECT
+      v_run_id,
+      v_group.product_id,
+      v_group.plan_id,
+      v_group.country_id,
+      v_group.price_type,
+      v_decision,
+      v_reason_code,
+      v_reason,
+      p_required_samples,
+      v_group.observation_ids,
+      ARRAY[v_group.billing_platform::TEXT],
+      MIN(po.converted_usd),
+      MAX(po.converted_usd),
+      ROUND(MAX(po.converted_usd) - MIN(po.converted_usd), 4),
+      CASE
+        WHEN AVG(po.converted_usd) IS NULL OR AVG(po.converted_usd) = 0 THEN NULL
+        ELSE ROUND(((MAX(po.converted_usd) - MIN(po.converted_usd)) / AVG(po.converted_usd)) * 100, 4)
+      END
+    FROM price_observations po
+    WHERE po.id = ANY(v_group.observation_ids);
+
+    IF v_decision = 'auto_approve' THEN
+      v_auto_approved_count := v_auto_approved_count + CARDINALITY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]));
+
+      IF NOT p_dry_run THEN
+        FOREACH v_observation_id IN ARRAY COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[])
+        LOOP
+          v_region_price_id := approve_price_observation(v_observation_id);
+
+          UPDATE price_observations
+          SET raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
+            'auto_review_run_id', v_run_id::TEXT,
+            'auto_review_rule', 'app_store_stability',
+            'auto_review_decision', v_decision,
+            'auto_review_reason_code', v_reason_code,
+            'auto_review_reason', v_reason,
+            'auto_approved_at', NOW()::TEXT
+          )
+          WHERE id = v_observation_id;
+        END LOOP;
+      END IF;
+    ELSE
+      v_manual_review_count := v_manual_review_count + CARDINALITY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]));
+
+      IF NOT p_dry_run THEN
+        UPDATE price_observations
+        SET raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
+          'auto_review_run_id', v_run_id::TEXT,
+          'auto_review_rule', 'app_store_stability',
+          'auto_review_decision', v_decision,
+          'auto_review_reason_code', v_reason_code,
+          'auto_review_reason', v_reason,
+          'review_note', v_reason
+        ),
+        updated_at = NOW()
+        WHERE id = ANY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]))
+          AND status = 'pending'::observation_status;
+      END IF;
+    END IF;
+
+    run_id := v_run_id;
+    decision := v_decision;
+    reason_code := v_reason_code;
+    reason := v_reason;
+    product_slug := v_group.product_slug;
+    plan_slug := v_group.plan_slug;
+    country_code := v_group.country_code;
+    source_count := p_required_samples;
+    platforms := ARRAY[v_group.billing_platform::TEXT];
+    observation_count := v_group.observation_count;
+    RETURN NEXT;
+  END LOOP;
+
+  UPDATE price_auto_review_runs
+  SET
+    status = 'succeeded',
+    completed_at = NOW(),
+    checked_groups = v_checked_groups,
+    auto_approved_count = v_auto_approved_count,
+    manual_review_count = v_manual_review_count,
+    updated_at = NOW()
+  WHERE id = v_run_id;
+
+EXCEPTION WHEN OTHERS THEN
+  IF v_run_id IS NOT NULL THEN
+    UPDATE price_auto_review_runs
+    SET
+      status = 'failed',
+      completed_at = NOW(),
+      error_message = SQLERRM,
+      updated_at = NOW()
+    WHERE id = v_run_id;
+  END IF;
+
+  RAISE;
+END;
+$$;

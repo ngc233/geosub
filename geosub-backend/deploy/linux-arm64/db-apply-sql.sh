@@ -60,6 +60,20 @@ core_files=(
   "sql/019_discovery_source_strategy.sql"
   "sql/020_discovery_collection_handoff.sql"
   "sql/021_collector_job_runs.sql"
+  "sql/022_discovery_manual_scan_queue.sql"
+  "sql/023_app_store_stability_auto_review.sql"
+  "sql/024_app_store_availability_status.sql"
+  "sql/025_archive_non_subscription_plans.sql"
+  "sql/026_clear_legacy_multisource_review_notes.sql"
+  "sql/027_archive_capacity_only_app_store_items.sql"
+  "sql/028_country_tax_profiles.sql"
+  "sql/029_country_app_store_risk_profiles.sql"
+  "sql/030_country_app_store_risk_model.sql"
+  "sql/031_app_store_country_coverage.sql"
+  "sql/032_country_tax_profile_v2.sql"
+  "sql/033_app_store_stability_auto_review_v2.sql"
+  "sql/034_affordability_metric_precision.sql"
+  "sql/035_country_tax_profile_sync_system.sql"
 )
 
 content_files=(

@@ -186,14 +186,23 @@ First version behavior:
   `last_content_hash`, and `last_title`,
 - creates or updates a candidate only when the page is first scanned or its hash
   changes and the importance score is high enough.
+- uses two thresholds: `promote_threshold` creates a `new` candidate for manual
+  review, while `watch_threshold` keeps a lower-confidence candidate in
+  `watching` status so the lead is not lost.
 
 For RSS/Atom sources, the candidate URL points to the triggering feed item, not
 only the feed URL. This keeps the admin review trail readable.
 
 `discovery_sources.strategy` controls how changes are classified. For example,
-official pricing pages prioritize price and plan terms, while announcement
-feeds prioritize model, product, and launch terms. `promote_threshold` controls
-the minimum importance score required before the scanner writes a candidate.
+official pricing pages prioritize price and plan terms, announcement feeds
+prioritize model, product, and launch terms, and marketplace sources prioritize
+in-app purchase and subscription signals. The scanner records matched keywords
+in `discovery_source_checks.matched_keywords` so the admin page can explain why
+a check was classified a certain way.
+
+`promote_threshold` controls the minimum importance score required before the
+scanner writes a `new` candidate. `watch_threshold` controls the lower score
+where the scanner writes a `watching` candidate.
 
 Dry run:
 
@@ -209,6 +218,18 @@ Execute:
 
 Without `-Force`, the scanner respects each source's `scan_interval_hours`.
 If nothing is due, it exits with `No discovery sources are due.`
+
+Scan one exact source, useful after clicking "加入下一轮检查" in the admin
+discovery center or when debugging one URL:
+
+```powershell
+.\scripts\scan-discovery-sources.ps1 -SourceId "<discovery_source_id>" -Force
+```
+
+The admin button does not run browser/network collection inside the web process.
+It marks the source as due by clearing `last_checked_at`; the independent
+scanner then picks it up on the next run. This keeps the public/admin website
+fast and keeps heavy collection work in the background worker layer.
 
 Linux timer:
 

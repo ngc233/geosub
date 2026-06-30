@@ -1,5 +1,5 @@
 [Unit]
-Description=GeoSub price collection and auto-review pipeline
+Description=GeoSub App Store price collection pipeline
 Wants=docker.service
 After=docker.service network-online.target
 

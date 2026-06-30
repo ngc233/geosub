@@ -108,7 +108,18 @@ sudo systemctl start geosub-price-pipeline.service
 sudo systemctl start geosub-price-pipeline.timer
 ```
 
-8. Install the discovery scanner timer:
+8. Install the collector job timer:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-collector-jobs.sh
+sudo systemctl start geosub-collector-jobs.service
+sudo systemctl start geosub-collector-jobs.timer
+```
+
+This runner consumes queued rows from `collector_jobs`. The admin button only
+marks a task as due; this timer is what actually executes the collection work.
+
+9. Install the discovery scanner timer:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-discovery-scan.sh
@@ -121,8 +132,10 @@ sudo systemctl start geosub-discovery-scan.timer
 ```bash
 systemctl status geosub-web.service
 systemctl status geosub-price-pipeline.timer
+systemctl status geosub-collector-jobs.timer
 systemctl status geosub-discovery-scan.timer
 journalctl -u geosub-price-pipeline.service -n 200 --no-pager
+journalctl -u geosub-collector-jobs.service -n 200 --no-pager
 journalctl -u geosub-discovery-scan.service -n 200 --no-pager
 docker ps
 ```
@@ -151,6 +164,42 @@ sudo systemctl start geosub-price-pipeline.timer
 
 Never restore over a production database without first taking a fresh backup.
 
+## Upgrade without redeploying from scratch
+
+After the first deployment, routine updates should use the upgrade script
+instead of reinstalling the server:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/upgrade.sh
+```
+
+The upgrade script performs the production-safe sequence:
+
+1. Stop web and background timers.
+2. Create a database backup.
+3. Pull the latest backend and frontend code from the configured Git branch.
+4. Install Node dependencies.
+5. Build the Next.js frontend.
+6. Apply core database migrations.
+7. Refresh systemd unit files.
+8. Run a database smoke check.
+9. Restart the web service and timers.
+
+Environment controls in `/etc/geosub/geosub.env`:
+
+```text
+GEOSUB_GIT_BRANCH=main
+GEOSUB_SKIP_GIT_PULL=false
+GEOSUB_RUN_CONTENT_MIGRATIONS=false
+```
+
+Use `GEOSUB_SKIP_GIT_PULL=true` only when you have already copied the newest
+files to the server and want the script to rebuild, migrate, and restart from
+the local filesystem state.
+
+Keep `GEOSUB_RUN_CONTENT_MIGRATIONS=false` for normal app upgrades. Set it to
+`true` only when you intentionally want to apply repository content seed SQL.
+
 ## Migration behavior
 
 `db-apply-sql.sh` records applied SQL files in:
@@ -169,8 +218,11 @@ made with a new SQL file, not by editing an old migration.
 - Web: official US web baseline price.
 - Google Play: public page evidence only. It does not expose plan-level prices,
   so it is stored as ignored evidence and is not eligible for auto-approval.
-- Auto-review: requires enough reliable sources before promoting observations
-  into `region_prices`.
+- Auto-review: V1 promotes App Store observations after the latest 3 samples
+  for the same product, plan, country, platform, and price type have the same
+  local `raw_price + currency`. The collector job runner triggers this review
+  automatically after successful App Store collection. Strict multi-source
+  review remains optional for later.
 - Discovery center: new products and model/service leads go into
   `product_discovery_candidates` first. They are reviewed in `/admin/discovery`
   before becoming formal `products`.

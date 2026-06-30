@@ -15,7 +15,7 @@ dist/
 # Databases, dumps, and local volumes
 *.dump
 *.sql.gz
-geosub-backend/data/
+geosub-backend/data/postgres/
 uploads/
 backups/
 

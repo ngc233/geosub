@@ -7,6 +7,10 @@ export type DbPricingRegion = {
   localPrice: string;
   priceUsd: number;
   taxNote: string;
+  taxConfidence?: "high" | "medium" | "low" | "unknown";
+  taxTreatment?: "included_likely" | "varies_by_region" | "checkout_may_add" | "unknown";
+  taxReviewStatus?: "verified" | "needs_review" | "unknown";
+  taxFrontendNote?: string;
   dataQuality: string;
   isReference: boolean;
   isCheap: boolean;
@@ -34,8 +38,38 @@ export function formatUsd(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
+const featuredPlanByProduct: Record<string, string[]> = {
+  chatgpt: ["plus"],
+  gemini: ["pro", "plus"],
+  claude: ["pro"],
+};
+
+const featuredPlanFallback = [
+  "plus",
+  "pro",
+  "premium",
+  "standard",
+  "basic",
+];
+
 export function getDefaultPlan(product: DbPricingProduct) {
-  return product.plans[0];
+  const explicitSlugs = featuredPlanByProduct[product.slug] || [];
+
+  for (const slug of explicitSlugs) {
+    const plan = product.plans.find((item) => item.slug === slug);
+
+    if (plan) {
+      return plan;
+    }
+  }
+
+  const popularPlan = product.plans.find((plan) => {
+    const slug = plan.slug.toLowerCase();
+
+    return featuredPlanFallback.some((keyword) => slug.includes(keyword));
+  });
+
+  return popularPlan || product.plans[0];
 }
 
 export function getPlanSpread(plan: DbPricingPlan) {

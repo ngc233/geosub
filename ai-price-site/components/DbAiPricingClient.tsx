@@ -30,6 +30,7 @@ const pageCopy = {
     countPrefix: "当前收录",
     countSuffix: "个产品",
     empty: "当前分类暂无已发布价格数据。",
+    defaultPlanHint: "默认展示主流月付套餐",
   },
   en: {
     tabs: [
@@ -47,6 +48,7 @@ const pageCopy = {
     countPrefix: "Currently tracking",
     countSuffix: "products",
     empty: "No published pricing data is available for this category yet.",
+    defaultPlanHint: "Popular monthly plan shown by default",
   },
 };
 
@@ -82,9 +84,14 @@ export default function DbAiPricingClient({
 
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-white">
-            {activeTab.label}
-          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-white">
+              {activeTab.label}
+            </h2>
+            <span className="rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700">
+              {copy.defaultPlanHint}
+            </span>
+          </div>
 
           <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
             {activeTab.desc}

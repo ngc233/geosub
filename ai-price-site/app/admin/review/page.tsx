@@ -1,6 +1,8 @@
 import { prisma } from "../../../lib/prisma";
+import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import ObservationReviewActions from "./ObservationReviewActions";
-import { runAutoReview } from "./actions";
+import { queueAppStoreCollectionAndReview } from "./actions";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,18 @@ type HistoryRow = PendingRow & {
   updated_at: Date | string;
 };
 
+type CollectorStatusRow = {
+  status: string;
+  next_run_at: Date | string | null;
+  last_run_at: Date | string | null;
+  success_count: number;
+  error_count: number;
+  latest_run_status: string | null;
+  latest_run_started_at: Date | string | null;
+  latest_run_output: string | null;
+  latest_run_error: string | null;
+};
+
 function toNumber(value: unknown) {
   if (value === null || value === undefined) return null;
   const number = Number(value);
@@ -54,7 +68,9 @@ function formatLocal(value: unknown, currency: string | null) {
   })} ${currency ?? ""}`.trim();
 }
 
-function formatDate(value: Date | string) {
+function formatDate(value: Date | string | null) {
+  if (!value) return "未安排";
+
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) return "—";
@@ -66,7 +82,7 @@ function formatDate(value: Date | string) {
 
 function platformLabel(platform: string) {
   const labels: Record<string, string> = {
-    ios: "iOS",
+    ios: "App Store",
     android: "Android",
     web: "Web",
     steam: "Steam",
@@ -99,7 +115,27 @@ function statusLabel(status: string) {
   return map[status] ?? status;
 }
 
-export default async function ReviewPage() {
+export default async function ReviewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ collectionQueued?: string; collectionRun?: string; page?: string }>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const queuedCount =
+    params.collectionQueued === undefined ? null : Number(params.collectionQueued);
+  const collectionRun = params.collectionRun ?? null;
+  const pendingPage = Math.max(1, Number(params.page ?? 1) || 1);
+  const pendingPageSize = 25;
+  const pendingOffset = (pendingPage - 1) * pendingPageSize;
+
+  const pendingCountRows = await prisma.$queryRaw<Array<{ count: number }>>`
+    SELECT COUNT(*)::int AS count
+    FROM pending_price_observations_view
+    WHERE platform = 'ios'
+  `;
+  const pendingTotal = Number(pendingCountRows[0]?.count ?? 0);
+  const pendingTotalPages = Math.max(1, Math.ceil(pendingTotal / pendingPageSize));
+
   const pendingRows = await prisma.$queryRaw<PendingRow[]>`
     SELECT
       id,
@@ -122,7 +158,10 @@ export default async function ReviewPage() {
       source_url,
       observed_at
     FROM pending_price_observations_view
+    WHERE platform = 'ios'
     ORDER BY observed_at DESC
+    LIMIT ${pendingPageSize}
+    OFFSET ${pendingOffset}
   `;
 
   const historyRows = await prisma.$queryRaw<HistoryRow[]>`
@@ -154,28 +193,58 @@ export default async function ReviewPage() {
     LIMIT 50
   `;
 
+  const collectorStatusRows = await prisma.$queryRaw<CollectorStatusRow[]>`
+    SELECT
+      job.status,
+      job.next_run_at,
+      job.last_run_at,
+      job.success_count,
+      job.error_count,
+      latest.status AS latest_run_status,
+      latest.started_at AS latest_run_started_at,
+      latest.output_excerpt AS latest_run_output,
+      latest.error_message AS latest_run_error
+    FROM collector_jobs job
+    JOIN price_sources source ON source.id = job.source_id
+    LEFT JOIN LATERAL (
+      SELECT status, started_at, output_excerpt, error_message
+      FROM collector_job_runs
+      WHERE job_id = job.id
+      ORDER BY started_at DESC
+      LIMIT 1
+    ) latest ON TRUE
+    WHERE source.type = 'app_store'::price_source_type
+      AND job.status <> 'archived'
+    ORDER BY job.updated_at DESC
+    LIMIT 1
+  `;
+
   const approvedCount = historyRows.filter((row) => row.review_status === "approved").length;
   const ignoredCount = historyRows.filter((row) => row.review_status === "ignored").length;
   const rejectedCount = historyRows.filter((row) => row.review_status === "rejected").length;
+  const collectorStatus = collectorStatusRows[0] ?? null;
+  const pageHref = (page: number) => `/admin/review?page=${page}`;
 
   return (
     <div className="space-y-6">
       <header className="border-b border-slate-200 pb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-          Review
+          采集流水线 · 第 3 步
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          审核中心
+          价格审核
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          管理价格异常、采集观测、来源证据、SEO 风险、广告状态和待处理事项。
+          只处理采集后的价格观测。App Store 连续稳定样本会自动通过；异常、缺样本或冲突数据留给人工确认。
         </p>
       </header>
+
+      <AdminPipelineSteps currentStep="review" />
 
       <section className="grid gap-4 md:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium text-slate-500">待审核价格观测</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">{pendingRows.length}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">{pendingTotal}</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -202,26 +271,43 @@ export default async function ReviewPage() {
           <div>
             <p className="text-sm font-semibold text-slate-900">价格观测已接入审核中心</p>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              外部 App Store 价格先进入待审核区。通过后会写入正式价格表 region_prices，并刷新购买力指数。
+              手动点击“立即补采并审核”会马上执行一次相关 App Store 采集；后台定时任务仍会按计划自动运行。为避免重复请求，手动执行有 2 分钟冷却。
             </p>
           </div>
         </div>
       </section>
+
+      {queuedCount !== null ? (
+        <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          {collectionRun === "succeeded"
+            ? `已立即执行 ${queuedCount} 个 App Store 补采任务，并完成稳定性自动审核。`
+            : collectionRun === "cooldown"
+              ? "已收到补采请求，但相关任务 2 分钟内刚执行过，本次进入冷却保护。"
+              : collectionRun === "failed"
+                ? "补采任务已排队，但立即执行失败；后台定时任务仍会继续处理，请查看采集任务页的失败原因。"
+              : `已处理 ${queuedCount} 个 App Store 补采任务。`}
+        </section>
+      ) : null}
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-950">价格观测待审核</h2>
             <p className="mt-1 text-xs text-slate-500">
-              仅显示 pending 状态的外部价格观测。
+              仅显示 pending 状态的价格观测。当前第 {pendingPage} / {pendingTotalPages} 页，每页 {pendingPageSize} 条。
             </p>
+            {collectorStatus ? (
+              <p className="mt-2 text-xs text-slate-400">
+                App Store 采集器：{collectorStatus.status}；下次执行 {formatDate(collectorStatus.next_run_at)}；最近结果 {collectorStatus.latest_run_status ?? "暂无"}。
+              </p>
+            ) : null}
           </div>
-          <form action={runAutoReview}>
+          <form action={queueAppStoreCollectionAndReview}>
             <button
               type="submit"
               className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
             >
-              运行自动审核
+              立即补采并审核
             </button>
           </form>
         </div>
@@ -321,6 +407,39 @@ export default async function ReviewPage() {
             </table>
           </div>
         )}
+
+        {pendingTotalPages > 1 ? (
+          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm">
+            <div className="text-slate-500">共 {pendingTotal} 条待审核记录</div>
+            <div className="flex items-center gap-2">
+              <Link
+                href={pageHref(Math.max(1, pendingPage - 1))}
+                aria-disabled={pendingPage <= 1}
+                className={`rounded-lg border px-3 py-1.5 font-medium ${
+                  pendingPage <= 1
+                    ? "pointer-events-none border-slate-100 text-slate-300"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                上一页
+              </Link>
+              <span className="text-slate-500">
+                {pendingPage} / {pendingTotalPages}
+              </span>
+              <Link
+                href={pageHref(Math.min(pendingTotalPages, pendingPage + 1))}
+                aria-disabled={pendingPage >= pendingTotalPages}
+                className={`rounded-lg border px-3 py-1.5 font-medium ${
+                  pendingPage >= pendingTotalPages
+                    ? "pointer-events-none border-slate-100 text-slate-300"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                下一页
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">

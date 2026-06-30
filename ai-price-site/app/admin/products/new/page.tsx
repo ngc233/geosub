@@ -7,6 +7,7 @@ import {
 import { AdminCheckbox } from "../../../../components/admin/AdminCheckbox";
 import { AdminInput, AdminTextarea } from "../../../../components/admin/AdminInput";
 import AdminSelect from "../../../../components/admin/AdminSelect";
+import ProductOnboardingSteps from "../ProductOnboardingSteps";
 import { createProductAction } from "../actions";
 
 const productCategoryOptions = [
@@ -40,7 +41,7 @@ export default async function NewProductPage({
       <AdminPageHeader
         eyebrow="Products"
         title="新增数字服务"
-        description="新增一个可用于前台价格页、文章关联、SEO、广告和 Affiliate 的数字服务。"
+        description="先建立产品档案。保存后继续补套餐、App Store 来源和价格审核。"
         action={
           <AdminLinkButton href="/admin/products" variant="secondary">
             返回列表
@@ -59,6 +60,8 @@ export default async function NewProductPage({
           这个 slug 已经存在，请换一个。
         </div>
       ) : null}
+
+      <ProductOnboardingSteps currentStep="product" />
 
       <form action={createProductAction} className="space-y-6">
         <AdminCard>

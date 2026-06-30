@@ -1,12 +1,14 @@
 param(
   [int]$Limit = 5,
+  [string]$JobId,
   [string]$ContainerName = "geosub-postgres",
   [string]$DbName = "geosub_app",
   [string]$DbUser = "geosub_admin",
-  [string[]]$DefaultCountryCodes = @("US", "CA", "JP", "PH"),
+  [string[]]$DefaultCountryCodes = @("ALL"),
   [string]$ChromePath = $env:CHROME_PATH,
   [switch]$DryRun,
-  [switch]$Force
+  [switch]$Force,
+  [switch]$SkipAutoReview
 )
 
 $ErrorActionPreference = "Stop"
@@ -63,6 +65,11 @@ function Invoke-PsqlJson {
 
 function Get-DueJobs {
   $forceSql = if ($Force) { "TRUE" } else { "FALSE" }
+  $jobFilterSql = if ([string]::IsNullOrWhiteSpace($JobId)) {
+    ""
+  } else {
+    "AND job.id = $(Quote-SqlString $JobId)::uuid"
+  }
 
   $jobs = Invoke-PsqlJson @"
 SELECT COALESCE(json_agg(row_to_json(j)), '[]'::json)
@@ -85,6 +92,7 @@ FROM (
   LEFT JOIN price_sources source ON source.id = job.source_id
   WHERE job.status = 'active'
     AND job.job_type = 'ai_pricing'
+    $jobFilterSql
     AND (
       $forceSql
       OR job.next_run_at IS NULL
@@ -125,6 +133,242 @@ function Get-CountryCodes {
   return @($DefaultCountryCodes)
 }
 
+function Get-PlainTextFromHtml {
+  param([AllowNull()][string]$Html)
+
+  if ([string]::IsNullOrWhiteSpace($Html)) {
+    return ""
+  }
+
+  $text = [regex]::Replace($Html, "(?is)<script\b[^>]*>.*?</script>", " ")
+  $text = [regex]::Replace($text, "(?is)<style\b[^>]*>.*?</style>", " ")
+  $text = [regex]::Replace($text, "(?is)<[^>]+>", " ")
+  $text = [System.Net.WebUtility]::HtmlDecode($text)
+  $text = [regex]::Replace($text, "\s+", " ").Trim()
+  return $text
+}
+
+function Get-HtmlTitle {
+  param([AllowNull()][string]$Html)
+
+  if ([string]::IsNullOrWhiteSpace($Html)) {
+    return $null
+  }
+
+  $match = [regex]::Match($Html, "(?is)<title[^>]*>(.*?)</title>")
+  if (!$match.Success) {
+    return $null
+  }
+
+  return ([System.Net.WebUtility]::HtmlDecode($match.Groups[1].Value) -replace "\s+", " ").Trim()
+}
+
+function Get-MetaDescription {
+  param([AllowNull()][string]$Html)
+
+  if ([string]::IsNullOrWhiteSpace($Html)) {
+    return $null
+  }
+
+  $match = [regex]::Match($Html, "(?is)<meta\s+[^>]*(?:name|property)=['""](?:description|og:description)['""][^>]*content=['""]([^'""]+)['""][^>]*>")
+  if (!$match.Success) {
+    $match = [regex]::Match($Html, "(?is)<meta\s+[^>]*content=['""]([^'""]+)['""][^>]*(?:name|property)=['""](?:description|og:description)['""][^>]*>")
+  }
+  if (!$match.Success) {
+    return $null
+  }
+
+  return ([System.Net.WebUtility]::HtmlDecode($match.Groups[1].Value) -replace "\s+", " ").Trim()
+}
+
+function Get-PriceHints {
+  param([AllowNull()][string]$Text)
+
+  if ([string]::IsNullOrWhiteSpace($Text)) {
+    return @()
+  }
+
+  $patterns = @(
+    "(?i)(?:US\$|CA\$|A\$|HK\$|NT\$|S\$|\$)\s?\d+(?:[.,]\d{1,2})?(?:\s?/(?:mo|month|monthly|yr|year|annually))?",
+    "(?i)\d+(?:[.,]\d{1,2})?\s?(?:USD|CAD|AUD|EUR|GBP|JPY|INR|PHP|SGD|HKD)(?:\s?/(?:mo|month|monthly|yr|year|annually))?"
+  )
+
+  $seen = @{}
+  $hints = New-Object System.Collections.Generic.List[string]
+
+  foreach ($pattern in $patterns) {
+    foreach ($match in [regex]::Matches($Text, $pattern)) {
+      $value = ($match.Value -replace "\s+", " ").Trim()
+      $key = $value.ToLowerInvariant()
+      if (!$seen.ContainsKey($key)) {
+        $seen[$key] = $true
+        [void]$hints.Add($value)
+      }
+      if ($hints.Count -ge 20) {
+        return @($hints)
+      }
+    }
+  }
+
+  return @($hints)
+}
+
+function Get-WebSnapshotDiagnosis {
+  param(
+    [AllowNull()][string]$Title,
+    [AllowNull()][string]$FinalUrl,
+    [AllowNull()][string]$Text,
+    [object[]]$PriceHints,
+    [bool]$AttemptPriceHints
+  )
+
+  $titleText = if ($Title) { $Title.ToLowerInvariant() } else { "" }
+  $urlText = if ($FinalUrl) { $FinalUrl.ToLowerInvariant() } else { "" }
+  $bodyText = if ($Text) { $Text.ToLowerInvariant() } else { "" }
+
+  if (
+    $urlText -match "accounts\.google\.com|/login|/signin|/auth" -or
+    $titleText -match "sign in|log in|login" -or
+    $bodyText -match "sign in to continue|log in to continue"
+  ) {
+    return "login_required"
+  }
+
+  if ($AttemptPriceHints -and (!$PriceHints -or $PriceHints.Count -eq 0)) {
+    return "no_price_hints"
+  }
+
+  if ($AttemptPriceHints) {
+    return "price_hints_found"
+  }
+
+  return "snapshot_ok"
+}
+
+function Invoke-BrowserWebSnapshot {
+  param(
+    [string]$Url,
+    [string]$Locale = "en-US"
+  )
+
+  $scriptPath = Join-Path $PSScriptRoot "render-web-snapshot.mjs"
+  $arguments = @(
+    $scriptPath,
+    "--url", $Url,
+    "--locale", $Locale
+  )
+
+  if (![string]::IsNullOrWhiteSpace($ChromePath)) {
+    $arguments += @("--chrome-path", $ChromePath)
+  }
+
+  $output = & node @arguments 2>&1
+  $exitCode = $LASTEXITCODE
+  $text = ($output | ForEach-Object { [string]$_ }) -join "`n"
+
+  if ($exitCode -ne 0) {
+    return [pscustomobject]@{
+      ok = $false
+      error = "Browser snapshot failed with exit code $exitCode. $text"
+    }
+  }
+
+  try {
+    return $text | ConvertFrom-Json
+  } catch {
+    return [pscustomobject]@{
+      ok = $false
+      error = "Browser snapshot returned invalid JSON. $text"
+    }
+  }
+}
+
+function Should-TryBrowserSnapshot {
+  param([string]$Diagnosis, [bool]$AttemptPriceHints)
+
+  if (!$AttemptPriceHints) {
+    return $false
+  }
+
+  return $Diagnosis -eq "login_required" -or $Diagnosis -eq "no_price_hints"
+}
+
+function Invoke-GenericWebSnapshot {
+  param(
+    [object]$Job,
+    [string]$Kind,
+    [AllowNull()][string]$Url,
+    [bool]$AttemptPriceHints
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Url)) {
+    throw "Generic web collector job is missing url/base_url."
+  }
+
+  $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -MaximumRedirection 5 -TimeoutSec 45 -Headers @{
+    "User-Agent" = "GeoSubBot/0.1 (+https://geosub.local; pricing discovery)"
+    "Accept-Language" = "en-US,en;q=0.9,zh-CN;q=0.8"
+  }
+
+  $html = [string]$response.Content
+  $title = Get-HtmlTitle -Html $html
+  $description = Get-MetaDescription -Html $html
+  $plainText = Get-PlainTextFromHtml -Html $html
+  $priceHints = if ($AttemptPriceHints) { @(Get-PriceHints -Text $plainText) } else { @() }
+  $snippetLength = [Math]::Min(360, $plainText.Length)
+  $snippet = if ($snippetLength -gt 0) { $plainText.Substring(0, $snippetLength) } else { "" }
+  $finalUrl = if ($response.BaseResponse -and $response.BaseResponse.ResponseUri) { [string]$response.BaseResponse.ResponseUri } else { $Url }
+  $statusCode = if ($response.StatusCode) { [int]$response.StatusCode } else { $null }
+  $diagnosis = Get-WebSnapshotDiagnosis `
+    -Title $title `
+    -FinalUrl $finalUrl `
+    -Text $plainText `
+    -PriceHints $priceHints `
+    -AttemptPriceHints $AttemptPriceHints
+  $browserSnapshot = $null
+
+  if (Should-TryBrowserSnapshot -Diagnosis $diagnosis -AttemptPriceHints $AttemptPriceHints) {
+    $browserSnapshot = Invoke-BrowserWebSnapshot -Url $finalUrl
+    if ($browserSnapshot -and $browserSnapshot.ok -and $browserSnapshot.diagnosis) {
+      $diagnosis = [string]$browserSnapshot.diagnosis
+      if ($browserSnapshot.price_hints) {
+        $priceHints = @($browserSnapshot.price_hints | ForEach-Object { [string]$_ })
+      }
+      if ($browserSnapshot.title) {
+        $title = [string]$browserSnapshot.title
+      }
+      if ($browserSnapshot.final_url) {
+        $finalUrl = [string]$browserSnapshot.final_url
+      }
+    }
+  }
+
+  $hintText = if ($priceHints.Count -gt 0) { $priceHints -join ", " } else { "none" }
+  $output = "Fetched web page. diagnosis=$diagnosis; title=$title; price_hints=$hintText"
+
+  return [pscustomobject]@{
+    Status = "succeeded"
+    CollectorKind = $Kind
+    Output = $output
+    Error = $null
+    RawPayload = @{
+      collector_kind = $Kind
+      product_slug = [string]$Job.product_slug
+      source_url = $Url
+      final_url = $finalUrl
+      http_status = $statusCode
+      diagnosis = $diagnosis
+      title = $title
+      description = $description
+      price_hints = @($priceHints)
+      text_snippet = $snippet
+      text_length = $plainText.Length
+      snapshot_only = $true
+      browser_snapshot = $browserSnapshot
+    }
+  }
+}
+
 function Invoke-CollectorScript {
   param([object]$Job)
 
@@ -155,9 +399,11 @@ function Invoke-CollectorScript {
       }
 
       $scriptPath = Join-Path $PSScriptRoot "collect-app-store-prices.ps1"
+      $appStoreUrl = Get-ConfigValue -Config $config -Name "url" -Fallback $Job.source_url
       $arguments = @(
         "-ProductSlug", $productSlug,
         "-AppId", $appId,
+        "-AppStoreUrl", $appStoreUrl,
         "-CountryCodes", ($countryCodes -join ","),
         "-ContainerName", $ContainerName,
         "-DbName", $DbName,
@@ -187,27 +433,12 @@ function Invoke-CollectorScript {
       )
     }
     "pricing_page" {
-      if ($productSlug -ne "chatgpt") {
-        return [pscustomobject]@{
-          Status = "skipped"
-          CollectorKind = $kind
-          Output = "Generic pricing-page collector is not implemented yet for product '$productSlug'."
-          Error = $null
-          RawPayload = @{ unsupported = $true; collector_kind = $kind; product_slug = $productSlug }
-        }
-      }
-
-      $pricingUrl = Get-ConfigValue -Config $config -Name "url" -Fallback "https://chatgpt.com/pricing"
-      $scriptPath = Join-Path $PSScriptRoot "collect-web-prices.ps1"
-      $arguments = @(
-        "-ProductSlug", $productSlug,
-        "-PricingUrl", $pricingUrl,
-        "-CountryCodes", "US",
-        "-ContainerName", $ContainerName,
-        "-DbName", $DbName,
-        "-DbUser", $DbUser,
-        "-Force"
-      )
+      $genericUrl = Get-ConfigValue -Config $config -Name "url" -Fallback $Job.source_url
+      return Invoke-GenericWebSnapshot -Job $Job -Kind $kind -Url $genericUrl -AttemptPriceHints $true
+    }
+    "official_site" {
+      $siteUrl = Get-ConfigValue -Config $config -Name "url" -Fallback $Job.source_url
+      return Invoke-GenericWebSnapshot -Job $Job -Kind $kind -Url $siteUrl -AttemptPriceHints $false
     }
     default {
       return [pscustomobject]@{
@@ -309,6 +540,7 @@ $summary = @{
   succeeded = 0
   skipped = 0
   failed = 0
+  appStoreSucceeded = 0
 }
 
 foreach ($job in $jobs) {
@@ -321,6 +553,9 @@ foreach ($job in $jobs) {
     if ($result.Status -eq "succeeded") { $summary.succeeded += 1 }
     elseif ($result.Status -eq "skipped") { $summary.skipped += 1 }
     else { $summary.failed += 1 }
+    if ($result.Status -eq "succeeded" -and $result.CollectorKind -eq "app_store") {
+      $summary.appStoreSucceeded += 1
+    }
     Complete-JobRun -Job $job -Result $result -StartedAt $startedAt
   } catch {
     $summary.failed += 1
@@ -334,6 +569,16 @@ foreach ($job in $jobs) {
     Complete-JobRun -Job $job -Result $failedResult -StartedAt $startedAt
     Write-Host "Failed: $($_.Exception.Message)"
   }
+}
+
+if (!$SkipAutoReview -and $summary.appStoreSucceeded -gt 0) {
+  Write-Host "Running App Store stability auto-review after collection."
+  Invoke-Psql @"
+SELECT *
+FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14);
+
+SELECT refresh_plan_affordability_metrics() AS refreshed_rows;
+"@
 }
 
 Write-Host "Collector jobs complete. Checked: $($summary.checked). Succeeded: $($summary.succeeded). Skipped: $($summary.skipped). Failed: $($summary.failed)."

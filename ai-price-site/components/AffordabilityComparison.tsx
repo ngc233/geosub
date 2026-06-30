@@ -1,3 +1,7 @@
+"use client";
+
+import type { FocusEvent, MouseEvent } from "react";
+import { useState } from "react";
 import type {
   PlanAffordabilityRow,
   PlanAffordabilitySummary,
@@ -126,6 +130,53 @@ function getCountryName(row: PlanAffordabilityRow | null | undefined, locale: De
 function getShareWidth(row: PlanAffordabilityRow, maxShare: number) {
   if (maxShare <= 0) return 6;
   return Math.max(6, Math.min(100, (row.incomeSharePercent / maxShare) * 100));
+}
+
+function HeaderHelp({
+  label,
+  help,
+  className = "",
+}: {
+  label: string;
+  help: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  function showTooltip(event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.bottom + 8,
+    });
+    setOpen(true);
+  }
+
+  return (
+    <div className={`inline-flex min-w-0 items-center gap-1.5 ${className}`}>
+      <span className="truncate">{label}</span>
+      <button
+        type="button"
+        className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-[10px] font-semibold leading-none text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300/60"
+        aria-label={`${label}说明：${help}`}
+        onMouseEnter={showTooltip}
+        onFocus={showTooltip}
+        onMouseLeave={() => setOpen(false)}
+        onBlur={() => setOpen(false)}
+      >
+        ?
+      </button>
+      {open ? (
+        <span
+          className="pointer-events-none fixed z-[80] max-w-[240px] -translate-x-1/2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-left text-xs font-normal leading-5 text-zinc-600 shadow-xl shadow-zinc-950/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+          style={{ left: position.x, top: position.y }}
+        >
+          {help}
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 function BurdenRow({
@@ -260,9 +311,19 @@ export default function AffordabilityComparison({
           <div>排名</div>
           <div>地区</div>
           <div>月费</div>
-          <div>占月收入</div>
-          <div>对比美国</div>
-          <div className="pl-4">判断</div>
+          <HeaderHelp
+            label="占月收入"
+            help="月费占当地月均收入的比例，用来估算订阅负担。"
+          />
+          <HeaderHelp
+            label="对比美国"
+            help="以美国订阅负担为 1.00 倍，显示该地区相对美国更重或更轻。"
+          />
+          <HeaderHelp
+            label="判断"
+            help="根据占月收入和相对美国负担，对该地区订阅压力做分级。"
+            className="pl-4"
+          />
         </div>
 
         {visibleRows.map((row, index) => (

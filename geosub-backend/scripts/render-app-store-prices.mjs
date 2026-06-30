@@ -12,8 +12,20 @@ for (let index = 2; index < process.argv.length; index += 2) {
 
 const country = (args.get("country") ?? "US").toLowerCase();
 const appId = args.get("app-id") ?? "6448311069";
+const configuredUrl = args.get("url");
 const executablePath = resolveBrowserPath(args.get("chrome-path") ?? process.env.CHROME_PATH);
-const url = `https://apps.apple.com/${country}/app/chatgpt/id${appId}`;
+const url = getAppStoreUrl(country, appId, configuredUrl);
+
+function getAppStoreUrl(countryCode, appleAppId, value) {
+  if (value) {
+    const normalized = value.replace(/apps\.apple\.com\/[a-z]{2}\//i, `apps.apple.com/${countryCode}/`);
+    if (normalized.match(new RegExp(`/id${appleAppId}(\\?|$)`))) {
+      return normalized;
+    }
+  }
+
+  return `https://apps.apple.com/${countryCode}/app/id${appleAppId}`;
+}
 
 function resolveBrowserPath(candidate) {
   if (candidate && existsSync(candidate)) {
@@ -97,23 +109,7 @@ try {
       return pairs;
     }
 
-    const bodyText = normalize(document.body?.innerText ?? "");
-    const fallbackMatches = [];
-    const knownNames = ["ChatGPT Plus", "ChatGPT Pro 20x"];
-    for (const name of knownNames) {
-      const index = bodyText.indexOf(name);
-      if (index < 0) continue;
-      const slice = bodyText.slice(index, index + 180);
-      const price = slice.match(/[$€£¥₱CA$A$S$]?\s?[0-9][0-9,]*(?:\.[0-9]+)?(?:\/mo|\/month| per month)?/i);
-      if (price) {
-        fallbackMatches.push({
-          name,
-          priceText: price[0]
-        });
-      }
-    }
-
-    return fallbackMatches;
+    return [];
   });
 
   const result = {

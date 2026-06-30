@@ -4,6 +4,35 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
 
+export type DiscoveryActionState = {
+  ok: boolean;
+  message: string;
+};
+
+const initialActionState: DiscoveryActionState = {
+  ok: false,
+  message: "",
+};
+
+function getFormData(
+  stateOrFormData: DiscoveryActionState | FormData,
+  maybeFormData?: FormData
+) {
+  if (maybeFormData) {
+    return maybeFormData;
+  }
+
+  return stateOrFormData as FormData;
+}
+
+function actionError(error: unknown, fallback: string): DiscoveryActionState {
+  if (error instanceof Error && error.message) {
+    return { ok: false, message: error.message };
+  }
+
+  return { ok: false, message: fallback };
+}
+
 function cleanText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
 }
@@ -20,6 +49,58 @@ function normalizeSlug(value: string) {
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .replace(/-+/g, "-");
+}
+
+function normalizeNameForMatch(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+async function findAppStoreApp(productName: string) {
+  const response = await fetch(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(productName)}&entity=software&limit=5`,
+    {
+      headers: {
+        "User-Agent": "GeoSubAdmin/1.0",
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = (await response.json()) as {
+    results?: Array<{
+      trackId?: number;
+      trackName?: string;
+      trackViewUrl?: string;
+      sellerName?: string;
+    }>;
+  };
+
+  const expected = normalizeNameForMatch(productName);
+  const candidates = data.results || [];
+  const exact =
+    candidates.find((candidate) => normalizeNameForMatch(candidate.trackName || "") === expected) ||
+    candidates.find((candidate) => {
+      const trackName = normalizeNameForMatch(candidate.trackName || "");
+      return trackName.includes(expected) || expected.includes(trackName);
+    });
+
+  if (!exact?.trackId || !exact.trackViewUrl) {
+    return null;
+  }
+
+  return {
+    appStoreId: String(exact.trackId),
+    appStoreUrl: exact.trackViewUrl,
+    appStoreName: exact.trackName || productName,
+    sellerName: exact.sellerName || null,
+  };
 }
 
 function parseCategory(value: FormDataEntryValue | null) {
@@ -94,25 +175,82 @@ function getCandidateId(formData: FormData) {
   return id;
 }
 
+function getSourceId(formData: FormData) {
+  const id = cleanText(formData.get("id"));
+
+  if (!id) {
+    throw new Error("Missing discovery source id.");
+  }
+
+  return id;
+}
+
 function getReviewNote(formData: FormData) {
   const note = cleanText(formData.get("reviewNote"));
   return note || null;
 }
 
-export async function createManualCandidate(formData: FormData) {
-  const admin = await requireAdmin();
+export async function queueDiscoverySourceScan(formData: FormData): Promise<void> {
+  try {
+    const admin = await requireAdmin();
+    const id = getSourceId(formData);
 
-  const name = cleanText(formData.get("name"));
-  const suggestedSlug = normalizeSlug(cleanText(formData.get("suggestedSlug")) || name);
-  const suggestedCategory = parseCategory(formData.get("suggestedCategory"));
-  const sourceType = parseSourceType(formData.get("sourceType"));
-  const confidenceScore = parseNumber(formData.get("confidenceScore"), 65, 0, 100);
+    await prisma.$queryRaw`
+      UPDATE discovery_sources
+      SET
+        status = 'active'::discovery_source_status,
+        manual_scan_requested_at = NOW(),
+        last_error = NULL,
+        updated_at = NOW()
+      WHERE id = ${id}::uuid
+    `;
 
-  if (!name || !suggestedSlug) {
-    throw new Error("Candidate name is required.");
+    await prisma.$queryRaw`
+      INSERT INTO audit_logs (
+        id,
+        actor_id,
+        action,
+        target_type,
+        target_id,
+        note,
+        created_at
+      )
+      VALUES (
+        gen_random_uuid(),
+        ${admin.id}::uuid,
+        'queue_scan',
+        'discovery_source',
+        ${id}::uuid,
+        'Queued discovery source for the next scanner run from admin UI.',
+        NOW()
+      )
+    `;
+
+    revalidatePath("/admin/discovery");
+  } catch (error) {
+    console.error("Failed to queue discovery source scan.", error);
   }
+}
 
-  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+export async function createManualCandidate(
+  stateOrFormData: DiscoveryActionState | FormData = initialActionState,
+  maybeFormData?: FormData
+): Promise<DiscoveryActionState> {
+  try {
+    const formData = getFormData(stateOrFormData, maybeFormData);
+    const admin = await requireAdmin();
+
+    const name = cleanText(formData.get("name"));
+    const suggestedSlug = normalizeSlug(cleanText(formData.get("suggestedSlug")) || name);
+    const suggestedCategory = parseCategory(formData.get("suggestedCategory"));
+    const sourceType = parseSourceType(formData.get("sourceType"));
+    const confidenceScore = parseNumber(formData.get("confidenceScore"), 65, 0, 100);
+
+    if (!name || !suggestedSlug) {
+      return { ok: false, message: "请填写产品名。" };
+    }
+
+    const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     INSERT INTO product_discovery_candidates (
       id,
       name,
@@ -139,21 +277,21 @@ export async function createManualCandidate(formData: FormData) {
     )
     VALUES (
       gen_random_uuid(),
-      ${name},
-      ${suggestedSlug},
+      ${name}::text,
+      ${suggestedSlug}::text,
       ${suggestedCategory}::product_category,
-      ${cleanOptionalText(formData.get("provider"))},
-      ${cleanOptionalText(formData.get("officialUrl"))},
-      ${cleanOptionalText(formData.get("appStoreUrl"))},
-      ${cleanOptionalText(formData.get("appStoreId"))},
-      ${cleanOptionalText(formData.get("googlePlayUrl"))},
-      ${cleanOptionalText(formData.get("googlePlayPackage"))},
-      ${cleanOptionalText(formData.get("pricingUrl"))},
+      ${cleanOptionalText(formData.get("provider"))}::text,
+      ${cleanOptionalText(formData.get("officialUrl"))}::text,
+      ${cleanOptionalText(formData.get("appStoreUrl"))}::text,
+      ${cleanOptionalText(formData.get("appStoreId"))}::text,
+      ${cleanOptionalText(formData.get("googlePlayUrl"))}::text,
+      ${cleanOptionalText(formData.get("googlePlayPackage"))}::text,
+      ${cleanOptionalText(formData.get("pricingUrl"))}::text,
       ${sourceType}::discovery_candidate_source_type,
-      ${cleanOptionalText(formData.get("sourceName"))},
-      ${cleanOptionalText(formData.get("sourceUrl"))},
-      ${cleanOptionalText(formData.get("discoveryReason"))},
-      ${confidenceScore},
+      ${cleanOptionalText(formData.get("sourceName"))}::text,
+      ${cleanOptionalText(formData.get("sourceUrl"))}::text,
+      ${cleanOptionalText(formData.get("discoveryReason"))}::text,
+      ${confidenceScore}::int,
       'new'::discovery_candidate_status,
       jsonb_build_object(
         'created_from', 'admin_discovery_manual_form',
@@ -168,9 +306,16 @@ export async function createManualCandidate(formData: FormData) {
     RETURNING id::text
   `;
 
-  const candidateId = rows[0]?.id || null;
+    const candidateId = rows[0]?.id || null;
 
-  await prisma.$queryRaw`
+    if (!candidateId) {
+      return {
+        ok: false,
+        message: "候选线索已存在或未写入，请检查候选池列表。",
+      };
+    }
+
+    await prisma.$queryRaw`
     INSERT INTO audit_logs (
       id,
       actor_id,
@@ -196,27 +341,37 @@ export async function createManualCandidate(formData: FormData) {
     )
   `;
 
-  revalidatePath("/admin/discovery");
+    revalidatePath("/admin/discovery");
+
+    return { ok: true, message: `已加入候选池：${name}` };
+  } catch (error) {
+    return actionError(error, "添加候选线索失败。");
+  }
 }
 
-export async function createDiscoverySource(formData: FormData) {
-  const admin = await requireAdmin();
+export async function createDiscoverySource(
+  stateOrFormData: DiscoveryActionState | FormData = initialActionState,
+  maybeFormData?: FormData
+): Promise<DiscoveryActionState> {
+  try {
+    const formData = getFormData(stateOrFormData, maybeFormData);
+    const admin = await requireAdmin();
 
-  const name = cleanText(formData.get("name"));
-  const url = cleanText(formData.get("url"));
-  const sourceType = parseSourceType(formData.get("sourceType"));
-  const categoryHint = parseCategory(formData.get("categoryHint"));
-  const interval = parseNumber(formData.get("scanIntervalHours"), 24, 1, 720);
-  const reliability = parseNumber(formData.get("reliabilityScore"), 60, 0, 100);
-  const strategy = parseDiscoveryStrategy(formData.get("strategy"));
-  const promoteThreshold = parseNumber(formData.get("promoteThreshold"), 60, 0, 100);
-  const watchThreshold = parseNumber(formData.get("watchThreshold"), 40, 0, 100);
+    const name = cleanText(formData.get("name"));
+    const url = cleanText(formData.get("url"));
+    const sourceType = parseSourceType(formData.get("sourceType"));
+    const categoryHint = parseCategory(formData.get("categoryHint"));
+    const interval = parseNumber(formData.get("scanIntervalHours"), 24, 1, 720);
+    const reliability = parseNumber(formData.get("reliabilityScore"), 60, 0, 100);
+    const strategy = parseDiscoveryStrategy(formData.get("strategy"));
+    const promoteThreshold = parseNumber(formData.get("promoteThreshold"), 60, 0, 100);
+    const watchThreshold = parseNumber(formData.get("watchThreshold"), 40, 0, 100);
 
-  if (!name || !url) {
-    throw new Error("Discovery source name and URL are required.");
-  }
+    if (!name || !url) {
+      return { ok: false, message: "请填写来源名称和 URL。" };
+    }
 
-  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     INSERT INTO discovery_sources (
       id,
       name,
@@ -238,18 +393,18 @@ export async function createDiscoverySource(formData: FormData) {
     )
     VALUES (
       gen_random_uuid(),
-      ${name},
+      ${name}::text,
       ${sourceType}::discovery_candidate_source_type,
-      ${url},
+      ${url}::text,
       ${categoryHint}::product_category,
-      ${cleanOptionalText(formData.get("query"))},
-      ${interval},
+      ${cleanOptionalText(formData.get("query"))}::text,
+      ${interval}::int,
       'active'::discovery_source_status,
-      ${reliability},
+      ${reliability}::int,
       ${strategy},
-      ${promoteThreshold},
-      ${watchThreshold},
-      ${cleanOptionalText(formData.get("note"))},
+      ${promoteThreshold}::int,
+      ${watchThreshold}::int,
+      ${cleanOptionalText(formData.get("note"))}::text,
       jsonb_build_object('created_from', 'admin_discovery_source_form'),
       ${admin.id}::uuid,
       NOW(),
@@ -272,9 +427,16 @@ export async function createDiscoverySource(formData: FormData) {
     RETURNING id::text
   `;
 
-  const sourceId = rows[0]?.id || null;
+    const sourceId = rows[0]?.id || null;
 
-  await prisma.$queryRaw`
+    if (!sourceId) {
+      return {
+        ok: false,
+        message: "发现来源未写入，请检查 URL 是否已存在。",
+      };
+    }
+
+    await prisma.$queryRaw`
     INSERT INTO audit_logs (
       id,
       actor_id,
@@ -302,15 +464,21 @@ export async function createDiscoverySource(formData: FormData) {
     )
   `;
 
-  revalidatePath("/admin/discovery");
+    revalidatePath("/admin/discovery");
+
+    return { ok: true, message: `已保存发现来源：${name}` };
+  } catch (error) {
+    return actionError(error, "保存发现来源失败。");
+  }
 }
 
-export async function watchCandidate(formData: FormData) {
-  const admin = await requireAdmin();
-  const id = getCandidateId(formData);
-  const reviewNote = getReviewNote(formData);
+export async function watchCandidate(formData: FormData): Promise<void> {
+  try {
+    const admin = await requireAdmin();
+    const id = getCandidateId(formData);
+    const reviewNote = getReviewNote(formData);
 
-  await prisma.$queryRaw`
+    await prisma.$queryRaw`
     UPDATE product_discovery_candidates
     SET
       status = 'watching'::discovery_candidate_status,
@@ -320,7 +488,7 @@ export async function watchCandidate(formData: FormData) {
     WHERE id = ${id}::uuid
   `;
 
-  await prisma.$queryRaw`
+    await prisma.$queryRaw`
     INSERT INTO audit_logs (
       id,
       actor_id,
@@ -341,15 +509,20 @@ export async function watchCandidate(formData: FormData) {
     )
   `;
 
-  revalidatePath("/admin/discovery");
+    revalidatePath("/admin/discovery");
+
+  } catch (error) {
+    console.error("Failed to mark discovery candidate as watching.", error);
+  }
 }
 
-export async function ignoreCandidate(formData: FormData) {
-  const admin = await requireAdmin();
-  const id = getCandidateId(formData);
-  const reviewNote = getReviewNote(formData);
+export async function ignoreCandidate(formData: FormData): Promise<void> {
+  try {
+    const admin = await requireAdmin();
+    const id = getCandidateId(formData);
+    const reviewNote = getReviewNote(formData);
 
-  await prisma.$queryRaw`
+    await prisma.$queryRaw`
     UPDATE product_discovery_candidates
     SET
       status = 'ignored'::discovery_candidate_status,
@@ -359,7 +532,7 @@ export async function ignoreCandidate(formData: FormData) {
     WHERE id = ${id}::uuid
   `;
 
-  await prisma.$queryRaw`
+    await prisma.$queryRaw`
     INSERT INTO audit_logs (
       id,
       actor_id,
@@ -380,15 +553,20 @@ export async function ignoreCandidate(formData: FormData) {
     )
   `;
 
-  revalidatePath("/admin/discovery");
+    revalidatePath("/admin/discovery");
+
+  } catch (error) {
+    console.error("Failed to ignore discovery candidate.", error);
+  }
 }
 
-export async function promoteCandidate(formData: FormData) {
-  const admin = await requireAdmin();
-  const id = getCandidateId(formData);
-  const reviewNote = getReviewNote(formData);
+export async function promoteCandidate(formData: FormData): Promise<void> {
+  try {
+    const admin = await requireAdmin();
+    const id = getCandidateId(formData);
+    const reviewNote = getReviewNote(formData);
 
-  const rows = await prisma.$queryRaw<Array<{ promoted_product_id: string | null; matched_product_id: string | null }>>`
+    const rows = await prisma.$queryRaw<Array<{ promoted_product_id: string | null; matched_product_id: string | null }>>`
     WITH candidate AS (
       SELECT *
       FROM product_discovery_candidates
@@ -456,11 +634,44 @@ export async function promoteCandidate(formData: FormData) {
     FROM updated
   `;
 
-  const result = rows[0];
-  const targetProductId = result?.promoted_product_id || result?.matched_product_id || null;
+    const result = rows[0];
+    const targetProductId = result?.promoted_product_id || result?.matched_product_id || null;
 
-  if (targetProductId) {
-    await prisma.$queryRaw`
+    if (targetProductId) {
+      const candidateRows = await prisma.$queryRaw<Array<{
+        name: string;
+        app_store_url: string | null;
+      }>>`
+        SELECT name, app_store_url
+        FROM product_discovery_candidates
+        WHERE id = ${id}::uuid
+        LIMIT 1
+      `;
+      const candidate = candidateRows[0] || null;
+
+      if (candidate && !candidate.app_store_url) {
+        try {
+          const appStoreMatch = await findAppStoreApp(candidate.name);
+
+          if (appStoreMatch) {
+            await prisma.$queryRaw`
+              UPDATE product_discovery_candidates
+              SET
+                app_store_url = ${appStoreMatch.appStoreUrl},
+                app_store_id = ${appStoreMatch.appStoreId},
+                review_note = COALESCE(review_note, '') ||
+                  CASE WHEN COALESCE(review_note, '') = '' THEN '' ELSE ' ' END ||
+                  ${`Auto matched App Store app: ${appStoreMatch.appStoreName}.`}::text,
+                updated_at = NOW()
+              WHERE id = ${id}::uuid
+            `;
+          }
+        } catch (error) {
+          console.error("Failed to auto match App Store app from discovery candidate.", error);
+        }
+      }
+
+      await prisma.$queryRaw`
       WITH candidate AS (
         SELECT *
         FROM product_discovery_candidates
@@ -632,9 +843,9 @@ export async function promoteCandidate(formData: FormData) {
           AND existing.status <> 'archived'
       )
     `;
-  }
+    }
 
-  await prisma.$queryRaw`
+    await prisma.$queryRaw`
     INSERT INTO audit_logs (
       id,
       actor_id,
@@ -660,6 +871,11 @@ export async function promoteCandidate(formData: FormData) {
     )
   `;
 
-  revalidatePath("/admin/discovery");
-  revalidatePath("/admin/products");
+    revalidatePath("/admin/discovery");
+    revalidatePath("/admin/products");
+    revalidatePath("/admin/collector-jobs");
+
+  } catch (error) {
+    console.error("Failed to promote discovery candidate.", error);
+  }
 }

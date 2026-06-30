@@ -3,6 +3,7 @@ param(
   [string]$ContainerName = "geosub-postgres",
   [string]$DbName = "geosub_app",
   [string]$DbUser = "geosub_admin",
+  [string]$SourceId,
   [switch]$DryRun,
   [switch]$Force
 )
@@ -61,6 +62,11 @@ function Invoke-PsqlJson {
 
 function Get-DueSources {
   $forceSql = if ($Force) { "TRUE" } else { "FALSE" }
+  $sourceFilterSql = if ([string]::IsNullOrWhiteSpace($SourceId)) {
+    ""
+  } else {
+    "AND id = $(Quote-SqlString $SourceId)::uuid"
+  }
 
   $sources = Invoke-PsqlJson @"
 SELECT COALESCE(json_agg(row_to_json(s)), '[]'::json)
@@ -78,12 +84,15 @@ FROM (
     promote_threshold,
     watch_threshold,
     last_checked_at,
+    manual_scan_requested_at,
     last_content_hash,
     note
   FROM discovery_sources
   WHERE status = 'active'::discovery_source_status
+    $sourceFilterSql
     AND (
       $forceSql
+      OR manual_scan_requested_at IS NOT NULL
       OR last_checked_at IS NULL
       OR last_checked_at <= NOW() - (scan_interval_hours || ' hours')::interval
     )
@@ -152,6 +161,16 @@ function Get-PromoteThreshold {
   return 60
 }
 
+function Get-WatchThreshold {
+  param([object]$Source)
+
+  if ($Source.watch_threshold) {
+    return [int]$Source.watch_threshold
+  }
+
+  return 40
+}
+
 function Add-KeywordMatches {
   param(
     [string]$Text,
@@ -168,6 +187,88 @@ function Add-KeywordMatches {
   }
 
   return $count
+}
+
+function Add-WeightedKeywordScore {
+  param(
+    [string]$Text,
+    [hashtable]$WeightedKeywords,
+    [System.Collections.Generic.List[string]]$Matched
+  )
+
+  $score = 0
+  foreach ($keyword in $WeightedKeywords.Keys) {
+    if ($Text.Contains($keyword.ToLowerInvariant())) {
+      $score += [int]$WeightedKeywords[$keyword]
+      $Matched.Add($keyword)
+    }
+  }
+
+  return $score
+}
+
+function Get-WeightedSignals {
+  return @{
+    price = @{
+      "pricing" = 18
+      "price" = 16
+      "prices" = 16
+      "billing" = 14
+      "subscription" = 14
+      "subscribe" = 10
+      "plan" = 10
+      "plans" = 10
+      "monthly" = 8
+      "annual" = 8
+      "yearly" = 8
+      "discount" = 8
+      "free trial" = 8
+      "usd" = 6
+      "$" = 6
+      "/mo" = 8
+      "per month" = 8
+      "per 1m tokens" = 10
+      "token" = 6
+      "tokens" = 6
+    }
+    model = @{
+      "model" = 12
+      "models" = 12
+      "new model" = 18
+      "api model" = 14
+      "reasoning" = 12
+      "multimodal" = 12
+      "preview" = 8
+      "context" = 6
+      "benchmark" = 6
+      "gpt-" = 12
+      "claude" = 10
+      "gemini" = 10
+      "deepseek" = 10
+    }
+    launch = @{
+      "launch" = 16
+      "launched" = 16
+      "released" = 14
+      "introducing" = 16
+      "announcing" = 14
+      "new product" = 16
+      "available now" = 12
+      "beta" = 8
+      "early access" = 10
+      "waitlist" = 8
+    }
+    marketplace = @{
+      "app store" = 14
+      "google play" = 14
+      "in-app" = 14
+      "iap" = 12
+      "subscription" = 12
+      "per item" = 8
+      "purchase" = 8
+      "developer" = 4
+    }
+  }
 }
 
 function Strip-Html {
@@ -374,11 +475,14 @@ function Get-SourcePage {
 function Get-ChangeClassification {
   param([object]$Source, [object]$Page, [bool]$Changed)
 
+  $strategy = Get-SourceStrategy -Source $Source
+
   if (!$Changed) {
     return [pscustomobject]@{
       Kind = "no_change"
       Importance = 0
       Keywords = @()
+      Strategy = $strategy
     }
   }
 
@@ -393,87 +497,95 @@ function Get-ChangeClassification {
   $matched = New-Object System.Collections.Generic.List[string]
   $score = 20
   $kind = "content_update"
-  $strategy = Get-SourceStrategy -Source $Source
 
-  $priceKeywords = @("pricing", "price", "prices", "cost", "billing", "subscription", "subscribe", "plan", "plans", "monthly", "annual", "yearly", "discount", "free trial")
-  $modelKeywords = @("model", "models", "new model", "launch model", "api model", "reasoning", "multimodal", "preview")
-  $launchKeywords = @("launch", "released", "introducing", "announcing", "new product", "available now", "beta", "early access")
-  $marketKeywords = @("app store", "google play", "in-app", "iap", "subscription", "per item", "purchase")
-
-  $priceCount = Add-KeywordMatches -Text $lower -Keywords $priceKeywords -Matched $matched
-  $modelCount = Add-KeywordMatches -Text $lower -Keywords $modelKeywords -Matched $matched
-  $launchCount = Add-KeywordMatches -Text $lower -Keywords $launchKeywords -Matched $matched
-  $marketCount = Add-KeywordMatches -Text $lower -Keywords $marketKeywords -Matched $matched
+  $signals = Get-WeightedSignals
+  $priceScore = Add-WeightedKeywordScore -Text $lower -WeightedKeywords $signals.price -Matched $matched
+  $modelScore = Add-WeightedKeywordScore -Text $lower -WeightedKeywords $signals.model -Matched $matched
+  $launchScore = Add-WeightedKeywordScore -Text $lower -WeightedKeywords $signals.launch -Matched $matched
+  $marketScore = Add-WeightedKeywordScore -Text $lower -WeightedKeywords $signals.marketplace -Matched $matched
+  $allScores = @{
+    price_change = $priceScore
+    new_model_or_plan = $modelScore
+    product_launch = $launchScore
+    marketplace = $marketScore
+  }
 
   switch ($strategy) {
     "pricing_page" {
-      if ($priceCount -gt 0) {
+      if ($priceScore -ge 14) {
         $kind = "price_change"
-        $score = 85
-      } elseif ($modelCount -gt 0) {
+        $score = 55 + $priceScore
+      } elseif ($modelScore -ge 14) {
         $kind = "new_model_or_plan"
-        $score = 65
-      } elseif ($launchCount -gt 0) {
+        $score = 45 + $modelScore
+      } elseif ($launchScore -ge 14) {
         $kind = "product_launch"
-        $score = 60
+        $score = 42 + $launchScore
       }
     }
     "announcement_feed" {
-      if ($modelCount -gt 0) {
+      if ($modelScore -ge 14) {
         $kind = "new_model_or_plan"
-        $score = 78
-      } elseif ($launchCount -gt 0) {
+        $score = 52 + $modelScore
+      } elseif ($launchScore -ge 14) {
         $kind = "product_launch"
-        $score = 74
-      } elseif ($priceCount -gt 0) {
+        $score = 50 + $launchScore
+      } elseif ($priceScore -ge 18) {
         $kind = "price_change"
-        $score = 72
+        $score = 48 + $priceScore
       }
     }
     "marketplace" {
-      if ($priceCount -gt 0 -or $marketCount -gt 0) {
+      if ($priceScore -ge 14 -or $marketScore -ge 14) {
         $kind = "price_change"
-        $score = 78
-      } elseif ($modelCount -gt 0 -or $launchCount -gt 0) {
+        $score = 48 + [Math]::Max($priceScore, $marketScore)
+      } elseif ($modelScore -ge 14 -or $launchScore -ge 14) {
         $kind = "new_model_or_plan"
-        $score = 65
+        $score = 42 + [Math]::Max($modelScore, $launchScore)
       }
     }
     "competitor_page" {
-      if ($priceCount -gt 0) {
+      if ($priceScore -ge 14) {
         $kind = "price_change"
-        $score = 76
-      } elseif ($modelCount -gt 0) {
+        $score = 48 + $priceScore
+      } elseif ($modelScore -ge 14) {
         $kind = "new_model_or_plan"
-        $score = 72
-      } elseif ($launchCount -gt 0) {
+        $score = 46 + $modelScore
+      } elseif ($launchScore -ge 14) {
         $kind = "product_launch"
-        $score = 68
+        $score = 44 + $launchScore
       }
     }
     "search_result" {
-      if ($launchCount -gt 0) {
+      if ($launchScore -ge 16) {
         $kind = "product_launch"
-        $score = 70
-      } elseif ($modelCount -gt 0) {
+        $score = 44 + $launchScore
+      } elseif ($modelScore -ge 16) {
         $kind = "new_model_or_plan"
-        $score = 68
-      } elseif ($priceCount -gt 1) {
+        $score = 44 + $modelScore
+      } elseif ($priceScore -ge 24) {
         $kind = "price_change"
-        $score = 64
+        $score = 38 + $priceScore
       }
     }
     default {
-      if ($priceCount -gt 0) {
+      $dominant = $allScores.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 1
+      if ($dominant.Value -ge 14 -and $dominant.Name -ne "marketplace") {
+        $kind = [string]$dominant.Name
+        $score = 42 + [int]$dominant.Value
+      } elseif ($marketScore -ge 14) {
         $kind = "price_change"
-        $score = 80
-      } elseif ($modelCount -gt 0) {
-        $kind = "new_model_or_plan"
-        $score = 72
-      } elseif ($launchCount -gt 0) {
-        $kind = "product_launch"
-        $score = 68
+        $score = 42 + $marketScore
       }
+    }
+  }
+
+  if ($Page.TriggerPublishedAt) {
+    $ageHours = ([DateTime]::UtcNow - ([DateTime]$Page.TriggerPublishedAt).ToUniversalTime()).TotalHours
+    if ($ageHours -le 72) {
+      $score += 8
+    } elseif ($ageHours -le 168) {
+      $score += 4
     }
   }
 
@@ -521,14 +633,21 @@ function Get-CandidateName {
 }
 
 function Upsert-Candidate {
-  param([object]$Source, [object]$Page, [bool]$Changed, [object]$Classification)
+  param(
+    [object]$Source,
+    [object]$Page,
+    [bool]$Changed,
+    [object]$Classification,
+    [string]$InitialStatus = "new"
+  )
 
   $name = Get-CandidateName -Source $Source -Page $Page
   $slug = Normalize-Slug -Value $name
   $confidence = [Math]::Min(95, [int]$Source.reliability_score + $(if ($Changed) { 10 } else { 0 }) + $(if ($Classification.Importance -ge 80) { 5 } else { 0 }))
   $candidateUrl = if ($Page.TriggerUrl) { [string]$Page.TriggerUrl } else { [string]$Source.url }
+  $statusNote = if ($InitialStatus -eq "watching") { "Kept for observation" } else { "Ready for review" }
   $reason = if ($Changed) {
-    "Discovery source changed: $($Source.name). Classification: $($Classification.Kind), importance $($Classification.Importance)."
+    "Discovery source changed: $($Source.name). Classification: $($Classification.Kind), importance $($Classification.Importance). $statusNote."
   } else {
     "Discovery source scanned without content change: $($Source.name)."
   }
@@ -573,7 +692,7 @@ WITH upserted AS (
     $(Quote-SqlString $Source.url),
     $(Quote-SqlString $reason),
     $confidence,
-    'new'::discovery_candidate_status,
+      $(Quote-SqlString $InitialStatus)::discovery_candidate_status,
     $(Quote-SqlJson @{
       scanner = "scan-discovery-sources.ps1"
       title = $Page.Title
@@ -701,6 +820,7 @@ UPDATE discovery_sources
 SET
   last_checked_at = NOW(),
   last_success_at = NOW(),
+  manual_scan_requested_at = NULL,
   last_error = NULL,
   last_content_hash = $contentHash,
   last_title = $title,
@@ -712,6 +832,7 @@ WHERE id = $(Quote-SqlString $Source.id)::uuid;
 UPDATE discovery_sources
 SET
   last_checked_at = NOW(),
+  manual_scan_requested_at = NULL,
   last_error = $(Quote-SqlString $ErrorMessage)
 WHERE id = $(Quote-SqlString $Source.id)::uuid;
 "@
@@ -729,6 +850,7 @@ $summary = @{
   checked = 0
   changed = 0
   candidates = 0
+  watching = 0
   failed = 0
 }
 
@@ -744,14 +866,20 @@ foreach ($source in $sources) {
     $classification = Get-ChangeClassification -Source $source -Page $page -Changed $changed
 
     $promoteThreshold = Get-PromoteThreshold -Source $source
+    $watchThreshold = Get-WatchThreshold -Source $source
 
     if ($changed -and $classification.Importance -ge $promoteThreshold) {
       $summary.changed += 1
-      $candidateId = Upsert-Candidate -Source $source -Page $page -Changed $changed -Classification $classification
+      $candidateId = Upsert-Candidate -Source $source -Page $page -Changed $changed -Classification $classification -InitialStatus "new"
       if ($candidateId) { $summary.candidates += 1 }
+    } elseif ($changed -and $classification.Importance -ge $watchThreshold) {
+      $summary.changed += 1
+      $candidateId = Upsert-Candidate -Source $source -Page $page -Changed $changed -Classification $classification -InitialStatus "watching"
+      if ($candidateId) { $summary.watching += 1 }
+      Write-Host "Changed and kept for observation: $($classification.Kind), score $($classification.Importance), promote threshold $promoteThreshold."
     } elseif ($changed) {
       $summary.changed += 1
-      Write-Host "Changed but below promote threshold: $($classification.Kind), score $($classification.Importance), threshold $promoteThreshold."
+      Write-Host "Changed but below watch threshold: $($classification.Kind), score $($classification.Importance), watch threshold $watchThreshold."
     }
 
     Record-Check -Source $source -Status "succeeded" -Page $page -Changed $changed -Classification $classification -CandidateId $candidateId -ErrorMessage $null
@@ -762,4 +890,4 @@ foreach ($source in $sources) {
   }
 }
 
-Write-Host "Discovery scan complete. Checked: $($summary.checked). Changed: $($summary.changed). Candidates: $($summary.candidates). Failed: $($summary.failed)."
+Write-Host "Discovery scan complete. Checked: $($summary.checked). Changed: $($summary.changed). Candidates: $($summary.candidates). Watching: $($summary.watching). Failed: $($summary.failed)."

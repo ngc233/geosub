@@ -24,8 +24,13 @@ export default function MethodologyPage() {
           </h2>
 
           <p className="mt-4 text-zinc-500 dark:text-zinc-400 leading-7">
-            订阅价格通常来自 App Store、Google Play、官方网站、公开价格页、礼品卡平台和其他可公开访问的信息。
-            不同产品的数据来源可能不同，我们会在具体产品详情页中逐步补充来源说明。
+            当前 V1 正式价格榜优先使用 App Store 各地区公开订阅价格。App Store 的地区价格结构更稳定，
+            更适合做国家和地区之间的横向比较。
+          </p>
+
+          <p className="mt-4 text-zinc-500 dark:text-zinc-400 leading-7">
+            Web 官网、Google Play、公开价格页和其他来源会先作为后台采集诊断与辅助线索，不直接混入正式榜单。
+            当这些来源的解析和审核规则稳定后，才会作为独立来源在产品页中明确标注。
           </p>
         </section>
 

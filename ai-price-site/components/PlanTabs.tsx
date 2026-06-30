@@ -22,9 +22,18 @@ export default function PlanTabs({
       value={activePlanSlug}
       tone="green"
       items={plans.map((plan) => ({
-        label: plan.name,
+        label:
+          plan.regions.length > 0
+            ? plan.name
+            : plan.priceStatus === "pending"
+              ? `${plan.name} 待审核`
+              : `${plan.name} 暂无价格`,
         value: plan.slug,
-        href: `/zh/ai-pricing/${productSlug}/?plan=${plan.slug}`,
+        href:
+          plan.regions.length > 0
+            ? `/zh/ai-pricing/${productSlug}/?plan=${plan.slug}`
+            : undefined,
+        disabled: plan.regions.length === 0,
       }))}
     />
   );

@@ -1,9 +1,13 @@
 param(
   [string]$ProductSlug = "chatgpt",
-  [string[]]$CountryCodes = @("US", "CA", "JP", "PH"),
+  [string[]]$CountryCodes = @("ALL"),
   [string]$ContainerName = "geosub-postgres",
   [string]$DbName = "geosub_app",
   [string]$DbUser = "geosub_admin",
+  [switch]$IncludeWeb,
+  [switch]$IncludeGooglePlay,
+  [switch]$RunStrictAutoReview,
+  [switch]$SkipAppStoreStabilityAutoReview,
   [switch]$DryRun,
   [switch]$Force
 )
@@ -58,28 +62,51 @@ if ($Force) {
 }
 
 Invoke-CollectorStep `
-  -Name "Step 1/4: collecting App Store prices." `
+  -Name "Step 1/2: collecting App Store prices." `
   -ScriptPath (Join-Path $scriptDir "collect-app-store-prices.ps1") `
   -Arguments ($commonArgs + @("-CountryCodes", ($CountryCodes -join ",")))
 
-Invoke-CollectorStep `
-  -Name "Step 2/4: collecting Web prices." `
-  -ScriptPath (Join-Path $scriptDir "collect-web-prices.ps1") `
-  -Arguments ($commonArgs + @("-CountryCodes", "US"))
+if ($IncludeWeb) {
+  Invoke-CollectorStep `
+    -Name "Optional: collecting Web price evidence." `
+    -ScriptPath (Join-Path $scriptDir "collect-web-prices.ps1") `
+    -Arguments ($commonArgs + @("-CountryCodes", "US"))
+} else {
+  Write-Host "Optional Web collection skipped. V1 official price flow uses App Store as the primary source."
+}
 
-Invoke-CollectorStep `
-  -Name "Step 3/4: collecting Google Play evidence." `
-  -ScriptPath (Join-Path $scriptDir "collect-google-play-prices.ps1") `
-  -Arguments ($commonArgs + @("-CountryCodes", "US"))
+if ($IncludeGooglePlay) {
+  Invoke-CollectorStep `
+    -Name "Optional: collecting Google Play evidence." `
+    -ScriptPath (Join-Path $scriptDir "collect-google-play-prices.ps1") `
+    -Arguments ($commonArgs + @("-CountryCodes", "US"))
+} else {
+  Write-Host "Optional Google Play collection skipped. V1 official price flow uses App Store as the primary source."
+}
 
 if ($DryRun) {
-  Write-Host "Step 4/4: skipping auto-review because this is a dry run."
-} else {
+  Write-Host "Step 2/2: skipping auto-review because this is a dry run."
+} elseif ($RunStrictAutoReview) {
   Invoke-Step `
-    -Name "Step 4/4: running auto-review." `
+    -Name "Step 2/2: running strict multi-source auto-review." `
     -ScriptPath (Join-Path $scriptDir "run-price-auto-review.ps1") `
     -Arguments @(
       "-Execute",
+      "-Rule", "StrictMultiSource",
+      "-ContainerName", $ContainerName,
+      "-DbName", $DbName,
+      "-DbUser", $DbUser
+    )
+} elseif ($SkipAppStoreStabilityAutoReview) {
+  Write-Host "Step 2/2: App Store stability auto-review skipped. Review observations manually in the admin review center."
+} else {
+  Invoke-Step `
+    -Name "Step 2/2: running App Store stability auto-review." `
+    -ScriptPath (Join-Path $scriptDir "run-price-auto-review.ps1") `
+    -Arguments @(
+      "-Execute",
+      "-Rule", "AppStoreStability",
+      "-RequiredSamples", "3",
       "-ContainerName", $ContainerName,
       "-DbName", $DbName,
       "-DbUser", $DbUser

@@ -90,7 +90,7 @@ function PurchasingPowerSection({
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500 md:text-[15px] md:leading-7 dark:text-zinc-400">
-            当前先用美国价格作为基准观察地区负担。后续可以继续接入 PPP、人均收入和真实购买力指数。
+            当前使用已发布的 App Store 地区价格与收入数据估算本地订阅负担。该指数用于辅助理解价格压力，不等同于实际支付能力。
           </p>
         </div>
       </div>
@@ -152,7 +152,7 @@ function FaqSection({ productName }: { productName: string }) {
   const faqs = [
     {
       q: `截至 2026 年，哪个国家的 ${productName} Plus 订阅最便宜？`,
-      a: `根据当前收录数据，最低价通常出现在菲律宾、日本、加拿大等地区附近，具体结果会随税费、汇率和平台定价变化而变化。`,
+      a: `根据当前已发布的 App Store 地区价格，最低价会显示在本页排行榜和地图中。具体结果会随平台定价、税费和汇率变化而变化。`,
     },
     {
       q: `${productName} 在不同 App Store 地区的定价为什么不同？`,
@@ -160,11 +160,11 @@ function FaqSection({ productName }: { productName: string }) {
     },
     {
       q: "本页追踪的是 App Store 价格、网页价格还是两者？",
-      a: "当前页面以已录入的地区订阅价格为准。后续可以继续区分 App Store、Google Play、Web 官网和礼品卡等不同计费平台。",
+      a: "V1 正式榜单优先追踪 App Store 各地区公开订阅价格。Web 官网和 Google Play 暂作为后台采集诊断与未来补充来源，不默认混入正式排名。",
     },
     {
       q: `本站地图能帮助我找到更便宜的 ${productName} 地区订阅吗？`,
-      a: "地图可以帮助你理解不同地区的价格差异，但最终是否可购买还取决于账号地区、支付方式、税费和平台规则。",
+      a: "地图可以帮助你快速理解 App Store 各地区价格差异，但最终是否可购买仍取决于账号地区、支付方式、税费和平台规则。",
     },
   ];
 
@@ -200,6 +200,56 @@ function FaqSection({ productName }: { productName: string }) {
   );
 }
 
+function NoPublishedPricesSection({
+  productName,
+  planName,
+}: {
+  productName: string;
+  planName: string;
+}) {
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="max-w-3xl">
+        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">
+          Price pending
+        </div>
+
+        <h2 className="mt-2 text-2xl font-semibold leading-tight text-zinc-950 dark:text-white">
+          {productName} {planName} 价格正在审核
+        </h2>
+
+        <p className="mt-3 text-sm leading-7 text-zinc-500 dark:text-zinc-400">
+          该套餐已经进入采集流程，但还没有写入正式价格库。后台完成 App Store
+          稳定性审核后，这里会自动显示地区价格、地图和购买力对比。
+        </p>
+      </div>
+
+      <div className="mt-6 grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div className="text-xs font-semibold text-zinc-400">当前状态</div>
+          <div className="mt-2 text-lg font-semibold text-zinc-950 dark:text-white">
+            待审核
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div className="text-xs font-semibold text-zinc-400">数据来源</div>
+          <div className="mt-2 text-lg font-semibold text-zinc-950 dark:text-white">
+            App Store
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div className="text-xs font-semibold text-zinc-400">展示条件</div>
+          <div className="mt-2 text-lg font-semibold text-zinc-950 dark:text-white">
+            通过审核后发布
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
@@ -213,8 +263,8 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${product.name} 订阅价格 - GeoSub`,
-    description: product.description,
+    title: `${product.name} App Store 地区订阅价格 - GeoSub`,
+    description: `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`,
   };
 }
 
@@ -231,11 +281,12 @@ export default async function ProductPricingPage({
   }
 
   const activePlan = getProductPlan(product, resolvedSearchParams.plan);
+  const hasPublishedPrices = activePlan.regions.length > 0;
   const [affordability, cnyExchangeRate] = await Promise.all([
     getPlanAffordability(product.slug, activePlan.slug),
     getLatestExchangeRate("USD", "CNY"),
   ]);
-  const stats = getPlanStats(activePlan);
+  const stats = hasPublishedPrices ? getPlanStats(activePlan) : null;
 
   return (
     <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
@@ -267,11 +318,11 @@ export default async function ProductPricingPage({
                 </div>
 
                 <h1 className="mt-0.5 text-[26px] font-semibold leading-tight text-zinc-950 md:text-[32px] dark:text-white">
-                  {product.name} 订阅价格
+                  {product.name} App Store 地区订阅价格
                 </h1>
 
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
-                  按套餐、地区和价格来源比较 {product.name} 订阅价格。
+                  按套餐和地区比较 {product.name} 在 App Store 的公开订阅价格，并提供美元、人民币和购买力视角。
                 </p>
               </div>
             </div>
@@ -287,24 +338,33 @@ export default async function ProductPricingPage({
           </div>
         </section>
 
-        <PricingPlatformView
-          productName={product.name}
-          plan={activePlan}
-          updatedAt={product.updatedAt}
-          cnyExchangeRate={cnyExchangeRate}
-          shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} />}
-        />
+        {stats ? (
+          <>
+            <PricingPlatformView
+              productName={product.name}
+              plan={activePlan}
+              updatedAt={product.updatedAt}
+              cnyExchangeRate={cnyExchangeRate}
+              shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} />}
+            />
 
-        {affordability.rows.length > 0 ? (
-          <AffordabilityComparison
+            {affordability.rows.length > 0 ? (
+              <AffordabilityComparison
+                productName={product.name}
+                planName={activePlan.name}
+                summary={affordability.summary}
+                rows={affordability.rows}
+                locale="zh"
+              />
+            ) : (
+              <PurchasingPowerSection productName={product.name} plan={activePlan} />
+            )}
+          </>
+        ) : (
+          <NoPublishedPricesSection
             productName={product.name}
             planName={activePlan.name}
-            summary={affordability.summary}
-            rows={affordability.rows}
-            locale="zh"
           />
-        ) : (
-          <PurchasingPowerSection productName={product.name} plan={activePlan} />
         )}
 
         <FaqSection productName={product.name} />

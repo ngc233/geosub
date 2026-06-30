@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "数据来源 - GeoSub",
-  description: "GeoSub 的价格数据主要来自官方订阅页面、公开价格页面、应用商店展示价格、地区价格页和人工整理的数据记录。",
+  description: "GeoSub V1 正式价格榜优先使用 App Store 各地区公开订阅价格，其他来源暂作为后台诊断和辅助线索。",
 };
 
 export default function TrustPage() {
@@ -18,13 +18,18 @@ export default function TrustPage() {
         </h1>
 
         <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          GeoSub 的价格数据主要来自官方订阅页面、公开价格页面、应用商店展示价格、地区价格页和人工整理的数据记录。
+          GeoSub V1 正式价格榜优先使用 App Store 各地区公开订阅价格。这样可以让国家和地区之间的比较更稳定、更容易解释。
         </p>
 
         <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
           <h2 className="text-xl font-black text-zinc-950">
             页面说明
           </h2>
+
+          <p className="mt-4 text-sm leading-8 text-zinc-600">
+            Web 官网、Google Play、公开价格页和其他来源会先进入后台采集诊断或审核线索，不会默认混入正式榜单。
+            当某个来源的解析、税费和审核规则足够稳定时，我们会在产品页中单独标注。
+          </p>
 
           <p className="mt-4 text-sm leading-8 text-zinc-600">
             由于平台价格、汇率、税费和地区政策可能随时变化，GeoSub 会尽量保持数据更新，但最终价格仍应以官方页面和实际支付页面为准。

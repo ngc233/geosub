@@ -4,9 +4,18 @@ import AnalyticsProvider from "../components/analytics/AnalyticsProvider";
 import SiteChrome from "../components/SiteChrome";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.com"),
   title: "GeoSub - 全球数字服务价格数据平台",
   description:
     "GeoSub 用于比较 AI 订阅、流媒体、软件、游戏、礼品卡、VPN 和支付工具在不同国家与地区的价格差异。",
+  openGraph: {
+    title: "GeoSub - 全球数字服务价格数据平台",
+    description:
+      "比较 AI 订阅、流媒体、软件、游戏、礼品卡、VPN 和支付工具在不同国家与地区的价格差异。",
+    siteName: "GeoSub",
+    locale: "zh_CN",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

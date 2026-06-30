@@ -7,6 +7,16 @@ export type RegionPrice = {
   priceUsd: number;
   localPrice: string;
   tax: string;
+  taxConfidence?: 'high' | 'medium' | 'low' | 'unknown';
+  taxTreatment?: 'included_likely' | 'varies_by_region' | 'checkout_may_add' | 'unknown';
+  taxCalculationPolicy?: 'do_not_calculate' | 'informational_only';
+  taxReviewStatus?: 'verified' | 'needs_review' | 'unknown';
+  taxFrontendNote?: string;
+  riskLevel?: 'low' | 'medium' | 'high' | 'unknown';
+  riskScore?: number;
+  riskNote?: string;
+  riskRequirements?: string;
+  riskFactors?: string;
   billingPlatform?: string;
   billingPlatformLabel?: string;
   isCheap?: boolean;
@@ -19,6 +29,8 @@ export type ProductPlan = {
   name: string;
   billing: 'monthly' | 'yearly';
   description?: string;
+  priceStatus?: 'published' | 'pending' | 'empty';
+  pendingObservationCount?: number;
   regions: RegionPrice[];
 };
 
@@ -49,9 +61,12 @@ export function formatUsd(price: number) {
 }
 
 export function getProductPlan(product: SubscriptionProduct, planSlug?: string) {
+  const availablePlans = product.plans.filter((plan) => plan.regions.length > 0);
+
   return (
-    product.plans.find((plan) => plan.slug === planSlug) ||
-    product.plans.find((plan) => plan.slug === product.defaultPlan) ||
+    availablePlans.find((plan) => plan.slug === planSlug) ||
+    availablePlans.find((plan) => plan.slug === product.defaultPlan) ||
+    availablePlans[0] ||
     product.plans[0]
   );
 }

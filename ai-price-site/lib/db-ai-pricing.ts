@@ -8,6 +8,16 @@ import type {
 } from "./db-pricing-types";
 
 type DbPricingLocale = "zh" | "en";
+type TaxProfileRow = {
+  country_code: string;
+  display_note_zh: string | null;
+  display_note_en: string | null;
+  confidence: string | null;
+  app_store_tax_treatment: string | null;
+  review_status: string | null;
+  frontend_note_zh: string | null;
+  frontend_note_en: string | null;
+};
 const countryNameZhMap: Record<string, string> = {
   US: "美国",
   CA: "加拿大",
@@ -45,14 +55,10 @@ const countryNameZhMap: Record<string, string> = {
   AE: "阿联酋",
 };
 
-const productDescriptionZhMap: Record<string, string> = {
-  chatgpt: "比较 ChatGPT Plus 和 Pro 在不同国家与地区的订阅价格、美元折算价和价格差异。",
-  netflix: "比较 Netflix 在不同国家与地区的订阅价格、套餐差异和区域价格差距。",
-};
-
-const productDescriptionEnMap: Record<string, string> = {
-  chatgpt: "Compare ChatGPT Plus and Pro subscription prices across countries and regions.",
-  netflix: "Compare Netflix subscription prices, plans and regional price differences across countries and regions.",
+const productDisplayNameMap: Record<string, string> = {
+  chatgpt: "ChatGPT",
+  gemini: "Gemini",
+  netflix: "Netflix",
 };
 
 function getCountryName({
@@ -76,38 +82,19 @@ function getCountryName({
 }
 
 function getProductDescription({
-  slug,
   name,
   category,
-  rawDescription,
   locale,
 }: {
-  slug: string;
   name: string;
   category: DbPricingCategory;
-  rawDescription?: string | null;
   locale: DbPricingLocale;
 }) {
-  if (locale === "zh") {
-    return (
-      productDescriptionZhMap[slug] ||
-      defaultDescription({
-        name,
-        category,
-        locale,
-      })
-    );
-  }
-
-  return (
-    productDescriptionEnMap[slug] ||
-    rawDescription ||
-    defaultDescription({
-      name,
-      category,
-      locale,
-    })
-  );
+  return defaultDescription({
+    name,
+    category,
+    locale,
+  });
 }
 
 function isDate(value: Date | null | undefined): value is Date {
@@ -163,18 +150,82 @@ function defaultDescription({
   locale: DbPricingLocale;
 }) {
   if (locale === "en") {
-    if (category === "ai") {
-      return `Compare ${name} subscription prices across countries and regions.`;
-    }
-
-    return `Compare ${name} subscription prices across countries and regions.`;
+    return `Compare ${name} subscription prices, cheapest regions and regional price spread.`;
   }
 
-  if (category === "ai") {
-    return `比较 ${name} 在不同国家和地区的订阅价格、最低价地区和价格差异。`;
+  return `比较 ${name} 在不同国家与地区的订阅价格、最低价地区和价差。`;
+}
+
+function getTaxNote({
+  priceTaxNote,
+  taxProfile,
+  locale,
+}: {
+  priceTaxNote?: string | null;
+  taxProfile?: TaxProfileRow;
+  locale: DbPricingLocale;
+}) {
+  const explicitNote = priceTaxNote?.trim();
+
+  if (explicitNote) {
+    return explicitNote;
   }
 
-  return `比较 ${name} 在不同国家和地区的订阅价格、最低价地区和价格差异。`;
+  const profileNote =
+    locale === "zh"
+      ? taxProfile?.display_note_zh?.trim()
+      : taxProfile?.display_note_en?.trim();
+
+  if (profileNote) {
+    return profileNote;
+  }
+
+  return locale === "en"
+    ? "Tax may vary at checkout"
+    : "税费以结算页为准";
+}
+
+function getTaxConfidence(value?: string | null): DbPricingRegion["taxConfidence"] {
+  if (value === "high" || value === "medium" || value === "low") {
+    return value;
+  }
+
+  return "unknown";
+}
+
+function getTaxTreatment(value?: string | null): DbPricingRegion["taxTreatment"] {
+  if (
+    value === "included_likely" ||
+    value === "varies_by_region" ||
+    value === "checkout_may_add" ||
+    value === "unknown"
+  ) {
+    return value;
+  }
+
+  return "unknown";
+}
+
+function getTaxReviewStatus(value?: string | null): DbPricingRegion["taxReviewStatus"] {
+  if (value === "verified" || value === "needs_review" || value === "unknown") {
+    return value;
+  }
+
+  return "unknown";
+}
+
+function getTaxFrontendNote({
+  taxProfile,
+  locale,
+}: {
+  taxProfile?: TaxProfileRow;
+  locale: DbPricingLocale;
+}) {
+  return (
+    (locale === "zh"
+      ? taxProfile?.frontend_note_zh?.trim()
+      : taxProfile?.frontend_note_en?.trim()) || ""
+  );
 }
 
 export async function getDbAiPricingProducts({
@@ -182,42 +233,76 @@ export async function getDbAiPricingProducts({
 }: {
   locale?: DbPricingLocale;
 } = {}) {
-  const products = await prisma.product.findMany({
-    where: {
-      status: "PUBLISHED",
-      category: {
-        in: [ProductCategory.AI, ProductCategory.STREAMING],
-      },
-    },
-    orderBy: [
-      { sortOrder: "asc" },
-      { createdAt: "asc" },
-    ],
-    include: {
-      plans: {
-        where: {
-          status: "PUBLISHED",
+  const [products, taxProfileRows] = await Promise.all([
+    prisma.product.findMany({
+      where: {
+        category: {
+          in: [ProductCategory.AI, ProductCategory.STREAMING],
         },
-        orderBy: [
-          { sortOrder: "asc" },
-          { createdAt: "asc" },
+        OR: [
+          { status: "PUBLISHED" },
+          {
+            plans: {
+              some: {
+                status: "PUBLISHED",
+                regionPrices: {
+                  some: {
+                    status: "PUBLISHED",
+                  },
+                },
+              },
+            },
+          },
         ],
-        include: {
-          regionPrices: {
-            where: {
-              status: "PUBLISHED",
-            },
-            orderBy: {
-              priceUsd: "asc",
-            },
-            include: {
-              country: true,
+      },
+      orderBy: [
+        { sortOrder: "asc" },
+        { createdAt: "asc" },
+      ],
+      include: {
+        plans: {
+          where: {
+            status: "PUBLISHED",
+          },
+          orderBy: [
+            { sortOrder: "asc" },
+            { createdAt: "asc" },
+          ],
+          include: {
+            regionPrices: {
+              where: {
+                status: "PUBLISHED",
+              },
+              orderBy: {
+                priceUsd: "asc",
+              },
+              include: {
+                country: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.$queryRaw<Array<TaxProfileRow>>`
+      SELECT
+        c.code AS country_code,
+        tax_profile.display_note_zh,
+        tax_profile.display_note_en,
+        tax_profile.confidence,
+        tax_profile.app_store_tax_treatment,
+        tax_profile.review_status,
+        tax_profile.frontend_note_zh,
+        tax_profile.frontend_note_en
+      FROM country_tax_profiles tax_profile
+      JOIN countries c ON c.id = tax_profile.country_id
+      WHERE tax_profile.status = 'active'
+    `,
+  ]);
+
+  const taxProfileByCountry = new Map(
+    taxProfileRows.map((row) => [row.country_code.toUpperCase(), row])
+  );
 
   return products
     .map<DbPricingProduct | null>((product) => {
@@ -226,6 +311,8 @@ export async function getDbAiPricingProducts({
       if (!category) {
         return null;
       }
+
+      const displayName = productDisplayNameMap[product.slug] || product.name;
 
       const plans = product.plans
         .map<DbPricingPlan | null>((plan) => {
@@ -241,6 +328,7 @@ export async function getDbAiPricingProducts({
 
           const regions = sortedPrices.map<DbPricingRegion>((price, index) => {
             const code = price.country.code.toUpperCase();
+            const taxProfile = taxProfileByCountry.get(code);
 
             return {
               rank: index + 1,
@@ -257,11 +345,18 @@ export async function getDbAiPricingProducts({
                 billingCycle: String(plan.billingCycle),
               }),
               priceUsd: Number(price.priceUsd),
-              taxNote:
-                price.taxNote ||
-                (locale === "en"
-                  ? "Tax may vary by region"
-                  : "税费可能因地区而异"),
+              taxNote: getTaxNote({
+                priceTaxNote: price.taxNote,
+                taxProfile,
+                locale,
+              }),
+              taxConfidence: getTaxConfidence(taxProfile?.confidence),
+              taxTreatment: getTaxTreatment(taxProfile?.app_store_tax_treatment),
+              taxReviewStatus: getTaxReviewStatus(taxProfile?.review_status),
+              taxFrontendNote: getTaxFrontendNote({
+                taxProfile,
+                locale,
+              }),
               dataQuality: String(price.dataQuality),
               isReference: code === "US",
               isCheap: index <= 2,
@@ -291,14 +386,12 @@ export async function getDbAiPricingProducts({
 
       return {
         slug: product.slug,
-        name: product.name,
-        brand: product.provider || product.name,
+        name: displayName,
+        brand: product.provider || displayName,
         category,
         description: getProductDescription({
-          slug: product.slug,
-          name: product.name,
+          name: displayName,
           category,
-          rawDescription: product.description,
           locale,
         }),
         updatedAt: formatYearMonth(latestDate),
