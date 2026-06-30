@@ -52,7 +52,7 @@ function Write-StatusLine {
   )
 
   $prefix = if ($Status -eq "WARN") { "[warn]" } elseif ($Status -eq "FAIL") { "[fail]" } else { "[ ok ]" }
-  Write-Host "$prefix $Label: $Value"
+  Write-Host "$prefix ${Label}: $Value"
 }
 
 function Add-Warning {
