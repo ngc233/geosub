@@ -1,6 +1,6 @@
 -- V2 App Store stability auto-review.
--- Adds a hard guard against suspiciously low USD conversions, so three
--- identical parser mistakes cannot be auto-approved.
+-- Adds a hard guard against parser/cycle/currency anomalies, so three
+-- identical mistakes cannot be auto-approved.
 
 CREATE OR REPLACE FUNCTION run_app_store_stability_auto_review(
   p_dry_run BOOLEAN DEFAULT TRUE,
@@ -33,9 +33,46 @@ DECLARE
   v_manual_review_count INTEGER := 0;
   v_region_price_id UUID;
   v_observation_id UUID;
+  v_observation_ids_to_approve UUID[];
 BEGIN
   IF p_required_samples < 2 THEN
     RAISE EXCEPTION 'p_required_samples must be at least 2';
+  END IF;
+
+  IF NOT p_dry_run THEN
+    UPDATE price_observations observation
+    SET
+      status = 'ignored'::observation_status,
+      raw_payload = COALESCE(observation.raw_payload, '{}'::jsonb) || jsonb_build_object(
+        'ignored_at', NOW()::TEXT,
+        'ignore_reason', 'Superseded by a newer or matching published App Store price.',
+        'auto_review_rule', 'app_store_stability',
+        'auto_review_decision', 'ignored',
+        'auto_review_reason_code', 'superseded_by_published_price'
+      ),
+      updated_at = NOW()
+    FROM region_prices published
+    WHERE observation.status = 'pending'::observation_status
+      AND COALESCE(observation.anomaly_flag, FALSE) = FALSE
+      AND observation.product_id = published.product_id
+      AND observation.plan_id = published.plan_id
+      AND observation.country_id = published.country_id
+      AND observation.billing_platform = published.billing_platform
+      AND observation.price_type = published.price_type
+      AND published.status = 'published'::publish_status
+      AND (
+        published.last_checked_at >= observation.observed_at
+        OR (
+          published.currency IS NOT DISTINCT FROM observation.currency
+          AND published.local_price IS NOT DISTINCT FROM observation.raw_price
+          AND (
+            published.price_usd IS NULL
+            OR observation.converted_usd IS NULL
+            OR published.price_usd = 0
+            OR ABS((observation.converted_usd - published.price_usd) / published.price_usd) <= 0.02
+          )
+        )
+      );
   END IF;
 
   INSERT INTO price_auto_review_runs (
@@ -114,6 +151,7 @@ BEGIN
         ls.billing_platform,
         ls.price_type,
         ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC) AS observation_ids,
+        (ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC))[1] AS latest_observation_id,
         ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC)
           FILTER (WHERE ls.status = 'pending'::observation_status) AS pending_observation_ids,
         COUNT(*) AS observation_count,
@@ -126,6 +164,42 @@ BEGIN
         MIN(ls.raw_price) AS stable_raw_price,
         MIN(ls.currency) AS stable_currency,
         MIN(ls.converted_usd) AS min_converted_usd,
+        MIN(ls.converted_usd) AS stable_converted_usd,
+        (ARRAY_AGG(ls.raw_price ORDER BY ls.observed_at DESC, ls.created_at DESC))[1] AS latest_raw_price,
+        (ARRAY_AGG(ls.raw_price ORDER BY ls.observed_at DESC, ls.created_at DESC))[2] AS second_raw_price,
+        (ARRAY_AGG(ls.currency ORDER BY ls.observed_at DESC, ls.created_at DESC))[1] AS latest_currency,
+        (ARRAY_AGG(ls.currency ORDER BY ls.observed_at DESC, ls.created_at DESC))[2] AS second_currency,
+        (ARRAY_AGG(ls.converted_usd ORDER BY ls.observed_at DESC, ls.created_at DESC))[1] AS latest_converted_usd,
+        (ARRAY_AGG(ls.converted_usd ORDER BY ls.observed_at DESC, ls.created_at DESC))[2] AS second_converted_usd,
+        (ARRAY_AGG(COALESCE(ls.anomaly_flag, FALSE) ORDER BY ls.observed_at DESC, ls.created_at DESC))[1] AS latest_has_anomaly,
+        (ARRAY_AGG(COALESCE(ls.anomaly_flag, FALSE) ORDER BY ls.observed_at DESC, ls.created_at DESC))[2] AS second_has_anomaly,
+        (ARRAY_AGG(
+          CASE
+            WHEN COALESCE(ls.raw_payload #>> '{raw_snapshot,priceSelection,selectedCount}', '') ~ '^\d+$'
+            THEN (ls.raw_payload #>> '{raw_snapshot,priceSelection,selectedCount}')::INTEGER
+            ELSE 0
+          END
+          ORDER BY ls.observed_at DESC, ls.created_at DESC
+        ))[1] AS latest_modal_count,
+        (ARRAY_AGG(
+          CASE
+            WHEN COALESCE(ls.raw_payload #>> '{raw_snapshot,priceSelection,runnerUpCount}', '') ~ '^\d+$'
+            THEN (ls.raw_payload #>> '{raw_snapshot,priceSelection,runnerUpCount}')::INTEGER
+            ELSE 0
+          END
+          ORDER BY ls.observed_at DESC, ls.created_at DESC
+        ))[1] AS latest_runner_up_count,
+        (ARRAY_AGG(
+          CASE
+            WHEN COALESCE(ls.raw_payload #>> '{raw_snapshot,priceSelection,variantCount}', '') ~ '^\d+$'
+            THEN (ls.raw_payload #>> '{raw_snapshot,priceSelection,variantCount}')::INTEGER
+            ELSE 0
+          END
+          ORDER BY ls.observed_at DESC, ls.created_at DESC
+        ))[1] AS latest_variant_count,
+        BOOL_OR(COALESCE(ls.anomaly_flag, FALSE)) AS has_anomaly,
+        STRING_AGG(DISTINCT NULLIF(ls.anomaly_reason, ''), ' ')
+          FILTER (WHERE COALESCE(ls.anomaly_flag, FALSE)) AS anomaly_reason,
         BOOL_OR(
           UPPER(COALESCE(ls.raw_payload -> 'raw_snapshot' ->> 'originalObservedPriceText', '')) LIKE '%USD%'
           AND ls.currency <> 'USD'
@@ -160,11 +234,118 @@ BEGIN
       g.*,
       p.slug AS product_slug,
       pl.slug AS plan_slug,
-      c.code AS country_code
+      c.code AS country_code,
+      COALESCE(peer_stats.peer_count, 0) AS peer_count,
+      peer_stats.peer_median_usd,
+      COALESCE(peer_stats.has_global_price_outlier, FALSE) AS has_global_price_outlier,
+      COALESCE(order_guard.has_plan_order_conflict, FALSE) AS has_plan_order_conflict,
+      order_guard.plan_order_conflict_reason
     FROM grouped g
     JOIN products p ON p.id = g.product_id
     JOIN plans pl ON pl.id = g.plan_id
     JOIN countries c ON c.id = g.country_id
+    LEFT JOIN LATERAL (
+      WITH peer_latest AS (
+        SELECT DISTINCT ON (peer.country_id)
+          peer.converted_usd
+        FROM price_observations peer
+        LEFT JOIN price_sources peer_source ON peer_source.id = peer.source_id
+        WHERE peer.product_id = g.product_id
+          AND peer.plan_id = g.plan_id
+          AND peer.country_id <> g.country_id
+          AND peer.billing_platform = g.billing_platform
+          AND peer.price_type = g.price_type
+          AND peer.status IN ('pending'::observation_status, 'approved'::observation_status)
+          AND peer.converted_usd IS NOT NULL
+          AND peer.converted_usd >= 1
+          AND COALESCE(peer.anomaly_flag, FALSE) = FALSE
+          AND peer.observed_at >= NOW() - MAKE_INTERVAL(days => p_max_sample_age_days)
+          AND (peer.source_level = 'A'::source_level OR peer_source.type = 'app_store'::price_source_type)
+        ORDER BY peer.country_id, peer.observed_at DESC, peer.created_at DESC
+      ),
+      peer_summary AS (
+        SELECT
+          COUNT(*)::INT AS peer_count,
+          percentile_cont(0.5) WITHIN GROUP (ORDER BY converted_usd)::NUMERIC AS peer_median_usd
+        FROM peer_latest
+      )
+      SELECT
+        peer_count,
+        peer_median_usd,
+        (
+          peer_count >= 8
+          AND peer_median_usd IS NOT NULL
+          AND (
+            g.stable_converted_usd < peer_median_usd * 0.2
+            OR g.stable_converted_usd > peer_median_usd * 3.5
+          )
+        ) AS has_global_price_outlier
+      FROM peer_summary
+    ) peer_stats ON TRUE
+    LEFT JOIN LATERAL (
+      WITH current_plan AS (
+        SELECT CASE
+          WHEN LOWER(pl.slug) IN ('free', 'trial') THEN 0
+          WHEN LOWER(pl.slug) IN ('go', 'lite', 'basic', 'mini') THEN 10
+          WHEN LOWER(pl.slug) LIKE '%plus%' THEN 20
+          WHEN LOWER(pl.slug) LIKE '%pro-5x%' THEN 30
+          WHEN LOWER(pl.slug) = 'pro' AND LOWER(p.slug) = 'chatgpt' THEN 40
+          WHEN LOWER(pl.slug) LIKE '%max%' THEN 45
+          WHEN LOWER(pl.slug) LIKE '%team%' THEN 50
+          WHEN COALESCE(pl.sort_order, 0) > 0 THEN pl.sort_order
+          ELSE 100
+        END AS effective_rank
+      ),
+      sibling_latest AS (
+        SELECT DISTINCT ON (sibling.plan_id)
+          sibling_plan.slug,
+          sibling.converted_usd,
+          CASE
+            WHEN LOWER(sibling_plan.slug) IN ('free', 'trial') THEN 0
+            WHEN LOWER(sibling_plan.slug) IN ('go', 'lite', 'basic', 'mini') THEN 10
+            WHEN LOWER(sibling_plan.slug) LIKE '%plus%' THEN 20
+            WHEN LOWER(sibling_plan.slug) LIKE '%pro-5x%' THEN 30
+            WHEN LOWER(sibling_plan.slug) = 'pro' AND LOWER(p.slug) = 'chatgpt' THEN 40
+            WHEN LOWER(sibling_plan.slug) LIKE '%max%' THEN 45
+            WHEN LOWER(sibling_plan.slug) LIKE '%team%' THEN 50
+            WHEN COALESCE(sibling_plan.sort_order, 0) > 0 THEN sibling_plan.sort_order
+            ELSE 100
+          END AS effective_rank
+        FROM price_observations sibling
+        JOIN plans sibling_plan ON sibling_plan.id = sibling.plan_id
+        LEFT JOIN price_sources sibling_source ON sibling_source.id = sibling.source_id
+        WHERE sibling.product_id = g.product_id
+          AND sibling.country_id = g.country_id
+          AND sibling.plan_id <> g.plan_id
+          AND sibling.billing_platform = g.billing_platform
+          AND sibling.price_type = g.price_type
+          AND sibling.status IN ('pending'::observation_status, 'approved'::observation_status)
+          AND sibling.converted_usd IS NOT NULL
+          AND sibling.converted_usd >= 1
+          AND COALESCE(sibling.anomaly_flag, FALSE) = FALSE
+          AND sibling.observed_at >= NOW() - MAKE_INTERVAL(days => p_max_sample_age_days)
+          AND (sibling.source_level = 'A'::source_level OR sibling_source.type = 'app_store'::price_source_type)
+        ORDER BY sibling.plan_id, sibling.observed_at DESC, sibling.created_at DESC
+      )
+      SELECT
+        TRUE AS has_plan_order_conflict,
+        FORMAT(
+          'Plan price order looks inconsistent: %s is %s USD, while sibling plan %s is %s USD in the same country. This requires manual review.',
+          pl.slug,
+          ROUND(g.stable_converted_usd, 2),
+          sibling_latest.slug,
+          ROUND(sibling_latest.converted_usd, 2)
+        ) AS plan_order_conflict_reason
+      FROM sibling_latest
+      CROSS JOIN current_plan
+      WHERE sibling_latest.effective_rank <> current_plan.effective_rank
+        AND (
+          (current_plan.effective_rank > sibling_latest.effective_rank AND g.stable_converted_usd < sibling_latest.converted_usd * 0.75)
+          OR (current_plan.effective_rank < sibling_latest.effective_rank AND g.stable_converted_usd > sibling_latest.converted_usd * 1.25)
+        )
+      ORDER BY ABS(current_plan.effective_rank - sibling_latest.effective_rank) DESC
+      LIMIT 1
+    ) order_guard ON TRUE
     WHERE g.pending_count > 0
     ORDER BY p.slug, pl.slug, c.code
   LOOP
@@ -174,6 +355,31 @@ BEGIN
       v_decision := 'manual_review';
       v_reason_code := 'incomplete_observation';
       v_reason := 'App Store observation is missing product, plan, country, raw price, currency, or USD conversion.';
+    ELSIF v_group.observation_count >= 2
+      AND COALESCE(v_group.latest_has_anomaly, FALSE) = FALSE
+      AND COALESCE(v_group.second_has_anomaly, FALSE) = FALSE
+      AND v_group.latest_raw_price IS NOT NULL
+      AND v_group.latest_raw_price = v_group.second_raw_price
+      AND v_group.latest_currency IS NOT NULL
+      AND v_group.latest_currency = v_group.second_currency
+      AND COALESCE(v_group.latest_converted_usd, 0) >= 1
+      AND COALESCE(v_group.second_converted_usd, 0) >= 1
+      AND v_group.has_anomaly
+    THEN
+      v_decision := 'auto_approve';
+      v_reason_code := 'app_store_clean_pair_after_rule_fix';
+      v_reason := FORMAT(
+        'The latest 2 clean App Store samples match after parser/rule correction: %s %s. Auto approved and older conflicting samples are ignored.',
+        v_group.latest_currency,
+        v_group.latest_raw_price
+      );
+    ELSIF v_group.has_anomaly THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'app_store_observation_anomaly';
+      v_reason := COALESCE(
+        v_group.anomaly_reason,
+        'The App Store collector flagged this observation as a hard anomaly, so it requires more automated evidence before publication.'
+      );
     ELSIF v_group.observation_count < p_required_samples THEN
       v_decision := 'manual_review';
       v_reason_code := 'waiting_for_more_app_store_samples';
@@ -198,6 +404,21 @@ BEGIN
         v_group.min_confidence,
         p_min_confidence
       );
+    ELSIF (v_group.raw_price_count <> 1 OR v_group.currency_count <> 1)
+      AND COALESCE(v_group.latest_has_anomaly, FALSE) = FALSE
+      AND COALESCE(v_group.latest_variant_count, 0) > 1
+      AND COALESCE(v_group.latest_modal_count, 0) >= 2
+      AND COALESCE(v_group.latest_modal_count, 0) > COALESCE(v_group.latest_runner_up_count, 0)
+    THEN
+      v_decision := 'auto_approve';
+      v_reason_code := 'app_store_modal_price_consensus';
+      v_reason := FORMAT(
+        'The latest rendered App Store page contains multiple prices, but the selected price has page consensus: %s %s appears %s times vs runner-up %s. Auto approved and older conflicting samples are ignored.',
+        v_group.latest_currency,
+        v_group.latest_raw_price,
+        v_group.latest_modal_count,
+        v_group.latest_runner_up_count
+      );
     ELSIF v_group.raw_price_count <> 1 OR v_group.currency_count <> 1 THEN
       v_decision := 'manual_review';
       v_reason_code := 'app_store_price_changed';
@@ -220,6 +441,19 @@ BEGIN
         'App Store converted price is below 1 USD (%s USD). This may indicate currency or price-text parsing error, so it requires manual review.',
         v_group.min_converted_usd
       );
+    ELSIF v_group.has_global_price_outlier THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'app_store_global_price_outlier';
+      v_reason := FORMAT(
+        'App Store converted price (%s USD) is far from the peer-country median (%s USD across %s countries). This may indicate parsing or currency conversion error.',
+        ROUND(v_group.stable_converted_usd, 2),
+        ROUND(v_group.peer_median_usd, 2),
+        v_group.peer_count
+      );
+    ELSIF v_group.has_plan_order_conflict THEN
+      v_decision := 'manual_review';
+      v_reason_code := 'app_store_plan_order_conflict';
+      v_reason := v_group.plan_order_conflict_reason;
     ELSE
       v_decision := 'auto_approve';
       v_reason_code := 'app_store_three_sample_consensus';
@@ -271,10 +505,17 @@ BEGIN
     WHERE po.id = ANY(v_group.observation_ids);
 
     IF v_decision = 'auto_approve' THEN
-      v_auto_approved_count := v_auto_approved_count + CARDINALITY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]));
+      v_observation_ids_to_approve := CASE
+        WHEN v_reason_code = 'app_store_modal_price_consensus'
+          OR v_reason_code = 'app_store_clean_pair_after_rule_fix'
+          THEN ARRAY[v_group.latest_observation_id]::UUID[]
+        ELSE COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[])
+      END;
+
+      v_auto_approved_count := v_auto_approved_count + CARDINALITY(COALESCE(v_observation_ids_to_approve, ARRAY[]::UUID[]));
 
       IF NOT p_dry_run THEN
-        FOREACH v_observation_id IN ARRAY COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[])
+        FOREACH v_observation_id IN ARRAY COALESCE(v_observation_ids_to_approve, ARRAY[]::UUID[])
         LOOP
           v_region_price_id := approve_price_observation(v_observation_id);
 
@@ -289,6 +530,25 @@ BEGIN
           )
           WHERE id = v_observation_id;
         END LOOP;
+
+        IF v_reason_code IN ('app_store_modal_price_consensus', 'app_store_clean_pair_after_rule_fix') THEN
+          UPDATE price_observations
+          SET
+            status = 'ignored'::observation_status,
+            raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
+              'ignored_at', NOW()::TEXT,
+              'ignore_reason', 'Superseded by a newer App Store auto-review consensus.',
+              'auto_review_run_id', v_run_id::TEXT,
+              'auto_review_rule', 'app_store_stability',
+              'auto_review_decision', 'ignored',
+              'auto_review_reason_code', 'superseded_by_app_store_consensus',
+              'auto_review_reason', v_reason
+            ),
+            updated_at = NOW()
+          WHERE id = ANY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]))
+            AND id <> ALL(COALESCE(v_observation_ids_to_approve, ARRAY[]::UUID[]))
+            AND status = 'pending'::observation_status;
+        END IF;
       END IF;
     ELSE
       v_manual_review_count := v_manual_review_count + CARDINALITY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]));

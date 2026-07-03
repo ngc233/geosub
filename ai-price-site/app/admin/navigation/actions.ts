@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "../../../lib/prisma";
+import { getDefaultNavigationItems } from "../../../lib/navigation-defaults";
 import { getNavigationLinkHealth } from "../../../lib/navigation-health";
 import {
   getNavigationLocaleByDbValue,
@@ -344,5 +345,84 @@ export async function createNavigationItem(formData: FormData) {
 
   redirect(
     `/admin/navigation?locale=${localeEntry.value}&position=${positionEntry.value}`
+  );
+}
+
+export async function seedDefaultNavigation(formData: FormData) {
+  const rawLocale = String(formData.get("locale") || "zh");
+  const rawPosition = String(formData.get("position") || "footer");
+  const localeEntry = getNavigationLocaleByValue(rawLocale);
+  const positionEntry = getNavigationPositionByValue(rawPosition);
+  const groups = getDefaultNavigationItems({
+    locale: localeEntry.value,
+    position: positionEntry.value,
+  });
+
+  for (const [groupIndex, group] of groups.entries()) {
+    let parent = await prisma.navigationItem.findFirst({
+      where: {
+        locale: localeEntry.dbValue,
+        position: positionEntry.dbValue,
+        parentId: null,
+        href: group.href,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!parent) {
+      parent = await prisma.navigationItem.create({
+        data: {
+          locale: localeEntry.dbValue,
+          position: positionEntry.dbValue,
+          label: group.label,
+          href: group.href,
+          parentId: null,
+          external: false,
+          status: "PUBLISHED",
+          sortOrder: (groupIndex + 1) * 10,
+        },
+        select: {
+          id: true,
+        },
+      });
+    }
+
+    for (const [childIndex, child] of (group.children || []).entries()) {
+      const exists = await prisma.navigationItem.findFirst({
+        where: {
+          locale: localeEntry.dbValue,
+          position: positionEntry.dbValue,
+          parentId: parent.id,
+          href: child.href,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (exists) continue;
+
+      await prisma.navigationItem.create({
+        data: {
+          locale: localeEntry.dbValue,
+          position: positionEntry.dbValue,
+          label: child.label,
+          href: child.href,
+          parentId: parent.id,
+          external: false,
+          status: "PUBLISHED",
+          sortOrder: (childIndex + 1) * 10,
+        },
+      });
+    }
+  }
+
+  revalidatePath("/admin/navigation");
+  revalidatePath("/admin");
+  revalidatePath(`/${localeEntry.path}`);
+  redirect(
+    `/admin/navigation?locale=${localeEntry.value}&position=${positionEntry.value}&seeded=1`,
   );
 }

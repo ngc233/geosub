@@ -1,73 +1,81 @@
 import Link from "next/link";
+import { getDefaultNavigationItems } from "../lib/navigation-defaults";
 import type { SiteNavigationItem } from "../lib/site-navigation";
-
-const fallbackFooterItems: SiteNavigationItem[] = [
-  {
-    name: "产品",
-    href: "/",
-    children: [
-      {
-        name: "AI 定价",
-        href: "/ai-pricing/",
-      },
-      {
-        name: "软件订阅",
-        href: "/software-subscriptions/",
-      },
-      {
-        name: "游戏 / Steam",
-        href: "/gaming-steam/",
-      },
-      {
-        name: "礼品卡",
-        href: "/gift-cards/",
-      },
-      {
-        name: "AI 工具",
-        href: "/ai-rankings/",
-      },
-    ],
-  },
-  {
-    name: "指南",
-    href: "/guides/",
-    children: [
-      {
-        name: "价格指南",
-        href: "/guides/price-guide/",
-      },
-      {
-        name: "礼品卡教程",
-        href: "/guides/gift-card-guide/",
-      },
-      {
-        name: "支付与账号",
-        href: "/guides/payment-account/",
-      },
-      {
-        name: "工具测评",
-        href: "/guides/tool-review/",
-      },
-    ],
-  },
-];
 
 const footerCopy = {
   zh: {
     description:
-      "GeoSub 是全球数字订阅与虚拟服务价格数据平台，帮助用户比较 AI 订阅、软件订阅、游戏服务、礼品卡和数字工具在不同国家与地区的价格差异。",
+      "GeoSub 是全球数字订阅价格数据平台，当前优先整理 AI 订阅和流媒体订阅在不同国家与地区的价格差异。",
     rights: "保留所有权利。",
-    note: "价格与可用性可能随地区、汇率和平台政策变化，请以官方页面为准。",
+    note: "价格与可用性可能随地区、汇率、税费和平台政策变化，请以官方结算页为准。",
     tagline: "全球数字订阅价格数据",
   },
   en: {
     description:
-      "GeoSub is a global digital subscription pricing platform for comparing AI subscriptions, software subscriptions, gaming services, gift cards, and digital tools across countries and regions.",
+      "GeoSub is a global digital subscription pricing platform. The current beta focuses on AI and streaming subscription prices across countries and regions.",
     rights: "All rights reserved.",
-    note: "Prices and availability may change by region, exchange rate, tax, and platform policy. Always verify final prices on the official page.",
+    note: "Prices and availability may change by region, exchange rate, tax, and platform policy. Always verify final prices on the official checkout page.",
     tagline: "Global Digital Subscription Pricing",
   },
 };
+
+const hiddenFooterPaths = [
+  "/ai-rankings",
+  "/software-subscriptions",
+  "/gaming-steam",
+  "/gift-cards",
+  "/vpn",
+];
+
+function normalizePath(pathname: string) {
+  if (!pathname) return "/";
+  const normalized =
+    pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
+  return normalized || "/";
+}
+
+function stripLocale(pathname: string) {
+  const parts = normalizePath(pathname).split("/");
+  const maybeLocale = parts[1];
+
+  if (maybeLocale === "zh" || maybeLocale === "en") {
+    const stripped = `/${parts.slice(2).join("/")}`;
+    return normalizePath(stripped);
+  }
+
+  return normalizePath(pathname);
+}
+
+function shouldHideHref(href: string) {
+  const path = stripLocale(href);
+  return hiddenFooterPaths.some(
+    (hiddenPath) => path === hiddenPath || path.startsWith(`${hiddenPath}/`),
+  );
+}
+
+function toSiteNavigationItems(locale: string): SiteNavigationItem[] {
+  return getDefaultNavigationItems({
+    locale,
+    position: "footer",
+  }).map((group) => ({
+    name: group.label,
+    href: group.href,
+    children: group.children?.map((child) => ({
+      name: child.label,
+      href: child.href,
+    })),
+  }));
+}
+
+function filterFooterItems(items: SiteNavigationItem[]) {
+  return items
+    .filter((group) => !shouldHideHref(group.href))
+    .map((group) => ({
+      ...group,
+      children: group.children?.filter((child) => !shouldHideHref(child.href)),
+    }))
+    .filter((group) => group.href || (group.children && group.children.length > 0));
+}
 
 function withLocale(href: string, locale: string) {
   if (href.startsWith("https://") || href.startsWith("http://")) {
@@ -75,6 +83,12 @@ function withLocale(href: string, locale: string) {
   }
 
   const cleanHref = href.startsWith("/") ? href : `/${href}`;
+  const alreadyLocalized =
+    cleanHref === `/${locale}` || cleanHref.startsWith(`/${locale}/`);
+
+  if (alreadyLocalized) {
+    return cleanHref;
+  }
 
   if (cleanHref === "/") {
     return `/${locale}/`;
@@ -90,9 +104,12 @@ export default function Footer({
   navItems?: SiteNavigationItem[];
   locale?: string;
 }) {
-  const footerItems = navItems.length > 0 ? navItems : fallbackFooterItems;
+  const normalizedLocale = locale === "en" ? "en" : "zh";
+  const footerItems = filterFooterItems(
+    navItems.length > 0 ? navItems : toSiteNavigationItems(normalizedLocale),
+  );
   const currentYear = new Date().getFullYear();
-  const copy = locale === "en" ? footerCopy.en : footerCopy.zh;
+  const copy = normalizedLocale === "en" ? footerCopy.en : footerCopy.zh;
 
   return (
     <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">
@@ -100,7 +117,7 @@ export default function Footer({
         <div className="grid gap-10 lg:grid-cols-[1.25fr_2fr]">
           <div>
             <Link
-              href={`/${locale}/`}
+              href={`/${normalizedLocale}/`}
               className="inline-flex items-center gap-2 text-zinc-950 transition hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
               aria-label="GeoSub"
             >
@@ -130,7 +147,7 @@ export default function Footer({
                     href={
                       group.external
                         ? group.href
-                        : withLocale(group.href, locale)
+                        : withLocale(group.href, normalizedLocale)
                     }
                     className="text-sm font-black text-zinc-950 transition hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
                   >
@@ -145,7 +162,7 @@ export default function Footer({
                           href={
                             item.external
                               ? item.href
-                              : withLocale(item.href, locale)
+                              : withLocale(item.href, normalizedLocale)
                           }
                           className="block text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
                         >

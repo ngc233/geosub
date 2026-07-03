@@ -47,11 +47,8 @@ export default function ProductOnboardingSteps({
           <AdminLinkButton href="/admin/plans" variant="secondary" size="sm">
             去套餐库
           </AdminLinkButton>
-          <AdminLinkButton href="/admin/collector-jobs" variant="secondary" size="sm">
-            去采集任务
-          </AdminLinkButton>
           <AdminLinkButton href="/admin/review" variant="secondary" size="sm">
-            去价格审核
+            去价格采集审核
           </AdminLinkButton>
         </div>
       </div>

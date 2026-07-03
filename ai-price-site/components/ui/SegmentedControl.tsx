@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 export type SegmentedControlItem = {
   label: string;
+  shortLabel?: string;
   value: string;
   href?: string;
   icon?: ReactNode;
@@ -62,8 +63,8 @@ export default function SegmentedControl({
 
   const sizeClasses =
     size === "sm"
-      ? "h-8 px-3 text-xs"
-      : "h-10 px-4 text-sm";
+      ? "h-8 px-2.5 text-xs sm:px-3"
+      : "h-10 px-2.5 text-sm sm:px-4";
 
   const thumbRadius = size === "sm" ? "rounded-lg" : "rounded-lg";
 
@@ -83,7 +84,14 @@ export default function SegmentedControl({
   const content = (item: SegmentedControlItem) => (
     <>
       {item.icon ? <span className="shrink-0">{item.icon}</span> : null}
-      <span className="truncate">{item.label}</span>
+      {item.shortLabel ? (
+        <>
+          <span className="truncate sm:hidden">{item.shortLabel}</span>
+          <span className="hidden truncate sm:inline">{item.label}</span>
+        </>
+      ) : (
+        <span className="truncate">{item.label}</span>
+      )}
     </>
   );
 

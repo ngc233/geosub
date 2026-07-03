@@ -54,19 +54,25 @@ SELECT
   rp.diff_vs_us_percent,
   rp.tax_note,
   rp.availability_note,
+  rp.last_checked_at AS price_last_checked_at,
   pam.monthly_income_usd,
   pam.income_share_percent,
   pam.us_income_share_percent,
   pam.burden_vs_us,
   pam.affordability_level,
-  pam.data_year,
-  pam.source,
-  pam.updated_at AS affordability_updated_at
+  pam.data_year AS income_data_year,
+  pam.source AS income_source,
+  pam.updated_at AS affordability_updated_at,
+  cim.metric_type AS income_metric_type,
+  cim.indicator_code AS income_indicator_code,
+  cim.source_url AS income_source_url,
+  cim.source_updated_at AS income_synced_at
 FROM latest_plan_affordability_metrics pam
 JOIN region_prices rp ON rp.id::text = pam.region_price_id
 JOIN products p ON p.slug = pam.product_slug
 JOIN plans pl ON pl.slug = pam.plan_slug AND pl.product_id = p.id
-JOIN countries c ON UPPER(c.code) = UPPER(pam.country_code);
+JOIN countries c ON UPPER(c.code) = UPPER(pam.country_code)
+LEFT JOIN country_income_metrics cim ON cim.id = pam.income_metric_id;
 
 CREATE VIEW plan_affordability_summary_view AS
 SELECT
@@ -83,6 +89,11 @@ SELECT
   ROUND(AVG(burden_vs_us)::numeric, 2) AS avg_burden_vs_us,
   (ARRAY_AGG(country_code ORDER BY income_share_percent ASC))[1] AS lowest_burden_country,
   (ARRAY_AGG(country_code ORDER BY income_share_percent DESC))[1] AS highest_burden_country,
-  MAX(data_year) AS data_year
+  MAX(income_data_year) AS income_data_year,
+  MAX(income_source) AS income_source,
+  MAX(income_metric_type) AS income_metric_type,
+  MAX(income_indicator_code) AS income_indicator_code,
+  MAX(income_synced_at) AS income_synced_at,
+  MAX(affordability_updated_at) AS affordability_updated_at
 FROM plan_affordability_detail_view
 GROUP BY product_slug, product_name, plan_slug, plan_name;

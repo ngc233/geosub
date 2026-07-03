@@ -1,12 +1,15 @@
 'use client';
 
-import type { SVGProps } from 'react';
-import * as icons from 'simple-icons/icons';
+/* eslint-disable @next/next/no-img-element */
+import { useState, type SVGProps } from 'react';
+import * as icons from 'simple-icons';
 
 type BrandIconProps = {
   product: {
     slug: string;
     name?: string;
+    logoUrl?: string | null;
+    icon?: string | null;
   };
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
@@ -20,20 +23,36 @@ type SimpleIcon = {
 };
 
 const iconMap: Record<string, string[]> = {
-  chatgpt: ['siOpenai'],
+  chatgpt: [],
   claude: ['siClaude', 'siAnthropic'],
   gemini: ['siGooglegemini', 'siGoogle'],
   grok: ['siX'],
   perplexity: ['siPerplexity'],
   deepseek: ['siDeepseek'],
+  qwen: ['siAlibaba'],
+  kimi: ['siMoonrepo'],
+  mistral: ['siMistralai'],
+  llama: ['siMeta'],
+  'meta-ai': ['siMeta'],
+  'le-chat': ['siMistralai'],
   'microsoft-copilot': ['siMicrosoftcopilot', 'siMicrosoft'],
+  notebooklm: ['siGoogle'],
   poe: ['siPoe'],
   'character-ai': ['siCharacterai'],
+  'adobe-firefly': ['siAdobe'],
+  canva: ['siCanva'],
+  ideogram: ['siIdeogram'],
+  'stable-diffusion': ['siStabilityai'],
+  recraft: ['siRecraft'],
   midjourney: ['siMidjourney'],
   runway: ['siRunway'],
+  luma: ['siLuma'],
+  pika: ['siPika'],
   suno: ['siSuno'],
+  udio: ['siUdio'],
+  elevenlabs: ['siElevenlabs'],
   'kling-ai': ['siKlingai'],
-  sora: ['siOpenai'],
+  sora: [],
 
   netflix: ['siNetflix'],
   'youtube-premium': ['siYoutube'],
@@ -54,12 +73,28 @@ const brandColorMap: Record<string, string> = {
   grok: '#111827',
   perplexity: '#111827',
   deepseek: '#4F7CFF',
+  qwen: '#FF6A00',
+  kimi: '#111827',
+  mistral: '#FF7000',
+  llama: '#0668E1',
+  'meta-ai': '#0668E1',
+  'le-chat': '#FF7000',
   'microsoft-copilot': '#111827',
+  notebooklm: '#4285F4',
   poe: '#111827',
   'character-ai': '#111827',
+  'adobe-firefly': '#FA0F00',
+  canva: '#00C4CC',
+  ideogram: '#111827',
+  'stable-diffusion': '#111827',
+  recraft: '#111827',
   midjourney: '#111827',
   runway: '#111827',
+  luma: '#111827',
+  pika: '#111827',
   suno: '#FF7A00',
+  udio: '#111827',
+  elevenlabs: '#111827',
   'kling-ai': '#111827',
   sora: '#111827',
 
@@ -82,12 +117,28 @@ const bgMap: Record<string, string> = {
   grok: 'bg-white',
   perplexity: 'bg-white',
   deepseek: 'bg-blue-50',
+  qwen: 'bg-orange-50',
+  kimi: 'bg-white',
+  mistral: 'bg-orange-50',
+  llama: 'bg-blue-50',
+  'meta-ai': 'bg-blue-50',
+  'le-chat': 'bg-orange-50',
   'microsoft-copilot': 'bg-white',
+  notebooklm: 'bg-blue-50',
   poe: 'bg-white',
   'character-ai': 'bg-zinc-950',
+  'adobe-firefly': 'bg-red-50',
+  canva: 'bg-cyan-50',
+  ideogram: 'bg-white',
+  'stable-diffusion': 'bg-white',
+  recraft: 'bg-white',
   midjourney: 'bg-white',
   runway: 'bg-white',
+  luma: 'bg-white',
+  pika: 'bg-white',
   suno: 'bg-orange-50',
+  udio: 'bg-white',
+  elevenlabs: 'bg-white',
   'kling-ai': 'bg-white',
   sora: 'bg-white',
 
@@ -136,6 +187,25 @@ function getSimpleIcon(productSlug: string): SimpleIcon | null {
     if (icon?.path) {
       return icon;
     }
+  }
+
+  return null;
+}
+
+function getLogoSrc(value?: string | null) {
+  const src = value?.trim();
+
+  if (!src) {
+    return null;
+  }
+
+  if (
+    src.startsWith('/') ||
+    src.startsWith('https://') ||
+    src.startsWith('http://') ||
+    src.startsWith('data:image/')
+  ) {
+    return src;
   }
 
   return null;
@@ -305,16 +375,31 @@ export default function BrandIcon({
   size = 'md',
   className = '',
 }: BrandIconProps) {
+  const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
   const icon = getSimpleIcon(product.slug);
   const sizeClass = sizeMap[size];
   const color = brandColorMap[product.slug] || '#18181B';
   const bg = bgMap[product.slug] || 'bg-white';
+  const candidateLogoSrc = getLogoSrc(product.logoUrl || product.icon);
+  const logoSrc =
+    candidateLogoSrc && candidateLogoSrc !== failedLogoSrc
+      ? candidateLogoSrc
+      : null;
 
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center overflow-hidden border border-zinc-200/80 shadow-sm ${sizeClass.box} ${bg} ${className}`}
     >
-      {icon ? (
+      {logoSrc ? (
+        <img
+          src={logoSrc}
+          alt={product.name ? `${product.name} logo` : ''}
+          className="h-[72%] w-[72%] object-contain"
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedLogoSrc(logoSrc)}
+        />
+      ) : icon ? (
         <SvgIcon icon={icon} color={color} className={sizeClass.svg} />
       ) : (
         <CustomBrandMark slug={product.slug} className={sizeClass.svg} />

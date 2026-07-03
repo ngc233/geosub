@@ -1,0 +1,216 @@
+{
+  "chatgpt": {
+    "name": "ChatGPT",
+    "app_store_id": "6448311069",
+    "plans": [
+      {
+        "slug": "go",
+        "name": "ChatGPT Go",
+        "aliases": ["chatgpt go", "go"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 2.0,
+        "expected_monthly_usd_max": 15.0
+      },
+      {
+        "slug": "plus",
+        "name": "ChatGPT Plus",
+        "aliases": ["chatgpt plus", "plus"],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 8.0,
+        "expected_monthly_usd_max": 40.0
+      },
+      {
+        "slug": "pro-5x",
+        "name": "ChatGPT Pro 5x",
+        "aliases": ["chatgpt pro 5x", "pro 5x", "pro-5x"],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 40.0,
+        "expected_monthly_usd_max": 160.0
+      },
+      {
+        "slug": "pro",
+        "name": "ChatGPT Pro 20x",
+        "aliases": ["chatgpt pro 20x", "pro 20x", "pro-20x"],
+        "sort_order": 40,
+        "expected_monthly_usd_min": 80.0,
+        "expected_monthly_usd_max": 330.0
+      }
+    ]
+  },
+  "claude": {
+    "name": "Claude",
+    "plans": [
+      {
+        "slug": "pro",
+        "name": "Claude Pro",
+        "aliases": ["claude pro", "pro"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 8.0,
+        "expected_monthly_usd_max": 35.0
+      },
+      {
+        "slug": "max-5x",
+        "name": "Claude Max 5x",
+        "aliases": ["claude max 5x", "max 5x", "max-5x"],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 40.0,
+        "expected_monthly_usd_max": 190.0
+      },
+      {
+        "slug": "max-20x",
+        "name": "Claude Max 20x",
+        "aliases": ["claude max 20x", "max 20x", "max-20x"],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 80.0,
+        "expected_monthly_usd_max": 380.0
+      }
+    ]
+  },
+  "gemini": {
+    "name": "Gemini",
+    "app_store_id": "6477489729",
+    "plans": [
+      {
+        "slug": "plus",
+        "name": "Google AI Plus",
+        "aliases": ["google ai plus", "ai plus", "gemini plus", "plus", "google ai plus 400 gb"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 2.0,
+        "expected_monthly_usd_max": 12.0
+      },
+      {
+        "slug": "pro",
+        "name": "Google AI Pro",
+        "aliases": ["google ai pro", "ai pro", "gemini pro", "pro", "google ai pro 5 tb"],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 8.0,
+        "expected_monthly_usd_max": 45.0
+      },
+      {
+        "slug": "ultra",
+        "name": "Google AI Ultra",
+        "aliases": ["google ai ultra", "ai ultra", "gemini ultra", "ultra", "google ai ultra 30 tb"],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 80.0,
+        "expected_monthly_usd_max": 330.0
+      }
+    ]
+  },
+  "grok": {
+    "name": "Grok",
+    "app_store_id": "6670324846",
+    "plans": [
+      {
+        "slug": "super-lite",
+        "name": "SuperGrok Lite",
+        "aliases": ["supergrok lite", "super grok lite", "grok lite", "lite"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 3.0,
+        "expected_monthly_usd_max": 45.0
+      },
+      {
+        "slug": "super",
+        "name": "SuperGrok",
+        "aliases": ["supergrok", "super grok", "grok super", "super"],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 5.0,
+        "expected_monthly_usd_max": 80.0
+      },
+      {
+        "slug": "super-heavy",
+        "name": "SuperGrok Heavy",
+        "aliases": ["supergrok heavy", "super grok heavy", "grok heavy", "heavy"],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 150.0,
+        "expected_monthly_usd_max": 520.0
+      }
+    ]
+  },
+  "manus": {
+    "name": "Manus",
+    "app_store_id": "6740909540",
+    "plans": [
+      {
+        "slug": "basic",
+        "name": "Manus Basic",
+        "aliases": ["manus basic", "basic", "manus basic monthly", "manus basic - monthly"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 8.0,
+        "expected_monthly_usd_max": 35.0
+      },
+      {
+        "slug": "pro",
+        "name": "Manus Pro",
+        "aliases": ["manus pro", "pro"],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 12.0,
+        "expected_monthly_usd_max": 140.0
+      },
+      {
+        "slug": "plus",
+        "name": "Manus Plus",
+        "aliases": ["manus plus", "plus", "manus plus monthly", "manus plus - monthly"],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 8.0,
+        "expected_monthly_usd_max": 70.0
+      }
+    ]
+  },
+  "netflix": {
+    "name": "Netflix",
+    "plans": [
+      {
+        "slug": "basic",
+        "name": "Netflix Basic",
+        "aliases": [
+          "netflix basic",
+          "basic",
+          "1 screen",
+          "1 screen unlimited streaming",
+          "one screen",
+          "single screen"
+        ],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 1.2,
+        "expected_monthly_usd_max": 18.0
+      },
+      {
+        "slug": "standard",
+        "name": "Netflix Standard",
+        "aliases": [
+          "netflix standard",
+          "standard",
+          "2 screens",
+          "2 screens unlimited streaming",
+          "two screens",
+          "standard 2 screens",
+          "estandar",
+          "2 pantallas",
+          "2 pantallas transmision limitada",
+          "2 pantallas transmision limitada 1mes"
+        ],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 2.4,
+        "expected_monthly_usd_max": 28.0
+      },
+      {
+        "slug": "premium",
+        "name": "Netflix Premium",
+        "aliases": [
+          "netflix premium",
+          "premium",
+          "4 screens",
+          "4 screens unlimited streaming",
+          "four screens",
+          "premium 4 screens",
+          "4 pantallas",
+          "4 pantallas transmision limitada",
+          "4 pantallas transmision limitada 1mes"
+        ],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 3.4,
+        "expected_monthly_usd_max": 38.0
+      }
+    ]
+  }
+}

@@ -97,6 +97,16 @@ function getCountryNumericCode(code: string) {
   return ISO2_TO_NUMERIC[code.toUpperCase()];
 }
 
+function isAntarcticaFeature(featureItem: MapFeature) {
+  const id =
+    typeof featureItem.id === 'number' || typeof featureItem.id === 'string'
+      ? Number(featureItem.id)
+      : undefined;
+  const name = featureItem.properties?.name?.toLowerCase();
+
+  return id === 10 || name === 'antarctica';
+}
+
 function getDiffPercent(price: number, referencePrice: number) {
   return Math.round(((price - referencePrice) / referencePrice) * 100);
 }
@@ -180,11 +190,17 @@ function ShareMiniMap({
       atlas.objects.countries as never
     ) as unknown as GeoPermissibleObjects & { features: MapFeature[] };
 
-    const features = countries.features;
+    const features = countries.features.filter(
+      (featureItem) => !isAntarcticaFeature(featureItem)
+    );
+    const filteredCountries = {
+      ...countries,
+      features,
+    } as typeof countries;
 
     const projection = geoNaturalEarth1().fitSize(
       [MAP_WIDTH, MAP_HEIGHT],
-      countries
+      filteredCountries
     );
 
     const pathGenerator = geoPath(projection);
@@ -277,7 +293,7 @@ function ShareMiniMap({
   return (
     <div className="mt-5 overflow-hidden rounded-[22px] border border-zinc-200 bg-[#fbfaf7]">
       <div className="relative">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_26%_40%,rgba(132,204,22,0.20),transparent_32%),radial-gradient(circle_at_72%_26%,rgba(244,63,94,0.16),transparent_32%),radial-gradient(circle_at_54%_78%,rgba(251,191,36,0.14),transparent_34%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#fffdf8_0%,#fbfaf7_100%)]" />
 
         <svg
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
@@ -499,17 +515,12 @@ export default function SharePriceModal({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-[430px] overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-zinc-950/25"
+            className="w-full max-w-[450px] overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-zinc-950/25"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 pb-3 pt-5">
-              <div>
-                <div className="text-xl font-black tracking-tight text-zinc-950">
-                  分享 {product.name} 价格
-                </div>
-                <div className="mt-1 text-sm text-zinc-500">
-                  下载 PNG，或分享到社媒。
-                </div>
+            <div className="flex items-center justify-between px-5 pb-2 pt-5">
+              <div className="text-lg font-black tracking-tight text-zinc-950">
+                分享 {product.name} 价格
               </div>
 
               <button
@@ -532,56 +543,57 @@ export default function SharePriceModal({
               </button>
             </div>
 
-            <div className="max-h-[78vh] overflow-y-auto px-5 pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="rounded-[26px] border border-zinc-200 bg-[#fffaf3] p-3 shadow-sm">
+            <div className="max-h-[80vh] overflow-y-auto px-5 pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="rounded-[28px] border border-zinc-200 bg-[#fffaf3] p-2 shadow-sm">
                 <div
-                  ref={cardRef}
-                  className="w-full rounded-[22px] bg-[#fffaf3] p-5 text-zinc-950"
+                  className="origin-top-left"
+                  style={{
+                    marginBottom: '-220px',
+                    transform: 'scale(0.7)',
+                    width: '142.86%',
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div
+                    ref={cardRef}
+                    className="w-full rounded-[26px] bg-[#fffaf3] p-5 text-zinc-950"
+                  >
                     <div>
-                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-orange-400">
-                        <span className="h-px w-5 bg-orange-300" />
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-500">
+                        <span className="h-[3px] w-10 rounded-full bg-blue-500" />
                         {product.brand} · 全球 · {product.updatedAt}
                       </div>
 
-                      <h2 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">
+                      <h2 className="mt-3 text-[32px] font-black leading-[0.95] tracking-tight text-zinc-950">
                         {product.name} 各地区价格
                       </h2>
-                    </div>
 
-                    <div className="rounded-2xl bg-white px-3 py-2 text-right shadow-sm">
-                      <div className="text-[9px] font-black text-zinc-400">
-                        美国基准
-                      </div>
-                      <div className="text-base font-black text-zinc-950">
-                        {formatUsd(referenceRegion.priceUsd)}
+                      <div className="mt-3 inline-flex max-w-full items-center rounded-md bg-zinc-950 px-3 py-1.5 text-[10px] font-black tracking-[0.12em] text-white">
+                        {plan.name} 套餐 · 美国基准 {formatUsd(referenceRegion.priceUsd)}
                       </div>
                     </div>
-                  </div>
 
                   <ShareMiniMap
                     plan={plan}
                     referenceRegion={referenceRegion}
                   />
 
-                  <div className="mt-4 rounded-2xl bg-lime-50 p-4">
+                  <div className="mt-4 rounded-[22px] border border-lime-100 bg-gradient-to-r from-lime-100 to-white p-4 shadow-sm">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-wide text-lime-700">
+                        <div className="text-[11px] font-black uppercase tracking-wide text-lime-700">
                           最低价地区
                         </div>
 
-                        <div className="mt-1 flex items-end gap-3">
-                          <div className="text-4xl font-black text-zinc-950">
+                        <div className="mt-2 flex items-end gap-3">
+                          <div className="text-[42px] font-black leading-none text-zinc-950">
                             {stats.minRegion.code}
                           </div>
 
                           <div className="pb-1">
-                            <div className="text-lg font-black text-zinc-950">
+                            <div className="text-xl font-black leading-none text-zinc-950">
                               {stats.minRegion.country}
                             </div>
-                            <div className="text-xs font-bold text-zinc-400">
+                            <div className="mt-1 text-xs font-bold text-zinc-500">
                               {getReadableDiff(cheapDiff)}
                             </div>
                           </div>
@@ -589,17 +601,17 @@ export default function SharePriceModal({
                       </div>
 
                       <div className="text-right">
-                        <div className="text-2xl font-black text-lime-700">
+                        <div className="text-[34px] font-black leading-none text-lime-700">
                           {formatUsd(stats.minRegion.priceUsd)}
                         </div>
-                        <div className="text-[10px] font-bold text-zinc-400">
+                        <div className="mt-1 text-[11px] font-bold text-zinc-500">
                           /mo
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="my-4 text-center text-sm font-bold italic text-zinc-500">
+                  <div className="my-4 text-center text-sm font-bold italic text-zinc-600">
                     “{stats.minRegion.country} 比 {stats.maxRegion.country} 便宜约{' '}
                     <span className="text-rose-500">
                       {stats.spreadPercent}%
@@ -608,9 +620,9 @@ export default function SharePriceModal({
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-lime-50 p-3">
-                      <div className="mb-2 text-[10px] font-black text-lime-700">
-                        低价 Top 3
+                    <div className="rounded-[20px] border border-lime-100 bg-lime-50 p-3">
+                      <div className="mb-2 text-[10px] font-black tracking-wide text-lime-700">
+                        ↓ 最便宜
                       </div>
 
                       <div className="space-y-2">
@@ -623,10 +635,10 @@ export default function SharePriceModal({
                           return (
                             <div
                               key={`${region.code}-cheap-share`}
-                              className="flex items-center justify-between text-xs"
+                              className="grid grid-cols-[1fr_auto] items-baseline gap-2 text-xs"
                             >
-                              <span className="font-black text-zinc-900">
-                                {region.code} {region.country}
+                              <span className="min-w-0 truncate font-black text-zinc-900">
+                                {region.code} · {region.country}
                               </span>
                               <span className="font-black text-lime-700">
                                 {formatUsd(region.priceUsd)}
@@ -640,9 +652,9 @@ export default function SharePriceModal({
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-rose-50 p-3">
-                      <div className="mb-2 text-[10px] font-black text-rose-600">
-                        高价 Top 3
+                    <div className="rounded-[20px] border border-rose-100 bg-rose-50 p-3">
+                      <div className="mb-2 text-[10px] font-black tracking-wide text-rose-600">
+                        ↑ 最贵
                       </div>
 
                       <div className="space-y-2">
@@ -655,10 +667,10 @@ export default function SharePriceModal({
                           return (
                             <div
                               key={`${region.code}-expensive-share`}
-                              className="flex items-center justify-between text-xs"
+                              className="grid grid-cols-[1fr_auto] items-baseline gap-2 text-xs"
                             >
-                              <span className="font-black text-zinc-900">
-                                {region.code} {region.country}
+                              <span className="min-w-0 truncate font-black text-zinc-900">
+                                {region.code} · {region.country}
                               </span>
                               <span className="font-black text-rose-600">
                                 {formatUsd(region.priceUsd)}
@@ -673,11 +685,14 @@ export default function SharePriceModal({
                     </div>
                   </div>
 
-                  <div className="mt-5 flex items-center justify-center gap-2 border-t border-orange-100 pt-4 text-[10px] font-bold text-zinc-400">
-                    <span className="h-3 w-3 rounded bg-orange-400" />
-                    <span>GeoSub · 全球数字订阅价格对比</span>
+                  <div className="mt-4 flex items-center justify-center gap-2 border-t border-orange-100 pt-3 text-[10px] font-bold text-zinc-400">
+                    <span className="h-3 w-3 rounded bg-blue-500" />
+                    <span>
+                      GeoSub · 数据校验于 {product.updatedAt} · geosub.com
+                    </span>
                   </div>
                 </div>
+              </div>
               </div>
 
               <button

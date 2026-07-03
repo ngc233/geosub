@@ -16,6 +16,7 @@ dist/
 *.dump
 *.sql.gz
 geosub-backend/data/postgres/
+geosub-backend/data/postgres-*/
 uploads/
 backups/
 

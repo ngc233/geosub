@@ -18,7 +18,7 @@ WITH product_insert AS (
     'ChatGPT',
     'ai',
     'OpenAI',
-    'https://chat.openai.com/favicon.ico',
+    'https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/22/59/ed/2259edf9-6bd5-a17a-c035-074aac0954d2/AppIcon-0-0-1x_U007epad-0-0-0-1-0-P3-85-220.png/512x512bb.jpg',
     'ChatGPT 是 OpenAI 提供的 AI 助手服务，本页面用于比较 ChatGPT Plus / Pro 在不同国家和地区的订阅价格差异。',
     'https://chat.openai.com/',
     'published',

@@ -8,10 +8,13 @@ import {
 import { AdminCheckbox } from "../../../../../components/admin/AdminCheckbox";
 import { AdminInput, AdminTextarea } from "../../../../../components/admin/AdminInput";
 import AdminSelect from "../../../../../components/admin/AdminSelect";
+import BrandIcon from "../../../../../components/BrandIcon";
 import { prisma } from "../../../../../lib/prisma";
 import ProductOnboardingSteps from "../../ProductOnboardingSteps";
 import {
+  saveProductSeoAction,
   saveProductAppStoreSourceAction,
+  syncProductOfficialLogoAction,
   updateProductAction,
 } from "../../actions";
 
@@ -44,6 +47,9 @@ export default async function EditProductPage({
     appStoreAuto?: string;
     sourceSaved?: string;
     sourceError?: string;
+    seoSaved?: string;
+    logoSynced?: string;
+    logoError?: string;
   }>;
 }) {
   const { id } = await params;
@@ -59,7 +65,7 @@ export default async function EditProductPage({
     notFound();
   }
 
-  const [appStoreSource, appStoreJob] = await Promise.all([
+  const [appStoreSource, appStoreJob, productSeoMeta] = await Promise.all([
     prisma.priceSource.findUnique({
       where: {
         sourceKey: `product-${product.id}-app-store`,
@@ -84,6 +90,15 @@ export default async function EditProductPage({
       ORDER BY job.created_at DESC
       LIMIT 1
     `,
+    prisma.seoMeta.findFirst({
+      where: {
+        productId: product.id,
+        planId: null,
+        articleId: null,
+        categoryId: null,
+        locale: "ZH",
+      },
+    }),
   ]);
   const latestAppStoreJob = appStoreJob[0] || null;
 
@@ -114,7 +129,7 @@ export default async function EditProductPage({
 
       {query?.appStoreAuto === "found" ? (
         <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm font-medium text-blue-700">
-          已自动找到 App Store 应用，并生成采集任务。采集器会自动读取套餐和地区价格。
+          已自动找到 App Store 应用，并准备好采集入口。请到价格采集审核页按产品执行采集。
         </div>
       ) : null}
 
@@ -133,6 +148,25 @@ export default async function EditProductPage({
       {query?.sourceError === "app-store" ? (
         <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
           请填写 App Store URL，或填写可识别的 App Store App ID。
+        </div>
+      ) : null}
+
+      {query?.seoSaved === "1" ? (
+        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+          SEO 信息已保存。
+        </div>
+      ) : null}
+
+      {query?.logoSynced ? (
+        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+          官方 Logo 已同步，当前优先使用
+          {query.logoSynced === "app-store" ? " App Store 官方 artwork" : " 官网 icon"}。
+        </div>
+      ) : null}
+
+      {query?.logoError === "not-found" ? (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
+          暂未找到可用官方 Logo。请先补充 App Store App ID 或官方网站，再重新同步。
         </div>
       ) : null}
 
@@ -247,8 +281,111 @@ export default async function EditProductPage({
 
       <AdminCard className="mt-6">
         <AdminSectionHeader
+          title="官方 Logo"
+          description="优先读取官方网站 icon 或品牌资源；官网不可用时才使用 App Store artwork 兜底。同步后会写入 Logo URL，并统一用于前台列表、详情页和分享图。"
+        />
+
+        <div className="flex flex-col gap-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <BrandIcon product={product} size="md" />
+            <div>
+              <div className="text-sm font-bold text-slate-950">
+                当前展示：{product.logoUrl ? "产品 Logo URL" : "系统兜底图标"}
+              </div>
+              <div className="mt-1 max-w-2xl text-xs leading-6 text-slate-600">
+                新增产品后，只要 App Store 来源配置正确，就可以直接同步官方图标。
+                如果官方图标有变化，重新点击同步即可更新。
+              </div>
+            </div>
+          </div>
+
+          <form action={syncProductOfficialLogoAction} className="flex shrink-0 flex-wrap gap-3">
+            <input type="hidden" name="productId" value={product.id} />
+            <input type="hidden" name="appStoreId" value={latestAppStoreJob?.app_store_id || ""} />
+            <AdminButton type="submit" variant="secondary">
+              自动同步官方 Logo
+            </AdminButton>
+          </form>
+        </div>
+      </AdminCard>
+
+      <AdminCard className="mt-6">
+        <AdminSectionHeader
+          title="价格页 SEO"
+          description="维护该产品价格详情页的搜索标题、描述、H1、canonical 和结构化数据。"
+        />
+
+        <form action={saveProductSeoAction} className="space-y-5">
+          <input type="hidden" name="productId" value={product.id} />
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <AdminInput
+              name="title"
+              label="SEO 标题 *"
+              required
+              defaultValue={productSeoMeta?.title || `${product.name} 全球价格对比 - GeoSub`}
+              helperText="建议包含产品名、价格对比、地区或订阅关键词。"
+            />
+
+            <AdminInput
+              name="h1"
+              label="页面 H1"
+              defaultValue={productSeoMeta?.h1 || `${product.name} 全球订阅价格对比`}
+            />
+
+            <AdminInput
+              name="canonicalUrl"
+              label="Canonical"
+              defaultValue={productSeoMeta?.canonicalUrl || `/zh/ai-pricing/${product.slug}`}
+              helperText="可填相对路径或完整 URL。"
+            />
+
+            <AdminSelect
+              name="schemaType"
+              label="结构化数据"
+              value={productSeoMeta?.schemaType || "NONE"}
+              options={[
+                { value: "NONE", label: "不输出", description: "暂不输出额外结构化数据" },
+                { value: "TECH_ARTICLE", label: "TechArticle", description: "适合方法论型价格页" },
+                { value: "ARTICLE", label: "Article", description: "通用内容页结构化数据" },
+                { value: "FAQ_PAGE", label: "FAQPage", description: "后续接入 FAQ 后使用" },
+              ]}
+            />
+
+            <AdminSelect
+              name="status"
+              label="SEO 状态"
+              value={productSeoMeta?.status || "PUBLISHED"}
+              options={publishStatusOptions}
+            />
+          </div>
+
+          <AdminTextarea
+            name="description"
+            label="SEO 描述"
+            rows={4}
+            defaultValue={
+              productSeoMeta?.description ||
+              product.description ||
+              `查看 ${product.name} 在不同国家和地区的订阅价格、美元换算、价格差异和购买力对比。`
+            }
+          />
+
+          <div className="flex flex-wrap gap-3">
+            <AdminButton type="submit" variant="primary">
+              保存 SEO 信息
+            </AdminButton>
+            <AdminLinkButton href="/admin/seo" variant="secondary">
+              查看 SEO 体检
+            </AdminLinkButton>
+          </div>
+        </form>
+      </AdminCard>
+
+      <AdminCard className="mt-6">
+        <AdminSectionHeader
           title="App Store 来源"
-          description="V1 正式价格源优先使用 App Store。配置后会生成采集任务，采集结果进入价格审核。"
+          description="V1 正式价格源优先使用 App Store。配置后会在价格采集审核页生成产品采集入口，采集后自动审核稳定价格。"
         />
 
         <div className="mb-5 grid gap-3 md:grid-cols-3">
@@ -295,10 +432,10 @@ export default async function EditProductPage({
 
           <div className="flex flex-wrap gap-3">
             <AdminButton type="submit" variant="primary">
-              保存来源并生成采集任务
+              保存来源并准备采集
             </AdminButton>
-            <AdminLinkButton href="/admin/collector-jobs" variant="secondary">
-              查看采集任务
+            <AdminLinkButton href="/admin/review" variant="secondary">
+              去价格采集审核
             </AdminLinkButton>
           </div>
         </form>

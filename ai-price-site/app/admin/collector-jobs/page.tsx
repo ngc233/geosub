@@ -462,12 +462,20 @@ export default async function CollectorJobsPage() {
   return (
     <div>
       <AdminPageHeader
-        eyebrow="采集流水线 · 第 2 步"
-        title="采集执行"
-        description="这里不判断内容是否该发布，只管理任务是否运行、何时运行、运行结果。采集到的价格会进入价格审核。"
+        eyebrow="技术详情"
+        title="采集任务详情"
+        description="这个页面保留给排错和查看执行日志。日常采集请回到“价格采集审核”页按产品操作。"
       />
 
       <AdminPipelineSteps currentStep="collector" />
+
+      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        普通操作入口已经合并到{" "}
+        <Link href="/admin/review" className="font-bold underline underline-offset-4">
+          价格采集审核
+        </Link>
+        。这里主要用于查看底层任务、失败原因和最近运行日志。
+      </div>
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminStatCard

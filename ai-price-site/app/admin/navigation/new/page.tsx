@@ -101,7 +101,7 @@ export default async function NewNavigationItemPage({
                 type="text"
                 placeholder={selectedLocale.value === "en" ? "For example: AI Pricing" : "例如：AI 定价"}
                 required
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
               />
             </div>
 

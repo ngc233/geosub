@@ -8,6 +8,7 @@ export type RegionPrice = {
   localPrice: string;
   tax: string;
   taxConfidence?: 'high' | 'medium' | 'low' | 'unknown';
+  taxSourceKind?: 'manual' | 'official' | 'apple' | 'provider' | 'inferred';
   taxTreatment?: 'included_likely' | 'varies_by_region' | 'checkout_may_add' | 'unknown';
   taxCalculationPolicy?: 'do_not_calculate' | 'informational_only';
   taxReviewStatus?: 'verified' | 'needs_review' | 'unknown';
@@ -19,6 +20,8 @@ export type RegionPrice = {
   riskFactors?: string;
   billingPlatform?: string;
   billingPlatformLabel?: string;
+  lastCheckedAt?: string;
+  fxRateDate?: string;
   isCheap?: boolean;
   isExpensive?: boolean;
   isReference?: boolean;
@@ -41,6 +44,7 @@ export type SubscriptionProduct = {
   brand: string;
   description: string;
   icon?: string;
+  logoUrl?: string;
   accentIcon?: string;
   defaultPlan: string;
   updatedAt: string;
@@ -618,14 +622,14 @@ export const subscriptionPricingData: SubscriptionProduct[] = [
     category: 'ai',
     name: 'Gemini',
     brand: 'Google',
-    description: '比较 Gemini Advanced / Google One AI Premium 地区价格。',
+    description: '比较 Google AI Pro / Google One AI Premium 地区价格。',
     accentIcon: '✦',
-    defaultPlan: 'advanced',
+    defaultPlan: 'pro',
     updatedAt: '2026-06',
     plans: [
       {
-        slug: 'advanced',
-        name: 'Advanced',
+        slug: 'pro',
+        name: 'Google AI Pro',
         billing: 'monthly',
         regions: geminiAdvancedRegions,
       },

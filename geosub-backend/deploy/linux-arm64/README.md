@@ -188,10 +188,23 @@ The upgrade script performs the production-safe sequence:
 Environment controls in `/etc/geosub/geosub.env`:
 
 ```text
+GEOSUB_REPO_DIR=/opt/geosub/geosub
 GEOSUB_GIT_BRANCH=main
 GEOSUB_SKIP_GIT_PULL=false
 GEOSUB_RUN_CONTENT_MIGRATIONS=false
 ```
+
+When `GEOSUB_REPO_DIR` is set, the upgrade script treats the GitHub repository as
+a monorepo and uses:
+
+```text
+$GEOSUB_REPO_DIR/geosub-backend
+$GEOSUB_REPO_DIR/ai-price-site
+```
+
+If you keep separate Git working copies for backend and frontend, leave
+`GEOSUB_REPO_DIR` empty and set `GEOSUB_BACKEND_DIR` / `GEOSUB_FRONTEND_DIR`
+instead.
 
 Use `GEOSUB_SKIP_GIT_PULL=true` only when you have already copied the newest
 files to the server and want the script to rebuild, migrate, and restart from
@@ -199,6 +212,13 @@ the local filesystem state.
 
 Keep `GEOSUB_RUN_CONTENT_MIGRATIONS=false` for normal app upgrades. Set it to
 `true` only when you intentionally want to apply repository content seed SQL.
+
+Each successful upgrade writes the deployed version and commit to:
+
+```text
+/opt/geosub/releases/current.env
+/opt/geosub/releases/history.log
+```
 
 ## Migration behavior
 

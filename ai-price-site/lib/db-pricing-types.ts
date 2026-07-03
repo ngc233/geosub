@@ -8,6 +8,7 @@ export type DbPricingRegion = {
   priceUsd: number;
   taxNote: string;
   taxConfidence?: "high" | "medium" | "low" | "unknown";
+  taxSourceKind?: "manual" | "official" | "apple" | "provider" | "inferred";
   taxTreatment?: "included_likely" | "varies_by_region" | "checkout_may_add" | "unknown";
   taxReviewStatus?: "verified" | "needs_review" | "unknown";
   taxFrontendNote?: string;
@@ -30,6 +31,7 @@ export type DbPricingProduct = {
   brand: string;
   category: DbPricingCategory;
   description: string;
+  logoUrl?: string;
   updatedAt: string;
   plans: DbPricingPlan[];
 };

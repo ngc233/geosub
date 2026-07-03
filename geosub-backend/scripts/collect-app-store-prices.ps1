@@ -1,9 +1,9 @@
 ﻿param(
   [string]$ProductSlug = "chatgpt",
-  [string]$AppId = "6448311069",
+  [string]$AppId,
   [string]$AppStoreUrl,
-  [string[]]$CountryCodes = @("ALL"),
-  [string[]]$ExcludedCountryCodes = @("CN"),
+  [string[]]$CountryCodes = @("DEFAULT"),
+  [string[]]$ExcludedCountryCodes = @("CN", "HK"),
   [string]$ContainerName = "geosub-postgres",
   [string]$DbName = "geosub_app",
   [string]$DbUser = "geosub_admin",
@@ -47,6 +47,17 @@ $ExcludedCountryCodes = @(
 )
 
 $CollectAllCountries = $CountryCodes.Count -eq 0 -or @($CountryCodes | Where-Object { $_.ToUpperInvariant() -in @("ALL", "*") }).Count -gt 0
+$DefaultAppStoreCountryCodes = @(
+  "US", "CA", "MX", "BR", "AR", "CL", "CO",
+  "GB", "DE", "FR", "ES", "IT", "NL", "SE", "NO", "DK", "CH", "PL", "TR",
+  "JP", "KR", "TW", "SG", "MY", "TH", "ID", "PH", "VN", "IN", "PK",
+  "AU", "NZ", "AE", "SA", "IL", "ZA", "EG", "NG", "KE"
+)
+$CollectDefaultCountries = -not $CollectAllCountries -and @($CountryCodes | Where-Object { $_.ToUpperInvariant() -eq "DEFAULT" }).Count -gt 0
+
+if ($CollectDefaultCountries) {
+  $CountryCodes = @($DefaultAppStoreCountryCodes | Where-Object { $_ -notin $ExcludedCountryCodes })
+}
 
 function Quote-SqlString {
   param([AllowNull()][string]$Value)
@@ -73,11 +84,161 @@ function Normalize-Slug {
   return $slug
 }
 
-function Get-PlanSlugFromItemName {
+function Load-ProductPlanSpecs {
+  $specPath = Join-Path $PSScriptRoot "..\data\product-plan-specs.json"
+  if (!(Test-Path -LiteralPath $specPath)) {
+    return $null
+  }
+
+  return Get-Content -LiteralPath $specPath -Raw | ConvertFrom-Json
+}
+
+function Get-ProductPlanSpec {
   param(
+    [AllowNull()][object]$Specs,
+    [string]$ProductSlug
+  )
+
+  if ($null -eq $Specs) {
+    return $null
+  }
+
+  $propertyName = $ProductSlug.ToLowerInvariant()
+  if ($Specs.PSObject.Properties.Name -contains $propertyName) {
+    return $Specs.$propertyName
+  }
+
+  return $null
+}
+
+function Normalize-PlanMatchText {
+  param([AllowNull()][string]$Value)
+
+  if ([string]::IsNullOrWhiteSpace($Value)) {
+    return ""
+  }
+
+  $text = [System.Net.WebUtility]::HtmlDecode($Value).ToLowerInvariant()
+  $text = [regex]::Replace($text, "[^a-z0-9]+", " ")
+  $text = [regex]::Replace($text, "\s+", " ").Trim()
+  return $text
+}
+
+function Test-AppStoreItemMatchesProduct {
+  param(
+    [string]$ItemName,
+    [string]$ProductName,
+    [AllowNull()][object]$ProductSpec = $null
+  )
+
+  if ($null -ne $ProductSpec) {
+    return $true
+  }
+
+  $itemText = Normalize-PlanMatchText -Value $ItemName
+  $productText = Normalize-PlanMatchText -Value $ProductName
+  if ([string]::IsNullOrWhiteSpace($itemText) -or [string]::IsNullOrWhiteSpace($productText)) {
+    return $true
+  }
+
+  $knownBrands = @(
+    @{ Name = "chatgpt"; ProductAliases = @("chatgpt", "openai") },
+    @{ Name = "openai"; ProductAliases = @("chatgpt", "openai") },
+    @{ Name = "claude"; ProductAliases = @("claude", "anthropic") },
+    @{ Name = "anthropic"; ProductAliases = @("claude", "anthropic") },
+    @{ Name = "gemini"; ProductAliases = @("gemini", "google ai") },
+    @{ Name = "google ai"; ProductAliases = @("gemini", "google ai") },
+    @{ Name = "grok"; ProductAliases = @("grok", "supergrok", "xai") },
+    @{ Name = "supergrok"; ProductAliases = @("grok", "supergrok", "xai") },
+    @{ Name = "xai"; ProductAliases = @("grok", "supergrok", "xai") },
+    @{ Name = "manus"; ProductAliases = @("manus") },
+    @{ Name = "netflix"; ProductAliases = @("netflix") },
+    @{ Name = "spotify"; ProductAliases = @("spotify") },
+    @{ Name = "youtube"; ProductAliases = @("youtube") },
+    @{ Name = "disney"; ProductAliases = @("disney") }
+  )
+
+  foreach ($brand in $knownBrands) {
+    $brandText = [string]$brand.Name
+    $itemHasBrand = $itemText -eq $brandText -or $itemText.Contains($brandText)
+    if (!$itemHasBrand) {
+      continue
+    }
+
+    $productHasBrand = $false
+    foreach ($alias in @($brand.ProductAliases)) {
+      $aliasText = Normalize-PlanMatchText -Value ([string]$alias)
+      if ($productText -eq $aliasText -or $productText.Contains($aliasText)) {
+        $productHasBrand = $true
+        break
+      }
+    }
+
+    if (!$productHasBrand) {
+      return $false
+    }
+  }
+
+  return $true
+}
+
+function Resolve-PlanSpec {
+  param(
+    [AllowNull()][object]$ProductSpec,
     [string]$ItemName,
     [string]$ProductName
   )
+
+  if ($null -eq $ProductSpec -or $null -eq $ProductSpec.plans) {
+    return $null
+  }
+
+  $itemText = Normalize-PlanMatchText -Value $ItemName
+  $productText = Normalize-PlanMatchText -Value $ProductName
+
+  if (![string]::IsNullOrWhiteSpace($productText)) {
+    $itemText = [regex]::Replace($itemText, "\b$([regex]::Escape($productText))\b", "").Trim()
+    $itemText = [regex]::Replace($itemText, "\s+", " ").Trim()
+  }
+
+  $planMatches = @()
+  foreach ($plan in @($ProductSpec.plans)) {
+    $aliases = @($plan.aliases)
+    $aliases += @($plan.slug, $plan.name)
+
+    foreach ($alias in $aliases) {
+      $aliasText = Normalize-PlanMatchText -Value ([string]$alias)
+      if ([string]::IsNullOrWhiteSpace($aliasText)) {
+        continue
+      }
+
+      if ($itemText -eq $aliasText -or $itemText -match "\b$([regex]::Escape($aliasText))\b") {
+        $planMatches += [pscustomobject]@{
+          Plan = $plan
+          AliasLength = $aliasText.Length
+        }
+      }
+    }
+  }
+
+  if ($planMatches.Count -gt 0) {
+    return @($planMatches | Sort-Object -Property AliasLength -Descending)[0].Plan
+  }
+
+  return $null
+}
+
+function Get-PlanSlugFromItemName {
+  param(
+    [string]$ItemName,
+    [string]$ProductName,
+    [AllowNull()][object]$ProductSpec = $null
+  )
+
+  $planSpec = Resolve-PlanSpec -ProductSpec $ProductSpec -ItemName $ItemName -ProductName $ProductName
+  if ($null -ne $planSpec) {
+    return [string]$planSpec.slug
+  }
 
   $clean = $ItemName
   if (![string]::IsNullOrWhiteSpace($ProductName)) {
@@ -116,7 +277,7 @@ function Should-IgnoreInAppPurchase {
 
   # App Store IAP lists sometimes mix subscription plans with standalone storage tiers
   # such as "30 GB" or "100 GB". Keep real plan names like "Google AI Pro (5 TB)".
-  if ($normalized -match "(?i)^\d+(?:\.\d+)?\s?(?:gb|tb|gib|tib|t)$") {
+  if ($normalized -match "(?i)^\d+(?:\.\d+)?\s?(?:mb|gb|tb|mo|go|to|gib|tib|t)$") {
     return $true
   }
 
@@ -134,12 +295,21 @@ function Get-AppStoreUrl {
 
   if (![string]::IsNullOrWhiteSpace($ConfiguredUrl)) {
     $normalized = $ConfiguredUrl.Trim()
-    $normalized = [regex]::Replace(
-      $normalized,
-      "apps\.apple\.com/[a-z]{2}/",
-      "apps.apple.com/$storefront/",
-      [Text.RegularExpressions.RegexOptions]::IgnoreCase
-    )
+    if ($normalized -match "apps\.apple\.com/[a-z]{2}/") {
+      $normalized = [regex]::Replace(
+        $normalized,
+        "apps\.apple\.com/[a-z]{2}/",
+        "apps.apple.com/$storefront/",
+        [Text.RegularExpressions.RegexOptions]::IgnoreCase
+      )
+    } else {
+      $normalized = [regex]::Replace(
+        $normalized,
+        "apps\.apple\.com/",
+        "apps.apple.com/$storefront/",
+        [Text.RegularExpressions.RegexOptions]::IgnoreCase
+      )
+    }
     if ($normalized -notmatch "/id$AppleAppId(\?|$)") {
       return "https://apps.apple.com/$storefront/app/id$AppleAppId"
     }
@@ -147,6 +317,20 @@ function Get-AppStoreUrl {
   }
 
   return "https://apps.apple.com/$storefront/app/id$AppleAppId"
+}
+
+function Get-AppStoreIdFromUrl {
+  param([AllowNull()][string]$Value)
+
+  if ([string]::IsNullOrWhiteSpace($Value)) {
+    return $null
+  }
+
+  if ($Value -match "/id(\d+)") {
+    return $Matches[1]
+  }
+
+  return $null
 }
 
 function Quote-SqlJson {
@@ -187,6 +371,29 @@ function Invoke-PsqlJson {
   }
 
   return $text | ConvertFrom-Json
+}
+
+function Get-AppStoreJobConfig {
+  param([string]$ProductSlug)
+
+  return Invoke-PsqlJson @"
+SELECT COALESCE(row_to_json(job_row), '{}'::json) AS context
+FROM (
+  SELECT
+    job.job_config ->> 'app_store_id' AS app_store_id,
+    job.job_config ->> 'url' AS app_store_url
+  FROM collector_jobs job
+  JOIN products product ON product.id = job.product_id
+  WHERE product.slug = $(Quote-SqlString $ProductSlug)
+    AND job.status = 'active'
+    AND job.job_config ->> 'collector_kind' = 'app_store'
+  ORDER BY
+    CASE WHEN job.job_config ? 'country_codes' THEN 1 ELSE 0 END,
+    job.last_run_at DESC NULLS LAST,
+    job.created_at DESC
+  LIMIT 1
+) job_row;
+"@
 }
 
 function Get-AppStoreHtml {
@@ -263,7 +470,9 @@ function Parse-PriceNumber {
 
   $normalized = [System.Net.WebUtility]::HtmlDecode($PriceText)
   $normalized = $normalized -replace "[\u00A0\u202F]", " "
-  $numberText = [regex]::Match($normalized, "[0-9][0-9\s.,]*").Value.Trim()
+  $normalized = [regex]::Replace($normalized, "(?<=[0-9])[^0-9.,]+(?=[0-9])", " ")
+  $numberMatches = [regex]::Matches($normalized, "[0-9](?:[0-9\s.,]*[0-9])?")
+  $numberText = @($numberMatches | Sort-Object { $_.Value.Length } -Descending | Select-Object -First 1).Value.Trim()
 
   if ([string]::IsNullOrWhiteSpace($numberText)) {
     return $null
@@ -324,7 +533,7 @@ function Get-ObservedCurrency {
 
   $normalized = [System.Net.WebUtility]::HtmlDecode($PriceText).ToUpperInvariant()
 
-  if ($normalized -match '\bUSD\b|US\$') {
+  if ($normalized -match 'USD|US\s?\$') {
     return "USD"
   }
 
@@ -495,10 +704,22 @@ function Ensure-Plan {
     [string]$ProductName,
     [string]$ItemName,
     [hashtable]$PlansBySlug,
-    [int]$SortOrder
+    [int]$SortOrder,
+    [AllowNull()][object]$ProductSpec = $null
   )
 
-  $planSlug = Get-PlanSlugFromItemName -ItemName $ItemName -ProductName $ProductName
+  $planSpec = Resolve-PlanSpec -ProductSpec $ProductSpec -ItemName $ItemName -ProductName $ProductName
+  $planSlug = Get-PlanSlugFromItemName -ItemName $ItemName -ProductName $ProductName -ProductSpec $ProductSpec
+  $planName = if ($null -ne $planSpec -and ![string]::IsNullOrWhiteSpace([string]$planSpec.name)) {
+    [string]$planSpec.name
+  } else {
+    $ItemName
+  }
+  $effectiveSortOrder = if ($null -ne $planSpec -and $planSpec.PSObject.Properties.Name -contains "sort_order") {
+    [int]$planSpec.sort_order
+  } else {
+    $SortOrder
+  }
 
   if ($planSlug -eq "pro-20x" -and $PlansBySlug.ContainsKey("pro")) {
     $planSlug = "pro"
@@ -510,20 +731,21 @@ function Ensure-Plan {
     Invoke-Psql @"
 UPDATE plans
 SET
-  name = $(Quote-SqlString $ItemName),
+  name = $(Quote-SqlString $planName),
   status = 'published'::publish_status,
-  sort_order = LEAST(sort_order, $SortOrder),
+  sort_order = $effectiveSortOrder,
   updated_at = NOW()
 WHERE id = $(Quote-SqlString $plan.id)::uuid;
 "@
 
-    $plan.name = $ItemName
+    $plan.name = $planName
+    $plan.sort_order = $effectiveSortOrder
     return $plan
   }
 
   $plan = Invoke-PsqlJson @"
 WITH existing AS (
-  SELECT id, slug, name
+  SELECT id, slug, name, sort_order
   FROM plans
   WHERE product_id = $(Quote-SqlString $ProductId)::uuid
     AND LOWER(name) = LOWER($(Quote-SqlString $ItemName))
@@ -545,10 +767,10 @@ upserted AS (
     gen_random_uuid(),
     $(Quote-SqlString $ProductId)::uuid,
     $(Quote-SqlString $planSlug),
-    $(Quote-SqlString $ItemName),
+    $(Quote-SqlString $planName),
     'monthly'::billing_cycle,
     'published'::publish_status,
-    $SortOrder,
+    $effectiveSortOrder,
     NOW(),
     NOW()
   WHERE NOT EXISTS (SELECT 1 FROM existing)
@@ -556,9 +778,9 @@ upserted AS (
   DO UPDATE SET
     name = EXCLUDED.name,
     status = 'published'::publish_status,
-    sort_order = LEAST(plans.sort_order, EXCLUDED.sort_order),
+    sort_order = EXCLUDED.sort_order,
     updated_at = NOW()
-  RETURNING id, slug, name
+  RETURNING id, slug, name, sort_order
 ),
 selected AS (
   SELECT * FROM existing
@@ -601,7 +823,7 @@ SELECT json_build_object(
   'plans', COALESCE((
     SELECT json_agg(row_to_json(plans))
     FROM (
-      SELECT id, slug, name
+      SELECT id, slug, name, sort_order
       FROM plans
       WHERE product_id = (SELECT id FROM products WHERE slug = $(Quote-SqlString $Slug) LIMIT 1)
     ) plans
@@ -617,6 +839,131 @@ SELECT json_build_object(
   ), '[]'::json)
 ) AS context;
 "@
+}
+
+function Get-AppStoreObservationAnomaly {
+  param(
+    [string]$CountryCurrency,
+    [string]$ObservedCurrency,
+    [decimal]$ConvertedUsd,
+    [string]$OriginalObservedPriceText,
+    [AllowNull()][object]$PriceSelection = $null,
+    [AllowNull()][object]$PlanSpec = $null
+  )
+
+  $reasons = @()
+  $normalizedText = ""
+  if (![string]::IsNullOrWhiteSpace($OriginalObservedPriceText)) {
+    $normalizedText = [System.Net.WebUtility]::HtmlDecode($OriginalObservedPriceText).ToUpperInvariant()
+  }
+
+  if ($ConvertedUsd -lt [decimal]1) {
+    $reasons += "Converted App Store price is below 1 USD. Check whether the price text or currency was parsed incorrectly."
+  }
+
+  if ($normalizedText -match "USD|US\s?\$" -and $ObservedCurrency -ne "USD") {
+    $reasons += "Original App Store price text contains USD, but the observation currency is $ObservedCurrency."
+  }
+
+  if (
+    $ObservedCurrency -eq "USD" -and
+    $CountryCurrency -ne "USD" -and
+    $normalizedText -notmatch "USD|US\s?\$"
+  ) {
+    $reasons += "Parsed currency is USD for a non-USD storefront, but the original price text did not explicitly contain USD."
+  }
+
+  if ($null -ne $PlanSpec) {
+    if (
+      $PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_min" -and
+      $null -ne $PlanSpec.expected_monthly_usd_min -and
+      $ConvertedUsd -lt [decimal]$PlanSpec.expected_monthly_usd_min
+    ) {
+      $reasons += "Converted App Store price is below the expected range for $($PlanSpec.slug). This may indicate a currency or decimal parsing error."
+    }
+
+    if (
+      $PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_max" -and
+      $null -ne $PlanSpec.expected_monthly_usd_max -and
+      $ConvertedUsd -gt [decimal]$PlanSpec.expected_monthly_usd_max
+    ) {
+      $reasons += "Converted App Store price is above the expected range for $($PlanSpec.slug). This may indicate a currency, billing-cycle, or decimal parsing error."
+    }
+  }
+
+  if ($null -ne $PriceSelection) {
+    $variantCount = if ($null -ne $PriceSelection.variantCount) { [int]$PriceSelection.variantCount } else { 0 }
+    $selectedCount = if ($null -ne $PriceSelection.selectedCount) { [int]$PriceSelection.selectedCount } else { 0 }
+    $runnerUpCount = if ($null -ne $PriceSelection.runnerUpCount) { [int]$PriceSelection.runnerUpCount } else { 0 }
+    $selectedPenalty = if ($null -ne $PriceSelection.expectedFitPenalty) { [decimal]$PriceSelection.expectedFitPenalty } else { [decimal]0 }
+    $runnerUpPenalty = if ($null -ne $PriceSelection.runnerUpExpectedFitPenalty) { [decimal]$PriceSelection.runnerUpExpectedFitPenalty } else { [decimal]0 }
+
+    if (
+      $variantCount -gt 1 -and
+      $selectedCount -le $runnerUpCount -and
+      ($null -eq $PlanSpec -or $selectedPenalty -ge $runnerUpPenalty)
+    ) {
+      $reasons += "Multiple App Store prices matched this plan without a clear consensus. This may indicate monthly/yearly or tier parsing ambiguity."
+    }
+  }
+
+  return [pscustomobject]@{
+    Flag = $reasons.Count -gt 0
+    Reason = if ($reasons.Count -gt 0) { $reasons -join " " } else { $null }
+  }
+}
+
+function Get-AppStorePriceSelectionPenalty {
+  param(
+    [AllowNull()][object]$PlanSpec = $null,
+    [string]$Currency,
+    [decimal]$RawPrice,
+    [string]$CountryCurrency,
+    [decimal]$UsdToCurrency,
+    [AllowNull()][object]$UsdRates = $null
+  )
+
+  if ($null -eq $PlanSpec) {
+    return [decimal]0
+  }
+
+  if (
+    !($PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_min") -or
+    !($PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_max") -or
+    $null -eq $PlanSpec.expected_monthly_usd_min -or
+    $null -eq $PlanSpec.expected_monthly_usd_max
+  ) {
+    return [decimal]0
+  }
+
+  $convertedUsd = $null
+  if ($Currency -eq "USD") {
+    $convertedUsd = [decimal]$RawPrice
+  } elseif ($Currency -eq $CountryCurrency -and $UsdToCurrency -gt 0) {
+    $convertedUsd = [decimal]$RawPrice / [decimal]$UsdToCurrency
+  } elseif ($null -ne $UsdRates -and $null -ne $UsdRates.Rates) {
+    $rateProperty = $UsdRates.Rates.PSObject.Properties[$Currency]
+    if ($null -ne $rateProperty -and [decimal]$rateProperty.Value -gt 0) {
+      $convertedUsd = [decimal]$RawPrice / [decimal]$rateProperty.Value
+    }
+  }
+
+  if ($null -eq $convertedUsd) {
+    return [decimal]999999
+  }
+
+  $expectedMin = [decimal]$PlanSpec.expected_monthly_usd_min
+  $expectedMax = [decimal]$PlanSpec.expected_monthly_usd_max
+
+  if ($convertedUsd -ge $expectedMin -and $convertedUsd -le $expectedMax) {
+    return [decimal]0
+  }
+
+  if ($convertedUsd -lt $expectedMin) {
+    return [math]::Round(($expectedMin - $convertedUsd), 4)
+  }
+
+  return [math]::Round(($convertedUsd - $expectedMax), 4)
 }
 
 function Insert-Observation {
@@ -635,12 +982,15 @@ function Insert-Observation {
     [string]$ObservedPriceText,
     [string]$ItemName,
     [object]$RawSnapshot,
+    [bool]$AnomalyFlag = $false,
+    [AllowNull()][string]$AnomalyReason,
     [string]$ParserVersion = "app-store-html-iap-v1",
     [string]$CollectorName = "collect-app-store-prices.ps1"
   )
 
   if ($DryRun) {
-    Write-Host "[dry-run] $CountryCode $ItemName $ObservedPriceText -> USD $ConvertedUsd via $ParserVersion"
+    $anomalyText = if ($AnomalyFlag) { " anomaly=$AnomalyReason" } else { "" }
+    Write-Host "[dry-run] $CountryCode $ItemName $ObservedPriceText -> USD $ConvertedUsd via $ParserVersion$anomalyText"
     return "dry-run"
   }
 
@@ -676,6 +1026,13 @@ WHERE product_id = $(Quote-SqlString $ProductId)::uuid
     raw_snapshot = $RawSnapshot
   }
 
+  if ($AnomalyFlag) {
+    $payload.anomaly_reason = $AnomalyReason
+    $payload.review_note = $AnomalyReason
+  }
+
+  $anomalyFlagSql = if ($AnomalyFlag) { "TRUE" } else { "FALSE" }
+
   Invoke-Psql @"
 INSERT INTO price_observations (
   id,
@@ -698,6 +1055,7 @@ INSERT INTO price_observations (
   parser_version,
   confidence_score,
   anomaly_flag,
+  anomaly_reason,
   status,
   created_at,
   updated_at
@@ -722,7 +1080,8 @@ VALUES (
   $(Quote-SqlJson $payload),
   $(Quote-SqlString $ParserVersion),
   82,
-  FALSE,
+  $anomalyFlagSql,
+  $(Quote-SqlString $AnomalyReason),
   'pending'::observation_status,
   NOW(),
   NOW()
@@ -840,6 +1199,33 @@ if ($null -eq $context.product) {
   throw "Product '$ProductSlug' not found."
 }
 
+$appStoreJobConfig = Get-AppStoreJobConfig -ProductSlug $ProductSlug
+if ([string]::IsNullOrWhiteSpace($AppId) -and $null -ne $appStoreJobConfig -and ![string]::IsNullOrWhiteSpace($appStoreJobConfig.app_store_id)) {
+  $AppId = [string]$appStoreJobConfig.app_store_id
+}
+
+if ([string]::IsNullOrWhiteSpace($AppStoreUrl) -and $null -ne $appStoreJobConfig -and ![string]::IsNullOrWhiteSpace($appStoreJobConfig.app_store_url)) {
+  $AppStoreUrl = [string]$appStoreJobConfig.app_store_url
+}
+
+if ([string]::IsNullOrWhiteSpace($AppId)) {
+  $AppId = Get-AppStoreIdFromUrl -Value $AppStoreUrl
+}
+
+if ([string]::IsNullOrWhiteSpace($AppId)) {
+  throw "App Store app id is required for product '$ProductSlug'. Pass -AppId, pass -AppStoreUrl with /id..., or create an active app_store collector job."
+}
+
+Write-Host "Using App Store app id $AppId for $ProductSlug."
+
+$productPlanSpecs = Load-ProductPlanSpecs
+$productPlanSpec = Get-ProductPlanSpec -Specs $productPlanSpecs -ProductSlug $ProductSlug
+if ($null -ne $productPlanSpec) {
+  Write-Host "Product plan spec loaded for $ProductSlug. Plans: $(@($productPlanSpec.plans).Count)."
+} else {
+  Write-Host "No product plan spec found for $ProductSlug. Falling back to name-based plan matching."
+}
+
 $plansBySlug = @{}
 foreach ($plan in @($context.plans)) {
   $plansBySlug[$plan.slug] = $plan
@@ -853,6 +1239,8 @@ foreach ($country in @($context.countries)) {
 if ($CollectAllCountries) {
   $CountryCodes = @($context.countries | ForEach-Object { $_.code.ToUpperInvariant() })
   Write-Host "App Store country mode: ALL. Countries from database: $($CountryCodes.Count). Excluded: $($ExcludedCountryCodes -join ',')."
+} elseif ($CollectDefaultCountries) {
+  Write-Host "App Store country mode: DEFAULT. Countries: $($CountryCodes.Count). Excluded: $($ExcludedCountryCodes -join ',')."
 } else {
   $missingCountries = @($CountryCodes | Where-Object { !$countriesByCode.ContainsKey($_.ToUpperInvariant()) })
   if ($missingCountries.Count -gt 0) {
@@ -888,18 +1276,29 @@ foreach ($countryCode in $CountryCodes) {
   $items = @()
 
   try {
-    $page = Get-AppStoreHtml -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
-    $items = @(Get-InAppPurchases -Html $page.Html)
-
-    if ($items.Count -eq 0) {
-      throw "No in-app purchases found in static App Store HTML."
+    $renderedPage = Get-AppStoreRenderedPage -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
+    if ($renderedPage.Items.Count -eq 0) {
+      throw "No in-app purchases found in rendered App Store page."
     }
-  } catch {
-    Write-Host "Static App Store collection failed for $code. Falling back to browser rendering."
-    Write-Host $_.Exception.Message
 
+    $page = [pscustomobject]@{
+      Url = $renderedPage.Url
+      FinalUrl = $renderedPage.FinalUrl
+      Status = $renderedPage.Status
+    }
+    $items = @($renderedPage.Items)
+    $parserVersion = $renderedPage.ParserVersion
+    $collectorName = $renderedPage.CollectorName
+  } catch {
+    Write-Host "Rendered App Store collection failed for $code. Falling back to static HTML."
+    Write-Host $_.Exception.Message
     try {
-      $renderedPage = Get-AppStoreRenderedPage -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
+      $page = Get-AppStoreHtml -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
+      $items = @(Get-InAppPurchases -Html $page.Html)
+
+      if ($items.Count -eq 0) {
+        throw "No in-app purchases found in static App Store HTML."
+      }
     } catch {
       $message = $_.Exception.Message
       $status = Get-AvailabilityStatusFromError -Message $message
@@ -927,22 +1326,19 @@ foreach ($countryCode in $CountryCodes) {
       $summary.availability += 1
       continue
     }
-
-    $page = [pscustomobject]@{
-      Url = $renderedPage.Url
-      FinalUrl = $renderedPage.FinalUrl
-      Status = $renderedPage.Status
-    }
-    $items = @($renderedPage.Items)
-    $parserVersion = $renderedPage.ParserVersion
-    $collectorName = $renderedPage.CollectorName
   }
 
-  $selectedItemsBySlug = @{}
+  $candidateItemsBySlug = @{}
   $ignoredItemCount = 0
   foreach ($item in $items) {
     if (Should-IgnoreInAppPurchase -ItemName $item.Name) {
       Write-Host "Ignoring non-subscription App Store item: $code $($item.Name)"
+      $ignoredItemCount += 1
+      continue
+    }
+
+    if (!(Test-AppStoreItemMatchesProduct -ItemName $item.Name -ProductName $context.product.name -ProductSpec $productPlanSpec)) {
+      Write-Host "Ignoring App Store item that appears to belong to another product: $code $($item.Name)"
       $ignoredItemCount += 1
       continue
     }
@@ -955,15 +1351,96 @@ foreach ($countryCode in $CountryCodes) {
       continue
     }
 
-    $planSlug = Get-PlanSlugFromItemName -ItemName $item.Name -ProductName $context.product.name
-    if (
-      !$selectedItemsBySlug.ContainsKey($planSlug) -or
-      $rawPrice -lt [decimal]$selectedItemsBySlug[$planSlug].RawPrice
-    ) {
-      $selectedItemsBySlug[$planSlug] = [pscustomobject]@{
-        Item = $item
-        RawPrice = $rawPrice
-        Currency = $observedCurrency
+    $planSpec = Resolve-PlanSpec -ProductSpec $productPlanSpec -ItemName $item.Name -ProductName $context.product.name
+    if ($null -ne $productPlanSpec -and $null -eq $planSpec) {
+      Write-Host "Ignoring unmatched App Store item for known product spec: $code $($item.Name)"
+      $ignoredItemCount += 1
+      continue
+    }
+
+    $planSlug = if ($null -ne $planSpec) {
+      [string]$planSpec.slug
+    } else {
+      Get-PlanSlugFromItemName -ItemName $item.Name -ProductName $context.product.name
+    }
+    if (!$candidateItemsBySlug.ContainsKey($planSlug)) {
+      $candidateItemsBySlug[$planSlug] = @()
+    }
+
+    $candidateItemsBySlug[$planSlug] += [pscustomobject]@{
+      Item = $item
+      RawPrice = $rawPrice
+      Currency = $observedCurrency
+      PlanSpec = $planSpec
+    }
+  }
+
+  $selectedItemsBySlug = @{}
+  foreach ($planSlug in $candidateItemsBySlug.Keys) {
+    $groups = @(
+      $candidateItemsBySlug[$planSlug] |
+        Group-Object -Property Currency, RawPrice |
+        Sort-Object `
+          @{ Expression = "Count"; Descending = $true },
+          @{
+            Expression = {
+              Get-AppStorePriceSelectionPenalty `
+                -PlanSpec $_.Group[0].PlanSpec `
+                -Currency ([string]$_.Group[0].Currency) `
+                -RawPrice ([decimal]$_.Group[0].RawPrice) `
+                -CountryCurrency $currency `
+                -UsdToCurrency $usdToCurrency `
+                -UsdRates $usdRates
+            }
+            Descending = $false
+          },
+          @{ Expression = { [decimal]$_.Group[0].RawPrice }; Descending = $false }
+    )
+
+    if ($groups.Count -gt 0) {
+      $selected = $groups[0].Group[0]
+      $priceVariants = @($groups | ForEach-Object {
+        $variantPenalty = Get-AppStorePriceSelectionPenalty `
+          -PlanSpec $_.Group[0].PlanSpec `
+          -Currency ([string]$_.Group[0].Currency) `
+          -RawPrice ([decimal]$_.Group[0].RawPrice) `
+          -CountryCurrency $currency `
+          -UsdToCurrency $usdToCurrency `
+          -UsdRates $usdRates
+
+        [pscustomobject]@{
+          currency = [string]$_.Group[0].Currency
+          rawPrice = [decimal]$_.Group[0].RawPrice
+          count = [int]$_.Count
+          expectedFitPenalty = [decimal]$variantPenalty
+        }
+      })
+
+      $runnerUpCount = if ($priceVariants.Count -gt 1) { [int]$priceVariants[1].count } else { 0 }
+      $runnerUpPenalty = if ($priceVariants.Count -gt 1) { [decimal]$priceVariants[1].expectedFitPenalty } else { [decimal]0 }
+      $selectionPenalty = Get-AppStorePriceSelectionPenalty `
+        -PlanSpec $selected.PlanSpec `
+        -Currency ([string]$selected.Currency) `
+        -RawPrice ([decimal]$selected.RawPrice) `
+        -CountryCurrency $currency `
+        -UsdToCurrency $usdToCurrency `
+        -UsdRates $usdRates
+      $selected | Add-Member -NotePropertyName PriceSelection -NotePropertyValue @{
+        selectedCurrency = [string]$selected.Currency
+        selectedRawPrice = [decimal]$selected.RawPrice
+        selectedCount = [int]$priceVariants[0].count
+        runnerUpCount = $runnerUpCount
+        variantCount = [int]$priceVariants.Count
+        expectedFitPenalty = [decimal]$selectionPenalty
+        runnerUpExpectedFitPenalty = [decimal]$runnerUpPenalty
+        variants = $priceVariants
+      } -Force
+      $selectedItemsBySlug[$planSlug] = $selected
+      if ($groups.Count -gt 1) {
+        $variants = @($groups | ForEach-Object {
+          "$($_.Group[0].Currency) $($_.Group[0].RawPrice) x$($_.Count)"
+        })
+        Write-Host "Multiple App Store prices for $code $planSlug. Selected modal price: $($variants[0]). Variants: $($variants -join '; ')"
       }
     }
   }
@@ -1023,7 +1500,8 @@ foreach ($countryCode in $CountryCodes) {
       -ProductName $context.product.name `
       -ItemName $item.Name `
       -PlansBySlug $plansBySlug `
-      -SortOrder $planSortOrder
+      -SortOrder $planSortOrder `
+      -ProductSpec $productPlanSpec
     $planSortOrder += 10
 
     if ($observedCurrency -eq "USD") {
@@ -1044,6 +1522,14 @@ foreach ($countryCode in $CountryCodes) {
       $fxRateToUsd = [math]::Round((1 / $observedUsdToCurrency), 8)
     }
 
+    $anomaly = Get-AppStoreObservationAnomaly `
+      -CountryCurrency $currency `
+      -ObservedCurrency $observedCurrency `
+      -ConvertedUsd $convertedUsd `
+      -OriginalObservedPriceText $item.PriceText `
+      -PriceSelection $entry.PriceSelection `
+      -PlanSpec (Resolve-PlanSpec -ProductSpec $productPlanSpec -ItemName $item.Name -ProductName $context.product.name)
+
     $observedPriceText = Format-ObservedPriceText -Currency $observedCurrency -Price $rawPrice
     $rawSnapshot = @{
       country = $code
@@ -1051,6 +1537,8 @@ foreach ($countryCode in $CountryCodes) {
       inAppPurchases = $items
       originalObservedPriceText = $item.PriceText
       observedCurrency = $observedCurrency
+      planSpecSlug = $plan.slug
+      priceSelection = $entry.PriceSelection
       usdToCurrency = $usdToCurrency
       fxProvider = "frankfurter"
       parserVersion = $parserVersion
@@ -1071,6 +1559,8 @@ foreach ($countryCode in $CountryCodes) {
       -ObservedPriceText $observedPriceText `
       -ItemName $item.Name `
       -RawSnapshot $rawSnapshot `
+      -AnomalyFlag $anomaly.Flag `
+      -AnomalyReason $anomaly.Reason `
       -ParserVersion $parserVersion `
       -CollectorName $collectorName
 

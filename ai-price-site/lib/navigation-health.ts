@@ -53,11 +53,11 @@ function routeExists(baseDir: string, segments: string[]): boolean {
       (entry) =>
         entry.isDirectory() &&
         entry.name.startsWith("[") &&
-        entry.name.endsWith("]")
+        entry.name.endsWith("]"),
     );
 
   return dynamicDirs.some((entry) =>
-    routeExists(path.join(baseDir, entry.name), restSegments)
+    routeExists(path.join(baseDir, entry.name), restSegments),
   );
 }
 
@@ -98,8 +98,7 @@ export function getNavigationLinkHealth({
     return {
       label: disabled ? "停用异常" : "路径异常",
       tone: "danger",
-      detail:
-        "内部链接必须以当前已启用的语言路径开头，例如 /zh/ 或 /en/。",
+      detail: "内部链接必须以当前已启用的语言路径开头，例如 /zh/ 或 /en/。",
     };
   }
 

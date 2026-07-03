@@ -5,13 +5,14 @@ import { usePathname } from "next/navigation";
 import {
   BadgeDollarSign,
   Boxes,
+  FileText,
   Globe2,
   Layers,
   LayoutDashboard,
   LogOut,
   Menu,
   Radar,
-  RefreshCw,
+  Search,
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
@@ -29,11 +30,10 @@ const navGroups: Array<{
     items: [{ label: "总览", href: "/admin", icon: LayoutDashboard }],
   },
   {
-    label: "采集流水线",
+    label: "价格采集",
     items: [
-      { label: "1 线索入口", href: "/admin/discovery", icon: Radar },
-      { label: "2 采集执行", href: "/admin/collector-jobs", icon: RefreshCw },
-      { label: "3 价格审核", href: "/admin/review", icon: ShieldCheck },
+      { label: "线索入口", href: "/admin/discovery", icon: Radar },
+      { label: "价格采集审核", href: "/admin/review", icon: ShieldCheck },
       { label: "正式价格", href: "/admin/prices", icon: Globe2 },
       { label: "购买力指数", href: "/admin/affordability", icon: BadgeDollarSign },
     ],
@@ -47,7 +47,11 @@ const navGroups: Array<{
   },
   {
     label: "内容增长",
-    items: [{ label: "导航菜单", href: "/admin/navigation", icon: Menu }],
+    items: [
+      { label: "文章发布", href: "/admin/articles", icon: FileText },
+      { label: "SEO 体检", href: "/admin/seo", icon: Search },
+      { label: "导航菜单", href: "/admin/navigation", icon: Menu },
+    ],
   },
 ];
 

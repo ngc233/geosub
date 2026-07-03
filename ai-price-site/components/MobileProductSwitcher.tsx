@@ -4,35 +4,47 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import BrandIcon from "./BrandIcon";
-import type { SubscriptionProduct } from "../data/ai-pricing";
+import {
+  getProductHref,
+  type ProductNavCategory,
+  type ProductNavItem,
+} from "./ProductSidebar";
 
 type MobileProductSwitcherProps = {
-  products: SubscriptionProduct[];
+  products: ProductNavItem[];
   currentSlug: string;
+  basePath?: string;
+  locale?: "zh" | "en";
 };
 
-function categoryLabel(category: string) {
-  if (category === "ai") return "AI 订阅";
-  if (category === "streaming") return "流媒体";
-  return "其他";
+function categoryLabel(category: ProductNavCategory, locale: "zh" | "en") {
+  if (category === "ai") return locale === "en" ? "AI Subscriptions" : "AI 订阅";
+  if (category === "streaming") return locale === "en" ? "Streaming" : "流媒体";
+  return locale === "en" ? "Other" : "其他";
 }
 
 export default function MobileProductSwitcher({
   products,
   currentSlug,
+  basePath,
+  locale = "zh",
 }: MobileProductSwitcherProps) {
   const [open, setOpen] = useState(false);
   const currentProduct =
     products.find((product) => product.slug === currentSlug) || products[0];
 
-  const groupedProducts = products.reduce<Record<string, SubscriptionProduct[]>>(
+  if (!currentProduct) {
+    return null;
+  }
+
+  const groupedProducts = products.reduce<Record<string, ProductNavItem[]>>(
     (groups, product) => {
       const key = product.category;
       groups[key] = groups[key] || [];
       groups[key].push(product);
       return groups;
     },
-    {}
+    {},
   );
 
   return (
@@ -48,7 +60,7 @@ export default function MobileProductSwitcher({
 
           <span className="min-w-0">
             <span className="block text-xs font-black text-zinc-400">
-              当前产品
+              {locale === "en" ? "Current product" : "当前产品"}
             </span>
             <span className="block truncate text-sm font-black text-zinc-950">
               {currentProduct.name}
@@ -76,7 +88,7 @@ export default function MobileProductSwitcher({
             {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
               <div key={category} className="py-2">
                 <div className="px-3 pb-2 text-xs font-black text-zinc-400">
-                  {categoryLabel(category)}
+                  {categoryLabel(category as ProductNavCategory, locale)}
                 </div>
 
                 <div className="grid gap-1.5">
@@ -86,7 +98,7 @@ export default function MobileProductSwitcher({
                     return (
                       <Link
                         key={product.slug}
-                        href={`/zh/ai-pricing/${product.slug}/`}
+                        href={getProductHref(product, basePath)}
                         onClick={() => setOpen(false)}
                         className={[
                           "flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-sm font-black transition",

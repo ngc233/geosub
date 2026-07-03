@@ -74,6 +74,14 @@ core_files=(
   "sql/033_app_store_stability_auto_review_v2.sql"
   "sql/034_affordability_metric_precision.sql"
   "sql/035_country_tax_profile_sync_system.sql"
+  "sql/036_product_plan_specs_seed.sql"
+  "sql/037_inferred_app_store_tax_profiles.sql"
+  "sql/038_common_app_store_tax_profiles.sql"
+  "sql/039_relax_claude_max_app_store_range.sql"
+  "sql/040_gemini_app_store_collector.sql"
+  "sql/041_merge_gemini_advanced_into_pro.sql"
+  "sql/042_price_observation_evidence_view.sql"
+  "sql/043_app_store_collection_schedule_policy.sql"
 )
 
 content_files=(
@@ -88,6 +96,7 @@ content_files=(
   "seed_en_navigation_draft.sql"
   "publish_en_navigation.sql"
   "publish_footer_trust_pages.sql"
+  "sql/045_article_soft_delete_trash.sql"
 )
 
 case "$MODE" in

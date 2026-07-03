@@ -10,6 +10,7 @@ import { prisma } from "../../../lib/prisma";
 
 const execFileAsync = promisify(execFile);
 const MANUAL_COLLECTION_COOLDOWN_SECONDS = 120;
+const MANUAL_COLLECTION_FRESH_HOURS = 12;
 
 function getObservationId(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
@@ -30,6 +31,10 @@ export async function approveObservation(formData: FormData) {
 
   await prisma.$queryRaw`
     SELECT refresh_plan_affordability_metrics() AS refreshed_rows
+  `;
+
+  await prisma.$queryRaw`
+    SELECT refresh_inferred_app_store_tax_profiles() AS inserted_rows
   `;
 
   revalidatePath("/admin/review");
@@ -75,45 +80,86 @@ export async function runAutoReview() {
     SELECT refresh_plan_affordability_metrics() AS refreshed_rows
   `;
 
+  await prisma.$queryRaw`
+    SELECT refresh_inferred_app_store_tax_profiles() AS inserted_rows
+  `;
+
   revalidatePath("/admin/review");
   revalidatePath("/admin/affordability");
   revalidatePath("/zh/ai-pricing/chatgpt");
+
+  redirect("/admin/review?autoReview=completed");
 }
 
-export async function queueAppStoreCollectionAndReview() {
-  const rows = await prisma.$queryRaw<Array<{ job_id: string }>>`
-    WITH pending_products AS (
-      SELECT DISTINCT product_id
-      FROM price_observations
-      WHERE status = 'pending'::observation_status
-        AND billing_platform = 'ios'::billing_platform
-    ),
-    queued AS (
-      UPDATE collector_jobs job
-      SET
-        status = 'active',
-        next_run_at = NOW(),
-        last_error = NULL,
-        priority = GREATEST(priority, 100),
-        updated_at = NOW()
-      FROM price_sources source
-      WHERE source.id = job.source_id
-        AND source.type = 'app_store'::price_source_type
-        AND job.job_type = 'ai_pricing'
-        AND job.status <> 'archived'
-        AND (
-          EXISTS (
-            SELECT 1
-            FROM pending_products pending
-            WHERE pending.product_id = job.product_id
-          )
-          OR NOT EXISTS (SELECT 1 FROM pending_products)
+export async function queueAppStoreCollectionAndReview(formData?: FormData) {
+  const productSlug = String(formData?.get("productSlug") ?? "").trim();
+  const rows = productSlug
+    ? await prisma.$queryRaw<Array<{ job_id: string }>>`
+        WITH scoped_product AS (
+          SELECT id
+          FROM products
+          WHERE slug = ${productSlug}
+          LIMIT 1
+        ),
+        queued AS (
+          UPDATE collector_jobs job
+          SET
+            status = 'active',
+            next_run_at = NOW(),
+            last_error = NULL,
+            priority = GREATEST(priority, 100),
+            updated_at = NOW()
+          FROM price_sources source, scoped_product product
+          WHERE source.id = job.source_id
+            AND source.type = 'app_store'::price_source_type
+            AND job.product_id = product.id
+            AND job.job_type = 'ai_pricing'
+            AND job.status <> 'archived'
+          RETURNING job.id
         )
-      RETURNING job.id
-    )
-    SELECT id::text AS job_id
-    FROM queued
-  `;
+        SELECT id::text AS job_id
+        FROM queued
+      `
+    : await prisma.$queryRaw<Array<{ job_id: string }>>`
+        WITH pending_products AS (
+          SELECT DISTINCT product_id
+          FROM price_observations
+          WHERE status = 'pending'::observation_status
+            AND billing_platform = 'ios'::billing_platform
+        ),
+        queued AS (
+          UPDATE collector_jobs job
+          SET
+            status = 'active',
+            next_run_at = NOW(),
+            last_error = NULL,
+            priority = GREATEST(priority, 100),
+            updated_at = NOW()
+          FROM price_sources source
+          WHERE source.id = job.source_id
+            AND source.type = 'app_store'::price_source_type
+            AND job.job_type = 'ai_pricing'
+            AND job.status <> 'archived'
+            AND (
+              EXISTS (
+                SELECT 1
+                FROM pending_products pending
+                WHERE pending.product_id = job.product_id
+              )
+              OR NOT EXISTS (SELECT 1 FROM pending_products)
+            )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM collector_job_runs run
+              WHERE run.job_id = job.id
+                AND run.status = 'succeeded'
+                AND run.started_at > NOW() - (${MANUAL_COLLECTION_FRESH_HOURS} || ' hours')::interval
+            )
+          RETURNING job.id
+        )
+        SELECT id::text AS job_id
+        FROM queued
+      `;
   const jobIds = rows.map((row) => row.job_id).filter(Boolean);
   const queuedCount = jobIds.length;
   const recentlyRunRows = jobIds.length
@@ -126,7 +172,7 @@ export async function queueAppStoreCollectionAndReview() {
     : [];
   const recentlyRunJobIds = new Set(recentlyRunRows.map((row) => row.job_id));
   const runnableJobIds = jobIds.filter((jobId) => !recentlyRunJobIds.has(jobId));
-  let runStatus = queuedCount > 0 ? "queued" : "none";
+  let runStatus = queuedCount > 0 ? "queued" : productSlug ? "fresh" : "none";
 
   if (queuedCount > 0 && runnableJobIds.length === 0) {
     runStatus = "cooldown";
@@ -175,10 +221,24 @@ export async function queueAppStoreCollectionAndReview() {
     SELECT refresh_plan_affordability_metrics() AS refreshed_rows
   `;
 
+  await prisma.$queryRaw`
+    SELECT refresh_inferred_app_store_tax_profiles() AS inserted_rows
+  `;
+
   revalidatePath("/admin/review");
   revalidatePath("/admin/collector-jobs");
   revalidatePath("/admin/affordability");
   revalidatePath("/zh/ai-pricing/chatgpt");
 
-  redirect(`/admin/review?collectionQueued=${queuedCount}&collectionRun=${runStatus}`);
+  const redirectParams = new URLSearchParams({
+    collectionQueued: String(queuedCount),
+    collectionRun: runStatus,
+  });
+
+  if (productSlug) {
+    redirectParams.set("collectionScope", productSlug);
+    redirectParams.set("q", productSlug);
+  }
+
+  redirect(`/admin/review?${redirectParams.toString()}`);
 }

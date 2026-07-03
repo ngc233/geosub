@@ -4,7 +4,7 @@ param(
   [string]$ContainerName = "geosub-postgres",
   [string]$DbName = "geosub_app",
   [string]$DbUser = "geosub_admin",
-  [string[]]$DefaultCountryCodes = @("ALL"),
+  [string[]]$DefaultCountryCodes = @("DEFAULT"),
   [string]$ChromePath = $env:CHROME_PATH,
   [switch]$DryRun,
   [switch]$Force,
@@ -131,6 +131,52 @@ function Get-CountryCodes {
   }
 
   return @($DefaultCountryCodes)
+}
+
+function Get-NextRunSql {
+  param([object]$Job, [string]$Status)
+
+  if ($Status -eq "failed") {
+    return "NOW() + INTERVAL '6 hours'"
+  }
+
+  $schedule = if (![string]::IsNullOrWhiteSpace([string]$Job.schedule)) {
+    [string]$Job.schedule
+  } else {
+    Get-ConfigValue -Config $Job.job_config -Name "schedule_strategy" -Fallback "daily_light"
+  }
+
+  $intervalHours = Get-ConfigValue -Config $Job.job_config -Name "interval_hours"
+  if (![string]::IsNullOrWhiteSpace($intervalHours)) {
+    $parsed = 0
+    if ([int]::TryParse($intervalHours, [ref]$parsed) -and $parsed -gt 0 -and $parsed -le 720) {
+      return "NOW() + INTERVAL '$parsed hours'"
+    }
+  }
+
+  switch ($schedule) {
+    "anomaly_watch" { return "NOW() + INTERVAL '6 hours'" }
+    "weekly_full" { return "NOW() + INTERVAL '7 days'" }
+    "monthly_audit" { return "NOW() + INTERVAL '30 days'" }
+    "daily_light" { return "NOW() + INTERVAL '24 hours'" }
+    "daily" { return "NOW() + INTERVAL '24 hours'" }
+    default { return "NOW() + INTERVAL '24 hours'" }
+  }
+}
+
+function Queue-AnomalyRechecks {
+  if ($DryRun) {
+    return
+  }
+
+  try {
+    Invoke-Psql @"
+SELECT *
+FROM queue_app_store_anomaly_rechecks(7, 12);
+"@
+  } catch {
+    Write-Host "Anomaly recheck queue skipped: $($_.Exception.Message)"
+  }
 }
 
 function Get-PlainTextFromHtml {
@@ -480,7 +526,7 @@ function Complete-JobRun {
   $output = if ($Result.Output -and $Result.Output.Length -gt 2000) { $Result.Output.Substring(0, 2000) } else { $Result.Output }
   $status = [string]$Result.Status
   $errorMessage = if ($Result.Error) { [string]$Result.Error } else { $null }
-  $nextRunSql = if ($status -eq "failed") { "NOW() + INTERVAL '6 hours'" } else { "NOW() + INTERVAL '24 hours'" }
+  $nextRunSql = Get-NextRunSql -Job $Job -Status $status
   $jobStatusSql = if ($status -eq "failed") { "'failed'" } else { "'active'" }
 
   Invoke-Psql @"
@@ -527,6 +573,8 @@ SET
 WHERE id = $(Quote-SqlString $Job.id)::uuid;
 "@
 }
+
+Queue-AnomalyRechecks
 
 $jobs = @(Get-DueJobs)
 
@@ -578,6 +626,8 @@ SELECT *
 FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14);
 
 SELECT refresh_plan_affordability_metrics() AS refreshed_rows;
+
+SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
 "@
 }
 

@@ -17,7 +17,7 @@ export default function ObservationReviewActions({ observationId }: Props) {
           type="submit"
           className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
         >
-          通过
+          强制入库
         </button>
       </form>
 
@@ -27,7 +27,7 @@ export default function ObservationReviewActions({ observationId }: Props) {
           type="submit"
           className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
         >
-          忽略
+          暂不处理
         </button>
       </form>
 

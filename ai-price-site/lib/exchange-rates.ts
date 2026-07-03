@@ -8,6 +8,7 @@ export type ExchangeRateSnapshot = {
   rateDate: string | null;
   fetchedAt: string | null;
   isFallback: boolean;
+  isStale?: boolean;
 };
 
 type RawExchangeRate = {
@@ -19,7 +20,8 @@ type RawExchangeRate = {
   fetched_at: Date | string | null;
 };
 
-const FALLBACK_USD_CNY_RATE = 7.25;
+const UNAVAILABLE_USD_CNY_RATE = 0;
+const MAX_FRESH_RATE_AGE_HOURS = 18;
 
 function toNumber(value: unknown) {
   if (typeof value === "number") return value;
@@ -52,6 +54,28 @@ function formatDateTime(value: Date | string | null) {
   return String(value);
 }
 
+function isStaleFetchedAt(value: Date | string | null) {
+  if (!value) return true;
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return true;
+
+  return Date.now() - date.getTime() > MAX_FRESH_RATE_AGE_HOURS * 60 * 60 * 1000;
+}
+
+function toSnapshot(row: RawExchangeRate, rate: number): ExchangeRateSnapshot {
+  return {
+    baseCurrency: row.base_currency,
+    quoteCurrency: row.quote_currency,
+    rate,
+    source: row.source,
+    rateDate: formatDateOnly(row.rate_date),
+    fetchedAt: formatDateTime(row.fetched_at),
+    isFallback: false,
+    isStale: isStaleFetchedAt(row.fetched_at),
+  };
+}
+
 export async function getLatestExchangeRate(
   baseCurrency: string,
   quoteCurrency: string,
@@ -76,27 +100,47 @@ export async function getLatestExchangeRate(
     const rate = row ? toNumber(row.rate) : 0;
 
     if (row && rate > 0) {
-      return {
-        baseCurrency: row.base_currency,
-        quoteCurrency: row.quote_currency,
-        rate,
-        source: row.source,
-        rateDate: formatDateOnly(row.rate_date),
-        fetchedAt: formatDateTime(row.fetched_at),
-        isFallback: false,
-      };
+      return toSnapshot(row, rate);
     }
   } catch (error) {
     console.error("Failed to load exchange rate", error);
   }
 
+  try {
+    const rows = await prisma.$queryRaw<RawExchangeRate[]>`
+      SELECT
+        base_currency,
+        quote_currency,
+        rate,
+        source,
+        rate_date,
+        fetched_at
+      FROM exchange_rates
+      WHERE base_currency = ${base}
+        AND quote_currency = ${quote}
+        AND status = 'active'
+      ORDER BY rate_date DESC, fetched_at DESC
+      LIMIT 1
+    `;
+
+    const row = rows[0];
+    const rate = row ? toNumber(row.rate) : 0;
+
+    if (row && rate > 0) {
+      return toSnapshot(row, rate);
+    }
+  } catch (error) {
+    console.error("Failed to load exchange rate table fallback", error);
+  }
+
   return {
     baseCurrency: base,
     quoteCurrency: quote,
-    rate: base === "USD" && quote === "CNY" ? FALLBACK_USD_CNY_RATE : 1,
+    rate: base === "USD" && quote === "CNY" ? UNAVAILABLE_USD_CNY_RATE : 1,
     source: null,
     rateDate: null,
     fetchedAt: null,
     isFallback: true,
+    isStale: true,
   };
 }

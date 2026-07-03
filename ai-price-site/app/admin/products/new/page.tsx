@@ -41,7 +41,7 @@ export default async function NewProductPage({
       <AdminPageHeader
         eyebrow="Products"
         title="新增数字服务"
-        description="先建立产品档案。保存后继续补套餐、App Store 来源和价格审核。"
+        description="先建立产品档案。保存后继续补套餐、App Store 来源，并到价格采集审核页执行采集。"
         action={
           <AdminLinkButton href="/admin/products" variant="secondary">
             返回列表

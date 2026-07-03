@@ -31,6 +31,23 @@ function Invoke-Step {
   }
 }
 
+function Invoke-SqlFileStep {
+  param(
+    [string]$Name,
+    [string]$SqlPath
+  )
+
+  Write-Host $Name
+  Get-Content -LiteralPath $SqlPath | docker exec -i $ContainerName psql `
+    -U $DbUser `
+    -d $DbName `
+    -v ON_ERROR_STOP=1
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "$Name failed with exit code $LASTEXITCODE."
+  }
+}
+
 function Invoke-CollectorStep {
   param(
     [string]$Name,
@@ -111,6 +128,16 @@ if ($DryRun) {
       "-DbName", $DbName,
       "-DbUser", $DbUser
     )
+}
+
+if (!$DryRun) {
+  Invoke-SqlFileStep `
+    -Name "Post-review: repairing or hiding anomalous App Store promotions." `
+    -SqlPath (Join-Path $scriptDir "..\sql\049_quarantine_app_store_anomaly_promotions.sql")
+
+  Invoke-SqlFileStep `
+    -Name "Post-review: cleaning App Store plan-matching artifacts." `
+    -SqlPath (Join-Path $scriptDir "..\sql\050_cleanup_app_store_plan_matching_artifacts.sql")
 }
 
 Write-Host "Price pipeline complete."

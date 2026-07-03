@@ -125,7 +125,7 @@ async function getTaxCoverage() {
     FROM (
       SELECT DISTINCT country_id
       FROM region_prices
-      WHERE status = 'PUBLISHED'
+      WHERE status = 'published'::publish_status
     ) published_countries
     LEFT JOIN country_tax_profiles tax_profile
       ON tax_profile.country_id = published_countries.country_id

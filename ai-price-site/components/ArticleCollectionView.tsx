@@ -1,0 +1,103 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import {
+  articleTypeLabels,
+  formatArticleDate,
+  type ArticleListItem,
+} from "../lib/articles";
+
+export default function ArticleCollectionView({
+  eyebrow,
+  title,
+  description,
+  articles,
+  emptyText,
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string | null;
+  articles: ArticleListItem[];
+  emptyText: string;
+}) {
+  const featured = articles[0] || null;
+  const rest = featured ? articles.slice(1) : articles;
+
+  return (
+    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
+      <section className="mx-auto max-w-6xl">
+        <Link href="/zh/guides" className="text-sm font-black text-blue-700 hover:text-blue-900">
+          返回指南
+        </Link>
+
+        <div className="mt-8 max-w-3xl">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
+            {eyebrow}
+          </p>
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
+            {title}
+          </h1>
+          {description ? (
+            <p className="mt-5 text-lg leading-8 text-zinc-600">{description}</p>
+          ) : null}
+        </div>
+
+        {featured ? (
+          <Link
+            href={`/zh/guides/${featured.slug}`}
+            className="mt-10 block rounded-2xl border border-zinc-200 bg-white p-7 shadow-sm shadow-zinc-950/[0.03] transition hover:-translate-y-0.5 hover:shadow-md md:p-9"
+          >
+            <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-zinc-500">
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+                {articleTypeLabels[featured.articleType]}
+              </span>
+              <span>{formatArticleDate(featured.publishedAt)}</span>
+              <span>{featured.readingTime || 1} 分钟读完</span>
+              {featured.category ? <span>{featured.category.name}</span> : null}
+            </div>
+            <h2 className="mt-5 text-3xl font-black tracking-tight text-zinc-950">
+              {featured.title}
+            </h2>
+            {featured.excerpt ? (
+              <p className="mt-4 max-w-3xl text-base leading-8 text-zinc-600">
+                {featured.excerpt}
+              </p>
+            ) : null}
+            <div className="mt-7 inline-flex items-center gap-2 text-sm font-black text-blue-700">
+              阅读全文 <ArrowRight size={16} />
+            </div>
+          </Link>
+        ) : (
+          <div className="mt-10 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm font-bold text-zinc-500">
+            {emptyText}
+          </div>
+        )}
+
+        {rest.length > 0 ? (
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {rest.map((article) => (
+              <Link
+                key={article.id}
+                href={`/zh/guides/${article.slug}`}
+                className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm shadow-zinc-950/[0.03] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-zinc-500">
+                  <span>{articleTypeLabels[article.articleType]}</span>
+                  <span>·</span>
+                  <span>{formatArticleDate(article.publishedAt)}</span>
+                </div>
+                <h2 className="mt-4 text-xl font-black leading-snug text-zinc-950">
+                  {article.title}
+                </h2>
+                {article.excerpt ? (
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-500">
+                    {article.excerpt}
+                  </p>
+                ) : null}
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </section>
+    </main>
+  );
+}

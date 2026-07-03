@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,6 +26,7 @@ type CurrencyExchangeRate = {
   source?: string | null;
   rateDate?: string | null;
   isFallback?: boolean;
+  isStale?: boolean;
 };
 
 type PricingPlatformViewProps = {
@@ -34,12 +35,13 @@ type PricingPlatformViewProps = {
   updatedAt?: string;
   cnyExchangeRate?: CurrencyExchangeRate;
   shareAction?: ReactNode;
+  locale?: "zh" | "en";
 };
 
 const platformOptions: Array<{ value: PlatformFilter; label: string }> = [
   { value: "ios", label: "App Store" },
-  { value: "web", label: "Web 线索" },
-  { value: "android", label: "Google Play 线索" },
+  { value: "web", label: "Web 官方价" },
+  { value: "android", label: "Google Play" },
   { value: "all", label: "全部来源诊断" },
 ];
 
@@ -48,21 +50,11 @@ const currencyOptions: Array<{ value: DisplayCurrency; label: string }> = [
   { value: "cny", label: "人民币 CNY" },
 ];
 
-const FALLBACK_CNY_PER_USD = 7.25;
+const UNAVAILABLE_CNY_PER_USD = 0;
 
 function getPlatform(region: RegionPrice) {
   const platform = (region.billingPlatform || "unknown").toLowerCase();
   return platform === "google_play" ? "android" : platform;
-}
-
-function getDefaultPlatform(regions: RegionPrice[]): PlatformFilter {
-  const platforms = new Set(regions.map(getPlatform));
-
-  if (platforms.has("ios")) return "ios";
-  if (platforms.has("web")) return "web";
-  if (platforms.has("android")) return "android";
-
-  return "all";
 }
 
 function getSortedRegions(plan: ProductPlan) {
@@ -87,7 +79,14 @@ function getSignedPercent(diffPercent: number) {
   return `${diffPercent}%`;
 }
 
-function getPlatformLabel(platform: PlatformFilter) {
+function getPlatformLabel(platform: PlatformFilter, locale: "zh" | "en" = "zh") {
+  if (locale === "en") {
+    if (platform === "ios") return "App Store";
+    if (platform === "web") return "official web pricing";
+    if (platform === "android") return "Google Play";
+    if (platform === "all") return "all diagnostic sources";
+  }
+
   return (
     platformOptions.find((option) => option.value === platform)?.label ||
     "全部来源"
@@ -138,166 +137,67 @@ function EmptyPriceState({ platformLabel }: { platformLabel: string }) {
   );
 }
 
-function SourceTabs({
-  value,
-  items,
-  onChange,
-}: {
-  value: PlatformFilter;
-  items: Array<{
-    label: string;
-    count: number;
-    value: PlatformFilter;
-    disabled?: boolean;
-  }>;
-  onChange: (platform: PlatformFilter) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const activeItem = items.find((item) => item.value === value) || items[0];
-
-  const handleChange = (nextValue: PlatformFilter) => {
-    setOpen(false);
-    onChange(nextValue);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div ref={rootRef} className="relative w-full md:w-[164px]">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex h-9 w-full items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50/70 px-2.5 text-left text-[13px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="min-w-0 truncate">{activeItem.label}</span>
-        <span className="ml-2 mr-1.5 shrink-0 text-[11px] font-medium text-zinc-400">
-          {activeItem.count} 个地区
-        </span>
-        <ChevronDown
-          className={[
-            "h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform",
-            open ? "rotate-180" : "",
-          ].join(" ")}
-          strokeWidth={2.2}
-        />
-      </button>
-
-      {open ? (
-        <div
-          className="absolute left-0 right-0 top-10 z-20 overflow-hidden rounded-lg border border-zinc-200 bg-white p-1 shadow-xl shadow-zinc-950/10 dark:border-zinc-800 dark:bg-zinc-900"
-          role="listbox"
-        >
-          {items.map((item) => {
-            const active = item.value === value;
-
-            return (
-              <button
-                key={item.value}
-                type="button"
-                role="option"
-                aria-selected={active}
-                disabled={item.disabled}
-                onClick={() => handleChange(item.value)}
-                className={[
-                  "relative flex min-h-8 w-full items-center justify-between gap-2 rounded-md px-2.5 text-[13px] transition-colors before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full",
-                  active
-                    ? "bg-zinc-50 font-semibold text-zinc-950 before:bg-lime-500 dark:bg-zinc-800 dark:text-white"
-                    : "text-zinc-600 before:bg-transparent hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
-                  item.disabled ? "cursor-not-allowed opacity-45" : "",
-                ].join(" ")}
-              >
-                <span className="min-w-0 truncate">{item.label}</span>
-                <span className="shrink-0 text-[11px] font-medium text-zinc-400">
-                  {item.count} 个地区
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function CurrencySelect({
   value,
   onChange,
+  cnyDisabled = false,
+  locale,
 }: {
   value: DisplayCurrency;
   onChange: (currency: DisplayCurrency) => void;
+  cnyDisabled?: boolean;
+  locale: "zh" | "en";
 }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
   const activeItem =
     currencyOptions.find((item) => item.value === value) || currencyOptions[0];
 
-  const handleChange = (nextValue: DisplayCurrency) => {
-    setOpen(false);
-    onChange(nextValue);
-  };
-
   useEffect(() => {
-    if (!open) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
         setOpen(false);
       }
-    };
+    }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
       }
-    };
+    }
 
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("keydown", handleKeyDown, true);
 
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [open]);
+  }, []);
 
   return (
-    <div ref={rootRef} className="relative w-full md:w-[132px]">
+    <div ref={containerRef} className="relative w-[148px] shrink-0">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex h-9 w-full items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50/70 px-2.5 text-left text-[13px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-        aria-haspopup="listbox"
+        className={[
+          "flex h-9 w-full items-center justify-between gap-2 rounded-lg border px-3 text-left text-[13px] font-semibold shadow-sm outline-none transition-all duration-200 ease-out",
+          open
+            ? "border-lime-300 bg-white text-zinc-950 ring-4 ring-lime-500/10 dark:border-lime-500/40 dark:bg-zinc-900 dark:text-white"
+            : "border-zinc-200 bg-zinc-50/80 text-zinc-700 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+        ].join(" ")}
+        aria-label={locale === "en" ? "Display currency" : "显示币种"}
+        aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="min-w-0 truncate">{activeItem.label}</span>
+        <span className="truncate">{activeItem.label}</span>
         <ChevronDown
           className={[
-            "ml-2 h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform",
+            "h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform duration-200 ease-out",
             open ? "rotate-180" : "",
           ].join(" ")}
           strokeWidth={2.2}
@@ -306,27 +206,36 @@ function CurrencySelect({
 
       {open ? (
         <div
-          className="absolute left-0 right-0 top-10 z-20 overflow-hidden rounded-lg border border-zinc-200 bg-white p-1 shadow-xl shadow-zinc-950/10 dark:border-zinc-800 dark:bg-zinc-900"
-          role="listbox"
+          className="absolute left-0 top-11 z-40 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
+          role="menu"
         >
           {currencyOptions.map((item) => {
+            const disabled = item.value === "cny" && cnyDisabled;
             const active = item.value === value;
 
             return (
               <button
                 key={item.value}
                 type="button"
-                role="option"
-                aria-selected={active}
-                onClick={() => handleChange(item.value)}
+                disabled={disabled}
+                onClick={() => {
+                  if (!disabled) {
+                    onChange(item.value);
+                    setOpen(false);
+                  }
+                }}
                 className={[
-                  "relative flex min-h-8 w-full items-center rounded-md px-2.5 text-left text-[13px] transition-colors before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full",
+                  "flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-left text-[13px] font-semibold transition-colors duration-200 ease-out",
                   active
-                    ? "bg-zinc-50 font-semibold text-zinc-950 before:bg-lime-500 dark:bg-zinc-800 dark:text-white"
-                    : "text-zinc-600 before:bg-transparent hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
+                    ? "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
+                    : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
+                  disabled ? "cursor-not-allowed opacity-40" : "",
                 ].join(" ")}
+                role="menuitemradio"
+                aria-checked={active}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {active ? <span className="h-1.5 w-1.5 rounded-full bg-lime-500" /> : null}
               </button>
             );
           })}
@@ -339,89 +248,106 @@ function CurrencySelect({
 function PricingLead({
   productName,
   plan,
-  platform,
   platformLabel,
   displayCurrency,
   cnyExchangeRate,
   updatedAt,
-  sourceItems,
-  onPlatformChange,
   onCurrencyChange,
+  locale,
 }: {
   productName: string;
   plan: ProductPlan;
-  platform: PlatformFilter;
   platformLabel: string;
   displayCurrency: DisplayCurrency;
   cnyExchangeRate: CurrencyExchangeRate;
   updatedAt?: string;
-  sourceItems: Array<{
-    label: string;
-    count: number;
-    value: PlatformFilter;
-    disabled?: boolean;
-  }>;
-  onPlatformChange: (platform: PlatformFilter) => void;
   onCurrencyChange: (currency: DisplayCurrency) => void;
+  locale: "zh" | "en";
 }) {
   const stats = getPlanStats(plan);
   const referenceRegion = getReferenceRegion(plan);
   const displayCurrencyLabel = getCurrencyLabel(displayCurrency);
-  const cnyRate = cnyExchangeRate.rate || FALLBACK_CNY_PER_USD;
+  const cnyRate = cnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
+  const cnyDisabled = Boolean(cnyExchangeRate.isFallback || cnyExchangeRate.isStale);
   const cnyRateNote = cnyExchangeRate.isFallback
-    ? `人民币按 ${cnyRate.toFixed(2)} 兜底汇率估算`
-    : `人民币按 ${cnyRate.toFixed(4)} 汇率估算${
-        cnyExchangeRate.rateDate ? ` · ${cnyExchangeRate.rateDate}` : ""
-      }`;
+    ? locale === "en"
+      ? "CNY estimate unavailable: exchange rate sync pending"
+      : "人民币估算暂不可用：汇率待同步"
+    : cnyExchangeRate.isStale
+      ? locale === "en"
+        ? `CNY estimate paused: exchange rate is stale${
+            cnyExchangeRate.rateDate ? ` · last rate date ${cnyExchangeRate.rateDate}` : ""
+          }`
+        : `人民币估算暂停：汇率已过期${
+            cnyExchangeRate.rateDate ? ` · 最近汇率日期 ${cnyExchangeRate.rateDate}` : ""
+          }`
+    : locale === "en"
+      ? `CNY uses ${cnyRate.toFixed(4)} USD/CNY${
+          cnyExchangeRate.rateDate ? ` · rate date ${cnyExchangeRate.rateDate}` : ""
+        }`
+      : `人民币按 ${cnyRate.toFixed(4)} 汇率估算${
+          cnyExchangeRate.rateDate ? ` · 汇率日期 ${cnyExchangeRate.rateDate}` : ""
+        }`;
 
   return (
     <PublicSection>
       <div className="p-5 md:p-6">
         <div className="mb-3 inline-flex rounded-md bg-lime-50 px-2.5 py-1 text-xs font-semibold text-lime-700 ring-1 ring-lime-200 dark:bg-lime-950/30 dark:text-lime-300 dark:ring-lime-900">
-          V1 正式价格源：App Store
+          {locale === "en" ? "V1 official price source: App Store" : "V1 正式价格源：App Store"}
         </div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-          <h2 className="text-[24px] font-semibold leading-tight text-zinc-950 md:whitespace-nowrap md:text-[28px] dark:text-white">
-            {productName} {plan.name} 全球价格结论
-          </h2>
-          <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
-            当前以 {platformLabel} 正式价格比较，{stats.minRegion.country} 最便宜，约{" "}
-            <strong className="font-semibold text-lime-700 dark:text-lime-300">
-              {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}
-            </strong>
-            ；{stats.maxRegion.country} 最贵，约{" "}
-            <strong className="font-semibold text-rose-600 dark:text-rose-300">
-              {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}
-            </strong>
-            ，价差约 {stats.spreadPercent}%。
-          </p>
+            <h2 className="text-[24px] font-semibold leading-tight text-zinc-950 md:whitespace-nowrap md:text-[28px] dark:text-white">
+              {locale === "en"
+                ? `${productName} ${plan.name} global price conclusion`
+                : `${productName} ${plan.name} 全球价格结论`}
+            </h2>
+            <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
+              {locale === "en" ? (
+                <>
+                  Based on official {platformLabel} pricing, {stats.minRegion.country} is currently the cheapest at about{" "}
+                  <strong className="font-semibold text-lime-700 dark:text-lime-300">
+                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}
+                  </strong>
+                  ; {stats.maxRegion.country} is the most expensive at about{" "}
+                  <strong className="font-semibold text-rose-600 dark:text-rose-300">
+                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}
+                  </strong>
+                  , with a spread of about {stats.spreadPercent}%.
+                </>
+              ) : (
+                <>
+                  当前以 {platformLabel} 正式价格比较，{stats.minRegion.country} 最便宜，约{" "}
+                  <strong className="font-semibold text-lime-700 dark:text-lime-300">
+                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}
+                  </strong>
+                  ；{stats.maxRegion.country} 最贵，约{" "}
+                  <strong className="font-semibold text-rose-600 dark:text-rose-300">
+                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}
+                  </strong>
+                  ，价差约 {stats.spreadPercent}%。
+                </>
+              )}
+            </p>
           </div>
 
           <div className="text-xs text-zinc-400 lg:text-right">
-            {updatedAt ? `更新：${updatedAt}` : `${plan.regions.length} 个地区`}
+            {updatedAt
+              ? locale === "en" ? `Updated: ${updatedAt}` : `更新：${updatedAt}`
+              : locale === "en" ? `${plan.regions.length} regions` : `${plan.regions.length} 个地区`}
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800 md:grid-cols-[auto_auto_1fr] md:items-center">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+        <div className="mt-4 grid gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800 md:grid-cols-[auto_1fr] md:items-center">
+          <div className="flex items-center gap-3">
             <span className="shrink-0 text-xs font-semibold text-zinc-400">
-              显示币种
+              {locale === "en" ? "Display currency" : "显示币种"}
             </span>
             <CurrencySelect
               value={displayCurrency}
               onChange={onCurrencyChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2 md:flex-row md:items-center">
-            <span className="shrink-0 text-xs font-semibold text-zinc-400">
-              数据来源
-            </span>
-            <SourceTabs
-              value={platform}
-              items={sourceItems}
-              onChange={onPlatformChange}
+              cnyDisabled={cnyDisabled}
+              locale={locale}
             />
           </div>
 
@@ -431,32 +357,29 @@ function PricingLead({
               : displayCurrencyLabel}
           </div>
         </div>
-        <p className="mt-3 text-xs leading-5 text-zinc-400">
-          Web 与 Google Play 暂作为采集诊断和未来补充来源；前台排名、地图和购买力判断优先以 App Store 正式价格为准。
-        </p>
       </div>
 
       <MetricStrip>
         <MetricItem
-          label="最低价"
+          label={locale === "en" ? "Lowest" : "最低价"}
           value={`${stats.minRegion.country} · ${formatDisplayPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}`}
           helper={stats.minRegion.localPrice}
           tone="green"
         />
         <MetricItem
-          label="最高价"
+          label={locale === "en" ? "Highest" : "最高价"}
           value={`${stats.maxRegion.country} · ${formatDisplayPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}`}
           helper={stats.maxRegion.localPrice}
           tone="red"
         />
         <MetricItem
-          label="美国基准"
+          label={locale === "en" ? "US base" : "美国基准"}
           value={`${referenceRegion.country} · ${formatDisplayPrice(referenceRegion.priceUsd, displayCurrency, cnyRate)}`}
           helper={referenceRegion.code}
         />
         <MetricItem
-          label="覆盖地区"
-          value={`${plan.regions.length} 个`}
+          label={locale === "en" ? "Regions" : "覆盖地区"}
+          value={locale === "en" ? `${plan.regions.length}` : `${plan.regions.length} 个`}
           helper={platformLabel}
         />
       </MetricStrip>
@@ -528,10 +451,12 @@ function PriceDistribution({
   productName,
   plan,
   shareAction,
+  locale,
 }: {
   productName: string;
   plan: ProductPlan;
   shareAction?: ReactNode;
+  locale: "zh" | "en";
 }) {
   const sortedRegions = getSortedRegions(plan);
   const referenceRegion = getReferenceRegion(plan);
@@ -542,28 +467,34 @@ function PriceDistribution({
     <PublicSection>
       <PublicSectionHeader
         eyebrow="Price distribution"
-        title="全球价格分布与地区排行"
+        title={locale === "en" ? "Global price distribution and regional ranking" : "全球价格分布与地区排行"}
         description={
-          <>
-            地图是这一页的主视觉，用来快速理解 {productName} 的全球价格差异；榜单只做辅助定位。
-          </>
+          locale === "en" ? (
+            <>
+              The map helps explain {productName} regional price differences; the lists highlight lower-price and higher-price regions.
+            </>
+          ) : (
+            <>
+              地图用于快速理解 {productName} 的全球价格差异；榜单用于辅助定位低价区和高价区。
+            </>
+          )
         }
         actions={shareAction}
       />
 
       <div className="p-4 md:p-5">
-        <PriceWorldMap plan={plan} locale="zh" compact />
+        <PriceWorldMap plan={plan} locale={locale} compact />
       </div>
 
       <div className="grid gap-6 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800 lg:grid-cols-2">
         <RankingList
-          title="更便宜的地区"
+          title={locale === "en" ? "Lower-price regions" : "更便宜的地区"}
           regions={cheapRegions}
           referenceRegion={referenceRegion}
           tone="green"
         />
         <RankingList
-          title="更贵的地区"
+          title={locale === "en" ? "Higher-price regions" : "更贵的地区"}
           regions={expensiveRegions}
           referenceRegion={referenceRegion}
           tone="red"
@@ -579,25 +510,27 @@ export default function PricingPlatformView({
   updatedAt,
   cnyExchangeRate,
   shareAction,
+  locale = "zh",
 }: PricingPlatformViewProps) {
-  const [platform, setPlatform] = useState<PlatformFilter>(() =>
-    getDefaultPlatform(plan.regions),
-  );
+  const [platform] = useState<PlatformFilter>("ios");
   const [displayCurrency, setDisplayCurrency] =
     useState<DisplayCurrency>("usd");
   const effectiveCnyExchangeRate = cnyExchangeRate || {
-    rate: FALLBACK_CNY_PER_USD,
+    rate: UNAVAILABLE_CNY_PER_USD,
     isFallback: true,
   };
-  const cnyRate = effectiveCnyExchangeRate.rate || FALLBACK_CNY_PER_USD;
+  const cnyRate = effectiveCnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
+  const handleCurrencyChange = (currency: DisplayCurrency) => {
+    if (
+      currency === "cny" &&
+      (effectiveCnyExchangeRate.isFallback || effectiveCnyExchangeRate.isStale)
+    ) {
+      setDisplayCurrency("usd");
+      return;
+    }
 
-  const platformCounts = useMemo(() => {
-    return plan.regions.reduce<Record<string, number>>((counts, region) => {
-      const key = getPlatform(region);
-      counts[key] = (counts[key] || 0) + 1;
-      return counts;
-    }, {});
-  }, [plan.regions]);
+    setDisplayCurrency(currency);
+  };
 
   const filteredPlan = useMemo<ProductPlan>(() => {
     if (platform === "all") return plan;
@@ -608,20 +541,7 @@ export default function PricingPlatformView({
     };
   }, [plan, platform]);
 
-  const platformLabel = getPlatformLabel(platform);
-  const sourceItems = platformOptions.map((option) => {
-    const count =
-      option.value === "all"
-        ? plan.regions.length
-        : platformCounts[option.value] || 0;
-
-    return {
-      label: option.label,
-      count,
-      value: option.value,
-      disabled: option.value !== "all" && count === 0,
-    };
-  });
+  const platformLabel = getPlatformLabel(platform, locale);
 
   return (
     <div className="space-y-5">
@@ -630,14 +550,12 @@ export default function PricingPlatformView({
           <PricingLead
             productName={productName}
             plan={plan}
-            platform={platform}
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             cnyExchangeRate={effectiveCnyExchangeRate}
             updatedAt={updatedAt}
-            sourceItems={sourceItems}
-            onPlatformChange={setPlatform}
-            onCurrencyChange={setDisplayCurrency}
+            onCurrencyChange={handleCurrencyChange}
+            locale={locale}
           />
           <EmptyPriceState platformLabel={platformLabel} />
         </>
@@ -646,23 +564,23 @@ export default function PricingPlatformView({
           <PricingLead
             productName={productName}
             plan={filteredPlan}
-            platform={platform}
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             cnyExchangeRate={effectiveCnyExchangeRate}
             updatedAt={updatedAt}
-            sourceItems={sourceItems}
-            onPlatformChange={setPlatform}
-            onCurrencyChange={setDisplayCurrency}
+            onCurrencyChange={handleCurrencyChange}
+            locale={locale}
           />
           <PriceDistribution
             productName={productName}
             plan={filteredPlan}
             shareAction={shareAction}
+            locale={locale}
           />
           <ExpandableRegionPriceTable
             plan={filteredPlan}
             initialVisibleCount={8}
+            locale={locale}
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             displayCurrencyLabel={getCurrencyLabel(displayCurrency)}
@@ -677,3 +595,4 @@ export default function PricingPlatformView({
     </div>
   );
 }
+

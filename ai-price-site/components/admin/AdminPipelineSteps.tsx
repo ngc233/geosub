@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Radar, RefreshCw, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Radar, ShieldCheck } from "lucide-react";
 
 type PipelineStep = "discovery" | "collector" | "review";
 
@@ -16,23 +16,15 @@ const steps: Array<{
     number: "1",
     title: "线索入口",
     href: "/admin/discovery",
-    description: "新产品、新模型、官网或定价页先进入候选池，不直接发布。",
+    description: "添加产品线索，系统会尝试匹配 App Store，并准备采集任务。",
     icon: Radar,
   },
   {
-    id: "collector",
-    number: "2",
-    title: "采集执行",
-    href: "/admin/collector-jobs",
-    description: "已确认产品生成采集任务，执行器负责抓取 App Store 价格。",
-    icon: RefreshCw,
-  },
-  {
     id: "review",
-    number: "3",
-    title: "价格审核",
+    number: "2",
+    title: "价格采集审核",
     href: "/admin/review",
-    description: "稳定价格自动通过；异常、缺样本或冲突价格留给人工确认。",
+    description: "按产品启动 App Store 采集，稳定价格自动入库，异常价格集中解释。",
     icon: ShieldCheck,
   },
 ];
@@ -42,13 +34,15 @@ export default function AdminPipelineSteps({
 }: {
   currentStep: PipelineStep;
 }) {
+  const activeStep = currentStep === "collector" ? "review" : currentStep;
+
   return (
     <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-950">价格采集流水线</h2>
           <p className="mt-1 text-sm leading-6 text-slate-500">
-            后台只保留一条主流程：发现线索 → 采集价格 → 审核入库。你当前所在步骤会高亮。
+            后台主流程简化为两步：先添加线索，再在同一个工作台完成采集、自动审核和异常处理。
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
@@ -57,9 +51,9 @@ export default function AdminPipelineSteps({
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         {steps.map((step) => {
-          const active = step.id === currentStep;
+          const active = step.id === activeStep;
           const Icon = step.icon;
 
           return (

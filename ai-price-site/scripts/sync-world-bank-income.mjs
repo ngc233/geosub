@@ -5,6 +5,7 @@ import { join } from "node:path";
 const CONTAINER = process.env.GEOSUB_DB_CONTAINER || "geosub-postgres";
 const PGUSER = process.env.GEOSUB_DB_USER || "geosub_admin";
 const PGDATABASE = process.env.GEOSUB_DB_NAME || "geosub_app";
+const REQUEST_TIMEOUT_MS = Number(process.env.WORLD_BANK_TIMEOUT_MS || 12000);
 
 const INDICATORS = [
   {
@@ -100,12 +101,25 @@ function sqlNumber(value) {
 
 async function fetchLatestIndicator({ iso3, indicatorCode }) {
   const url = `https://api.worldbank.org/v2/country/${iso3}/indicator/${indicatorCode}?format=json&per_page=80`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(`World Bank API timed out after ${REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     throw new Error(`World Bank API error ${response.status} for ${iso3} ${indicatorCode}`);
@@ -125,6 +139,57 @@ async function fetchLatestIndicator({ iso3, indicatorCode }) {
     .sort((a, b) => b.year - a.year);
 
   return validRows[0] || null;
+}
+
+async function fetchIndicatorSnapshot(indicatorCode) {
+  const url = `https://api.worldbank.org/v2/country/all/indicator/${indicatorCode}?format=json&per_page=20000`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(`World Bank bulk API timed out after ${REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!response.ok) {
+    throw new Error(`World Bank bulk API error ${response.status} for ${indicatorCode}`);
+  }
+
+  const payload = await response.json();
+  const rows = Array.isArray(payload) ? payload[1] || [] : [];
+  const latestByIso3 = new Map();
+
+  for (const row of rows) {
+    const iso3 = String(row?.countryiso3code || "").toUpperCase();
+    const year = Number(row?.date);
+    const value = Number(row?.value);
+    if (!iso3 || !Number.isFinite(year) || !Number.isFinite(value) || value <= 0) {
+      continue;
+    }
+
+    const existing = latestByIso3.get(iso3);
+    if (!existing || year > existing.year) {
+      latestByIso3.set(iso3, {
+        year,
+        value,
+        sourceUrl: url,
+      });
+    }
+  }
+
+  return latestByIso3;
 }
 
 function getCountriesFromDb() {
@@ -159,6 +224,18 @@ async function main() {
     throw new Error("No countries with ISO3 mapping found. Check countries.code and countries.iso3.");
   }
 
+  const indicatorSnapshots = new Map();
+  for (const indicator of INDICATORS) {
+    try {
+      const snapshot = await fetchIndicatorSnapshot(indicator.indicatorCode);
+      indicatorSnapshots.set(indicator.indicatorCode, snapshot);
+      console.log(`[OK] ${indicator.metricType} bulk rows ${snapshot.size}`);
+    } catch (error) {
+      console.log(`[WARN] ${indicator.metricType} bulk fetch failed: ${error.message}`);
+      indicatorSnapshots.set(indicator.indicatorCode, null);
+    }
+  }
+
   const insertRows = [];
   const iso3UpdateRows = [];
   const skipped = [];
@@ -168,10 +245,13 @@ async function main() {
 
     for (const indicator of INDICATORS) {
       try {
-        const latest = await fetchLatestIndicator({
-          iso3: country.iso3,
-          indicatorCode: indicator.indicatorCode,
-        });
+        const snapshot = indicatorSnapshots.get(indicator.indicatorCode);
+        const latest = snapshot
+          ? snapshot.get(country.iso3)
+          : await fetchLatestIndicator({
+              iso3: country.iso3,
+              indicatorCode: indicator.indicatorCode,
+            });
 
         if (!latest) {
           skipped.push(`${country.countryCode}/${country.iso3}/${indicator.metricType}: no value`);

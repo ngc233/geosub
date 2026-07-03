@@ -1,4 +1,4 @@
-import {
+﻿import {
   subscriptionPricingData,
   type ProductPlan,
   type RegionPrice,
@@ -10,6 +10,7 @@ import type { DetailLocale } from "./detail-page-copy";
 type PricingDetailRow = {
   product_slug: string;
   product_name: string;
+  product_logo_url: string | null;
   plan_slug: string;
   plan_name: string;
   billing_cycle: string | null;
@@ -30,6 +31,7 @@ type PricingDetailRow = {
   tax_profile_note_zh: string | null;
   tax_profile_note_en: string | null;
   tax_profile_confidence: string | null;
+  tax_profile_source_kind: string | null;
   tax_profile_is_variable: boolean | null;
   tax_profile_treatment: string | null;
   tax_profile_calculation_policy: string | null;
@@ -47,6 +49,7 @@ type PricingDetailRow = {
   availability_note: string | null;
   billing_platform: string | null;
   last_checked_at: Date | string | null;
+  fx_rate_date: string | null;
 };
 
 const localeMap: Record<DetailLocale, string> = {
@@ -70,6 +73,28 @@ function toNumber(value: unknown) {
   }
 
   return 0;
+}
+
+function formatDate(value: Date | string | null) {
+  if (!value) return undefined;
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+
+  return date.toISOString().slice(0, 10);
+}
+
+function getLatestDate(values: Array<Date | string | null | undefined>) {
+  const latest = values
+    .map((value) => {
+      if (!value) return null;
+      const date = value instanceof Date ? value : new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    })
+    .filter((date): date is Date => Boolean(date))
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+
+  return latest ? formatDate(latest) : undefined;
 }
 
 function getStaticProduct(productSlug: string) {
@@ -107,7 +132,7 @@ function formatLocalPrice(value: unknown, currency: string | null, locale: Detai
   const number = toNumber(value);
 
   if (!currency || number <= 0) {
-    return "本地价格待核实";
+    return "本地价格待核验";
   }
 
   try {
@@ -151,17 +176,20 @@ function getTaxNote({
   billingPlatform: string | null;
   locale: DetailLocale;
 }) {
+  const profileNote = getLocalizedTaxProfileText({
+    zh: taxProfileNoteZh,
+    en: taxProfileNoteEn,
+    locale,
+  });
+
+  if (profileNote) {
+    return profileNote;
+  }
+
   const note = taxNote?.trim();
 
   if (note) {
     return note;
-  }
-
-  const profileNote =
-    locale === "zh" ? taxProfileNoteZh?.trim() : taxProfileNoteEn?.trim();
-
-  if (profileNote) {
-    return profileNote;
   }
 
   const platform = (billingPlatform || "unknown").toLowerCase();
@@ -178,7 +206,77 @@ function getTaxNote({
     return "官网标价，税费以结算页为准";
   }
 
-  return "税费待核实";
+  return "税费待核验";
+}
+
+function hasBrokenText(value?: string | null) {
+  return !value || value.includes("?") || value.includes("锟");
+}
+
+function hasCjkText(value: string) {
+  return /[\u3400-\u9fff]/.test(value);
+}
+
+function translateTaxProfileTextToZh(value: string) {
+  const raw = value.trim();
+  const includeMatch = raw.match(/^(?:Includes|Usually includes)\s+(.+)$/i);
+
+  if (includeMatch) {
+    const label = includeMatch[1]
+      .replace(/consumption tax/i, "消费税")
+      .replace(/service tax/i, "服务税")
+      .replace(/sales tax/i, "销售税")
+      .replace(/by region/i, "因地区不同");
+    return /^Usually includes/i.test(raw) ? `通常含 ${label}` : `含 ${label}`;
+  }
+
+  const provinceMatch = raw.match(/^GST\/HST varies by province(?:,\s*(.+))?$/i);
+  if (provinceMatch) {
+    return provinceMatch[1]
+      ? `各省 ${provinceMatch[1]} GST/HST 不同`
+      : "各省 GST/HST 不同";
+  }
+
+  if (/State ICMS varies/i.test(raw)) return "州税（ICMS）不同";
+  if (/Sales tax varies by state/i.test(raw)) return "各州销售税不同";
+  if (/Sales tax varies by region/i.test(raw)) return "销售税因地区不同";
+  if (/VAT treatment needs review/i.test(raw)) return "VAT 规则需复核";
+  if (/Usually GST-inclusive/i.test(raw)) return "通常已含 GST，最终以结算页为准";
+  if (/Usually VAT-inclusive/i.test(raw)) return "通常已含 VAT，最终以结算页为准";
+  if (/App Store list price/i.test(raw)) return "App Store 标价，税费以结算页为准";
+  if (/No country tax-rate profile matched yet/i.test(raw)) {
+    return "未匹配到国家税率资料；最终以 App Store 结算页为准";
+  }
+  if (/final checkout applies/i.test(raw)) return "最终以结算页为准";
+
+  return raw;
+}
+
+function getLocalizedTaxProfileText({
+  zh,
+  en,
+  locale,
+}: {
+  zh?: string | null;
+  en?: string | null;
+  locale: DetailLocale;
+}) {
+  const zhText = zh?.trim();
+  const enText = en?.trim();
+
+  if (locale === "en") {
+    return enText || zhText || "";
+  }
+
+  if (zhText && !hasBrokenText(zhText) && hasCjkText(zhText)) {
+    return zhText;
+  }
+
+  if (enText) {
+    return translateTaxProfileTextToZh(enText);
+  }
+
+  return "";
 }
 
 function getTaxConfidence(value: string | null): RegionPrice["taxConfidence"] {
@@ -187,6 +285,20 @@ function getTaxConfidence(value: string | null): RegionPrice["taxConfidence"] {
   }
 
   return "unknown";
+}
+
+function getTaxSourceKind(value: string | null): RegionPrice["taxSourceKind"] {
+  if (
+    value === "manual" ||
+    value === "official" ||
+    value === "apple" ||
+    value === "provider" ||
+    value === "inferred"
+  ) {
+    return value;
+  }
+
+  return undefined;
 }
 
 function getTaxTreatment(value: string | null): RegionPrice["taxTreatment"] {
@@ -227,7 +339,7 @@ function getTaxFrontendNote({
   en: string | null;
   locale: DetailLocale;
 }) {
-  return (locale === "zh" ? zh?.trim() : en?.trim()) || "";
+  return getLocalizedTaxProfileText({ zh, en, locale });
 }
 
 function getRiskLevel(value: string | null): RegionPrice["riskLevel"] {
@@ -239,8 +351,8 @@ function getRiskLevel(value: string | null): RegionPrice["riskLevel"] {
 }
 
 function getRiskLevelFromScore(score: number): RegionPrice["riskLevel"] {
-  if (score <= 54) return "low";
-  if (score <= 79) return "medium";
+  if (score <= 49) return "low";
+  if (score <= 74) return "medium";
   return "high";
 }
 
@@ -259,7 +371,24 @@ function getRiskLevelLabel(level: RegionPrice["riskLevel"], locale: DetailLocale
   if (level === "low") return "低";
   if (level === "high") return "高";
   if (level === "medium") return "中";
-  return "待核实";
+  return "待核验";
+}
+
+function getLocalizedRiskProfileText({
+  zh,
+  en,
+  locale,
+}: {
+  zh: string | null;
+  en: string | null;
+  locale: DetailLocale;
+}) {
+  const canonical = en?.trim() || zh?.trim();
+
+  if (!canonical) return undefined;
+  if (locale !== "zh") return canonical;
+
+  return zh?.trim() || canonical;
 }
 
 function assessAppStoreRisk({
@@ -290,39 +419,48 @@ function assessAppStoreRisk({
 
   if (score <= 0) {
     const level = getRiskLevel(baseLevel);
-    score = level === "low" ? 40 : level === "high" ? 82 : level === "medium" ? 60 : 72;
+    score = level === "low" ? 42 : level === "high" ? 78 : level === "medium" ? 62 : 58;
   }
 
   if (baseFactors) factors.push(baseFactors);
 
   const platform = (billingPlatform || "unknown").toLowerCase();
   if (platform !== "ios") {
-    score += 8;
+    score += 5;
     factors.push(
       locale === "zh"
-        ? "当前不是 App Store 来源，风险模型只作参考。"
+        ? "当前不是 App Store 来源，风险模型仅作参考。"
         : "This is not an App Store source, so the risk model is only indicative.",
     );
   }
 
-  if (diffPercent <= -30) {
-    score += 16;
+  if (diffPercent <= -40) {
+    score += 10;
     factors.push(
       locale === "zh"
-        ? "价格显著低于美国，跨区订阅时更需要关注付款和账号限制。"
+        ? "价格大幅低于美国，跨区订阅时更需要关注付款和账号限制。"
         : "The price is far below the US reference, so payment and account restrictions deserve extra attention.",
     );
-  } else if (diffPercent <= -22) {
-    score += 8;
+  } else if (diffPercent <= -25) {
+    score += 6;
     factors.push(
       locale === "zh"
         ? "价格明显低于美国，建议以结算页能否完成为准。"
         : "The price is clearly below the US reference; rely on checkout completion.",
     );
+  } else if (diffPercent <= -12) {
+    score += 3;
+  } else if (diffPercent >= 45) {
+    score += 3;
+    factors.push(
+      locale === "zh"
+        ? "价格明显高于美国，主要体现为成本风险，不直接等同于平台高风控。"
+        : "The price is far above the US reference; this is mainly cost risk, not high platform risk by itself.",
+    );
   }
 
   if (taxVariable) {
-    score += 4;
+    score += 3;
     factors.push(
       locale === "zh"
         ? "税费按州或省变化，结算价可能和展示价略有差异。"
@@ -331,10 +469,10 @@ function assessAppStoreRisk({
   }
 
   if (taxConfidence === "low") {
-    score += 8;
-    factors.push(locale === "zh" ? "税费资料可信度较低。" : "Tax profile confidence is low.");
+    score += 5;
+    factors.push(locale === "zh" ? "税务资料可信度较低。" : "Tax profile confidence is low.");
   } else if (taxConfidence === "medium") {
-    score += 3;
+    score += 1;
   }
 
   const finalScore = clampRiskScore(score);
@@ -350,10 +488,9 @@ function assessAppStoreRisk({
     level: finalLevel,
     score: finalScore,
     note: `${riskNote} ${locale === "zh" ? "模型判断：" : "Model rating: "}${getRiskLevelLabel(finalLevel, locale)} (${finalScore}/100).`,
-    factors: factors.join(locale === "zh" ? " " : " "),
+    factors: factors.join(" "),
   };
 }
-
 function getLocalizedRiskText({
   zh,
   en,
@@ -363,10 +500,7 @@ function getLocalizedRiskText({
   en: string | null;
   locale: DetailLocale;
 }) {
-  const value = locale === "zh" ? zh?.trim() : en?.trim();
-  const fallback = locale === "zh" ? en?.trim() : zh?.trim();
-
-  return value || fallback || undefined;
+  return getLocalizedRiskProfileText({ zh, en, locale });
 }
 
 function buildProductFromRows(
@@ -461,6 +595,7 @@ function buildProductFromRows(
         locale,
       }),
       taxConfidence: getTaxConfidence(row.tax_profile_confidence),
+      taxSourceKind: getTaxSourceKind(row.tax_profile_source_kind),
       taxTreatment: getTaxTreatment(row.tax_profile_treatment),
       taxCalculationPolicy: getTaxCalculationPolicy(row.tax_profile_calculation_policy),
       taxReviewStatus: getTaxReviewStatus(row.tax_profile_review_status),
@@ -476,6 +611,8 @@ function buildProductFromRows(
       riskFactors: assessedRisk.factors,
       billingPlatform: row.billing_platform || "unknown",
       billingPlatformLabel: getBillingPlatformLabel(row.billing_platform),
+      lastCheckedAt: formatDate(row.last_checked_at),
+      fxRateDate: row.fx_rate_date || undefined,
       isReference: Boolean(row.is_reference) || countryCode === "US",
       isCheap: diffPercent < -5,
       isExpensive: diffPercent > 18,
@@ -512,6 +649,7 @@ function buildProductFromRows(
     staticProduct?.defaultPlan && plans.some((plan) => plan.slug === staticProduct.defaultPlan)
       ? staticProduct.defaultPlan
       : plans[0]?.slug || staticProduct?.defaultPlan || "plus";
+  const latestCheckedAt = getLatestDate(rows.map((row) => row.last_checked_at));
 
   return {
     slug: firstRow.product_slug,
@@ -522,9 +660,10 @@ function buildProductFromRows(
       staticProduct?.description ||
       `比较 ${firstRow.product_name} 不同地区的订阅价格。`,
     icon: staticProduct?.icon,
+    logoUrl: staticProduct?.logoUrl || firstRow.product_logo_url || undefined,
     accentIcon: staticProduct?.accentIcon,
     defaultPlan,
-    updatedAt: staticProduct?.updatedAt || "2026-06",
+    updatedAt: latestCheckedAt || staticProduct?.updatedAt || "2026-06",
     sourceNote: "价格数据来自 GeoSub 数据库；缺失产品会回退到静态示例数据。",
     plans,
   };
@@ -538,6 +677,7 @@ export async function getPricingDetailProduct(
     SELECT
       p.slug AS product_slug,
       p.name AS product_name,
+      p.logo_url AS product_logo_url,
       pl.slug AS plan_slug,
       pl.name AS plan_name,
       pl.billing_cycle::text AS billing_cycle,
@@ -558,6 +698,7 @@ export async function getPricingDetailProduct(
       tax_profile.display_note_zh AS tax_profile_note_zh,
       tax_profile.display_note_en AS tax_profile_note_en,
       tax_profile.confidence AS tax_profile_confidence,
+      tax_profile.source_kind AS tax_profile_source_kind,
       tax_profile.is_variable_by_region AS tax_profile_is_variable,
       tax_profile.app_store_tax_treatment AS tax_profile_treatment,
       tax_profile.price_calculation_policy AS tax_profile_calculation_policy,
@@ -574,7 +715,8 @@ export async function getPricingDetailProduct(
       risk_profile.requirements_en AS risk_requirements_en,
       rp.availability_note,
       rp.billing_platform::text AS billing_platform,
-      rp.last_checked_at
+      rp.last_checked_at,
+      latest_observation.raw_payload ->> 'fx_rate_date' AS fx_rate_date
     FROM products p
     JOIN plans pl ON pl.product_id = p.id
     LEFT JOIN region_prices rp
@@ -589,6 +731,17 @@ export async function getPricingDetailProduct(
     LEFT JOIN country_app_store_risk_profiles risk_profile
       ON risk_profile.country_id = c.id
       AND risk_profile.status = 'active'
+    LEFT JOIN LATERAL (
+      SELECT po.raw_payload
+      FROM price_observations po
+      WHERE po.product_id = p.id
+        AND po.plan_id = pl.id
+        AND po.country_id = rp.country_id
+        AND po.billing_platform = rp.billing_platform
+        AND po.status = 'approved'
+      ORDER BY po.observed_at DESC, po.created_at DESC
+      LIMIT 1
+    ) latest_observation ON TRUE
     LEFT JOIN LATERAL (
       SELECT COUNT(*) AS pending_observation_count
       FROM price_observations po

@@ -16,31 +16,56 @@ center first, then the V1 auto-review can promote them after repeated stability:
 App Store page -> price_observations pending -> 3 stable App Store samples -> region_prices
 ```
 
+The collector marks suspicious observations before review. Examples include a
+converted USD price below `$1`, App Store text that explicitly says USD while
+the parsed currency is different, or a non-USD storefront where a local `$`
+price was parsed as USD. These rows stay pending with `anomaly_flag` and a
+review note so they are visible in the admin review center.
+
+For products listed in `geosub-backend/data/product-plan-specs.json`, the
+collector also checks broad expected monthly USD ranges. These ranges are not
+used to decide the exact correct price; they only catch obvious parser mistakes,
+wrong billing-cycle captures, or currency conversion failures.
+
 ## Run manually
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\collect-app-store-prices.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\collect-app-store-prices.ps1 -ProductSlug chatgpt
 ```
 
 Default scope:
 
 - Product: `chatgpt`
-- App Store app id: `6448311069`
-- Countries: `US`, `CA`, `JP`, `PH`, `TR`, `IN`, `GB`, `DE`, `AU`, `SG`,
-  `DK`, `BR`, `MX`, `KR`
-- Plans are parsed from App Store in-app purchase names and sorted by price
-  for new products.
+- App Store app id: read from the product's active `app_store` collector job,
+  or pass `-AppId` / `-AppStoreUrl` explicitly.
+- Countries: `DEFAULT`, a curated common-storefront set. Mainland China (`CN`)
+  and Hong Kong (`HK`) are excluded by default.
+- Plans are matched through `geosub-backend/data/product-plan-specs.json` when
+  the product has a spec. Unknown products still fall back to App Store
+  in-app purchase names and price-ascending sort order.
 
 ## Dry run
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\collect-app-store-prices.ps1 -DryRun
+powershell -ExecutionPolicy Bypass -File .\scripts\collect-app-store-prices.ps1 -ProductSlug chatgpt -DryRun
 ```
 
 If matching pending observations already exist today, the collector skips them
 unless `-Force` is passed.
 
 Dry run always prints the prices it would collect and does not insert rows.
+
+## Quality report
+
+After a collection run, inspect the local price quality summary:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\report-app-store-price-quality.ps1 -ProductSlug chatgpt
+```
+
+The report shows configured plan order, recent observation coverage, pending
+review reasons, collector anomalies, and published coverage. It is read-only and
+safe to run repeatedly.
 
 ## Availability status
 
@@ -81,9 +106,17 @@ continues to read cached prices from the database.
 
 ## Country coverage
 
-By default the App Store collector runs in `ALL` mode: it reads every country
-from the `countries` table and skips mainland China (`CN`). This keeps the
-collector aligned with the database instead of a hard-coded country list.
+By default the App Store collector runs in `DEFAULT` mode: it samples a curated
+set of common storefronts across North America, Europe, Asia-Pacific, Latin
+America, the Middle East, and Africa. Mainland China (`CN`) and Hong Kong
+(`HK`) are excluded by default.
+
+Use `ALL` only for occasional full-coverage sweeps. It reads every App Store
+country from the `countries` table and still skips the excluded storefronts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\collect-app-store-prices.ps1 -CountryCodes ALL
+```
 
 Use `-CountryCodes` only when you want to limit a run to a small test set:
 
@@ -96,7 +129,7 @@ supported by the FX providers used for USD conversion. The collector tries
 Frankfurter first and falls back to a broader public USD rate endpoint for
 currencies that Frankfurter does not cover, such as some emerging-market
 storefronts. To exclude more storefronts in an `ALL` run, pass
-`-ExcludedCountryCodes CN,XX`.
+`-ExcludedCountryCodes CN,HK,XX`.
 
 ## Review flow
 
@@ -159,12 +192,15 @@ product name + official site
   -> region_prices
 ```
 
-The collector no longer hard-codes ChatGPT plan names. It parses the App Store
-in-app purchase list, keeps subscription-like plan names such as `Go`, `Plus`,
-`Pro 5x`, and `Pro 20x`, and filters obvious non-subscription purchases such as
-credits/coins/tokens. For unknown products, generated plans use price ascending
-as the default `sort_order`, which gives the frontend a sensible first display
-order until a human chooses a custom order.
+For known products, the collector uses `product-plan-specs.json` to normalize
+plan slugs, display names, sort order, aliases, and broad expected monthly USD
+ranges. It still parses the App Store in-app purchase list, keeps
+subscription-like plan names such as `Go`, `Plus`, `Pro 5x`, and `Pro 20x`, and
+filters obvious non-subscription purchases such as credits/coins/tokens.
+
+For unknown products, generated plans use price ascending as the default
+`sort_order`, which gives the frontend a sensible first display order until a
+human chooses a custom order.
 
 Existing common names still map cleanly:
 
@@ -175,3 +211,78 @@ Existing common names still map cleanly:
 
 If automatic App Store matching fails, the admin can still paste an App Store
 URL or App ID in the product edit page; the rest of the pipeline is the same.
+
+## Evidence-first price quality
+
+The pricing pipeline treats official sources as evidence, not as a single blind
+scrape. Each App Store observation now carries enough context for review:
+
+- parser and collector version
+- source URL and collection time
+- original local price and USD conversion
+- FX rate date
+- page-level price variants when the App Store exposes multiple prices for the
+  same plan
+- auto-review decision and reason code
+- comparison against the current published price
+
+`sql/042_price_observation_evidence_view.sql` exposes this as
+`price_observation_evidence_view`. Admin pages should read this view instead of
+re-parsing `raw_payload` ad hoc.
+
+When a rendered App Store page shows several prices for the same known plan, the
+collector records the price distribution. The auto-review rule may approve the
+latest rendered observation when the selected price has page consensus, for
+example `INR 1950 x4` versus `INR 1649 x1`. Older conflicting pending samples are
+ignored instead of remaining in the review queue.
+
+External sites are useful probes, but not truth sources. Use
+`probe-opentherank-price-diffs.mjs` to detect differences against OpenTheRank:
+
+```powershell
+node .\scripts\probe-opentherank-price-diffs.mjs
+node .\scripts\probe-opentherank-price-diffs.mjs --product gemini
+```
+
+The probe never writes data. A difference should trigger official-source
+re-collection or manual source inspection; it must not directly overwrite
+`region_prices`.
+
+## Collection cadence
+
+Published prices are maintained with layered scheduling:
+
+- `daily_light`: daily patrol for core countries and popular products.
+- `weekly_full`: weekly collection for the curated common-country set.
+- `anomaly_watch`: short-interval rechecks for recent anomalies, price changes,
+  plan-order conflicts, currency mismatches, or published-price conflicts.
+
+This avoids treating noisy daily full-page scrapes as truth while still catching
+real price changes quickly.
+
+`sql/043_app_store_collection_schedule_policy.sql` configures existing App Store
+jobs into this cadence and creates `queue_app_store_anomaly_rechecks(...)`.
+`run-collector-jobs.ps1` calls that function before selecting due jobs, then
+sets the next run time by schedule:
+
+- failed job: 6 hours
+- anomaly watch: 6 hours
+- daily light: 24 hours
+- weekly full: 7 days
+- monthly audit: 30 days
+
+The recommended scheduled entrypoint is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-price-accuracy-maintenance.ps1
+```
+
+That script performs the daily maintenance sequence:
+
+1. sync exchange rates,
+2. queue anomaly rechecks,
+3. run due collector jobs,
+4. optionally run the external OpenTheRank probe as an alert-only report.
+
+Use `-SkipExternalProbe` if the scheduled environment should not make external
+competitor-page requests.

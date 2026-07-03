@@ -5,7 +5,6 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   CheckCircle2,
   CircleDollarSign,
   Eye,

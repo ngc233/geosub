@@ -1,5 +1,7 @@
-import { chromium } from "playwright-core";
+import { createRequire } from "node:module";
 import { existsSync } from "node:fs";
+
+const chromium = await loadChromium();
 
 const args = new Map();
 for (let index = 2; index < process.argv.length; index += 2) {
@@ -16,9 +18,34 @@ const configuredUrl = args.get("url");
 const executablePath = resolveBrowserPath(args.get("chrome-path") ?? process.env.CHROME_PATH);
 const url = getAppStoreUrl(country, appId, configuredUrl);
 
+async function loadChromium() {
+  try {
+    return (await import("playwright-core")).chromium;
+  } catch {
+    const runtimePackage = process.env.PLAYWRIGHT_CORE_PACKAGE_JSON;
+    const candidates = [
+      runtimePackage,
+      "C:\\Users\\lanad\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\.pnpm\\node_modules\\playwright-core\\package.json",
+      "C:\\Users\\lanad\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\.pnpm\\playwright-core@1.61.1\\node_modules\\playwright-core\\package.json"
+    ].filter(Boolean);
+
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return createRequire(candidate)("playwright-core").chromium;
+      }
+    }
+
+    throw new Error(
+      "Cannot find the playwright-core package. Install project dependencies or set PLAYWRIGHT_CORE_PACKAGE_JSON."
+    );
+  }
+}
+
 function getAppStoreUrl(countryCode, appleAppId, value) {
   if (value) {
-    const normalized = value.replace(/apps\.apple\.com\/[a-z]{2}\//i, `apps.apple.com/${countryCode}/`);
+    const normalized = /apps\.apple\.com\/[a-z]{2}\//i.test(value)
+      ? value.replace(/apps\.apple\.com\/[a-z]{2}\//i, `apps.apple.com/${countryCode}/`)
+      : value.replace(/apps\.apple\.com\//i, `apps.apple.com/${countryCode}/`);
     if (normalized.match(new RegExp(`/id${appleAppId}(\\?|$)`))) {
       return normalized;
     }

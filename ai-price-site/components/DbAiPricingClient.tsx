@@ -57,7 +57,21 @@ export default function DbAiPricingClient({
   locale,
 }: DbAiPricingClientProps) {
   const copy = pageCopy[locale];
-  const [activeCategory, setActiveCategory] = useState<DbPricingCategory>("ai");
+  const availableTabs = useMemo(
+    () =>
+      copy.tabs.filter((tab) =>
+        products.some((product) => product.category === tab.key),
+      ),
+    [copy.tabs, products],
+  );
+  const defaultCategory = availableTabs[0]?.key || copy.tabs[0].key;
+  const [selectedCategory, setSelectedCategory] =
+    useState<DbPricingCategory>(defaultCategory);
+  const activeCategory = availableTabs.some(
+    (tab) => tab.key === selectedCategory,
+  )
+    ? selectedCategory
+    : defaultCategory;
 
   const activeTab =
     copy.tabs.find((tab) => tab.key === activeCategory) || copy.tabs[0];
@@ -69,18 +83,20 @@ export default function DbAiPricingClient({
 
   return (
     <>
-      <div className="mb-10 flex justify-center">
-        <SegmentedControl
-          ariaLabel={locale === "en" ? "Digital service category" : "数字服务分类"}
-          value={activeCategory}
-          tone="green"
-          items={copy.tabs.map((tab) => ({
-            label: tab.label,
-            value: tab.key,
-          }))}
-          onChange={(value) => setActiveCategory(value as DbPricingCategory)}
-        />
-      </div>
+      {availableTabs.length > 1 ? (
+        <div className="mb-10 flex justify-center">
+          <SegmentedControl
+            ariaLabel={locale === "en" ? "Digital service category" : "数字服务分类"}
+            value={activeCategory}
+            tone="green"
+            items={availableTabs.map((tab) => ({
+              label: tab.label,
+              value: tab.key,
+            }))}
+            onChange={(value) => setSelectedCategory(value as DbPricingCategory)}
+          />
+        </div>
+      ) : null}
 
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>

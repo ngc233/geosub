@@ -85,6 +85,24 @@ function Get-FrankfurterRates {
   }
 }
 
+function Get-OpenErApiRates {
+  param([string]$Base)
+
+  $url = "https://open.er-api.com/v6/latest/$([uri]::EscapeDataString($Base))"
+  $response = Invoke-RestMethod -Uri $url -TimeoutSec 30
+  $rateDate = (Get-Date).ToString("yyyy-MM-dd")
+  if ($response.time_last_update_utc) {
+    $rateDate = ([datetime]::Parse([string]$response.time_last_update_utc)).ToString("yyyy-MM-dd")
+  }
+
+  return [pscustomobject]@{
+    Url = $url
+    Date = $rateDate
+    Rates = $response.rates
+    Payload = $response
+  }
+}
+
 $base = Normalize-CurrencyCode $BaseCurrency
 $quotes = @($QuoteCurrencies |
   ForEach-Object { Normalize-CurrencyCode $_ } |
@@ -115,12 +133,28 @@ RETURNING id;
 "@
 
 try {
-  if ($Provider -ne "frankfurter") {
-    throw "Unsupported provider '$Provider'. Current script supports 'frankfurter'."
+  if ($Provider -notin @("frankfurter", "open-er-api")) {
+    throw "Unsupported provider '$Provider'. Current script supports 'frankfurter' and 'open-er-api'."
   }
 
-  $result = Get-FrankfurterRates -Base $base -Quotes $quotes
+  $result = if ($Provider -eq "open-er-api") {
+    Get-OpenErApiRates -Base $base
+  } else {
+    try {
+      Get-FrankfurterRates -Base $base -Quotes $quotes
+    } catch {
+      Write-Warning "Frankfurter FX lookup failed: $($_.Exception.Message). Falling back to open.er-api."
+      [pscustomobject]@{
+        Url = "https://api.frankfurter.app/latest?from=$base"
+        Date = (Get-Date).ToString("yyyy-MM-dd")
+        Rates = [pscustomobject]@{}
+        Payload = @{ error = $_.Exception.Message }
+      }
+    }
+  }
   $rowCount = 0
+  $requestedUrls = @($result.Url)
+  $syncedQuotes = @{}
 
   foreach ($quote in $quotes) {
     $rate = $result.Rates.$quote
@@ -145,6 +179,39 @@ SELECT upsert_exchange_rate(
 "@
 
     $rowCount += 1
+    $syncedQuotes[$quote] = $true
+  }
+
+  $missingQuotes = @($quotes | Where-Object { !$syncedQuotes.ContainsKey($_) })
+  if ($Provider -eq "frankfurter" -and $missingQuotes.Count -gt 0) {
+    $fallbackResult = Get-OpenErApiRates -Base $base
+    $requestedUrls += $fallbackResult.Url
+
+    foreach ($quote in $missingQuotes) {
+      $rate = $fallbackResult.Rates.$quote
+
+      if ($null -eq $rate) {
+        continue
+      }
+
+      $rateText = ([decimal]$rate).ToString([Globalization.CultureInfo]::InvariantCulture)
+
+      Invoke-Psql @"
+SELECT upsert_exchange_rate(
+  $(Quote-SqlString $base),
+  $(Quote-SqlString $quote),
+  $rateText,
+  $(Quote-SqlString $fallbackResult.Date)::date,
+  'open-er-api',
+  NOW(),
+  $(Quote-SqlString $runId)::uuid,
+  $(Quote-SqlJson $fallbackResult.Payload)
+);
+"@
+
+      $rowCount += 1
+      $syncedQuotes[$quote] = $true
+    }
   }
 
   $finalStatus = if ($rowCount -eq $quotes.Count) { "succeeded" } else { "partial" }
@@ -152,7 +219,7 @@ SELECT upsert_exchange_rate(
   Invoke-Psql @"
 UPDATE exchange_rate_sync_runs
 SET status = $(Quote-SqlString $finalStatus),
-    requested_url = $(Quote-SqlString $result.Url),
+    requested_url = $(Quote-SqlString ($requestedUrls -join " | ")),
     row_count = $rowCount,
     completed_at = NOW(),
     error_message = NULL

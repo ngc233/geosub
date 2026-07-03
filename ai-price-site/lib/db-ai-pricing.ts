@@ -1,4 +1,4 @@
-import { ProductCategory } from "@prisma/client";
+﻿import { ProductCategory } from "@prisma/client";
 import { prisma } from "./prisma";
 import type {
   DbPricingCategory,
@@ -13,6 +13,7 @@ type TaxProfileRow = {
   display_note_zh: string | null;
   display_note_en: string | null;
   confidence: string | null;
+  source_kind: string | null;
   app_store_tax_treatment: string | null;
   review_status: string | null;
   frontend_note_zh: string | null;
@@ -83,16 +84,13 @@ function getCountryName({
 
 function getProductDescription({
   name,
-  category,
   locale,
 }: {
   name: string;
-  category: DbPricingCategory;
   locale: DbPricingLocale;
 }) {
   return defaultDescription({
     name,
-    category,
     locale,
   });
 }
@@ -132,7 +130,7 @@ function formatLocalPrice({
   const numberValue = Number(amount);
 
   if (Number.isNaN(numberValue)) {
-    return `— ${currency}`;
+    return `-- ${currency}`;
   }
 
   return `${numberValue.toLocaleString("en-US", {
@@ -142,18 +140,16 @@ function formatLocalPrice({
 
 function defaultDescription({
   name,
-  category,
   locale,
 }: {
   name: string;
-  category: DbPricingCategory;
   locale: DbPricingLocale;
 }) {
   if (locale === "en") {
     return `Compare ${name} subscription prices, cheapest regions and regional price spread.`;
   }
 
-  return `比较 ${name} 在不同国家与地区的订阅价格、最低价地区和价差。`;
+  return `比较 ${name} 在不同国家与地区的订阅价格、最低价地区和价格差异。`;
 }
 
 function getTaxNote({
@@ -165,24 +161,95 @@ function getTaxNote({
   taxProfile?: TaxProfileRow;
   locale: DbPricingLocale;
 }) {
+  const profileNote = getLocalizedTaxProfileText({
+    zh: taxProfile?.display_note_zh,
+    en: taxProfile?.display_note_en,
+    locale,
+  });
+
+  if (profileNote) {
+    return profileNote;
+  }
+
   const explicitNote = priceTaxNote?.trim();
 
   if (explicitNote) {
     return explicitNote;
   }
 
-  const profileNote =
-    locale === "zh"
-      ? taxProfile?.display_note_zh?.trim()
-      : taxProfile?.display_note_en?.trim();
-
-  if (profileNote) {
-    return profileNote;
-  }
-
   return locale === "en"
     ? "Tax may vary at checkout"
     : "税费以结算页为准";
+}
+
+function hasBrokenText(value?: string | null) {
+  return !value || value.includes("?") || value.includes("锟");
+}
+
+function hasCjkText(value: string) {
+  return /[\u3400-\u9fff]/.test(value);
+}
+
+function translateTaxProfileTextToZh(value: string) {
+  const raw = value.trim();
+  const includeMatch = raw.match(/^(?:Includes|Usually includes)\s+(.+)$/i);
+
+  if (includeMatch) {
+    const label = includeMatch[1]
+      .replace(/consumption tax/i, "消费税")
+      .replace(/service tax/i, "服务税")
+      .replace(/sales tax/i, "销售税")
+      .replace(/by region/i, "因地区不同");
+    return /^Usually includes/i.test(raw) ? `通常含 ${label}` : `含 ${label}`;
+  }
+
+  const provinceMatch = raw.match(/^GST\/HST varies by province(?:,\s*(.+))?$/i);
+  if (provinceMatch) {
+    return provinceMatch[1]
+      ? `各省 ${provinceMatch[1]} GST/HST 不同`
+      : "各省 GST/HST 不同";
+  }
+
+  if (/State ICMS varies/i.test(raw)) return "州税（ICMS）不同";
+  if (/Sales tax varies by state/i.test(raw)) return "各州销售税不同";
+  if (/Sales tax varies by region/i.test(raw)) return "销售税因地区不同";
+  if (/VAT treatment needs review/i.test(raw)) return "VAT 规则需复核";
+  if (/Usually GST-inclusive/i.test(raw)) return "通常已含 GST，最终以结算页为准";
+  if (/Usually VAT-inclusive/i.test(raw)) return "通常已含 VAT，最终以结算页为准";
+  if (/App Store list price/i.test(raw)) return "App Store 标价，税费以结算页为准";
+  if (/No country tax-rate profile matched yet/i.test(raw)) {
+    return "未匹配到国家税率资料；最终以 App Store 结算页为准";
+  }
+  if (/final checkout applies/i.test(raw)) return "最终以结算页为准";
+
+  return raw;
+}
+
+function getLocalizedTaxProfileText({
+  zh,
+  en,
+  locale,
+}: {
+  zh?: string | null;
+  en?: string | null;
+  locale: DbPricingLocale;
+}) {
+  const zhText = zh?.trim();
+  const enText = en?.trim();
+
+  if (locale === "en") {
+    return enText || zhText || "";
+  }
+
+  if (zhText && !hasBrokenText(zhText) && hasCjkText(zhText)) {
+    return zhText;
+  }
+
+  if (enText) {
+    return translateTaxProfileTextToZh(enText);
+  }
+
+  return "";
 }
 
 function getTaxConfidence(value?: string | null): DbPricingRegion["taxConfidence"] {
@@ -191,6 +258,20 @@ function getTaxConfidence(value?: string | null): DbPricingRegion["taxConfidence
   }
 
   return "unknown";
+}
+
+function getTaxSourceKind(value?: string | null): DbPricingRegion["taxSourceKind"] {
+  if (
+    value === "manual" ||
+    value === "official" ||
+    value === "apple" ||
+    value === "provider" ||
+    value === "inferred"
+  ) {
+    return value;
+  }
+
+  return undefined;
 }
 
 function getTaxTreatment(value?: string | null): DbPricingRegion["taxTreatment"] {
@@ -221,23 +302,25 @@ function getTaxFrontendNote({
   taxProfile?: TaxProfileRow;
   locale: DbPricingLocale;
 }) {
-  return (
-    (locale === "zh"
-      ? taxProfile?.frontend_note_zh?.trim()
-      : taxProfile?.frontend_note_en?.trim()) || ""
-  );
+  return getLocalizedTaxProfileText({
+    zh: taxProfile?.frontend_note_zh,
+    en: taxProfile?.frontend_note_en,
+    locale,
+  });
 }
 
 export async function getDbAiPricingProducts({
   locale = "zh",
+  categories = [ProductCategory.AI, ProductCategory.STREAMING],
 }: {
   locale?: DbPricingLocale;
+  categories?: ProductCategory[];
 } = {}) {
   const [products, taxProfileRows] = await Promise.all([
     prisma.product.findMany({
       where: {
         category: {
-          in: [ProductCategory.AI, ProductCategory.STREAMING],
+          in: categories,
         },
         OR: [
           { status: "PUBLISHED" },
@@ -290,6 +373,7 @@ export async function getDbAiPricingProducts({
         tax_profile.display_note_zh,
         tax_profile.display_note_en,
         tax_profile.confidence,
+        tax_profile.source_kind,
         tax_profile.app_store_tax_treatment,
         tax_profile.review_status,
         tax_profile.frontend_note_zh,
@@ -351,6 +435,7 @@ export async function getDbAiPricingProducts({
                 locale,
               }),
               taxConfidence: getTaxConfidence(taxProfile?.confidence),
+              taxSourceKind: getTaxSourceKind(taxProfile?.source_kind),
               taxTreatment: getTaxTreatment(taxProfile?.app_store_tax_treatment),
               taxReviewStatus: getTaxReviewStatus(taxProfile?.review_status),
               taxFrontendNote: getTaxFrontendNote({
@@ -391,9 +476,9 @@ export async function getDbAiPricingProducts({
         category,
         description: getProductDescription({
           name: displayName,
-          category,
           locale,
         }),
+        logoUrl: product.logoUrl || undefined,
         updatedAt: formatYearMonth(latestDate),
         plans,
       };

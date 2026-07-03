@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
 
@@ -561,6 +562,8 @@ export async function ignoreCandidate(formData: FormData): Promise<void> {
 }
 
 export async function promoteCandidate(formData: FormData): Promise<void> {
+  let redirectTo = "/admin/discovery?promotionError=1";
+
   try {
     const admin = await requireAdmin();
     const id = getCandidateId(formData);
@@ -636,6 +639,9 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
 
     const result = rows[0];
     const targetProductId = result?.promoted_product_id || result?.matched_product_id || null;
+    let targetProductSlug = "";
+    let targetProductName = "";
+    let appStoreJobCount = 0;
 
     if (targetProductId) {
       const candidateRows = await prisma.$queryRaw<Array<{
@@ -843,6 +849,30 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
           AND existing.status <> 'archived'
       )
     `;
+
+      const productRows = await prisma.$queryRaw<Array<{
+        slug: string;
+        name: string;
+        app_store_job_count: number;
+      }>>`
+        SELECT
+          product.slug,
+          product.name,
+          COUNT(job.id) FILTER (WHERE source.type = 'app_store'::price_source_type)::int AS app_store_job_count
+        FROM products product
+        LEFT JOIN collector_jobs job
+          ON job.product_id = product.id
+          AND job.status <> 'archived'
+        LEFT JOIN price_sources source ON source.id = job.source_id
+        WHERE product.id = ${targetProductId}::uuid
+        GROUP BY product.id
+        LIMIT 1
+      `;
+
+      const product = productRows[0];
+      targetProductSlug = product?.slug || "";
+      targetProductName = product?.name || "";
+      appStoreJobCount = Number(product?.app_store_job_count ?? 0);
     }
 
     await prisma.$queryRaw`
@@ -874,8 +904,22 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
     revalidatePath("/admin/discovery");
     revalidatePath("/admin/products");
     revalidatePath("/admin/collector-jobs");
+    revalidatePath("/admin/review");
+
+    if (targetProductId && targetProductSlug) {
+      const query = new URLSearchParams({
+        q: targetProductSlug,
+        discoveryPromoted: "1",
+        discoveryProduct: targetProductName || targetProductSlug,
+        discoveryJobs: String(appStoreJobCount),
+      });
+
+      redirectTo = `/admin/review?${query.toString()}`;
+    }
 
   } catch (error) {
     console.error("Failed to promote discovery candidate.", error);
   }
+
+  redirect(redirectTo);
 }

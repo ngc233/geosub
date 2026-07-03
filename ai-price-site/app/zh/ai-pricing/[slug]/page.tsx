@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ProductCategory } from "@prisma/client";
 import BrandIcon from "../../../../components/BrandIcon";
 import ProductSidebar from "../../../../components/ProductSidebar";
 import PlanTabs from "../../../../components/PlanTabs";
@@ -12,12 +13,12 @@ import {
   formatUsd,
   getPlanStats,
   getProductPlan,
-  subscriptionPricingData,
   type ProductPlan,
 } from "../../../../data/ai-pricing";
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../../../../lib/affordability";
 import { getLatestExchangeRate } from "../../../../lib/exchange-rates";
+import { prisma } from "../../../../lib/prisma";
 
 type PageProps = {
   params: Promise<{
@@ -30,6 +31,85 @@ type PageProps = {
 
 async function getProduct(slug: string) {
   return getPricingDetailProduct(slug, "zh");
+}
+
+function toDbProductCategory(category: string) {
+  return category === "streaming" ? ProductCategory.STREAMING : ProductCategory.AI;
+}
+
+async function getProductNavItems(category: string) {
+  const products = await prisma.product.findMany({
+    where: {
+      category: toDbProductCategory(category),
+      status: {
+        in: ["PUBLISHED", "REVIEW"],
+      },
+    },
+    orderBy: [
+      { sortOrder: "asc" },
+      { createdAt: "asc" },
+    ],
+    select: {
+      slug: true,
+      name: true,
+      category: true,
+      logoUrl: true,
+    },
+  });
+
+  return products.map((product) => ({
+    slug: product.slug,
+    name: product.name,
+    category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
+    logoUrl: product.logoUrl,
+  }));
+}
+
+async function getProductSeoMeta(slug: string) {
+  return prisma.seoMeta.findFirst({
+    where: {
+      locale: "ZH",
+      status: "PUBLISHED",
+      product: {
+        slug,
+      },
+      planId: null,
+      articleId: null,
+      categoryId: null,
+    },
+  });
+}
+
+function hasChineseText(value?: string | null) {
+  return Boolean(value && /[\u3400-\u9fff]/.test(value));
+}
+
+function getPlanDisplayName(productName: string, planName: string) {
+  if (planName.toLowerCase().startsWith(productName.toLowerCase())) {
+    return planName;
+  }
+
+  return `${productName} ${planName}`;
+}
+
+function getLocalizedH1({
+  productName,
+  planName,
+  seoH1,
+}: {
+  productName: string;
+  planName: string;
+  seoH1?: string | null;
+}) {
+  if (hasChineseText(seoH1)) {
+    return seoH1;
+  }
+
+  return `${getPlanDisplayName(productName, planName)} 全球价格对比`;
+}
+
+function getLocalizedDescription(productName: string) {
+  return `按套餐和地区比较 ${productName} 在 App Store 的公开订阅价格，并提供美元、人民币和购买力视角。`;
 }
 
 function getDiffPercent(price: number, referencePrice: number) {
@@ -65,84 +145,139 @@ function PurchasingPowerSection({
   const referenceRegion = getReferenceRegion(plan);
   const referencePrice = referenceRegion.priceUsd;
 
-  const grouped = sortedRegions.map((region) => {
+  const rows = sortedRegions.map((region) => {
     const diff = getDiffPercent(region.priceUsd, referencePrice);
-    let group = "接近公平定价";
+    const normalized = Math.max(6, Math.min(100, 50 + diff / 2));
+    let label = "接近基准";
+    let tone = "bg-zinc-400";
 
-    if (diff >= 80) group = "严重偏高";
-    else if (diff >= 20) group = "中度偏高";
-    else if (diff <= -20) group = "更划算";
+    if (diff >= 80) {
+      label = "明显偏贵";
+      tone = "bg-rose-500";
+    } else if (diff >= 20) {
+      label = "偏贵";
+      tone = "bg-amber-500";
+    } else if (diff <= -20) {
+      label = "价格友好";
+      tone = "bg-emerald-500";
+    }
 
     return {
       region,
       diff,
-      group,
-      burden: Math.max(8, Math.min(100, 50 + diff)),
+      label,
+      tone,
+      normalized,
     };
   });
+  const cheapest = rows[0];
+  const mostExpensive = rows[rows.length - 1];
+  const nearBaseline =
+    rows.find(({ diff }) => Math.abs(diff) <= 10) ||
+    rows.reduce((closest, row) =>
+      Math.abs(row.diff) < Math.abs(closest.diff) ? row : closest,
+    rows[0]);
+  const matrixRows = rows.slice(0, 28);
 
   return (
-    <section className="rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
-      <div className="mb-7 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="border-b border-zinc-100 px-5 py-5 dark:border-zinc-800 md:px-6">
         <div>
-          <h2 className="text-xl font-semibold leading-tight text-zinc-950 dark:text-white">
-            {productName} 本地购买力对比
+          <h2 className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-white">
+            {productName} 价格压力判断
           </h2>
-
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500 md:text-[15px] md:leading-7 dark:text-zinc-400">
-            当前使用已发布的 App Store 地区价格与收入数据估算本地订阅负担。该指数用于辅助理解价格压力，不等同于实际支付能力。
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+            收入指标还未完成本地刷新时，先用已发布 App Store 价格做过渡判断：看哪些地区低于基准、哪些地区明显溢价。收入数据接入后会自动升级为本地订阅负担排行。
           </p>
         </div>
       </div>
 
-      <div className="space-y-3">
-        {grouped.map(({ region, diff, group, burden }) => (
-          <div
-            key={`power-${region.code}`}
-            className="grid grid-cols-[96px_80px_1fr_70px] items-center gap-3 text-sm"
-          >
-            <div className="font-bold text-zinc-700 dark:text-zinc-200">
-              {region.country}
-            </div>
-
-            <div className="font-mono text-xs text-zinc-400">
-              {formatUsd(region.priceUsd)}
-            </div>
-
-            <div>
-              <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div
-                  className={[
-                    "h-2 rounded-full",
-                    diff > 20
-                      ? "bg-rose-400"
-                      : diff < -10
-                        ? "bg-lime-500"
-                        : "bg-zinc-400",
-                  ].join(" ")}
-                  style={{ width: `${burden}%` }}
-                />
+      <div className="grid gap-3 border-b border-zinc-100 px-5 py-5 dark:border-zinc-800 md:grid-cols-3 md:px-6">
+        {[
+          { label: "最低公开价", row: cheapest, helper: "可作为价格锚点，但仍需结合税费和账号风险。" },
+          { label: "接近基准", row: nearBaseline, helper: `${referenceRegion.country} 作为当前基准地区。` },
+          { label: "最高溢价", row: mostExpensive, helper: "适合放入解释和风险提示，而不是推荐位。" },
+        ].map(({ label, row, helper }) => (
+          <div key={label} className="rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-800">
+            <div className="text-xs font-medium text-zinc-400">{label}</div>
+            <div className="mt-2 flex items-baseline justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-base font-semibold text-zinc-950 dark:text-white">
+                  {row.region.country}
+                </div>
+                <div className="mt-1 text-xs text-zinc-400">{row.region.code}</div>
               </div>
-
-              <div className="mt-1 text-[11px] font-bold text-zinc-400">
-                {group}
+              <div className="text-right">
+                <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
+                  {formatUsd(row.region.priceUsd)}
+                </div>
+                <div className={["mt-1 text-xs font-medium tabular-nums", row.diff > 0 ? "text-rose-600" : row.diff < 0 ? "text-emerald-700" : "text-zinc-500"].join(" ")}>
+                  {getDiffText(row.diff)}
+                </div>
               </div>
             </div>
-
-            <div
-              className={[
-                "text-right text-xs font-black",
-                diff > 0
-                  ? "text-rose-600"
-                  : diff < 0
-                    ? "text-lime-700"
-                    : "text-zinc-500",
-              ].join(" ")}
-            >
-              {getDiffText(diff)}
-            </div>
+            <div className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{helper}</div>
           </div>
         ))}
+      </div>
+
+      <div className="grid gap-5 px-5 py-5 dark:border-zinc-800 md:px-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
+        <div>
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold text-zinc-950 dark:text-white">价格差矩阵</h3>
+              <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                以 {referenceRegion.country} 为 0% 基准，越靠左越便宜，越靠右溢价越明显。
+              </p>
+            </div>
+            <div className="text-xs text-zinc-400">{matrixRows.length} 个地区</div>
+          </div>
+
+          <div className="relative h-[220px] overflow-hidden rounded-lg border border-zinc-200 bg-[linear-gradient(to_right,rgba(113,113,122,0.10)_1px,transparent_1px)] bg-[size:25%_100%] dark:border-zinc-800">
+            <div className="absolute inset-y-0 left-1/2 border-l border-zinc-300 dark:border-zinc-700" />
+            <div className="absolute left-3 top-3 text-xs text-zinc-400">更便宜</div>
+            <div className="absolute right-3 top-3 text-xs text-zinc-400">更贵</div>
+            {matrixRows.map(({ region, diff, tone }, index) => {
+              const x = Math.max(5, Math.min(95, 50 + diff / 2));
+              const y = 18 + (index % 7) * 26;
+
+              return (
+                <div
+                  key={`fallback-power-${region.code}`}
+                  className="absolute -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: `${x}%`, top: `${y}px` }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className={`h-2.5 w-2.5 rounded-full ${tone}`} />
+                    <span className="rounded bg-white/85 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 shadow-sm dark:bg-zinc-900/85 dark:text-zinc-300">
+                      {region.code}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="content-start space-y-2">
+          {rows.slice(0, 8).map(({ region, diff, label, tone, normalized }) => (
+            <div key={`fallback-row-${region.code}`} className="rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-zinc-950 dark:text-white">{region.country}</div>
+                  <div className="mt-0.5 text-xs text-zinc-400">{formatUsd(region.priceUsd)}</div>
+                </div>
+                <div className="text-right text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">
+                  {getDiffText(diff)}
+                </div>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                <div className={`h-full rounded-full ${tone}`} style={{ width: `${normalized}%` }} />
+              </div>
+              <div className="mt-1.5 text-xs text-zinc-400">{label}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -254,7 +389,10 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProduct(slug);
+  const [product, seoMeta] = await Promise.all([
+    getProduct(slug),
+    getProductSeoMeta(slug),
+  ]);
 
   if (!product) {
     return {
@@ -263,8 +401,19 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${product.name} App Store 地区订阅价格 - GeoSub`,
-    description: `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`,
+    title: hasChineseText(seoMeta?.title)
+      ? seoMeta?.title || `${product.name} App Store 地区订阅价格 - GeoSub`
+      : `${product.name} App Store 地区订阅价格 - GeoSub`,
+    description:
+      hasChineseText(seoMeta?.description)
+        ? seoMeta?.description ||
+          `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`
+        : `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`,
+    alternates: seoMeta?.canonicalUrl
+      ? {
+          canonical: seoMeta.canonicalUrl,
+        }
+      : undefined,
   };
 }
 
@@ -274,13 +423,19 @@ export default async function ProductPricingPage({
 }: PageProps) {
   const { slug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const product = await getProduct(slug);
+  const [product, seoMeta] = await Promise.all([
+    getProduct(slug),
+    getProductSeoMeta(slug),
+  ]);
 
   if (!product) {
     notFound();
   }
 
   const activePlan = getProductPlan(product, resolvedSearchParams.plan);
+  const sidebarProducts = await getProductNavItems(product.category);
+  const detailBasePath =
+    product.category === "streaming" ? "/zh/streaming-pricing" : "/zh/ai-pricing";
   const hasPublishedPrices = activePlan.regions.length > 0;
   const [affordability, cnyExchangeRate] = await Promise.all([
     getPlanAffordability(product.slug, activePlan.slug),
@@ -290,7 +445,11 @@ export default async function ProductPricingPage({
 
   return (
     <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
-      <ProductSidebar products={subscriptionPricingData} currentSlug={product.slug} />
+      <ProductSidebar
+        products={sidebarProducts}
+        currentSlug={product.slug}
+        basePath={detailBasePath}
+      />
 
       <div className="min-w-0 flex-1 space-y-4">
         <div className="space-y-3">
@@ -302,8 +461,9 @@ export default async function ProductPricingPage({
           </Link>
 
           <MobileProductSwitcher
-            products={subscriptionPricingData}
+            products={sidebarProducts}
             currentSlug={product.slug}
+            basePath={detailBasePath}
           />
         </div>
 
@@ -318,11 +478,15 @@ export default async function ProductPricingPage({
                 </div>
 
                 <h1 className="mt-0.5 text-[26px] font-semibold leading-tight text-zinc-950 md:text-[32px] dark:text-white">
-                  {product.name} App Store 地区订阅价格
+                  {getLocalizedH1({
+                    productName: product.name,
+                    planName: activePlan.name,
+                    seoH1: seoMeta?.h1,
+                  })}
                 </h1>
 
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
-                  按套餐和地区比较 {product.name} 在 App Store 的公开订阅价格，并提供美元、人民币和购买力视角。
+                  {getLocalizedDescription(product.name)}
                 </p>
               </div>
             </div>

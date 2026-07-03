@@ -52,7 +52,7 @@ export const defaultNavigationLocale = navigationLocales[0];
 export const defaultNavigationPosition = navigationPositions[0];
 
 export const supportedNavigationLocalePaths = navigationLocales.map(
-  (locale) => locale.path
+  (locale) => locale.path,
 );
 
 export function getNavigationLocaleByValue(value?: string) {
@@ -69,7 +69,7 @@ export function getNavigationLocaleByDbValue(value?: Locale | string) {
 
   return (
     navigationLocales.find(
-      (locale) => String(locale.dbValue).toUpperCase() === normalized
+      (locale) => String(locale.dbValue).toUpperCase() === normalized,
     ) || defaultNavigationLocale
   );
 }
@@ -84,13 +84,13 @@ export function getNavigationPositionByValue(value?: string) {
 }
 
 export function getNavigationPositionByDbValue(
-  value?: NavigationPosition | string
+  value?: NavigationPosition | string,
 ) {
   const normalized = String(value || "").toUpperCase();
 
   return (
     navigationPositions.find(
-      (position) => String(position.dbValue).toUpperCase() === normalized
+      (position) => String(position.dbValue).toUpperCase() === normalized,
     ) || defaultNavigationPosition
   );
 }
@@ -100,6 +100,6 @@ export function isNavigationHomeHref(href: string) {
 
   return navigationLocales.some(
     (locale) =>
-      cleanHref === `/${locale.path}/` || cleanHref === `/${locale.path}`
+      cleanHref === `/${locale.path}/` || cleanHref === `/${locale.path}`,
   );
 }

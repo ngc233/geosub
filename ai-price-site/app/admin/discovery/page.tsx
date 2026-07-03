@@ -1,6 +1,7 @@
 ﻿import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { prisma } from "../../../lib/prisma";
+import Link from "next/link";
 import {
   ignoreCandidate,
   promoteCandidate,
@@ -191,13 +192,35 @@ function sourceQueueClassName(source: SourceRow) {
 
 function CandidateActions({ candidate }: { candidate: CandidateRow }) {
   if (["promoted", "merged", "ignored"].includes(candidate.status)) {
+    const reviewParams = new URLSearchParams({
+      q: candidate.suggested_slug || candidate.name,
+    });
+
+    if (candidate.collector_job_count > 0) {
+      reviewParams.set("discoveryPromoted", "1");
+      reviewParams.set(
+        "discoveryProduct",
+        candidate.promoted_product_name || candidate.matched_product_name || candidate.name,
+      );
+      reviewParams.set("discoveryJobs", String(candidate.collector_job_count));
+    }
+
+    const reviewHref = `/admin/review?${reviewParams.toString()}`;
+
     return (
       <div className="text-xs leading-5 text-slate-500">
         {candidate.promoted_product_name ? `已加入：${candidate.promoted_product_name}` : null}
         {candidate.matched_product_name ? `已合并：${candidate.matched_product_name}` : null}
         {candidate.collector_job_count > 0 ? (
           <div className="mt-1 font-semibold text-emerald-700">
-            已生成 {candidate.collector_job_count} 个采集任务
+            已准备采集
+            <Link href={reviewHref} className="ml-2 text-blue-700 underline underline-offset-4">
+              去采集这个产品
+            </Link>
+          </div>
+        ) : ["promoted", "merged"].includes(candidate.status) ? (
+          <div className="mt-1 rounded-lg bg-amber-50 px-2 py-1.5 font-medium leading-5 text-amber-800 ring-1 ring-amber-100">
+            已入库，但还没有 App Store 采集任务。请补 App Store 链接后再采集。
           </div>
         ) : null}
         {!candidate.promoted_product_name && !candidate.matched_product_name
@@ -215,7 +238,7 @@ function CandidateActions({ candidate }: { candidate: CandidateRow }) {
           type="submit"
           className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800"
         >
-          加入服务库并生成采集任务
+          加入并进入采集
         </button>
       </form>
 
@@ -242,7 +265,14 @@ function CandidateActions({ candidate }: { candidate: CandidateRow }) {
   );
 }
 
-export default async function DiscoveryPage() {
+export default async function DiscoveryPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    promotionError?: string;
+  }>;
+}) {
+  const params = searchParams ? await searchParams : {};
   const [candidates, sources, recentChecks] = await Promise.all([
     prisma.$queryRaw<CandidateRow[]>`
       SELECT
@@ -380,12 +410,18 @@ export default async function DiscoveryPage() {
   return (
     <div>
       <AdminPageHeader
-        eyebrow="采集流水线 · 第 1 步"
+        eyebrow="价格采集 · 第 1 步"
         title="线索入口"
-        description="新产品、新模型、官网或定价页先放进候选池。确认值得上架后，系统再生成采集任务；这里不会直接发布前台内容。"
+        description="添加产品、官网或 App Store 线索。确认加入服务库后，系统会尝试匹配 App Store，并准备好后续价格采集。"
       />
 
       <AdminPipelineSteps currentStep="discovery" />
+
+      {params.promotionError === "1" ? (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm leading-6 text-red-800">
+          加入服务库失败。请检查这条线索是否缺少名称、slug 或 App Store 链接，然后再试一次。
+        </div>
+      ) : null}
 
       <DiscoveryIntakeForms />
 
@@ -416,7 +452,7 @@ export default async function DiscoveryPage() {
         <div className="mb-5">
           <h2 className="text-lg font-bold text-slate-950">候选产品池</h2>
           <p className="mt-1 text-sm text-slate-500">
-            添加线索只会进入候选池，不会立刻采集。点击“加入服务库并生成采集任务”后，系统会创建产品、尝试自动匹配 App Store，并把采集任务送到采集执行页。
+            添加线索先进入候选池，不会立刻发布。点击“加入服务库并准备采集”后，系统会创建产品、尝试自动匹配 App Store，并在价格采集审核页生成可执行的产品采集入口。
           </p>
         </div>
 

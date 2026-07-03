@@ -20,26 +20,32 @@ function priceSuffix(locale: "zh" | "en", billingCycle: string) {
   return "";
 }
 
-function taxConfidenceLabel(locale: "zh" | "en", confidence?: string) {
+function taxConfidenceLabel(locale: "zh" | "en", confidence?: string, sourceKind?: string) {
   if (locale === "en") {
+    if (sourceKind === "inferred") return "Platform inferred";
     if (confidence === "high") return "Verified";
     if (confidence === "medium") return "Medium";
     if (confidence === "low") return "Needs review";
     return "Unverified";
   }
 
+  if (sourceKind === "inferred") return "平台推断";
   if (confidence === "high") return "高可信";
   if (confidence === "medium") return "中可信";
-  if (confidence === "low") return "待核验";
+  if (confidence === "low") return "待复核";
   return "待核验";
 }
 
-function taxConfidenceClass(confidence?: string) {
+function taxConfidenceClass(confidence?: string, sourceKind?: string) {
   if (confidence === "high") {
     return "bg-emerald-50 text-emerald-700 ring-emerald-200";
   }
 
-  if (confidence === "medium") {
+  if (sourceKind === "inferred") {
+    return "bg-blue-50 text-blue-700 ring-blue-200";
+  }
+
+  if (confidence === "medium" || confidence === "low") {
     return "bg-amber-50 text-amber-700 ring-amber-200";
   }
 
@@ -49,41 +55,34 @@ function taxConfidenceClass(confidence?: string) {
 function formatTaxNote(locale: "zh" | "en", note?: string, confidence?: string, reviewStatus?: string) {
   const raw = (note || "").trim();
 
-  if (reviewStatus === "needs_review" || confidence === "low") {
-    return locale === "en" ? "Needs review" : "待核验";
+  if (!raw && (reviewStatus === "needs_review" || confidence === "low")) {
+    return locale === "en" ? "Needs review" : "待复核";
   }
 
   if (locale === "en") {
     return raw || "Checkout applies";
   }
 
-  const includeMatch = raw.match(/^Includes\s+(.+)$/i);
+  const includeMatch = raw.match(/^(?:Includes|Usually includes)\s+(.+)$/i);
   if (includeMatch) {
     const value = includeMatch[1]
       .replace(/consumption tax/i, "消费税")
-      .replace(/sales tax/i, "销售税");
-    return `含 ${value}`;
+      .replace(/service tax/i, "服务税")
+      .replace(/sales tax/i, "销售税")
+      .replace(/by region/i, "因地区不同");
+    return /^Usually includes/i.test(raw) ? `通常含 ${value}` : `含 ${value}`;
   }
 
-  if (/GST\/HST varies by province/i.test(raw)) {
-    return "各省税费不同";
-  }
-
-  if (/State ICMS varies/i.test(raw)) {
-    return "州税不同";
-  }
-
-  if (/Sales tax varies by state/i.test(raw)) {
-    return "各州销售税不同";
-  }
+  if (/GST\/HST varies by province/i.test(raw)) return "各省 5-15% GST/HST 不同";
+  if (/State ICMS varies/i.test(raw)) return "州税（ICMS）不同";
+  if (/Sales tax varies by state/i.test(raw)) return "各州销售税不同";
+  if (/Sales tax varies by region/i.test(raw)) return "销售税因地区不同";
+  if (/VAT treatment needs review/i.test(raw)) return "VAT 规则需复核";
 
   return raw || "结算页为准";
 }
 
-export default function DbPricingCard({
-  product,
-  locale,
-}: DbPricingCardProps) {
+export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
   const defaultPlan = getDefaultPlan(product);
 
   if (!defaultPlan) {
@@ -127,7 +126,9 @@ export default function DbPricingCard({
           lowest: "最低价",
         };
 
-  const detailHref = `/${locale}/ai-pricing/${product.slug}/`;
+  const detailBase =
+    product.category === "streaming" ? "streaming-pricing" : "ai-pricing";
+  const detailHref = `/${locale}/${detailBase}/${product.slug}/`;
 
   return (
     <Link
@@ -158,7 +159,7 @@ export default function DbPricingCard({
 
               <div className="hidden shrink-0 flex-col items-end gap-3 sm:flex">
                 <span className="text-xs font-black text-rose-500">
-                  ↕ {spread}% {copy.spread}
+                  ↑ {spread}% {copy.spread}
                 </span>
 
                 <span className="text-xs font-bold text-zinc-500">
@@ -264,10 +265,10 @@ export default function DbPricingCard({
                       <span
                         className={[
                           "mt-1 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset",
-                          taxConfidenceClass(region.taxConfidence),
+                          taxConfidenceClass(region.taxConfidence, region.taxSourceKind),
                         ].join(" ")}
                       >
-                        {taxConfidenceLabel(locale, region.taxConfidence)}
+                        {taxConfidenceLabel(locale, region.taxConfidence, region.taxSourceKind)}
                       </span>
                     </div>
                   </td>
@@ -285,7 +286,7 @@ export default function DbPricingCard({
 
         <div className="flex items-center gap-4">
           <span className="text-xs font-black text-rose-500 sm:hidden">
-            ↕ {spread}% {copy.spread}
+            ↑ {spread}% {copy.spread}
           </span>
 
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 transition group-hover:border-lime-300 group-hover:text-lime-700">

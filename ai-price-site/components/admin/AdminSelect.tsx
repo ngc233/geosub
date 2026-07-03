@@ -67,7 +67,7 @@ export default function AdminSelect({
         type="button"
         onClick={() => setOpen((state) => !state)}
         className={[
-          "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition",
+          "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition",
           "border-slate-300 bg-white text-slate-950 shadow-sm",
           "hover:border-slate-400",
           "focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10",
@@ -106,7 +106,7 @@ export default function AdminSelect({
       ) : null}
 
       {open ? (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5">
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5">
           <div className="admin-scrollbar max-h-[360px] overflow-y-auto">
             {options.map((option) => {
               const active = option.value === currentValue;
@@ -120,7 +120,7 @@ export default function AdminSelect({
                     setOpen(false);
                   }}
                   className={[
-                    "flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition",
+                    "flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm transition",
                     active
                       ? "bg-blue-50 text-blue-700"
                       : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",

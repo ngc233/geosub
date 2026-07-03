@@ -37,6 +37,16 @@ type WorldAtlasTopology = {
   };
 };
 
+function isAntarcticaFeature(featureItem: MapFeature) {
+  const id =
+    typeof featureItem.id === "number" || typeof featureItem.id === "string"
+      ? Number(featureItem.id)
+      : undefined;
+  const name = featureItem.properties?.name?.toLowerCase();
+
+  return id === 10 || name === "antarctica";
+}
+
 type HoverInfo = {
   x: number;
   y: number;
@@ -256,12 +266,21 @@ export default function PriceWorldMap({
       atlas.objects.countries as never
     ) as unknown as GeoPermissibleObjects & { features: MapFeature[] };
 
-    const features = countries.features;
-    const projection = geoNaturalEarth1().fitSize([WIDTH, HEIGHT], countries);
+    const features = countries.features.filter(
+      (featureItem) => !isAntarcticaFeature(featureItem)
+    );
+    const filteredCountries = {
+      ...countries,
+      features,
+    } as typeof countries;
+    const projection = geoNaturalEarth1().fitSize(
+      [WIDTH, HEIGHT],
+      filteredCountries
+    );
     const pathGenerator = geoPath(projection);
 
     return {
-      countries,
+      countries: filteredCountries,
       features,
       projection,
       pathGenerator,

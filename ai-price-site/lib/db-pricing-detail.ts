@@ -41,6 +41,7 @@ export type DbPricingDetailProduct = {
   brand: string;
   categoryLabel: string;
   description: string;
+  logoUrl?: string;
   officialUrl: string | null;
   updatedAt: string;
   sourceNote: string;
@@ -226,8 +227,8 @@ function getProductDescription({
 
 function getSourceNote(locale: DbPricingDetailLocale) {
   return locale === "en"
-    ? "Pricing data is maintained in the GeoSub database. Final checkout prices may vary by taxes, exchange rates, platform and region."
-    : "本页价格来自 GeoSub 数据库维护结果。最终结算价格可能因税费、汇率、平台和地区政策变化而不同。";
+    ? "The official V1 ranking uses reviewed App Store regional subscription prices. Web and Google Play signals are kept for diagnostics unless they are labeled separately. Final checkout prices may still vary by tax, exchange rate, platform policy and region."
+    : "V1 正式榜单使用已审核的 App Store 各地区订阅价格。Web 官网价和 Google Play 线索暂用于后台诊断，除非单独标注，不会混入正式排行。最终结算价格仍可能因税费、汇率、平台政策和地区而变化。";
 }
 
 function getSpreadPercent(minPrice: number, maxPrice: number) {
@@ -404,6 +405,7 @@ export async function getDbPricingProductDetail({
       rawDescription: product.description,
       locale,
     }),
+    logoUrl: product.logoUrl || undefined,
     officialUrl: product.officialUrl,
     updatedAt: formatYearMonth(latestDate),
     sourceNote: getSourceNote(locale),

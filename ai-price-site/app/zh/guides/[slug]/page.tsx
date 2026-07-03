@@ -1,0 +1,175 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import {
+  articleTypeLabels,
+  formatArticleDate,
+  getPublishedArticleBySlug,
+  renderArticleMarkdown,
+} from "../../../../lib/articles";
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.com";
+
+function absoluteUrl(path: string) {
+  return new URL(path, siteUrl).toString();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getPublishedArticleBySlug(slug, "ZH");
+
+  if (!article) {
+    return {
+      title: "文章不存在 - GeoSub",
+    };
+  }
+
+  const title = article.seoTitle || article.ogTitle || `${article.title} - GeoSub`;
+  const description = article.seoDescription || article.ogDescription || article.excerpt || undefined;
+  const url = article.canonicalUrl || absoluteUrl(`/zh/guides/${article.slug}`);
+  const image = article.ogImageUrl || article.coverImageUrl || undefined;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    robots: {
+      index: !article.noindex,
+      follow: !article.nofollow,
+    },
+    openGraph: {
+      type: "article",
+      title: article.ogTitle || title,
+      description,
+      url,
+      images: image ? [{ url: image }] : undefined,
+      publishedTime: article.publishedAt?.toISOString(),
+      modifiedTime: article.updatedAt.toISOString(),
+    },
+  };
+}
+
+export default async function GuideArticlePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const article = await getPublishedArticleBySlug(slug, "ZH");
+
+  if (!article) {
+    notFound();
+  }
+
+  const html = article.bodyHtml || renderArticleMarkdown(article.bodyMarkdown);
+  const url = article.canonicalUrl || absoluteUrl(`/zh/guides/${article.slug}`);
+  const structuredData =
+    article.structuredDataType === "NONE"
+      ? null
+      : {
+          "@context": "https://schema.org",
+          "@type": article.structuredDataType.replace("_", ""),
+          headline: article.title,
+          description: article.seoDescription || article.excerpt || undefined,
+          datePublished: article.publishedAt?.toISOString(),
+          dateModified: article.updatedAt.toISOString(),
+          author: {
+            "@type": "Organization",
+            name: article.authorName || "GeoSub 编辑部",
+          },
+          publisher: {
+            "@type": "Organization",
+            name: "GeoSub",
+          },
+          mainEntityOfPage: url,
+        };
+
+  return (
+    <main className="min-h-screen bg-[#faf8f2] px-5 py-12">
+      {structuredData ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      ) : null}
+
+      <article className="mx-auto max-w-3xl">
+        <Link href="/zh/guides" className="text-sm font-black text-blue-700 hover:text-blue-900">
+          返回指南
+        </Link>
+
+        <header className="mt-8">
+          <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-zinc-500">
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+              {articleTypeLabels[article.articleType]}
+            </span>
+            <span>{formatArticleDate(article.publishedAt)}</span>
+            <span>{article.readingTime || 1} 分钟读完</span>
+            {article.category ? <span>{article.category.name}</span> : null}
+          </div>
+
+          <h1 className="mt-5 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
+            {article.title}
+          </h1>
+
+          {article.subtitle || article.excerpt ? (
+            <p className="mt-5 text-lg leading-8 text-zinc-600">
+              {article.subtitle || article.excerpt}
+            </p>
+          ) : null}
+        </header>
+
+        {article.coverImageUrl ? (
+          <img
+            src={article.coverImageUrl}
+            alt={article.title}
+            className="mt-10 aspect-[16/9] w-full rounded-2xl object-cover"
+          />
+        ) : null}
+
+        <div
+          className="article-body mt-10 rounded-2xl border border-zinc-200 bg-white p-7 text-zinc-700 shadow-sm shadow-zinc-950/[0.03] md:p-9"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+
+        {article.relations.length > 0 ? (
+          <aside className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6">
+            <h2 className="text-base font-black text-zinc-950">相关阅读</h2>
+            <div className="mt-4 grid gap-3">
+              {article.relations.map((relation) => {
+                const href = relation.relatedArticle
+                  ? `/zh/guides/${relation.relatedArticle.slug}`
+                  : relation.product
+                    ? `/zh/ai-pricing/${relation.product.slug}`
+                    : null;
+
+                if (!href) return null;
+
+                return (
+                  <Link
+                    key={relation.id}
+                    href={href}
+                    className="rounded-xl border border-zinc-200 px-4 py-3 transition hover:border-blue-200 hover:bg-blue-50"
+                  >
+                    <div className="font-bold text-zinc-950">
+                      {relation.title || relation.relatedArticle?.title || relation.product?.name}
+                    </div>
+                    {relation.description ? (
+                      <div className="mt-1 text-sm text-zinc-500">{relation.description}</div>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
+          </aside>
+        ) : null}
+      </article>
+    </main>
+  );
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { FocusEvent, MouseEvent } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type {
   PlanAffordabilityRow,
   PlanAffordabilitySummary,
@@ -24,6 +24,8 @@ type Props = {
   locale?: DetailLocale;
 };
 
+type Quadrant = "friendly" | "cheapPressure" | "premiumFair" | "expensivePressure";
+
 const localeMap: Record<DetailLocale, string> = {
   zh: "zh-CN",
   en: "en",
@@ -39,6 +41,11 @@ function formatPercent(value: number, digits = 2) {
   return `${value.toFixed(digits)}%`;
 }
 
+function formatSignedPercent(value: number) {
+  if (value > 0) return `+${Math.round(value)}%`;
+  return `${Math.round(value)}%`;
+}
+
 function formatUsd(value: number, digits = 2) {
   return `$${value.toLocaleString("en-US", {
     minimumFractionDigits: digits,
@@ -50,11 +57,7 @@ function formatDate(value: Date | string | null | undefined) {
   if (!value) return "-";
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toISOString().slice(0, 10);
 }
 
@@ -86,6 +89,7 @@ function levelTone(level: string) {
       text: "text-rose-600 dark:text-rose-300",
       bar: "bg-rose-500",
       dot: "bg-rose-500",
+      badge: "bg-rose-50 text-rose-600 ring-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-800",
     };
   }
 
@@ -94,6 +98,7 @@ function levelTone(level: string) {
       text: "text-amber-700 dark:text-amber-300",
       bar: "bg-amber-500",
       dot: "bg-amber-500",
+      badge: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800",
     };
   }
 
@@ -101,6 +106,7 @@ function levelTone(level: string) {
     text: "text-emerald-700 dark:text-emerald-300",
     bar: "bg-emerald-500",
     dot: "bg-emerald-500",
+    badge: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800",
   };
 }
 
@@ -112,10 +118,7 @@ function getCountryName(row: PlanAffordabilityRow | null | undefined, locale: De
       type: "region",
     });
     const localizedName = displayNames.of(row.countryCode.toUpperCase());
-
-    if (localizedName) {
-      return localizedName;
-    }
+    if (localizedName) return localizedName;
   } catch {
     // Fall back to stored names.
   }
@@ -130,6 +133,50 @@ function getCountryName(row: PlanAffordabilityRow | null | undefined, locale: De
 function getShareWidth(row: PlanAffordabilityRow, maxShare: number) {
   if (maxShare <= 0) return 6;
   return Math.max(6, Math.min(100, (row.incomeSharePercent / maxShare) * 100));
+}
+
+function classifyQuadrant(row: PlanAffordabilityRow): Quadrant {
+  const cheap = row.diffVsUsPercent < 0;
+  const heavy = row.burdenVsUs > 1.2;
+
+  if (cheap && !heavy) return "friendly";
+  if (cheap && heavy) return "cheapPressure";
+  if (!cheap && !heavy) return "premiumFair";
+  return "expensivePressure";
+}
+
+function quadrantCopy(quadrant: Quadrant) {
+  const map: Record<Quadrant, { label: string; desc: string; dot: string }> = {
+    friendly: {
+      label: "便宜且友好",
+      desc: "美元价格低于美国，本地负担也接近或低于美国。",
+      dot: "bg-emerald-500",
+    },
+    cheapPressure: {
+      label: "便宜但吃力",
+      desc: "美元价格看起来便宜，但按当地收入仍然偏贵。",
+      dot: "bg-amber-500",
+    },
+    premiumFair: {
+      label: "贵但可承受",
+      desc: "标价高于美国，但本地收入能消化一部分溢价。",
+      dot: "bg-sky-500",
+    },
+    expensivePressure: {
+      label: "贵且负担高",
+      desc: "价格和收入负担都不友好，主要用于风险提示。",
+      dot: "bg-rose-500",
+    },
+  };
+
+  return map[quadrant];
+}
+
+function quadrantPointClass(quadrant: Quadrant) {
+  if (quadrant === "friendly") return "border-emerald-500 bg-emerald-500";
+  if (quadrant === "cheapPressure") return "border-amber-500 bg-amber-500";
+  if (quadrant === "premiumFair") return "border-sky-500 bg-sky-500";
+  return "border-rose-500 bg-rose-500";
 }
 
 function HeaderHelp({
@@ -169,12 +216,146 @@ function HeaderHelp({
       </button>
       {open ? (
         <span
-          className="pointer-events-none fixed z-[80] max-w-[240px] -translate-x-1/2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-left text-xs font-normal leading-5 text-zinc-600 shadow-xl shadow-zinc-950/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+          className="pointer-events-none fixed z-[80] max-w-[260px] -translate-x-1/2 rounded-xl border border-zinc-200/80 bg-white/95 px-3 py-2 text-left text-xs font-normal leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300"
           style={{ left: position.x, top: position.y }}
         >
           {help}
         </span>
       ) : null}
+    </div>
+  );
+}
+
+function DecisionCard({
+  title,
+  row,
+  locale,
+  tone,
+  note,
+}: {
+  title: string;
+  row?: PlanAffordabilityRow;
+  locale: DetailLocale;
+  tone: "green" | "amber" | "red";
+  note: string;
+}) {
+  if (!row) return null;
+
+  const toneClass =
+    tone === "green"
+      ? "border-emerald-200 bg-emerald-50/60 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200"
+      : tone === "amber"
+        ? "border-amber-200 bg-amber-50/60 text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200"
+        : "border-rose-200 bg-rose-50/60 text-rose-800 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-200";
+
+  return (
+    <div className={`rounded-lg border p-4 ${toneClass}`}>
+      <div className="text-xs font-medium opacity-75">{title}</div>
+      <div className="mt-2 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-base font-semibold">{getCountryName(row, locale)}</div>
+          <div className="mt-1 text-xs opacity-75">{row.countryCode}</div>
+        </div>
+        <div className="text-right text-sm font-semibold tabular-nums">
+          {row.burdenVsUs.toFixed(2)} 倍
+        </div>
+      </div>
+      <div className="mt-3 text-xs leading-5 opacity-80">
+        {note} 月费 {formatUsd(row.priceUsd)}，占月收入 {formatPercent(row.incomeSharePercent)}。
+      </div>
+    </div>
+  );
+}
+
+function AffordabilityMatrix({
+  rows,
+}: {
+  rows: PlanAffordabilityRow[];
+}) {
+  const matrixRows = rows.slice(0, 24);
+  const xValues = matrixRows.map((row) => row.diffVsUsPercent);
+  const yValues = matrixRows.map((row) => row.burdenVsUs);
+  const minX = Math.min(-30, ...xValues);
+  const maxX = Math.max(40, ...xValues);
+  const minY = Math.min(0.5, ...yValues);
+  const maxY = Math.max(2.5, ...yValues);
+  const xRange = Math.max(1, maxX - minX);
+  const yRange = Math.max(1, maxY - minY);
+  const usX = Math.max(0, Math.min(100, ((0 - minX) / xRange) * 100));
+  const usY = Math.max(0, Math.min(100, ((1 - minY) / yRange) * 100));
+
+  return (
+    <div className="border-t border-zinc-100 px-5 py-5 dark:border-zinc-800 md:px-6">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(260px,0.65fr)]">
+        <div>
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-zinc-950 dark:text-white">
+                价格 × 本地负担矩阵
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                横轴看美元价格是否比美国便宜，纵轴看本地负担是否高于美国。越靠左下越友好。
+              </p>
+            </div>
+            <div className="text-xs text-zinc-400">美国基准：0% / 1.00 倍</div>
+          </div>
+
+          <div className="relative h-[320px] overflow-hidden rounded-lg border border-zinc-200 bg-[linear-gradient(to_right,rgba(113,113,122,0.10)_1px,transparent_1px),linear-gradient(to_bottom,rgba(113,113,122,0.10)_1px,transparent_1px)] bg-[size:25%_25%] dark:border-zinc-800 dark:bg-zinc-950/30">
+            <div className="absolute inset-y-0 border-l border-zinc-300/80 dark:border-zinc-700" style={{ left: `${usX}%` }} />
+            <div className="absolute inset-x-0 border-t border-zinc-300/80 dark:border-zinc-700" style={{ bottom: `${usY}%` }} />
+            <div className="absolute left-3 top-3 text-xs text-zinc-400">高负担</div>
+            <div className="absolute bottom-3 right-3 text-xs text-zinc-400">更贵</div>
+            <div className="absolute bottom-3 left-3 text-xs text-zinc-400">更便宜</div>
+
+            {matrixRows.map((row) => {
+              const x = Math.max(4, Math.min(96, ((row.diffVsUsPercent - minX) / xRange) * 100));
+              const y = Math.max(8, Math.min(92, ((row.burdenVsUs - minY) / yRange) * 100));
+              const quadrant = classifyQuadrant(row);
+              const isUs = row.countryCode.toUpperCase() === "US";
+
+              return (
+                <div
+                  key={`${row.planSlug}-${row.countryCode}-matrix`}
+                  className="absolute -translate-x-1/2 translate-y-1/2"
+                  style={{ left: `${x}%`, bottom: `${y}%` }}
+                >
+                  <div className="flex items-center gap-1">
+                    <span
+                      className={[
+                        "h-3 w-3 rounded-full border-2 shadow-sm",
+                        isUs ? "border-zinc-900 bg-white dark:border-white dark:bg-zinc-950" : quadrantPointClass(quadrant),
+                      ].join(" ")}
+                    />
+                    <span className="hidden rounded bg-white/80 px-1 text-[10px] font-medium text-zinc-500 shadow-sm md:inline dark:bg-zinc-900/80 dark:text-zinc-300">
+                      {row.countryCode}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid gap-2 content-start">
+          {(["friendly", "cheapPressure", "premiumFair", "expensivePressure"] as Quadrant[]).map((quadrant) => {
+            const copy = quadrantCopy(quadrant);
+            const count = rows.filter((row) => classifyQuadrant(row) === quadrant).length;
+
+            return (
+              <div key={quadrant} className="rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${copy.dot}`} />
+                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{copy.label}</span>
+                  </div>
+                  <span className="text-xs tabular-nums text-zinc-400">{count}</span>
+                </div>
+                <div className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{copy.desc}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -191,9 +372,10 @@ function BurdenRow({
   locale: DetailLocale;
 }) {
   const tone = levelTone(row.affordabilityLevel);
+  const quadrant = quadrantCopy(classifyQuadrant(row));
 
   return (
-    <div className="grid gap-3 border-b border-zinc-100 px-5 py-3.5 last:border-b-0 md:grid-cols-[54px_minmax(150px,1fr)_110px_minmax(190px,1.25fr)_110px_108px] md:items-center md:px-6 dark:border-zinc-800">
+    <div className="grid gap-3 border-b border-zinc-100 px-5 py-3.5 last:border-b-0 md:grid-cols-[54px_minmax(150px,1fr)_110px_minmax(190px,1.25fr)_110px_120px] md:items-center md:px-6 dark:border-zinc-800">
       <div className="text-sm tabular-nums text-zinc-400">#{rank}</div>
 
       <div className="min-w-0">
@@ -208,6 +390,7 @@ function BurdenRow({
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
           {formatUsd(row.priceUsd)}
         </div>
+        <div className="mt-0.5 text-xs text-zinc-400">{formatSignedPercent(row.diffVsUsPercent)}</div>
       </div>
 
       <div>
@@ -237,9 +420,11 @@ function BurdenRow({
 
       <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">判断</div>
-        <div className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-          <span className={`h-2 w-2 rounded-full ${tone.dot}`} />
-          {levelLabel(row.affordabilityLevel)}
+        <div className="flex flex-col items-start gap-1.5">
+          <span className={["inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset", tone.badge].join(" ")}>
+            {levelLabel(row.affordabilityLevel)}
+          </span>
+          <span className="text-xs text-zinc-400">{quadrant.label}</span>
         </div>
       </div>
     </div>
@@ -253,22 +438,32 @@ export default function AffordabilityComparison({
   rows,
   locale = "zh",
 }: Props) {
+  const model = useMemo(() => {
+    const byBurdenDesc = [...rows].sort((a, b) => b.incomeSharePercent - a.incomeSharePercent);
+    const byBurdenAsc = [...rows].sort((a, b) => a.incomeSharePercent - b.incomeSharePercent);
+    const byPriceAsc = [...rows].sort((a, b) => a.priceUsd - b.priceUsd);
+    const balanced = byPriceAsc.find((row) => row.burdenVsUs <= 1.25) || byBurdenAsc[0];
+    const cheapButHeavy = byPriceAsc.find((row) => row.diffVsUsPercent < 0 && row.burdenVsUs > 1.5);
+
+    return {
+      byBurdenDesc,
+      byBurdenAsc,
+      highest: byBurdenDesc[0],
+      lowest: byBurdenAsc[0],
+      balanced,
+      cheapButHeavy,
+      us: rows.find((row) => row.countryCode.toUpperCase() === "US"),
+    };
+  }, [rows]);
+
   if (!summary || rows.length === 0) {
     return null;
   }
 
-  const sortedRows = [...rows].sort(
-    (a, b) => b.incomeSharePercent - a.incomeSharePercent,
-  );
-  const highest = sortedRows[0];
-  const lowest = [...rows].sort(
-    (a, b) => a.incomeSharePercent - b.incomeSharePercent,
-  )[0];
-  const us = rows.find((row) => row.countryCode.toUpperCase() === "US");
-  const initialVisibleCount = Math.min(5, sortedRows.length);
-  const visibleRows = sortedRows.slice(0, initialVisibleCount);
-  const hiddenRows = sortedRows.slice(initialVisibleCount);
-  const maxShare = Math.max(...sortedRows.map((row) => row.incomeSharePercent));
+  const initialVisibleCount = Math.min(6, model.byBurdenDesc.length);
+  const visibleRows = model.byBurdenDesc.slice(0, initialVisibleCount);
+  const hiddenRows = model.byBurdenDesc.slice(initialVisibleCount);
+  const maxShare = Math.max(...model.byBurdenDesc.map((row) => row.incomeSharePercent));
   const latestPriceCheckedAt = rows
     .map((row) => row.priceLastCheckedAt)
     .filter(Boolean)
@@ -277,37 +472,62 @@ export default function AffordabilityComparison({
   return (
     <PublicSection>
       <PublicSectionHeader
-        eyebrow="Affordability index"
-        title="本地订阅负担指数"
+        title={`${productName} 本地购买力判断`}
         description={
           <>
-            用 {planName} 月费与当地月均收入对比，判断同样的 {productName} 价格在不同地区是否真正容易承担。
+            不只看哪个地区标价最低，而是把 {planName} 月费放回当地收入里比较：价格、税务和风险之外，再判断这笔订阅对当地用户到底重不重。
           </>
         }
       />
 
       <MetricStrip columns={3}>
         <MetricItem
-          label="负担最高"
-          value={getCountryName(highest, locale)}
-          helper={`占月收入 ${formatPercent(highest.incomeSharePercent)} · 美国的 ${highest.burdenVsUs.toFixed(2)} 倍`}
+          label="本地负担最高"
+          value={getCountryName(model.highest, locale)}
+          helper={`占月收入 ${formatPercent(model.highest.incomeSharePercent)} · 美国的 ${model.highest.burdenVsUs.toFixed(2)} 倍`}
           tone="red"
         />
         <MetricItem
-          label="最容易承担"
-          value={getCountryName(lowest, locale)}
-          helper={`占月收入 ${formatPercent(lowest.incomeSharePercent)}`}
+          label="本地更友好"
+          value={getCountryName(model.lowest, locale)}
+          helper={`占月收入 ${formatPercent(model.lowest.incomeSharePercent)}`}
           tone="green"
         />
         <MetricItem
           label="美国基准"
-          value={us ? formatPercent(us.incomeSharePercent) : "-"}
-          helper="记为 1.00 倍"
+          value={model.us ? formatPercent(model.us.incomeSharePercent) : "-"}
+          helper="记为 1.00 倍，用于判断相对负担"
         />
       </MetricStrip>
 
-      <div className="overflow-hidden">
-        <div className="hidden gap-3 border-b border-zinc-100 bg-zinc-50/70 px-5 py-3 text-xs font-medium text-zinc-400 md:grid md:grid-cols-[54px_minmax(150px,1fr)_110px_minmax(190px,1.25fr)_110px_108px] md:px-6 dark:border-zinc-800 dark:bg-zinc-900/40">
+      <div className="grid gap-3 border-t border-zinc-100 px-5 py-5 dark:border-zinc-800 md:grid-cols-3 md:px-6">
+        <DecisionCard
+          title="综合更均衡"
+          row={model.balanced}
+          locale={locale}
+          tone="green"
+          note="价格和本地负担都相对克制，适合作为友好地区候选。"
+        />
+        <DecisionCard
+          title="便宜但需谨慎"
+          row={model.cheapButHeavy}
+          locale={locale}
+          tone="amber"
+          note="美元标价低，但当地收入负担明显偏高，不能只按便宜排序。"
+        />
+        <DecisionCard
+          title="本地压力最高"
+          row={model.highest}
+          locale={locale}
+          tone="red"
+          note="本地收入压力最明显，适合放入风险和解释提示。"
+        />
+      </div>
+
+      <AffordabilityMatrix rows={rows} />
+
+      <div className="overflow-hidden border-t border-zinc-100 dark:border-zinc-800">
+        <div className="hidden gap-3 border-b border-zinc-100 bg-zinc-50/70 px-5 py-3 text-xs font-medium text-zinc-400 md:grid md:grid-cols-[54px_minmax(150px,1fr)_110px_minmax(190px,1.25fr)_110px_120px] md:px-6 dark:border-zinc-800 dark:bg-zinc-900/40">
           <div>排名</div>
           <div>地区</div>
           <div>月费</div>
@@ -321,8 +541,7 @@ export default function AffordabilityComparison({
           />
           <HeaderHelp
             label="判断"
-            help="根据占月收入和相对美国负担，对该地区订阅压力做分级。"
-            className="pl-4"
+            help="结合收入占比、美国基准和美元价差，对地区订阅压力做分层。"
           />
         </div>
 
@@ -351,9 +570,8 @@ export default function AffordabilityComparison({
 
       <DataNote>
         收入指标采用 {metricLabel(summary.incomeMetricType)}
-        {summary.incomeIndicatorCode ? `（${summary.incomeIndicatorCode}）` : ""}；
-        收入数据年份为 {summary.incomeDataYear || "-"}，价格检查时间为{" "}
-        {formatDate(latestPriceCheckedAt)}。
+        {summary.incomeIndicatorCode ? `（${summary.incomeIndicatorCode}）` : ""}，收入数据年份为{" "}
+        {summary.incomeDataYear || "-"}，价格检查时间为 {formatDate(latestPriceCheckedAt)}。购买力判断用于解释价格压力，不等同于实际支付能力或订阅成功率。
       </DataNote>
     </PublicSection>
   );
