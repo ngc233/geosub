@@ -31,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
     : "GeoSub 用于比较 AI 订阅、流媒体、软件、游戏、礼品卡、VPN 和支付工具在不同国家与地区的价格差异。";
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.com"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org"),
     title,
     description,
     openGraph: {

@@ -8,7 +8,7 @@ import {
   renderArticleMarkdown,
 } from "../../../../lib/articles";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org";
 
 function absoluteUrl(path: string) {
   return new URL(path, siteUrl).toString();

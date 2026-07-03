@@ -688,7 +688,7 @@ export default function SharePriceModal({
                   <div className="mt-4 flex items-center justify-center gap-2 border-t border-orange-100 pt-3 text-[10px] font-bold text-zinc-400">
                     <span className="h-3 w-3 rounded bg-blue-500" />
                     <span>
-                      GeoSub · 数据校验于 {product.updatedAt} · geosub.com
+                      GeoSub · 数据校验于 {product.updatedAt} · geosub.org
                     </span>
                   </div>
                 </div>
