@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS price_auto_review_decisions (
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   plan_id UUID NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
   country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
-  price_type TEXT NOT NULL,
+  price_type price_type NOT NULL,
   decision TEXT NOT NULL CHECK (decision IN (
     'auto_approve',
     'manual_review'

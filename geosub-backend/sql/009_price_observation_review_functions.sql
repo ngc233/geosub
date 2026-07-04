@@ -8,7 +8,7 @@ DECLARE
   v_us_country_id UUID;
   v_us_base_price NUMERIC;
   v_diff_vs_us_percent NUMERIC;
-  v_data_quality TEXT;
+  v_data_quality data_quality;
 BEGIN
   SELECT *
   INTO v_observation
@@ -72,10 +72,10 @@ BEGIN
   v_data_quality := CASE
     WHEN v_observation.source_level = 'A'
       AND v_observation.confidence_score >= 80
-      THEN 'verified'
+      THEN 'verified'::data_quality
     WHEN v_observation.confidence_score >= 60
-      THEN 'estimated'
-    ELSE 'pending_review'
+      THEN 'estimated'::data_quality
+    ELSE 'pending_review'::data_quality
   END;
 
   SELECT rp.id

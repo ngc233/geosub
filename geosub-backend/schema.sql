@@ -42,15 +42,8 @@ CREATE TABLE IF NOT EXISTS admin_users (
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   name TEXT,
-  role TEXT NOT NULL DEFAULT 'owner' CHECK (role IN (
-    'owner',
-    'editor',
-    'viewer'
-  )),
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN (
-    'active',
-    'disabled'
-  )),
+  role admin_role NOT NULL DEFAULT 'owner',
+  status admin_status NOT NULL DEFAULT 'active',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -98,28 +91,14 @@ CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  category TEXT NOT NULL DEFAULT 'ai' CHECK (category IN (
-    'ai',
-    'streaming',
-    'software',
-    'game',
-    'gift_card',
-    'vpn',
-    'payment',
-    'other'
-  )),
+  category product_category NOT NULL DEFAULT 'ai',
   provider TEXT,
   logo_file UUID,
   logo_asset_id UUID REFERENCES media_assets(id) ON DELETE SET NULL,
   logo_url TEXT,
   description TEXT,
   official_url TEXT,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (
-    'draft',
-    'review',
-    'published',
-    'archived'
-  )),
+  status publish_status NOT NULL DEFAULT 'draft',
   featured BOOLEAN NOT NULL DEFAULT FALSE,
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -131,22 +110,9 @@ CREATE TABLE IF NOT EXISTS plans (
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   slug TEXT NOT NULL,
   name TEXT NOT NULL,
-  billing_cycle TEXT NOT NULL DEFAULT 'monthly' CHECK (billing_cycle IN (
-    'monthly',
-    'yearly',
-    'weekly',
-    'quarterly',
-    'one_time',
-    'lifetime',
-    'unknown'
-  )),
+  billing_cycle billing_cycle NOT NULL DEFAULT 'monthly',
   description TEXT,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (
-    'draft',
-    'review',
-    'published',
-    'archived'
-  )),
+  status publish_status NOT NULL DEFAULT 'draft',
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -157,41 +123,17 @@ CREATE TABLE IF NOT EXISTS price_sources (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   source_key TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  source_level TEXT NOT NULL DEFAULT 'C' CHECK (source_level IN (
-    'A',
-    'B',
-    'C',
-    'D',
-    'E'
-  )),
-  type TEXT NOT NULL DEFAULT 'manual' CHECK (type IN (
-    'official_page',
-    'help_center',
-    'api',
-    'app_store',
-    'google_play',
-    'crawler',
-    'third_party',
-    'manual',
-    'user_submission'
-  )),
+  source_level source_level NOT NULL DEFAULT 'C',
+  type price_source_type NOT NULL DEFAULT 'manual',
   provider TEXT,
   base_url TEXT,
   country_url_pattern TEXT,
   requires_javascript BOOLEAN NOT NULL DEFAULT FALSE,
   requires_account BOOLEAN NOT NULL DEFAULT FALSE,
   requires_geo BOOLEAN NOT NULL DEFAULT FALSE,
-  terms_risk TEXT NOT NULL DEFAULT 'low' CHECK (terms_risk IN (
-    'low',
-    'medium',
-    'high'
-  )),
+  terms_risk risk_level NOT NULL DEFAULT 'low',
   reliability_score INTEGER NOT NULL DEFAULT 60 CHECK (reliability_score >= 0 AND reliability_score <= 100),
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN (
-    'active',
-    'paused',
-    'deprecated'
-  )),
+  status source_status NOT NULL DEFAULT 'active',
   note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -264,39 +206,15 @@ CREATE TABLE IF NOT EXISTS region_prices (
   price_usd NUMERIC(12, 2) NOT NULL,
   us_base_price NUMERIC(12, 2),
   diff_vs_us_percent NUMERIC(8, 2),
-  billing_platform TEXT NOT NULL DEFAULT 'web' CHECK (billing_platform IN (
-    'web',
-    'ios',
-    'android',
-    'steam',
-    'gift_card',
-    'unknown'
-  )),
-  price_type TEXT NOT NULL DEFAULT 'list_price' CHECK (price_type IN (
-    'list_price',
-    'promo_price',
-    'student_price',
-    'family_price',
-    'bundle_price',
-    'unknown'
-  )),
+  billing_platform billing_platform NOT NULL DEFAULT 'web',
+  price_type price_type NOT NULL DEFAULT 'list_price',
   tax_note TEXT,
   availability_note TEXT,
   source_summary TEXT,
   primary_source_id UUID REFERENCES price_sources(id) ON DELETE SET NULL,
   confidence_score INTEGER NOT NULL DEFAULT 60 CHECK (confidence_score >= 0 AND confidence_score <= 100),
-  data_quality TEXT NOT NULL DEFAULT 'pending_review' CHECK (data_quality IN (
-    'verified',
-    'estimated',
-    'stale',
-    'pending_review'
-  )),
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (
-    'draft',
-    'review',
-    'published',
-    'archived'
-  )),
+  data_quality data_quality NOT NULL DEFAULT 'pending_review',
+  status publish_status NOT NULL DEFAULT 'draft',
   last_checked_at TIMESTAMPTZ,
   published_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -310,13 +228,7 @@ CREATE TABLE IF NOT EXISTS price_observations (
   plan_id UUID REFERENCES plans(id) ON DELETE SET NULL,
   country_id UUID REFERENCES countries(id) ON DELETE SET NULL,
   source_id UUID REFERENCES price_sources(id) ON DELETE SET NULL,
-  source_level TEXT NOT NULL DEFAULT 'C' CHECK (source_level IN (
-    'A',
-    'B',
-    'C',
-    'D',
-    'E'
-  )),
+  source_level source_level NOT NULL DEFAULT 'C',
   raw_price NUMERIC(12, 2),
   currency TEXT,
   converted_usd NUMERIC(12, 2),
@@ -324,38 +236,15 @@ CREATE TABLE IF NOT EXISTS price_observations (
   source_url TEXT,
   locale TEXT,
   ip_country TEXT,
-  billing_platform TEXT NOT NULL DEFAULT 'unknown' CHECK (billing_platform IN (
-    'web',
-    'ios',
-    'android',
-    'steam',
-    'gift_card',
-    'unknown'
-  )),
-  price_type TEXT NOT NULL DEFAULT 'list_price' CHECK (price_type IN (
-    'list_price',
-    'promo_price',
-    'student_price',
-    'family_price',
-    'bundle_price',
-    'unknown'
-  )),
-  tax_included TEXT NOT NULL DEFAULT 'unknown' CHECK (tax_included IN (
-    'true',
-    'false',
-    'unknown'
-  )),
+  billing_platform billing_platform NOT NULL DEFAULT 'unknown',
+  price_type price_type NOT NULL DEFAULT 'list_price',
+  tax_included tax_included NOT NULL DEFAULT 'unknown',
   raw_payload JSONB,
   parser_version TEXT,
   confidence_score INTEGER NOT NULL DEFAULT 0 CHECK (confidence_score >= 0 AND confidence_score <= 100),
   anomaly_flag BOOLEAN NOT NULL DEFAULT FALSE,
   anomaly_reason TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN (
-    'pending',
-    'approved',
-    'rejected',
-    'ignored'
-  )),
+  status observation_status NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -363,13 +252,7 @@ CREATE TABLE IF NOT EXISTS price_observations (
 CREATE TABLE IF NOT EXISTS source_evidence (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   observation_id UUID NOT NULL REFERENCES price_observations(id) ON DELETE CASCADE,
-  evidence_type TEXT NOT NULL DEFAULT 'html' CHECK (evidence_type IN (
-    'html',
-    'json',
-    'screenshot',
-    'text_snapshot',
-    'other'
-  )),
+  evidence_type evidence_type NOT NULL DEFAULT 'html',
   storage_url TEXT,
   content_hash TEXT,
   captured_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -383,29 +266,13 @@ CREATE TABLE IF NOT EXISTS source_evidence (
 
 CREATE TABLE IF NOT EXISTS review_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  target_type TEXT NOT NULL CHECK (target_type IN (
-    'region_price',
-    'observation',
-    'product',
-    'seo',
-    'affiliate',
-    'ad_slot'
-  )),
+  target_type review_target_type NOT NULL,
   target_id UUID NOT NULL,
   reason TEXT NOT NULL,
   old_value JSONB,
   new_value JSONB,
-  severity TEXT NOT NULL DEFAULT 'medium' CHECK (severity IN (
-    'low',
-    'medium',
-    'high'
-  )),
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN (
-    'pending',
-    'approved',
-    'rejected',
-    'resolved'
-  )),
+  severity severity NOT NULL DEFAULT 'medium',
+  status review_status NOT NULL DEFAULT 'pending',
   assigned_to TEXT,
   note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -417,23 +284,12 @@ CREATE TABLE IF NOT EXISTS seo_meta (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
   plan_id UUID REFERENCES plans(id) ON DELETE CASCADE,
-  locale TEXT NOT NULL DEFAULT 'zh' CHECK (locale IN (
-    'zh',
-    'en',
-    'es',
-    'ja',
-    'ko',
-    'de'
-  )),
+  locale locale NOT NULL DEFAULT 'zh',
   title TEXT NOT NULL,
   description TEXT,
   h1 TEXT,
   canonical_url TEXT,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (
-    'draft',
-    'review',
-    'published'
-  )),
+  status publish_status NOT NULL DEFAULT 'draft',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -442,22 +298,11 @@ CREATE TABLE IF NOT EXISTS faqs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
   plan_id UUID REFERENCES plans(id) ON DELETE CASCADE,
-  locale TEXT NOT NULL DEFAULT 'zh' CHECK (locale IN (
-    'zh',
-    'en',
-    'es',
-    'ja',
-    'ko',
-    'de'
-  )),
+  locale locale NOT NULL DEFAULT 'zh',
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
   sort_order INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (
-    'draft',
-    'published',
-    'archived'
-  )),
+  status publish_status NOT NULL DEFAULT 'draft',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -465,34 +310,15 @@ CREATE TABLE IF NOT EXISTS faqs (
 CREATE TABLE IF NOT EXISTS affiliate_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-  category TEXT NOT NULL DEFAULT 'official' CHECK (category IN (
-    'vpn',
-    'payment',
-    'official',
-    'service',
-    'gift_card',
-    'software',
-    'other'
-  )),
+  category affiliate_category NOT NULL DEFAULT 'official',
   title TEXT NOT NULL,
   description TEXT,
   button_text TEXT,
   url TEXT NOT NULL,
   placement TEXT NOT NULL DEFAULT 'product_after_map',
-  locale TEXT NOT NULL DEFAULT 'zh' CHECK (locale IN (
-    'zh',
-    'en',
-    'es',
-    'ja',
-    'ko',
-    'de'
-  )),
+  locale locale NOT NULL DEFAULT 'zh',
   priority INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (
-    'draft',
-    'published',
-    'archived'
-  )),
+  status publish_status NOT NULL DEFAULT 'draft',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -502,28 +328,10 @@ CREATE TABLE IF NOT EXISTS ad_slots (
   slot_key TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   position TEXT NOT NULL,
-  page_type TEXT NOT NULL DEFAULT 'product' CHECK (page_type IN (
-    'home',
-    'category',
-    'product',
-    'ranking',
-    'compare',
-    'article',
-    'global'
-  )),
-  provider TEXT NOT NULL DEFAULT 'adsense' CHECK (provider IN (
-    'adsense',
-    'ezoic',
-    'custom',
-    'affiliate',
-    'none'
-  )),
+  page_type page_type NOT NULL DEFAULT 'product',
+  provider ad_provider NOT NULL DEFAULT 'adsense',
   code TEXT,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (
-    'draft',
-    'published',
-    'archived'
-  )),
+  status publish_status NOT NULL DEFAULT 'draft',
   priority INTEGER NOT NULL DEFAULT 0,
   show_on_mobile BOOLEAN NOT NULL DEFAULT TRUE,
   show_on_desktop BOOLEAN NOT NULL DEFAULT TRUE,
