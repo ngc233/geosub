@@ -120,7 +120,7 @@ log "Installing backend tool dependencies"
 run_as_geosub "cd '$BACKEND_DIR' && npm ci --omit=dev"
 
 log "Installing frontend dependencies and building Next.js"
-run_as_geosub "cd '$FRONTEND_DIR' && npm ci && npm run build"
+run_as_geosub "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && npm ci && npx prisma generate && npm run build"
 
 log "Applying core database migrations"
 bash "$BACKEND_DIR/deploy/linux-arm64/db-apply-sql.sh" core

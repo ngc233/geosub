@@ -15,7 +15,7 @@ fi
 
 chown -R geosub:geosub /opt/geosub
 
-sudo -u geosub bash -lc "cd '$FRONTEND_DIR' && npm ci && npm run build"
+sudo -u geosub bash -lc "set -a && source /etc/geosub/geosub.env && set +a && cd '$FRONTEND_DIR' && npm ci && npx prisma generate && npm run build"
 
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-web.service" /etc/systemd/system/geosub-web.service
 
