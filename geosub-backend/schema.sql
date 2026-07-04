@@ -1,5 +1,34 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+DO $$ BEGIN CREATE TYPE "locale" AS ENUM ('zh', 'en', 'es', 'ja', 'ko', 'de'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "publish_status" AS ENUM ('draft', 'review', 'published', 'archived'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "article_status" AS ENUM ('draft', 'review', 'published', 'scheduled', 'archived'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "product_category" AS ENUM ('ai', 'streaming', 'software', 'game', 'gift_card', 'vpn', 'payment', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "billing_cycle" AS ENUM ('monthly', 'yearly', 'weekly', 'quarterly', 'one_time', 'lifetime', 'unknown'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "billing_platform" AS ENUM ('web', 'ios', 'android', 'steam', 'gift_card', 'unknown'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "price_type" AS ENUM ('list_price', 'promo_price', 'student_price', 'family_price', 'bundle_price', 'unknown'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "data_quality" AS ENUM ('verified', 'estimated', 'stale', 'pending_review'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "source_level" AS ENUM ('A', 'B', 'C', 'D', 'E'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "price_source_type" AS ENUM ('official_page', 'help_center', 'api', 'app_store', 'google_play', 'crawler', 'third_party', 'manual', 'user_submission'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "source_status" AS ENUM ('active', 'paused', 'deprecated'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "risk_level" AS ENUM ('low', 'medium', 'high'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "observation_status" AS ENUM ('pending', 'approved', 'rejected', 'ignored'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "tax_included" AS ENUM ('true', 'false', 'unknown'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "evidence_type" AS ENUM ('html', 'json', 'screenshot', 'text_snapshot', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "review_target_type" AS ENUM ('region_price', 'observation', 'product', 'seo', 'affiliate', 'ad_slot', 'article'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "review_status" AS ENUM ('pending', 'approved', 'rejected', 'resolved'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "severity" AS ENUM ('low', 'medium', 'high'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "article_type" AS ENUM ('guide', 'how_to', 'comparison', 'ranking', 'news', 'methodology', 'faq_hub', 'review', 'announcement', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "block_type" AS ENUM ('paragraph', 'heading', 'image', 'table', 'callout', 'quote', 'code', 'price_table', 'product_card', 'country_card', 'affiliate_box', 'ad_slot', 'faq', 'toc', 'related_articles', 'custom_html'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "relation_type" AS ENUM ('related_product', 'related_plan', 'related_country', 'related_article', 'recommended_reading', 'source_reference', 'commercial_recommendation'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "ad_provider" AS ENUM ('adsense', 'ezoic', 'custom', 'affiliate', 'none'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "page_type" AS ENUM ('home', 'category', 'product', 'ranking', 'compare', 'article', 'global'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "affiliate_category" AS ENUM ('vpn', 'payment', 'official', 'service', 'gift_card', 'software', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "navigation_position" AS ENUM ('header', 'footer', 'sidebar', 'mobile', 'article_toc', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "structured_data_type" AS ENUM ('Article', 'BlogPosting', 'HowTo', 'FAQPage', 'NewsArticle', 'TechArticle', 'None'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "admin_role" AS ENUM ('owner', 'editor', 'viewer'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "admin_status" AS ENUM ('active', 'disabled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
