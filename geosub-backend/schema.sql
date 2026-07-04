@@ -8,6 +8,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TABLE IF NOT EXISTS admin_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  name TEXT,
+  role TEXT NOT NULL DEFAULT 'owner' CHECK (role IN (
+    'owner',
+    'editor',
+    'viewer'
+  )),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN (
+    'active',
+    'disabled'
+  )),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS countries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL UNIQUE,
@@ -527,7 +553,21 @@ CREATE TABLE IF NOT EXISTS tracking_events (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS site_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  setting_key TEXT NOT NULL UNIQUE,
+  group_name TEXT NOT NULL DEFAULT 'general',
+  label TEXT NOT NULL,
+  value_text TEXT,
+  value_json JSONB,
+  is_public BOOLEAN NOT NULL DEFAULT FALSE,
+  note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_products_category_status ON products(category, status);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_user_id ON admin_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_plans_product_status ON plans(product_id, status);
 CREATE INDEX IF NOT EXISTS idx_region_prices_plan_country ON region_prices(plan_id, country_id);
 CREATE INDEX IF NOT EXISTS idx_region_prices_status ON region_prices(status);
@@ -590,6 +630,12 @@ CREATE TRIGGER trg_parser_rules_updated_at BEFORE UPDATE ON parser_rules FOR EAC
 
 DROP TRIGGER IF EXISTS trg_tracking_events_updated_at ON tracking_events;
 CREATE TRIGGER trg_tracking_events_updated_at BEFORE UPDATE ON tracking_events FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_admin_users_updated_at ON admin_users;
+CREATE TRIGGER trg_admin_users_updated_at BEFORE UPDATE ON admin_users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_site_settings_updated_at ON site_settings;
+CREATE TRIGGER trg_site_settings_updated_at BEFORE UPDATE ON site_settings FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE OR REPLACE FUNCTION upsert_exchange_rate(
   p_base_currency TEXT,
