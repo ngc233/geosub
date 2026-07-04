@@ -26,7 +26,7 @@ docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d postgres -v ON_ERROR_STOP=1 -t
   "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" | grep -q 1 ||
   docker exec "$DB_CONTAINER" createdb -U "$DB_USER" "$DB_NAME"
 
-docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
+docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE IF NOT EXISTS geosub_schema_migrations (
   id BIGSERIAL PRIMARY KEY,
   filename TEXT NOT NULL UNIQUE,
