@@ -41,7 +41,8 @@ core_files=(
   "sql/001_affordability_income_tables.sql"
   "sql/002_compute_plan_affordability.sql"
   "sql/003_affordability_views.sql"
-  "sql/004_affordability_source_metadata.sql"
+  # 004_affordability_source_metadata.sql used CREATE OR REPLACE for a view
+  # with incompatible columns; the fix file below drops and recreates it safely.
   "sql/004_affordability_source_metadata_fix.sql"
   "sql/006_price_observation_tables.sql"
   "sql/007_fix_pending_price_observations_view.sql"
