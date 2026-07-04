@@ -63,6 +63,21 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS media_assets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  file_name TEXT NOT NULL,
+  original_name TEXT,
+  mime_type TEXT NOT NULL,
+  size_bytes INTEGER,
+  storage_path TEXT NOT NULL,
+  public_url TEXT NOT NULL,
+  alt_text TEXT,
+  caption TEXT,
+  uploaded_by_id UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS countries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL UNIQUE,
@@ -95,6 +110,7 @@ CREATE TABLE IF NOT EXISTS products (
   )),
   provider TEXT,
   logo_file UUID,
+  logo_asset_id UUID REFERENCES media_assets(id) ON DELETE SET NULL,
   logo_url TEXT,
   description TEXT,
   official_url TEXT,
@@ -597,6 +613,7 @@ CREATE TABLE IF NOT EXISTS site_settings (
 
 CREATE INDEX IF NOT EXISTS idx_products_category_status ON products(category, status);
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_user_id ON admin_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_media_assets_uploaded_by ON media_assets(uploaded_by_id);
 CREATE INDEX IF NOT EXISTS idx_plans_product_status ON plans(product_id, status);
 CREATE INDEX IF NOT EXISTS idx_region_prices_plan_country ON region_prices(plan_id, country_id);
 CREATE INDEX IF NOT EXISTS idx_region_prices_status ON region_prices(status);
@@ -662,6 +679,9 @@ CREATE TRIGGER trg_tracking_events_updated_at BEFORE UPDATE ON tracking_events F
 
 DROP TRIGGER IF EXISTS trg_admin_users_updated_at ON admin_users;
 CREATE TRIGGER trg_admin_users_updated_at BEFORE UPDATE ON admin_users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_media_assets_updated_at ON media_assets;
+CREATE TRIGGER trg_media_assets_updated_at BEFORE UPDATE ON media_assets FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 DROP TRIGGER IF EXISTS trg_site_settings_updated_at ON site_settings;
 CREATE TRIGGER trg_site_settings_updated_at BEFORE UPDATE ON site_settings FOR EACH ROW EXECUTE FUNCTION set_updated_at();
