@@ -44,9 +44,8 @@ core_files=(
   # 004_affordability_source_metadata.sql used CREATE OR REPLACE for a view
   # with incompatible columns; the fix file below drops and recreates it safely.
   "sql/004_affordability_source_metadata_fix.sql"
-  "sql/006_price_observation_tables.sql"
-  "sql/007_fix_pending_price_observations_view.sql"
-  "sql/007_fix_pending_price_observations_view_v3.sql"
+  # schema.sql owns the current price_observations table. Earlier 006/007
+  # migrations targeted a superseded slug-based observation model.
   "sql/008_price_observations_view_v4.sql"
   "sql/009_price_observation_review_functions.sql"
   "sql/010_refresh_affordability_function.sql"
