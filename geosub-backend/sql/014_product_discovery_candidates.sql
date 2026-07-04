@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS product_discovery_candidates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   suggested_slug TEXT,
-  suggested_category product_category NOT NULL DEFAULT 'ai',
+  suggested_category TEXT NOT NULL DEFAULT 'ai',
   provider TEXT,
   official_url TEXT,
   app_store_url TEXT,
@@ -94,7 +94,7 @@ INSERT INTO product_discovery_candidates (
 VALUES (
   'DeepSeek',
   'deepseek',
-  'ai'::product_category,
+  'ai',
   'DeepSeek',
   'https://www.deepseek.com/',
   'https://api-docs.deepseek.com/quick_start/pricing',
