@@ -284,11 +284,14 @@ CREATE TABLE IF NOT EXISTS seo_meta (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
   plan_id UUID REFERENCES plans(id) ON DELETE CASCADE,
+  article_id UUID,
+  category_id UUID,
   locale locale NOT NULL DEFAULT 'zh',
   title TEXT NOT NULL,
   description TEXT,
   h1 TEXT,
   canonical_url TEXT,
+  schema_type structured_data_type NOT NULL DEFAULT 'None',
   status publish_status NOT NULL DEFAULT 'draft',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -298,6 +301,7 @@ CREATE TABLE IF NOT EXISTS faqs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
   plan_id UUID REFERENCES plans(id) ON DELETE CASCADE,
+  article_id UUID,
   locale locale NOT NULL DEFAULT 'zh',
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
@@ -338,6 +342,192 @@ CREATE TABLE IF NOT EXISTS ad_slots (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS article_categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL,
+  locale locale NOT NULL DEFAULT 'zh',
+  name TEXT NOT NULL,
+  description TEXT,
+  parent_id UUID REFERENCES article_categories(id) ON DELETE SET NULL,
+  seo_title TEXT,
+  seo_description TEXT,
+  status publish_status NOT NULL DEFAULT 'draft',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (slug, locale)
+);
+
+CREATE TABLE IF NOT EXISTS articles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL,
+  locale locale NOT NULL DEFAULT 'zh',
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  excerpt TEXT,
+  article_type article_type NOT NULL DEFAULT 'guide',
+  category_id UUID REFERENCES article_categories(id) ON DELETE SET NULL,
+  cover_asset_id UUID REFERENCES media_assets(id) ON DELETE SET NULL,
+  cover_image_url TEXT,
+  author_name TEXT DEFAULT 'GeoSub Editor',
+  body_markdown TEXT,
+  body_html TEXT,
+  body_json JSONB,
+  status article_status NOT NULL DEFAULT 'draft',
+  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  reading_time INTEGER,
+  published_at TIMESTAMPTZ,
+  scheduled_at TIMESTAMPTZ,
+  canonical_url TEXT,
+  seo_title TEXT,
+  seo_description TEXT,
+  seo_keywords TEXT,
+  og_title TEXT,
+  og_description TEXT,
+  og_asset_id UUID REFERENCES media_assets(id) ON DELETE SET NULL,
+  og_image_url TEXT,
+  structured_data_type structured_data_type NOT NULL DEFAULT 'Article',
+  toc_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  noindex BOOLEAN NOT NULL DEFAULT FALSE,
+  nofollow BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ,
+  UNIQUE (slug, locale)
+);
+
+CREATE TABLE IF NOT EXISTS article_blocks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  block_type block_type NOT NULL DEFAULT 'paragraph',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  heading_level INTEGER,
+  title TEXT,
+  content_markdown TEXT,
+  content_html TEXT,
+  content_json JSONB,
+  image_asset_id UUID REFERENCES media_assets(id) ON DELETE SET NULL,
+  image_url TEXT,
+  image_alt TEXT,
+  image_caption TEXT,
+  linked_product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  linked_plan_id UUID REFERENCES plans(id) ON DELETE SET NULL,
+  linked_country_id UUID REFERENCES countries(id) ON DELETE SET NULL,
+  ad_slot_id UUID REFERENCES ad_slots(id) ON DELETE SET NULL,
+  affiliate_link_id UUID REFERENCES affiliate_links(id) ON DELETE SET NULL,
+  status publish_status NOT NULL DEFAULT 'published',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS article_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL,
+  locale locale NOT NULL DEFAULT 'zh',
+  name TEXT NOT NULL,
+  description TEXT,
+  status publish_status NOT NULL DEFAULT 'published',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (slug, locale)
+);
+
+CREATE TABLE IF NOT EXISTS article_tag_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  tag_id UUID NOT NULL REFERENCES article_tags(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (article_id, tag_id)
+);
+
+CREATE TABLE IF NOT EXISTS article_relations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  relation_type relation_type NOT NULL DEFAULT 'recommended_reading',
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  plan_id UUID REFERENCES plans(id) ON DELETE CASCADE,
+  country_id UUID REFERENCES countries(id) ON DELETE CASCADE,
+  related_article_id UUID REFERENCES articles(id) ON DELETE CASCADE,
+  affiliate_link_id UUID REFERENCES affiliate_links(id) ON DELETE SET NULL,
+  title TEXT,
+  description TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  status publish_status NOT NULL DEFAULT 'published',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS redirects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_path TEXT NOT NULL UNIQUE,
+  target_path TEXT NOT NULL,
+  status_code INTEGER NOT NULL DEFAULT 301,
+  locale locale,
+  reason TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  hit_count INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS navigation_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  locale locale NOT NULL DEFAULT 'zh',
+  label TEXT NOT NULL,
+  href TEXT NOT NULL,
+  position navigation_position NOT NULL DEFAULT 'header',
+  parent_id UUID REFERENCES navigation_items(id) ON DELETE SET NULL,
+  icon TEXT,
+  external BOOLEAN NOT NULL DEFAULT FALSE,
+  status publish_status NOT NULL DEFAULT 'published',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS internal_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_type TEXT NOT NULL,
+  source_id UUID,
+  target_type TEXT NOT NULL,
+  target_id UUID,
+  target_url TEXT,
+  anchor_text TEXT NOT NULL,
+  locale locale NOT NULL DEFAULT 'zh',
+  priority INTEGER NOT NULL DEFAULT 0,
+  status publish_status NOT NULL DEFAULT 'published',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'seo_meta_article_id_fkey'
+  ) THEN
+    ALTER TABLE seo_meta
+      ADD CONSTRAINT seo_meta_article_id_fkey
+      FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'seo_meta_category_id_fkey'
+  ) THEN
+    ALTER TABLE seo_meta
+      ADD CONSTRAINT seo_meta_category_id_fkey
+      FOREIGN KEY (category_id) REFERENCES article_categories(id) ON DELETE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'faqs_article_id_fkey'
+  ) THEN
+    ALTER TABLE faqs
+      ADD CONSTRAINT faqs_article_id_fkey
+      FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS collector_jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -432,9 +622,25 @@ CREATE INDEX IF NOT EXISTS idx_price_observations_product_country ON price_obser
 CREATE INDEX IF NOT EXISTS idx_price_observations_status ON price_observations(status);
 CREATE INDEX IF NOT EXISTS idx_review_queue_status ON review_queue(status);
 CREATE INDEX IF NOT EXISTS idx_seo_meta_locale ON seo_meta(locale);
+CREATE INDEX IF NOT EXISTS idx_seo_meta_article_id ON seo_meta(article_id);
+CREATE INDEX IF NOT EXISTS idx_seo_meta_category_id ON seo_meta(category_id);
 CREATE INDEX IF NOT EXISTS idx_faqs_locale_status ON faqs(locale, status);
 CREATE INDEX IF NOT EXISTS idx_affiliate_links_status ON affiliate_links(status);
 CREATE INDEX IF NOT EXISTS idx_ad_slots_slot_key ON ad_slots(slot_key);
+CREATE INDEX IF NOT EXISTS idx_article_categories_locale_status ON article_categories(locale, status);
+CREATE INDEX IF NOT EXISTS idx_articles_locale_status ON articles(locale, status);
+CREATE INDEX IF NOT EXISTS idx_articles_type_status ON articles(article_type, status);
+CREATE INDEX IF NOT EXISTS idx_articles_category_status ON articles(category_id, status);
+CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at);
+CREATE INDEX IF NOT EXISTS idx_articles_deleted_at ON articles(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_article_blocks_article_sort ON article_blocks(article_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_article_tags_locale_status ON article_tags(locale, status);
+CREATE INDEX IF NOT EXISTS idx_article_relations_article_type ON article_relations(article_id, relation_type);
+CREATE INDEX IF NOT EXISTS idx_article_relations_product_id ON article_relations(product_id);
+CREATE INDEX IF NOT EXISTS idx_redirects_active ON redirects(is_active);
+CREATE INDEX IF NOT EXISTS idx_navigation_items_locale_position ON navigation_items(locale, position, status);
+CREATE INDEX IF NOT EXISTS idx_internal_links_source ON internal_links(source_type, source_id, locale);
+CREATE INDEX IF NOT EXISTS idx_internal_links_target ON internal_links(target_type, target_id, locale);
 CREATE INDEX IF NOT EXISTS idx_tracking_events_event_key ON tracking_events(event_key);
 
 DROP TRIGGER IF EXISTS trg_countries_updated_at ON countries;
@@ -475,6 +681,30 @@ CREATE TRIGGER trg_affiliate_links_updated_at BEFORE UPDATE ON affiliate_links F
 
 DROP TRIGGER IF EXISTS trg_ad_slots_updated_at ON ad_slots;
 CREATE TRIGGER trg_ad_slots_updated_at BEFORE UPDATE ON ad_slots FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_article_categories_updated_at ON article_categories;
+CREATE TRIGGER trg_article_categories_updated_at BEFORE UPDATE ON article_categories FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_articles_updated_at ON articles;
+CREATE TRIGGER trg_articles_updated_at BEFORE UPDATE ON articles FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_article_blocks_updated_at ON article_blocks;
+CREATE TRIGGER trg_article_blocks_updated_at BEFORE UPDATE ON article_blocks FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_article_tags_updated_at ON article_tags;
+CREATE TRIGGER trg_article_tags_updated_at BEFORE UPDATE ON article_tags FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_article_relations_updated_at ON article_relations;
+CREATE TRIGGER trg_article_relations_updated_at BEFORE UPDATE ON article_relations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_redirects_updated_at ON redirects;
+CREATE TRIGGER trg_redirects_updated_at BEFORE UPDATE ON redirects FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_navigation_items_updated_at ON navigation_items;
+CREATE TRIGGER trg_navigation_items_updated_at BEFORE UPDATE ON navigation_items FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_internal_links_updated_at ON internal_links;
+CREATE TRIGGER trg_internal_links_updated_at BEFORE UPDATE ON internal_links FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 DROP TRIGGER IF EXISTS trg_collector_jobs_updated_at ON collector_jobs;
 CREATE TRIGGER trg_collector_jobs_updated_at BEFORE UPDATE ON collector_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
