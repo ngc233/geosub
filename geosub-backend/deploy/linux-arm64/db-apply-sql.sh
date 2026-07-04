@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 ENV_FILE="${GEOSUB_ENV_FILE:-/etc/geosub/geosub.env}"
