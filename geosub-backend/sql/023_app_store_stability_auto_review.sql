@@ -65,11 +65,11 @@ BEGIN
         po.price_type
       FROM price_observations po
       LEFT JOIN price_sources ps ON ps.id = po.source_id
-      WHERE po.status = 'pending'::observation_status
-        AND po.billing_platform = 'ios'::billing_platform
+      WHERE po.status = 'pending'
+        AND po.billing_platform = 'ios'
         AND (
-          po.source_level = 'A'::source_level
-          OR ps.type = 'app_store'::price_source_type
+          po.source_level = 'A'
+          OR ps.type = 'app_store'
         )
     ),
     ranked AS (
@@ -93,13 +93,13 @@ BEGIN
        AND cg.price_type = po.price_type
       LEFT JOIN price_sources ps ON ps.id = po.source_id
       WHERE po.status IN (
-          'pending'::observation_status,
-          'approved'::observation_status
+          'pending',
+          'approved'
         )
-        AND po.billing_platform = 'ios'::billing_platform
+        AND po.billing_platform = 'ios'
         AND (
-          po.source_level = 'A'::source_level
-          OR ps.type = 'app_store'::price_source_type
+          po.source_level = 'A'
+          OR ps.type = 'app_store'
         )
     ),
     latest_samples AS (
@@ -116,9 +116,9 @@ BEGIN
         ls.price_type,
         ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC) AS observation_ids,
         ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC)
-          FILTER (WHERE ls.status = 'pending'::observation_status) AS pending_observation_ids,
+          FILTER (WHERE ls.status = 'pending') AS pending_observation_ids,
         COUNT(*) AS observation_count,
-        COUNT(*) FILTER (WHERE ls.status = 'pending'::observation_status) AS pending_count,
+        COUNT(*) FILTER (WHERE ls.status = 'pending') AS pending_count,
         COUNT(DISTINCT ls.raw_price) AS raw_price_count,
         COUNT(DISTINCT ls.currency) AS currency_count,
         MIN(ls.confidence_score) AS min_confidence,
@@ -284,7 +284,7 @@ BEGIN
         ),
         updated_at = NOW()
         WHERE id = ANY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]))
-          AND status = 'pending'::observation_status;
+          AND status = 'pending';
       END IF;
     END IF;
 

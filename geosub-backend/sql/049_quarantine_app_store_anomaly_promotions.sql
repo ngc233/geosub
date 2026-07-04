@@ -30,8 +30,8 @@ WITH affected_region_prices AS (
         AND ABS(observation.converted_usd - region_price.price_usd) <= GREATEST(0.01, region_price.price_usd * 0.02)
       )
     )
-  WHERE region_price.status = 'published'::publish_status
-    AND region_price.billing_platform = 'ios'::billing_platform
+  WHERE region_price.status = 'published'
+    AND region_price.billing_platform = 'ios'
     AND COALESCE(observation.anomaly_flag, FALSE) = TRUE
 ),
 clean_replacements AS (
@@ -74,8 +74,8 @@ SET
   END,
   primary_source_id = clean.source_id,
   confidence_score = clean.confidence_score,
-  data_quality = 'verified'::data_quality,
-  status = 'published'::publish_status,
+  data_quality = 'verified',
+  status = 'published',
   last_checked_at = clean.observed_at,
   updated_at = NOW()
 FROM clean_replacements clean
@@ -105,8 +105,8 @@ WITH affected_region_prices AS (
         AND ABS(observation.converted_usd - region_price.price_usd) <= GREATEST(0.01, region_price.price_usd * 0.02)
       )
     )
-  WHERE region_price.status = 'published'::publish_status
-    AND region_price.billing_platform = 'ios'::billing_platform
+  WHERE region_price.status = 'published'
+    AND region_price.billing_platform = 'ios'
     AND COALESCE(observation.anomaly_flag, FALSE) = TRUE
 ),
 clean_replacements AS (
@@ -127,8 +127,8 @@ clean_replacements AS (
 )
 UPDATE region_prices region_price
 SET
-  status = 'review'::publish_status,
-  data_quality = 'pending_review'::data_quality,
+  status = 'review',
+  data_quality = 'pending_review',
   source_summary = CONCAT_WS(
     ' ',
     NULLIF(region_price.source_summary, ''),
@@ -143,7 +143,7 @@ WHERE region_price.id = affected.id
 
 UPDATE price_observations observation
 SET
-  status = 'ignored'::observation_status,
+  status = 'ignored',
   raw_payload = COALESCE(observation.raw_payload, '{}'::jsonb) || jsonb_build_object(
     'ignored_at', NOW()::TEXT,
     'ignore_reason', 'Hard anomaly: observation is not eligible for publication.',
@@ -152,6 +152,6 @@ SET
     'auto_review_reason_code', 'app_store_observation_anomaly'
   ),
   updated_at = NOW()
-WHERE observation.billing_platform = 'ios'::billing_platform
+WHERE observation.billing_platform = 'ios'
   AND COALESCE(observation.anomaly_flag, FALSE) = TRUE
-  AND observation.status IN ('pending'::observation_status, 'approved'::observation_status);
+  AND observation.status IN ('pending', 'approved');

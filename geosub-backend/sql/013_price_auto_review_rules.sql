@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS price_auto_review_decisions (
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   plan_id UUID NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
   country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
-  price_type price_type NOT NULL,
+  price_type TEXT NOT NULL,
   decision TEXT NOT NULL CHECK (decision IN (
     'auto_approve',
     'manual_review'
@@ -136,7 +136,7 @@ BEGIN
           OR po.converted_usd IS NULL
         ) AS has_incomplete
       FROM price_observations po
-      WHERE po.status = 'pending'::observation_status
+      WHERE po.status = 'pending'
       GROUP BY
         po.product_id,
         po.plan_id,
@@ -170,7 +170,7 @@ BEGIN
        AND rp.country_id = po.country_id
        AND rp.billing_platform = po.billing_platform
        AND rp.price_type = po.price_type
-       AND rp.status = 'published'::publish_status
+       AND rp.status = 'published'
       WHERE po.id = ANY(v_group.observation_ids)
         AND rp.price_usd > 0
         AND ABS(((po.converted_usd - rp.price_usd) / rp.price_usd) * 100) > p_max_change_percent
@@ -287,7 +287,7 @@ BEGIN
         ),
         updated_at = NOW()
         WHERE id = ANY(v_group.observation_ids)
-          AND status = 'pending'::observation_status;
+          AND status = 'pending';
       END IF;
     END IF;
 

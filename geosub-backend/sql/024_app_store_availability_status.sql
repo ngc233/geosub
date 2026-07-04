@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS app_store_availability_checks (
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   source_id UUID REFERENCES price_sources(id) ON DELETE SET NULL,
   country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
-  billing_platform billing_platform NOT NULL DEFAULT 'ios'::billing_platform,
+  billing_platform billing_platform NOT NULL DEFAULT 'ios',
   status TEXT NOT NULL CHECK (status IN (
     'available_with_prices',
     'available_no_iap',

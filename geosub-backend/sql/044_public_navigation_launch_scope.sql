@@ -1,7 +1,7 @@
 -- Keep the first beta navigation focused on pages with usable content.
 
 UPDATE navigation_items
-SET status = 'draft'::publish_status,
+SET status = 'draft',
     updated_at = NOW()
 WHERE external = FALSE
   AND (
@@ -33,7 +33,7 @@ SELECT
   'header'::navigation_position,
   NULL,
   FALSE,
-  'published'::publish_status,
+  'published',
   25,
   NOW(),
   NOW()
@@ -66,7 +66,7 @@ SELECT
   'header'::navigation_position,
   NULL,
   FALSE,
-  'published'::publish_status,
+  'published',
   25,
   NOW(),
   NOW()

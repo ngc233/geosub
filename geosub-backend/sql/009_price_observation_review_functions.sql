@@ -8,7 +8,7 @@ DECLARE
   v_us_country_id UUID;
   v_us_base_price NUMERIC;
   v_diff_vs_us_percent NUMERIC;
-  v_data_quality data_quality;
+  v_data_quality TEXT;
 BEGIN
   SELECT *
   INTO v_observation
@@ -20,7 +20,7 @@ BEGIN
     RAISE EXCEPTION 'price_observation % not found', p_observation_id;
   END IF;
 
-  IF v_observation.status <> 'pending'::observation_status THEN
+  IF v_observation.status <> 'pending' THEN
     RAISE EXCEPTION 'price_observation % is not pending, current status: %',
       p_observation_id,
       v_observation.status;
@@ -52,7 +52,7 @@ BEGIN
       AND rp.plan_id = v_observation.plan_id
       AND rp.country_id = v_us_country_id
       AND rp.price_type = v_observation.price_type
-      AND rp.status = 'published'::publish_status
+      AND rp.status = 'published'
     ORDER BY
       CASE WHEN rp.billing_platform = v_observation.billing_platform THEN 0 ELSE 1 END,
       rp.last_checked_at DESC NULLS LAST,
@@ -70,12 +70,12 @@ BEGIN
   END IF;
 
   v_data_quality := CASE
-    WHEN v_observation.source_level = 'A'::source_level
+    WHEN v_observation.source_level = 'A'
       AND v_observation.confidence_score >= 80
-      THEN 'verified'::data_quality
+      THEN 'verified'
     WHEN v_observation.confidence_score >= 60
-      THEN 'estimated'::data_quality
-    ELSE 'pending_review'::data_quality
+      THEN 'estimated'
+    ELSE 'pending_review'
   END;
 
   SELECT rp.id
@@ -87,7 +87,7 @@ BEGIN
     AND rp.price_type = v_observation.price_type
   ORDER BY
     CASE WHEN rp.billing_platform = v_observation.billing_platform THEN 0 ELSE 1 END,
-    CASE WHEN rp.status = 'published'::publish_status THEN 0 ELSE 1 END,
+    CASE WHEN rp.status = 'published' THEN 0 ELSE 1 END,
     rp.updated_at DESC
   LIMIT 1
   FOR UPDATE;
@@ -130,8 +130,8 @@ BEGIN
       v_observation.billing_platform,
       v_observation.price_type,
       CASE
-        WHEN v_observation.tax_included = 'true'::tax_included THEN 'Tax included.'
-        WHEN v_observation.tax_included = 'false'::tax_included THEN 'Tax excluded.'
+        WHEN v_observation.tax_included = 'true' THEN 'Tax included.'
+        WHEN v_observation.tax_included = 'false' THEN 'Tax excluded.'
         ELSE NULL
       END,
       NULL,
@@ -139,7 +139,7 @@ BEGIN
       v_observation.source_id,
       v_observation.confidence_score,
       v_data_quality,
-      'published'::publish_status,
+      'published',
       v_observation.observed_at,
       NOW(),
       NOW(),
@@ -157,15 +157,15 @@ BEGIN
       billing_platform = v_observation.billing_platform,
       price_type = v_observation.price_type,
       tax_note = CASE
-        WHEN v_observation.tax_included = 'true'::tax_included THEN 'Tax included.'
-        WHEN v_observation.tax_included = 'false'::tax_included THEN 'Tax excluded.'
+        WHEN v_observation.tax_included = 'true' THEN 'Tax included.'
+        WHEN v_observation.tax_included = 'false' THEN 'Tax excluded.'
         ELSE NULL
       END,
       source_summary = 'Approved observation: ' || v_observation.source_level::TEXT || ' level, ' || COALESCE(v_observation.parser_version, 'manual'),
       primary_source_id = v_observation.source_id,
       confidence_score = v_observation.confidence_score,
       data_quality = v_data_quality,
-      status = 'published'::publish_status,
+      status = 'published',
       last_checked_at = v_observation.observed_at,
       published_at = COALESCE(region_prices.published_at, NOW()),
       updated_at = NOW()
@@ -174,7 +174,7 @@ BEGIN
 
   UPDATE price_observations
   SET
-    status = 'approved'::observation_status,
+    status = 'approved',
     raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
       'approved_at', NOW()::TEXT,
       'promoted_region_price_id', v_region_price_id::TEXT
@@ -197,14 +197,14 @@ AS $$
 BEGIN
   UPDATE price_observations
   SET
-    status = 'rejected'::observation_status,
+    status = 'rejected',
     raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
       'rejected_at', NOW()::TEXT,
       'reject_reason', p_reason
     ),
     updated_at = NOW()
   WHERE id = p_observation_id
-    AND status = 'pending'::observation_status;
+    AND status = 'pending';
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'pending price_observation % not found', p_observation_id;
@@ -223,14 +223,14 @@ AS $$
 BEGIN
   UPDATE price_observations
   SET
-    status = 'ignored'::observation_status,
+    status = 'ignored',
     raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
       'ignored_at', NOW()::TEXT,
       'ignore_reason', p_reason
     ),
     updated_at = NOW()
   WHERE id = p_observation_id
-    AND status = 'pending'::observation_status;
+    AND status = 'pending';
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'pending price_observation % not found', p_observation_id;

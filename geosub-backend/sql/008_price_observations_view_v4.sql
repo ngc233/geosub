@@ -49,5 +49,5 @@ FROM price_observations po
 LEFT JOIN products p ON p.id = po.product_id
 LEFT JOIN plans pl ON pl.id = po.plan_id
 LEFT JOIN countries c ON c.id = po.country_id
-WHERE po.status = 'pending'::observation_status
+WHERE po.status = 'pending'
 ORDER BY po.observed_at DESC;

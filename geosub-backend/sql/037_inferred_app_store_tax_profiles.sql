@@ -9,8 +9,8 @@ BEGIN
     SELECT DISTINCT country.id AS country_id
     FROM region_prices price
     JOIN countries country ON country.id = price.country_id
-    WHERE price.status = 'published'::publish_status
-      AND price.billing_platform = 'ios'::billing_platform
+    WHERE price.status = 'published'
+      AND price.billing_platform = 'ios'
   ),
   missing_profiles AS (
     SELECT published_countries.country_id

@@ -22,7 +22,7 @@ BEGIN
     JOIN products p ON p.id = rp.product_id
     JOIN plans pl ON pl.id = rp.plan_id
     JOIN countries c ON c.id = rp.country_id
-    WHERE rp.status = 'published'::publish_status
+    WHERE rp.status = 'published'
       AND rp.price_usd IS NOT NULL
       AND (arg_product_slug IS NULL OR p.slug = arg_product_slug)
       AND (arg_plan_slug IS NULL OR pl.slug = arg_plan_slug)
@@ -31,8 +31,8 @@ BEGIN
       pl.slug,
       c.code,
       CASE
-        WHEN rp.billing_platform = 'ios'::billing_platform THEN 0
-        WHEN rp.billing_platform = 'web'::billing_platform THEN 1
+        WHEN rp.billing_platform = 'ios' THEN 0
+        WHEN rp.billing_platform = 'web' THEN 1
         ELSE 2
       END,
       rp.last_checked_at DESC NULLS LAST,

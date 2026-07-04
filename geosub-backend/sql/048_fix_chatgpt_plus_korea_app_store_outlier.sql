@@ -21,7 +21,7 @@ clean_observation AS (
     ON target.product_id = observation.product_id
    AND target.plan_id = observation.plan_id
    AND target.country_id = observation.country_id
-  WHERE observation.billing_platform = 'ios'::billing_platform
+  WHERE observation.billing_platform = 'ios'
     AND observation.currency = 'KRW'
     AND observation.raw_price = 29000
     AND COALESCE(observation.anomaly_flag, FALSE) = FALSE
@@ -40,15 +40,15 @@ SET
   END,
   primary_source_id = clean_observation.source_id,
   confidence_score = clean_observation.confidence_score,
-  data_quality = 'verified'::data_quality,
-  status = 'published'::publish_status,
+  data_quality = 'verified',
+  status = 'published',
   last_checked_at = clean_observation.observed_at,
   updated_at = NOW()
 FROM target, clean_observation
 WHERE region_price.product_id = target.product_id
   AND region_price.plan_id = target.plan_id
   AND region_price.country_id = target.country_id
-  AND region_price.billing_platform = 'ios'::billing_platform;
+  AND region_price.billing_platform = 'ios';
 
 WITH target AS (
   SELECT
@@ -64,7 +64,7 @@ WITH target AS (
 )
 UPDATE price_observations observation
 SET
-  status = 'ignored'::observation_status,
+  status = 'ignored',
   raw_payload = COALESCE(observation.raw_payload, '{}'::jsonb) || jsonb_build_object(
     'ignored_at', NOW()::TEXT,
     'ignore_reason', 'Hard anomaly: duplicate App Store Plus price selected as monthly price.',
@@ -77,7 +77,7 @@ FROM target
 WHERE observation.product_id = target.product_id
   AND observation.plan_id = target.plan_id
   AND observation.country_id = target.country_id
-  AND observation.billing_platform = 'ios'::billing_platform
+  AND observation.billing_platform = 'ios'
   AND observation.currency = 'KRW'
   AND observation.raw_price = 99000
   AND COALESCE(observation.anomaly_flag, FALSE) = TRUE;

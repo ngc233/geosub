@@ -16,7 +16,7 @@ unused_wrong_plans AS (
 )
 UPDATE plans plan
 SET
-  status = 'archived'::publish_status,
+  status = 'archived',
   updated_at = NOW()
 FROM unused_wrong_plans wrong_plan
 WHERE plan.id = wrong_plan.id;
@@ -28,14 +28,14 @@ WITH suspicious_grok_lite AS (
   JOIN plans plan ON plan.id = region_price.plan_id
   WHERE product.slug = 'grok'
     AND plan.slug = 'super-lite'
-    AND region_price.billing_platform = 'ios'::billing_platform
-    AND region_price.status = 'published'::publish_status
+    AND region_price.billing_platform = 'ios'
+    AND region_price.status = 'published'
     AND region_price.price_usd > 45
 )
 UPDATE region_prices region_price
 SET
-  status = 'review'::publish_status,
-  data_quality = 'pending_review'::data_quality,
+  status = 'review',
+  data_quality = 'pending_review',
   source_summary = CONCAT_WS(
     ' ',
     NULLIF(region_price.source_summary, ''),
@@ -47,7 +47,7 @@ WHERE region_price.id = suspicious.id;
 
 UPDATE price_observations observation
 SET
-  status = 'ignored'::observation_status,
+  status = 'ignored',
   raw_payload = COALESCE(observation.raw_payload, '{}'::jsonb) || jsonb_build_object(
     'ignored_at', NOW()::TEXT,
     'ignore_reason', 'Likely annual SuperGrok Lite App Store price selected before product-specific plan specs and longest-alias matching.',
@@ -62,6 +62,6 @@ WHERE observation.product_id = product.id
   AND observation.plan_id = plan.id
   AND product.slug = 'grok'
   AND plan.slug = 'super-lite'
-  AND observation.billing_platform = 'ios'::billing_platform
-  AND observation.status IN ('pending'::observation_status, 'approved'::observation_status)
+  AND observation.billing_platform = 'ios'
+  AND observation.status IN ('pending', 'approved')
   AND observation.converted_usd > 45;

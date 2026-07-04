@@ -118,8 +118,8 @@ BEGIN
       ARRAY_AGG(DISTINCT evidence.country_code ORDER BY evidence.country_code)
         FILTER (WHERE evidence.country_code IS NOT NULL) AS anomaly_country_codes
     FROM price_observation_evidence_view evidence
-    WHERE evidence.billing_platform = 'ios'::billing_platform
-      AND evidence.status = 'pending'::observation_status
+    WHERE evidence.billing_platform = 'ios'
+      AND evidence.status = 'pending'
       AND evidence.observed_at >= NOW() - MAKE_INTERVAL(days => p_recent_days)
       AND (
         evidence.evidence_status = 'blocked_anomaly'

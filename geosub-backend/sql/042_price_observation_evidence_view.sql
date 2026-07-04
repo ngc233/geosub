@@ -46,7 +46,7 @@ WITH observation_with_context AS (
     AND published.country_id = observation.country_id
     AND published.billing_platform = observation.billing_platform
     AND published.price_type = observation.price_type
-    AND published.status = 'published'::publish_status
+    AND published.status = 'published'
 ),
 evidence_fields AS (
   SELECT

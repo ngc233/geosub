@@ -42,7 +42,7 @@ BEGIN
   IF NOT p_dry_run THEN
     UPDATE price_observations observation
     SET
-      status = 'ignored'::observation_status,
+      status = 'ignored',
       raw_payload = COALESCE(observation.raw_payload, '{}'::jsonb) || jsonb_build_object(
         'ignored_at', NOW()::TEXT,
         'ignore_reason', 'Superseded by a newer or matching published App Store price.',
@@ -52,14 +52,14 @@ BEGIN
       ),
       updated_at = NOW()
     FROM region_prices published
-    WHERE observation.status = 'pending'::observation_status
+    WHERE observation.status = 'pending'
       AND COALESCE(observation.anomaly_flag, FALSE) = FALSE
       AND observation.product_id = published.product_id
       AND observation.plan_id = published.plan_id
       AND observation.country_id = published.country_id
       AND observation.billing_platform = published.billing_platform
       AND observation.price_type = published.price_type
-      AND published.status = 'published'::publish_status
+      AND published.status = 'published'
       AND (
         published.last_checked_at >= observation.observed_at
         OR (
@@ -101,11 +101,11 @@ BEGIN
         po.price_type
       FROM price_observations po
       LEFT JOIN price_sources ps ON ps.id = po.source_id
-      WHERE po.status = 'pending'::observation_status
-        AND po.billing_platform = 'ios'::billing_platform
+      WHERE po.status = 'pending'
+        AND po.billing_platform = 'ios'
         AND (
-          po.source_level = 'A'::source_level
-          OR ps.type = 'app_store'::price_source_type
+          po.source_level = 'A'
+          OR ps.type = 'app_store'
         )
     ),
     ranked AS (
@@ -129,13 +129,13 @@ BEGIN
        AND cg.price_type = po.price_type
       LEFT JOIN price_sources ps ON ps.id = po.source_id
       WHERE po.status IN (
-          'pending'::observation_status,
-          'approved'::observation_status
+          'pending',
+          'approved'
         )
-        AND po.billing_platform = 'ios'::billing_platform
+        AND po.billing_platform = 'ios'
         AND (
-          po.source_level = 'A'::source_level
-          OR ps.type = 'app_store'::price_source_type
+          po.source_level = 'A'
+          OR ps.type = 'app_store'
         )
     ),
     latest_samples AS (
@@ -153,9 +153,9 @@ BEGIN
         ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC) AS observation_ids,
         (ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC))[1] AS latest_observation_id,
         ARRAY_AGG(ls.id ORDER BY ls.observed_at DESC, ls.created_at DESC)
-          FILTER (WHERE ls.status = 'pending'::observation_status) AS pending_observation_ids,
+          FILTER (WHERE ls.status = 'pending') AS pending_observation_ids,
         COUNT(*) AS observation_count,
-        COUNT(*) FILTER (WHERE ls.status = 'pending'::observation_status) AS pending_count,
+        COUNT(*) FILTER (WHERE ls.status = 'pending') AS pending_count,
         COUNT(DISTINCT ls.raw_price) AS raw_price_count,
         COUNT(DISTINCT ls.currency) AS currency_count,
         MIN(ls.confidence_score) AS min_confidence,
@@ -255,12 +255,12 @@ BEGIN
           AND peer.country_id <> g.country_id
           AND peer.billing_platform = g.billing_platform
           AND peer.price_type = g.price_type
-          AND peer.status IN ('pending'::observation_status, 'approved'::observation_status)
+          AND peer.status IN ('pending', 'approved')
           AND peer.converted_usd IS NOT NULL
           AND peer.converted_usd >= 1
           AND COALESCE(peer.anomaly_flag, FALSE) = FALSE
           AND peer.observed_at >= NOW() - MAKE_INTERVAL(days => p_max_sample_age_days)
-          AND (peer.source_level = 'A'::source_level OR peer_source.type = 'app_store'::price_source_type)
+          AND (peer.source_level = 'A' OR peer_source.type = 'app_store')
         ORDER BY peer.country_id, peer.observed_at DESC, peer.created_at DESC
       ),
       peer_summary AS (
@@ -319,12 +319,12 @@ BEGIN
           AND sibling.plan_id <> g.plan_id
           AND sibling.billing_platform = g.billing_platform
           AND sibling.price_type = g.price_type
-          AND sibling.status IN ('pending'::observation_status, 'approved'::observation_status)
+          AND sibling.status IN ('pending', 'approved')
           AND sibling.converted_usd IS NOT NULL
           AND sibling.converted_usd >= 1
           AND COALESCE(sibling.anomaly_flag, FALSE) = FALSE
           AND sibling.observed_at >= NOW() - MAKE_INTERVAL(days => p_max_sample_age_days)
-          AND (sibling.source_level = 'A'::source_level OR sibling_source.type = 'app_store'::price_source_type)
+          AND (sibling.source_level = 'A' OR sibling_source.type = 'app_store')
         ORDER BY sibling.plan_id, sibling.observed_at DESC, sibling.created_at DESC
       )
       SELECT
@@ -534,7 +534,7 @@ BEGIN
         IF v_reason_code IN ('app_store_modal_price_consensus', 'app_store_clean_pair_after_rule_fix') THEN
           UPDATE price_observations
           SET
-            status = 'ignored'::observation_status,
+            status = 'ignored',
             raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
               'ignored_at', NOW()::TEXT,
               'ignore_reason', 'Superseded by a newer App Store auto-review consensus.',
@@ -547,7 +547,7 @@ BEGIN
             updated_at = NOW()
           WHERE id = ANY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]))
             AND id <> ALL(COALESCE(v_observation_ids_to_approve, ARRAY[]::UUID[]))
-            AND status = 'pending'::observation_status;
+            AND status = 'pending';
         END IF;
       END IF;
     ELSE
@@ -565,7 +565,7 @@ BEGIN
         ),
         updated_at = NOW()
         WHERE id = ANY(COALESCE(v_group.pending_observation_ids, ARRAY[]::UUID[]))
-          AND status = 'pending'::observation_status;
+          AND status = 'pending';
       END IF;
     END IF;
 

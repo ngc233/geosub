@@ -17,8 +17,8 @@ FROM products product
 JOIN plans plan ON plan.product_id = product.id
 WHERE observation.product_id = product.id
   AND observation.plan_id = plan.id
-  AND observation.status = 'pending'::observation_status
-  AND observation.billing_platform = 'ios'::billing_platform
+  AND observation.status = 'pending'
+  AND observation.billing_platform = 'ios'
   AND product.slug = 'claude'
   AND (
     (
