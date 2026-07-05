@@ -586,6 +586,44 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS event_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_key TEXT NOT NULL,
+  event_name TEXT,
+  page_path TEXT,
+  page_title TEXT,
+  referrer TEXT,
+  locale TEXT DEFAULT 'zh',
+  session_id TEXT,
+  anonymous_id TEXT,
+  product_id UUID,
+  plan_id UUID,
+  country_id UUID,
+  article_id UUID,
+  button_key TEXT,
+  placement TEXT,
+  source TEXT,
+  device_type TEXT,
+  user_agent TEXT,
+  ip_country TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS daily_stats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stat_date DATE NOT NULL,
+  metric_key TEXT NOT NULL,
+  metric_value INTEGER NOT NULL DEFAULT 0,
+  dimension_type TEXT NOT NULL DEFAULT 'global',
+  dimension_key TEXT NOT NULL DEFAULT 'global',
+  label TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (stat_date, metric_key, dimension_type, dimension_key)
+);
+
 CREATE TABLE IF NOT EXISTS tracking_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_key TEXT NOT NULL UNIQUE,
@@ -641,6 +679,16 @@ CREATE INDEX IF NOT EXISTS idx_redirects_active ON redirects(is_active);
 CREATE INDEX IF NOT EXISTS idx_navigation_items_locale_position ON navigation_items(locale, position, status);
 CREATE INDEX IF NOT EXISTS idx_internal_links_source ON internal_links(source_type, source_id, locale);
 CREATE INDEX IF NOT EXISTS idx_internal_links_target ON internal_links(target_type, target_id, locale);
+CREATE INDEX IF NOT EXISTS idx_event_logs_event_created ON event_logs(event_key, created_at);
+CREATE INDEX IF NOT EXISTS idx_event_logs_page_path ON event_logs(page_path);
+CREATE INDEX IF NOT EXISTS idx_event_logs_product_id ON event_logs(product_id);
+CREATE INDEX IF NOT EXISTS idx_event_logs_plan_id ON event_logs(plan_id);
+CREATE INDEX IF NOT EXISTS idx_event_logs_country_id ON event_logs(country_id);
+CREATE INDEX IF NOT EXISTS idx_event_logs_article_id ON event_logs(article_id);
+CREATE INDEX IF NOT EXISTS idx_event_logs_created_at ON event_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_daily_stats_stat_date ON daily_stats(stat_date);
+CREATE INDEX IF NOT EXISTS idx_daily_stats_metric_key ON daily_stats(metric_key);
+CREATE INDEX IF NOT EXISTS idx_daily_stats_dimension ON daily_stats(dimension_type, dimension_key);
 CREATE INDEX IF NOT EXISTS idx_tracking_events_event_key ON tracking_events(event_key);
 
 DROP TRIGGER IF EXISTS trg_countries_updated_at ON countries;
@@ -705,6 +753,9 @@ CREATE TRIGGER trg_navigation_items_updated_at BEFORE UPDATE ON navigation_items
 
 DROP TRIGGER IF EXISTS trg_internal_links_updated_at ON internal_links;
 CREATE TRIGGER trg_internal_links_updated_at BEFORE UPDATE ON internal_links FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_daily_stats_updated_at ON daily_stats;
+CREATE TRIGGER trg_daily_stats_updated_at BEFORE UPDATE ON daily_stats FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 DROP TRIGGER IF EXISTS trg_collector_jobs_updated_at ON collector_jobs;
 CREATE TRIGGER trg_collector_jobs_updated_at BEFORE UPDATE ON collector_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
