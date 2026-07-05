@@ -13,6 +13,25 @@ $logFile = Join-Path $logDir "exchange-rate-sync-$dateStamp.log"
 
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
+function Get-PowerShellHost {
+  $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
+  if ($pwsh) {
+    return $pwsh.Source
+  }
+
+  $windowsPowerShell = Get-Command "powershell" -ErrorAction SilentlyContinue
+  if ($windowsPowerShell) {
+    return $windowsPowerShell.Source
+  }
+
+  $windowsPowerShellExe = Get-Command "powershell.exe" -ErrorAction SilentlyContinue
+  if ($windowsPowerShellExe) {
+    return $windowsPowerShellExe.Source
+  }
+
+  throw "PowerShell executable not found. Install PowerShell 7 or Windows PowerShell."
+}
+
 function Write-Log {
   param([string]$Message)
 
@@ -24,7 +43,7 @@ try {
   Write-Log "Starting exchange rate sync."
   Write-Log "Base: $BaseCurrency; Quotes: $($QuoteCurrencies -join ',')."
 
-  & powershell -NoProfile -ExecutionPolicy Bypass `
+  & (Get-PowerShellHost) -NoProfile -ExecutionPolicy Bypass `
     -File $syncScript `
     -BaseCurrency $BaseCurrency `
     -QuoteCurrencies $QuoteCurrencies 2>&1 |

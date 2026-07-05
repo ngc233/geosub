@@ -1,0 +1,19 @@
+[Unit]
+Description=GeoSub exchange-rate sync
+Wants=docker.service network-online.target
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/geosub-backend
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-exchange-rate-sync.sh
+TimeoutStartSec=3m
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

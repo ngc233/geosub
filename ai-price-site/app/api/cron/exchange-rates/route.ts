@@ -93,44 +93,26 @@ async function upsertRate({
   rate,
   rateDate,
   source,
+  providerPayload,
 }: {
   base: string;
   quote: string;
   rate: number;
   rateDate: string;
   source: string;
+  providerPayload: Record<string, unknown>;
 }) {
   await prisma.$executeRaw`
-    INSERT INTO exchange_rates (
-      id,
-      base_currency,
-      quote_currency,
-      rate,
-      source,
-      rate_date,
-      fetched_at,
-      status,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      gen_random_uuid(),
+    SELECT upsert_exchange_rate(
       ${base},
       ${quote},
       ${rate},
-      ${source},
       ${rateDate}::date,
+      ${source},
       NOW(),
-      'active',
-      NOW(),
-      NOW()
+      NULL,
+      ${JSON.stringify(providerPayload)}::jsonb
     )
-    ON CONFLICT (base_currency, quote_currency, rate_date, source)
-    DO UPDATE SET
-      rate = EXCLUDED.rate,
-      fetched_at = EXCLUDED.fetched_at,
-      status = 'active',
-      updated_at = NOW()
   `;
 }
 
@@ -174,6 +156,13 @@ export async function POST(request: NextRequest) {
       rate,
       rateDate: result.rateDate,
       source: result.source,
+      providerPayload: {
+        source: result.source,
+        requestedUrl: result.requestedUrl,
+        rateDate: result.rateDate,
+        quote,
+        rate,
+      },
     });
 
     synced.push({ quote, rate });

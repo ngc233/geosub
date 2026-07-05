@@ -16,6 +16,27 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+function Get-PowerShellHost {
+  $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
+  if ($pwsh) {
+    return $pwsh.Source
+  }
+
+  $windowsPowerShell = Get-Command "powershell" -ErrorAction SilentlyContinue
+  if ($windowsPowerShell) {
+    return $windowsPowerShell.Source
+  }
+
+  $windowsPowerShellExe = Get-Command "powershell.exe" -ErrorAction SilentlyContinue
+  if ($windowsPowerShellExe) {
+    return $windowsPowerShellExe.Source
+  }
+
+  throw "PowerShell executable not found. Install PowerShell 7 or Windows PowerShell."
+}
+
+$powerShellHost = Get-PowerShellHost
+
 function Invoke-Step {
   param(
     [string]$Name,
@@ -24,7 +45,7 @@ function Invoke-Step {
   )
 
   Write-Host $Name
-  & powershell -ExecutionPolicy Bypass -File $ScriptPath @Arguments
+  & $powerShellHost -ExecutionPolicy Bypass -File $ScriptPath @Arguments
 
   if ($LASTEXITCODE -ne 0) {
     throw "$Name failed with exit code $LASTEXITCODE."

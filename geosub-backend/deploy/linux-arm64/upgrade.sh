@@ -100,6 +100,7 @@ log "Stopping timers and web service"
 systemctl stop geosub-price-pipeline.timer 2>/dev/null || true
 systemctl stop geosub-collector-jobs.timer 2>/dev/null || true
 systemctl stop geosub-discovery-scan.timer 2>/dev/null || true
+systemctl stop geosub-exchange-rate-sync.timer 2>/dev/null || true
 systemctl stop geosub-web.service 2>/dev/null || true
 
 log "Creating database backup"
@@ -133,7 +134,10 @@ else
 fi
 
 log "Refreshing systemd units"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-exchange-rate-sync.sh"
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-web.service" /etc/systemd/system/geosub-web.service
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-exchange-rate-sync.service" /etc/systemd/system/geosub-exchange-rate-sync.service
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-exchange-rate-sync.timer" /etc/systemd/system/geosub-exchange-rate-sync.timer
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-price-pipeline.service" /etc/systemd/system/geosub-price-pipeline.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-price-pipeline.timer" /etc/systemd/system/geosub-price-pipeline.timer
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-collector-jobs.service" /etc/systemd/system/geosub-collector-jobs.service
@@ -147,9 +151,13 @@ bash "$BACKEND_DIR/deploy/linux-arm64/db-smoke-check.sh"
 
 log "Starting services"
 systemctl start geosub-web.service
+systemctl start geosub-exchange-rate-sync.timer 2>/dev/null || true
 systemctl start geosub-price-pipeline.timer 2>/dev/null || true
 systemctl start geosub-collector-jobs.timer 2>/dev/null || true
 systemctl start geosub-discovery-scan.timer 2>/dev/null || true
+
+log "Refreshing exchange rates once"
+systemctl start geosub-exchange-rate-sync.service 2>/dev/null || true
 
 log "Recording deployed version"
 record_release
