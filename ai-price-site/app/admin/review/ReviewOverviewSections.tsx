@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Archive, CheckCircle2, Clock3, XCircle } from "lucide-react";
+import AdminMetricCard from "../../../components/admin/AdminMetricCard";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import AdminStatusNotice, {
   type AdminStatusNoticeVariant,
@@ -126,26 +128,34 @@ export function ReviewOverviewSections({
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">待审核价格观测</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">{pendingTotal}</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">已通过</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">{approvedCount}</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">已忽略</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">{ignoredCount}</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">已拒绝</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">{rejectedCount}</p>
-        </div>
+      <section className="grid gap-3 md:grid-cols-4">
+        <AdminMetricCard
+          label="待处理观测"
+          value={pendingTotal}
+          helper="等待自动补采或规则复核"
+          icon={Clock3}
+          variant="warning"
+        />
+        <AdminMetricCard
+          label="已通过"
+          value={approvedCount}
+          helper="已进入正式价格库"
+          icon={CheckCircle2}
+          variant="success"
+        />
+        <AdminMetricCard
+          label="已忽略"
+          value={ignoredCount}
+          helper="旧样本或被新共识覆盖"
+          icon={Archive}
+        />
+        <AdminMetricCard
+          label="已拒绝"
+          value={rejectedCount}
+          helper="明确不可用的记录"
+          icon={XCircle}
+          variant="danger"
+        />
       </section>
 
       <section className="rounded-xl border border-blue-200 bg-blue-50 p-4">
