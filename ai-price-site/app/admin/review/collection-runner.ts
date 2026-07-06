@@ -10,7 +10,15 @@ import { prisma } from "../../../lib/prisma";
 const MANUAL_COLLECTION_COOLDOWN_SECONDS = 120;
 const MANUAL_COLLECTION_FRESH_HOURS = 12;
 
-export type CollectionRunStatus = "queued" | "fresh" | "none" | "cooldown" | "succeeded" | "failed";
+export type CollectionRunStatus =
+  | "queued"
+  | "fresh"
+  | "none"
+  | "cooldown"
+  | "succeeded"
+  | "failed"
+  | "not_found"
+  | "not_configured";
 
 export type CollectionRunResult = {
   queuedCount: number;
@@ -33,6 +41,33 @@ export function buildCollectionRedirectPath(
   }
 
   return `/admin/review?${redirectParams.toString()}`;
+}
+
+async function getProductCollectionReadiness(productSlug: string) {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      product_id: string | null;
+      app_store_job_count: number;
+    }>
+  >`
+    SELECT
+      product.id::text AS product_id,
+      COUNT(job.id)::int AS app_store_job_count
+    FROM products product
+    LEFT JOIN price_sources source
+      ON source.product_id = product.id
+      AND source.type = 'app_store'::price_source_type
+    LEFT JOIN collector_jobs job
+      ON job.source_id = source.id
+      AND job.product_id = product.id
+      AND job.job_type = 'ai_pricing'
+      AND job.status <> 'archived'
+    WHERE product.slug = ${productSlug}
+    GROUP BY product.id
+    LIMIT 1
+  `;
+
+  return rows[0] ?? null;
 }
 
 function startCollectorJobInBackground(jobId: string) {
@@ -78,6 +113,24 @@ function startCollectorJobInBackground(jobId: string) {
 }
 
 export async function queueAndRunAppStoreCollection(productSlug: string): Promise<CollectionRunResult> {
+  if (productSlug) {
+    const readiness = await getProductCollectionReadiness(productSlug);
+
+    if (!readiness) {
+      return {
+        queuedCount: 0,
+        runStatus: "not_found",
+      };
+    }
+
+    if (readiness.app_store_job_count <= 0) {
+      return {
+        queuedCount: 0,
+        runStatus: "not_configured",
+      };
+    }
+  }
+
   const rows = productSlug
     ? await prisma.$queryRaw<Array<{ job_id: string }>>`
         WITH scoped_product AS (
