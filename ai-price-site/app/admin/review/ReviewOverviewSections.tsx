@@ -1,9 +1,12 @@
 import Link from "next/link";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
+import AdminStatusNotice, {
+  type AdminStatusNoticeVariant,
+} from "../../../components/admin/AdminStatusNotice";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
 import {
-  getCollectionStatusClassName,
   getCollectionStatusMessage,
+  getCollectionStatusTone,
 } from "./collection-status";
 import type {
   AutoReviewReasonRow,
@@ -22,6 +25,11 @@ import {
   toNumber,
 } from "./review-display";
 import { reviewReasonAction, reviewReasonLabel } from "./review-reason-copy";
+
+function collectionStatusVariant(status: string | null | undefined): AdminStatusNoticeVariant {
+  const tone = getCollectionStatusTone(status);
+  return tone === "error" ? "danger" : tone;
+}
 
 type ReviewOverviewSectionsProps = {
   discoveryPromoted: boolean;
@@ -155,18 +163,13 @@ export function ReviewOverviewSections({
       </section>
 
       {queuedCount !== null ? (
-        <section
-          className={[
-            "rounded-xl border p-4 text-sm",
-            getCollectionStatusClassName(collectionRun),
-          ].join(" ")}
-        >
+        <AdminStatusNotice title="采集状态" variant={collectionStatusVariant(collectionRun)}>
           {getCollectionStatusMessage({
             queuedCount,
             collectionRun,
             collectionScope,
           })}
-        </section>
+        </AdminStatusNotice>
       ) : null}
 
       {latestAutoReview ? (

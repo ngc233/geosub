@@ -69,20 +69,6 @@ export function getCollectionStatusTone(status: string | null | undefined): Coll
   return "success";
 }
 
-export function getCollectionStatusClassName(status: string | null | undefined) {
-  const tone = getCollectionStatusTone(status);
-
-  if (tone === "error") {
-    return "border-red-200 bg-red-50 text-red-800";
-  }
-
-  if (tone === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-800";
-  }
-
-  return "border-emerald-200 bg-emerald-50 text-emerald-800";
-}
-
 export function getCollectionStatusMessage({
   queuedCount,
   collectionRun,
