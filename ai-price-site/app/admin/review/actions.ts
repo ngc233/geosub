@@ -8,7 +8,7 @@ import {
   rejectPriceObservation,
   runAppStoreStabilityAutoReview,
 } from "../../../lib/admin-price-review";
-import { queueAndRunAppStoreCollection } from "./collection-runner";
+import { buildCollectionRedirectPath, queueAndRunAppStoreCollection } from "./collection-runner";
 
 function getObservationId(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
@@ -58,16 +58,7 @@ export async function runAutoReview() {
 
 export async function queueAppStoreCollectionAndReview(formData?: FormData) {
   const productSlug = String(formData?.get("productSlug") ?? "").trim();
-  const { queuedCount, runStatus } = await queueAndRunAppStoreCollection(productSlug);
-  const redirectParams = new URLSearchParams({
-    collectionQueued: String(queuedCount),
-    collectionRun: runStatus,
-  });
+  const result = await queueAndRunAppStoreCollection(productSlug);
 
-  if (productSlug) {
-    redirectParams.set("collectionScope", productSlug);
-    redirectParams.set("q", productSlug);
-  }
-
-  redirect(`/admin/review?${redirectParams.toString()}`);
+  redirect(buildCollectionRedirectPath(result, productSlug));
 }

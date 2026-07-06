@@ -16,6 +16,24 @@ export type CollectionRunResult = {
   runStatus: CollectionRunStatus;
 };
 
+export function buildCollectionRedirectPath(
+  { queuedCount, runStatus }: CollectionRunResult,
+  productSlug?: string,
+) {
+  const redirectParams = new URLSearchParams({
+    collectionQueued: String(queuedCount),
+    collectionRun: runStatus,
+  });
+  const trimmedProductSlug = String(productSlug ?? "").trim();
+
+  if (trimmedProductSlug) {
+    redirectParams.set("collectionScope", trimmedProductSlug);
+    redirectParams.set("q", trimmedProductSlug);
+  }
+
+  return `/admin/review?${redirectParams.toString()}`;
+}
+
 function startCollectorJobInBackground(jobId: string) {
   const backendRoot =
     process.env.GEOSUB_BACKEND_ROOT || process.env.GEOSUB_BACKEND_DIR || path.resolve(process.cwd(), "..", "geosub-backend");
