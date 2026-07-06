@@ -5,11 +5,11 @@ import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
 
 type Props = {
-  action: (formData: FormData) => Promise<void>;
   productSlug?: string;
   buttonLabel?: string;
   pendingLabel?: string;
   disabled?: boolean;
+  submitUrl?: string;
 };
 
 const stages = [
@@ -95,17 +95,18 @@ function ProgressContent({
 }
 
 export default function ManualCollectionProgressForm({
-  action,
   productSlug,
   buttonLabel = "立即补采并审核",
   pendingLabel = "正在补采并审核",
   disabled = false,
+  submitUrl = "/admin/review/collect",
 }: Props) {
   const [startedAt, setStartedAt] = useState<number | null>(null);
 
   return (
     <form
-      action={action}
+      action={submitUrl}
+      method="post"
       onClick={(event) => {
         event.stopPropagation();
       }}

@@ -2,7 +2,6 @@ import { prisma } from "../../../lib/prisma";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
 import ObservationReviewActions from "./ObservationReviewActions";
-import { queueAppStoreCollectionAndReview } from "./actions";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
 
@@ -1095,7 +1094,6 @@ export default async function ReviewPage({
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <ManualCollectionProgressForm
-                action={queueAppStoreCollectionAndReview}
                 productSlug={selectedProductSlug}
                 buttonLabel={`立即采集 ${selectedProductName || "该产品"}`}
                 pendingLabel="正在采集并审核"
@@ -1524,7 +1522,6 @@ export default async function ReviewPage({
 
                       return (
                     <ManualCollectionProgressForm
-                      action={queueAppStoreCollectionAndReview}
                       productSlug={productGroup.productSlug}
                       buttonLabel={buttonLabel}
                       pendingLabel="正在补采这个产品"
