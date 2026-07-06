@@ -52,16 +52,15 @@ async function getProductCollectionReadiness(productSlug: string) {
   >`
     SELECT
       product.id::text AS product_id,
-      COUNT(job.id)::int AS app_store_job_count
+      COUNT(job.id) FILTER (WHERE source.id IS NOT NULL)::int AS app_store_job_count
     FROM products product
-    LEFT JOIN price_sources source
-      ON source.product_id = product.id
-      AND source.type = 'app_store'::price_source_type
     LEFT JOIN collector_jobs job
-      ON job.source_id = source.id
-      AND job.product_id = product.id
+      ON job.product_id = product.id
       AND job.job_type = 'ai_pricing'
       AND job.status <> 'archived'
+    LEFT JOIN price_sources source
+      ON source.id = job.source_id
+      AND source.type = 'app_store'::price_source_type
     WHERE product.slug = ${productSlug}
     GROUP BY product.id
     LIMIT 1
