@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { queueAndRunAppStoreCollection } from "../collection-runner";
 
@@ -24,6 +23,10 @@ export async function POST(request: Request) {
     redirectParams.set("q", productSlug);
   }
 
-  const redirectUrl = new URL(`/admin/review?${redirectParams.toString()}`, request.url);
-  return NextResponse.redirect(redirectUrl, 303);
+  return new Response(null, {
+    status: 303,
+    headers: {
+      Location: `/admin/review?${redirectParams.toString()}`,
+    },
+  });
 }
