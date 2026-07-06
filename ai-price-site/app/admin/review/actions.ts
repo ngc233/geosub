@@ -8,7 +8,8 @@ import {
   rejectPriceObservation,
   runAppStoreStabilityAutoReview,
 } from "../../../lib/admin-price-review";
-import { buildCollectionRedirectPath, queueAndRunAppStoreCollection } from "./collection-runner";
+import { buildCollectionRedirectPath } from "./collection-status";
+import { queueAndRunAppStoreCollection } from "./collection-runner";
 
 function getObservationId(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();

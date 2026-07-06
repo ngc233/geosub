@@ -6,42 +6,13 @@ import path from "node:path";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../lib/prisma";
+import {
+  type CollectionRunResult,
+  type CollectionRunStatus,
+} from "./collection-status";
 
 const MANUAL_COLLECTION_COOLDOWN_SECONDS = 120;
 const MANUAL_COLLECTION_FRESH_HOURS = 12;
-
-export type CollectionRunStatus =
-  | "queued"
-  | "fresh"
-  | "none"
-  | "cooldown"
-  | "succeeded"
-  | "failed"
-  | "not_found"
-  | "not_configured";
-
-export type CollectionRunResult = {
-  queuedCount: number;
-  runStatus: CollectionRunStatus;
-};
-
-export function buildCollectionRedirectPath(
-  { queuedCount, runStatus }: CollectionRunResult,
-  productSlug?: string,
-) {
-  const redirectParams = new URLSearchParams({
-    collectionQueued: String(queuedCount),
-    collectionRun: runStatus,
-  });
-  const trimmedProductSlug = String(productSlug ?? "").trim();
-
-  if (trimmedProductSlug) {
-    redirectParams.set("collectionScope", trimmedProductSlug);
-    redirectParams.set("q", trimmedProductSlug);
-  }
-
-  return `/admin/review?${redirectParams.toString()}`;
-}
 
 async function getProductCollectionReadiness(productSlug: string) {
   const rows = await prisma.$queryRaw<

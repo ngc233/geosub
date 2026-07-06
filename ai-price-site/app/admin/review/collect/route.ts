@@ -1,5 +1,6 @@
 import { requireAdmin } from "../../../../lib/admin-auth";
-import { buildCollectionRedirectPath, queueAndRunAppStoreCollection } from "../collection-runner";
+import { buildCollectionRedirectPath } from "../collection-status";
+import { queueAndRunAppStoreCollection } from "../collection-runner";
 
 export async function POST(request: Request) {
   await requireAdmin();

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
+import {
+  getCollectionStatusClassName,
+  getCollectionStatusMessage,
+} from "./collection-status";
 import type {
   AutoReviewReasonRow,
   AutoReviewRunRow,
@@ -155,33 +159,14 @@ export function ReviewOverviewSections({
         <section
           className={[
             "rounded-xl border p-4 text-sm",
-            collectionRun === "failed" || collectionRun === "not_found"
-              ? "border-red-200 bg-red-50 text-red-800"
-              : collectionRun === "cooldown" ||
-                  collectionRun === "fresh" ||
-                  collectionRun === "none" ||
-                  collectionRun === "not_configured"
-                ? "border-amber-200 bg-amber-50 text-amber-800"
-                : "border-emerald-200 bg-emerald-50 text-emerald-800",
+            getCollectionStatusClassName(collectionRun),
           ].join(" ")}
         >
-          {collectionRun === "succeeded"
-            ? `已立即执行${collectionScope ? ` ${collectionScope} 的` : ""} ${queuedCount} 个 App Store 补采任务，并完成真实稳定性审核。下方“最新审核结果”会显示正式入库数量。`
-            : collectionRun === "cooldown"
-              ? "已收到补采请求，但相关任务 2 分钟内刚执行过，本次进入冷却保护。"
-              : collectionRun === "fresh"
-                ? `${collectionScope ? `${collectionScope} ` : ""}12 小时内已经成功采集过，本次跳过补采；可以等待后台定时任务或后续再手动更新。`
-              : collectionRun === "not_configured"
-                ? `${collectionScope ? `${collectionScope} ` : "这个产品"}还没有可用的 App Store 采集任务。请先到产品库补充 App Store 链接或应用 ID，再回来采集。`
-              : collectionRun === "not_found"
-                ? `没有找到${collectionScope ? ` ${collectionScope}` : ""} 对应的产品，请检查服务库 slug，或从线索入口重新加入服务库。`
-              : collectionRun === "failed"
-                ? "补采任务已排队，但立即执行失败；后台定时任务仍会继续处理，请查看采集任务页的失败原因。"
-              : collectionRun === "none"
-                ? "当前没有需要立即补采的 App Store 任务。可以先筛选具体产品，或等待后台定时采集。"
-              : collectionRun === "queued"
-                ? `已排队并唤起后台采集器${collectionScope ? `：${collectionScope}` : ""}，共 ${queuedCount} 个 App Store 任务。采集完成后会自动审核，运行记录可在采集任务页查看。`
-              : `已处理 ${queuedCount} 个 App Store 补采任务。`}
+          {getCollectionStatusMessage({
+            queuedCount,
+            collectionRun,
+            collectionScope,
+          })}
         </section>
       ) : null}
 
