@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "../../../lib/prisma";
+import {
+  approvePriceObservation,
+  ignorePriceObservation,
+  rejectPriceObservation,
+} from "../../../lib/admin-price-review";
 
 function getObservationId(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
@@ -16,13 +20,7 @@ function getObservationId(formData: FormData) {
 export async function approveObservation(formData: FormData) {
   const id = getObservationId(formData);
 
-  await prisma.$queryRaw`
-    SELECT approve_price_observation(CAST(${id} AS uuid)) AS region_price_id
-  `;
-
-  await prisma.$queryRaw`
-    SELECT refresh_plan_affordability_metrics() AS refreshed_rows
-  `;
+  await approvePriceObservation(id);
 
   revalidatePath("/admin/price-observations");
   revalidatePath("/admin/affordability");
@@ -32,9 +30,7 @@ export async function approveObservation(formData: FormData) {
 export async function ignoreObservation(formData: FormData) {
   const id = getObservationId(formData);
 
-  await prisma.$queryRaw`
-    SELECT ignore_price_observation(CAST(${id} AS uuid), 'Ignored from admin review page') AS result
-  `;
+  await ignorePriceObservation(id, "Ignored from admin review page");
 
   revalidatePath("/admin/price-observations");
 }
@@ -42,9 +38,7 @@ export async function ignoreObservation(formData: FormData) {
 export async function rejectObservation(formData: FormData) {
   const id = getObservationId(formData);
 
-  await prisma.$queryRaw`
-    SELECT reject_price_observation(CAST(${id} AS uuid), 'Rejected from admin review page') AS result
-  `;
+  await rejectPriceObservation(id, "Rejected from admin review page");
 
   revalidatePath("/admin/price-observations");
 }

@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "../../../lib/prisma";
+import {
+  approvePriceObservation,
+  ignorePriceObservation,
+  rejectPriceObservation,
+  runAppStoreStabilityAutoReview,
+} from "../../../lib/admin-price-review";
 import { queueAndRunAppStoreCollection } from "./collection-runner";
 
 function getObservationId(formData: FormData) {
@@ -18,17 +23,7 @@ function getObservationId(formData: FormData) {
 export async function approveObservation(formData: FormData) {
   const id = getObservationId(formData);
 
-  await prisma.$queryRaw`
-    SELECT approve_price_observation(CAST(${id} AS uuid)) AS region_price_id
-  `;
-
-  await prisma.$queryRaw`
-    SELECT refresh_plan_affordability_metrics() AS refreshed_rows
-  `;
-
-  await prisma.$queryRaw`
-    SELECT refresh_inferred_app_store_tax_profiles() AS inserted_rows
-  `;
+  await approvePriceObservation(id, { taxProfiles: true });
 
   revalidatePath("/admin/review");
   revalidatePath("/admin/affordability");
@@ -38,13 +33,7 @@ export async function approveObservation(formData: FormData) {
 export async function ignoreObservation(formData: FormData) {
   const id = getObservationId(formData);
 
-  await prisma.$queryRaw`
-    WITH action AS (
-      SELECT ignore_price_observation(CAST(${id} AS uuid), 'Ignored from review center') AS ignored
-    )
-    SELECT 1::int AS result
-    FROM action
-  `;
+  await ignorePriceObservation(id, "Ignored from review center");
 
   revalidatePath("/admin/review");
 }
@@ -52,30 +41,13 @@ export async function ignoreObservation(formData: FormData) {
 export async function rejectObservation(formData: FormData) {
   const id = getObservationId(formData);
 
-  await prisma.$queryRaw`
-    WITH action AS (
-      SELECT reject_price_observation(CAST(${id} AS uuid), 'Rejected from review center') AS rejected
-    )
-    SELECT 1::int AS result
-    FROM action
-  `;
+  await rejectPriceObservation(id, "Rejected from review center");
 
   revalidatePath("/admin/review");
 }
 
 export async function runAutoReview() {
-  await prisma.$queryRaw`
-    SELECT *
-    FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14)
-  `;
-
-  await prisma.$queryRaw`
-    SELECT refresh_plan_affordability_metrics() AS refreshed_rows
-  `;
-
-  await prisma.$queryRaw`
-    SELECT refresh_inferred_app_store_tax_profiles() AS inserted_rows
-  `;
+  await runAppStoreStabilityAutoReview();
 
   revalidatePath("/admin/review");
   revalidatePath("/admin/affordability");
