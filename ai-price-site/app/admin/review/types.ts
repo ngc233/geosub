@@ -86,7 +86,8 @@ export type AutoReviewReasonRow = {
   observation_count: number;
 };
 
-export type ReviewStatusCountRow = {
+export type HistoryStatsRow = {
+  history_count: number;
   approved_count: number;
   ignored_count: number;
   rejected_count: number;
@@ -118,6 +119,8 @@ export type PendingProductGroup = {
 };
 
 export type PendingProductSummaryRow = {
+  total_product_count: number;
+  total_observation_count: number;
   product_slug: string;
   product_name: string | null;
   pending_count: number;

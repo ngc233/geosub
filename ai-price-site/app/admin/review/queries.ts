@@ -6,13 +6,13 @@ import type {
   CollectorStatusRow,
   EvidenceHealthRow,
   EvidenceSummaryRow,
+  HistoryStatsRow,
   HistoryRow,
   PendingDiagnosisRow,
   PendingProductGroup,
   PendingProductSummaryRow,
   PendingRow,
   ProductCollectorFreshnessRow,
-  ReviewStatusCountRow,
   SelectedProductCollectorRow,
 } from "./types";
 
@@ -36,59 +36,6 @@ export async function getReviewPageData({
   const pendingOffset = (pendingPage - 1) * pendingPageSize;
   const historyPageSize = 25;
   const historyOffset = (historyPage - 1) * historyPageSize;
-
-  const pendingCountPromise = prisma.$queryRaw<
-    Array<{ product_count: number; observation_count: number }>
-  >`
-    SELECT
-      COUNT(DISTINCT pending.product_slug)::int AS product_count,
-      COUNT(*)::int AS observation_count
-    FROM pending_price_observations_view pending
-    JOIN price_observations observation ON observation.id = pending.id
-    LEFT JOIN region_prices published
-      ON published.product_id = observation.product_id
-      AND published.plan_id = observation.plan_id
-      AND published.country_id = observation.country_id
-      AND published.billing_platform = observation.billing_platform
-      AND published.price_type = observation.price_type
-      AND published.status = 'published'::publish_status
-    WHERE pending.platform = 'ios'
-      AND (
-        ${productQuery} = ''
-        OR pending.product_slug ILIKE ${productQueryLike}
-        OR pending.product_name ILIKE ${productQueryLike}
-      )
-      AND NOT (
-        published.id IS NOT NULL
-        AND (
-          published.last_checked_at >= observation.observed_at
-          OR (
-            published.currency IS NOT DISTINCT FROM observation.currency
-            AND published.local_price IS NOT DISTINCT FROM observation.raw_price
-            AND (
-              published.price_usd IS NULL
-              OR observation.converted_usd IS NULL
-              OR published.price_usd = 0
-              OR ABS((observation.converted_usd - published.price_usd) / published.price_usd) <= 0.02
-            )
-          )
-        )
-      )
-      AND (
-        COALESCE(observation.anomaly_flag, FALSE)
-        OR published.id IS NULL
-        OR pending.review_note IS NOT NULL
-          AND pending.review_note NOT ILIKE 'Only % App Store observations are available%'
-        OR published.currency IS DISTINCT FROM observation.currency
-        OR published.local_price IS DISTINCT FROM observation.raw_price
-        OR (
-          published.price_usd IS NOT NULL
-          AND observation.converted_usd IS NOT NULL
-          AND published.price_usd > 0
-          AND ABS((observation.converted_usd - published.price_usd) / published.price_usd) > 0.02
-        )
-      )
-  `;
 
   const pendingProductSummaryPromise = prisma.$queryRaw<PendingProductSummaryRow[]>`
     WITH scoped_pending AS (
@@ -149,7 +96,7 @@ export async function getReviewPageData({
           )
         )
     ),
-    product_page AS (
+    product_summary AS (
       SELECT
         product_slug,
         MAX(product_name) AS product_name,
@@ -163,11 +110,23 @@ export async function getReviewPageData({
         MAX(observed_at) AS latest_observed_at
       FROM scoped_pending
       GROUP BY product_slug
+    ),
+    totals AS (
+      SELECT
+        COUNT(*)::int AS total_product_count,
+        COALESCE(SUM(pending_count), 0)::int AS total_observation_count
+      FROM product_summary
+    ),
+    product_page AS (
+      SELECT *
+      FROM product_summary
       ORDER BY latest_observed_at DESC, pending_count DESC, product_slug
       LIMIT ${pendingPageSize}
       OFFSET ${pendingOffset}
     )
     SELECT
+      totals.total_product_count,
+      totals.total_observation_count,
       page.product_slug,
       page.product_name,
       page.pending_count,
@@ -182,9 +141,12 @@ export async function getReviewPageData({
       COUNT(history.id) FILTER (WHERE history.review_status = 'rejected')::int AS rejected_count,
       COUNT(history.id) FILTER (WHERE history.review_status = 'ignored')::int AS ignored_count
     FROM product_page page
+    CROSS JOIN totals
     LEFT JOIN price_observations_review_history_view history
       ON history.product_slug = page.product_slug
     GROUP BY
+      totals.total_product_count,
+      totals.total_observation_count,
       page.product_slug,
       page.product_name,
       page.pending_count,
@@ -198,12 +160,9 @@ export async function getReviewPageData({
     ORDER BY page.latest_observed_at DESC, page.pending_count DESC, page.product_slug
   `;
 
-  const [pendingCountRows, pendingProductSummaryRows] = await Promise.all([
-    pendingCountPromise,
-    pendingProductSummaryPromise,
-  ]);
-  const pendingProductTotal = Number(pendingCountRows[0]?.product_count ?? 0);
-  const pendingTotal = Number(pendingCountRows[0]?.observation_count ?? 0);
+  const pendingProductSummaryRows = await pendingProductSummaryPromise;
+  const pendingProductTotal = Number(pendingProductSummaryRows[0]?.total_product_count ?? 0);
+  const pendingTotal = Number(pendingProductSummaryRows[0]?.total_observation_count ?? 0);
   const pendingTotalPages = Math.max(1, Math.ceil(pendingProductTotal / pendingPageSize));
 
   const pendingProductSlugs = pendingProductSummaryRows.map((row) => row.product_slug);
@@ -474,8 +433,12 @@ export async function getReviewPageData({
     WHERE observed_at >= NOW() - INTERVAL '14 days'
   `;
 
-  const historyCountPromise = prisma.$queryRaw<Array<{ count: number }>>`
-    SELECT COUNT(*)::int AS count
+  const historyStatsPromise = prisma.$queryRaw<HistoryStatsRow[]>`
+    SELECT
+      COUNT(*)::int AS history_count,
+      COUNT(*) FILTER (WHERE review_status = 'approved')::int AS approved_count,
+      COUNT(*) FILTER (WHERE review_status = 'ignored')::int AS ignored_count,
+      COUNT(*) FILTER (WHERE review_status = 'rejected')::int AS rejected_count
     FROM price_observations_review_history_view
   `;
 
@@ -507,14 +470,6 @@ export async function getReviewPageData({
     ORDER BY updated_at DESC
     LIMIT ${historyPageSize}
     OFFSET ${historyOffset}
-  `;
-
-  const reviewStatusCountPromise = prisma.$queryRaw<ReviewStatusCountRow[]>`
-    SELECT
-      COUNT(*) FILTER (WHERE review_status = 'approved')::int AS approved_count,
-      COUNT(*) FILTER (WHERE review_status = 'ignored')::int AS ignored_count,
-      COUNT(*) FILTER (WHERE review_status = 'rejected')::int AS rejected_count
-    FROM price_observations_review_history_view
   `;
 
   const collectorStatusPromise = prisma.$queryRaw<CollectorStatusRow[]>`
@@ -589,9 +544,8 @@ export async function getReviewPageData({
     pendingDiagnosisRows,
     evidenceSummaryRows,
     evidenceHealthRows,
-    historyCountRows,
+    historyStatsRows,
     historyRows,
-    reviewStatusCountRows,
     collectorStatusRows,
     latestAutoReviewRows,
     autoReviewReasonRows,
@@ -602,19 +556,18 @@ export async function getReviewPageData({
     pendingDiagnosisPromise,
     evidenceSummaryPromise,
     evidenceHealthPromise,
-    historyCountPromise,
+    historyStatsPromise,
     historyRowsPromise,
-    reviewStatusCountPromise,
     collectorStatusPromise,
     latestAutoReviewPromise,
     autoReviewReasonPromise,
   ]);
 
-  const historyTotal = Number(historyCountRows[0]?.count ?? 0);
+  const historyTotal = Number(historyStatsRows[0]?.history_count ?? 0);
   const historyTotalPages = Math.max(1, Math.ceil(historyTotal / historyPageSize));
-  const approvedCount = Number(reviewStatusCountRows[0]?.approved_count ?? 0);
-  const ignoredCount = Number(reviewStatusCountRows[0]?.ignored_count ?? 0);
-  const rejectedCount = Number(reviewStatusCountRows[0]?.rejected_count ?? 0);
+  const approvedCount = Number(historyStatsRows[0]?.approved_count ?? 0);
+  const ignoredCount = Number(historyStatsRows[0]?.ignored_count ?? 0);
+  const rejectedCount = Number(historyStatsRows[0]?.rejected_count ?? 0);
   const collectorStatus = collectorStatusRows[0] ?? null;
   const latestAutoReview = latestAutoReviewRows[0] ?? null;
   const selectedProductCollector = selectedProductCollectorRows[0] ?? null;
