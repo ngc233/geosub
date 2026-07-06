@@ -1,13 +1,11 @@
 import "server-only";
 
-import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../lib/prisma";
 
-const execFileAsync = promisify(execFile);
 const MANUAL_COLLECTION_COOLDOWN_SECONDS = 120;
 const MANUAL_COLLECTION_FRESH_HOURS = 12;
 
@@ -17,6 +15,36 @@ export type CollectionRunResult = {
   queuedCount: number;
   runStatus: CollectionRunStatus;
 };
+
+function startCollectorJobInBackground(jobId: string) {
+  const backendRoot =
+    process.env.GEOSUB_BACKEND_ROOT || process.env.GEOSUB_BACKEND_DIR || path.resolve(process.cwd(), "..", "geosub-backend");
+  const runnerPath = path.join(backendRoot, "scripts", "run-collector-jobs.ps1");
+  const shell = process.platform === "win32" ? "powershell.exe" : "pwsh";
+  const child = spawn(
+    shell,
+    [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      runnerPath,
+      "-JobId",
+      jobId,
+      "-Force",
+      "-Limit",
+      "1",
+    ],
+    {
+      cwd: backendRoot,
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+    }
+  );
+
+  child.unref();
+}
 
 export async function queueAndRunAppStoreCollection(productSlug: string): Promise<CollectionRunResult> {
   const rows = productSlug
@@ -106,51 +134,13 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
   }
 
   for (const jobId of runnableJobIds) {
-    const backendRoot =
-      process.env.GEOSUB_BACKEND_ROOT || path.resolve(process.cwd(), "..", "geosub-backend");
-    const runnerPath = path.join(backendRoot, "scripts", "run-collector-jobs.ps1");
-    const shell = process.platform === "win32" ? "powershell.exe" : "pwsh";
-
     try {
-      await execFileAsync(
-        shell,
-        [
-          "-NoProfile",
-          "-ExecutionPolicy",
-          "Bypass",
-          "-File",
-          runnerPath,
-          "-JobId",
-          jobId,
-          "-Force",
-          "-Limit",
-          "1",
-        ],
-        {
-          cwd: backendRoot,
-          timeout: 180_000,
-          windowsHide: true,
-          maxBuffer: 1024 * 1024 * 4,
-        }
-      );
-      runStatus = "succeeded";
+      startCollectorJobInBackground(jobId);
+      runStatus = "queued";
     } catch {
       runStatus = "failed";
     }
   }
-
-  await prisma.$queryRaw`
-    SELECT *
-    FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14)
-  `;
-
-  await prisma.$queryRaw`
-    SELECT refresh_plan_affordability_metrics() AS refreshed_rows
-  `;
-
-  await prisma.$queryRaw`
-    SELECT refresh_inferred_app_store_tax_profiles() AS inserted_rows
-  `;
 
   revalidatePath("/admin/review");
   revalidatePath("/admin/collector-jobs");
