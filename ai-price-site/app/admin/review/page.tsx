@@ -406,7 +406,9 @@ export default async function ReviewPage({
   const historyPageSize = 25;
   const historyOffset = (historyPage - 1) * historyPageSize;
 
-  const pendingCountRows = await prisma.$queryRaw<Array<{ product_count: number; observation_count: number }>>`
+  const pendingCountPromise = prisma.$queryRaw<
+    Array<{ product_count: number; observation_count: number }>
+  >`
     SELECT
       COUNT(DISTINCT pending.product_slug)::int AS product_count,
       COUNT(*)::int AS observation_count
@@ -456,11 +458,8 @@ export default async function ReviewPage({
         )
       )
   `;
-  const pendingProductTotal = Number(pendingCountRows[0]?.product_count ?? 0);
-  const pendingTotal = Number(pendingCountRows[0]?.observation_count ?? 0);
-  const pendingTotalPages = Math.max(1, Math.ceil(pendingProductTotal / pendingPageSize));
 
-  const pendingProductSummaryRows = await prisma.$queryRaw<PendingProductSummaryRow[]>`
+  const pendingProductSummaryPromise = prisma.$queryRaw<PendingProductSummaryRow[]>`
     WITH scoped_pending AS (
       SELECT
         pending.*,
@@ -567,9 +566,18 @@ export default async function ReviewPage({
       page.latest_observed_at
     ORDER BY page.latest_observed_at DESC, page.pending_count DESC, page.product_slug
   `;
+
+  const [pendingCountRows, pendingProductSummaryRows] = await Promise.all([
+    pendingCountPromise,
+    pendingProductSummaryPromise,
+  ]);
+  const pendingProductTotal = Number(pendingCountRows[0]?.product_count ?? 0);
+  const pendingTotal = Number(pendingCountRows[0]?.observation_count ?? 0);
+  const pendingTotalPages = Math.max(1, Math.ceil(pendingProductTotal / pendingPageSize));
+
   const pendingProductSlugs = pendingProductSummaryRows.map((row) => row.product_slug);
-  const pendingRows = pendingProductSlugs.length
-    ? await prisma.$queryRaw<PendingRow[]>`
+  const pendingRowsPromise = pendingProductSlugs.length
+    ? prisma.$queryRaw<PendingRow[]>`
     SELECT
       pending.id,
       pending.product_slug,
@@ -658,10 +666,10 @@ export default async function ReviewPage({
       )
     ORDER BY pending.product_slug, pending.plan_slug, pending.observed_at DESC
   `
-    : [];
-  const productFreshnessRows =
+    : Promise.resolve([] as PendingRow[]);
+  const productFreshnessPromise =
     pendingProductSlugs.length > 0
-      ? await prisma.$queryRaw<ProductCollectorFreshnessRow[]>`
+      ? prisma.$queryRaw<ProductCollectorFreshnessRow[]>`
           SELECT
             product.slug AS product_slug,
             MAX(run.started_at) FILTER (WHERE run.status = 'succeeded') AS latest_success_at,
@@ -679,13 +687,10 @@ export default async function ReviewPage({
             AND job.status <> 'archived'
           GROUP BY product.slug
         `
-      : [];
-  const productFreshnessBySlug = new Map(
-    productFreshnessRows.map((row) => [row.product_slug, row]),
-  );
+      : Promise.resolve([] as ProductCollectorFreshnessRow[]);
 
-  const selectedProductCollectorRows = productQuery
-    ? await prisma.$queryRaw<SelectedProductCollectorRow[]>`
+  const selectedProductCollectorPromise = productQuery
+    ? prisma.$queryRaw<SelectedProductCollectorRow[]>`
         SELECT
           product.slug AS product_slug,
           product.name AS product_name,
@@ -742,20 +747,9 @@ export default async function ReviewPage({
           product.name
         LIMIT 1
       `
-    : [];
-  const selectedProductCollector = selectedProductCollectorRows[0] ?? null;
-  const selectedProductName =
-    discoveryProduct ||
-    selectedProductCollector?.product_name ||
-    selectedProductCollector?.product_slug ||
-    productQuery;
-  const selectedProductSlug = selectedProductCollector?.product_slug || productQuery;
-  const selectedAppStoreJobCount =
-    discoveryJobs > 0
-      ? discoveryJobs
-      : Number(selectedProductCollector?.app_store_job_count ?? 0);
+    : Promise.resolve([] as SelectedProductCollectorRow[]);
 
-  const pendingDiagnosisRows = await prisma.$queryRaw<PendingDiagnosisRow[]>`
+  const pendingDiagnosisPromise = prisma.$queryRaw<PendingDiagnosisRow[]>`
     SELECT
       pending.product_slug,
       pending.product_name,
@@ -824,7 +818,7 @@ export default async function ReviewPage({
     LIMIT 8
   `;
 
-  const evidenceSummaryRows = await prisma.$queryRaw<EvidenceSummaryRow[]>`
+  const evidenceSummaryPromise = prisma.$queryRaw<EvidenceSummaryRow[]>`
     SELECT
       evidence_status,
       evidence_tier,
@@ -839,7 +833,7 @@ export default async function ReviewPage({
     LIMIT 8
   `;
 
-  const evidenceHealthRows = await prisma.$queryRaw<EvidenceHealthRow[]>`
+  const evidenceHealthPromise = prisma.$queryRaw<EvidenceHealthRow[]>`
     SELECT
       COUNT(*) FILTER (WHERE has_modal_consensus)::int AS modal_consensus_count,
       COUNT(*) FILTER (WHERE evidence_status = 'blocked_anomaly')::int AS blocked_anomaly_count,
@@ -849,14 +843,12 @@ export default async function ReviewPage({
     WHERE observed_at >= NOW() - INTERVAL '14 days'
   `;
 
-  const historyCountRows = await prisma.$queryRaw<Array<{ count: number }>>`
+  const historyCountPromise = prisma.$queryRaw<Array<{ count: number }>>`
     SELECT COUNT(*)::int AS count
     FROM price_observations_review_history_view
   `;
-  const historyTotal = Number(historyCountRows[0]?.count ?? 0);
-  const historyTotalPages = Math.max(1, Math.ceil(historyTotal / historyPageSize));
 
-  const historyRows = await prisma.$queryRaw<HistoryRow[]>`
+  const historyRowsPromise = prisma.$queryRaw<HistoryRow[]>`
     SELECT
       id,
       product_slug,
@@ -886,7 +878,7 @@ export default async function ReviewPage({
     OFFSET ${historyOffset}
   `;
 
-  const reviewStatusCountRows = await prisma.$queryRaw<ReviewStatusCountRow[]>`
+  const reviewStatusCountPromise = prisma.$queryRaw<ReviewStatusCountRow[]>`
     SELECT
       COUNT(*) FILTER (WHERE review_status = 'approved')::int AS approved_count,
       COUNT(*) FILTER (WHERE review_status = 'ignored')::int AS ignored_count,
@@ -894,7 +886,7 @@ export default async function ReviewPage({
     FROM price_observations_review_history_view
   `;
 
-  const collectorStatusRows = await prisma.$queryRaw<CollectorStatusRow[]>`
+  const collectorStatusPromise = prisma.$queryRaw<CollectorStatusRow[]>`
     SELECT
       job.status,
       job.next_run_at,
@@ -920,7 +912,7 @@ export default async function ReviewPage({
     LIMIT 1
   `;
 
-  const latestAutoReviewRows = await prisma.$queryRaw<AutoReviewRunRow[]>`
+  const latestAutoReviewPromise = prisma.$queryRaw<AutoReviewRunRow[]>`
     SELECT
       id::text,
       status,
@@ -936,7 +928,7 @@ export default async function ReviewPage({
     LIMIT 1
   `;
 
-  const autoReviewReasonRows = await prisma.$queryRaw<AutoReviewReasonRow[]>`
+  const autoReviewReasonPromise = prisma.$queryRaw<AutoReviewReasonRow[]>`
     WITH latest AS (
       SELECT id
       FROM price_auto_review_runs
@@ -959,11 +951,55 @@ export default async function ReviewPage({
     LIMIT 6
   `;
 
+  const [
+    pendingRows,
+    productFreshnessRows,
+    selectedProductCollectorRows,
+    pendingDiagnosisRows,
+    evidenceSummaryRows,
+    evidenceHealthRows,
+    historyCountRows,
+    historyRows,
+    reviewStatusCountRows,
+    collectorStatusRows,
+    latestAutoReviewRows,
+    autoReviewReasonRows,
+  ] = await Promise.all([
+    pendingRowsPromise,
+    productFreshnessPromise,
+    selectedProductCollectorPromise,
+    pendingDiagnosisPromise,
+    evidenceSummaryPromise,
+    evidenceHealthPromise,
+    historyCountPromise,
+    historyRowsPromise,
+    reviewStatusCountPromise,
+    collectorStatusPromise,
+    latestAutoReviewPromise,
+    autoReviewReasonPromise,
+  ]);
+
+  const historyTotal = Number(historyCountRows[0]?.count ?? 0);
+  const historyTotalPages = Math.max(1, Math.ceil(historyTotal / historyPageSize));
   const approvedCount = Number(reviewStatusCountRows[0]?.approved_count ?? 0);
   const ignoredCount = Number(reviewStatusCountRows[0]?.ignored_count ?? 0);
   const rejectedCount = Number(reviewStatusCountRows[0]?.rejected_count ?? 0);
   const collectorStatus = collectorStatusRows[0] ?? null;
   const latestAutoReview = latestAutoReviewRows[0] ?? null;
+  const selectedProductCollector = selectedProductCollectorRows[0] ?? null;
+  const selectedProductName =
+    discoveryProduct ||
+    selectedProductCollector?.product_name ||
+    selectedProductCollector?.product_slug ||
+    productQuery;
+  const selectedProductSlug = selectedProductCollector?.product_slug || productQuery;
+  const selectedAppStoreJobCount =
+    discoveryJobs > 0
+      ? discoveryJobs
+      : Number(selectedProductCollector?.app_store_job_count ?? 0);
+  const productFreshnessBySlug = new Map(
+    productFreshnessRows.map((row) => [row.product_slug, row]),
+  );
   const evidenceHealth = evidenceHealthRows[0] ?? {
     modal_consensus_count: 0,
     blocked_anomaly_count: 0,
