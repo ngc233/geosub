@@ -1,6 +1,7 @@
 import "server-only";
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -37,25 +38,37 @@ export function buildCollectionRedirectPath(
 function startCollectorJobInBackground(jobId: string) {
   const backendRoot =
     process.env.GEOSUB_BACKEND_ROOT || process.env.GEOSUB_BACKEND_DIR || path.resolve(process.cwd(), "..", "geosub-backend");
-  const runnerPath = path.join(backendRoot, "scripts", "run-collector-jobs.ps1");
-  const shell = process.platform === "win32" ? "powershell.exe" : "pwsh";
+  const scriptRunnerPath = path.join(backendRoot, "scripts", "run-collector-jobs.ps1");
+  const linuxRunnerPath = path.join(backendRoot, "deploy", "linux-arm64", "run-collector-jobs.sh");
+  const useLinuxRunner = process.platform !== "win32" && existsSync(linuxRunnerPath);
+  const command = useLinuxRunner ? "bash" : process.platform === "win32" ? "powershell.exe" : "pwsh";
+  const args = useLinuxRunner
+    ? [linuxRunnerPath, "-JobId", jobId, "-Force"]
+    : [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        scriptRunnerPath,
+        "-JobId",
+        jobId,
+        "-Force",
+        "-Limit",
+        "1",
+      ];
   const child = spawn(
-    shell,
-    [
-      "-NoProfile",
-      "-ExecutionPolicy",
-      "Bypass",
-      "-File",
-      runnerPath,
-      "-JobId",
-      jobId,
-      "-Force",
-      "-Limit",
-      "1",
-    ],
+    command,
+    args,
     {
       cwd: backendRoot,
       detached: true,
+      env: useLinuxRunner
+        ? {
+            ...process.env,
+            GEOSUB_BACKEND_DIR: backendRoot,
+            GEOSUB_COLLECTOR_JOB_LIMIT: "1",
+          }
+        : process.env,
       stdio: "ignore",
       windowsHide: true,
     }

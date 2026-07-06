@@ -14,6 +14,7 @@ DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 LIMIT="${GEOSUB_COLLECTOR_JOB_LIMIT:-5}"
+EXTRA_ARGS=("$@")
 
 cd "$BACKEND_DIR"
 
@@ -22,4 +23,5 @@ pwsh -NoProfile -ExecutionPolicy Bypass \
   -ContainerName "$DB_CONTAINER" \
   -DbName "$DB_NAME" \
   -DbUser "$DB_USER" \
-  -Limit "$LIMIT"
+  -Limit "$LIMIT" \
+  "${EXTRA_ARGS[@]}"
