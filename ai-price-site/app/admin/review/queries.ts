@@ -123,6 +123,16 @@ export async function getReviewPageData({
       ORDER BY latest_observed_at DESC, pending_count DESC, product_slug
       LIMIT ${pendingPageSize}
       OFFSET ${pendingOffset}
+    ),
+    history_summary AS (
+      SELECT
+        history.product_slug,
+        COUNT(*) FILTER (WHERE history.review_status = 'approved')::int AS approved_count,
+        COUNT(*) FILTER (WHERE history.review_status = 'rejected')::int AS rejected_count,
+        COUNT(*) FILTER (WHERE history.review_status = 'ignored')::int AS ignored_count
+      FROM price_observations_review_history_view history
+      JOIN product_page page ON page.product_slug = history.product_slug
+      GROUP BY history.product_slug
     )
     SELECT
       totals.total_product_count,
@@ -137,26 +147,12 @@ export async function getReviewPageData({
       page.changed_count,
       page.low_confidence_count,
       page.latest_observed_at,
-      COUNT(history.id) FILTER (WHERE history.review_status = 'approved')::int AS approved_count,
-      COUNT(history.id) FILTER (WHERE history.review_status = 'rejected')::int AS rejected_count,
-      COUNT(history.id) FILTER (WHERE history.review_status = 'ignored')::int AS ignored_count
+      COALESCE(history_summary.approved_count, 0)::int AS approved_count,
+      COALESCE(history_summary.rejected_count, 0)::int AS rejected_count,
+      COALESCE(history_summary.ignored_count, 0)::int AS ignored_count
     FROM product_page page
     CROSS JOIN totals
-    LEFT JOIN price_observations_review_history_view history
-      ON history.product_slug = page.product_slug
-    GROUP BY
-      totals.total_product_count,
-      totals.total_observation_count,
-      page.product_slug,
-      page.product_name,
-      page.pending_count,
-      page.plan_count,
-      page.country_count,
-      page.blocked_count,
-      page.waiting_count,
-      page.changed_count,
-      page.low_confidence_count,
-      page.latest_observed_at
+    LEFT JOIN history_summary ON history_summary.product_slug = page.product_slug
     ORDER BY page.latest_observed_at DESC, page.pending_count DESC, page.product_slug
   `;
 
