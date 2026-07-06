@@ -280,27 +280,22 @@ export async function getReviewPageData({
         SELECT
           product.slug AS product_slug,
           product.name AS product_name,
-          COUNT(DISTINCT job.id) FILTER (
-            WHERE source.type = 'app_store'::price_source_type
-              AND job.job_type = 'ai_pricing'
-              AND job.status <> 'archived'
-          )::int AS app_store_job_count,
+          COALESCE(job_stats.app_store_job_count, 0)::int AS app_store_job_count,
           latest_run.started_at AS latest_run_at,
           latest_run.status AS latest_run_status,
           latest_success.started_at AS latest_success_at,
-          COUNT(DISTINCT observation.id) FILTER (
-            WHERE observation.status = 'pending'::observation_status
-              AND observation.billing_platform = 'ios'::billing_platform
-          )::int AS pending_observation_count,
-          COUNT(DISTINCT published.id) FILTER (
-            WHERE published.status = 'published'::publish_status
-              AND published.billing_platform = 'ios'::billing_platform
-          )::int AS published_price_count
+          COALESCE(observation_stats.pending_observation_count, 0)::int AS pending_observation_count,
+          COALESCE(published_stats.published_price_count, 0)::int AS published_price_count
         FROM products product
-        LEFT JOIN collector_jobs job
-          ON job.product_id = product.id
-          AND job.status <> 'archived'
-        LEFT JOIN price_sources source ON source.id = job.source_id
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int AS app_store_job_count
+          FROM collector_jobs job
+          JOIN price_sources source ON source.id = job.source_id
+          WHERE job.product_id = product.id
+            AND source.type = 'app_store'::price_source_type
+            AND job.job_type = 'ai_pricing'
+            AND job.status <> 'archived'
+        ) job_stats ON TRUE
         LEFT JOIN LATERAL (
           SELECT run.status, run.started_at
           FROM collector_jobs scoped_job
@@ -322,11 +317,22 @@ export async function getReviewPageData({
           ORDER BY run.started_at DESC
           LIMIT 1
         ) latest_success ON TRUE
-        LEFT JOIN price_observations observation ON observation.product_id = product.id
-        LEFT JOIN region_prices published ON published.product_id = product.id
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int AS pending_observation_count
+          FROM price_observations observation
+          WHERE observation.product_id = product.id
+            AND observation.status = 'pending'::observation_status
+            AND observation.billing_platform = 'ios'::billing_platform
+        ) observation_stats ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int AS published_price_count
+          FROM region_prices published
+          WHERE published.product_id = product.id
+            AND published.status = 'published'::publish_status
+            AND published.billing_platform = 'ios'::billing_platform
+        ) published_stats ON TRUE
         WHERE product.slug ILIKE ${productQueryLike}
           OR product.name ILIKE ${productQueryLike}
-        GROUP BY product.id, latest_run.started_at, latest_run.status, latest_success.started_at
         ORDER BY
           CASE WHEN product.slug = ${productQuery} THEN 0 ELSE 1 END,
           product.sort_order,
