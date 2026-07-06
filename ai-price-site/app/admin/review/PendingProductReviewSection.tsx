@@ -8,9 +8,8 @@ import {
   formatLocal,
   formatUsd,
   platformLabel,
-  reviewReasonAction,
-  reviewReasonLabel,
 } from "./review-display";
+import { reviewReasonAction, reviewReasonLabel } from "./review-reason-copy";
 
 type PendingProductReviewSectionProps = {
   collectorStatus: CollectorStatusRow | null;

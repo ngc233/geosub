@@ -19,10 +19,9 @@ import {
   evidenceTierLabel,
   formatDate,
   formatUsd,
-  reviewReasonAction,
-  reviewReasonLabel,
   toNumber,
 } from "./review-display";
+import { reviewReasonAction, reviewReasonLabel } from "./review-reason-copy";
 
 type ReviewOverviewSectionsProps = {
   discoveryPromoted: boolean;
