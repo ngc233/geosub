@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ProductCategory } from "@prisma/client";
+import { Prisma, type ProductCategory } from "@prisma/client";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import SegmentedControl from "../../../components/ui/SegmentedControl";
 import { prisma } from "../../../lib/prisma";
@@ -119,14 +119,162 @@ function statusClassName(status: string) {
   return "bg-slate-100 text-slate-600 ring-slate-200";
 }
 
-function getHealth(product: {
-  plans: Array<unknown>;
-  regionPrices: Array<{
-    dataQuality: unknown;
-    primarySourceId: string | null;
-  }>;
-}) {
-  if (product.plans.length === 0) {
+type ProductAssetRow = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  provider: string | null;
+  status: string;
+  sort_order: number | null;
+  created_at: Date | string;
+  plan_count: unknown;
+  price_count: unknown;
+  country_count: unknown;
+  min_price_usd: unknown;
+  max_price_usd: unknown;
+  verified_price_count: unknown;
+  stale_price_count: unknown;
+  pending_price_count: unknown;
+  missing_source_count: unknown;
+  last_checked_at: Date | string | null;
+};
+
+type ProductAsset = {
+  id: string;
+  slug: string;
+  name: string;
+  category: ProductCategory;
+  provider: string | null;
+  status: string;
+  planCount: number;
+  priceCount: number;
+  countryCount: number;
+  minPriceUsd: number | null;
+  maxPriceUsd: number | null;
+  verifiedPriceCount: number;
+  stalePriceCount: number;
+  pendingPriceCount: number;
+  missingSourceCount: number;
+  lastCheckedAt: Date | null;
+};
+
+function toNumber(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "string") return Number(value);
+  if (value && typeof value === "object" && "toNumber" in value) {
+    return Number((value as { toNumber: () => number }).toNumber());
+  }
+  return 0;
+}
+
+function toNullableNumber(value: unknown) {
+  if (value === null || value === undefined) return null;
+  const number = toNumber(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function toDate(value: Date | string | null) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizeCategory(value: string): ProductCategory {
+  return value.toUpperCase() as ProductCategory;
+}
+
+function normalizeStatus(value: string) {
+  return value.toUpperCase();
+}
+
+function normalizeProductAsset(row: ProductAssetRow): ProductAsset {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    category: normalizeCategory(row.category),
+    provider: row.provider,
+    status: normalizeStatus(row.status),
+    planCount: toNumber(row.plan_count),
+    priceCount: toNumber(row.price_count),
+    countryCount: toNumber(row.country_count),
+    minPriceUsd: toNullableNumber(row.min_price_usd),
+    maxPriceUsd: toNullableNumber(row.max_price_usd),
+    verifiedPriceCount: toNumber(row.verified_price_count),
+    stalePriceCount: toNumber(row.stale_price_count),
+    pendingPriceCount: toNumber(row.pending_price_count),
+    missingSourceCount: toNumber(row.missing_source_count),
+    lastCheckedAt: toDate(row.last_checked_at),
+  };
+}
+
+async function getProductAssets() {
+  const rows = await prisma.$queryRaw<ProductAssetRow[]>`
+    SELECT
+      product.id::text,
+      product.slug,
+      product.name,
+      product.category::text AS category,
+      product.provider,
+      product.status::text AS status,
+      product.sort_order,
+      product.created_at,
+      COALESCE(plan_stats.plan_count, 0)::int AS plan_count,
+      COALESCE(price_stats.price_count, 0)::int AS price_count,
+      COALESCE(price_stats.country_count, 0)::int AS country_count,
+      price_stats.min_price_usd,
+      price_stats.max_price_usd,
+      COALESCE(price_stats.verified_price_count, 0)::int AS verified_price_count,
+      COALESCE(price_stats.stale_price_count, 0)::int AS stale_price_count,
+      COALESCE(price_stats.pending_price_count, 0)::int AS pending_price_count,
+      COALESCE(price_stats.missing_source_count, 0)::int AS missing_source_count,
+      price_stats.last_checked_at
+    FROM products product
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::int AS plan_count
+      FROM plans plan
+      WHERE plan.product_id = product.id
+    ) plan_stats ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT
+        COUNT(*)::int AS price_count,
+        COUNT(DISTINCT price.country_id)::int AS country_count,
+        MIN(price.price_usd) AS min_price_usd,
+        MAX(price.price_usd) AS max_price_usd,
+        COUNT(*) FILTER (WHERE price.data_quality = 'verified'::data_quality)::int AS verified_price_count,
+        COUNT(*) FILTER (WHERE price.data_quality = 'stale'::data_quality)::int AS stale_price_count,
+        COUNT(*) FILTER (WHERE price.data_quality = 'pending_review'::data_quality)::int AS pending_price_count,
+        COUNT(*) FILTER (WHERE price.primary_source_id IS NULL)::int AS missing_source_count,
+        MAX(COALESCE(price.last_checked_at, price.updated_at)) AS last_checked_at
+      FROM region_prices price
+      WHERE price.product_id = product.id
+    ) price_stats ON TRUE
+    ORDER BY product.sort_order ASC, product.created_at ASC, product.name ASC
+  `;
+
+  return rows.map(normalizeProductAsset);
+}
+
+async function getCountryCoverage(category?: CategoryValue) {
+  const categoryFilter =
+    category && category !== "all"
+      ? Prisma.sql`WHERE product.category = ${category}::product_category`
+      : Prisma.empty;
+
+  const rows = await prisma.$queryRaw<Array<{ country_count: unknown }>>`
+    SELECT COUNT(DISTINCT price.country_id)::int AS country_count
+    FROM region_prices price
+    JOIN products product ON product.id = price.product_id
+    ${categoryFilter}
+  `;
+
+  return toNumber(rows[0]?.country_count);
+}
+
+function getHealth(product: ProductAsset) {
+  if (product.planCount === 0) {
     return {
       label: "无套餐",
       tone: "danger",
@@ -134,7 +282,7 @@ function getHealth(product: {
     };
   }
 
-  if (product.regionPrices.length === 0) {
+  if (product.priceCount === 0) {
     return {
       label: "无价格",
       tone: "danger",
@@ -142,9 +290,7 @@ function getHealth(product: {
     };
   }
 
-  const staleCount = product.regionPrices.filter(
-    (price) => String(price.dataQuality) === "STALE"
-  ).length;
+  const staleCount = product.stalePriceCount;
 
   if (staleCount > 0) {
     return {
@@ -154,9 +300,7 @@ function getHealth(product: {
     };
   }
 
-  const noSourceCount = product.regionPrices.filter(
-    (price) => !price.primarySourceId
-  ).length;
+  const noSourceCount = product.missingSourceCount;
 
   if (noSourceCount > 0) {
     return {
@@ -166,9 +310,7 @@ function getHealth(product: {
     };
   }
 
-  const pendingCount = product.regionPrices.filter(
-    (price) => String(price.dataQuality) === "PENDING_REVIEW"
-  ).length;
+  const pendingCount = product.pendingPriceCount;
 
   if (pendingCount > 0) {
     return {
@@ -229,35 +371,10 @@ export default async function AdminProductsPage({
   const params = searchParams ? await searchParams : {};
   const selectedCategory = getSelectedCategory(params?.category);
 
-  const allProducts = await prisma.product.findMany({
-    orderBy: [
-      {
-        sortOrder: "asc",
-      },
-      {
-        createdAt: "asc",
-      },
-    ],
-    include: {
-      plans: {
-        orderBy: [
-          {
-            sortOrder: "asc",
-          },
-          {
-            createdAt: "asc",
-          },
-        ],
-      },
-      regionPrices: {
-        include: {
-          country: true,
-          plan: true,
-          primarySource: true,
-        },
-      },
-    },
-  });
+  const [allProducts, countryCoverage] = await Promise.all([
+    getProductAssets(),
+    getCountryCoverage(selectedCategory.value),
+  ]);
 
   const products =
     selectedCategory.value === "all"
@@ -273,15 +390,9 @@ export default async function AdminProductsPage({
         (product) => product.category === category.dbValue
       );
 
-      const planCount = categoryProducts.reduce(
-        (sum, product) => sum + product.plans.length,
-        0
-      );
+      const planCount = categoryProducts.reduce((sum, product) => sum + product.planCount, 0);
 
-      const priceCount = categoryProducts.reduce(
-        (sum, product) => sum + product.regionPrices.length,
-        0
-      );
+      const priceCount = categoryProducts.reduce((sum, product) => sum + product.priceCount, 0);
 
       const issueCount = categoryProducts.filter((product) => {
         const health = getHealth(product);
@@ -297,21 +408,9 @@ export default async function AdminProductsPage({
       };
     });
 
-  const totalPlans = products.reduce(
-    (sum, product) => sum + product.plans.length,
-    0
-  );
+  const totalPlans = products.reduce((sum, product) => sum + product.planCount, 0);
 
-  const totalPrices = products.reduce(
-    (sum, product) => sum + product.regionPrices.length,
-    0
-  );
-
-  const countryCoverage = new Set(
-    products.flatMap((product) =>
-      product.regionPrices.map((price) => price.country.code)
-    )
-  );
+  const totalPrices = products.reduce((sum, product) => sum + product.priceCount, 0);
 
   const issueProducts = products.filter((product) => {
     const health = getHealth(product);
@@ -366,7 +465,7 @@ export default async function AdminProductsPage({
         <AdminCard>
           <div className="text-sm font-bold text-slate-500">价格 / 国家</div>
           <div className="mt-2 text-2xl font-black text-slate-950">
-            {totalPrices} / {countryCoverage.size}
+            {totalPrices} / {countryCoverage}
           </div>
           <div className="mt-2 text-sm text-slate-500">
             当前分类的区域价格和国家覆盖。
@@ -532,23 +631,6 @@ export default async function AdminProductsPage({
 
           <div className="divide-y divide-slate-100 bg-white">
             {products.map((product) => {
-              const countries = new Set(
-                product.regionPrices.map((price) => price.country.code)
-              );
-
-              const prices = product.regionPrices
-                .map((price) => Number(price.priceUsd))
-                .filter((value) => !Number.isNaN(value));
-
-              const minPrice = prices.length > 0 ? Math.min(...prices) : null;
-              const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
-
-              const lastChecked =
-                product.regionPrices
-                  .map((price) => price.lastCheckedAt || price.updatedAt)
-                  .filter(Boolean)
-                  .sort((a, b) => b.getTime() - a.getTime())[0] || null;
-
               const health = getHealth(product);
               const category = categoryConfigs.find(
                 (item) => item.dbValue === product.category
@@ -569,9 +651,9 @@ export default async function AdminProductsPage({
                     <div className="mt-1 font-mono text-xs text-slate-400">
                       {product.slug}
                     </div>
-                    {minPrice !== null || maxPrice !== null ? (
+                    {product.minPriceUsd !== null || product.maxPriceUsd !== null ? (
                       <div className="mt-2 text-xs font-bold text-slate-400">
-                        {formatUsd(minPrice)} - {formatUsd(maxPrice)}
+                        {formatUsd(product.minPriceUsd)} - {formatUsd(product.maxPriceUsd)}
                       </div>
                     ) : null}
                   </div>
@@ -585,15 +667,15 @@ export default async function AdminProductsPage({
                   </div>
 
                   <div className="font-bold text-slate-700">
-                    {product.plans.length}
+                    {product.planCount}
                   </div>
 
                   <div className="font-bold text-slate-700">
-                    {countries.size}
+                    {product.countryCount}
                   </div>
 
                   <div className="font-bold text-slate-700">
-                    {product.regionPrices.length}
+                    {product.priceCount}
                   </div>
 
                   <div>
@@ -609,7 +691,7 @@ export default async function AdminProductsPage({
                   </div>
 
                   <div className="text-xs font-bold text-slate-500">
-                    {formatDate(lastChecked)}
+                    {formatDate(product.lastCheckedAt)}
                   </div>
 
                   <div>

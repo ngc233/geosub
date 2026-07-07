@@ -25,6 +25,7 @@ type CurrencyExchangeRate = {
   rate: number;
   source?: string | null;
   rateDate?: string | null;
+  fetchedAt?: string | null;
   isFallback?: boolean;
   isStale?: boolean;
 };
@@ -98,6 +99,67 @@ function getCurrencyLabel(currency: DisplayCurrency) {
     currencyOptions.find((option) => option.value === currency)?.label ||
     "美元 USD"
   );
+}
+
+function formatSyncDate(value: string | null | undefined, locale: "zh" | "en") {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10);
+  }
+
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(date)
+    .replace(/\//g, "-");
+}
+
+function getCnyRateNote(
+  cnyExchangeRate: CurrencyExchangeRate,
+  cnyRate: number,
+  locale: "zh" | "en",
+) {
+  const syncedDate = formatSyncDate(cnyExchangeRate.fetchedAt, locale);
+  const basisDate = cnyExchangeRate.rateDate || null;
+
+  if (cnyExchangeRate.isFallback) {
+    return locale === "en"
+      ? "CNY estimate unavailable: exchange-rate sync is pending"
+      : "人民币估算暂不可用：汇率待同步";
+  }
+
+  const suffixParts =
+    locale === "en"
+      ? [
+          syncedDate ? `synced ${syncedDate}` : null,
+          basisDate ? `rate basis ${basisDate}` : null,
+        ]
+      : [
+          syncedDate ? `同步 ${syncedDate}` : null,
+          basisDate ? `汇率基准 ${basisDate}` : null,
+        ];
+  const suffix = suffixParts.filter(Boolean).join(" · ");
+
+  if (cnyExchangeRate.isStale) {
+    const prefix =
+      locale === "en"
+        ? "CNY estimate paused: exchange-rate sync is stale"
+        : "人民币估算暂停：汇率同步已过期";
+
+    return suffix ? `${prefix} · ${suffix}` : prefix;
+  }
+
+  const prefix =
+    locale === "en"
+      ? `CNY uses ${cnyRate.toFixed(4)} USD/CNY`
+      : `人民币按 ${cnyRate.toFixed(4)} 汇率估算`;
+
+  return suffix ? `${prefix} · ${suffix}` : prefix;
 }
 
 function formatCnyFromUsd(value: number, exchangeRate: number) {
@@ -206,7 +268,7 @@ function CurrencySelect({
 
       {open ? (
         <div
-          className="absolute left-0 top-11 z-40 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
+          className="absolute left-0 top-11 z-[70] w-full overflow-hidden rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
           role="menu"
         >
           {currencyOptions.map((item) => {
@@ -269,25 +331,7 @@ function PricingLead({
   const displayCurrencyLabel = getCurrencyLabel(displayCurrency);
   const cnyRate = cnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
   const cnyDisabled = Boolean(cnyExchangeRate.isFallback || cnyExchangeRate.isStale);
-  const cnyRateNote = cnyExchangeRate.isFallback
-    ? locale === "en"
-      ? "CNY estimate unavailable: exchange rate sync pending"
-      : "人民币估算暂不可用：汇率待同步"
-    : cnyExchangeRate.isStale
-      ? locale === "en"
-        ? `CNY estimate paused: exchange rate is stale${
-            cnyExchangeRate.rateDate ? ` · last rate date ${cnyExchangeRate.rateDate}` : ""
-          }`
-        : `人民币估算暂停：汇率已过期${
-            cnyExchangeRate.rateDate ? ` · 最近汇率日期 ${cnyExchangeRate.rateDate}` : ""
-          }`
-    : locale === "en"
-      ? `CNY uses ${cnyRate.toFixed(4)} USD/CNY${
-          cnyExchangeRate.rateDate ? ` · rate date ${cnyExchangeRate.rateDate}` : ""
-        }`
-      : `人民币按 ${cnyRate.toFixed(4)} 汇率估算${
-          cnyExchangeRate.rateDate ? ` · 汇率日期 ${cnyExchangeRate.rateDate}` : ""
-        }`;
+  const cnyRateNote = getCnyRateNote(cnyExchangeRate, cnyRate, locale);
 
   return (
     <PublicSection>
@@ -333,7 +377,7 @@ function PricingLead({
 
           <div className="text-xs text-zinc-400 lg:text-right">
             {updatedAt
-              ? locale === "en" ? `Updated: ${updatedAt}` : `更新：${updatedAt}`
+              ? locale === "en" ? `Published prices updated: ${updatedAt}` : `正式价更新：${updatedAt}`
               : locale === "en" ? `${plan.regions.length} regions` : `${plan.regions.length} 个地区`}
           </div>
         </div>

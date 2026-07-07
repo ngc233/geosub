@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GeoSub frontend
 
-## Getting Started
+Next.js public site and self-hosted admin console for GeoSub.
 
-First, run the development server:
+## Local development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+On Windows PowerShell, if `npm` is blocked by the execution policy, use
+`npm.cmd` for the same commands.
+
+Start the website:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment
 
-## Learn More
+Required for database-backed pages:
 
-To learn more about Next.js, take a look at the following resources:
+```text
+DATABASE_URL=postgresql://...
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Optional integrations:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+DIRECTUS_URL=...
+DIRECTUS_TOKEN=...
+NEXT_PUBLIC_SITE_URL=https://geosub.org
+```
 
-## Deploy on Vercel
+Real `.env` files must stay out of Git.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Checks
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Code-only check:
+
+```bash
+npm run preflight:code
+```
+
+Full local check with database connectivity:
+
+```bash
+npm run preflight:full
+```
+
+If `preflight:full` fails at `check:local`, start PostgreSQL first or fix
+`DATABASE_URL`. The code checks can still pass while the local database is down.
+
+## Local PostgreSQL
+
+The local Docker Compose file lives in `../geosub-backend/docker-compose.yml`.
+After Docker Desktop or the Docker daemon is running:
+
+```bash
+npm run db:doctor
+npm run db:up
+npm run db:status
+npm run check:local
+```
+
+`db:doctor` checks whether Docker is available. `db:up` starts only the local
+PostgreSQL container. Directus can still be started from `../geosub-backend`
+when needed.
+
+## Database and migrations
+
+The Prisma schema is in:
+
+```text
+prisma/schema.prisma
+```
+
+SQL migrations are in:
+
+```text
+prisma/migrations
+```
+
+Production upgrade applies migrations through the backend deployment scripts.
+Do not edit old migration files after they have been applied on a server; add a
+new migration instead.
+
+## Admin entry points
+
+Useful local admin URLs:
+
+```text
+/admin/system      runtime health
+/admin/pipeline    product-level collection pipeline
+/admin/discovery   lead intake
+/admin/review      price observation review
+/admin/prices      official price database
+```
+
+## Release checks
+
+From repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\release-check.ps1
+```
+
+The server upgrade path is documented in:
+
+```text
+../geosub-backend/deploy/linux-arm64/README.md
+```

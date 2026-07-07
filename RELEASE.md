@@ -23,6 +23,24 @@ powershell -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -Version 
 powershell -ExecutionPolicy Bypass -File .\scripts\release-check.ps1
 ```
 
+For frontend-only local verification, use:
+
+```powershell
+cd ai-price-site
+npm run preflight:code
+```
+
+On Windows PowerShell, use `npm.cmd` instead of `npm` if the execution policy
+blocks npm scripts.
+
+For a full local verification that also requires PostgreSQL to be reachable,
+use:
+
+```powershell
+cd ai-price-site
+npm run preflight:full
+```
+
 3. Publish to GitHub after checks pass:
 
 ```powershell

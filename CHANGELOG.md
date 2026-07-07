@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0-beta.2 - 2026-07-07
+
+- Added admin system health checks for database, exchange rates, collector status, review backlog, content, and runtime configuration.
+- Added product-level collection pipeline view with system recommendations, per-product collection actions, pending anomaly summaries, and database-down fallback messaging.
+- Optimized admin product and price pages with aggregate queries, focused pagination, and supporting database indexes for large price datasets.
+- Added local preflight tooling for code checks, database checks, Docker/PostgreSQL status, and clearer release-check coverage.
+- Improved sitemap fallback logging so local builds without a database generate static routes cleanly.
+- Ignored stale pnpm workspace files because this project currently uses npm and package-lock for release builds.
+
 ## 0.3.0-beta.1 - 2026-07-02
 
 - Added release preparation workflow with synchronized VERSION/package versions, release checks, GitHub publishing helper, and Linux ARM64 upgrade script.

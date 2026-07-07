@@ -5,6 +5,12 @@ import AnalyticsProvider from "../components/analytics/AnalyticsProvider";
 import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScripts";
 import SiteChrome from "../components/SiteChrome";
 
+const defaultSiteUrl = "https://geosub.org";
+
+function getSiteUrl() {
+  return (process.env.NEXT_PUBLIC_SITE_URL || defaultSiteUrl).replace(/\/$/, "");
+}
+
 function getLocaleFromPath(pathname?: string | null) {
   return pathname === "/en" || pathname?.startsWith("/en/") ? "en" : "zh";
 }
@@ -23,23 +29,62 @@ async function getCurrentLocale() {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getCurrentLocale();
   const isEnglish = locale === "en";
+  const siteUrl = getSiteUrl();
   const title = isEnglish
     ? "GeoSub - Global Digital Subscription Pricing Data"
-    : "GeoSub - 全球数字服务价格数据平台";
+    : "GeoSub - 全球数字订阅价格数据平台";
   const description = isEnglish
     ? "Compare AI subscriptions, streaming services and other digital subscriptions across countries and regions."
-    : "GeoSub 用于比较 AI 订阅、流媒体、软件、游戏、礼品卡、VPN 和支付工具在不同国家与地区的价格差异。";
+    : "GeoSub 用于比较 AI 订阅、流媒体和其他数字订阅在不同国家和地区的价格差异、税费说明和购买力视角。";
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org"),
-    title,
+    metadataBase: new URL(siteUrl),
+    applicationName: "GeoSub",
+    title: {
+      default: title,
+      template: "%s - GeoSub",
+    },
     description,
+    keywords: isEnglish
+      ? [
+          "subscription pricing",
+          "AI subscription prices",
+          "streaming prices",
+          "App Store prices",
+          "regional pricing",
+        ]
+      : [
+          "订阅价格",
+          "AI 订阅价格",
+          "流媒体价格",
+          "App Store 价格",
+          "地区价格对比",
+        ],
+    alternates: {
+      canonical: isEnglish ? "/en" : "/zh",
+      languages: {
+        "zh-CN": "/zh",
+        en: "/en",
+      },
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       title,
       description,
       siteName: "GeoSub",
       locale: isEnglish ? "en_US" : "zh_CN",
       type: "website",
+      url: siteUrl,
     },
     twitter: {
       card: "summary",
@@ -55,10 +100,38 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getCurrentLocale();
+  const siteUrl = getSiteUrl();
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: "GeoSub",
+        url: siteUrl,
+        logo: `${siteUrl}/logo.png`,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        name: "GeoSub",
+        url: siteUrl,
+        inLanguage: locale === "en" ? "en" : "zh-CN",
+        publisher: {
+          "@id": `${siteUrl}/#organization`,
+        },
+      },
+    ],
+  };
 
   return (
     <html lang={locale === "en" ? "en" : "zh-CN"} suppressHydrationWarning>
       <body className="min-h-screen bg-slate-50 text-slate-950 antialiased">
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         <GoogleAnalyticsScripts />
         <AnalyticsProvider />
         <SiteChrome>{children}</SiteChrome>

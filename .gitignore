@@ -27,6 +27,8 @@ tmp/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-lock.yaml
+pnpm-workspace.yaml
 .DS_Store
 
 # TypeScript / generated files

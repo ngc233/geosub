@@ -197,6 +197,7 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
   }
 
   revalidatePath("/admin/review");
+  revalidatePath("/admin/pipeline");
   revalidatePath("/admin/collector-jobs");
   revalidatePath("/admin/affordability");
   revalidatePath("/zh/ai-pricing/chatgpt");

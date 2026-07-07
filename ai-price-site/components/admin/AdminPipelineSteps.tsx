@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { CheckCircle2, Radar, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Radar, ShieldCheck, Workflow } from "lucide-react";
 
-type PipelineStep = "discovery" | "collector" | "review";
+type PipelineStep = "pipeline" | "discovery" | "collector" | "review";
 
 const steps: Array<{
   id: PipelineStep;
@@ -12,16 +12,24 @@ const steps: Array<{
   icon: typeof Radar;
 }> = [
   {
-    id: "discovery",
+    id: "pipeline",
     number: "1",
+    title: "产品流水线",
+    href: "/admin/pipeline",
+    description: "按产品查看线索、采集任务、异常审核和正式价格，先判断卡在哪一步。",
+    icon: Workflow,
+  },
+  {
+    id: "discovery",
+    number: "2",
     title: "线索入口",
     href: "/admin/discovery",
-    description: "添加产品线索，系统会尝试匹配 App Store，并准备采集任务。",
+    description: "添加新产品、官网或 App Store 线索，入库后自动准备采集任务。",
     icon: Radar,
   },
   {
     id: "review",
-    number: "2",
+    number: "3",
     title: "价格采集审核",
     href: "/admin/review",
     description: "按产品启动 App Store 采集，稳定价格自动入库，异常价格集中解释。",
@@ -51,7 +59,7 @@ export default function AdminPipelineSteps({
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-3">
         {steps.map((step) => {
           const active = step.id === activeStep;
           const Icon = step.icon;

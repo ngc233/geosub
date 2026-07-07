@@ -269,9 +269,10 @@ function MenuIcon({ open }: { open: boolean }) {
 export default function Header({ initialNavItems = [] }: { initialNavItems?: NavItem[] }) {
   const pathname = usePathname();
   const navDropdownRef = useRef<HTMLDivElement | null>(null);
-  const languageDetailsRef = useRef<HTMLDetailsElement | null>(null);
+  const languageMenuRef = useRef<HTMLDivElement | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopDropdown, setDesktopDropdown] = useState<string | null>(null);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const currentLocaleCode = getLocaleFromPath(pathname);
   const currentLocale =
     languages.find((item) => item.code === currentLocaleCode) || languages[0];
@@ -286,18 +287,6 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
   }, [navItems, pathname]);
 
   useEffect(() => {
-    function closeOpenLanguageMenus(target?: EventTarget | null) {
-      document
-        .querySelectorAll<HTMLDetailsElement>("[data-language-menu][open]")
-        .forEach((menu) => {
-          if (target instanceof Node && menu.contains(target)) {
-            return;
-          }
-
-          menu.removeAttribute("open");
-        });
-    }
-
     function handlePointerOutside(event: Event) {
       const target = event.target;
 
@@ -309,12 +298,19 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
         setDesktopDropdown(null);
       }
 
-      closeOpenLanguageMenus(target);
+      if (
+        target instanceof Node &&
+        languageMenuRef.current &&
+        !languageMenuRef.current.contains(target)
+      ) {
+        setLanguageMenuOpen(false);
+      }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        closeOpenLanguageMenus();
+        setDesktopDropdown(null);
+        setLanguageMenuOpen(false);
       }
     }
 
@@ -446,31 +442,45 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
         </nav>
 
         <div className="flex items-center gap-2">
-          <details
-            ref={languageDetailsRef}
-            data-language-menu
-            className="group relative hidden sm:block"
-          >
-            <summary
+          <div ref={languageMenuRef} className="relative hidden sm:block">
+            <button
+              type="button"
+              onClick={() => setLanguageMenuOpen((open) => !open)}
               className={[
-                "flex h-10 cursor-pointer list-none items-center gap-2 rounded-lg border px-3.5 text-sm font-bold shadow-sm transition-all duration-200 ease-out marker:hidden outline-none [&::-webkit-details-marker]:hidden",
+                "flex h-10 cursor-pointer list-none items-center gap-2 rounded-lg border px-3.5 text-sm font-bold shadow-sm transition-all duration-200 ease-out outline-none",
                 "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
                 "focus-visible:ring-4 focus-visible:ring-lime-500/15",
-                "group-open:border-lime-400 group-open:bg-white group-open:text-zinc-950 group-open:ring-4 group-open:ring-lime-500/10 dark:group-open:border-lime-500/40 dark:group-open:bg-zinc-900 dark:group-open:text-white",
+                languageMenuOpen
+                  ? "border-lime-400 bg-white text-zinc-950 ring-4 ring-lime-500/10 dark:border-lime-500/40 dark:bg-zinc-900 dark:text-white"
+                  : "",
               ].join(" ")}
               aria-haspopup="menu"
+              aria-expanded={languageMenuOpen}
             >
               <span className="inline-flex h-5 min-w-7 items-center justify-center rounded-full bg-zinc-100 px-1.5 text-[10px] font-black text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                 {currentLocale.short}
               </span>
               <span>{currentLocale.name}</span>
-              <span className="transition-transform duration-200 ease-out group-open:rotate-180">
+              <span
+                className={[
+                  "transition-transform duration-200 ease-out",
+                  languageMenuOpen ? "rotate-180" : "",
+                ].join(" ")}
+              >
                 <ChevronIcon />
               </span>
-            </summary>
+            </button>
 
-            <div className="absolute right-0 top-[46px] z-50 grid w-48 grid-rows-[0fr] overflow-hidden rounded-xl opacity-0 shadow-xl shadow-zinc-900/10 transition-[grid-template-rows,opacity,transform] duration-200 ease-out group-open:grid-rows-[1fr] group-open:translate-y-0 group-open:opacity-100 dark:shadow-black/30">
-              <div className="min-h-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1.5 dark:border-zinc-800 dark:bg-zinc-900">
+            <div
+              className={[
+                "absolute right-0 top-[46px] z-[70] grid w-48 overflow-hidden rounded-lg shadow-xl shadow-zinc-900/10 transition-[grid-template-rows,opacity,transform] duration-200 ease-out dark:shadow-black/30",
+                languageMenuOpen
+                  ? "pointer-events-auto grid-rows-[1fr] translate-y-0 opacity-100"
+                  : "pointer-events-none grid-rows-[0fr] translate-y-1 opacity-0",
+              ].join(" ")}
+              role="menu"
+            >
+              <div className="min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-white p-1.5 dark:border-zinc-800 dark:bg-zinc-900">
                 {languages.map((language) => {
                   const active = language.code === currentLocaleCode;
 
@@ -478,6 +488,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
                     <Link
                       key={language.code}
                       href={replaceLocaleInPath(pathname, language.code)}
+                      onClick={() => setLanguageMenuOpen(false)}
                       className={[
                         "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors duration-200 ease-out",
                         active
@@ -499,7 +510,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
                 })}
               </div>
             </div>
-          </details>
+          </div>
 
           <button
             type="button"

@@ -406,9 +406,9 @@ function RegionPriceRow({
         ) : null}
         {region.lastCheckedAt || region.fxRateDate ? (
           <div className="mt-0.5 text-xs text-zinc-400">
-            {region.lastCheckedAt ? `${locale === "en" ? "Collected" : "采集"} ${region.lastCheckedAt}` : ""}
+            {region.lastCheckedAt ? `${locale === "en" ? "Price collected" : "价格采集"} ${region.lastCheckedAt}` : ""}
             {region.lastCheckedAt && region.fxRateDate ? " · " : ""}
-            {region.fxRateDate ? `${locale === "en" ? "FX" : "汇率"} ${region.fxRateDate}` : ""}
+            {region.fxRateDate ? `${locale === "en" ? "FX basis" : "采集汇率基准"} ${region.fxRateDate}` : ""}
           </div>
         ) : null}
       </div>

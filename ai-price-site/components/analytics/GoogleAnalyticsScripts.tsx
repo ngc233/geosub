@@ -13,29 +13,38 @@ function isValidGtmId(value: string) {
 async function getAnalyticsSettings() {
   noStore();
 
-  const rows = await prisma.siteSetting.findMany({
-    where: {
-      settingKey: {
-        in: ["ga4_id", "gtm_id"],
+  try {
+    const rows = await prisma.siteSetting.findMany({
+      where: {
+        settingKey: {
+          in: ["ga4_id", "gtm_id"],
+        },
       },
-    },
-    select: {
-      settingKey: true,
-      valueText: true,
-    },
-  });
+      select: {
+        settingKey: true,
+        valueText: true,
+      },
+    });
 
-  const valueByKey = new Map(
-    rows.map((row) => [row.settingKey, row.valueText?.trim() || ""]),
-  );
+    const valueByKey = new Map(
+      rows.map((row) => [row.settingKey, row.valueText?.trim() || ""]),
+    );
 
-  const ga4Id = valueByKey.get("ga4_id") || "";
-  const gtmId = valueByKey.get("gtm_id") || "";
+    const ga4Id = valueByKey.get("ga4_id") || "";
+    const gtmId = valueByKey.get("gtm_id") || "";
 
-  return {
-    ga4Id: isValidGa4Id(ga4Id) ? ga4Id : "",
-    gtmId: isValidGtmId(gtmId) ? gtmId : "",
-  };
+    return {
+      ga4Id: isValidGa4Id(ga4Id) ? ga4Id : "",
+      gtmId: isValidGtmId(gtmId) ? gtmId : "",
+    };
+  } catch {
+    console.warn("Analytics settings unavailable; skipping GA/GTM injection.");
+
+    return {
+      ga4Id: "",
+      gtmId: "",
+    };
+  }
 }
 
 export default async function GoogleAnalyticsScripts() {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Activity,
   BadgeDollarSign,
   Boxes,
   FileText,
@@ -14,6 +15,7 @@ import {
   Radar,
   Search,
   ShieldCheck,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,11 +29,15 @@ const navGroups: Array<{
 }> = [
   {
     label: "工作台",
-    items: [{ label: "总览", href: "/admin", icon: LayoutDashboard }],
+    items: [
+      { label: "总览", href: "/admin", icon: LayoutDashboard },
+      { label: "系统状态", href: "/admin/system", icon: Activity },
+    ],
   },
   {
     label: "价格采集",
     items: [
+      { label: "采集流水线", href: "/admin/pipeline", icon: Workflow },
       { label: "线索入口", href: "/admin/discovery", icon: Radar },
       { label: "价格采集审核", href: "/admin/review", icon: ShieldCheck },
       { label: "正式价格", href: "/admin/prices", icon: Globe2 },

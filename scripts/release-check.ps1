@@ -1,6 +1,6 @@
 param(
   [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-  [string]$PnpmPath = "C:\Users\lanad\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\pnpm.cmd",
+  [string]$NpmPath = "npm.cmd",
   [string]$GitPath = "C:\Users\lanad\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\git\cmd\git.exe",
   [switch]$SkipBuild
 )
@@ -89,22 +89,31 @@ function Test-NodeSyntax {
   }
 }
 
-$PnpmPath = Resolve-ToolPath -PreferredPath $PnpmPath -CommandName "pnpm"
+$NpmPath = Resolve-ToolPath -PreferredPath $NpmPath -CommandName "npm"
 $GitPath = Resolve-ToolPath -PreferredPath $GitPath -CommandName "git"
+$FrontendDir = Join-Path $Root "ai-price-site"
 
 Invoke-Step -Name "Version sync" -Block { Assert-VersionSync }
 Invoke-Step -Name "PowerShell syntax" -Block { Test-PowerShellSyntax }
 Invoke-Step -Name "Node script syntax" -Block { Test-NodeSyntax }
 
+Invoke-Step -Name "Frontend typecheck" -Block {
+  & $NpmPath --prefix $FrontendDir run typecheck
+}
+
 Invoke-Step -Name "Frontend lint" -Block {
-  & $PnpmPath --dir (Join-Path $Root "ai-price-site") exec eslint
+  & $NpmPath --prefix $FrontendDir run lint
+}
+
+Invoke-Step -Name "Frontend tests" -Block {
+  & $NpmPath --prefix $FrontendDir test
 }
 
 if ($SkipBuild) {
   Write-Host "Frontend build skipped."
 } else {
   Invoke-Step -Name "Frontend build" -Block {
-    & $PnpmPath --dir (Join-Path $Root "ai-price-site") run build
+    & $NpmPath --prefix $FrontendDir run build
   }
 }
 

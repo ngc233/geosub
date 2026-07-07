@@ -902,6 +902,7 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
   `;
 
     revalidatePath("/admin/discovery");
+    revalidatePath("/admin/pipeline");
     revalidatePath("/admin/products");
     revalidatePath("/admin/collector-jobs");
     revalidatePath("/admin/review");

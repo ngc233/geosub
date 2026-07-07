@@ -97,37 +97,65 @@ export async function POST(request: NextRequest) {
   const userAgent = request.headers.get("user-agent");
   const referrerFromHeader = request.headers.get("referer");
 
-  await prisma.eventLog.create({
-    data: {
-      eventKey,
-      eventName: cleanString(body.eventName, 200),
+  const eventData = {
+    eventKey,
+    eventName: cleanString(body.eventName, 200),
 
-      pagePath: cleanString(body.pagePath, 1000),
-      pageTitle: cleanString(body.pageTitle, 300),
-      referrer: cleanString(body.referrer, 1000) || cleanString(referrerFromHeader, 1000),
+    pagePath: cleanString(body.pagePath, 1000),
+    pageTitle: cleanString(body.pageTitle, 300),
+    referrer: cleanString(body.referrer, 1000) || cleanString(referrerFromHeader, 1000),
 
-      locale: cleanString(body.locale, 20) || "zh",
-      sessionId: cleanString(body.sessionId, 200),
-      anonymousId,
+    locale: cleanString(body.locale, 20) || "zh",
+    sessionId: cleanString(body.sessionId, 200),
+    anonymousId,
 
-      productId: cleanUuid(body.productId),
-      planId: cleanUuid(body.planId),
-      countryId: cleanUuid(body.countryId),
-      articleId: cleanUuid(body.articleId),
+    productId: cleanUuid(body.productId),
+    planId: cleanUuid(body.planId),
+    countryId: cleanUuid(body.countryId),
+    articleId: cleanUuid(body.articleId),
 
-      buttonKey: cleanString(body.buttonKey, 200),
-      placement: cleanString(body.placement, 200),
-      source: cleanString(body.source, 200),
-      deviceType: getDeviceType(userAgent),
+    buttonKey: cleanString(body.buttonKey, 200),
+    placement: cleanString(body.placement, 200),
+    source: cleanString(body.source, 200),
+    deviceType: getDeviceType(userAgent),
 
-      userAgent: cleanString(userAgent, 1000),
+    userAgent: cleanString(userAgent, 1000),
 
-      metadata:
-        body.metadata && typeof body.metadata === "object"
-          ? body.metadata
-          : undefined,
-    },
-  });
+    metadata:
+      body.metadata && typeof body.metadata === "object"
+        ? body.metadata
+        : undefined,
+  };
+
+  try {
+    await prisma.eventLog.create({
+      data: eventData,
+    });
+  } catch {
+    console.warn("Event tracking unavailable; skipping event write.");
+
+    const response = NextResponse.json(
+      {
+        ok: false,
+        skipped: true,
+      },
+      {
+        status: 202,
+      },
+    );
+
+    if (!existingAnonymousId) {
+      response.cookies.set("geosub_anon_id", anonymousId, {
+        httpOnly: false,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+
+    return response;
+  }
 
   const response = NextResponse.json({
     ok: true,
