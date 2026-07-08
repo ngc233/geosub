@@ -15,6 +15,8 @@ import type {
   ProductCollectorFreshnessRow,
   SelectedProductCollectorRow,
 } from "./types";
+import { reconcileStaleCollectorRuns } from "./collection-runner";
+import { getCollectorRunHistoryRows } from "./collector-run-history-query";
 
 export type ReviewPageQueryInput = {
   productQuery: string;
@@ -31,11 +33,14 @@ export async function getReviewPageData({
   pendingPage,
   historyPage,
 }: ReviewPageQueryInput) {
+  await reconcileStaleCollectorRuns();
+
   const productQueryLike = `%${productQuery}%`;
   const pendingPageSize = 25;
   const pendingOffset = (pendingPage - 1) * pendingPageSize;
   const historyPageSize = 25;
   const historyOffset = (historyPage - 1) * historyPageSize;
+  const detailRowsPerProduct = productQuery ? 500 : 24;
 
   const pendingProductSummaryPromise = prisma.$queryRaw<PendingProductSummaryRow[]>`
     WITH scoped_pending AS (
@@ -164,6 +169,7 @@ export async function getReviewPageData({
   const pendingProductSlugs = pendingProductSummaryRows.map((row) => row.product_slug);
   const pendingRowsPromise = pendingProductSlugs.length
     ? prisma.$queryRaw<PendingRow[]>`
+    WITH detail_rows AS (
     SELECT
       pending.id,
       pending.product_slug,
@@ -207,7 +213,11 @@ export async function getReviewPageData({
       evidence.published_currency,
       evidence.published_price_usd,
       evidence.published_last_checked_at,
-      evidence.evidence_note
+      evidence.evidence_note,
+      ROW_NUMBER() OVER (
+        PARTITION BY pending.product_slug
+        ORDER BY pending.observed_at DESC, pending.id
+      ) AS detail_rank
     FROM pending_price_observations_view pending
     JOIN price_observations observation ON observation.id = pending.id
     LEFT JOIN price_observation_evidence_view evidence ON evidence.id = pending.id
@@ -250,7 +260,11 @@ export async function getReviewPageData({
           AND ABS((observation.converted_usd - published.price_usd) / published.price_usd) > 0.02
         )
       )
-    ORDER BY pending.product_slug, pending.plan_slug, pending.observed_at DESC
+    )
+    SELECT *
+    FROM detail_rows
+    WHERE detail_rank <= ${detailRowsPerProduct}
+    ORDER BY product_slug, plan_slug, observed_at DESC
   `
     : Promise.resolve([] as PendingRow[]);
   const productFreshnessPromise =
@@ -500,6 +514,8 @@ export async function getReviewPageData({
     LIMIT 1
   `;
 
+  const collectorRunHistoryPromise = getCollectorRunHistoryRows(productQuery);
+
   const latestAutoReviewPromise = prisma.$queryRaw<AutoReviewRunRow[]>`
     SELECT
       id::text,
@@ -549,6 +565,7 @@ export async function getReviewPageData({
     historyStatsRows,
     historyRows,
     collectorStatusRows,
+    collectorRunHistoryRows,
     latestAutoReviewRows,
     autoReviewReasonRows,
   ] = await Promise.all([
@@ -561,6 +578,7 @@ export async function getReviewPageData({
     historyStatsPromise,
     historyRowsPromise,
     collectorStatusPromise,
+    collectorRunHistoryPromise,
     latestAutoReviewPromise,
     autoReviewReasonPromise,
   ]);
@@ -669,6 +687,8 @@ export async function getReviewPageData({
   return {
     pendingPageSize,
     historyPageSize,
+    detailRowsPerProduct,
+    detailRowsLimited: !productQuery,
     pendingProductTotal,
     pendingTotal,
     pendingTotalPages,
@@ -678,6 +698,7 @@ export async function getReviewPageData({
     ignoredCount,
     rejectedCount,
     collectorStatus,
+    collectorRunHistoryRows,
     latestAutoReview,
     selectedProductCollector,
     selectedProductName,

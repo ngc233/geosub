@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import type { FocusEvent, MouseEvent } from "react";
 import { useMemo, useState } from "react";
 import type { ProductPlan, RegionPrice } from "../data/ai-pricing";
@@ -262,11 +263,13 @@ function CountryFlag({ code }: { code: string }) {
 
   if (isIso2 && !imageFailed) {
     return (
-      <img
+      <Image
         src={`/flags/${countryCode.toLowerCase()}.svg`}
         alt={countryCode}
         title={countryCode}
-        loading="lazy"
+        width={28}
+        height={20}
+        unoptimized
         onError={() => setImageFailed(true)}
         className="h-5 w-7 rounded-[4px] object-cover shadow-[0_0_0_1px_rgba(24,24,27,0.08)]"
       />

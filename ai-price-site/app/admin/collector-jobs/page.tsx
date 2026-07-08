@@ -6,7 +6,12 @@ import {
 } from "../../../components/admin/AdminCard";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { prisma } from "../../../lib/prisma";
-import { pauseCollectorJob, runCollectorJobNow, runProductCollectorJobsNow } from "./actions";
+import { reconcileStaleCollectorRuns } from "../review/collection-runner";
+import {
+  pauseCollectorJob,
+  runCollectorJobNow,
+  runProductCollectorJobsNow,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +39,9 @@ type JobRow = {
   latest_run_error: string | null;
   latest_run_output: string | null;
   latest_run_diagnosis: string | null;
+  latest_runner_state: string | null;
+  latest_process_id: string | null;
+  latest_run_age_seconds: number | null;
   published_price_count: number;
   pending_observation_count: number;
   approved_observation_count: number;
@@ -54,6 +62,9 @@ type RunRow = {
   error_message: string | null;
   output_excerpt: string | null;
   diagnosis: string | null;
+  process_id: string | null;
+  runner_state: string | null;
+  run_age_seconds: number | null;
 };
 
 type AvailabilityRow = {
@@ -71,6 +82,26 @@ type AvailabilityRow = {
   checked_at: Date | string;
 };
 
+type ProductJobGroup = {
+  productId: string;
+  productName: string;
+  productSlug: string;
+  productStatus: string | null;
+  jobs: JobRow[];
+  latestJob: JobRow | null;
+  hasQueuedJob: boolean;
+  hasRunningJob: boolean;
+  hasFailedJob: boolean;
+  activeJobCount: number;
+  sourceLabels: string[];
+  publishedPriceCount: number;
+  pendingObservationCount: number;
+  approvedObservationCount: number;
+  recentAppStoreObservationCount: number;
+  successCount: number;
+  errorCount: number;
+};
+
 function formatDate(value: Date | string | null) {
   if (!value) return "未安排";
 
@@ -84,11 +115,34 @@ function formatDate(value: Date | string | null) {
   });
 }
 
+function formatDuration(value: number | null) {
+  if (!value) return "未记录";
+  if (value < 1000) return `${value} 毫秒`;
+  return `${Math.round(value / 1000)} 秒`;
+}
+
+function formatRunDuration(row: {
+  status: string;
+  duration_ms: number | null;
+  run_age_seconds: number | null;
+}) {
+  if (row.duration_ms !== null && row.duration_ms !== undefined) {
+    return formatDuration(row.duration_ms);
+  }
+
+  if (row.status === "running" && row.run_age_seconds !== null) {
+    return `${row.run_age_seconds} 秒`;
+  }
+
+  return row.status === "running" ? "运行中" : "未记录";
+}
+
 function statusLabel(status: string | null) {
   if (status === "active") return "启用";
   if (status === "paused") return "暂停";
   if (status === "failed") return "失败";
   if (status === "archived") return "归档";
+  if (status === "running") return "运行中";
   if (status === "succeeded") return "成功";
   if (status === "skipped") return "跳过";
   return status || "未知";
@@ -97,6 +151,10 @@ function statusLabel(status: string | null) {
 function statusClassName(status: string | null) {
   if (status === "active" || status === "succeeded") {
     return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+
+  if (status === "running") {
+    return "bg-blue-50 text-blue-700 ring-blue-200";
   }
 
   if (status === "failed") {
@@ -126,10 +184,6 @@ function availabilityClassName(status: string | null) {
 
   if (status === "available_no_iap") {
     return "bg-amber-50 text-amber-700 ring-amber-200";
-  }
-
-  if (status === "not_available") {
-    return "bg-slate-100 text-slate-600 ring-slate-200";
   }
 
   if (status === "blocked" || status === "unknown_error") {
@@ -183,33 +237,45 @@ function sourceTypeLabel(type: string | null) {
   return type || "未知来源";
 }
 
-function shortText(value: string | null, fallback = "暂无") {
+function shortText(value: string | null, fallback = "暂无摘要") {
   if (!value) return fallback;
   return value.length > 180 ? `${value.slice(0, 180)}...` : value;
+}
+
+function collectorRunOutput({
+  status,
+  error,
+  output,
+  processId,
+  runnerState,
+}: {
+  status: string;
+  error: string | null;
+  output: string | null;
+  processId: string | null;
+  runnerState: string | null;
+}) {
+  if (error) return shortText(error);
+  if (output) return shortText(output);
+
+  if (status === "running") {
+    if (processId) {
+      return `脚本进程 ${processId} 正在运行，完成后会写回结果。`;
+    }
+
+    if (runnerState === "queued_from_admin") {
+      return "已创建运行记录，正在唤起后台脚本。超过 3 分钟未接管会自动标记失败。";
+    }
+
+    return "正在等待后台脚本写回结果。";
+  }
+
+  return "暂无摘要";
 }
 
 function isManuallyQueued(job: JobRow) {
   return job.status === "active" && job.is_due && job.priority >= 100;
 }
-
-type ProductJobGroup = {
-  productId: string;
-  productName: string;
-  productSlug: string;
-  productStatus: string | null;
-  jobs: JobRow[];
-  latestJob: JobRow | null;
-  hasQueuedJob: boolean;
-  hasFailedJob: boolean;
-  activeJobCount: number;
-  sourceLabels: string[];
-  publishedPriceCount: number;
-  pendingObservationCount: number;
-  approvedObservationCount: number;
-  recentAppStoreObservationCount: number;
-  successCount: number;
-  errorCount: number;
-};
 
 function dateValue(value: Date | string | null) {
   if (!value) return 0;
@@ -226,6 +292,7 @@ function groupCollectorJobs(jobs: JobRow[]) {
   for (const job of jobs) {
     const key = job.product_id || job.product_slug || job.id;
     const existing = groups.get(key);
+    const hasLatestRun = Boolean(job.latest_run_started_at || job.last_run_at);
 
     if (!existing) {
       groups.set(key, {
@@ -234,11 +301,15 @@ function groupCollectorJobs(jobs: JobRow[]) {
         productSlug: job.product_slug,
         productStatus: job.product_status,
         jobs: [job],
-        latestJob: job.latest_run_started_at || job.last_run_at ? job : null,
+        latestJob: hasLatestRun ? job : null,
         hasQueuedJob: isManuallyQueued(job),
+        hasRunningJob: job.latest_run_status === "running",
         hasFailedJob: job.status === "failed" || job.latest_run_status === "failed",
         activeJobCount: job.status === "active" ? 1 : 0,
-        sourceLabels: uniqueLabels([collectorLabel(job.collector_kind), sourceTypeLabel(job.source_type)]),
+        sourceLabels: uniqueLabels([
+          collectorLabel(job.collector_kind),
+          sourceTypeLabel(job.source_type),
+        ]),
         publishedPriceCount: job.published_price_count,
         pendingObservationCount: job.pending_observation_count,
         approvedObservationCount: job.approved_observation_count,
@@ -251,16 +322,27 @@ function groupCollectorJobs(jobs: JobRow[]) {
 
     existing.jobs.push(job);
     existing.hasQueuedJob = existing.hasQueuedJob || isManuallyQueued(job);
-    existing.hasFailedJob = existing.hasFailedJob || job.status === "failed" || job.latest_run_status === "failed";
+    existing.hasRunningJob = existing.hasRunningJob || job.latest_run_status === "running";
+    existing.hasFailedJob =
+      existing.hasFailedJob || job.status === "failed" || job.latest_run_status === "failed";
     existing.activeJobCount += job.status === "active" ? 1 : 0;
     existing.sourceLabels = uniqueLabels([
       ...existing.sourceLabels,
       collectorLabel(job.collector_kind),
       sourceTypeLabel(job.source_type),
     ]);
-    existing.publishedPriceCount = Math.max(existing.publishedPriceCount, job.published_price_count);
-    existing.pendingObservationCount = Math.max(existing.pendingObservationCount, job.pending_observation_count);
-    existing.approvedObservationCount = Math.max(existing.approvedObservationCount, job.approved_observation_count);
+    existing.publishedPriceCount = Math.max(
+      existing.publishedPriceCount,
+      job.published_price_count
+    );
+    existing.pendingObservationCount = Math.max(
+      existing.pendingObservationCount,
+      job.pending_observation_count
+    );
+    existing.approvedObservationCount = Math.max(
+      existing.approvedObservationCount,
+      job.approved_observation_count
+    );
     existing.recentAppStoreObservationCount = Math.max(
       existing.recentAppStoreObservationCount,
       job.recent_app_store_observation_count
@@ -268,7 +350,9 @@ function groupCollectorJobs(jobs: JobRow[]) {
     existing.successCount += job.success_count;
     existing.errorCount += job.error_count;
 
-    const latestCurrent = dateValue(existing.latestJob?.latest_run_started_at || existing.latestJob?.last_run_at || null);
+    const latestCurrent = dateValue(
+      existing.latestJob?.latest_run_started_at || existing.latestJob?.last_run_at || null
+    );
     const latestCandidate = dateValue(job.latest_run_started_at || job.last_run_at);
     if (latestCandidate > latestCurrent) {
       existing.latestJob = job;
@@ -276,24 +360,42 @@ function groupCollectorJobs(jobs: JobRow[]) {
   }
 
   return Array.from(groups.values()).sort((a, b) => {
-    if (a.hasFailedJob !== b.hasFailedJob) return a.hasFailedJob ? -1 : 1;
+    if (a.hasRunningJob !== b.hasRunningJob) return a.hasRunningJob ? -1 : 1;
     if (a.hasQueuedJob !== b.hasQueuedJob) return a.hasQueuedJob ? -1 : 1;
-    return dateValue(b.latestJob?.latest_run_started_at || b.latestJob?.last_run_at || null) -
-      dateValue(a.latestJob?.latest_run_started_at || a.latestJob?.last_run_at || null);
+    if (a.hasFailedJob !== b.hasFailedJob) return a.hasFailedJob ? -1 : 1;
+    if (a.pendingObservationCount !== b.pendingObservationCount) {
+      return b.pendingObservationCount - a.pendingObservationCount;
+    }
+    return (
+      dateValue(b.latestJob?.latest_run_started_at || b.latestJob?.last_run_at || null) -
+      dateValue(a.latestJob?.latest_run_started_at || a.latestJob?.last_run_at || null)
+    );
   });
 }
 
 function productPublishLabel(group: ProductJobGroup) {
-  if (group.publishedPriceCount > 0) return "已采纳并上架";
+  if (group.publishedPriceCount > 0) return "已入正式库";
   if (group.pendingObservationCount > 0) return "待审核";
   if (group.approvedObservationCount > 0) return "已通过，待同步";
-  return "未采纳";
+  return "未采集";
 }
 
 function productPublishClassName(group: ProductJobGroup) {
-  if (group.publishedPriceCount > 0) return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (group.pendingObservationCount > 0) return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (group.publishedPriceCount > 0) {
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+
+  if (group.pendingObservationCount > 0) {
+    return "bg-amber-50 text-amber-700 ring-amber-200";
+  }
+
   return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function productActionLabel(group: ProductJobGroup) {
+  if (group.hasRunningJob) return "正在采集";
+  if (group.hasQueuedJob) return "已排队";
+  return "只采这个产品";
 }
 
 function autoReviewSummary(group: ProductJobGroup) {
@@ -302,70 +404,97 @@ function autoReviewSummary(group: ProductJobGroup) {
   }
 
   if (group.recentAppStoreObservationCount >= 3) {
-    return "App Store 样本已满 3 次；稳定一致会自动通过，异常会留在审核中心。";
+    return "App Store 样本已满 3 次。稳定一致会自动通过，异常会留在审核中心。";
   }
 
   if (group.recentAppStoreObservationCount > 0) {
-    return `等待满 3 次 App Store 稳定样本；当前 ${group.recentAppStoreObservationCount} 次。`;
+    return `等待满 3 次 App Store 稳定样本，当前 ${group.recentAppStoreObservationCount} 次。`;
   }
 
   return "还没有可用于自动审核的 App Store 样本。";
 }
 
 export default async function CollectorJobsPage() {
+  await reconcileStaleCollectorRuns();
+
   const [jobs, runs, availabilityChecks] = await Promise.all([
     prisma.$queryRaw<JobRow[]>`
-      WITH latest_runs AS (
-        SELECT *
-        FROM (
-          SELECT
-            run.job_id,
-            run.status,
-            run.started_at,
-            run.error_message,
-            run.output_excerpt,
-            run.raw_payload,
-            ROW_NUMBER() OVER (
-              PARTITION BY run.job_id
-              ORDER BY run.started_at DESC
-            ) AS row_number
-          FROM collector_job_runs run
-        ) ranked_runs
-        WHERE row_number = 1
+      WITH job_scope AS (
+        SELECT
+          job.id,
+          job.product_id,
+          product.name AS product_name,
+          product.slug AS product_slug,
+          product.status::text AS product_status,
+          source.name AS source_name,
+          source.type::text AS source_type,
+          job.job_type,
+          job.schedule,
+          job.status,
+          job.next_run_at,
+          job.last_run_at,
+          job.success_count,
+          job.error_count,
+          job.last_error,
+          job.priority,
+          job.job_config,
+          job.updated_at,
+          job.created_at,
+          candidate.name AS discovery_candidate_name
+        FROM collector_jobs job
+        JOIN products product ON product.id = job.product_id
+        LEFT JOIN price_sources source ON source.id = job.source_id
+        LEFT JOIN product_discovery_candidates candidate ON candidate.id = job.discovery_candidate_id
+        WHERE job.status <> 'archived'
+        ORDER BY
+          CASE job.status
+            WHEN 'failed' THEN 1
+            WHEN 'active' THEN 2
+            WHEN 'paused' THEN 3
+            ELSE 4
+          END,
+          job.priority DESC,
+          job.next_run_at NULLS FIRST,
+          job.created_at DESC
+        LIMIT 160
       ),
       published_price_state AS (
         SELECT
-          product_id,
+          price.product_id,
           COUNT(*) FILTER (
-            WHERE status = 'published'::publish_status
+            WHERE price.status = 'published'::publish_status
           )::int AS published_price_count
-        FROM region_prices
-        GROUP BY product_id
+        FROM region_prices price
+        JOIN (SELECT DISTINCT product_id FROM job_scope WHERE product_id IS NOT NULL) scoped_product
+          ON scoped_product.product_id = price.product_id
+        GROUP BY price.product_id
       ),
       observation_state AS (
         SELECT
-          product_id,
+          observation.product_id,
           COUNT(*) FILTER (
-            WHERE status = 'pending'::observation_status
+            WHERE observation.status = 'pending'::observation_status
           )::int AS pending_observation_count,
           COUNT(*) FILTER (
-            WHERE status = 'approved'::observation_status
+            WHERE observation.status = 'approved'::observation_status
           )::int AS approved_observation_count,
           COUNT(*) FILTER (
-            WHERE billing_platform = 'ios'::billing_platform
-              AND observed_at >= NOW() - INTERVAL '14 days'
+            WHERE observation.billing_platform = 'ios'::billing_platform
+              AND observation.observed_at >= NOW() - INTERVAL '14 days'
           )::int AS recent_app_store_observation_count
-        FROM price_observations
-        GROUP BY product_id
+        FROM price_observations observation
+        JOIN (SELECT DISTINCT product_id FROM job_scope WHERE product_id IS NOT NULL) scoped_product
+          ON scoped_product.product_id = observation.product_id
+        GROUP BY observation.product_id
       )
       SELECT
         job.id::text,
         job.product_id::text,
-        product.name AS product_name,
-        product.slug AS product_slug,
-        product.status::text AS product_status,
-        source.name AS source_name,
-        source.type::text AS source_type,
+        job.product_name,
+        job.product_slug,
+        job.product_status,
+        job.source_name,
+        job.source_type,
         job.job_type,
         job.schedule,
         job.status,
@@ -382,6 +511,12 @@ export default async function CollectorJobsPage() {
         latest_runs.error_message AS latest_run_error,
         latest_runs.output_excerpt AS latest_run_output,
         latest_runs.raw_payload ->> 'diagnosis' AS latest_run_diagnosis,
+        latest_runs.raw_payload ->> 'state' AS latest_runner_state,
+        latest_runs.raw_payload ->> 'pid' AS latest_process_id,
+        CASE
+          WHEN latest_runs.started_at IS NULL THEN NULL
+          ELSE GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(latest_runs.finished_at, NOW()) - latest_runs.started_at)))::int
+        END AS latest_run_age_seconds,
         COALESCE(published_price_state.published_price_count, 0)::int AS published_price_count,
         COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
         COALESCE(observation_state.approved_observation_count, 0)::int AS approved_observation_count,
@@ -393,14 +528,22 @@ export default async function CollectorJobsPage() {
             OR job.next_run_at <= NOW()
           )
         ) AS is_due
-      FROM collector_jobs job
-      JOIN products product ON product.id = job.product_id
-      LEFT JOIN price_sources source ON source.id = job.source_id
-      LEFT JOIN product_discovery_candidates candidate ON candidate.id = job.discovery_candidate_id
-      LEFT JOIN latest_runs ON latest_runs.job_id = job.id
+      FROM job_scope job
+      LEFT JOIN LATERAL (
+        SELECT
+          run.status,
+          run.started_at,
+          run.finished_at,
+          run.error_message,
+          run.output_excerpt,
+          run.raw_payload
+        FROM collector_job_runs run
+        WHERE run.job_id = job.id
+        ORDER BY run.started_at DESC
+        LIMIT 1
+      ) latest_runs ON TRUE
       LEFT JOIN published_price_state ON published_price_state.product_id = job.product_id
       LEFT JOIN observation_state ON observation_state.product_id = job.product_id
-      WHERE job.status <> 'archived'
       ORDER BY
         CASE job.status
           WHEN 'failed' THEN 1
@@ -411,7 +554,7 @@ export default async function CollectorJobsPage() {
         job.priority DESC,
         job.next_run_at NULLS FIRST,
         job.created_at DESC
-      LIMIT 100
+      LIMIT 160
     `,
     prisma.$queryRaw<RunRow[]>`
       SELECT
@@ -427,6 +570,10 @@ export default async function CollectorJobsPage() {
         run.error_message,
         run.output_excerpt,
         run.raw_payload ->> 'diagnosis' AS diagnosis
+        ,
+        run.raw_payload ->> 'pid' AS process_id,
+        run.raw_payload ->> 'state' AS runner_state,
+        GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(run.finished_at, NOW()) - run.started_at)))::int AS run_age_seconds
       FROM collector_job_runs run
       LEFT JOIN products product ON product.id = run.product_id
       LEFT JOIN price_sources source ON source.id = run.source_id
@@ -453,50 +600,51 @@ export default async function CollectorJobsPage() {
     `,
   ]);
 
-  const activeCount = jobs.filter((job) => job.status === "active").length;
-  const failedCount = jobs.filter((job) => job.status === "failed").length;
-  const pausedCount = jobs.filter((job) => job.status === "paused").length;
-  const dueCount = jobs.filter((job) => job.is_due).length;
   const productGroups = groupCollectorJobs(jobs);
+  const activeCount = jobs.filter((job) => job.status === "active").length;
+  const runningProductCount = productGroups.filter((group) => group.hasRunningJob).length;
+  const queuedProductCount = productGroups.filter((group) => group.hasQueuedJob).length;
+  const failedProductCount = productGroups.filter((group) => group.hasFailedJob).length;
 
   return (
     <div>
       <AdminPageHeader
-        eyebrow="技术详情"
-        title="采集任务详情"
-        description="这个页面保留给排错和查看执行日志。日常采集请回到“价格采集审核”页按产品操作。"
+        eyebrow="采集系统"
+        title="产品采集状态中心"
+        description="这里按产品展示采集、自动审核和正式入库状态。日常只需要点某个产品的采集按钮；底层任务留在展开详情里排查。"
       />
 
       <AdminPipelineSteps currentStep="collector" />
 
-      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-        普通操作入口已经合并到{" "}
+      <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-800">
+        主流程是：线索入库 → 生成产品采集任务 → 按产品触发采集 → 自动审核稳定价格 → 写入正式价格库。
+        价格审核入口仍在{" "}
         <Link href="/admin/review" className="font-bold underline underline-offset-4">
-          价格采集审核
+          审核中心
         </Link>
-        。这里主要用于查看底层任务、失败原因和最近运行日志。
+        ，这里负责看后台到底有没有排队、运行和产出。
       </div>
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminStatCard
-          label="启用任务"
-          value={activeCount}
-          helper="会被执行器按计划读取。"
+          label="产品数"
+          value={productGroups.length}
+          helper="按产品聚合后的采集对象。"
         />
         <AdminStatCard
-          label="等待采集"
-          value={dueCount}
-          helper="已经到时间，下一轮会执行。"
+          label="运行中"
+          value={runningProductCount}
+          helper="已有后台运行记录，等待完成即可。"
         />
         <AdminStatCard
-          label="失败任务"
-          value={failedCount}
-          helper="需要查看错误或重新触发。"
+          label="已排队"
+          value={queuedProductCount}
+          helper="下一轮执行器会优先处理。"
         />
         <AdminStatCard
-          label="暂停任务"
-          value={pausedCount}
-          helper="不会自动执行。"
+          label="异常产品"
+          value={failedProductCount}
+          helper="底层任务或最近运行失败。"
         />
       </div>
 
@@ -504,22 +652,22 @@ export default async function CollectorJobsPage() {
         <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 className="text-lg font-bold text-slate-950">产品采集列表</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              按产品聚合展示。一个产品可能有 App Store、官网、定价页等多个底层任务，但这里统一成一个采集入口。
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              一个产品只保留一个主要按钮。系统会汇总它下面的 App Store、官网或定价页任务，不再把几十页底层记录直接摊开。
             </p>
           </div>
           <p className="text-xs text-slate-400">
-            App Store 最近 3 次稳定样本一致会自动通过并写入正式价格库。
+            当前启用底层任务 {activeCount} 个，列表最多展示最近和高优先级的 160 个任务。
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
               <tr>
                 <th className="px-4 py-3 font-medium">产品</th>
-                <th className="px-4 py-3 font-medium">来源任务</th>
-                <th className="px-4 py-3 font-medium">采纳状态</th>
+                <th className="px-4 py-3 font-medium">任务来源</th>
+                <th className="px-4 py-3 font-medium">入库状态</th>
                 <th className="px-4 py-3 font-medium">最近采集</th>
                 <th className="px-4 py-3 font-medium">自动审核</th>
                 <th className="px-4 py-3 font-medium">操作</th>
@@ -531,11 +679,23 @@ export default async function CollectorJobsPage() {
                   <td className="px-4 py-4">
                     <div className="font-semibold text-slate-950">{group.productName}</div>
                     <div className="mt-1 text-xs text-slate-500">{group.productSlug}</div>
-                    {group.hasQueuedJob ? (
-                      <span className="mt-2 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
-                        已排队，等待执行器
-                      </span>
-                    ) : null}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {group.hasRunningJob ? (
+                        <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
+                          运行中
+                        </span>
+                      ) : null}
+                      {group.hasQueuedJob ? (
+                        <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
+                          已排队
+                        </span>
+                      ) : null}
+                      {group.hasFailedJob ? (
+                        <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-200">
+                          有异常
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex max-w-[260px] flex-wrap gap-2">
@@ -551,11 +711,65 @@ export default async function CollectorJobsPage() {
                     <div className="mt-2 text-xs text-slate-400">
                       共 {group.jobs.length} 个底层任务，启用 {group.activeJobCount} 个
                     </div>
-                    {group.hasFailedJob ? (
-                      <div className="mt-2 text-xs font-medium text-red-600">
-                        有任务失败，建议优先处理来源或重采。
+                    <details className="mt-3 text-xs text-slate-500">
+                      <summary className="cursor-pointer font-semibold text-slate-700">
+                        查看底层任务
+                      </summary>
+                      <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3">
+                        {group.jobs.map((job) => (
+                          <div
+                            key={job.id}
+                            className="rounded-lg border border-slate-200 bg-white p-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <div className="font-semibold text-slate-800">
+                                  {collectorLabel(job.collector_kind)}
+                                </div>
+                                <div className="mt-1 text-slate-400">
+                                  {job.source_name || "未绑定来源"} · {sourceTypeLabel(job.source_type)}
+                                </div>
+                              </div>
+                              <span
+                                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${statusClassName(job.status)}`}
+                              >
+                                {statusLabel(job.status)}
+                              </span>
+                            </div>
+                            <div className="mt-2 grid gap-1 text-slate-500 md:grid-cols-2">
+                              <span>下次：{formatDate(job.next_run_at)}</span>
+                              <span>上次：{formatDate(job.last_run_at)}</span>
+                            </div>
+                            {job.last_error ? (
+                              <p className="mt-2 leading-5 text-red-600">{job.last_error}</p>
+                            ) : null}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <form action={runCollectorJobNow}>
+                                <input type="hidden" name="id" value={job.id} />
+                                <button
+                                  type="submit"
+                                  disabled={isManuallyQueued(job) || job.latest_run_status === "running"}
+                                  className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                >
+                                  {isManuallyQueued(job) ? "已排队" : "加入下一轮"}
+                                </button>
+                              </form>
+                              {job.status !== "paused" ? (
+                                <form action={pauseCollectorJob}>
+                                  <input type="hidden" name="id" value={job.id} />
+                                  <button
+                                    type="submit"
+                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                                  >
+                                    暂停
+                                  </button>
+                                </form>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ) : null}
+                    </details>
                   </td>
                   <td className="px-4 py-4">
                     <span
@@ -567,6 +781,8 @@ export default async function CollectorJobsPage() {
                       正式价格 {group.publishedPriceCount} 条
                       <br />
                       待审核 {group.pendingObservationCount} 条
+                      <br />
+                      已通过样本 {group.approvedObservationCount} 条
                     </div>
                   </td>
                   <td className="px-4 py-4">
@@ -593,7 +809,15 @@ export default async function CollectorJobsPage() {
                           </div>
                         ) : null}
                         <div className="mt-2 max-w-[320px] text-xs leading-5 text-slate-400">
-                          {shortText(group.latestJob.latest_run_error || group.latestJob.latest_run_output)}
+                          {shortText(
+                            collectorRunOutput({
+                              status: group.latestJob.latest_run_status,
+                              error: group.latestJob.latest_run_error,
+                              output: group.latestJob.latest_run_output,
+                              processId: group.latestJob.latest_process_id,
+                              runnerState: group.latestJob.latest_runner_state,
+                            })
+                          )}
                         </div>
                       </>
                     ) : (
@@ -611,10 +835,10 @@ export default async function CollectorJobsPage() {
                         <input type="hidden" name="productId" value={group.productId} />
                         <button
                           type="submit"
-                          disabled={group.hasQueuedJob}
-                          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          disabled={group.hasQueuedJob || group.hasRunningJob}
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                          {group.hasQueuedJob ? "已排队" : "立即采集"}
+                          {productActionLabel(group)}
                         </button>
                       </form>
                       <Link
@@ -632,7 +856,9 @@ export default async function CollectorJobsPage() {
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center">
                     <div className="mx-auto max-w-lg">
-                      <h3 className="text-base font-bold text-slate-950">还没有可采集任务</h3>
+                      <h3 className="text-base font-bold text-slate-950">
+                        还没有可采集任务
+                      </h3>
                       <p className="mt-2 text-sm leading-6 text-slate-500">
                         先在线索入口把候选服务加入服务库，系统会自动生成对应采集任务。
                       </p>
@@ -653,168 +879,91 @@ export default async function CollectorJobsPage() {
         </div>
       </AdminCard>
 
-      <AdminCard className="hidden">
+      <AdminCard className="mt-6">
         <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-950">任务列表</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              最多显示 100 个未归档任务。失败任务会排在前面，方便优先处理。
+            <h2 className="text-lg font-bold text-slate-950">最近采集运行</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              这里显示脚本是否真的跑过。运行中的任务会先出现，完成后会补上耗时和输出摘要。
             </p>
           </div>
-          <p className="text-xs text-slate-400">
-            手动点击“立即采集”后，执行器下一轮会优先处理。
-          </p>
+          <Link
+            href="/admin/review"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            去审核中心
+          </Link>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
               <tr>
-                <th className="px-4 py-3 font-medium">产品 / 来源</th>
-                <th className="px-4 py-3 font-medium">采集器</th>
+                <th className="px-4 py-3 font-medium">产品</th>
+                <th className="px-4 py-3 font-medium">来源</th>
                 <th className="px-4 py-3 font-medium">状态</th>
-                <th className="px-4 py-3 font-medium">最近结果</th>
-                <th className="px-4 py-3 font-medium">操作</th>
+                <th className="px-4 py-3 font-medium">开始时间</th>
+                <th className="px-4 py-3 font-medium">耗时</th>
+                <th className="px-4 py-3 font-medium">输出</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {jobs.map((job) => (
-                <tr key={job.id} className="align-top hover:bg-slate-50">
+              {runs.map((run) => (
+                <tr key={run.id} className="align-top hover:bg-slate-50">
                   <td className="px-4 py-4">
                     <div className="font-semibold text-slate-950">
-                      {job.product_name}
+                      {run.product_name || "未知产品"}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {job.product_slug}
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      {job.source_name || "未绑定来源"}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {sourceTypeLabel(job.source_type)}
-                    </div>
-                    {job.discovery_candidate_name ? (
-                      <div className="mt-2 text-xs text-emerald-700">
-                        来自发现：{job.discovery_candidate_name}
-                      </div>
-                    ) : null}
+                    <div className="mt-1 text-xs text-slate-400">{run.job_id}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-medium text-slate-800">
-                      {collectorLabel(job.collector_kind)}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {job.job_type}
-                    </div>
-                    <div className="mt-2 text-xs text-slate-400">
-                      优先级 {job.priority}
-                    </div>
+                    <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                      {collectorLabel(run.collector_kind)}
+                    </span>
+                    {run.source_name ? (
+                      <div className="mt-2 text-xs text-slate-400">{run.source_name}</div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClassName(job.status)}`}
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClassName(run.status)}`}
                     >
-                      {statusLabel(job.status)}
+                      {statusLabel(run.status)}
                     </span>
-                    <div className="mt-2 text-xs text-slate-500">
-                      下次：{formatDate(job.next_run_at)}
-                    </div>
-                    {isManuallyQueued(job) ? (
+                    {diagnosisLabel(run.diagnosis) ? (
                       <div className="mt-2">
-                        <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
-                          已排队，等待执行器
-                        </span>
-                      </div>
-                    ) : null}
-                    <div className="mt-1 text-xs text-slate-400">
-                      上次：{formatDate(job.last_run_at)}
-                    </div>
-                    {job.last_error ? (
-                      <div className="mt-2 max-w-[260px] text-xs leading-5 text-red-600">
-                        {job.last_error}
-                      </div>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-4">
-                    {job.latest_run_status ? (
-                      <>
                         <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${statusClassName(job.latest_run_status)}`}
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${diagnosisClassName(run.diagnosis)}`}
                         >
-                          {statusLabel(job.latest_run_status)}
+                          {diagnosisLabel(run.diagnosis)}
                         </span>
-                        <div className="mt-1 text-xs text-slate-400">
-                          {formatDate(job.latest_run_started_at)}
-                        </div>
-                        <div className="mt-2 text-xs text-slate-500">
-                          成功 {job.success_count} / 失败 {job.error_count}
-                        </div>
-                        {diagnosisLabel(job.latest_run_diagnosis) ? (
-                          <div className="mt-2">
-                            <span
-                              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${diagnosisClassName(job.latest_run_diagnosis)}`}
-                            >
-                              {diagnosisLabel(job.latest_run_diagnosis)}
-                            </span>
-                          </div>
-                        ) : null}
-                        <div className="mt-2 max-w-[320px] text-xs leading-5 text-slate-400">
-                          {shortText(job.latest_run_error || job.latest_run_output)}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-slate-400">
-                        暂无运行记录
                       </div>
-                    )}
+                    ) : null}
+                  </td>
+                  <td className="px-4 py-4 text-xs text-slate-500">
+                    {formatDate(run.started_at)}
+                  </td>
+                  <td className="px-4 py-4 text-xs text-slate-500">
+                    {formatRunDuration(run)}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex flex-wrap gap-2">
-                      <form action={runCollectorJobNow}>
-                        <input type="hidden" name="id" value={job.id} />
-                        <button
-                          type="submit"
-                          disabled={isManuallyQueued(job)}
-                          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          {isManuallyQueued(job) ? "已排队" : "加入下一轮采集"}
-                        </button>
-                      </form>
-                      {job.status !== "paused" ? (
-                        <form action={pauseCollectorJob}>
-                          <input type="hidden" name="id" value={job.id} />
-                          <button
-                            type="submit"
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-                          >
-                            暂停
-                          </button>
-                        </form>
-                      ) : null}
+                    <div className="max-w-[520px] text-xs leading-5 text-slate-500">
+                      {collectorRunOutput({
+                        status: run.status,
+                        error: run.error_message,
+                        output: run.output_excerpt,
+                        processId: run.process_id,
+                        runnerState: run.runner_state,
+                      })}
                     </div>
                   </td>
                 </tr>
               ))}
 
-              {jobs.length === 0 ? (
+              {runs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
-                    <div className="mx-auto max-w-lg">
-                      <h3 className="text-base font-bold text-slate-950">
-                        还没有可采集任务
-                      </h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        “立即采集”是针对具体任务的操作。当前任务列表为空，所以暂时没有可执行按钮。先在线索入口把候选服务加入服务库，系统会自动生成对应的采集任务。
-                      </p>
-                      <div className="mt-5 flex justify-center">
-                        <Link
-                          href="/admin/discovery"
-                          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                        >
-                          去线索入口生成任务
-                        </Link>
-                      </div>
-                    </div>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                    暂无采集运行记录。
                   </td>
                 </tr>
               ) : null}
@@ -825,15 +974,13 @@ export default async function CollectorJobsPage() {
 
       <AdminCard className="mt-6">
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-slate-950">
-            App Store 地区可用性
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            这里不是价格审核，而是解释每个国家为什么有价格、没价格或采集失败。
+          <h2 className="text-lg font-bold text-slate-950">App Store 地区可用性</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            这里不是价格审核，而是解释每个国家为什么有价格、无价格或采集失败。
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
               <tr>
@@ -852,23 +999,14 @@ export default async function CollectorJobsPage() {
                     {formatDate(check.checked_at)}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-semibold text-slate-950">
-                      {check.product_name}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {check.product_slug}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {check.source_name || "App Store"}
-                    </div>
+                    <div className="font-semibold text-slate-950">{check.product_name}</div>
+                    <div className="mt-1 text-xs text-slate-400">{check.product_slug}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-medium text-slate-900">
-                      {check.country_name_zh}
+                    <div className="font-semibold text-slate-700">
+                      {check.country_name_zh || check.country_code}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {check.country_code}
-                    </div>
+                    <div className="mt-1 text-xs text-slate-400">{check.country_code}</div>
                   </td>
                   <td className="px-4 py-4">
                     <span
@@ -878,23 +1016,24 @@ export default async function CollectorJobsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-xs leading-5 text-slate-500">
-                    <div>订阅 {check.subscription_item_count}</div>
-                    <div>全部 {check.item_count}</div>
-                    <div>忽略 {check.ignored_item_count}</div>
+                    总项 {check.item_count}
+                    <br />
+                    订阅 {check.subscription_item_count}
+                    <br />
+                    忽略 {check.ignored_item_count}
                   </td>
-                  <td className="max-w-[420px] px-4 py-4 text-xs leading-5 text-slate-500">
-                    {shortText(check.reason, "暂无说明")}
+                  <td className="px-4 py-4">
+                    <div className="max-w-[420px] text-xs leading-5 text-slate-500">
+                      {shortText(check.reason, "暂无说明")}
+                    </div>
                   </td>
                 </tr>
               ))}
 
               {availabilityChecks.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-12 text-center text-sm text-slate-500"
-                  >
-                    暂无可用性记录。App Store 采集器跑过一轮后，会显示每个地区的可用状态。
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                    暂无 App Store 可用性检查记录。
                   </td>
                 </tr>
               ) : null}
@@ -903,89 +1042,11 @@ export default async function CollectorJobsPage() {
         </div>
       </AdminCard>
 
-      <AdminCard className="mt-6">
-        <div className="mb-5">
-          <h2 className="text-lg font-bold text-slate-950">最近运行记录</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            显示最近 50 次采集执行结果，用来追踪执行器是否稳定。
-          </p>
-        </div>
-
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">时间</th>
-                <th className="px-4 py-3 font-medium">产品 / 来源</th>
-                <th className="px-4 py-3 font-medium">结果</th>
-                <th className="px-4 py-3 font-medium">输出</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {runs.map((run) => (
-                <tr key={run.id} className="align-top hover:bg-slate-50">
-                  <td className="px-4 py-4">
-                    <div className="font-medium text-slate-900">
-                      {formatDate(run.started_at)}
-                    </div>
-                    {run.duration_ms !== null ? (
-                      <div className="mt-1 text-xs text-slate-400">
-                        {Math.round(run.duration_ms / 1000)} 秒
-                      </div>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="font-medium text-slate-800">
-                      {run.product_name || "未知产品"}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {run.source_name || "未知来源"}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {collectorLabel(run.collector_kind)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClassName(run.status)}`}
-                    >
-                      {statusLabel(run.status)}
-                    </span>
-                    {run.error_message ? (
-                      <div className="mt-2 max-w-[320px] text-xs leading-5 text-red-600">
-                        {run.error_message}
-                      </div>
-                    ) : null}
-                    {diagnosisLabel(run.diagnosis) ? (
-                      <div className="mt-2">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${diagnosisClassName(run.diagnosis)}`}
-                        >
-                          {diagnosisLabel(run.diagnosis)}
-                        </span>
-                      </div>
-                    ) : null}
-                  </td>
-                  <td className="max-w-[420px] px-4 py-4 text-xs leading-5 text-slate-500">
-                    {shortText(run.output_excerpt, "无输出")}
-                  </td>
-                </tr>
-              ))}
-
-              {runs.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-12 text-center text-sm text-slate-500"
-                  >
-                    暂无运行记录。采集执行器运行后，会写入这里。
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </AdminCard>
+      <div className="mt-6">
+        <Link href="/admin" className="text-sm font-semibold text-slate-900 hover:text-blue-700">
+          ← 返回运营驾驶舱
+        </Link>
+      </div>
     </div>
   );
 }

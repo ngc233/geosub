@@ -83,22 +83,22 @@ export function getCollectionStatusMessage({
 
   switch (normalizedStatus) {
     case "succeeded":
-      return `已立即执行${collectionScope ? ` ${collectionScope} 的` : ""} ${queuedCount} 个 App Store 补采任务，并完成真实稳定性审核。下方“最新审核结果”会显示正式入库数量。`;
+      return `\u5df2\u7acb\u5373\u6267\u884c${collectionScope ? ` ${collectionScope} \u7684` : ""} ${queuedCount} \u4e2a App Store \u8865\u91c7\u4efb\u52a1\uff0c\u5e76\u5b8c\u6210\u771f\u5b9e\u7a33\u5b9a\u6027\u5ba1\u6838\u3002\u4e0b\u65b9\u201c\u6700\u65b0\u5ba1\u6838\u7ed3\u679c\u201d\u4f1a\u663e\u793a\u6b63\u5f0f\u5165\u5e93\u6570\u91cf\u3002`;
     case "cooldown":
-      return "已收到补采请求，但相关任务 2 分钟内刚执行过，本次进入冷却保护。";
+      return "\u5df2\u6536\u5230\u8865\u91c7\u8bf7\u6c42\uff0c\u4f46\u76f8\u5173\u4efb\u52a1 2 \u5206\u949f\u5185\u521a\u6267\u884c\u8fc7\uff0c\u672c\u6b21\u8fdb\u5165\u51b7\u5374\u4fdd\u62a4\u3002";
     case "fresh":
-      return `${collectionScope ? `${collectionScope} ` : ""}12 小时内已经成功采集过，本次跳过补采；可以等待后台定时任务或后续再手动更新。`;
+      return `${collectionScope ? `${collectionScope} ` : ""}12 \u5c0f\u65f6\u5185\u5df2\u7ecf\u6210\u529f\u91c7\u96c6\u8fc7\uff0c\u672c\u6b21\u8df3\u8fc7\u8865\u91c7\uff1b\u53ef\u4ee5\u7b49\u5f85\u540e\u53f0\u5b9a\u65f6\u4efb\u52a1\u6216\u540e\u7eed\u518d\u624b\u52a8\u66f4\u65b0\u3002`;
     case "not_configured":
-      return `${collectionScope ? `${collectionScope} ` : "这个产品"}还没有可用的 App Store 采集任务。请先到产品库补充 App Store 链接或应用 ID，再回来采集。`;
+      return `${collectionScope ? `${collectionScope} ` : "\u8fd9\u4e2a\u4ea7\u54c1"}\u8fd8\u6ca1\u6709\u53ef\u7528\u7684 App Store \u91c7\u96c6\u4efb\u52a1\u3002\u8bf7\u5148\u5230\u4ea7\u54c1\u5e93\u8865\u5145 App Store \u94fe\u63a5\u6216\u5e94\u7528 ID\uff0c\u518d\u56de\u6765\u91c7\u96c6\u3002`;
     case "not_found":
-      return `没有找到${scopeLabel} 对应的产品，请检查服务库 slug，或从线索入口重新加入服务库。`;
+      return `\u6ca1\u6709\u627e\u5230${scopeLabel} \u5bf9\u5e94\u7684\u4ea7\u54c1\uff0c\u8bf7\u68c0\u67e5\u670d\u52a1\u5e93 slug\uff0c\u6216\u4ece\u7ebf\u7d22\u5165\u53e3\u91cd\u65b0\u52a0\u5165\u670d\u52a1\u5e93\u3002`;
     case "failed":
-      return "补采任务已排队，但立即执行失败；后台定时任务仍会继续处理，请查看采集任务页的失败原因。";
+      return "\u8865\u91c7\u4efb\u52a1\u5df2\u6392\u961f\uff0c\u4f46\u7acb\u5373\u6267\u884c\u5931\u8d25\uff1b\u540e\u53f0\u5b9a\u65f6\u4efb\u52a1\u4ecd\u4f1a\u7ee7\u7eed\u5904\u7406\uff0c\u8bf7\u67e5\u770b\u91c7\u96c6\u4efb\u52a1\u9875\u7684\u5931\u8d25\u539f\u56e0\u3002";
     case "none":
-      return "当前没有需要立即补采的 App Store 任务。可以先筛选具体产品，或等待后台定时采集。";
+      return "\u5f53\u524d\u6ca1\u6709\u9700\u8981\u7acb\u5373\u8865\u91c7\u7684 App Store \u4efb\u52a1\u3002\u53ef\u4ee5\u5148\u7b5b\u9009\u5177\u4f53\u4ea7\u54c1\uff0c\u6216\u7b49\u5f85\u540e\u53f0\u5b9a\u65f6\u91c7\u96c6\u3002";
     case "queued":
-      return `已排队并唤起后台采集器${collectionScope ? `：${collectionScope}` : ""}，共 ${queuedCount} 个 App Store 任务。采集完成后会自动审核，运行记录可在采集任务页查看。`;
+      return `\u5df2\u6392\u961f\u5e76\u5524\u8d77\u540e\u53f0\u91c7\u96c6\u5668${collectionScope ? `\uff1a${collectionScope}` : ""}\uff0c\u5171 ${queuedCount} \u4e2a App Store \u4efb\u52a1\u3002\u91c7\u96c6\u5b8c\u6210\u540e\u4f1a\u81ea\u52a8\u5ba1\u6838\uff0c\u8fd0\u884c\u8bb0\u5f55\u53ef\u5728\u91c7\u96c6\u4efb\u52a1\u9875\u67e5\u770b\u3002`;
     default:
-      return `已处理 ${queuedCount} 个 App Store 补采任务。`;
+      return `\u5df2\u5904\u7406 ${queuedCount} \u4e2a App Store \u8865\u91c7\u4efb\u52a1\u3002`;
   }
 }

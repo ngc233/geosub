@@ -1,7 +1,7 @@
 param(
   [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
   [string]$NpmPath = "npm.cmd",
-  [string]$GitPath = "C:\Users\lanad\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\git\cmd\git.exe",
+  [string]$GitPath = "git",
   [switch]$SkipBuild
 )
 
@@ -89,6 +89,46 @@ function Test-NodeSyntax {
   }
 }
 
+function Test-RepositoryHygiene {
+  $blockedPatterns = @(
+    @{ Label = "local Windows user path"; Pattern = ("C:" + "\\Users\\") },
+    @{ Label = "old .com domain"; Pattern = ("geosub" + "\.com") },
+    @{ Label = "deployment server IP"; Pattern = ("89\.58" + "\.25\.190") }
+  )
+  $textExtensions = @(
+    ".cjs", ".css", ".env", ".example", ".js", ".json", ".jsx", ".md", ".mjs",
+    ".ps1", ".sh", ".sql", ".ts", ".tsx", ".txt", ".yaml", ".yml"
+  )
+  $hygieneFindings = @()
+  $files = & $GitPath -C $Root ls-files
+
+  foreach ($file in $files) {
+    $path = Join-Path $Root $file
+    if (!(Test-Path -LiteralPath $path)) {
+      continue
+    }
+
+    $extension = [System.IO.Path]::GetExtension($file)
+    if ($textExtensions -notcontains $extension) {
+      continue
+    }
+
+    $content = Get-Content -LiteralPath $path -Raw -ErrorAction SilentlyContinue
+    foreach ($blocked in $blockedPatterns) {
+      if ($content -match $blocked["Pattern"]) {
+        $hygieneFindings += ("{0} contains {1}" -f $file, $blocked["Label"])
+      }
+    }
+  }
+
+  if ($hygieneFindings.Count -gt 0) {
+    $hygieneFindings | ForEach-Object { Write-Host "BLOCKED $_" }
+    throw "Repository hygiene check failed."
+  }
+
+  Write-Host "No blocked local paths, old domains, or server IPs found."
+}
+
 $NpmPath = Resolve-ToolPath -PreferredPath $NpmPath -CommandName "npm"
 $GitPath = Resolve-ToolPath -PreferredPath $GitPath -CommandName "git"
 $FrontendDir = Join-Path $Root "ai-price-site"
@@ -96,6 +136,7 @@ $FrontendDir = Join-Path $Root "ai-price-site"
 Invoke-Step -Name "Version sync" -Block { Assert-VersionSync }
 Invoke-Step -Name "PowerShell syntax" -Block { Test-PowerShellSyntax }
 Invoke-Step -Name "Node script syntax" -Block { Test-NodeSyntax }
+Invoke-Step -Name "Repository hygiene" -Block { Test-RepositoryHygiene }
 
 Invoke-Step -Name "Frontend typecheck" -Block {
   & $NpmPath --prefix $FrontendDir run typecheck

@@ -2,7 +2,7 @@ param(
   [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
   [string]$Remote = "origin",
   [string]$Branch = "main",
-  [string]$GitPath = "C:\Users\lanad\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\git\cmd\git.exe",
+  [string]$GitPath = "git",
   [switch]$SkipChecks,
   [switch]$NoTag
 )

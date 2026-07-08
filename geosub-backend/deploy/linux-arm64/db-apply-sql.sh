@@ -82,6 +82,8 @@ core_files=(
   "sql/041_merge_gemini_advanced_into_pro.sql"
   "sql/042_price_observation_evidence_view.sql"
   "sql/043_app_store_collection_schedule_policy.sql"
+  "sql/052_collector_job_runs_running_status.sql"
+  "sql/053_admin_collection_performance.sql"
 )
 
 content_files=(

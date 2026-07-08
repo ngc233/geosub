@@ -50,7 +50,7 @@ export default function AdminPipelineSteps({
         <div>
           <h2 className="text-base font-bold text-slate-950">价格采集流水线</h2>
           <p className="mt-1 text-sm leading-6 text-slate-500">
-            后台主流程简化为两步：先添加线索，再在同一个工作台完成采集、自动审核和异常处理。
+            后台主流程简化为三步：先定位产品状态，再补充线索，最后在同一个工作台完成采集、自动审核和异常处理。
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
@@ -93,13 +93,9 @@ export default function AdminPipelineSteps({
                       strokeWidth={2}
                       className={active ? "text-blue-700" : "text-slate-400"}
                     />
-                    <h3 className="text-sm font-bold text-slate-950">
-                      {step.title}
-                    </h3>
+                    <h3 className="text-sm font-bold text-slate-950">{step.title}</h3>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    {step.description}
-                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{step.description}</p>
                 </div>
               </div>
             </Link>

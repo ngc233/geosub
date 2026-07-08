@@ -78,6 +78,8 @@ export function ReviewOverviewSections({
   evidenceHealth,
   evidenceSummaryRows,
 }: ReviewOverviewSectionsProps) {
+  const hasSelectedProduct = discoveryPromoted || selectedProductCollector;
+
   return (
     <>
       <header className="border-b border-slate-200 pb-6">
@@ -94,7 +96,7 @@ export function ReviewOverviewSections({
 
       <AdminPipelineSteps currentStep="review" />
 
-      {discoveryPromoted || selectedProductCollector ? (
+      {hasSelectedProduct ? (
         <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -107,7 +109,7 @@ export function ReviewOverviewSections({
               <p className="mt-1 text-sm leading-6 text-slate-600">
                 {selectedAppStoreJobCount > 0
                   ? `已准备 ${selectedAppStoreJobCount} 个 App Store 采集任务。现在可以直接跑一次采集，完成后系统会自动审核并把稳定价格写入正式库。`
-                  : "还没有识别到 App Store 采集任务。请先回产品库补充 App Store 链接，再回来采集。"}
+                  : "还没有识别到 App Store 采集任务。请先回产品库补充 App Store 链接或应用 ID，再回来采集。"}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -159,7 +161,7 @@ export function ReviewOverviewSections({
       </section>
 
       <AdminStatusNotice title="采集和审核已合并到这个工作台" variant="info">
-        补采不再默认扫全部产品。请在下方按产品点击“只补采这个产品”；系统会跳过 12 小时内已经成功采集过的 App Store
+        补采不再默认扫描全部产品。请在下方按产品点击“只补采这个产品”；系统会跳过 12 小时内已经成功采集过的 App Store
         任务，避免重复请求。
       </AdminStatusNotice>
 
@@ -237,7 +239,7 @@ export function ReviewOverviewSections({
                 </div>
               </div>
               <div className="rounded-lg bg-white/80 px-3 py-2 ring-1 ring-inset ring-white/70">
-                <div className="text-xs text-slate-500">需人工</div>
+                <div className="text-xs text-slate-500">需继续观察</div>
                 <div className="mt-1 text-lg font-semibold tabular-nums text-amber-700">
                   {latestAutoReview.manual_review_count}
                 </div>
@@ -266,7 +268,7 @@ export function ReviewOverviewSections({
                           : "bg-amber-50 text-amber-700 ring-amber-200",
                       ].join(" ")}
                     >
-                      {row.decision === "auto_approve" ? "可自动过" : "被拦截"}
+                      {row.decision === "auto_approve" ? "可自动过" : "被拦住"}
                     </span>
                   </div>
                   <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
@@ -284,16 +286,16 @@ export function ReviewOverviewSections({
         <div className="border-b border-slate-200 px-4 py-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-slate-950">为什么还有这么多没上线？</h2>
+              <h2 className="text-sm font-semibold text-slate-950">为什么还有这么多没有正式上线？</h2>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
                 这里不是普通队列，而是“自动审核不敢直接上线”的异常池。当前主要集中在{" "}
                 <span className="font-semibold text-slate-950">
                   {diagnosisProductCount} 个产品、{diagnosisPlanCount} 个套餐
                 </span>
-                ；系统已经把稳定样本写入正式库，剩下的是自动规则暂时拦住、等待补采或交叉验证的项目。
+                ；系统已经把稳定样本写入正式库，剩下的是被保护规则拦住、等待补采或交叉验证的项目。
               </p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                换句话说：数量多不是因为审核没跑，而是因为这些价格碰到了保护规则。正常处理方式是继续自动补采和规则校验；人工通过只作为极少数强制覆盖。
+                换句话说，数量多不是因为审核没跑，而是因为这些价格碰到了保护规则。正常处理方式是继续自动补采和规则校验；人工通过只作为极少数强制覆盖。
               </p>
             </div>
             {topPendingReason ? (
@@ -356,7 +358,7 @@ export function ReviewOverviewSections({
         <div className="border-b border-slate-200 px-4 py-4">
           <h2 className="text-sm font-semibold text-slate-950">价格证据质量概览</h2>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            最近 14 天的采集证据按状态归类。这里看的是证据链强弱，不是竞站是否一致。
+            最近 14 天的采集证据按状态归类。这里看的不是竞站是否一致，而是我们自己的证据链强弱。
           </p>
         </div>
 
@@ -414,7 +416,7 @@ export function ReviewOverviewSections({
                 </div>
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
                   <span>{row.country_count} 个地区</span>
-                  <span>均分 {toNumber(row.average_score)?.toFixed(1) ?? "—"}</span>
+                  <span>均分 {toNumber(row.average_score)?.toFixed(1) ?? "-"}</span>
                 </div>
                 <div className="mt-1 text-xs text-slate-400">
                   最近：{formatDate(row.latest_observed_at)}

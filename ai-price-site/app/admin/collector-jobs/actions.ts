@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
+import { startCollectorJobRunInBackground } from "../review/collection-runner";
 
 function cleanText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
@@ -54,7 +55,11 @@ export async function runCollectorJobNow(formData: FormData) {
     )
   `;
 
+  await startCollectorJobRunInBackground(id);
+
   revalidatePath("/admin/collector-jobs");
+  revalidatePath("/admin/review");
+  revalidatePath("/admin/pipeline");
 }
 
 export async function runProductCollectorJobsNow(formData: FormData) {
@@ -66,17 +71,22 @@ export async function runProductCollectorJobsNow(formData: FormData) {
   }
 
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
-    UPDATE collector_jobs
+    UPDATE collector_jobs job
     SET
       status = 'active',
       next_run_at = NOW(),
       last_error = NULL,
       priority = GREATEST(priority, 100),
       updated_at = NOW()
-    WHERE product_id = ${productId}::uuid
-      AND status <> 'archived'
-    RETURNING id::text
+    FROM price_sources source
+    WHERE source.id = job.source_id
+      AND source.type = 'app_store'::price_source_type
+      AND job.product_id = ${productId}::uuid
+      AND job.job_type = 'ai_pricing'
+      AND job.status <> 'archived'
+    RETURNING job.id::text
   `;
+  const jobIds = rows.map((row) => row.id).filter(Boolean);
 
   await prisma.$queryRaw`
     INSERT INTO audit_logs (
@@ -94,12 +104,18 @@ export async function runProductCollectorJobsNow(formData: FormData) {
       'run_now',
       'collector_product',
       ${productId}::uuid,
-      ${`Queued ${rows.length} collector jobs for this product from admin UI.`},
+      ${`Queued and started ${jobIds.length} App Store collector jobs for this product from admin UI.`},
       NOW()
     )
   `;
 
+  for (const jobId of jobIds) {
+    await startCollectorJobRunInBackground(jobId);
+  }
+
   revalidatePath("/admin/collector-jobs");
+  revalidatePath("/admin/review");
+  revalidatePath("/admin/pipeline");
 }
 
 export async function pauseCollectorJob(formData: FormData) {

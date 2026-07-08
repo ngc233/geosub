@@ -2,6 +2,7 @@ import { getReviewPageData } from "./queries";
 import { ReviewOverviewSections } from "./ReviewOverviewSections";
 import { PendingProductReviewSection } from "./PendingProductReviewSection";
 import { ReviewHistorySection } from "./ReviewHistorySection";
+import CollectionRunHistorySection from "./CollectionRunHistorySection";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,8 @@ export default async function ReviewPage({
   const {
     pendingPageSize,
     historyPageSize,
+    detailRowsPerProduct,
+    detailRowsLimited,
     pendingProductTotal,
     pendingTotal,
     pendingTotalPages,
@@ -43,6 +46,7 @@ export default async function ReviewPage({
     ignoredCount,
     rejectedCount,
     collectorStatus,
+    collectorRunHistoryRows,
     latestAutoReview,
     selectedProductCollector,
     selectedProductName,
@@ -96,10 +100,20 @@ export default async function ReviewPage({
         pendingPage={pendingPage}
         pendingTotalPages={pendingTotalPages}
         pendingPageSize={pendingPageSize}
+        detailRowsPerProduct={detailRowsPerProduct}
+        detailRowsLimited={detailRowsLimited}
         pendingProductTotal={pendingProductTotal}
         pendingTotal={pendingTotal}
         historyPage={historyPage}
         pendingProductGroups={pendingProductGroups}
+      />
+
+      <CollectionRunHistorySection
+        key={productQuery || "all-products"}
+        rows={collectorRunHistoryRows}
+        collectionRun={collectionRun}
+        collectionScope={collectionScope}
+        productQuery={productQuery}
       />
 
       <ReviewHistorySection

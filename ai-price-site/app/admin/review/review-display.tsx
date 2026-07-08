@@ -8,13 +8,13 @@ export function toNumber(value: unknown) {
 
 export function formatUsd(value: unknown) {
   const number = toNumber(value);
-  return number === null ? "—" : `$${number.toFixed(2)}`;
+  return number === null ? "-" : `$${number.toFixed(2)}`;
 }
 
 export function formatLocal(value: unknown, currency: string | null) {
   const number = toNumber(value);
 
-  if (number === null) return "—";
+  if (number === null) return "-";
 
   return `${number.toLocaleString("en-US", {
     maximumFractionDigits: 2,
@@ -26,7 +26,7 @@ export function formatDate(value: Date | string | null) {
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
 
   return date.toLocaleString("zh-CN", {
     hour12: false,
@@ -87,13 +87,20 @@ export function reviewReasonLabel(reasonCode: string | null) {
 export function reviewReasonAction(reasonCode: string | null) {
   const map: Record<string, string> = {
     app_store_three_sample_consensus: "已满足自动入库条件。",
-    app_store_clean_pair_after_rule_fix: "最新 2 次干净 App Store 样本一致，系统会自动采用新样本并忽略旧的冲突样本。",
-    waiting_for_more_app_store_samples: "系统会继续补采；最近 3 次 App Store 样本一致后自动发布。",
-    app_store_observation_anomaly: "系统已自动隔离这类价格，不进入正式库；等待下一轮采集或解析规则修正，不要求人工逐国打开 App Store。",
-    app_store_price_changed: "系统会等待连续样本稳定；稳定后自动发布，未稳定前不进入正式榜单。",
-    low_confidence: "系统会继续补采提高可信度；达到阈值后自动进入稳定性审核。",
-    suspicious_low_converted_usd: "系统会自动隔离，优先防止币种、小数点或价格文本解析错误进入正式榜单。",
-    suspicious_plan_order: "系统会用同地区套餐阶梯继续校验；阶梯恢复合理后自动发布。",
+    app_store_clean_pair_after_rule_fix:
+      "最新 2 次干净 App Store 样本一致，系统会自动采用新样本并忽略旧的冲突样本。",
+    waiting_for_more_app_store_samples:
+      "系统会继续补采；最近 3 次 App Store 样本一致后自动发布。",
+    app_store_observation_anomaly:
+      "系统已自动隔离这类价格，不进入正式库；等待下一轮采集或解析规则修正，不要求人工逐国打开 App Store。",
+    app_store_price_changed:
+      "系统会等待连续样本稳定；稳定后自动发布，未稳定前不进入正式榜单。",
+    low_confidence:
+      "系统会继续补采提高可信度；达到阈值后自动进入稳定性审核。",
+    suspicious_low_converted_usd:
+      "系统会自动隔离，优先防止币种、小数点或价格文本解析错误进入正式榜单。",
+    suspicious_plan_order:
+      "系统会用同地区套餐阶梯继续校验；阶梯恢复合理后自动发布。",
     superseded_by_published_price: "无需处理，系统会隐藏或忽略旧样本。",
   };
 
@@ -168,14 +175,14 @@ export function PriceEvidencePanel({ row }: { row: PendingRow }) {
         >
           {evidenceStatusLabel(row.evidence_status)}
         </span>
-        <span>证据分 {row.evidence_score ?? "—"}</span>
+        <span>证据分 {row.evidence_score ?? "-"}</span>
         <span>{evidenceTierLabel(row.evidence_tier)}</span>
       </div>
 
       <div className="mt-1 grid gap-1 text-slate-500">
         {row.has_modal_consensus ? (
           <div>
-            页面多数票：{row.modal_selected_count ?? "—"} : {row.modal_runner_up_count ?? 0}
+            页面多数票：{row.modal_selected_count ?? "-"} : {row.modal_runner_up_count ?? 0}
             {row.modal_variant_count ? `，共 ${row.modal_variant_count} 组价格` : ""}
           </div>
         ) : null}

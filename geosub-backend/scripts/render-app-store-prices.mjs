@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 const chromium = await loadChromium();
 
@@ -23,22 +24,29 @@ async function loadChromium() {
     return (await import("playwright-core")).chromium;
   } catch {
     const runtimePackage = process.env.PLAYWRIGHT_CORE_PACKAGE_JSON;
-    const candidates = [
-      runtimePackage,
-      "C:\\Users\\lanad\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\.pnpm\\node_modules\\playwright-core\\package.json",
-      "C:\\Users\\lanad\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\.pnpm\\playwright-core@1.61.1\\node_modules\\playwright-core\\package.json"
-    ].filter(Boolean);
+    const packageJsonPath = resolvePackageJsonPath(runtimePackage);
 
-    for (const candidate of candidates) {
-      if (existsSync(candidate)) {
-        return createRequire(candidate)("playwright-core").chromium;
-      }
+    if (packageJsonPath) {
+      return createRequire(packageJsonPath)("playwright-core").chromium;
     }
 
     throw new Error(
       "Cannot find the playwright-core package. Install project dependencies or set PLAYWRIGHT_CORE_PACKAGE_JSON."
     );
   }
+}
+
+function resolvePackageJsonPath(candidate) {
+  if (!candidate || !existsSync(candidate)) {
+    return null;
+  }
+
+  if (candidate.endsWith("package.json")) {
+    return candidate;
+  }
+
+  const packageJsonPath = join(candidate, "package.json");
+  return existsSync(packageJsonPath) ? packageJsonPath : null;
 }
 
 function getAppStoreUrl(countryCode, appleAppId, value) {

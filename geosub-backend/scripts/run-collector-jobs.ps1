@@ -6,6 +6,7 @@ param(
   [string]$DbUser = "geosub_admin",
   [string[]]$DefaultCountryCodes = @("DEFAULT"),
   [string]$ChromePath = $env:CHROME_PATH,
+  [string]$RunId,
   [switch]$DryRun,
   [switch]$Force,
   [switch]$SkipAutoReview
@@ -54,6 +55,18 @@ function Quote-SqlJson {
 function Invoke-Psql {
   param([string]$Sql)
 
+  $nodeBridge = Join-Path $PSScriptRoot "db-query.mjs"
+  if (Test-Path -LiteralPath $nodeBridge) {
+    $nodeOutput = $Sql | node $nodeBridge --exec 2>&1
+    $nodeExitCode = $LASTEXITCODE
+    if ($nodeExitCode -eq 0) {
+      return
+    }
+    if ($nodeExitCode -ne 78 -and $nodeExitCode -ne 79) {
+      throw "direct database command failed with exit code $nodeExitCode. $($nodeOutput -join "`n")"
+    }
+  }
+
   $Sql | docker exec -i $ContainerName psql `
     -U $DbUser `
     -d $DbName `
@@ -67,6 +80,22 @@ function Invoke-Psql {
 
 function Invoke-PsqlJson {
   param([string]$Sql)
+
+  $nodeBridge = Join-Path $PSScriptRoot "db-query.mjs"
+  if (Test-Path -LiteralPath $nodeBridge) {
+    $nodeOutput = $Sql | node $nodeBridge --json 2>&1
+    $nodeExitCode = $LASTEXITCODE
+    if ($nodeExitCode -eq 0) {
+      $nodeText = ($nodeOutput -join "").Trim()
+      if ([string]::IsNullOrWhiteSpace($nodeText)) {
+        return $null
+      }
+      return $nodeText | ConvertFrom-Json
+    }
+    if ($nodeExitCode -ne 78 -and $nodeExitCode -ne 79) {
+      throw "direct database json query failed with exit code $nodeExitCode. $($nodeOutput -join "`n")"
+    }
+  }
 
   $result = $Sql | docker exec -i $ContainerName psql `
     -U $DbUser `
@@ -535,11 +564,64 @@ function Invoke-CollectorScript {
   }
 }
 
+function Start-JobRun {
+  param(
+    [object]$Job,
+    [datetime]$StartedAt,
+    [AllowNull()][string]$ExistingRunId
+  )
+
+  if ($DryRun) {
+    return $null
+  }
+
+  if (![string]::IsNullOrWhiteSpace($ExistingRunId)) {
+    return $ExistingRunId
+  }
+
+  try {
+    $run = Invoke-PsqlJson @"
+WITH inserted AS (
+  INSERT INTO collector_job_runs (
+    id,
+    job_id,
+    product_id,
+    source_id,
+    status,
+    collector_kind,
+    started_at,
+    raw_payload,
+    created_at
+  )
+  VALUES (
+    gen_random_uuid(),
+    $(Quote-SqlString $Job.id)::uuid,
+    $(Quote-SqlString $Job.product_id)::uuid,
+    $(if ($Job.source_id) { "$(Quote-SqlString $Job.source_id)::uuid" } else { "NULL" }),
+    'running',
+    $(Quote-SqlString (Get-ConfigValue -Config $Job.job_config -Name "collector_kind" -Fallback "unknown")),
+    $(Quote-SqlString ($StartedAt.ToUniversalTime().ToString("o")))::timestamptz,
+    '{"state":"started"}'::jsonb,
+    NOW()
+  )
+  RETURNING id::text
+)
+SELECT row_to_json(inserted) FROM inserted;
+"@
+
+    return [string]$run.id
+  } catch {
+    Write-Host "Could not create running collector run row: $($_.Exception.Message)"
+    return $null
+  }
+}
+
 function Complete-JobRun {
   param(
     [object]$Job,
     [object]$Result,
-    [datetime]$StartedAt
+    [datetime]$StartedAt,
+    [AllowNull()][string]$RunId
   )
 
   $finishedAt = Get-Date
@@ -550,7 +632,20 @@ function Complete-JobRun {
   $nextRunSql = Get-NextRunSql -Job $Job -Status $status
   $jobStatusSql = if ($status -eq "failed") { "'failed'" } else { "'active'" }
 
-  Invoke-Psql @"
+  $runWriteSql = if (![string]::IsNullOrWhiteSpace($RunId)) {
+@"
+UPDATE collector_job_runs
+SET
+  status = $(Quote-SqlString $status),
+  finished_at = $(Quote-SqlString ($finishedAt.ToUniversalTime().ToString("o")))::timestamptz,
+  duration_ms = $durationMs,
+  error_message = $(Quote-SqlString $errorMessage),
+  output_excerpt = $(Quote-SqlString $output),
+  raw_payload = $(Quote-SqlJson $Result.RawPayload)
+WHERE id = $(Quote-SqlString $RunId)::uuid;
+"@
+  } else {
+@"
 INSERT INTO collector_job_runs (
   id,
   job_id,
@@ -581,7 +676,10 @@ VALUES (
   $(Quote-SqlJson $Result.RawPayload),
   NOW()
 );
+"@
+  }
 
+$jobWriteSql = @"
 UPDATE collector_jobs
 SET
   last_run_at = NOW(),
@@ -593,6 +691,8 @@ SET
   updated_at = NOW()
 WHERE id = $(Quote-SqlString $Job.id)::uuid;
 "@
+
+  Invoke-Psql ($runWriteSql + "`n" + $jobWriteSql)
 }
 
 Queue-AnomalyRechecks
@@ -615,6 +715,7 @@ $summary = @{
 foreach ($job in $jobs) {
   $summary.checked += 1
   $startedAt = Get-Date
+  $runId = Start-JobRun -Job $job -StartedAt $startedAt -ExistingRunId $RunId
   Write-Host "Running collector job: $($job.id) product=$($job.product_slug)"
 
   try {
@@ -625,7 +726,7 @@ foreach ($job in $jobs) {
     if ($result.Status -eq "succeeded" -and $result.CollectorKind -eq "app_store") {
       $summary.appStoreSucceeded += 1
     }
-    Complete-JobRun -Job $job -Result $result -StartedAt $startedAt
+    Complete-JobRun -Job $job -Result $result -StartedAt $startedAt -RunId $runId
   } catch {
     $summary.failed += 1
     $failedResult = [pscustomobject]@{
@@ -635,7 +736,7 @@ foreach ($job in $jobs) {
       Error = $_.Exception.Message
       RawPayload = @{ error = $_.Exception.Message }
     }
-    Complete-JobRun -Job $job -Result $failedResult -StartedAt $startedAt
+    Complete-JobRun -Job $job -Result $failedResult -StartedAt $startedAt -RunId $runId
     Write-Host "Failed: $($_.Exception.Message)"
   }
 }

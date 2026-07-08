@@ -17,6 +17,8 @@ type PendingProductReviewSectionProps = {
   pendingPage: number;
   pendingTotalPages: number;
   pendingPageSize: number;
+  detailRowsPerProduct: number;
+  detailRowsLimited: boolean;
   pendingProductTotal: number;
   pendingTotal: number;
   historyPage: number;
@@ -29,6 +31,8 @@ export function PendingProductReviewSection({
   pendingPage,
   pendingTotalPages,
   pendingPageSize,
+  detailRowsPerProduct,
+  detailRowsLimited,
   pendingProductTotal,
   pendingTotal,
   historyPage,
@@ -46,57 +50,68 @@ export function PendingProductReviewSection({
   };
 
   return (
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-950">异常待决价格</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              按产品聚合展示，不再按套餐或地区逐条铺开。当前第 {pendingPage} / {pendingTotalPages} 页，每页 {pendingPageSize} 个产品；共 {pendingProductTotal} 个产品、{pendingTotal} 条待处理观测。
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-950">异常待决价格</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            按产品聚合展示，不再按套餐或地区逐条铺开。当前第 {pendingPage} / {pendingTotalPages} 页，每页{" "}
+            {pendingPageSize} 个产品；共 {pendingProductTotal} 个产品、{pendingTotal} 条待处理观测。
+          </p>
+          {detailRowsLimited ? (
+            <p className="mt-1 text-xs text-slate-400">
+              为了让后台列表更快，默认每个产品只展示最近 {detailRowsPerProduct} 条异常明细；搜索具体产品后可查看更多明细。
             </p>
-            {collectorStatus ? (
-              <p className="mt-2 text-xs text-slate-400">
-                App Store 采集器：{collectorStatus.status}；下次执行 {formatDate(collectorStatus.next_run_at)}；最近结果 {collectorStatus.latest_run_status ?? "暂无"}。
-              </p>
-            ) : null}
-          </div>
-          <form action="/admin/review" className="flex shrink-0 items-center gap-2">
-            <input
-              type="search"
-              name="q"
-              defaultValue={productQuery}
-              placeholder="搜索产品，如 Netflix"
-              className="h-9 w-56 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
-            />
-            <button
-              type="submit"
-              className="h-9 rounded-lg border border-slate-200 bg-slate-950 px-3 text-xs font-semibold text-white transition hover:bg-slate-800"
-            >
-              搜索
-            </button>
-            {productQuery ? (
-              <Link
-                href="/admin/review"
-                className="h-9 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-              >
-                清除
-              </Link>
-            ) : null}
-          </form>
+          ) : null}
+          {collectorStatus ? (
+            <p className="mt-2 text-xs text-slate-400">
+              App Store 采集器：{collectorStatus.status}；下次执行 {formatDate(collectorStatus.next_run_at)}
+              ；最近结果 {collectorStatus.latest_run_status ?? "暂无"}。
+            </p>
+          ) : null}
         </div>
+        <form action="/admin/review" className="flex shrink-0 items-center gap-2">
+          <input
+            type="search"
+            name="q"
+            defaultValue={productQuery}
+            placeholder="搜索产品，如 Netflix"
+            className="h-9 w-56 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
+          />
+          <button
+            type="submit"
+            className="h-9 rounded-lg border border-slate-200 bg-slate-950 px-3 text-xs font-semibold text-white transition hover:bg-slate-800"
+          >
+            搜索
+          </button>
+          {productQuery ? (
+            <Link
+              href="/admin/review"
+              className="h-9 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              清除
+            </Link>
+          ) : null}
+        </form>
+      </div>
 
-        {pendingProductGroups.length === 0 ? (
-          <div className="px-4 py-10 text-center text-sm text-slate-500">
-            暂无待审核价格观测。
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {pendingProductGroups.map((productGroup) => (
+      {pendingProductGroups.length === 0 ? (
+        <div className="px-4 py-10 text-center text-sm text-slate-500">
+          暂无待审核价格观测。
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {pendingProductGroups.map((productGroup) => {
+            const hasIsolatedAnomaly = (productGroup.blockedCount ?? 0) > 0;
+            const buttonLabel = hasIsolatedAnomaly
+              ? "规则已修，重新采集"
+              : productGroup.hasFreshSuccess
+                ? "12小时内已采集，仍要重跑"
+                : "只补采这个产品";
+
+            return (
               <details key={productGroup.productSlug} className="group">
-                {/*
-                  Products with isolated anomalies should remain re-runnable after parser/spec fixes.
-                  Freshness only disables clean products that were just collected successfully.
-                */}
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 hover:bg-slate-50">
+                <summary className="flex cursor-pointer list-none flex-col gap-4 px-4 py-4 hover:bg-slate-50 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-semibold text-slate-950">
@@ -132,24 +147,11 @@ export function PendingProductReviewSection({
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {(() => {
-                      const hasIsolatedAnomaly = (productGroup.blockedCount ?? 0) > 0;
-                      const disableCollection = Boolean(productGroup.hasFreshSuccess && !hasIsolatedAnomaly);
-                      const buttonLabel = disableCollection
-                        ? "已采集，暂不重复"
-                        : hasIsolatedAnomaly
-                          ? "规则已修，重新采集"
-                          : "只补采这个产品";
-
-                      return (
                     <ManualCollectionProgressForm
                       productSlug={productGroup.productSlug}
                       buttonLabel={buttonLabel}
                       pendingLabel="正在补采这个产品"
-                      disabled={disableCollection}
                     />
-                      );
-                    })()}
                     <span className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 group-open:bg-slate-50">
                       查看异常明细
                     </span>
@@ -158,14 +160,17 @@ export function PendingProductReviewSection({
 
                 <div className="grid gap-3 bg-slate-50/60 px-4 pb-4 md:grid-cols-2 xl:grid-cols-4">
                   {productGroup.plans.map((planGroup) => (
-                    <div key={`${productGroup.productSlug}-${planGroup.planSlug}`} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <div
+                      key={`${productGroup.productSlug}-${planGroup.planSlug}`}
+                      className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                    >
                       <div className="flex items-center justify-between gap-4 px-4 py-3">
                         <div>
                           <div className="text-sm font-semibold text-slate-950">
                             {planGroup.planName ?? planGroup.planSlug}
                           </div>
                           <div className="mt-1 text-xs text-slate-500">
-                            {planGroup.planSlug} · {planGroup.rows.length} 个地区待处理
+                            {planGroup.planSlug} · 显示 {planGroup.rows.length} 条最新明细
                           </div>
                         </div>
                         <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
@@ -186,7 +191,7 @@ export function PendingProductReviewSection({
                                   <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">
                                     {platformLabel(row.platform)}
                                   </span>
-                                  <span>可信度 {row.confidence_score ?? "—"}</span>
+                                  <span>可信度 {row.confidence_score ?? "-"}</span>
                                 </div>
                               </div>
                               <div className="text-right">
@@ -237,44 +242,45 @@ export function PendingProductReviewSection({
                   ))}
                 </div>
               </details>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
+      )}
 
-        {pendingTotalPages > 1 ? (
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm">
-            <div className="text-slate-500">
-              共 {pendingProductTotal} 个产品，{pendingTotal} 条待处理观测
-            </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href={buildPendingPageHref(Math.max(1, pendingPage - 1))}
-                aria-disabled={pendingPage <= 1}
-                className={`rounded-lg border px-3 py-1.5 font-medium ${
-                  pendingPage <= 1
-                    ? "pointer-events-none border-slate-100 text-slate-300"
-                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                上一页
-              </Link>
-              <span className="text-slate-500">
-                {pendingPage} / {pendingTotalPages}
-              </span>
-              <Link
-                href={buildPendingPageHref(Math.min(pendingTotalPages, pendingPage + 1))}
-                aria-disabled={pendingPage >= pendingTotalPages}
-                className={`rounded-lg border px-3 py-1.5 font-medium ${
-                  pendingPage >= pendingTotalPages
-                    ? "pointer-events-none border-slate-100 text-slate-300"
-                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                下一页
-              </Link>
-            </div>
+      {pendingTotalPages > 1 ? (
+        <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm">
+          <div className="text-slate-500">
+            共 {pendingProductTotal} 个产品，{pendingTotal} 条待处理观测
           </div>
-        ) : null}
-      </section>
+          <div className="flex items-center gap-2">
+            <Link
+              href={buildPendingPageHref(Math.max(1, pendingPage - 1))}
+              aria-disabled={pendingPage <= 1}
+              className={`rounded-lg border px-3 py-1.5 font-medium ${
+                pendingPage <= 1
+                  ? "pointer-events-none border-slate-100 text-slate-300"
+                  : "border-slate-200 text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              上一页
+            </Link>
+            <span className="text-slate-500">
+              {pendingPage} / {pendingTotalPages}
+            </span>
+            <Link
+              href={buildPendingPageHref(Math.min(pendingTotalPages, pendingPage + 1))}
+              aria-disabled={pendingPage >= pendingTotalPages}
+              className={`rounded-lg border px-3 py-1.5 font-medium ${
+                pendingPage >= pendingTotalPages
+                  ? "pointer-events-none border-slate-100 text-slate-300"
+                  : "border-slate-200 text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              下一页
+            </Link>
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }

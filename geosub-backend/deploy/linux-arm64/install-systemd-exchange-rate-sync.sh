@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ "$(id -u)" -ne 0 ]]; then
-  echo "Run as root: sudo bash deploy/linux-arm64/install-systemd-collector-jobs.sh"
+  echo "Run as root: sudo bash deploy/linux-arm64/install-systemd-exchange-rate-sync.sh"
   exit 1
 fi
 
@@ -23,16 +23,16 @@ if getent group docker >/dev/null 2>&1; then
 fi
 
 chown -R geosub:geosub /opt/geosub
-chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-collector-jobs.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-exchange-rate-sync.sh"
 
-install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-collector-jobs.service" /etc/systemd/system/geosub-collector-jobs.service
-install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-collector-jobs.timer" /etc/systemd/system/geosub-collector-jobs.timer
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-exchange-rate-sync.service" /etc/systemd/system/geosub-exchange-rate-sync.service
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-exchange-rate-sync.timer" /etc/systemd/system/geosub-exchange-rate-sync.timer
 
 systemctl daemon-reload
-systemctl enable geosub-collector-jobs.timer
+systemctl enable geosub-exchange-rate-sync.timer
 
-echo "Installed geosub-collector-jobs.timer."
+echo "Installed geosub-exchange-rate-sync.timer."
 echo "Test it with:"
-echo "  sudo systemctl start geosub-collector-jobs.service"
+echo "  sudo systemctl start geosub-exchange-rate-sync.service"
 echo "Then start the timer:"
-echo "  sudo systemctl start geosub-collector-jobs.timer"
+echo "  sudo systemctl start geosub-exchange-rate-sync.timer"

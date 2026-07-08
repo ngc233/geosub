@@ -134,7 +134,11 @@ else
 fi
 
 log "Refreshing systemd units"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-price-pipeline.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-collector-jobs.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-discovery-scan.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-exchange-rate-sync.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/post-deploy-check.sh"
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-web.service" /etc/systemd/system/geosub-web.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-exchange-rate-sync.service" /etc/systemd/system/geosub-exchange-rate-sync.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-exchange-rate-sync.timer" /etc/systemd/system/geosub-exchange-rate-sync.timer
@@ -145,6 +149,11 @@ install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-collector-jobs.t
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-discovery-scan.service" /etc/systemd/system/geosub-discovery-scan.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-discovery-scan.timer" /etc/systemd/system/geosub-discovery-scan.timer
 systemctl daemon-reload
+systemctl enable geosub-web.service
+systemctl enable geosub-exchange-rate-sync.timer
+systemctl enable geosub-price-pipeline.timer
+systemctl enable geosub-collector-jobs.timer
+systemctl enable geosub-discovery-scan.timer
 
 log "Running database smoke check"
 bash "$BACKEND_DIR/deploy/linux-arm64/db-smoke-check.sh"
@@ -158,6 +167,9 @@ systemctl start geosub-discovery-scan.timer 2>/dev/null || true
 
 log "Refreshing exchange rates once"
 systemctl start geosub-exchange-rate-sync.service 2>/dev/null || true
+
+log "Running post-deploy check"
+bash "$BACKEND_DIR/deploy/linux-arm64/post-deploy-check.sh"
 
 log "Recording deployed version"
 record_release

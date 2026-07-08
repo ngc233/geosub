@@ -8,7 +8,7 @@ function detectLocale(pathname: string) {
   return "zh";
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-geosub-locale", detectLocale(request.nextUrl.pathname));
 

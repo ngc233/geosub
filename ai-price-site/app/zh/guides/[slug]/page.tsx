@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -126,9 +127,12 @@ export default async function GuideArticlePage({
         </header>
 
         {article.coverImageUrl ? (
-          <img
+          <Image
             src={article.coverImageUrl}
             alt={article.title}
+            width={1200}
+            height={675}
+            unoptimized
             className="mt-10 aspect-[16/9] w-full rounded-2xl object-cover"
           />
         ) : null}

@@ -23,6 +23,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -Version 
 powershell -ExecutionPolicy Bypass -File .\scripts\release-check.ps1
 ```
 
+This checks version sync, script syntax, repository hygiene, frontend types,
+lint, tests, and the production build.
+
 For frontend-only local verification, use:
 
 ```powershell
@@ -40,6 +43,9 @@ use:
 cd ai-price-site
 npm run preflight:full
 ```
+
+The full local preflight also checks the local database, exchange-rate
+freshness, collector state, review backlog, and published price quality.
 
 3. Publish to GitHub after checks pass:
 

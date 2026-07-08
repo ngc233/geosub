@@ -17,7 +17,9 @@ Docker Compose
   -> geosub-directus                 content/admin CMS
 
 systemd timers
+  -> geosub-exchange-rate-sync.timer  USD/CNY exchange-rate refresh
   -> geosub-price-pipeline.timer     price collectors + auto-review
+  -> geosub-collector-jobs.timer     queued product-level collectors
   -> geosub-discovery-scan.timer     discovery source scanner
 ```
 
@@ -100,7 +102,18 @@ sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-web-service.sh
 sudo systemctl start geosub-web.service
 ```
 
-7. Install the price pipeline timer:
+7. Install the exchange-rate sync timer:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-exchange-rate-sync.sh
+sudo systemctl start geosub-exchange-rate-sync.service
+sudo systemctl start geosub-exchange-rate-sync.timer
+```
+
+The public site can show CNY estimates only after this job has written a fresh
+USD/CNY rate. The default timer refreshes every 12 hours.
+
+8. Install the price pipeline timer:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-price-pipeline.sh
@@ -108,7 +121,7 @@ sudo systemctl start geosub-price-pipeline.service
 sudo systemctl start geosub-price-pipeline.timer
 ```
 
-8. Install the collector job timer:
+9. Install the collector job timer:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-collector-jobs.sh
@@ -119,7 +132,7 @@ sudo systemctl start geosub-collector-jobs.timer
 This runner consumes queued rows from `collector_jobs`. The admin button only
 marks a task as due; this timer is what actually executes the collection work.
 
-9. Install the discovery scanner timer:
+10. Install the discovery scanner timer:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-discovery-scan.sh
@@ -127,17 +140,30 @@ sudo systemctl start geosub-discovery-scan.service
 sudo systemctl start geosub-discovery-scan.timer
 ```
 
+11. Run the production post-deploy check:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/post-deploy-check.sh
+```
+
+This check validates critical migrations, the collector `running` status,
+exchange-rate freshness, key product price coverage, sub-dollar published price
+guards, timer status, and the web health URL.
+
 ## Useful checks
 
 ```bash
 systemctl status geosub-web.service
+systemctl status geosub-exchange-rate-sync.timer
 systemctl status geosub-price-pipeline.timer
 systemctl status geosub-collector-jobs.timer
 systemctl status geosub-discovery-scan.timer
+journalctl -u geosub-exchange-rate-sync.service -n 200 --no-pager
 journalctl -u geosub-price-pipeline.service -n 200 --no-pager
 journalctl -u geosub-collector-jobs.service -n 200 --no-pager
 journalctl -u geosub-discovery-scan.service -n 200 --no-pager
 docker ps
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/post-deploy-check.sh
 ```
 
 ## Database backup and restore
@@ -183,7 +209,10 @@ The upgrade script performs the production-safe sequence:
 6. Apply core database migrations.
 7. Refresh systemd unit files.
 8. Run a database smoke check.
-9. Restart the web service and timers.
+9. Enable and restart the web service and timers.
+10. Refresh exchange rates once.
+11. Run the production post-deploy check.
+12. Record the deployed version and commit.
 
 Environment controls in `/etc/geosub/geosub.env`:
 
@@ -192,6 +221,9 @@ GEOSUB_REPO_DIR=/opt/geosub/geosub
 GEOSUB_GIT_BRANCH=main
 GEOSUB_SKIP_GIT_PULL=false
 GEOSUB_RUN_CONTENT_MIGRATIONS=false
+GEOSUB_WEB_HEALTH_URL=http://127.0.0.1:3000/zh/ai-pricing
+GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS=18
+GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD=1
 ```
 
 When `GEOSUB_REPO_DIR` is set, the upgrade script treats the GitHub repository as

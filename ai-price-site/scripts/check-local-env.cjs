@@ -2,37 +2,39 @@
 
 const fs = require("fs");
 const path = require("path");
-const { Client } = require("pg");
 const dotenv = require("dotenv");
+const { Client } = require("pg");
 
 const rootDir = process.cwd();
+const warnings = [];
+const criticals = [];
 
 for (const fileName of [".env.local", ".env"]) {
   const filePath = path.join(rootDir, fileName);
   if (fs.existsSync(filePath)) {
-    dotenv.config({ path: filePath, override: false });
+    dotenv.config({ path: filePath, override: false, quiet: true });
   }
 }
 
 const databaseUrl = process.env.DATABASE_URL;
-const warnings = [];
-const criticals = [];
+const maxExchangeRateAgeHours = Number(process.env.GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS || 18);
+const maxRunningMinutes = Number(process.env.GEOSUB_MAX_COLLECTOR_RUNNING_MINUTES || 45);
 
 function maskDatabaseTarget(url) {
-  if (!url) return "未配置";
+  if (!url) return "not configured";
 
   try {
     const parsed = new URL(url);
     const database = parsed.pathname.replace(/^\//, "") || "postgres";
     return `${parsed.hostname}:${parsed.port || "5432"}/${database}`;
   } catch {
-    return "DATABASE_URL 格式无法解析";
+    return "invalid DATABASE_URL";
   }
 }
 
 function printRow(label, value, status = "ok") {
   const marker = status === "ok" ? "OK" : status === "warning" ? "WARN" : "FAIL";
-  console.log(`${marker.padEnd(5)} ${label.padEnd(16)} ${value}`);
+  console.log(`${marker.padEnd(5)} ${label.padEnd(18)} ${value}`);
 }
 
 async function tableExists(client, tableName) {
@@ -44,13 +46,13 @@ async function tableExists(client, tableName) {
 
 async function safeCount(client, tableName, label) {
   if (!(await tableExists(client, tableName))) {
-    warnings.push(`${label} 表不存在：${tableName}`);
-    printRow(label, "表不存在", "warning");
+    warnings.push(`${label} table is missing: ${tableName}`);
+    printRow(label, "missing table", "warning");
     return;
   }
 
   const result = await client.query(`SELECT COUNT(*)::int AS count FROM ${tableName}`);
-  printRow(label, `${result.rows[0]?.count ?? 0} 条`);
+  printRow(label, `${result.rows[0]?.count ?? 0} rows`);
 }
 
 function hoursSince(value) {
@@ -61,19 +63,16 @@ function hoursSince(value) {
 }
 
 function formatDate(value) {
-  if (!value) return "暂无";
+  if (!value) return "none";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "暂无";
-  return date.toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai",
-    hour12: false,
-  });
+  if (Number.isNaN(date.getTime())) return "none";
+  return date.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
 }
 
 async function checkExchangeRates(client) {
   if (!(await tableExists(client, "exchange_rates"))) {
-    warnings.push("汇率表不存在：exchange_rates");
-    printRow("汇率", "表不存在", "warning");
+    warnings.push("exchange_rates table is missing.");
+    printRow("exchange rates", "missing table", "warning");
     return;
   }
 
@@ -86,23 +85,23 @@ async function checkExchangeRates(client) {
   `);
 
   if (result.rowCount === 0) {
-    warnings.push("没有找到 USD 汇率记录，人民币切换会不可用或只能显示美元。");
-    printRow("汇率", "没有 USD 汇率记录", "warning");
+    warnings.push("No USD exchange-rate rows found.");
+    printRow("exchange rates", "no USD rows", "warning");
     return;
   }
 
   const cny = result.rows.find((row) => row.quote_currency === "CNY");
   const latest = cny || result.rows[0];
   const age = hoursSince(latest.fetched_at || latest.rate_date);
-  const stale = age === null || age > 18;
+  const stale = age === null || age > maxExchangeRateAgeHours;
 
   if (stale) {
-    warnings.push("USD/CNY 汇率超过 18 小时没有刷新。");
+    warnings.push(`USD/CNY exchange rate is older than ${maxExchangeRateAgeHours} hours.`);
   }
 
   printRow(
-    "汇率",
-    `${latest.quote_currency} ${Number(latest.rate).toFixed(4)}，更新时间 ${formatDate(
+    "exchange rates",
+    `${latest.quote_currency} ${Number(latest.rate).toFixed(4)}, updated ${formatDate(
       latest.fetched_at || latest.rate_date
     )}`,
     stale ? "warning" : "ok"
@@ -111,8 +110,8 @@ async function checkExchangeRates(client) {
 
 async function checkCollector(client) {
   if (!(await tableExists(client, "collector_jobs"))) {
-    warnings.push("采集任务表不存在：collector_jobs");
-    printRow("采集任务", "表不存在", "warning");
+    warnings.push("collector_jobs table is missing.");
+    printRow("collector jobs", "missing table", "warning");
     return;
   }
 
@@ -124,36 +123,53 @@ async function checkCollector(client) {
     FROM collector_jobs
   `);
   const row = jobs.rows[0];
-  printRow("采集任务", `总计 ${row.total}，启用 ${row.active}，到期 ${row.due}`);
+  printRow("collector jobs", `total ${row.total}, active ${row.active}, due ${row.due}`);
 
-  if (await tableExists(client, "collector_job_runs")) {
-    const runs = await client.query(`
-      SELECT status, started_at, error_message
-      FROM collector_job_runs
-      ORDER BY started_at DESC NULLS LAST
-      LIMIT 1
-    `);
-    const latest = runs.rows[0];
-    if (latest) {
-      const status = latest.status === "succeeded" ? "ok" : "warning";
-      if (status === "warning") {
-        warnings.push(`最近一次采集状态为 ${latest.status || "未知"}。`);
-      }
-      printRow(
-        "最近采集",
-        `${latest.status || "未知"}，开始 ${formatDate(latest.started_at)}${
-          latest.error_message ? `，错误：${latest.error_message.slice(0, 80)}` : ""
-        }`,
-        status
-      );
-    } else {
-      warnings.push("还没有采集运行记录。");
-      printRow("最近采集", "暂无运行记录", "warning");
-    }
-  } else {
-    warnings.push("采集运行表不存在：collector_job_runs");
-    printRow("最近采集", "运行表不存在", "warning");
+  if (!(await tableExists(client, "collector_job_runs"))) {
+    warnings.push("collector_job_runs table is missing.");
+    printRow("collector runs", "missing table", "warning");
+    return;
   }
+
+  const staleRunning = await client.query(
+    `
+      SELECT COUNT(*)::int AS count
+      FROM collector_job_runs
+      WHERE status = 'running'
+        AND started_at < now() - ($1::text || ' minutes')::interval
+    `,
+    [String(maxRunningMinutes)]
+  );
+
+  if (staleRunning.rows[0].count > 0) {
+    warnings.push(`${staleRunning.rows[0].count} collector run(s) look stuck.`);
+    printRow("collector stuck", `${staleRunning.rows[0].count} stale running run(s)`, "warning");
+  }
+
+  const runs = await client.query(`
+    SELECT status, started_at, finished_at, error_message
+    FROM collector_job_runs
+    ORDER BY started_at DESC NULLS LAST, created_at DESC NULLS LAST
+    LIMIT 1
+  `);
+  const latest = runs.rows[0];
+  if (!latest) {
+    warnings.push("No collector run history found.");
+    printRow("latest run", "none", "warning");
+    return;
+  }
+
+  const status = latest.status === "succeeded" ? "ok" : "warning";
+  if (status === "warning") {
+    warnings.push(`Latest collector run status is ${latest.status || "unknown"}.`);
+  }
+  printRow(
+    "latest run",
+    `${latest.status || "unknown"}, started ${formatDate(latest.started_at)}${
+      latest.error_message ? `, error ${latest.error_message.slice(0, 100)}` : ""
+    }`,
+    status
+  );
 }
 
 async function checkReview(client) {
@@ -161,18 +177,20 @@ async function checkReview(client) {
     const observations = await client.query(`
       SELECT
         COUNT(*) FILTER (WHERE status = 'pending')::int AS pending,
-        COUNT(*) FILTER (WHERE status = 'pending' AND anomaly_flag IS NOT NULL)::int AS anomalies,
+        COUNT(*) FILTER (WHERE status = 'pending' AND COALESCE(anomaly_flag, FALSE))::int AS anomalies,
         MAX(observed_at) AS latest_observed_at
       FROM price_observations
     `);
     const row = observations.rows[0];
     printRow(
-      "待审核价格",
-      `待处理 ${row.pending}，异常 ${row.anomalies}，最新 ${formatDate(row.latest_observed_at)}`
+      "review queue",
+      `pending ${row.pending}, pending anomalies ${row.anomalies}, latest ${formatDate(
+        row.latest_observed_at
+      )}`
     );
   } else {
-    warnings.push("价格观测表不存在：price_observations");
-    printRow("待审核价格", "表不存在", "warning");
+    warnings.push("price_observations table is missing.");
+    printRow("review queue", "missing table", "warning");
   }
 
   if (await tableExists(client, "region_prices")) {
@@ -184,20 +202,20 @@ async function checkReview(client) {
     `);
     const row = published.rows[0];
     printRow(
-      "正式价格",
-      `已上线 ${row.published}，最近核验 ${formatDate(row.latest_checked_at)}`
+      "published prices",
+      `published ${row.published}, latest check ${formatDate(row.latest_checked_at)}`
     );
   }
 }
 
 async function main() {
-  console.log("GeoSub 本地环境检查");
-  console.log(`目标数据库：${maskDatabaseTarget(databaseUrl)}`);
+  console.log("GeoSub local environment check");
+  console.log(`Database target: ${maskDatabaseTarget(databaseUrl)}`);
   console.log("");
 
   if (!databaseUrl) {
-    criticals.push("没有配置 DATABASE_URL。");
-    printRow("数据库", "DATABASE_URL 未配置", "critical");
+    criticals.push("DATABASE_URL is not configured.");
+    printRow("database", "DATABASE_URL missing", "critical");
     process.exitCode = 1;
     return;
   }
@@ -213,42 +231,45 @@ async function main() {
       "SELECT current_database() AS database_name, current_schema() AS schema_name, now() AS checked_at"
     );
     printRow(
-      "数据库",
-      `${ping.rows[0].database_name} / ${ping.rows[0].schema_name}，${formatDate(
+      "database",
+      `${ping.rows[0].database_name} / ${ping.rows[0].schema_name}, checked ${formatDate(
         ping.rows[0].checked_at
       )}`
     );
 
-    await safeCount(client, "products", "产品");
-    await safeCount(client, "plans", "套餐");
-    await safeCount(client, "countries", "地区");
+    await safeCount(client, "products", "products");
+    await safeCount(client, "plans", "plans");
+    await safeCount(client, "countries", "countries");
+    await safeCount(client, "region_prices", "region prices");
+    await safeCount(client, "price_observations", "observations");
     await checkExchangeRates(client);
     await checkCollector(client);
     await checkReview(client);
   } catch (error) {
-    criticals.push(error instanceof Error ? error.message : String(error));
-    printRow("数据库", "连接失败", "critical");
-    console.error("");
-    console.error(error);
+    criticals.push(error?.message || String(error));
+    printRow("database", error?.message || String(error), "critical");
   } finally {
-    await client.end().catch(() => undefined);
+    await client.end().catch(() => {});
   }
 
   console.log("");
   if (criticals.length > 0) {
-    console.log(`结果：需要处理 ${criticals.length} 个严重问题。`);
+    console.log("Critical issues:");
+    for (const item of criticals) {
+      console.log(`- ${item}`);
+    }
     process.exitCode = 1;
-  } else if (warnings.length > 0) {
-    console.log(`结果：可以运行，但有 ${warnings.length} 个提醒。`);
-    for (const warning of warnings) {
-      console.log(`- ${warning}`);
+    return;
+  }
+
+  if (warnings.length > 0) {
+    console.log("Warnings:");
+    for (const item of warnings) {
+      console.log(`- ${item}`);
     }
   } else {
-    console.log("结果：核心环境正常。");
+    console.log("No local environment warnings.");
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main();

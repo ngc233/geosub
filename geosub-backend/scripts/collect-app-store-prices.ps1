@@ -343,6 +343,18 @@ function Quote-SqlJson {
 function Invoke-Psql {
   param([string]$Sql)
 
+  $nodeBridge = Join-Path $PSScriptRoot "db-query.mjs"
+  if (Test-Path -LiteralPath $nodeBridge) {
+    $nodeOutput = $Sql | node $nodeBridge --exec 2>&1
+    $nodeExitCode = $LASTEXITCODE
+    if ($nodeExitCode -eq 0) {
+      return
+    }
+    if ($nodeExitCode -ne 78 -and $nodeExitCode -ne 79) {
+      throw "direct database command failed with exit code $nodeExitCode. $($nodeOutput -join "`n")"
+    }
+  }
+
   $Sql | docker exec -i $ContainerName psql `
     -U $DbUser `
     -d $DbName `
@@ -356,6 +368,22 @@ function Invoke-Psql {
 
 function Invoke-PsqlJson {
   param([string]$Sql)
+
+  $nodeBridge = Join-Path $PSScriptRoot "db-query.mjs"
+  if (Test-Path -LiteralPath $nodeBridge) {
+    $nodeOutput = $Sql | node $nodeBridge --json 2>&1
+    $nodeExitCode = $LASTEXITCODE
+    if ($nodeExitCode -eq 0) {
+      $nodeText = ($nodeOutput -join "").Trim()
+      if ([string]::IsNullOrWhiteSpace($nodeText)) {
+        return $null
+      }
+      return $nodeText | ConvertFrom-Json
+    }
+    if ($nodeExitCode -ne 78 -and $nodeExitCode -ne 79) {
+      throw "direct database json query failed with exit code $nodeExitCode. $($nodeOutput -join "`n")"
+    }
+  }
 
   $result = $Sql | docker exec -i $ContainerName psql `
     -U $DbUser `

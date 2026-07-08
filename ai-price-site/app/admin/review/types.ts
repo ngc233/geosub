@@ -55,6 +55,24 @@ export type CollectorStatusRow = {
   latest_run_error: string | null;
 };
 
+export type CollectorRunHistoryRow = {
+  id: string;
+  product_slug: string | null;
+  product_name: string | null;
+  source_type: string | null;
+  status: string;
+  collector_kind: string | null;
+  started_at: Date | string;
+  finished_at: Date | string | null;
+  duration_ms: number | null;
+  error_message: string | null;
+  output_excerpt: string | null;
+  diagnosis: string | null;
+  process_id: string | null;
+  runner_state: string | null;
+  run_age_seconds: number | null;
+};
+
 export type SelectedProductCollectorRow = {
   product_slug: string;
   product_name: string | null;

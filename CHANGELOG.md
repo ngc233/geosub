@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0-beta.3 - 2026-07-08
+
+- Reworked the admin collection center around product-level actions, clearer queue states, and grouped collection/review feedback.
+- Added durable collection run polling so manual collection progress remains visible after a request is queued or running.
+- Hardened collection execution by reconciling stale running jobs, tightening queued-count semantics, and reducing repeated work for recently collected products.
+- Added collection-run history API/query helpers and supporting admin indexes for faster review and collection pages.
+- Added price-quality preflight checks for exchange-rate freshness, published price anomalies, pending review backlog, and stuck collector jobs.
+- Improved Linux ARM deployment scripts with exchange-rate sync installation, post-deploy checks, SQL migration coverage, and safer collector execution.
+- Migrated Next.js middleware to proxy, removed tracked local scan artifacts, and added repository hygiene checks for release publishing.
+
 ## 0.3.0-beta.2 - 2026-07-07
 
 - Added admin system health checks for database, exchange rates, collector status, review backlog, content, and runtime configuration.
