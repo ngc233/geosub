@@ -71,6 +71,8 @@ CREATE INDEX IF NOT EXISTS product_discovery_candidates_status_idx
 CREATE INDEX IF NOT EXISTS product_discovery_candidates_source_idx
   ON product_discovery_candidates (source_type, last_seen_at DESC);
 
+DROP TRIGGER IF EXISTS trg_product_discovery_candidates_updated_at ON product_discovery_candidates;
+
 CREATE TRIGGER trg_product_discovery_candidates_updated_at
 BEFORE UPDATE ON product_discovery_candidates
 FOR EACH ROW

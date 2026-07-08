@@ -1,6 +1,10 @@
 -- GeoSub affordability views
 -- Read-friendly views for frontend/admin preview
 
+DROP VIEW IF EXISTS plan_affordability_summary_view;
+DROP VIEW IF EXISTS plan_affordability_detail_view;
+DROP VIEW IF EXISTS latest_plan_affordability_metrics;
+
 CREATE OR REPLACE VIEW latest_plan_affordability_metrics AS
 SELECT
   id,

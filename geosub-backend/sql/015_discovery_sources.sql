@@ -38,6 +38,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS discovery_sources_url_key
 CREATE INDEX IF NOT EXISTS discovery_sources_status_idx
   ON discovery_sources (status, source_type, last_checked_at);
 
+DROP TRIGGER IF EXISTS trg_discovery_sources_updated_at ON discovery_sources;
+
 CREATE TRIGGER trg_discovery_sources_updated_at
 BEFORE UPDATE ON discovery_sources
 FOR EACH ROW

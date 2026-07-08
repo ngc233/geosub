@@ -8,6 +8,8 @@ WITH price_income AS (
     pl.slug AS plan_slug,
     UPPER(c.code) AS country_code,
     rp.price_usd::numeric AS price_usd,
+    rp.billing_platform,
+    rp.updated_at AS price_updated_at,
     lci.id AS income_metric_id,
     lci.year AS data_year,
     lci.monthly_value_usd::numeric AS monthly_income_usd,
@@ -26,12 +28,33 @@ WITH price_income AS (
     AND rp.price_usd IS NOT NULL
     AND lci.monthly_value_usd IS NOT NULL
 ),
+ranked_price_income AS (
+  SELECT
+    price_income.*,
+    ROW_NUMBER() OVER (
+      PARTITION BY product_slug, plan_slug, country_code, data_year
+      ORDER BY
+        CASE billing_platform::text
+          WHEN 'app_store' THEN 1
+          WHEN 'web' THEN 2
+          ELSE 3
+        END,
+        price_updated_at DESC NULLS LAST,
+        region_price_id DESC
+    ) AS row_rank
+  FROM price_income
+),
+deduped_price_income AS (
+  SELECT *
+  FROM ranked_price_income
+  WHERE row_rank = 1
+),
 us_benchmark AS (
   SELECT
     product_slug,
     plan_slug,
     income_share_percent AS us_income_share_percent
-  FROM price_income
+  FROM deduped_price_income
   WHERE country_code = 'US'
 )
 INSERT INTO plan_affordability_metrics (
@@ -74,7 +97,7 @@ SELECT
   pi.data_year,
   pi.source,
   NOW()
-FROM price_income pi
+FROM deduped_price_income pi
 LEFT JOIN us_benchmark ub
   ON ub.product_slug = pi.product_slug
  AND ub.plan_slug = pi.plan_slug
