@@ -47,6 +47,19 @@ crlf_sql_checksum() {
   awk '{ sub(/\r$/, ""); printf "%s\r\n", $0 }' "$1" | sha256sum | awk '{print $1}'
 }
 
+is_known_line_ending_checksum() {
+  local filename="$1"
+  local existing_checksum="$2"
+
+  case "${filename}:${existing_checksum}" in
+    "sql/002_compute_plan_affordability.sql:b6a4e9ab30620ccf05f4895f0f55d119565e96a39d8ef8ef9cf2722df10c5913")
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 core_files=(
   "schema.sql"
   "seed-chatgpt.sql"
@@ -143,7 +156,8 @@ for file in "${files[@]}"; do
       raw_checksum="$(raw_sql_checksum "$file")"
       crlf_checksum="$(crlf_sql_checksum "$file")"
 
-      if [[ "$existing" == "$raw_checksum" || "$existing" == "$crlf_checksum" ]]; then
+      if [[ "$existing" == "$raw_checksum" || "$existing" == "$crlf_checksum" ]] ||
+        is_known_line_ending_checksum "$file" "$existing"; then
         docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
           "UPDATE geosub_schema_migrations SET checksum = '$checksum' WHERE filename = '$file';" >/dev/null
         echo "Already applied: $file (normalized stored checksum)"

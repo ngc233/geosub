@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0-beta.6 - 2026-07-09
+
+- Added an explicit compatibility entry for the previously applied affordability migration whose stored checksum differed only by historical line-ending bytes.
+
 ## 0.3.0-beta.5 - 2026-07-09
 
 - Normalized SQL migration checksums in the Linux deployment script so CRLF/LF line-ending drift does not block safe upgrades.
