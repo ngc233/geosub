@@ -1,38 +1,89 @@
 import "server-only";
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import type { CollectorRunHistoryRow } from "./types";
 
+function getPayloadText(rawPayload: Prisma.JsonValue, key: string) {
+  if (!rawPayload || typeof rawPayload !== "object" || Array.isArray(rawPayload)) {
+    return null;
+  }
+
+  const value = (rawPayload as Record<string, unknown>)[key];
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return null;
+}
+
+function sourceTypeText(value: string | null | undefined) {
+  return value ? value.toLowerCase() : null;
+}
+
+function runAgeSeconds(startedAt: Date, finishedAt: Date | null) {
+  const end = finishedAt?.getTime() ?? Date.now();
+  return Math.max(0, Math.floor((end - startedAt.getTime()) / 1000));
+}
+
 export async function getCollectorRunHistoryRows(productQuery: string, limit = 12) {
   const trimmedQuery = productQuery.trim();
-  const productQueryLike = `%${trimmedQuery}%`;
 
-  return prisma.$queryRaw<CollectorRunHistoryRow[]>`
-    SELECT
-      run.id::text,
-      product.slug AS product_slug,
-      product.name AS product_name,
-      source.type::text AS source_type,
-      run.status,
-      run.collector_kind,
-      run.started_at,
-      run.finished_at,
-      run.duration_ms,
-      run.error_message,
-      run.output_excerpt,
-      run.raw_payload ->> 'diagnosis' AS diagnosis,
-      run.raw_payload ->> 'pid' AS process_id,
-      run.raw_payload ->> 'state' AS runner_state,
-      GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(run.finished_at, NOW()) - run.started_at)))::int AS run_age_seconds
-    FROM collector_job_runs run
-    LEFT JOIN products product ON product.id = run.product_id
-    LEFT JOIN price_sources source ON source.id = run.source_id
-    WHERE (
-      ${trimmedQuery} = ''
-      OR product.slug ILIKE ${productQueryLike}
-      OR product.name ILIKE ${productQueryLike}
-    )
-    ORDER BY run.started_at DESC
-    LIMIT ${limit}
-  `;
+  const rows = await prisma.collectorJobRun.findMany({
+    where: trimmedQuery
+      ? {
+          product: {
+            OR: [
+              {
+                slug: {
+                  contains: trimmedQuery,
+                  mode: "insensitive",
+                },
+              },
+              {
+                name: {
+                  contains: trimmedQuery,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          },
+        }
+      : undefined,
+    orderBy: {
+      startedAt: "desc",
+    },
+    take: limit,
+    include: {
+      product: {
+        select: {
+          slug: true,
+          name: true,
+        },
+      },
+      source: {
+        select: {
+          type: true,
+        },
+      },
+    },
+  });
+
+  return rows.map(
+    (row): CollectorRunHistoryRow => ({
+      id: row.id,
+      product_slug: row.product?.slug ?? null,
+      product_name: row.product?.name ?? null,
+      source_type: sourceTypeText(row.source?.type),
+      status: row.status,
+      collector_kind: row.collectorKind,
+      started_at: row.startedAt,
+      finished_at: row.finishedAt,
+      duration_ms: row.durationMs,
+      error_message: row.errorMessage,
+      output_excerpt: row.outputExcerpt,
+      diagnosis: getPayloadText(row.rawPayload, "diagnosis"),
+      process_id: getPayloadText(row.rawPayload, "pid"),
+      runner_state: getPayloadText(row.rawPayload, "state"),
+      run_age_seconds: runAgeSeconds(row.startedAt, row.finishedAt),
+    })
+  );
 }

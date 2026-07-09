@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0-beta.7 - 2026-07-09
+
+- Added Prisma coverage for collector job run history so admin collection pages no longer depend on fragile raw SQL for that table.
+- Switched the admin collector-run history query to typed Prisma reads while preserving product filtering, source labels, runner state, and elapsed-time display.
+- Added a source encoding gate to prevent replacement characters or mojibake from entering release builds.
+
 ## 0.3.0-beta.6 - 2026-07-09
 
 - Added an explicit compatibility entry for the previously applied affordability migration whose stored checksum differed only by historical line-ending bytes.

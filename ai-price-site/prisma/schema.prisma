@@ -415,6 +415,7 @@ model Product {
   faqs              Faq[]
   affiliateLinks    AffiliateLink[]
   collectorJobs     CollectorJob[]
+  collectorJobRuns  CollectorJobRun[]
   articleBlocks     ArticleBlock[]
   articleRelations  ArticleRelation[]
 
@@ -516,6 +517,7 @@ model PriceSource {
   regionPrices  RegionPrice[]
   observations  PriceObservation[]
   collectorJobs CollectorJob[]
+  collectorJobRuns CollectorJobRun[]
   parserRules   ParserRule[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1055,10 +1057,44 @@ model CollectorJob {
   errorCount   Int     @default(0) @map("error_count")
   lastError    String? @map("last_error")
 
+  runs CollectorJobRun[]
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("collector_jobs")
+}
+
+model CollectorJobRun {
+  id String @id @default(uuid()) @db.Uuid
+
+  jobId     String  @map("job_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  sourceId  String? @map("source_id") @db.Uuid
+
+  job     CollectorJob @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product Product?     @relation(fields: [productId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  source  PriceSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  status        String
+  collectorKind String? @map("collector_kind")
+
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(6)
+  durationMs Int?      @map("duration_ms")
+
+  errorMessage String? @map("error_message")
+  outputExcerpt String? @map("output_excerpt")
+  rawPayload    Json    @default("{}") @map("raw_payload")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([jobId, startedAt(sort: Desc)], map: "collector_job_runs_job_started_idx")
+  @@index([status, startedAt(sort: Desc)], map: "collector_job_runs_status_started_idx")
+  @@index([startedAt(sort: Desc)], map: "collector_job_runs_started_idx")
+  @@index([productId, startedAt(sort: Desc)], map: "collector_job_runs_product_started_idx")
+  // Partial index collector_job_runs_running_started_idx is managed by SQL migration 053.
+  @@map("collector_job_runs")
 }
 
 model ParserRule {
