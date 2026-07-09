@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import CollectorRunTimeline from "./CollectorRunTimeline";
 import { formatDate } from "./review-display";
 import type { CollectorRunHistoryRow } from "./types";
 
@@ -275,8 +276,11 @@ export default function CollectionRunHistorySection({
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500">{formatDate(row.started_at)}</td>
                     <td className="px-4 py-3 text-xs text-slate-500">{formatDuration(row)}</td>
-                    <td className={`max-w-md px-4 py-3 text-xs leading-5 ${output.className}`}>
-                      {output.text}
+                    <td className={`min-w-[420px] max-w-xl px-4 py-3 text-xs leading-5 ${output.className}`}>
+                      <div>{output.text}</div>
+                      <div className="mt-3">
+                        <CollectorRunTimeline run={row} />
+                      </div>
                     </td>
                   </tr>
                 );

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0-beta.9 - 2026-07-09
+
+- Added a four-step collector run timeline covering run record creation, script startup, collection result writeback, and review handoff.
+- Displayed the collector timeline in the review center and collector center so operators can see whether a manual collection actually started, is still waiting, succeeded, skipped, or failed.
+- Added unit coverage for queued, spawned, succeeded, and spawn-failed collector run timeline states.
+
 ## 0.3.0-beta.8 - 2026-07-09
 
 - Tightened admin collection queue detection so product-level App Store collection is not blocked by unrelated official-page or pricing-page jobs.

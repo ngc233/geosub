@@ -6,6 +6,7 @@ import {
 } from "../../../components/admin/AdminCard";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { prisma } from "../../../lib/prisma";
+import CollectorRunTimeline from "../review/CollectorRunTimeline";
 import { reconcileStaleCollectorRuns } from "../review/collection-runner";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import {
@@ -830,6 +831,20 @@ export default async function CollectorJobsPage() {
                             })
                           )}
                         </div>
+                        <div className="mt-3">
+                          <CollectorRunTimeline
+                            compact
+                            run={{
+                              status: group.latestJob.latest_run_status,
+                              runner_state: group.latestJob.latest_runner_state,
+                              process_id: group.latestJob.latest_process_id,
+                              error_message: group.latestJob.latest_run_error,
+                              output_excerpt: group.latestJob.latest_run_output,
+                              duration_ms: null,
+                              run_age_seconds: group.latestJob.latest_run_age_seconds,
+                            }}
+                          />
+                        </div>
                       </>
                     ) : (
                       <div className="text-xs text-slate-400">暂无运行记录</div>
@@ -962,6 +977,9 @@ export default async function CollectorJobsPage() {
                         processId: run.process_id,
                         runnerState: run.runner_state,
                       })}
+                    </div>
+                    <div className="mt-3">
+                      <CollectorRunTimeline compact run={run} />
                     </div>
                   </td>
                 </tr>
