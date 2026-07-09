@@ -57,6 +57,7 @@ type JobRow = {
 type RunRow = {
   id: string;
   job_id: string;
+  product_slug: string | null;
   product_name: string | null;
   source_name: string | null;
   status: string;
@@ -579,6 +580,7 @@ export default async function CollectorJobsPage() {
       SELECT
         run.id::text,
         run.job_id::text,
+        product.slug AS product_slug,
         product.name AS product_name,
         source.name AS source_name,
         run.status,
@@ -928,6 +930,12 @@ export default async function CollectorJobsPage() {
                         disabled={group.hasQueuedJob || group.hasAppStoreRunningJob}
                       />
                       <Link
+                        href={`/admin/data-quality/${encodeURIComponent(group.productSlug)}`}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        数据诊断
+                      </Link>
+                      <Link
                         href={`/admin/products/${group.productId}/edit`}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                       >
@@ -1000,7 +1008,15 @@ export default async function CollectorJobsPage() {
                     <div className="font-semibold text-slate-950">
                       {run.product_name || "未知产品"}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">{run.job_id}</div>
+                    <div className="mt-1 text-xs text-slate-400">{run.product_slug || run.job_id}</div>
+                    {run.product_slug ? (
+                      <Link
+                        href={`/admin/data-quality/${encodeURIComponent(run.product_slug)}`}
+                        className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        数据诊断
+                      </Link>
+                    ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
@@ -1093,6 +1109,12 @@ export default async function CollectorJobsPage() {
                   <td className="px-4 py-4">
                     <div className="font-semibold text-slate-950">{check.product_name}</div>
                     <div className="mt-1 text-xs text-slate-400">{check.product_slug}</div>
+                    <Link
+                      href={`/admin/data-quality/${encodeURIComponent(check.product_slug)}`}
+                      className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      数据诊断
+                    </Link>
                   </td>
                   <td className="px-4 py-4">
                     <div className="font-semibold text-slate-700">

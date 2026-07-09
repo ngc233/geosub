@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.12 - 2026-07-09
+
+- Added data-diagnosis shortcuts from the review queue, review run history, collector product list, collector run history, and App Store availability table.
+- Included product slugs in collector-run rows so failed or running collection records can link directly to the product diagnosis page.
+
 ## 0.3.0-beta.11 - 2026-07-09
 
 - Added product-level data quality diagnosis pages at `/admin/data-quality/[slug]`.

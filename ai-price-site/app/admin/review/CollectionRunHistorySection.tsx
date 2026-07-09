@@ -255,6 +255,14 @@ export default function CollectionRunHistorySection({
                         {row.product_name || row.product_slug || "未知产品"}
                       </div>
                       <div className="text-xs text-slate-500">{row.product_slug || "unknown"}</div>
+                      {row.product_slug ? (
+                        <Link
+                          href={`/admin/data-quality/${encodeURIComponent(row.product_slug)}`}
+                          className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          数据诊断
+                        </Link>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">

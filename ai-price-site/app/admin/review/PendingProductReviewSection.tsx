@@ -152,6 +152,12 @@ export function PendingProductReviewSection({
                       buttonLabel={buttonLabel}
                       pendingLabel="正在补采这个产品"
                     />
+                    <Link
+                      href={`/admin/data-quality/${encodeURIComponent(productGroup.productSlug)}`}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      数据诊断
+                    </Link>
                     <span className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 group-open:bg-slate-50">
                       查看异常明细
                     </span>
