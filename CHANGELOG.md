@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0-beta.10 - 2026-07-09
+
+- Added collector-run outcome summaries that attribute each run to newly written price observations, pending/approved/rejected/ignored outcomes, anomalies, and published prices.
+- Displayed the outcome summary beside collector timelines in the review center and collector center so operators can see what a manual collection actually produced.
+- Kept run attribution migration-free by using product, source, and a bounded run-time window compatible with existing server data.
+
 ## 0.3.0-beta.9 - 2026-07-09
 
 - Added a four-step collector run timeline covering run record creation, script startup, collection result writeback, and review handoff.

@@ -6,7 +6,7 @@ import {
 } from "../../../components/admin/AdminCard";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { prisma } from "../../../lib/prisma";
-import CollectorRunTimeline from "../review/CollectorRunTimeline";
+import CollectorRunTimeline, { CollectorRunOutcomeSummary } from "../review/CollectorRunTimeline";
 import { reconcileStaleCollectorRuns } from "../review/collection-runner";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import {
@@ -70,6 +70,13 @@ type RunRow = {
   process_id: string | null;
   runner_state: string | null;
   run_age_seconds: number | null;
+  observed_count: number;
+  pending_observation_count: number;
+  approved_observation_count: number;
+  rejected_observation_count: number;
+  ignored_observation_count: number;
+  anomaly_observation_count: number;
+  published_price_count: number;
 };
 
 type AvailabilityRow = {
@@ -585,10 +592,67 @@ export default async function CollectorJobsPage() {
         ,
         run.raw_payload ->> 'pid' AS process_id,
         run.raw_payload ->> 'state' AS runner_state,
-        GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(run.finished_at, NOW()) - run.started_at)))::int AS run_age_seconds
+        GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(run.finished_at, NOW()) - run.started_at)))::int AS run_age_seconds,
+        COALESCE(observation_outcome.observed_count, 0)::int AS observed_count,
+        COALESCE(observation_outcome.pending_observation_count, 0)::int AS pending_observation_count,
+        COALESCE(observation_outcome.approved_observation_count, 0)::int AS approved_observation_count,
+        COALESCE(observation_outcome.rejected_observation_count, 0)::int AS rejected_observation_count,
+        COALESCE(observation_outcome.ignored_observation_count, 0)::int AS ignored_observation_count,
+        COALESCE(observation_outcome.anomaly_observation_count, 0)::int AS anomaly_observation_count,
+        COALESCE(published_outcome.published_price_count, 0)::int AS published_price_count
       FROM collector_job_runs run
       LEFT JOIN products product ON product.id = run.product_id
       LEFT JOIN price_sources source ON source.id = run.source_id
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(observation.id)::int AS observed_count,
+          COUNT(*) FILTER (
+            WHERE observation.status = 'pending'::observation_status
+          )::int AS pending_observation_count,
+          COUNT(*) FILTER (
+            WHERE observation.status = 'approved'::observation_status
+          )::int AS approved_observation_count,
+          COUNT(*) FILTER (
+            WHERE observation.status = 'rejected'::observation_status
+          )::int AS rejected_observation_count,
+          COUNT(*) FILTER (
+            WHERE observation.status = 'ignored'::observation_status
+          )::int AS ignored_observation_count,
+          COUNT(*) FILTER (
+            WHERE COALESCE(observation.anomaly_flag, FALSE)
+          )::int AS anomaly_observation_count
+        FROM price_observations observation
+        WHERE run.product_id IS NOT NULL
+          AND observation.product_id = run.product_id
+          AND (
+            run.source_id IS NULL
+            OR observation.source_id IS NULL
+            OR observation.source_id = run.source_id
+          )
+          AND observation.observed_at >= run.started_at - INTERVAL '2 minutes'
+          AND observation.observed_at <= LEAST(
+            COALESCE(run.finished_at, NOW()) + INTERVAL '10 minutes',
+            run.started_at + INTERVAL '2 hours'
+          )
+      ) observation_outcome ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(price.id)::int AS published_price_count
+        FROM region_prices price
+        WHERE run.product_id IS NOT NULL
+          AND price.product_id = run.product_id
+          AND (
+            run.source_id IS NULL
+            OR price.primary_source_id IS NULL
+            OR price.primary_source_id = run.source_id
+          )
+          AND price.status = 'published'::publish_status
+          AND price.last_checked_at >= run.started_at - INTERVAL '2 minutes'
+          AND price.last_checked_at <= LEAST(
+            COALESCE(run.finished_at, NOW()) + INTERVAL '10 minutes',
+            run.started_at + INTERVAL '2 hours'
+          )
+      ) published_outcome ON TRUE
       ORDER BY run.started_at DESC
       LIMIT 50
     `,
@@ -980,6 +1044,9 @@ export default async function CollectorJobsPage() {
                     </div>
                     <div className="mt-3">
                       <CollectorRunTimeline compact run={run} />
+                    </div>
+                    <div className="mt-3">
+                      <CollectorRunOutcomeSummary compact run={run} />
                     </div>
                   </td>
                 </tr>

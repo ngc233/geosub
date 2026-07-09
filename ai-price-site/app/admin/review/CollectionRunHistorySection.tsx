@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import CollectorRunTimeline from "./CollectorRunTimeline";
+import CollectorRunTimeline, { CollectorRunOutcomeSummary } from "./CollectorRunTimeline";
 import { formatDate } from "./review-display";
 import type { CollectorRunHistoryRow } from "./types";
 
@@ -280,6 +280,9 @@ export default function CollectionRunHistorySection({
                       <div>{output.text}</div>
                       <div className="mt-3">
                         <CollectorRunTimeline run={row} />
+                      </div>
+                      <div className="mt-3">
+                        <CollectorRunOutcomeSummary run={row} />
                       </div>
                     </td>
                   </tr>

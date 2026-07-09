@@ -71,6 +71,13 @@ export type CollectorRunHistoryRow = {
   process_id: string | null;
   runner_state: string | null;
   run_age_seconds: number | null;
+  observed_count: number;
+  pending_observation_count: number;
+  approved_observation_count: number;
+  rejected_observation_count: number;
+  ignored_observation_count: number;
+  anomaly_observation_count: number;
+  published_price_count: number;
 };
 
 export type SelectedProductCollectorRow = {
