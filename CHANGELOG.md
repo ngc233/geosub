@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0-beta.11 - 2026-07-09
+
+- Added product-level data quality diagnosis pages at `/admin/data-quality/[slug]`.
+- Connected data-quality overview rows to the diagnosis page so operators can inspect plan coverage, common-country gaps, pending review reasons, availability, and recent collector outcomes per product.
+- Reused existing review reason copy and collector run timeline summaries to keep product diagnosis aligned with the review center and collector center.
+
 ## 0.3.0-beta.10 - 2026-07-09
 
 - Added collector-run outcome summaries that attribute each run to newly written price observations, pending/approved/rejected/ignored outcomes, anomalies, and published prices.

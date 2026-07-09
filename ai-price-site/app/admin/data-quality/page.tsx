@@ -683,6 +683,12 @@ export default async function AdminDataQualityPage() {
                       审核
                     </Link>
                     <Link
+                      href={`/admin/data-quality/${encodeURIComponent(row.slug)}`}
+                      className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      诊断
+                    </Link>
+                    <Link
                       href={`/admin/collector-jobs?q=${encodeURIComponent(row.slug)}`}
                       className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                     >
