@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0-beta.4 - 2026-07-09
+
+- Added an admin data-quality overview that groups collection, review, anomaly, freshness, and published-price health by product.
+- Added per-product collection actions from the data-quality page so operators can collect one service without scanning the full review backlog.
+- Refined collection queue interpretation so stale priority flags do not appear as active progress after a later run has already completed.
+- Added the data-quality entry to the admin sidebar and tightened manual collection progress copy.
+- Verified locally with typecheck, lint, tests, production build, and a browser load of `/admin/data-quality`.
+
 ## 0.3.0-beta.3 - 2026-07-08
 
 - Reworked the admin collection center around product-level actions, clearer queue states, and grouped collection/review feedback.

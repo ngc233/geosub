@@ -39,6 +39,7 @@ const navGroups: Array<{
     items: [
       { label: "采集流水线", href: "/admin/pipeline", icon: Workflow },
       { label: "线索入口", href: "/admin/discovery", icon: Radar },
+      { label: "数据健康", href: "/admin/data-quality", icon: ShieldCheck },
       { label: "价格采集审核", href: "/admin/review", icon: ShieldCheck },
       { label: "正式价格", href: "/admin/prices", icon: Globe2 },
       { label: "购买力指数", href: "/admin/affordability", icon: BadgeDollarSign },
