@@ -7,11 +7,15 @@ import {
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { prisma } from "../../../lib/prisma";
 import { reconcileStaleCollectorRuns } from "../review/collection-runner";
+import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import {
   pauseCollectorJob,
   runCollectorJobNow,
-  runProductCollectorJobsNow,
 } from "./actions";
+import {
+  isManuallyQueuedAppStoreJob,
+  isRunningAppStoreJob,
+} from "./job-state";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +95,7 @@ type ProductJobGroup = {
   latestJob: JobRow | null;
   hasQueuedJob: boolean;
   hasRunningJob: boolean;
+  hasAppStoreRunningJob: boolean;
   hasFailedJob: boolean;
   activeJobCount: number;
   sourceLabels: string[];
@@ -274,7 +279,11 @@ function collectorRunOutput({
 }
 
 function isManuallyQueued(job: JobRow) {
-  return job.status === "active" && job.is_due && job.priority >= 100;
+  return isManuallyQueuedAppStoreJob(job);
+}
+
+function isAppStoreRunning(job: JobRow) {
+  return isRunningAppStoreJob(job);
 }
 
 function dateValue(value: Date | string | null) {
@@ -304,6 +313,7 @@ function groupCollectorJobs(jobs: JobRow[]) {
         latestJob: hasLatestRun ? job : null,
         hasQueuedJob: isManuallyQueued(job),
         hasRunningJob: job.latest_run_status === "running",
+        hasAppStoreRunningJob: isAppStoreRunning(job),
         hasFailedJob: job.status === "failed" || job.latest_run_status === "failed",
         activeJobCount: job.status === "active" ? 1 : 0,
         sourceLabels: uniqueLabels([
@@ -323,6 +333,7 @@ function groupCollectorJobs(jobs: JobRow[]) {
     existing.jobs.push(job);
     existing.hasQueuedJob = existing.hasQueuedJob || isManuallyQueued(job);
     existing.hasRunningJob = existing.hasRunningJob || job.latest_run_status === "running";
+    existing.hasAppStoreRunningJob = existing.hasAppStoreRunningJob || isAppStoreRunning(job);
     existing.hasFailedJob =
       existing.hasFailedJob || job.status === "failed" || job.latest_run_status === "failed";
     existing.activeJobCount += job.status === "active" ? 1 : 0;
@@ -393,7 +404,7 @@ function productPublishClassName(group: ProductJobGroup) {
 }
 
 function productActionLabel(group: ProductJobGroup) {
-  if (group.hasRunningJob) return "正在采集";
+  if (group.hasAppStoreRunningJob) return "正在采集";
   if (group.hasQueuedJob) return "已排队";
   return "只采这个产品";
 }
@@ -831,16 +842,12 @@ export default async function CollectorJobsPage() {
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-2">
-                      <form action={runProductCollectorJobsNow}>
-                        <input type="hidden" name="productId" value={group.productId} />
-                        <button
-                          type="submit"
-                          disabled={group.hasQueuedJob || group.hasRunningJob}
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          {productActionLabel(group)}
-                        </button>
-                      </form>
+                      <ManualCollectionProgressForm
+                        productSlug={group.productSlug}
+                        buttonLabel={productActionLabel(group)}
+                        pendingLabel="正在采集"
+                        disabled={group.hasQueuedJob || group.hasAppStoreRunningJob}
+                      />
                       <Link
                         href={`/admin/products/${group.productId}/edit`}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"

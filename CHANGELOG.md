@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0-beta.8 - 2026-07-09
+
+- Tightened admin collection queue detection so product-level App Store collection is not blocked by unrelated official-page or pricing-page jobs.
+- Reused the manual collection progress button on the collector center product action, giving operators immediate progress feedback before redirecting to run history.
+- Scoped data-quality queue, running, and latest-run signals to App Store jobs so product health reflects the pricing collector instead of unrelated sources.
+- Added unit coverage for App Store queued/running state classification.
+
 ## 0.3.0-beta.7 - 2026-07-09
 
 - Added Prisma coverage for collector job run history so admin collection pages no longer depend on fragile raw SQL for that table.

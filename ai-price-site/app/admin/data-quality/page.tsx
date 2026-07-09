@@ -365,7 +365,8 @@ async function getProductQualityRows() {
             AND job.status <> 'archived'
         )::int AS active_app_store_job_count,
         COUNT(*) FILTER (
-          WHERE job.status = 'active'
+          WHERE source.type::text = 'app_store'
+            AND job.status = 'active'
             AND job.priority >= 100
             AND (
               job.next_run_at IS NULL
@@ -375,7 +376,8 @@ async function getProductQualityRows() {
         )::int AS queued_job_count
         ,
         COUNT(*) FILTER (
-          WHERE job.status = 'active'
+          WHERE source.type::text = 'app_store'
+            AND job.status = 'active'
             AND job.priority >= 100
             AND (
               job.next_run_at IS NULL
@@ -384,7 +386,8 @@ async function getProductQualityRows() {
             AND job.updated_at <= NOW() - INTERVAL '15 minutes'
         )::int AS stale_queue_count,
         MAX(job.updated_at) FILTER (
-          WHERE job.status = 'active'
+          WHERE source.type::text = 'app_store'
+            AND job.status = 'active'
             AND job.priority >= 100
             AND (
               job.next_run_at IS NULL
@@ -405,7 +408,9 @@ async function getProductQualityRows() {
         )::int AS running_run_count
       FROM collector_job_runs run
       LEFT JOIN collector_jobs job ON job.id = run.job_id
+      LEFT JOIN price_sources source ON source.id = COALESCE(run.source_id, job.source_id)
       WHERE COALESCE(run.product_id, job.product_id) IS NOT NULL
+        AND source.type::text = 'app_store'
       GROUP BY COALESCE(run.product_id, job.product_id)
     ),
     latest_run AS (
@@ -422,7 +427,9 @@ async function getProductQualityRows() {
         END AS latest_run_age_seconds
       FROM collector_job_runs run
       LEFT JOIN collector_jobs job ON job.id = run.job_id
+      LEFT JOIN price_sources source ON source.id = COALESCE(run.source_id, job.source_id)
       WHERE COALESCE(run.product_id, job.product_id) IS NOT NULL
+        AND source.type::text = 'app_store'
       ORDER BY COALESCE(run.product_id, job.product_id), run.started_at DESC
     )
     SELECT
