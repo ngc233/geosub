@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.5 - 2026-07-09
+
+- Normalized SQL migration checksums in the Linux deployment script so CRLF/LF line-ending drift does not block safe upgrades.
+- Kept compatibility with existing migration rows that were recorded with legacy raw or CRLF checksums.
+
 ## 0.3.0-beta.4 - 2026-07-09
 
 - Added an admin data-quality overview that groups collection, review, anomaly, freshness, and published-price health by product.

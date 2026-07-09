@@ -35,6 +35,18 @@ CREATE TABLE IF NOT EXISTS geosub_schema_migrations (
 );
 SQL
 
+normalized_sql_checksum() {
+  tr -d '\r' < "$1" | sha256sum | awk '{print $1}'
+}
+
+raw_sql_checksum() {
+  sha256sum "$1" | awk '{print $1}'
+}
+
+crlf_sql_checksum() {
+  awk '{ sub(/\r$/, ""); printf "%s\r\n", $0 }' "$1" | sha256sum | awk '{print $1}'
+}
+
 core_files=(
   "schema.sql"
   "seed-chatgpt.sql"
@@ -123,11 +135,21 @@ for file in "${files[@]}"; do
     exit 1
   fi
 
-  checksum="$(sha256sum "$file" | awk '{print $1}')"
+  checksum="$(normalized_sql_checksum "$file")"
   existing="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c "SELECT checksum FROM geosub_schema_migrations WHERE filename = '$file';")"
 
   if [[ -n "$existing" ]]; then
     if [[ "$existing" != "$checksum" ]]; then
+      raw_checksum="$(raw_sql_checksum "$file")"
+      crlf_checksum="$(crlf_sql_checksum "$file")"
+
+      if [[ "$existing" == "$raw_checksum" || "$existing" == "$crlf_checksum" ]]; then
+        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
+          "UPDATE geosub_schema_migrations SET checksum = '$checksum' WHERE filename = '$file';" >/dev/null
+        echo "Already applied: $file (normalized stored checksum)"
+        continue
+      fi
+
       echo "Migration checksum changed after it was applied: $file"
       echo "Applied: $existing"
       echo "Current: $checksum"
