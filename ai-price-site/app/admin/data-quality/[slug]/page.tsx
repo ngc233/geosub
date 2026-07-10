@@ -735,6 +735,114 @@ function PlanCoverageCard({ row }: { row: PlanCoverageRow }) {
   );
 }
 
+function collectionDisabledReason(product: ProductSummaryRow) {
+  if (product.app_store_job_count <= 0) {
+    return "还没有 App Store 采集任务，请先编辑产品来源。";
+  }
+
+  if (product.running_run_count > 0 || product.latest_run_status === "running") {
+    return "这个产品正在采集中，等本轮结束后再重跑。";
+  }
+
+  return null;
+}
+
+function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
+  const disabledReason = collectionDisabledReason(product);
+  const productQuery = encodeURIComponent(product.slug);
+
+  return (
+    <AdminCard className="mb-6">
+      <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-slate-950">处理动作</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            诊断页只保留和这个产品相关的操作入口，避免再回到全站列表里翻找。
+          </p>
+        </div>
+        <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+          {product.slug}
+        </span>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-4">
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+          <div className="text-xs font-bold text-blue-600">重新采集</div>
+          <h3 className="mt-2 text-base font-bold text-slate-950">只采这个产品</h3>
+          <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
+            只唤起 {product.name} 的 App Store 采集任务，完成后进入自动审核。
+          </p>
+          <div className="mt-4">
+            <ManualCollectionProgressForm
+              productSlug={product.slug}
+              buttonLabel="立即采集"
+              pendingLabel="正在采集"
+              disabled={Boolean(disabledReason)}
+            />
+          </div>
+          {disabledReason ? (
+            <p className="mt-3 text-xs leading-5 text-blue-700">{disabledReason}</p>
+          ) : null}
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-bold text-amber-600">异常处理</div>
+          <h3 className="mt-2 text-base font-bold text-slate-950">查看待审核异常</h3>
+          <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
+            当前待审 {product.pending_observation_count} 条，其中硬异常 {product.hard_anomaly_count} 条。
+          </p>
+          <Link
+            href={`/admin/review?q=${productQuery}`}
+            className="mt-4 inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+          >
+            打开审核中心
+          </Link>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-bold text-emerald-600">采集排查</div>
+          <h3 className="mt-2 text-base font-bold text-slate-950">查看采集任务</h3>
+          <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
+            已配置 {product.app_store_job_count} 个 App Store 任务，到期 {product.due_job_count} 个。
+          </p>
+          <Link
+            href={`/admin/collector-jobs?q=${productQuery}`}
+            className="mt-4 inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+          >
+            打开采集中心
+          </Link>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-bold text-slate-500">来源配置</div>
+          <h3 className="mt-2 text-base font-bold text-slate-950">编辑产品来源</h3>
+          <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
+            维护 App Store、官网、Logo 和 SEO 等基础资料，缺采集任务时先从这里补。
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={`/admin/products/${product.id}/edit`}
+              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            >
+              编辑产品
+            </Link>
+            {product.official_url ? (
+              <a
+                href={product.official_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                打开官网
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </AdminCard>
+  );
+}
+
 export default async function ProductDataQualityPage({
   params,
 }: {
@@ -826,9 +934,17 @@ export default async function ProductDataQualityPage({
             >
               采集任务
             </Link>
+            <Link
+              href={`/admin/products/${product.id}/edit`}
+              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            >
+              编辑来源
+            </Link>
           </div>
         </div>
       </AdminCard>
+
+      <ProductActionPanel product={product} />
 
       <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <AdminStatCard label="套餐" value={product.plan_count} helper={categoryLabel(product.category)} />

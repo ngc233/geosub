@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.13 - 2026-07-10
+
+- Added a product-level action panel to the data diagnosis page with direct actions for one-product collection, review filtering, collector task filtering, and product source editing.
+- Added source-edit access from the diagnosis conclusion area so missing App Store task issues can be resolved without leaving the product context.
+
 ## 0.3.0-beta.12 - 2026-07-09
 
 - Added data-diagnosis shortcuts from the review queue, review run history, collector product list, collector run history, and App Store availability table.
