@@ -195,7 +195,8 @@ if (( failures == 0 )); then
     "sql/033_app_store_stability_auto_review_v2.sql" \
     "sql/043_app_store_collection_schedule_policy.sql" \
     "sql/052_collector_job_runs_running_status.sql" \
-    "sql/053_admin_collection_performance.sql"; do
+    "sql/053_admin_collection_performance.sql" \
+    "sql/054_refresh_affordability_app_store_scope.sql"; do
     check_migration "$migration"
   done
 

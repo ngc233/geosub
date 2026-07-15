@@ -109,6 +109,7 @@ core_files=(
   "sql/043_app_store_collection_schedule_policy.sql"
   "sql/052_collector_job_runs_running_status.sql"
   "sql/053_admin_collection_performance.sql"
+  "sql/054_refresh_affordability_app_store_scope.sql"
 )
 
 content_files=(

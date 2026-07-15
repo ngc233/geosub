@@ -8,6 +8,23 @@ AS $$
 DECLARE
   v_row_count INTEGER := 0;
 BEGIN
+  DELETE FROM plan_affordability_metrics pam
+  WHERE (arg_product_slug IS NULL OR pam.product_slug = arg_product_slug)
+    AND (arg_plan_slug IS NULL OR pam.plan_slug = arg_plan_slug)
+    AND NOT EXISTS (
+      SELECT 1
+      FROM region_prices rp
+      JOIN products p ON p.id = rp.product_id
+      JOIN plans pl ON pl.id = rp.plan_id
+      WHERE rp.id::TEXT = pam.region_price_id
+        AND p.slug = pam.product_slug
+        AND pl.slug = pam.plan_slug
+        AND rp.status = 'published'
+        AND rp.billing_platform = 'ios'
+        AND rp.price_usd IS NOT NULL
+        AND pl.status = 'published'
+    );
+
   WITH published_prices AS (
     SELECT DISTINCT ON (p.slug, pl.slug, c.code)
       p.slug AS product_slug,
@@ -23,18 +40,15 @@ BEGIN
     JOIN plans pl ON pl.id = rp.plan_id
     JOIN countries c ON c.id = rp.country_id
     WHERE rp.status = 'published'
+      AND rp.billing_platform = 'ios'
       AND rp.price_usd IS NOT NULL
+      AND pl.status = 'published'
       AND (arg_product_slug IS NULL OR p.slug = arg_product_slug)
       AND (arg_plan_slug IS NULL OR pl.slug = arg_plan_slug)
     ORDER BY
       p.slug,
       pl.slug,
       c.code,
-      CASE
-        WHEN rp.billing_platform = 'ios' THEN 0
-        WHEN rp.billing_platform = 'web' THEN 1
-        ELSE 2
-      END,
       rp.last_checked_at DESC NULLS LAST,
       rp.updated_at DESC
   ),
