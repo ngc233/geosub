@@ -156,22 +156,22 @@ const bgMap: Record<string, string> = {
 
 const sizeMap = {
   sm: {
-    box: 'h-8 w-8 rounded-xl',
+    box: 'h-8 w-8 rounded-lg',
     svg: 'h-5 w-5',
     text: 'text-[10px]',
   },
   md: {
-    box: 'h-12 w-12 rounded-2xl',
+    box: 'h-12 w-12 rounded-lg',
     svg: 'h-7 w-7',
     text: 'text-sm',
   },
   lg: {
-    box: 'h-14 w-14 rounded-2xl',
+    box: 'h-14 w-14 rounded-lg',
     svg: 'h-8 w-8',
     text: 'text-base',
   },
   xl: {
-    box: 'h-16 w-16 rounded-3xl',
+    box: 'h-16 w-16 rounded-lg',
     svg: 'h-10 w-10',
     text: 'text-lg',
   },

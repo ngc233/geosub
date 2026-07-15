@@ -3,6 +3,8 @@ import { ProductCategory } from "@prisma/client";
 import DbAiPricingClient from "../../../components/DbAiPricingClient";
 import { getDbAiPricingProducts } from "../../../lib/db-ai-pricing";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "流媒体订阅价格对比 - Netflix、YouTube Premium、Spotify 全球价格",
   description:

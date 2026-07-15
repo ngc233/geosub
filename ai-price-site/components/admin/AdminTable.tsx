@@ -10,7 +10,7 @@ export function AdminTableShell({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
       {title || description ? (
         <div className="border-b border-slate-200 px-6 py-5">
           {title ? <h2 className="font-bold text-slate-950">{title}</h2> : null}

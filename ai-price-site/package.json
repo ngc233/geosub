@@ -1,6 +1,6 @@
 {
     "name":  "ai-price-site",
-    "version":  "0.3.0-beta.13",
+    "version":  "0.3.0-beta.14",
     "private":  true,
     "scripts":  {
                     "dev":  "next dev",
@@ -11,13 +11,14 @@
                     "db:up":  "node scripts/local-db.cjs up",
                     "db:status":  "node scripts/local-db.cjs status",
                     "db:doctor":  "node scripts/local-db.cjs doctor",
+                    "sync:exchange-rates":  "node scripts/sync-exchange-rates.cjs",
                     "typecheck":  "tsc --noEmit",
                     "preflight:code":  "npm run check:encoding \u0026\u0026 npm run typecheck \u0026\u0026 npm run lint \u0026\u0026 npm test \u0026\u0026 npm run build",
                     "preflight:full":  "npm run check:local \u0026\u0026 npm run check:prices \u0026\u0026 npm run preflight:code",
                     "seed:local-demo":  "powershell -ExecutionPolicy Bypass -File scripts/seed-local-demo.ps1",
                     "sync:worldbank-income":  "node scripts/sync-world-bank-income.mjs",
                     "start":  "next start",
-                    "test":  "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test app/admin/collector-jobs/job-state.test.mts app/admin/review/collection-status.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts",
+                    "test":  "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test app/admin/admin-navigation-static.test.mts app/admin/admin-ui-consistency.test.mts app/admin/articles/article-admin-flow.test.mts app/admin/collector-jobs/job-state.test.mts app/admin/discovery/discovery-flow.test.mts app/admin/pipeline/stale-price-policy.test.mts app/admin/products/product-logo-policy.test.mts app/admin/review/collection-progress.test.mts app/admin/review/collection-status.test.mts app/admin/review/manual-review-policy.test.mts app/admin/review/pending-product-diagnosis.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts app/admin/settings/settings-admin.test.mts app/affordability-static.test.mts app/data-sources-static.test.mts app/exchange-rate-static.test.mts app/homepage-static.test.mts app/price-quality-gate-static.test.mts app/pricing-detail-static.test.mts app/pricing-list-static.test.mts app/risk-model-static.test.mts app/seo-static.test.mts app/trust-pages-static.test.mts components/dropdown-interactions.test.mts components/public-ui-consistency.test.mts components/tax-risk-display.test.mts",
                     "lint":  "eslint"
                 },
     "dependencies":  {

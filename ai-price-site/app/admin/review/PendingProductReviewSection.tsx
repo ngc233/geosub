@@ -1,6 +1,10 @@
 import Link from "next/link";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
 import ObservationReviewActions from "./ObservationReviewActions";
+import {
+  diagnosePendingProductGroup,
+  type PendingProductDiagnosisLevel,
+} from "./pending-product-diagnosis";
 import type { CollectorStatusRow, PendingProductGroup } from "./types";
 import {
   PriceEvidencePanel,
@@ -24,6 +28,34 @@ type PendingProductReviewSectionProps = {
   historyPage: number;
   pendingProductGroups: PendingProductGroup[];
 };
+
+function diagnosisClassName(level: PendingProductDiagnosisLevel) {
+  if (level === "danger") {
+    return {
+      panel: "border-red-100 bg-red-50 text-red-950",
+      badge: "bg-white text-red-700 ring-red-200",
+    };
+  }
+
+  if (level === "warning") {
+    return {
+      panel: "border-amber-100 bg-amber-50 text-amber-950",
+      badge: "bg-white text-amber-700 ring-amber-200",
+    };
+  }
+
+  if (level === "good") {
+    return {
+      panel: "border-emerald-100 bg-emerald-50 text-emerald-950",
+      badge: "bg-white text-emerald-700 ring-emerald-200",
+    };
+  }
+
+  return {
+    panel: "border-blue-100 bg-blue-50 text-blue-950",
+    badge: "bg-white text-blue-700 ring-blue-200",
+  };
+}
 
 export function PendingProductReviewSection({
   collectorStatus,
@@ -57,6 +89,9 @@ export function PendingProductReviewSection({
           <p className="mt-1 text-xs text-slate-500">
             按产品聚合展示，不再按套餐或地区逐条铺开。当前第 {pendingPage} / {pendingTotalPages} 页，每页{" "}
             {pendingPageSize} 个产品；共 {pendingProductTotal} 个产品、{pendingTotal} 条待处理观测。
+          </p>
+          <p className="mt-1 text-xs leading-5 text-blue-700">
+            默认处理方式是自动补采、稳定性审核和规则修正；采集证据链接只用于排查解析问题，不要求人工逐国打开 App Store 核验。
           </p>
           {detailRowsLimited ? (
             <p className="mt-1 text-xs text-slate-400">
@@ -103,6 +138,8 @@ export function PendingProductReviewSection({
         <div className="divide-y divide-slate-100">
           {pendingProductGroups.map((productGroup) => {
             const hasIsolatedAnomaly = (productGroup.blockedCount ?? 0) > 0;
+            const diagnosis = diagnosePendingProductGroup(productGroup);
+            const diagnosisClasses = diagnosisClassName(diagnosis.level);
             const buttonLabel = hasIsolatedAnomaly
               ? "规则已修，重新采集"
               : productGroup.hasFreshSuccess
@@ -145,6 +182,18 @@ export function PendingProductReviewSection({
                       最近成功采集：{formatDate(productGroup.latestSuccessAt ?? null)}
                       {productGroup.hasFreshSuccess ? " · 12 小时内已更新" : ""}
                     </p>
+                    <div className={`mt-3 rounded-xl border px-3 py-2 ${diagnosisClasses.panel}`}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-[11px] font-bold ring-1 ${diagnosisClasses.badge}`}
+                        >
+                          系统结论：{diagnosis.label}
+                        </span>
+                        <span className="text-xs font-bold">{diagnosis.title}</span>
+                      </div>
+                      <p className="mt-1 text-xs leading-5 opacity-80">{diagnosis.detail}</p>
+                      <p className="mt-1 text-xs font-bold">下一步：{diagnosis.nextAction}</p>
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <ManualCollectionProgressForm
@@ -234,7 +283,7 @@ export function PendingProductReviewSection({
                                   rel="noreferrer"
                                   className="text-xs font-medium text-blue-600 hover:text-blue-700"
                                 >
-                                  打开来源
+                                  查看采集证据
                                 </a>
                               ) : (
                                 <span className="text-xs text-slate-400">无来源链接</span>

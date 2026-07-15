@@ -31,7 +31,7 @@ export default function EnglishTrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            This is a basic English trust page. It can be expanded later with company details, analytics disclosure, advertising policy, affiliate policy, and data update rules.
+            By using GeoSub, you understand that the data is a public pricing reference. Cross-region subscriptions, account region, payment method, taxes and platform risk controls can affect availability. Final checkout pages and official platform rules remain authoritative.
           </p>
         </div>
       </section>

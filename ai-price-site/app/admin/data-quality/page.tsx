@@ -14,6 +14,7 @@ import {
   AdminStatCard,
 } from "../../../components/admin/AdminCard";
 import { prisma } from "../../../lib/prisma";
+import { reconcileStaleCollectorRuns } from "../review/collection-runner";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 
 export const dynamic = "force-dynamic";
@@ -488,6 +489,8 @@ async function getProductQualityRows() {
 }
 
 export default async function AdminDataQualityPage() {
+  await reconcileStaleCollectorRuns();
+
   const rows = (await getProductQualityRows()).sort((a, b) => {
     const healthA = getProductHealth(a);
     const healthB = getProductHealth(b);

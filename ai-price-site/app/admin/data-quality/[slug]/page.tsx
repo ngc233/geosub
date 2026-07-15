@@ -18,6 +18,7 @@ import { prisma } from "../../../../lib/prisma";
 import CollectorRunTimeline, {
   CollectorRunOutcomeSummary,
 } from "../../review/CollectorRunTimeline";
+import { reconcileStaleCollectorRuns } from "../../review/collection-runner";
 import { getCollectorRunHistoryRows } from "../../review/collector-run-history-query";
 import ManualCollectionProgressForm from "../../review/ManualCollectionProgressForm";
 import { reviewReasonAction, reviewReasonLabel } from "../../review/review-reason-copy";
@@ -849,6 +850,8 @@ export default async function ProductDataQualityPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  await reconcileStaleCollectorRuns();
+
   const product = await getProductSummary(slug);
 
   if (!product) {

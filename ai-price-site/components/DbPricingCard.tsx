@@ -133,11 +133,11 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
   return (
     <Link
       href={detailHref}
-      className="group relative z-0 block overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-[0_14px_36px_rgba(15,23,42,0.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-900/50"
+      className="group relative z-0 block overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-[0_14px_36px_rgba(15,23,42,0.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-900/50"
     >
       <div className="p-6 md:p-7">
         <div className="flex items-start gap-4">
-          <BrandIcon product={product} size="md" className="rounded-xl" />
+          <BrandIcon product={product} size="md" />
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-4">

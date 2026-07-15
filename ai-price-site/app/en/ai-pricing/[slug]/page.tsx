@@ -16,7 +16,10 @@ import {
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../../../../lib/affordability";
 import { getLatestExchangeRate } from "../../../../lib/exchange-rates";
+import { getPlanDisplayName } from "../../../../lib/pricing-labels";
 import { prisma } from "../../../../lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{
@@ -61,14 +64,6 @@ async function getProductNavItems(category: string) {
     category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
     logoUrl: product.logoUrl,
   }));
-}
-
-function getPlanDisplayName(productName: string, planName: string) {
-  if (planName.toLowerCase().startsWith(productName.toLowerCase())) {
-    return planName;
-  }
-
-  return `${productName} ${planName}`;
 }
 
 function getH1(productName: string, planName: string) {
@@ -267,7 +262,7 @@ export default async function EnglishProductPricingPage({
               updatedAt={product.updatedAt}
               cnyExchangeRate={cnyExchangeRate}
               locale="en"
-              shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} />}
+              shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} locale="en" />}
             />
 
             {affordability.rows.length > 0 ? (

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
+import { buildDiscoveryReviewRedirectPath } from "./discovery-redirect";
 
 export type DiscoveryActionState = {
   ok: boolean;
@@ -344,7 +345,10 @@ export async function createManualCandidate(
 
     revalidatePath("/admin/discovery");
 
-    return { ok: true, message: `已加入候选池：${name}` };
+    return {
+      ok: true,
+      message: `已加入候选池：${name}。在下方点击“加入并进入采集”，系统会先匹配 App Store，再跳到这个产品的采集工作台。`,
+    };
   } catch (error) {
     return actionError(error, "添加候选线索失败。");
   }
@@ -908,14 +912,11 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
     revalidatePath("/admin/review");
 
     if (targetProductId && targetProductSlug) {
-      const query = new URLSearchParams({
-        q: targetProductSlug,
-        discoveryPromoted: "1",
-        discoveryProduct: targetProductName || targetProductSlug,
-        discoveryJobs: String(appStoreJobCount),
+      redirectTo = buildDiscoveryReviewRedirectPath({
+        productSlug: targetProductSlug,
+        productName: targetProductName,
+        appStoreJobCount,
       });
-
-      redirectTo = `/admin/review?${query.toString()}`;
     }
 
   } catch (error) {

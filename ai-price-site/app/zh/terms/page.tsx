@@ -31,7 +31,7 @@ export default function TrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            当前页面为基础版本，后续可以根据网站实际数据源、统计工具、广告合作、联盟链接和公司主体信息继续完善。
+            使用 GeoSub 即表示你理解这些数据是公开价格参考。跨区订阅、账号地区、支付方式、税费和平台风控可能影响最终是否可订阅，最终请以官方结算页和平台规则为准。
           </p>
         </div>
       </section>

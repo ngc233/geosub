@@ -31,7 +31,7 @@ export default function EnglishTrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            This is a basic English trust page. It can be expanded later with company details, analytics disclosure, advertising policy, affiliate policy, and data update rules.
+            GeoSub V1 prioritizes reviewed App Store subscription prices, exchange-rate timestamps, tax notes, anomaly review and pricing risk explanations. New sources such as official web prices or Google Play will be labelled separately before they affect rankings.
           </p>
         </div>
       </section>

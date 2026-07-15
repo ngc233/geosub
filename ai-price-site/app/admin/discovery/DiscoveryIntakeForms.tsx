@@ -55,7 +55,7 @@ function ModeButton({
       type="button"
       onClick={onClick}
       className={[
-        "flex min-h-[92px] items-start gap-3 rounded-xl border p-4 text-left transition",
+        "flex min-h-[92px] items-start gap-3 rounded-lg border p-4 text-left transition",
         active
           ? "border-blue-200 bg-blue-50 text-blue-950 ring-1 ring-blue-100"
           : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
@@ -367,7 +367,7 @@ export default function DiscoveryIntakeForms() {
   const [mode, setMode] = useState<IntakeMode>("candidate");
 
   return (
-    <section className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
+    <section className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="mb-5">
         <p className="text-sm font-bold tracking-tight text-blue-700">
           线索入口
@@ -376,7 +376,7 @@ export default function DiscoveryIntakeForms() {
           添加发现线索
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-          已经明确是某个产品时，先放进候选池等待审核；如果只是一个值得长期监控的网站、频道或应用市场入口，就保存为发现来源，后续由扫描器定期检查。
+          已经明确是某个产品时，先放进候选池；点击加入后会创建产品、匹配 App Store，并进入这个产品的采集工作台。如果只是一个值得长期监控的网站、频道或应用市场入口，就保存为发现来源，后续由扫描器定期检查。
         </p>
       </div>
 
@@ -385,7 +385,7 @@ export default function DiscoveryIntakeForms() {
           active={mode === "candidate"}
           icon={<PackagePlus size={18} strokeWidth={2} />}
           title="具体产品线索"
-          description="你已经知道某个产品、模型、套餐或定价页，先进入候选池。"
+          description="你已经知道某个产品、模型、套餐或定价页，下一步会进入产品级采集。"
           onClick={() => setMode("candidate")}
         />
         <ModeButton

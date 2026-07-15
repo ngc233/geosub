@@ -441,7 +441,7 @@ export default function PriceWorldMap({
       ) : null}
 
       {!usRegion ? (
-        <div className="mx-5 mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200 md:mx-6">
+        <div className="mx-5 mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200 md:mx-6">
           {mapCopy.noUsBenchmarkNotice}
         </div>
       ) : null}
@@ -729,7 +729,7 @@ export default function PriceWorldMap({
 
         {hoverInfo ? (
           <div
-            className="pointer-events-auto fixed z-50 w-64 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl shadow-zinc-900/10 transition-all duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
+            className="pointer-events-auto fixed z-50 w-64 rounded-lg border border-zinc-200 bg-white p-4 shadow-xl shadow-zinc-900/10 transition-all duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
             style={{
               left:
                 typeof window !== "undefined"

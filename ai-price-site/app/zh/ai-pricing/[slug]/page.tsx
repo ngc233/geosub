@@ -18,7 +18,10 @@ import {
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../../../../lib/affordability";
 import { getLatestExchangeRate } from "../../../../lib/exchange-rates";
+import { getPlanDisplayName } from "../../../../lib/pricing-labels";
 import { prisma } from "../../../../lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{
@@ -82,14 +85,6 @@ async function getProductSeoMeta(slug: string) {
 
 function hasChineseText(value?: string | null) {
   return Boolean(value && /[\u3400-\u9fff]/.test(value));
-}
-
-function getPlanDisplayName(productName: string, planName: string) {
-  if (planName.toLowerCase().startsWith(productName.toLowerCase())) {
-    return planName;
-  }
-
-  return `${productName} ${planName}`;
 }
 
 function getLocalizedH1({
@@ -454,7 +449,7 @@ export default async function ProductPricingPage({
       <div className="min-w-0 flex-1 space-y-4">
         <div className="space-y-3">
           <Link
-            href="/zh/ai-pricing/"
+            href={detailBasePath}
             className="inline-flex text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
           >
             ← 返回订阅价格列表
@@ -498,6 +493,7 @@ export default async function ProductPricingPage({
               productSlug={product.slug}
               plans={product.plans}
               activePlanSlug={activePlan.slug}
+              basePath={detailBasePath}
             />
           </div>
         </section>
@@ -509,7 +505,7 @@ export default async function ProductPricingPage({
               plan={activePlan}
               updatedAt={product.updatedAt}
               cnyExchangeRate={cnyExchangeRate}
-              shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} />}
+              shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} locale="zh" />}
             />
 
             {affordability.rows.length > 0 ? (

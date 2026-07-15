@@ -106,7 +106,7 @@ export default function AdminSelect({
       ) : null}
 
       {open ? (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5">
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5">
           <div className="admin-scrollbar max-h-[360px] overflow-y-auto">
             {options.map((option) => {
               const active = option.value === currentValue;

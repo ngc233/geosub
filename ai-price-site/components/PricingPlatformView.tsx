@@ -17,6 +17,7 @@ import {
   PublicSection,
   PublicSectionHeader,
 } from "./ui/PublicPage";
+import { getPlanDisplayName } from "../lib/pricing-labels";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 type DisplayCurrency = "usd" | "cny";
@@ -332,6 +333,7 @@ function PricingLead({
   const cnyRate = cnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
   const cnyDisabled = Boolean(cnyExchangeRate.isFallback || cnyExchangeRate.isStale);
   const cnyRateNote = getCnyRateNote(cnyExchangeRate, cnyRate, locale);
+  const planDisplayName = getPlanDisplayName(productName, plan.name);
 
   return (
     <PublicSection>
@@ -343,8 +345,8 @@ function PricingLead({
           <div className="min-w-0">
             <h2 className="text-[24px] font-semibold leading-tight text-zinc-950 md:whitespace-nowrap md:text-[28px] dark:text-white">
               {locale === "en"
-                ? `${productName} ${plan.name} global price conclusion`
-                : `${productName} ${plan.name} 全球价格结论`}
+                ? `${planDisplayName} global price conclusion`
+                : `${planDisplayName} 全球价格结论`}
             </h2>
             <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
               {locale === "en" ? (

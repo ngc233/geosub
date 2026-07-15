@@ -9,7 +9,7 @@ export function AdminCheckbox({
   description?: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 transition hover:border-slate-300 hover:bg-slate-50">
+    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-4 transition hover:border-slate-300 hover:bg-slate-50">
       <input
         {...props}
         type="checkbox"

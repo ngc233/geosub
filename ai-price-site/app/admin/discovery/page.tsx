@@ -8,6 +8,7 @@ import {
   queueDiscoverySourceScan,
   watchCandidate,
 } from "./actions";
+import { buildDiscoveryReviewRedirectPath } from "./discovery-redirect";
 import DiscoveryIntakeForms from "./DiscoveryIntakeForms";
 
 export const dynamic = "force-dynamic";
@@ -192,35 +193,30 @@ function sourceQueueClassName(source: SourceRow) {
 
 function CandidateActions({ candidate }: { candidate: CandidateRow }) {
   if (["promoted", "merged", "ignored"].includes(candidate.status)) {
-    const reviewParams = new URLSearchParams({
-      q: candidate.suggested_slug || candidate.name,
+    const reviewHref = buildDiscoveryReviewRedirectPath({
+      productSlug: candidate.suggested_slug || candidate.name,
+      productName: candidate.promoted_product_name || candidate.matched_product_name || candidate.name,
+      appStoreJobCount: candidate.collector_job_count,
     });
 
-    if (candidate.collector_job_count > 0) {
-      reviewParams.set("discoveryPromoted", "1");
-      reviewParams.set(
-        "discoveryProduct",
-        candidate.promoted_product_name || candidate.matched_product_name || candidate.name,
-      );
-      reviewParams.set("discoveryJobs", String(candidate.collector_job_count));
-    }
-
-    const reviewHref = `/admin/review?${reviewParams.toString()}`;
-
     return (
-      <div className="text-xs leading-5 text-slate-500">
-        {candidate.promoted_product_name ? `已加入：${candidate.promoted_product_name}` : null}
-        {candidate.matched_product_name ? `已合并：${candidate.matched_product_name}` : null}
+      <div className="space-y-2 text-xs leading-5 text-slate-500">
+        {candidate.promoted_product_name ? (
+          <div>已加入：{candidate.promoted_product_name}</div>
+        ) : null}
+        {candidate.matched_product_name ? (
+          <div>已合并：{candidate.matched_product_name}</div>
+        ) : null}
         {candidate.collector_job_count > 0 ? (
-          <div className="mt-1 font-semibold text-emerald-700">
-            已准备采集
-            <Link href={reviewHref} className="ml-2 text-blue-700 underline underline-offset-4">
-              去采集这个产品
+          <div className="rounded-lg bg-emerald-50 px-2 py-2 font-medium leading-5 text-emerald-800 ring-1 ring-emerald-100">
+            已生成 {candidate.collector_job_count} 个采集任务。
+            <Link href={reviewHref} className="mt-1 inline-flex font-semibold text-blue-700 underline underline-offset-4">
+              去这个产品的采集工作台
             </Link>
           </div>
         ) : ["promoted", "merged"].includes(candidate.status) ? (
-          <div className="mt-1 rounded-lg bg-amber-50 px-2 py-1.5 font-medium leading-5 text-amber-800 ring-1 ring-amber-100">
-            已入库，但还没有 App Store 采集任务。请补 App Store 链接后再采集。
+          <div className="rounded-lg bg-amber-50 px-2 py-2 font-medium leading-5 text-amber-800 ring-1 ring-amber-100">
+            已入库，但还没有 App Store 采集任务。先到产品资料补 App Store 链接或应用 ID，再回来采集。
           </div>
         ) : null}
         {!candidate.promoted_product_name && !candidate.matched_product_name
@@ -412,7 +408,7 @@ export default async function DiscoveryPage({
       <AdminPageHeader
         eyebrow="价格采集 · 第 1 步"
         title="线索入口"
-        description="添加产品、官网或 App Store 线索。确认加入服务库后，系统会尝试匹配 App Store，并准备好后续价格采集。"
+        description="添加产品、官网或 App Store 线索。点击加入后，系统会创建或合并产品、尝试匹配 App Store，并直接带你进入这个产品的采集工作台。"
       />
 
       <AdminPipelineSteps currentStep="discovery" />
@@ -452,7 +448,7 @@ export default async function DiscoveryPage({
         <div className="mb-5">
           <h2 className="text-lg font-bold text-slate-950">候选产品池</h2>
           <p className="mt-1 text-sm text-slate-500">
-            添加线索先进入候选池，不会立刻发布。点击“加入服务库并准备采集”后，系统会创建产品、尝试自动匹配 App Store，并在价格采集审核页生成可执行的产品采集入口。
+            添加线索先进入候选池，不会立刻发布。点击“加入并进入采集”后，系统会创建或合并产品、自动匹配 App Store，并跳到价格采集审核页，只采这个产品。
           </p>
         </div>
 

@@ -31,7 +31,7 @@ export default function TrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            当前页面为基础版本，后续可以根据网站实际数据源、统计工具、广告合作、联盟链接和公司主体信息继续完善。
+            GeoSub V1 优先把 App Store 正式价格、汇率更新时间、税务说明、异常审核和价格风险讲清楚。后续新增官网价、Google Play 或其他来源时，会在数据来源页和产品页单独标注口径，不默认混入现有榜单。
           </p>
         </div>
       </section>

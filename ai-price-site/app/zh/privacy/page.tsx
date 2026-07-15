@@ -31,7 +31,7 @@ export default function TrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            当前页面为基础版本，后续可以根据网站实际数据源、统计工具、广告合作、联盟链接和公司主体信息继续完善。
+            后台可以配置 Google Analytics 或 Tag Manager。若后续启用更多统计、广告或合作追踪，GeoSub 会继续在本页说明用途，并避免收集与价格比较无关的敏感身份信息。
           </p>
         </div>
       </section>

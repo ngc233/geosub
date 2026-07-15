@@ -3,6 +3,7 @@ export type CollectorJobStateInput = {
   collector_kind: string | null;
   status: string | null;
   is_due: boolean;
+  queue_pending?: boolean | null;
   priority: number;
   latest_run_status: string | null;
 };
@@ -36,10 +37,13 @@ export function isAppStoreCollectorJob(job: CollectorJobStateInput) {
 }
 
 export function isManuallyQueuedAppStoreJob(job: CollectorJobStateInput) {
+  const queuePending = job.queue_pending ?? true;
+
   return (
     isAppStoreCollectorJob(job) &&
     job.status === "active" &&
     job.is_due &&
+    queuePending &&
     job.priority >= 100 &&
     job.latest_run_status !== "running"
   );

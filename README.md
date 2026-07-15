@@ -7,6 +7,7 @@ GeoSub is a subscription price intelligence project. It includes a public pricin
 - `ai-price-site/` - Next.js frontend and self-hosted admin console.
 - `geosub-backend/` - database schema, SQL migrations, collector scripts, and Linux ARM deployment files.
 - `PROJECT-HANDOFF.md` - current implementation status and next steps.
+- `ROADMAP-1.0.md` - local 1.0 launch-readiness checklist.
 
 ## What Is Not Committed
 

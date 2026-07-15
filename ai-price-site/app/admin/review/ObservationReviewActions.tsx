@@ -10,17 +10,7 @@ type Props = {
 
 export default function ObservationReviewActions({ observationId }: Props) {
   return (
-    <div className="flex items-center gap-2">
-      <form action={approveObservation}>
-        <input type="hidden" name="id" value={observationId} />
-        <button
-          type="submit"
-          className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-        >
-          强制入库
-        </button>
-      </form>
-
+    <div className="flex flex-wrap items-center gap-2">
       <form action={ignoreObservation}>
         <input type="hidden" name="id" value={observationId} />
         <button
@@ -40,6 +30,26 @@ export default function ObservationReviewActions({ observationId }: Props) {
           拒绝
         </button>
       </form>
+
+      <details className="basis-full">
+        <summary className="cursor-pointer list-none rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100">
+          人工覆盖
+        </summary>
+        <div className="mt-2 rounded-xl border border-amber-200 bg-white p-3 text-xs leading-5 text-slate-600">
+          <p>
+            仅在已有独立结算证据时使用。不要把逐国打开 App Store 当作日常审核流程；常规异常应继续补采或修规则。
+          </p>
+          <form action={approveObservation} className="mt-3">
+            <input type="hidden" name="id" value={observationId} />
+            <button
+              type="submit"
+              className="rounded-lg bg-amber-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+            >
+              覆盖入库
+            </button>
+          </form>
+        </div>
+      </details>
     </div>
   );
 }

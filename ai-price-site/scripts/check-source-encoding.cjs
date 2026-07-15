@@ -48,13 +48,29 @@ const mojibakeTokens = [
   "涓",
 ];
 
-function listTrackedFiles() {
-  return execFileSync("git", ["ls-files"], {
+function gitLines(args) {
+  return execFileSync("git", args, {
     cwd: repoRoot,
     encoding: "utf8",
   })
     .split(/\r?\n/)
     .filter(Boolean);
+}
+
+function listSourceFiles() {
+  const trackedFiles = gitLines(["ls-files"]);
+  const untrackedFiles = execFileSync(
+    "git",
+    ["ls-files", "--others", "--exclude-standard"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8",
+    },
+  )
+    .split(/\r?\n/)
+    .filter(Boolean);
+
+  return [...new Set([...trackedFiles, ...untrackedFiles])];
 }
 
 function shouldScan(file) {
@@ -73,7 +89,7 @@ function suspiciousTokenCount(line) {
 
 const findings = [];
 
-for (const file of listTrackedFiles().filter(shouldScan)) {
+for (const file of listSourceFiles().filter(shouldScan)) {
   const absolutePath = path.join(repoRoot, file);
   const content = fs.readFileSync(absolutePath, "utf8");
   content.split(/\r?\n/).forEach((line, index) => {

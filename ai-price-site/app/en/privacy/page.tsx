@@ -31,7 +31,7 @@ export default function EnglishTrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            This is a basic English trust page. It can be expanded later with company details, analytics disclosure, advertising policy, affiliate policy, and data update rules.
+            GeoSub can load Google Analytics or Tag Manager when configured by the site administrator. If additional analytics, advertising or partner tracking is added later, this page should explain the purpose and avoid collecting sensitive identity data unrelated to price comparison.
           </p>
         </div>
       </section>

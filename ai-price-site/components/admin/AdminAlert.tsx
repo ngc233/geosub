@@ -45,9 +45,9 @@ export default function AdminAlert({
   const style = variantStyles[variant];
 
   return (
-    <div className={`rounded-3xl border p-6 ${style.box}`}>
+    <div className={`rounded-xl border p-6 ${style.box}`}>
       <div className="flex items-start gap-4">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold ${style.icon}`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${style.icon}`}>
           {style.mark}
         </div>
 

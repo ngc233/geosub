@@ -118,7 +118,14 @@ function getStatusDot(diffPercent: number) {
   return "bg-zinc-300";
 }
 
-function getRiskLabel(level: RegionPrice["riskLevel"]) {
+function getRiskLabel(level: RegionPrice["riskLevel"], locale: "zh" | "en") {
+  if (locale === "en") {
+    if (level === "low") return "low";
+    if (level === "high") return "high";
+    if (level === "medium") return "medium";
+    return "needs review";
+  }
+
   if (level === "low") return "低";
   if (level === "high") return "高";
   if (level === "medium") return "中";
@@ -141,7 +148,15 @@ function getRiskClass(level: RegionPrice["riskLevel"]) {
   return "bg-zinc-50 text-zinc-500 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-800";
 }
 
-function getTaxConfidenceLabel(region: RegionPrice) {
+function getTaxConfidenceLabel(region: RegionPrice, locale: "zh" | "en") {
+  if (locale === "en") {
+    if (region.taxSourceKind === "inferred") return "Platform inferred";
+    if (region.taxConfidence === "high") return "Verified";
+    if (region.taxConfidence === "medium") return "Medium confidence";
+    if (region.taxConfidence === "low") return "Needs review";
+    return "Unverified";
+  }
+
   if (region.taxSourceKind === "inferred") return "平台推断";
   if (region.taxConfidence === "high") return "高可信";
   if (region.taxConfidence === "medium") return "中可信";
@@ -172,53 +187,107 @@ function getTaxTooltipDotClass(region: RegionPrice) {
   return "bg-zinc-400";
 }
 
-function formatTaxDisplay(region: RegionPrice) {
+function translateTaxTextToZh(value: string) {
+  const raw = value.trim();
+  const includeMatch = raw.match(/^(?:Includes|Usually includes)\s+(.+)$/i);
+
+  if (includeMatch) {
+    const label = includeMatch[1]
+      .replace(/consumption tax/i, "消费税")
+      .replace(/service tax/i, "服务税")
+      .replace(/sales tax/i, "销售税")
+      .replace(/by region/i, "因地区不同");
+
+    return /^Usually includes/i.test(raw) ? `通常含 ${label}` : `含 ${label}`;
+  }
+
+  const provinceMatch = raw.match(/^GST\/HST varies by province(?:,\s*(.+))?$/i);
+  if (provinceMatch) {
+    return provinceMatch[1]
+      ? `各省 ${provinceMatch[1]} GST/HST 不同`
+      : "各省 GST/HST 不同";
+  }
+
+  if (/State ICMS varies/i.test(raw)) return "州税（ICMS）不同";
+  if (/Sales tax varies by state/i.test(raw)) return "各州销售税不同";
+  if (/Sales tax varies by region/i.test(raw)) return "销售税因地区不同";
+  if (/VAT treatment needs review/i.test(raw)) return "VAT 规则需复核";
+  if (/Usually GST-inclusive/i.test(raw)) return "通常已含 GST，最终以结算页为准";
+  if (/Usually VAT-inclusive/i.test(raw)) return "通常已含 VAT，最终以结算页为准";
+  if (/App Store list price.*GST-inclusive/i.test(raw)) {
+    return "App Store 标价通常已含 GST，最终以结算页为准";
+  }
+  if (/App Store list price.*VAT-inclusive/i.test(raw)) {
+    return "App Store 标价通常已含 VAT，最终以结算页为准";
+  }
+  if (/Digital service tax treatment may vary/i.test(raw)) {
+    return "数字服务税务规则可能随服务类别变化，最终以结算页为准";
+  }
+  if (/No country tax-rate profile matched yet/i.test(raw)) {
+    return "未匹配到国家税率资料；最终以 App Store 结算页为准";
+  }
+  if (/final checkout applies/i.test(raw)) return "最终以结算页为准";
+
+  return raw;
+}
+
+function formatTaxDisplay(region: RegionPrice, locale: "zh" | "en") {
   const raw = (region.tax || "").trim();
 
   if (!raw && (region.taxReviewStatus === "needs_review" || region.taxConfidence === "low")) {
-    return "待复核";
+    return locale === "en" ? "Needs review" : "待复核";
   }
 
-  const includeMatch = raw.match(/^Includes\s+(.+)$/i);
-  if (includeMatch) {
-    const value = includeMatch[1]
-      .replace(/consumption tax/i, "消费税")
-      .replace(/sales tax/i, "销售税");
-    return `含 ${value}`;
+  if (locale === "en") {
+    return raw || "Checkout applies";
   }
 
-  if (/GST\/HST varies by province/i.test(raw)) return "各省 5-15% GST/HST 不同";
-  if (/State ICMS varies/i.test(raw)) return "州税（ICMS）不同";
-  if (/Sales tax varies by state/i.test(raw)) return "各州销售税不同";
-
-  if (raw) return raw;
-  return "结算页为准";
+  return raw ? translateTaxTextToZh(raw) : "结算页为准";
 }
 
-function getTaxTooltip(region: RegionPrice) {
-  const note = region.taxFrontendNote || region.tax || "";
+function getTaxTooltip(region: RegionPrice, locale: "zh" | "en") {
+  const noteRaw = region.taxFrontendNote || region.tax || "";
+  const note = locale === "en" ? noteRaw : translateTaxTextToZh(noteRaw);
   const base =
     region.taxReviewStatus === "verified" && region.taxConfidence === "high"
-      ? "税务资料来自国家税务资料库，高可信。"
+      ? locale === "en"
+        ? "Tax profile comes from the country tax database and is verified."
+        : "税务资料来自国家税务资料库，高可信。"
       : region.taxSourceKind === "inferred"
-        ? "系统根据 App Store 平台结算逻辑生成说明；具体税率仍以官方结算页为准。"
+        ? locale === "en"
+          ? "Generated from App Store billing assumptions; final checkout remains authoritative."
+          : "系统根据 App Store 平台结算逻辑生成说明；具体税率仍以官方结算页为准。"
         : region.taxConfidence === "medium"
-          ? "税务资料来自国家或地区税务资料库，仍需定期复核。"
-          : "该地区税务资料尚未核验，最终以结算页为准。";
+          ? locale === "en"
+            ? "Tax profile comes from country or regional tax data and needs periodic review."
+            : "税务资料来自国家或地区税务资料库，仍需定期复核。"
+          : locale === "en"
+            ? "Tax profile is not verified yet; final checkout remains authoritative."
+            : "该地区税务资料尚未核验，最终以结算页为准。";
 
   return [
     base,
     note,
     region.taxCalculationPolicy === "do_not_calculate"
-      ? "GeoSub 不把税率额外加入采集价格；价格排序使用 App Store 标价折算。"
+      ? locale === "en"
+        ? "GeoSub does not add tax again; rankings use the App Store list price converted to USD."
+        : "GeoSub 不把税率额外加入采集价格；价格排序使用 App Store 标价折算。"
       : "",
   ].filter(Boolean).join(" ");
 }
 
-function TaxTooltip({ region, taxDisplay }: { region: RegionPrice; taxDisplay: string }) {
+function TaxTooltip({
+  region,
+  taxDisplay,
+  locale,
+}: {
+  region: RegionPrice;
+  taxDisplay: string;
+  locale: "zh" | "en";
+}) {
   const [open, setOpen] = useState(false);
-  const label = getTaxConfidenceLabel(region);
-  const tooltip = getTaxTooltip(region);
+  const label = getTaxConfidenceLabel(region, locale);
+  const tooltip = getTaxTooltip(region, locale);
 
   return (
     <div
@@ -242,7 +311,7 @@ function TaxTooltip({ region, taxDisplay }: { region: RegionPrice; taxDisplay: s
       <span
         role="tooltip"
         className={[
-          "pointer-events-none absolute left-0 top-full z-[90] mt-2 w-[min(280px,calc(100vw-32px))] rounded-xl border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
+          "pointer-events-none absolute left-0 top-full z-[90] mt-2 w-[min(280px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
           open ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
         ].join(" ")}
       >
@@ -266,7 +335,6 @@ function CountryFlag({ code }: { code: string }) {
       <Image
         src={`/flags/${countryCode.toLowerCase()}.svg`}
         alt={countryCode}
-        title={countryCode}
         width={28}
         height={20}
         unoptimized
@@ -330,6 +398,70 @@ function HeaderHelp({
   );
 }
 
+function RiskStatus({
+  region,
+  diffPercent,
+  locale,
+}: {
+  region: RegionPrice;
+  diffPercent: number;
+  locale: "zh" | "en";
+}) {
+  const [open, setOpen] = useState(false);
+  const fallback =
+    locale === "en"
+      ? "Cross-region subscriptions may be affected by account region, payment method and platform risk controls."
+      : "跨区订阅可能受账号地区、付款方式和平台风控影响。";
+  const tooltip = [region.riskNote, region.riskFactors].filter(Boolean).join(" ") || fallback;
+  const statusLabel = getStatusByLocale(diffPercent, locale);
+  const riskLabel =
+    locale === "en"
+      ? `Risk ${getRiskLabel(region.riskLevel, locale)}`
+      : `风险${getRiskLabel(region.riskLevel, locale)}`;
+
+  return (
+    <div
+      className="relative inline-flex min-w-0 items-center"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className="inline-flex min-w-0 items-center gap-2 text-left text-sm text-zinc-500 outline-none transition hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-300/60 dark:text-zinc-400 dark:hover:text-zinc-200"
+        aria-label={`${statusLabel} · ${riskLabel}: ${tooltip}`}
+      >
+        <span className={`h-2 w-2 shrink-0 rounded-full ${getStatusDot(diffPercent)}`} />
+        <span className="shrink-0">{statusLabel}</span>
+        <span
+          className={[
+            "hidden h-5 shrink-0 items-center rounded-md px-1.5 text-[11px] font-medium ring-1 ring-inset xl:inline-flex",
+            getRiskClass(region.riskLevel),
+          ].join(" ")}
+        >
+          {riskLabel}
+        </span>
+      </button>
+      <span
+        role="tooltip"
+        className={[
+          "pointer-events-none absolute right-0 top-full z-[90] mt-2 w-[min(280px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
+          open ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
+        ].join(" ")}
+      >
+        <span className="mb-1.5 flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full ${getStatusDot(diffPercent)}`} />
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+            {statusLabel} · {riskLabel}
+          </span>
+        </span>
+        <span className="block">{tooltip}</span>
+      </span>
+    </div>
+  );
+}
+
 function RegionPriceRow({
   region,
   rank,
@@ -353,8 +485,7 @@ function RegionPriceRow({
   const columns = showSourceColumn
     ? "md:grid-cols-[44px_minmax(142px,1.05fr)_120px_108px_124px_minmax(136px,1fr)_82px_118px]"
     : "md:grid-cols-[44px_minmax(150px,1.05fr)_122px_108px_124px_minmax(144px,1fr)_118px]";
-  const riskNote = [region.riskNote, region.riskFactors].filter(Boolean).join(" ");
-  const taxDisplay = formatTaxDisplay(region);
+  const taxDisplay = formatTaxDisplay(region, locale);
 
   return (
     <div
@@ -369,7 +500,6 @@ function RegionPriceRow({
         <div
           className="flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-800"
           aria-label={region.code}
-          title={region.code}
         >
           <CountryFlag code={region.code} />
         </div>
@@ -429,7 +559,7 @@ function RegionPriceRow({
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {locale === "en" ? "Tax note" : "税费说明"}
         </div>
-        <TaxTooltip region={region} taxDisplay={taxDisplay} />
+        <TaxTooltip region={region} taxDisplay={taxDisplay} locale={locale} />
       </div>
 
       {showSourceColumn ? (
@@ -447,21 +577,7 @@ function RegionPriceRow({
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {locale === "en" ? "Status / risk" : "状态/风险"}
         </div>
-        <div
-          className="inline-flex min-w-0 items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400"
-          title={riskNote || "跨区订阅可能受账号地区、付款方式和平台风控影响。"}
-        >
-          <span className={`h-2 w-2 rounded-full ${getStatusDot(diffPercent)}`} />
-          <span className="shrink-0">{getStatusByLocale(diffPercent, locale)}</span>
-          <span
-            className={[
-              "hidden h-5 shrink-0 items-center rounded-full px-1.5 text-[11px] font-medium ring-1 ring-inset xl:inline-flex",
-              getRiskClass(region.riskLevel),
-            ].join(" ")}
-          >
-            {locale === "en" ? `Risk ${getRiskLabel(region.riskLevel)}` : `风险${getRiskLabel(region.riskLevel)}`}
-          </span>
-        </div>
+        <RiskStatus region={region} diffPercent={diffPercent} locale={locale} />
       </div>
     </div>
   );
@@ -543,9 +659,9 @@ export default function ExpandableRegionPriceTable({
 
       {showPlatformFilter ? (
         <div className="border-b border-zinc-100 px-5 py-3 dark:border-zinc-800">
-          <div className="relative grid w-full grid-cols-4 rounded-xl bg-zinc-100 p-1 ring-1 ring-inset ring-zinc-200 sm:w-[520px] dark:bg-zinc-800 dark:ring-zinc-700">
+          <div className="relative grid w-full grid-cols-4 rounded-lg bg-zinc-100 p-1 ring-1 ring-inset ring-zinc-200 sm:w-[520px] dark:bg-zinc-800 dark:ring-zinc-700">
             <div
-              className="absolute bottom-1 top-1 rounded-lg bg-white shadow-[0_1px_3px_rgba(15,23,42,0.12)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:bg-zinc-950"
+              className="absolute bottom-1 top-1 rounded-md bg-white shadow-[0_1px_3px_rgba(15,23,42,0.12)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:bg-zinc-950"
               style={{
                 left: "0.25rem",
                 width: "calc((100% - 0.5rem) / 4)",
@@ -565,7 +681,7 @@ export default function ExpandableRegionPriceTable({
                   type="button"
                   onClick={() => setPlatform(option.value)}
                   className={[
-                    "relative z-10 flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors",
+                    "relative z-10 flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium transition-colors",
                     active
                       ? "text-zinc-950 dark:text-white"
                       : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200",

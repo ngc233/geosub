@@ -336,6 +336,60 @@ async function checkPublishedMedianOutliers(client) {
   }
 }
 
+async function checkTaxProfileCoverage(client) {
+  const result = await client.query(`
+    WITH published_countries AS (
+      SELECT DISTINCT country_id
+      FROM region_prices
+      WHERE status = 'published'::publish_status
+        AND billing_platform = 'ios'::billing_platform
+    ),
+    coverage AS (
+      SELECT
+        country.code,
+        country.name_en,
+        tax.id AS tax_profile_id,
+        tax.confidence,
+        tax.review_status
+      FROM published_countries published_country
+      JOIN countries country ON country.id = published_country.country_id
+      LEFT JOIN country_tax_profiles tax
+        ON tax.country_id = published_country.country_id
+       AND tax.status = 'active'
+    )
+    SELECT
+      COUNT(*)::int AS published_country_count,
+      COUNT(*) FILTER (WHERE tax_profile_id IS NOT NULL)::int AS covered_country_count,
+      COUNT(*) FILTER (WHERE tax_profile_id IS NULL)::int AS missing_country_count,
+      COUNT(*) FILTER (
+        WHERE confidence = 'high'
+          AND review_status = 'verified'
+      )::int AS verified_high_confidence_count,
+      STRING_AGG(code, ', ' ORDER BY code) FILTER (WHERE tax_profile_id IS NULL) AS missing_country_codes
+    FROM coverage
+  `);
+
+  const row = result.rows[0] || {};
+  const missing = Number(row.missing_country_count || 0);
+  const total = Number(row.published_country_count || 0);
+  const covered = Number(row.covered_country_count || 0);
+  const verified = Number(row.verified_high_confidence_count || 0);
+
+  if (missing > 0) {
+    failures.push(
+      `${missing} published App Store country/countries are missing tax profiles: ${
+        row.missing_country_codes || "unknown"
+      }.`
+    );
+  }
+
+  printRow(
+    missing > 0 ? "fail" : "ok",
+    "tax profiles",
+    `${covered}/${total} covered, ${verified} high-confidence verified`
+  );
+}
+
 async function checkCollectorRuns(client) {
   if (!(await tableExists(client, "collector_job_runs"))) {
     failures.push("collector_job_runs table is missing.");
@@ -397,6 +451,7 @@ async function main() {
       "countries",
       "region_prices",
       "price_observations",
+      "country_tax_profiles",
     ]);
 
     if (required) {
@@ -404,6 +459,7 @@ async function main() {
       await checkTrackedProductCoverage(client);
       await checkPublishedLowPrices(client);
       await checkPublishedMedianOutliers(client);
+      await checkTaxProfileCoverage(client);
       await checkCollectorRuns(client);
     }
   } catch (error) {

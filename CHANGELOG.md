@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0-beta.14 - 2026-07-16
+
+- Made public AI and streaming pricing pages dynamically read current database prices and exchange-rate metadata instead of retaining build-time snapshots.
+- Hardened product-level collection progress, queued/running reconciliation, review diagnosis, and stale-price guidance so operators can follow automatic collection without reviewing every observation manually.
+- Expanded release gates for published-price outliers, stale App Store data, tax coverage, source encoding, SEO, locale consistency, and public interaction regressions.
+- Synchronized Chinese and English public pages, category-specific navigation, plan labels, sharing cards, mobile dropdown behavior, expandable region tables, and compact UI radius rules.
+- Tightened official-logo synchronization, article archive/trash workflows, analytics settings validation, affordability refresh scope, and App Store-only public pricing policy.
+
 ## 0.3.0-beta.13 - 2026-07-10
 
 - Added a product-level action panel to the data diagnosis page with direct actions for one-product collection, review filtering, collector task filtering, and product source editing.

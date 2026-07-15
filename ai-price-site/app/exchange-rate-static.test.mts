@@ -1,0 +1,42 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const appDir = dirname(fileURLToPath(import.meta.url));
+const rootDir = resolve(appDir, "..");
+
+function readProjectFile(fileName: string) {
+  return readFileSync(resolve(rootDir, fileName), "utf8");
+}
+
+test("exchange-rate fallback never shows a hardcoded CNY estimate", () => {
+  const exchangeRates = readProjectFile("lib/exchange-rates.ts");
+  const pricingView = readProjectFile("components/PricingPlatformView.tsx");
+
+  assert.match(exchangeRates, /const UNAVAILABLE_USD_CNY_RATE = 0;/);
+  assert.match(pricingView, /const UNAVAILABLE_CNY_PER_USD = 0;/);
+  assert.doesNotMatch(exchangeRates, /7\.25/);
+  assert.doesNotMatch(pricingView, /7\.25/);
+  assert.match(
+    pricingView,
+    /cnyDisabled = Boolean\(cnyExchangeRate\.isFallback \|\| cnyExchangeRate\.isStale\)/,
+  );
+  assert.match(pricingView, /人民币估算暂不可用：汇率待同步/);
+  assert.match(pricingView, /人民币估算暂停：汇率同步已过期/);
+  assert.match(pricingView, /CNY estimate unavailable: exchange-rate sync is pending/);
+  assert.match(pricingView, /CNY estimate paused: exchange-rate sync is stale/);
+});
+
+test("exchange-rate freshness is stricter than the public 12-hour refresh window", () => {
+  const exchangeRates = readProjectFile("lib/exchange-rates.ts");
+  const cronRoute = readProjectFile("app/api/cron/exchange-rates/route.ts");
+  const syncScript = readProjectFile("scripts/sync-exchange-rates.cjs");
+
+  assert.match(cronRoute, /recommendedSchedule:\s*"Every 12 hours"/);
+  assert.match(exchangeRates, /const MAX_FRESH_RATE_AGE_HOURS = 18;/);
+  assert.match(syncScript, /api\.frankfurter\.app\/latest/);
+  assert.match(syncScript, /open\.er-api\.com\/v6\/latest/);
+  assert.match(syncScript, /upsert_exchange_rate/);
+});

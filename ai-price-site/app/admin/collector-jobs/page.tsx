@@ -52,6 +52,7 @@ type JobRow = {
   approved_observation_count: number;
   recent_app_store_observation_count: number;
   is_due: boolean;
+  queue_pending: boolean;
 };
 
 type RunRow = {
@@ -525,7 +526,7 @@ export default async function CollectorJobsPage() {
         job.last_error,
         job.priority,
         job.job_config ->> 'collector_kind' AS collector_kind,
-        candidate.name AS discovery_candidate_name,
+        job.discovery_candidate_name,
         latest_runs.status AS latest_run_status,
         latest_runs.started_at AS latest_run_started_at,
         latest_runs.error_message AS latest_run_error,
@@ -547,7 +548,19 @@ export default async function CollectorJobsPage() {
             job.next_run_at IS NULL
             OR job.next_run_at <= NOW()
           )
-        ) AS is_due
+        ) AS is_due,
+        (
+          job.status = 'active'
+          AND job.priority >= 100
+          AND (
+            job.next_run_at IS NULL
+            OR job.next_run_at <= NOW()
+          )
+          AND (
+            latest_runs.started_at IS NULL
+            OR job.updated_at > latest_runs.started_at
+          )
+        ) AS queue_pending
       FROM job_scope job
       LEFT JOIN LATERAL (
         SELECT

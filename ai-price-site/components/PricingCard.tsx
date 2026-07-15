@@ -61,7 +61,7 @@ export default function PricingCard({ product, locale = "zh" }: PricingCardProps
   return (
     <Link
       href={productHref}
-      className="group relative z-0 block overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 ease-out will-change-transform hover:z-10 hover:-translate-y-1 hover:scale-[1.015] hover:border-lime-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.12)] dark:border-zinc-800 dark:bg-zinc-900/50"
+      className="group relative z-0 block overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 ease-out will-change-transform hover:z-10 hover:-translate-y-1 hover:scale-[1.015] hover:border-lime-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.12)] dark:border-zinc-800 dark:bg-zinc-900/50"
     >
       <div className="p-6 md:p-7">
         <div className="flex items-start gap-4">
@@ -75,7 +75,7 @@ export default function PricingCard({ product, locale = "zh" }: PricingCardProps
                     {product.name} {copy.titleSuffix}
                   </h2>
 
-                  <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-black text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className="rounded-md bg-zinc-100 px-2.5 py-1 text-[11px] font-black text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300">
                     {defaultPlan.name}
                   </span>
                 </div>
@@ -149,7 +149,7 @@ export default function PricingCard({ product, locale = "zh" }: PricingCardProps
                       </span>
 
                       {region.isReference ? (
-                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-black text-zinc-400 dark:bg-zinc-800">
+                        <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-black text-zinc-400 dark:bg-zinc-800">
                           {copy.reference}
                         </span>
                       ) : null}
@@ -158,7 +158,7 @@ export default function PricingCard({ product, locale = "zh" }: PricingCardProps
 
                   <td className="py-4">
                     <div
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black tracking-wide ${
+                      className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-black tracking-wide ${
                         region.isExpensive
                           ? "bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
                           : region.isReference

@@ -53,6 +53,8 @@ type PipelineProductRow = {
   low_confidence_observation_count: unknown;
   published_price_count: unknown;
   published_region_count: unknown;
+  published_stale_price_count: unknown;
+  latest_price_checked_at: Date | string | null;
   discovery_candidate_count: unknown;
 };
 
@@ -132,6 +134,7 @@ function getPipelineState(row: PipelineProductRow) {
   const pending = toNumber(row.pending_observation_count);
   const blocked = toNumber(row.blocked_observation_count);
   const published = toNumber(row.published_price_count);
+  const stalePublished = toNumber(row.published_stale_price_count);
 
   if (appStoreJobs <= 0) {
     return {
@@ -185,6 +188,16 @@ function getPipelineState(row: PipelineProductRow) {
     };
   }
 
+  if (stalePublished > 0) {
+    return {
+      key: "stale",
+      label: "需复采",
+      detail: `${stalePublished} 条正式 App Store 价格超过 14 天未更新。先按产品复采，稳定结果会自动入库。`,
+      className: "bg-amber-50 text-amber-700 ring-amber-200",
+      icon: Clock3,
+    };
+  }
+
   return {
     key: "ready",
     label: "已上线",
@@ -230,6 +243,8 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       COALESCE(observation_stats.low_confidence_observation_count, 0)::int AS low_confidence_observation_count,
       COALESCE(published_stats.published_price_count, 0)::int AS published_price_count,
       COALESCE(published_stats.published_region_count, 0)::int AS published_region_count,
+      COALESCE(published_stats.published_stale_price_count, 0)::int AS published_stale_price_count,
+      published_stats.latest_price_checked_at,
       COALESCE(candidate_stats.discovery_candidate_count, 0)::int AS discovery_candidate_count
     FROM products product
     LEFT JOIN LATERAL (
@@ -287,10 +302,17 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
     LEFT JOIN LATERAL (
       SELECT
         COUNT(*)::int AS published_price_count,
-        COUNT(DISTINCT price.country_id)::int AS published_region_count
+        COUNT(DISTINCT price.country_id)::int AS published_region_count,
+        COUNT(*) FILTER (
+          WHERE price.last_checked_at IS NULL
+            OR price.last_checked_at < NOW() - INTERVAL '14 days'
+        )::int AS published_stale_price_count,
+        MAX(price.last_checked_at) AS latest_price_checked_at
       FROM region_prices price
       WHERE price.product_id = product.id
         AND price.status = 'published'::publish_status
+        AND price.billing_platform = 'ios'::billing_platform
+        AND price.price_usd IS NOT NULL
     ) published_stats ON TRUE
     LEFT JOIN LATERAL (
       SELECT COUNT(*)::int AS discovery_candidate_count
@@ -308,7 +330,8 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
         WHEN latest_run.status = 'failed' THEN 2
         WHEN latest_success.latest_success_at IS NULL THEN 3
         WHEN COALESCE(published_stats.published_price_count, 0) <= 0 THEN 4
-        ELSE 5
+        WHEN COALESCE(published_stats.published_stale_price_count, 0) > 0 THEN 5
+        ELSE 6
       END,
       COALESCE(observation_stats.pending_observation_count, 0) DESC,
       product.category ASC,
@@ -328,7 +351,9 @@ async function getPipelineStats() {
         latest_run.status AS latest_run_status,
         latest_success.latest_success_at,
         COALESCE(observation_stats.pending_observation_count, 0) AS pending_observation_count,
-        COALESCE(published_stats.published_price_count, 0) AS published_price_count
+        COALESCE(published_stats.published_price_count, 0) AS published_price_count,
+        COALESCE(published_stats.published_stale_price_count, 0) AS published_stale_price_count,
+        published_stats.latest_price_checked_at
       FROM products product
       LEFT JOIN LATERAL (
         SELECT
@@ -364,16 +389,29 @@ async function getPipelineStats() {
           AND observation.billing_platform = 'ios'::billing_platform
       ) observation_stats ON TRUE
       LEFT JOIN LATERAL (
-        SELECT COUNT(*)::int AS published_price_count
+        SELECT
+          COUNT(*)::int AS published_price_count,
+          COUNT(*) FILTER (
+            WHERE price.last_checked_at IS NULL
+              OR price.last_checked_at < NOW() - INTERVAL '14 days'
+          )::int AS published_stale_price_count,
+          MAX(price.last_checked_at) AS latest_price_checked_at
         FROM region_prices price
         WHERE price.product_id = product.id
           AND price.status = 'published'::publish_status
+          AND price.billing_platform = 'ios'::billing_platform
+          AND price.price_usd IS NOT NULL
       ) published_stats ON TRUE
       WHERE product.status <> 'archived'::publish_status
     )
     SELECT
       COUNT(*)::int AS product_count,
-      COUNT(*) FILTER (WHERE pending_observation_count = 0 AND published_price_count > 0)::int AS ready_count,
+      COUNT(*) FILTER (
+        WHERE pending_observation_count = 0
+          AND published_price_count > 0
+          AND published_stale_price_count = 0
+          AND latest_price_checked_at IS NOT NULL
+      )::int AS ready_count,
       COUNT(*) FILTER (WHERE app_store_job_count <= 0)::int AS setup_count,
       COUNT(*) FILTER (WHERE pending_observation_count > 0)::int AS pending_count,
       COUNT(*) FILTER (WHERE latest_run_status = 'failed')::int AS failed_count,
@@ -382,8 +420,8 @@ async function getPipelineStats() {
       COUNT(*) FILTER (
         WHERE published_price_count > 0
           AND (
-            latest_success_at IS NULL
-            OR latest_success_at < NOW() - INTERVAL '24 hours'
+            published_stale_price_count > 0
+            OR latest_price_checked_at IS NULL
           )
       )::int AS stale_count,
       COALESCE(SUM(published_price_count), 0)::int AS published_price_count
@@ -458,7 +496,7 @@ function getPipelineRecommendation(stats: PipelineStats) {
   if (stats.staleCount > 0) {
     return {
       title: "上线价格需要定期复核",
-      body: `${stats.staleCount} 个已上线产品超过 24 小时没有成功采集记录。建议下一轮后台任务优先复采。`,
+      body: `${stats.staleCount} 个已上线产品存在超过 14 天未更新的正式 App Store 价格。建议按产品复采，稳定结果会自动入库。`,
       href: "/admin/collector-jobs",
       action: "查看采集任务",
       className: "border-slate-200 bg-slate-50 text-slate-950",
@@ -540,6 +578,7 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
   const pendingCount = toNumber(row.pending_observation_count);
   const blockedCount = toNumber(row.blocked_observation_count);
   const appStoreJobs = toNumber(row.app_store_job_count);
+  const stalePublishedCount = toNumber(row.published_stale_price_count);
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50">
@@ -618,6 +657,16 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
           <div className="mt-1 text-xs text-slate-500">
             地区 {toNumber(row.published_region_count)}，套餐 {toNumber(row.plan_count)}
           </div>
+          <div
+            className={joinClasses(
+              "mt-1 text-xs font-bold",
+              stalePublishedCount > 0 ? "text-amber-700" : "text-slate-400"
+            )}
+          >
+            {stalePublishedCount > 0
+              ? `需复采 ${stalePublishedCount} 条`
+              : `最新 ${formatDate(row.latest_price_checked_at)}`}
+          </div>
         </div>
       </div>
 
@@ -641,6 +690,11 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
           {toNumber(row.discovery_candidate_count) > 0 ? (
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600 ring-1 ring-slate-200">
               来自线索 {toNumber(row.discovery_candidate_count)}
+            </span>
+          ) : null}
+          {stalePublishedCount > 0 ? (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200">
+              正式价超过 14 天
             </span>
           ) : null}
         </div>
@@ -750,9 +804,11 @@ export default async function AdminPipelinePage({
           <div className="mt-2 text-sm text-slate-500">最近采集失败。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">到期复采</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">{stats.dueCount}</div>
-          <div className="mt-2 text-sm text-slate-500">可由后台任务处理。</div>
+          <div className="text-sm font-bold text-slate-500">复采提醒</div>
+          <div className="mt-2 text-2xl font-black text-slate-950">{stats.dueCount + stats.staleCount}</div>
+          <div className="mt-2 text-sm text-slate-500">
+            定时到期 {stats.dueCount}，正式价过期 {stats.staleCount}。
+          </div>
         </AdminCard>
         <AdminCard>
           <div className="text-sm font-bold text-slate-500">正式价格</div>

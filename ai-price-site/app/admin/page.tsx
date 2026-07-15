@@ -761,12 +761,6 @@ export default async function AdminDashboardPage({
       helper: "Header、Footer 与子菜单",
       href: "/admin/navigation",
     },
-    {
-      label: "广告位",
-      value: data.adSlots,
-      helper: "商业化展示位",
-      href: "/admin/commercial",
-    },
   ];
 
   return (
@@ -829,8 +823,6 @@ export default async function AdminDashboardPage({
         <DashboardPanel
           title="商业化点击"
           description="读取今日 event_logs 中的商业点击事件。"
-          actionHref="/admin/commercial"
-          actionLabel="商业设置"
         >
           <div className="space-y-3">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">

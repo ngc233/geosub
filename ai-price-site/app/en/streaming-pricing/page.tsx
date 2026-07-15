@@ -3,6 +3,8 @@ import { ProductCategory } from "@prisma/client";
 import DbAiPricingClient from "../../../components/DbAiPricingClient";
 import { getDbAiPricingProducts } from "../../../lib/db-ai-pricing";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Streaming Subscription Pricing - Netflix, YouTube Premium, Spotify - GeoSub",
   description:

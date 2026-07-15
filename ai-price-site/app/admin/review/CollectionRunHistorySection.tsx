@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { buildCollectionProgressState, type CollectionProgressState } from "./collection-progress";
 import CollectorRunTimeline, { CollectorRunOutcomeSummary } from "./CollectorRunTimeline";
 import { formatDate } from "./review-display";
 import type { CollectorRunHistoryRow } from "./types";
@@ -116,6 +117,89 @@ function runOutput(row: CollectorRunHistoryRow) {
   };
 }
 
+function progressToneClassName(tone: CollectionProgressState["tone"]) {
+  if (tone === "success") {
+    return {
+      wrapper: "border-emerald-100 bg-emerald-50 text-emerald-950",
+      bar: "bg-emerald-600",
+      pill: "bg-white text-emerald-700 ring-emerald-200",
+    };
+  }
+
+  if (tone === "danger") {
+    return {
+      wrapper: "border-red-100 bg-red-50 text-red-950",
+      bar: "bg-red-600",
+      pill: "bg-white text-red-700 ring-red-200",
+    };
+  }
+
+  if (tone === "warning") {
+    return {
+      wrapper: "border-amber-100 bg-amber-50 text-amber-950",
+      bar: "bg-amber-500",
+      pill: "bg-white text-amber-700 ring-amber-200",
+    };
+  }
+
+  if (tone === "neutral") {
+    return {
+      wrapper: "border-slate-100 bg-slate-50 text-slate-900",
+      bar: "bg-slate-500",
+      pill: "bg-white text-slate-600 ring-slate-200",
+    };
+  }
+
+  return {
+    wrapper: "border-blue-100 bg-blue-50 text-blue-950",
+    bar: "bg-blue-600",
+    pill: "bg-white text-blue-700 ring-blue-200",
+  };
+}
+
+function CollectionProgressPanel({ progress }: { progress: CollectionProgressState }) {
+  if (!progress.visible) return null;
+
+  const classes = progressToneClassName(progress.tone);
+
+  return (
+    <div className={`border-b px-4 py-4 ${classes.wrapper}`} aria-live="polite">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${classes.pill}`}>
+              {progress.active ? "采集中" : "本轮结果"}
+            </span>
+            {progress.elapsedLabel ? (
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${classes.pill}`}>
+                已用 {progress.elapsedLabel}
+              </span>
+            ) : null}
+          </div>
+          <h3 className="mt-2 text-sm font-bold">{progress.label}</h3>
+          <p className="mt-1 text-xs leading-5 opacity-80">{progress.detail}</p>
+        </div>
+
+        <div className="w-full lg:w-80">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span>采集进度</span>
+            <span className="font-mono tabular-nums">{progress.progress}%</span>
+          </div>
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/80 ring-1 ring-inset ring-black/5">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
+              style={{ width: `${progress.progress}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[11px] leading-4 opacity-70">
+            页面会自动刷新运行记录；不需要反复点击采集按钮。
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CollectionRunHistorySection({
   rows,
   collectionRun,
@@ -130,6 +214,15 @@ export default function CollectionRunHistorySection({
   );
   const hasRunning = runningRows.length > 0;
   const autoRefreshActive = queued || hasRunning;
+  const progressState = useMemo(
+    () =>
+      buildCollectionProgressState({
+        rows: visibleRows,
+        collectionRun,
+        collectionScope,
+      }),
+    [visibleRows, collectionRun, collectionScope],
+  );
 
   useEffect(() => {
     if (!autoRefreshActive) {
@@ -209,22 +302,7 @@ export default function CollectionRunHistorySection({
         </Link>
       </div>
 
-      {queued || hasRunning ? (
-        <div className="border-b border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-800">
-          {queued ? (
-            <>
-              已唤起后台采集器{collectionScope ? `：${collectionScope}` : ""}。
-            </>
-          ) : null}
-          {hasRunning ? (
-            <>
-              当前有 {runningRows.length} 条运行记录未完成，本区块会自动刷新。
-            </>
-          ) : (
-            "脚本开始或结束后会出现在下方运行记录里。"
-          )}
-        </div>
-      ) : null}
+      <CollectionProgressPanel progress={progressState} />
 
       {visibleRows.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-slate-500">

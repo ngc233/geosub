@@ -159,14 +159,13 @@ export default async function EditProductPage({
 
       {query?.logoSynced ? (
         <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
-          官方 Logo 已同步，当前优先使用
-          {query.logoSynced === "app-store" ? " App Store 官方 artwork" : " 官网 icon"}。
+          官网 Logo 已同步，当前优先使用官方网站高可信 icon。
         </div>
       ) : null}
 
-      {query?.logoError === "not-found" ? (
+      {query?.logoError === "official-not-found" || query?.logoError === "not-found" ? (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
-          暂未找到可用官方 Logo。请先补充 App Store App ID 或官方网站，再重新同步。
+          暂未找到高可信官网 Logo，系统不会自动写入 App Store artwork。请补充官方网站或手动填写官方 SVG/PNG Logo URL。
         </div>
       ) : null}
 
@@ -282,7 +281,7 @@ export default async function EditProductPage({
       <AdminCard className="mt-6">
         <AdminSectionHeader
           title="官方 Logo"
-          description="优先读取官方网站 icon 或品牌资源；官网不可用时才使用 App Store artwork 兜底。同步后会写入 Logo URL，并统一用于前台列表、详情页和分享图。"
+          description="只自动写入官方网站高可信 icon 或品牌资源；官网不可用时保留系统兜底图标，不再把 App Store artwork 当作正式 Logo。"
         />
 
         <div className="flex flex-col gap-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -293,8 +292,8 @@ export default async function EditProductPage({
                 当前展示：{product.logoUrl ? "产品 Logo URL" : "系统兜底图标"}
               </div>
               <div className="mt-1 max-w-2xl text-xs leading-6 text-slate-600">
-                新增产品后，只要 App Store 来源配置正确，就可以直接同步官方图标。
-                如果官方图标有变化，重新点击同步即可更新。
+                新增产品后，优先维护官方网站；如果官网品牌图标有变化，重新点击同步即可更新。
+                找不到高可信官网图标时，前台会继续使用系统品牌图标或手动填写的 Logo URL。
               </div>
             </div>
           </div>

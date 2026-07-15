@@ -45,7 +45,7 @@ export default function AdminPipelineSteps({
   const activeStep = currentStep === "collector" ? "review" : currentStep;
 
   return (
-    <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
+    <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-950">价格采集流水线</h2>
@@ -53,7 +53,7 @@ export default function AdminPipelineSteps({
             后台主流程简化为三步：先定位产品状态，再补充线索，最后在同一个工作台完成采集、自动审核和异常处理。
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+        <div className="inline-flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
           <CheckCircle2 size={14} strokeWidth={2} />
           V1 主线：App Store 优先
         </div>
@@ -69,7 +69,7 @@ export default function AdminPipelineSteps({
               key={step.id}
               href={step.href}
               className={[
-                "group rounded-xl border p-4 transition",
+                "group rounded-lg border p-4 transition",
                 active
                   ? "border-blue-200 bg-blue-50 ring-1 ring-blue-100"
                   : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white",

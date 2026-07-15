@@ -166,6 +166,8 @@ function toAbsoluteUrl(value: string, baseUrl: string) {
   }
 }
 
+const MIN_OFFICIAL_ICON_SCORE = 600;
+
 function getOfficialIconScore(tag: string) {
   const rel = getHtmlAttribute(tag, "rel")?.toLowerCase() || "";
   const href = getHtmlAttribute(tag, "href")?.toLowerCase() || "";
@@ -262,7 +264,7 @@ async function fetchOfficialSiteIcon(officialUrl: string | null) {
   });
 
   if (!response.ok) {
-    return `${siteUrl.origin}/favicon.ico`;
+    return null;
   }
 
   const html = await response.text();
@@ -278,14 +280,19 @@ async function fetchOfficialSiteIcon(officialUrl: string | null) {
         score: getOfficialIconScore(tag),
       };
     })
-    .filter((candidate) => candidate.url && !candidate.url.startsWith("data:") && candidate.score >= 0)
+    .filter(
+      (candidate) =>
+        candidate.url &&
+        !candidate.url.startsWith("data:") &&
+        candidate.score >= MIN_OFFICIAL_ICON_SCORE,
+    )
     .sort((a, b) => b.score - a.score);
 
   if (iconCandidates[0]?.url) {
     return iconCandidates[0].url;
   }
 
-  return `${siteUrl.origin}/favicon.ico`;
+  return null;
 }
 
 async function configureAppStoreSourceForProduct({
@@ -475,11 +482,9 @@ export async function createProductAction(formData: FormData) {
       !product.logoUrl && officialUrl
         ? await fetchOfficialSiteIcon(officialUrl).catch(() => null)
         : null;
-    const fallbackLogoUrl =
-      !product.logoUrl && !officialLogoUrl ? appStoreApp.artworkUrl : null;
 
     if (
-      (!product.logoUrl && (officialLogoUrl || fallbackLogoUrl)) ||
+      (!product.logoUrl && officialLogoUrl) ||
       (!product.officialUrl && appStoreApp.sellerUrl)
     ) {
       product = await prisma.product.update({
@@ -487,7 +492,7 @@ export async function createProductAction(formData: FormData) {
           id: product.id,
         },
         data: {
-          logoUrl: product.logoUrl || officialLogoUrl || fallbackLogoUrl,
+          logoUrl: product.logoUrl || officialLogoUrl,
           officialUrl: product.officialUrl || appStoreApp.sellerUrl,
         },
       });
@@ -514,8 +519,8 @@ export async function createProductAction(formData: FormData) {
           appStoreName: appStoreApp.appStoreName,
           sellerName: appStoreApp.sellerName,
           sellerUrl: appStoreApp.sellerUrl,
-          logoUrl: product.logoUrl || officialLogoUrl || appStoreApp.artworkUrl,
-          logoSource: officialLogoUrl ? "official-site" : "app-store",
+          logoUrl: product.logoUrl || officialLogoUrl,
+          logoSource: officialLogoUrl ? "official-site" : null,
         },
         note: "Automatically configured App Store source from product onboarding.",
       },
@@ -706,22 +711,15 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
   const storedAppStoreId =
     appStoreRows[0]?.app_store_id || extractAppStoreId(appStoreRows[0]?.app_store_url || null);
   const appStoreId = formAppStoreId || storedAppStoreId;
-  let appStoreLogo =
+  const appStoreLogo =
     product.officialUrl || !appStoreId
       ? null
       : await lookupAppStoreArtwork(appStoreId).catch(() => null);
   const officialUrl = product.officialUrl || appStoreLogo?.sellerUrl || null;
   const officialSiteLogo = await fetchOfficialSiteIcon(officialUrl).catch(() => null);
 
-  if (!officialSiteLogo && !appStoreLogo) {
-    appStoreLogo = await lookupAppStoreArtwork(appStoreId).catch(() => null);
-  }
-
-  const logoUrl = officialSiteLogo || appStoreLogo?.logoUrl;
-  const logoSource = officialSiteLogo ? "official-site" : "app-store";
-
-  if (!logoUrl) {
-    redirect(`/admin/products/${product.id}/edit?logoError=not-found`);
+  if (!officialSiteLogo) {
+    redirect(`/admin/products/${product.id}/edit?logoError=official-not-found`);
   }
 
   await prisma.product.update({
@@ -729,7 +727,7 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
       id: product.id,
     },
     data: {
-      logoUrl,
+      logoUrl: officialSiteLogo,
       officialUrl: product.officialUrl || officialUrl,
     },
   });
@@ -744,18 +742,18 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
         logoUrl: product.logoUrl,
       },
       newValue: {
-        logoUrl,
-        logoSource,
+        logoUrl: officialSiteLogo,
+        logoSource: "official-site",
         appStoreId,
         officialUrl,
         appName: appStoreLogo?.appName || null,
         sellerName: appStoreLogo?.sellerName || null,
       },
-      note: "Synced product logo from official App Store artwork or official website icon.",
+      note: "Synced product logo from high-confidence official website icon.",
     },
   });
 
-  redirect(`/admin/products/${product.id}/edit?logoSynced=${logoSource}`);
+  redirect(`/admin/products/${product.id}/edit?logoSynced=official-site`);
 }
 
 export async function saveProductSeoAction(formData: FormData) {

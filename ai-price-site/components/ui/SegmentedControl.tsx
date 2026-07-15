@@ -66,11 +66,11 @@ export default function SegmentedControl({
       ? "h-8 px-2.5 text-xs sm:px-3"
       : "h-10 px-2.5 text-sm sm:px-4";
 
-  const thumbRadius = size === "sm" ? "rounded-lg" : "rounded-lg";
+  const thumbRadius = "rounded-md";
 
   const sharedClassName = (active: boolean, disabled?: boolean) =>
     [
-      "relative z-10 inline-flex min-w-0 items-center justify-center gap-2 rounded-lg font-bold outline-none transition-colors duration-200 ease-out",
+      "relative z-10 inline-flex min-w-0 items-center justify-center gap-2 rounded-md font-bold outline-none transition-colors duration-200 ease-out",
       sizeClasses,
       active
         ? toneClasses.activeText
@@ -102,7 +102,7 @@ export default function SegmentedControl({
   return (
     <div
       className={[
-        "relative inline-grid rounded-xl bg-zinc-100/85 p-1 text-sm shadow-inner shadow-white/80 ring-1 ring-zinc-950/[0.04] backdrop-blur dark:bg-zinc-900/80 dark:shadow-black/20 dark:ring-white/[0.06]",
+        "relative inline-grid rounded-lg bg-zinc-100/85 p-1 text-sm shadow-inner shadow-white/80 ring-1 ring-zinc-950/[0.04] backdrop-blur dark:bg-zinc-900/80 dark:shadow-black/20 dark:ring-white/[0.06]",
         className,
       ].join(" ")}
       style={{

@@ -25,7 +25,7 @@ export function adminButtonClassName({
   className?: string;
 }) {
   const base =
-    "inline-flex items-center justify-center rounded-xl font-semibold transition shadow-sm focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex items-center justify-center rounded-lg font-semibold transition shadow-sm focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60";
 
   const sizes = {
     sm: "px-3.5 py-2 text-xs",

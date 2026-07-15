@@ -15,6 +15,7 @@ function job(overrides: Partial<CollectorJobStateInput> = {}): CollectorJobState
     collector_kind: "app_store",
     status: "active",
     is_due: true,
+    queue_pending: true,
     priority: 100,
     latest_run_status: null,
     ...overrides,
@@ -62,6 +63,10 @@ test("running app store job is running, not queued", () => {
 test("low-priority or future app store jobs are not shown as manually queued", () => {
   assert.equal(isManuallyQueuedAppStoreJob(job({ priority: 20 })), false);
   assert.equal(isManuallyQueuedAppStoreJob(job({ is_due: false })), false);
+});
+
+test("consumed app store queue is not shown as manually queued", () => {
+  assert.equal(isManuallyQueuedAppStoreJob(job({ queue_pending: false })), false);
 });
 
 test("queued admin run shows process startup as the active timeline step", () => {
@@ -116,4 +121,18 @@ test("spawn failure is visible before the collection step", () => {
   assert.equal(timeline[1].state, "failed");
   assert.equal(timeline[2].state, "waiting");
   assert.match(timeline[1].detail, /not found/);
+});
+
+test("stale running collection is visible as a failed run", () => {
+  const timeline = buildCollectorRunTimeline(
+    run({
+      status: "failed",
+      runner_state: "stale_running_marked_failed",
+      error_message: "Collector process did not start reporting within 3 minutes.",
+    }),
+  );
+
+  assert.equal(timeline[1].state, "failed");
+  assert.equal(timeline[2].state, "failed");
+  assert.match(timeline[1].detail, /3 minutes/);
 });

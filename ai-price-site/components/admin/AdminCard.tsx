@@ -16,7 +16,7 @@ export function AdminCard({
   return (
     <div
       className={joinClasses(
-        "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60",
+        "rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60",
         className
       )}
     >
@@ -39,7 +39,7 @@ export function AdminStatCard({
   const card = (
     <div
       className={joinClasses(
-        "h-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition",
+        "h-full rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition",
         href
           ? "cursor-pointer hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80"
           : ""
@@ -57,11 +57,11 @@ export function AdminStatCard({
         </div>
 
         {href ? (
-          <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
+          <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
             <ArrowRight size={16} strokeWidth={2} />
           </span>
         ) : (
-          <span className="mt-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">
+          <span className="mt-1 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">
             统计
           </span>
         )}

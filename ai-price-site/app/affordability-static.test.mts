@@ -1,0 +1,47 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const appDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(appDir, "../..");
+
+function readRepoFile(fileName: string) {
+  return readFileSync(resolve(repoRoot, fileName), "utf8");
+}
+
+test("affordability refresh uses the same published App Store price scope as V1 rankings", () => {
+  const source = readRepoFile("geosub-backend/sql/010_refresh_affordability_function.sql");
+
+  assert.match(source, /DELETE FROM plan_affordability_metrics pam/);
+  assert.match(source, /NOT EXISTS \([\s\S]*rp\.billing_platform = 'ios'/);
+  assert.match(source, /WHERE rp\.status = 'published'/);
+  assert.match(source, /rp\.billing_platform = 'ios'/);
+  assert.match(source, /rp\.price_usd IS NOT NULL/);
+  assert.match(source, /pl\.status = 'published'/);
+  assert.doesNotMatch(source, /WHEN rp\.billing_platform = 'web'/);
+});
+
+test("public detail pages read affordability from the shared database view", () => {
+  const zhPage = readRepoFile("ai-price-site/app/zh/ai-pricing/[slug]/page.tsx");
+  const enPage = readRepoFile("ai-price-site/app/en/ai-pricing/[slug]/page.tsx");
+  const affordabilityLib = readRepoFile("ai-price-site/lib/affordability.ts");
+
+  assert.match(zhPage, /getPlanAffordability\(product\.slug, activePlan\.slug\)/);
+  assert.match(enPage, /getPlanAffordability\(product\.slug, activePlan\.slug\)/);
+  assert.match(zhPage, /<AffordabilityComparison/);
+  assert.match(enPage, /<AffordabilityComparison/);
+  assert.match(affordabilityLib, /FROM plan_affordability_summary_view/);
+  assert.match(affordabilityLib, /FROM plan_affordability_detail_view/);
+  assert.match(affordabilityLib, /ORDER BY income_share_percent DESC/);
+});
+
+test("collector success refreshes affordability after App Store auto review", () => {
+  const collectorRunner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
+  const adminRunner = readRepoFile("ai-price-site/app/admin/review/collection-runner.ts");
+
+  assert.match(collectorRunner, /run_app_store_stability_auto_review\(FALSE, 3, 80, 14\)/);
+  assert.match(collectorRunner, /SELECT refresh_plan_affordability_metrics\(\) AS refreshed_rows/);
+  assert.match(adminRunner, /revalidatePath\("\/admin\/affordability"\)/);
+});
