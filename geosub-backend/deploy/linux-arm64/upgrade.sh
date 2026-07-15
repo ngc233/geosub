@@ -73,9 +73,9 @@ record_release() {
   fi
 
   if [[ -d "$source_dir/.git" ]]; then
-    commit="$(git -C "$source_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+    commit="$(sudo -u geosub git -C "$source_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
   elif [[ -d "$BACKEND_DIR/.git" ]]; then
-    commit="$(git -C "$BACKEND_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+    commit="$(sudo -u geosub git -C "$BACKEND_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
   fi
 
   mkdir -p "$RELEASE_DIR"
