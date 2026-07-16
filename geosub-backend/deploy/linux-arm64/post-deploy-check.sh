@@ -19,6 +19,7 @@ MAX_EXCHANGE_RATE_AGE_HOURS="${GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS:-18}"
 MIN_PUBLISHED_SUBSCRIPTION_USD="${GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD:-1}"
 MAX_PUBLISHED_PRICE_AGE_DAYS="${GEOSUB_MAX_PUBLISHED_PRICE_AGE_DAYS:-14}"
 MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS="${GEOSUB_MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS:-8}"
+LOGO_STORAGE_DIR="${GEOSUB_LOGO_STORAGE_DIR:-/var/lib/geosub/product-logos}"
 
 failures=0
 warnings=0
@@ -154,6 +155,13 @@ fi
 
 check_required_path "backend directory" "$BACKEND_DIR"
 check_required_path "frontend directory" "$FRONTEND_DIR"
+check_required_path "product logo storage" "$LOGO_STORAGE_DIR"
+
+if sudo -u geosub test -w "$LOGO_STORAGE_DIR"; then
+  pass "product logo storage writable by geosub"
+else
+  fail "product logo storage is not writable by geosub: $LOGO_STORAGE_DIR"
+fi
 
 if ! command -v docker >/dev/null 2>&1; then
   fail "docker command not found"

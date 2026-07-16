@@ -26,6 +26,7 @@ BRANCH="${GEOSUB_GIT_BRANCH:-main}"
 SKIP_GIT_PULL="${GEOSUB_SKIP_GIT_PULL:-false}"
 RUN_CONTENT_MIGRATIONS="${GEOSUB_RUN_CONTENT_MIGRATIONS:-false}"
 RELEASE_DIR="${GEOSUB_RELEASE_DIR:-/opt/geosub/releases}"
+LOGO_STORAGE_DIR="${GEOSUB_LOGO_STORAGE_DIR:-/var/lib/geosub/product-logos}"
 
 log() {
   printf '\n==> %s\n' "$1"
@@ -104,6 +105,9 @@ else
   ensure_repo "$BACKEND_DIR"
   ensure_repo "$FRONTEND_DIR"
 fi
+
+log "Preparing persistent product logo storage"
+install -d -m 0755 -o geosub -g geosub "$LOGO_STORAGE_DIR"
 
 log "Stopping timers and web service"
 systemctl stop geosub-price-pipeline.timer 2>/dev/null || true

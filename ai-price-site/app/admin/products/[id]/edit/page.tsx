@@ -159,13 +159,19 @@ export default async function EditProductPage({
 
       {query?.logoSynced ? (
         <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
-          官网 Logo 已同步，当前优先使用官方网站高可信 icon。
+          官网 Logo 已同步并保存到 GeoSub 服务器，前台不再直接加载第三方图片。
         </div>
       ) : null}
 
       {query?.logoError === "official-not-found" || query?.logoError === "not-found" ? (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
           暂未找到高可信官网 Logo，系统不会自动写入 App Store artwork。请补充官方网站或手动填写官方 SVG/PNG Logo URL。
+        </div>
+      ) : null}
+
+      {query?.logoError === "download-failed" ? (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
+          已找到官网图标，但服务器下载或校验失败。当前继续使用内置品牌图标，请稍后重新同步。
         </div>
       ) : null}
 
@@ -281,7 +287,7 @@ export default async function EditProductPage({
       <AdminCard className="mt-6">
         <AdminSectionHeader
           title="官方 Logo"
-          description="只自动写入官方网站高可信 icon 或品牌资源；官网不可用时保留系统兜底图标，不再把 App Store artwork 当作正式 Logo。"
+          description="只同步官方网站高可信 icon，并下载到 GeoSub 持久目录；官网不可用时保留系统兜底图标。"
         />
 
         <div className="flex flex-col gap-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -293,7 +299,7 @@ export default async function EditProductPage({
               </div>
               <div className="mt-1 max-w-2xl text-xs leading-6 text-slate-600">
                 新增产品后，优先维护官方网站；如果官网品牌图标有变化，重新点击同步即可更新。
-                找不到高可信官网图标时，前台会继续使用系统品牌图标或手动填写的 Logo URL。
+                找不到高可信官网图标时，前台会继续使用内置品牌图标，不会显示破损图片。
               </div>
             </div>
           </div>

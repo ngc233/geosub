@@ -31,8 +31,18 @@ test("pricing detail pages keep product navigation database-driven", () => {
     assert.match(page, /status:\s*\{\s*in:\s*\["PUBLISHED", "REVIEW"\]/);
     assert.match(page, /sortOrder: "asc"/);
     assert.match(page, /logoUrl: true/);
+    assert.match(page, /officialUrl: true/);
     assert.match(page, /products=\{sidebarProducts\}/);
   }
+});
+
+test("database-only streaming products keep their real category on detail pages", () => {
+  const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
+
+  assert.match(adapter, /p\.category::text AS product_category/);
+  assert.match(adapter, /p\.official_url AS product_official_url/);
+  assert.match(adapter, /firstRow\.product_category === "streaming"/);
+  assert.doesNotMatch(adapter, /category: staticProduct\?\.category \|\| "ai"/);
 });
 
 test("pricing detail pages keep AI and streaming paths synchronized", () => {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0-beta.19 - 2026-07-16
+
+- Preserved database-only streaming categories on product detail pages so Disney+, Netflix, and future streaming products receive the streaming product overview and URLs.
+- Replaced browser-side third-party logo hotlinks with a GeoSub API that discovers high-confidence official-site icons and stores validated image files in persistent server storage.
+- Kept built-in brand marks visible while a cached logo loads or when an official download fails, eliminating broken-image placeholders.
+- Added deployment and post-deploy checks for the persistent product-logo directory.
+
 ## 0.3.0-beta.18 - 2026-07-16
 
 - Normalized Disney+ App Store prices into Standard with Ads, Standard, and Premium monthly tiers across localized storefront labels.

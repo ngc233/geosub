@@ -45,6 +45,7 @@ export type SubscriptionProduct = {
   description: string;
   icon?: string;
   logoUrl?: string;
+  officialUrl?: string;
   accentIcon?: string;
   defaultPlan: string;
   updatedAt: string;

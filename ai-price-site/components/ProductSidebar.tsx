@@ -8,6 +8,7 @@ export type ProductNavItem = {
   name: string;
   category: ProductNavCategory;
   logoUrl?: string | null;
+  officialUrl?: string | null;
 };
 
 type ProductSidebarProps = {

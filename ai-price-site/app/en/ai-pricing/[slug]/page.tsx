@@ -55,6 +55,7 @@ async function getProductNavItems(category: string) {
       name: true,
       category: true,
       logoUrl: true,
+      officialUrl: true,
     },
   });
 
@@ -63,6 +64,7 @@ async function getProductNavItems(category: string) {
     name: product.name,
     category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
     logoUrl: product.logoUrl,
+    officialUrl: product.officialUrl,
   }));
 }
 

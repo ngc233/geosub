@@ -8,11 +8,13 @@ fi
 
 FRONTEND_DIR="${GEOSUB_FRONTEND_DIR:-/opt/geosub/ai-price-site}"
 BACKEND_DIR="${GEOSUB_BACKEND_DIR:-/opt/geosub/geosub-backend}"
+LOGO_STORAGE_DIR="${GEOSUB_LOGO_STORAGE_DIR:-/var/lib/geosub/product-logos}"
 
 if ! id geosub >/dev/null 2>&1; then
   useradd --system --create-home --home-dir /opt/geosub --shell /usr/sbin/nologin geosub
 fi
 
+install -d -m 0755 -o geosub -g geosub "$LOGO_STORAGE_DIR"
 chown -R geosub:geosub /opt/geosub
 
 sudo -u geosub bash -lc "set -a && source /etc/geosub/geosub.env && set +a && cd '$FRONTEND_DIR' && npm ci && npx prisma generate && npm run build"

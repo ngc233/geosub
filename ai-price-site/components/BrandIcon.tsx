@@ -9,6 +9,7 @@ type BrandIconProps = {
     slug: string;
     name?: string;
     logoUrl?: string | null;
+    officialUrl?: string | null;
     icon?: string | null;
   };
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -58,6 +59,7 @@ const iconMap: Record<string, string[]> = {
   'youtube-premium': ['siYoutube'],
   spotify: ['siSpotify'],
   'apple-music': ['siApplemusic', 'siApple'],
+  disney: ['siDisneyplus', 'siDisney'],
   'disney-plus': ['siDisneyplus', 'siDisney'],
   max: ['siMax', 'siHbo'],
   'prime-video': ['siPrimevideo', 'siAmazonprime', 'siAmazon'],
@@ -102,6 +104,7 @@ const brandColorMap: Record<string, string> = {
   'youtube-premium': '#FF0000',
   spotify: '#1DB954',
   'apple-music': '#FA243C',
+  disney: '#113CCF',
   'disney-plus': '#113CCF',
   max: '#002BE7',
   'prime-video': '#00A8E1',
@@ -146,6 +149,7 @@ const bgMap: Record<string, string> = {
   'youtube-premium': 'bg-red-50',
   spotify: 'bg-green-50',
   'apple-music': 'bg-rose-50',
+  disney: 'bg-blue-50',
   'disney-plus': 'bg-blue-50',
   max: 'bg-blue-50',
   'prime-video': 'bg-sky-50',
@@ -192,19 +196,24 @@ function getSimpleIcon(productSlug: string): SimpleIcon | null {
   return null;
 }
 
-function getLogoSrc(value?: string | null) {
+function getLogoSrc(
+  value: string | null | undefined,
+  productSlug: string,
+  officialUrl?: string | null,
+) {
   const src = value?.trim();
 
   if (!src) {
-    return null;
+    return officialUrl?.trim()
+      ? `/api/product-logos/${encodeURIComponent(productSlug)}`
+      : null;
   }
 
-  if (
-    src.startsWith('/') ||
-    src.startsWith('https://') ||
-    src.startsWith('http://') ||
-    src.startsWith('data:image/')
-  ) {
+  if (src.startsWith('https://') || src.startsWith('http://')) {
+    return `/api/product-logos/${encodeURIComponent(productSlug)}`;
+  }
+
+  if (src.startsWith('/') || src.startsWith('data:image/')) {
     return src;
   }
 
@@ -376,34 +385,53 @@ export default function BrandIcon({
   className = '',
 }: BrandIconProps) {
   const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
+  const [loadedLogoSrc, setLoadedLogoSrc] = useState<string | null>(null);
   const icon = getSimpleIcon(product.slug);
   const sizeClass = sizeMap[size];
   const color = brandColorMap[product.slug] || '#18181B';
   const bg = bgMap[product.slug] || 'bg-white';
-  const candidateLogoSrc = getLogoSrc(product.logoUrl || product.icon);
+  const candidateLogoSrc = getLogoSrc(
+    product.logoUrl || product.icon,
+    product.slug,
+    product.officialUrl,
+  );
   const logoSrc =
     candidateLogoSrc && candidateLogoSrc !== failedLogoSrc
       ? candidateLogoSrc
       : null;
+  const logoLoaded = Boolean(logoSrc && loadedLogoSrc === logoSrc);
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden border border-zinc-200/80 shadow-sm ${sizeClass.box} ${bg} ${className}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-zinc-200/80 shadow-sm ${sizeClass.box} ${bg} ${className}`}
     >
+      {icon ? (
+        <SvgIcon
+          icon={icon}
+          color={color}
+          className={`${sizeClass.svg} transition-opacity ${logoLoaded ? 'opacity-0' : 'opacity-100'}`}
+        />
+      ) : (
+        <CustomBrandMark
+          slug={product.slug}
+          className={`${sizeClass.svg} transition-opacity ${logoLoaded ? 'opacity-0' : 'opacity-100'}`}
+        />
+      )}
+
       {logoSrc ? (
         <img
           src={logoSrc}
           alt={product.name ? `${product.name} logo` : ''}
-          className="h-[72%] w-[72%] object-contain"
+          className={`absolute h-[72%] w-[72%] object-contain transition-opacity ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
           decoding="async"
-          onError={() => setFailedLogoSrc(logoSrc)}
+          onLoad={() => setLoadedLogoSrc(logoSrc)}
+          onError={(event) => {
+            event.currentTarget.style.display = 'none';
+            setFailedLogoSrc(logoSrc);
+          }}
         />
-      ) : icon ? (
-        <SvgIcon icon={icon} color={color} className={sizeClass.svg} />
-      ) : (
-        <CustomBrandMark slug={product.slug} className={sizeClass.svg} />
-      )}
+      ) : null}
     </span>
   );
 }

@@ -10,7 +10,9 @@ import type { DetailLocale } from "./detail-page-copy";
 type PricingDetailRow = {
   product_slug: string;
   product_name: string;
+  product_category: string;
   product_logo_url: string | null;
+  product_official_url: string | null;
   plan_slug: string;
   plan_name: string;
   billing_cycle: string | null;
@@ -653,7 +655,10 @@ function buildProductFromRows(
 
   return {
     slug: firstRow.product_slug,
-    category: staticProduct?.category || "ai",
+    category:
+      firstRow.product_category === "streaming"
+        ? "streaming"
+        : staticProduct?.category || "ai",
     name: staticProduct?.name || firstRow.product_name,
     brand: staticProduct?.brand || firstRow.product_name,
     description:
@@ -661,6 +666,7 @@ function buildProductFromRows(
       `比较 ${firstRow.product_name} 不同地区的订阅价格。`,
     icon: staticProduct?.icon,
     logoUrl: staticProduct?.logoUrl || firstRow.product_logo_url || undefined,
+    officialUrl: firstRow.product_official_url || undefined,
     accentIcon: staticProduct?.accentIcon,
     defaultPlan,
     updatedAt: latestCheckedAt || staticProduct?.updatedAt || "2026-06",
@@ -677,7 +683,9 @@ export async function getPricingDetailProduct(
     SELECT
       p.slug AS product_slug,
       p.name AS product_name,
+      p.category::text AS product_category,
       p.logo_url AS product_logo_url,
+      p.official_url AS product_official_url,
       pl.slug AS plan_slug,
       pl.name AS plan_name,
       pl.billing_cycle::text AS billing_cycle,
