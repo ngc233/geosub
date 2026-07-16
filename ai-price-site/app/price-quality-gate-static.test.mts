@@ -85,3 +85,16 @@ test("price quality gates reject globally unrefreshed exact-local prices", () =>
   assert.match(postDeploy, /all active App Store products have published coverage/);
   assert.match(postDeploy, /all active App Store products collected within/);
 });
+
+test("the current Disney plan repair is a required core migration", () => {
+  const migrationName = "sql/058_normalize_disney_app_store_plans.sql";
+  const migrationRunner = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/db-apply-sql.sh"
+  );
+  const postDeploy = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/post-deploy-check.sh"
+  );
+
+  assert.ok(migrationRunner.includes(migrationName));
+  assert.ok(postDeploy.includes(migrationName));
+});

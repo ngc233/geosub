@@ -7,6 +7,7 @@
 - Excluded explicit annual, one-time Premier Access, and non-US US-only purchases before they can create public plans.
 - Added a data migration that consolidates valid Disney+ evidence and archives the fallback-generated duplicate plans.
 - Fixed unified-repository upgrades so backend and frontend symlink directories no longer need their own `.git` folders.
+- Registered the Disney+ repair as a required core migration and post-deploy health check.
 
 ## 0.3.0-beta.17 - 2026-07-16
 
