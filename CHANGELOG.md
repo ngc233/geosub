@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.16 - 2026-07-16
+
+- Allowed an exact, non-anomalous App Store local price to refresh its USD conversion and review date without being blocked by normal exchange-rate movement.
+- Kept genuine local-price changes and known decimal parsing anomalies on the normal stability-review path.
+
 ## 0.3.0-beta.15 - 2026-07-16
 
 - Refreshed published App Store rows when a newer trusted observation confirms the same local price, keeping review dates and FX conversions current without creating duplicate prices.

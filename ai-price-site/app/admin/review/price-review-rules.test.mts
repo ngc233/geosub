@@ -31,6 +31,11 @@ const matchingPriceRefreshSql = readFileSync(
   "utf8",
 );
 
+const exactLocalPriceRefreshSql = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/056_refresh_exact_local_app_store_prices.sql"),
+  "utf8",
+);
+
 const appStoreCollector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
@@ -75,6 +80,20 @@ test("matching App Store observations refresh published dates and FX conversions
   assert.match(matchingPriceRefreshSql, /COALESCE\(observation\.anomaly_flag, FALSE\) = FALSE/);
   assert.match(matchingPriceRefreshSql, /observation\.converted_usd >= 1/);
   assert.match(matchingPriceRefreshSql, /<= 0\.02/);
+});
+
+test("exact local App Store prices are not blocked by normal FX movement", () => {
+  assert.match(
+    exactLocalPriceRefreshSql,
+    /published\.local_price IS NOT DISTINCT FROM observation\.raw_price/,
+  );
+  assert.match(
+    exactLocalPriceRefreshSql,
+    /published\.currency IS NOT DISTINCT FROM observation\.currency/,
+  );
+  assert.match(exactLocalPriceRefreshSql, /COALESCE\(observation\.anomaly_flag, FALSE\) = FALSE/);
+  assert.match(exactLocalPriceRefreshSql, /observation\.converted_usd >= 1/);
+  assert.doesNotMatch(exactLocalPriceRefreshSql, /ABS\(\(observation\.converted_usd - published\.price_usd\)/);
 });
 
 test("collector compares parsed App Store prices against plan-specific USD ranges", () => {

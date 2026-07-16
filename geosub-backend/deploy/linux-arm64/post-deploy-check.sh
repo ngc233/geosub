@@ -197,7 +197,8 @@ if (( failures == 0 )); then
     "sql/052_collector_job_runs_running_status.sql" \
     "sql/053_admin_collection_performance.sql" \
     "sql/054_refresh_affordability_app_store_scope.sql" \
-    "sql/055_refresh_matching_app_store_prices.sql"; do
+    "sql/055_refresh_matching_app_store_prices.sql" \
+    "sql/056_refresh_exact_local_app_store_prices.sql"; do
     check_migration "$migration"
   done
 
