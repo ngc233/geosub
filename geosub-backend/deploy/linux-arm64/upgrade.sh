@@ -92,9 +92,18 @@ EOF
 log "Checking project directories"
 if [[ -n "$REPO_DIR" ]]; then
   ensure_repo "$REPO_DIR"
+  if [[ ! -d "$BACKEND_DIR" ]]; then
+    echo "Directory not found: $BACKEND_DIR"
+    exit 1
+  fi
+  if [[ ! -d "$FRONTEND_DIR" ]]; then
+    echo "Directory not found: $FRONTEND_DIR"
+    exit 1
+  fi
+else
+  ensure_repo "$BACKEND_DIR"
+  ensure_repo "$FRONTEND_DIR"
 fi
-ensure_repo "$BACKEND_DIR"
-ensure_repo "$FRONTEND_DIR"
 
 log "Stopping timers and web service"
 systemctl stop geosub-price-pipeline.timer 2>/dev/null || true
