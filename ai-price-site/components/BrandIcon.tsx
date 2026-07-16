@@ -1,7 +1,7 @@
 'use client';
 
 /* eslint-disable @next/next/no-img-element */
-import { useState, type SVGProps } from 'react';
+import { useEffect, useRef, useState, type SVGProps } from 'react';
 import * as icons from 'simple-icons';
 
 type BrandIconProps = {
@@ -386,6 +386,7 @@ export default function BrandIcon({
 }: BrandIconProps) {
   const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
   const [loadedLogoSrc, setLoadedLogoSrc] = useState<string | null>(null);
+  const logoImageRef = useRef<HTMLImageElement | null>(null);
   const icon = getSimpleIcon(product.slug);
   const sizeClass = sizeMap[size];
   const color = brandColorMap[product.slug] || '#18181B';
@@ -400,6 +401,24 @@ export default function BrandIcon({
       ? candidateLogoSrc
       : null;
   const logoLoaded = Boolean(logoSrc && loadedLogoSrc === logoSrc);
+
+  useEffect(() => {
+    const image = logoImageRef.current;
+
+    if (!logoSrc || !image || !image.complete) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      if (image.naturalWidth > 0) {
+        setLoadedLogoSrc(logoSrc);
+      } else {
+        setFailedLogoSrc(logoSrc);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [logoSrc]);
 
   return (
     <span
@@ -420,6 +439,7 @@ export default function BrandIcon({
 
       {logoSrc ? (
         <img
+          ref={logoImageRef}
           src={logoSrc}
           alt={product.name ? `${product.name} logo` : ''}
           className={`absolute h-[72%] w-[72%] object-contain transition-opacity ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}

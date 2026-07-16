@@ -38,6 +38,8 @@ test("public logos are served from the persistent GeoSub cache", () => {
   assert.match(brandIcon, /\/api\/product-logos\//);
   assert.match(brandIcon, /officialUrl\?\.trim\(\)/);
   assert.match(brandIcon, /loadedLogoSrc/);
+  assert.match(brandIcon, /image\.complete/);
+  assert.match(brandIcon, /image\.naturalWidth > 0/);
   assert.match(brandIcon, /event\.currentTarget\.style\.display = 'none'/);
   assert.match(storage, /GEOSUB_LOGO_STORAGE_DIR/);
   assert.match(storage, /\/var\/lib\/geosub\/product-logos/);

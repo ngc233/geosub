@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.20 - 2026-07-16
+
+- Fixed official product logos remaining invisible when the browser loaded a cached image before React hydration attached its load handler.
+- Added a regression guard for cached-image readiness while preserving the built-in fallback during pending or failed downloads.
+
 ## 0.3.0-beta.19 - 2026-07-16
 
 - Preserved database-only streaming categories on product detail pages so Disney+, Netflix, and future streaming products receive the streaming product overview and URLs.
