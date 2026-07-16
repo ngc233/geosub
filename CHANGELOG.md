@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.23 - 2026-07-17
+
+- Changed cached official product images from inset logos to full-bleed, cover-fitted artwork inside the shared rounded icon frame.
+- Preserved the built-in fallback mark only while the official image is pending or unavailable, giving product navigation an App Store-style icon treatment.
+
 ## 0.3.0-beta.22 - 2026-07-16
 
 - Removed the product-logo opacity transition so loaded official logos appear immediately and cannot remain visually suspended at zero opacity in background or cached-page states.

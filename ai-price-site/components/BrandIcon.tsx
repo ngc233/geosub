@@ -442,7 +442,7 @@ export default function BrandIcon({
           ref={logoImageRef}
           src={logoSrc}
           alt={product.name ? `${product.name} logo` : ''}
-          className={`absolute h-[72%] w-[72%] object-contain ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 h-full w-full object-cover ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
           decoding="async"
           onLoad={() => setLoadedLogoSrc(logoSrc)}

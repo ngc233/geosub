@@ -50,6 +50,16 @@ test("public logos are served from the persistent GeoSub cache", () => {
     /transition-opacity/,
     'logo visibility must not depend on a CSS transition completing',
   );
+  assert.match(
+    brandIcon,
+    /absolute inset-0 h-full w-full object-cover/,
+    'cached official images should fill the rounded app-icon frame',
+  );
+  assert.doesNotMatch(
+    brandIcon,
+    /h-\[72%\] w-\[72%\] object-contain/,
+    'official images should not look inset inside a second tile',
+  );
   assert.match(brandIcon, /event\.currentTarget\.style\.display = 'none'/);
   assert.match(storage, /GEOSUB_LOGO_STORAGE_DIR/);
   assert.match(storage, /\/var\/lib\/geosub\/product-logos/);
