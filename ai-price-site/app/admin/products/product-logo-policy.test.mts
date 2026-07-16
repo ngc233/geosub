@@ -45,6 +45,11 @@ test("public logos are served from the persistent GeoSub cache", () => {
       brandIcon.indexOf('else if (image.complete)'),
     'cached image dimensions must win before the completion failure check',
   );
+  assert.doesNotMatch(
+    brandIcon,
+    /transition-opacity/,
+    'logo visibility must not depend on a CSS transition completing',
+  );
   assert.match(brandIcon, /event\.currentTarget\.style\.display = 'none'/);
   assert.match(storage, /GEOSUB_LOGO_STORAGE_DIR/);
   assert.match(storage, /\/var\/lib\/geosub\/product-logos/);

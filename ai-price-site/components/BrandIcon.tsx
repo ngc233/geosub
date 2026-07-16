@@ -428,12 +428,12 @@ export default function BrandIcon({
         <SvgIcon
           icon={icon}
           color={color}
-          className={`${sizeClass.svg} transition-opacity ${logoLoaded ? 'opacity-0' : 'opacity-100'}`}
+          className={`${sizeClass.svg} ${logoLoaded ? 'opacity-0' : 'opacity-100'}`}
         />
       ) : (
         <CustomBrandMark
           slug={product.slug}
-          className={`${sizeClass.svg} transition-opacity ${logoLoaded ? 'opacity-0' : 'opacity-100'}`}
+          className={`${sizeClass.svg} ${logoLoaded ? 'opacity-0' : 'opacity-100'}`}
         />
       )}
 
@@ -442,7 +442,7 @@ export default function BrandIcon({
           ref={logoImageRef}
           src={logoSrc}
           alt={product.name ? `${product.name} logo` : ''}
-          className={`absolute h-[72%] w-[72%] object-contain transition-opacity ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute h-[72%] w-[72%] object-contain ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
           decoding="async"
           onLoad={() => setLoadedLogoSrc(logoSrc)}

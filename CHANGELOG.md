@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.22 - 2026-07-16
+
+- Removed the product-logo opacity transition so loaded official logos appear immediately and cannot remain visually suspended at zero opacity in background or cached-page states.
+- Added a regression guard that keeps logo visibility independent from CSS transition scheduling.
+
 ## 0.3.0-beta.21 - 2026-07-16
 
 - Made cached official logos visible as soon as their decoded dimensions are available, even while the browser completion flag is still settling after hydration.
