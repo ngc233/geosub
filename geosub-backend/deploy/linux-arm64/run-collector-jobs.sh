@@ -14,9 +14,18 @@ DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 LIMIT="${GEOSUB_COLLECTOR_JOB_LIMIT:-5}"
+LOCK_FILE="${GEOSUB_COLLECTOR_LOCK_FILE:-/tmp/geosub-collector-jobs.lock}"
 EXTRA_ARGS=("$@")
 
 cd "$BACKEND_DIR"
+
+if ! command -v flock >/dev/null 2>&1; then
+  echo "flock is required to serialize collector runs."
+  exit 1
+fi
+
+exec 9>"$LOCK_FILE"
+flock 9
 
 pwsh -NoProfile -ExecutionPolicy Bypass \
   -File "$BACKEND_DIR/scripts/run-collector-jobs.ps1" \

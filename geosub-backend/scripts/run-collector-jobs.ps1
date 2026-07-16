@@ -14,27 +14,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Get-PowerShellHost {
-  $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
-  if ($pwsh) {
-    return $pwsh.Source
-  }
-
-  $windowsPowerShell = Get-Command "powershell" -ErrorAction SilentlyContinue
-  if ($windowsPowerShell) {
-    return $windowsPowerShell.Source
-  }
-
-  $windowsPowerShellExe = Get-Command "powershell.exe" -ErrorAction SilentlyContinue
-  if ($windowsPowerShellExe) {
-    return $windowsPowerShellExe.Source
-  }
-
-  throw "PowerShell executable not found. Install PowerShell 7 or Windows PowerShell."
-}
-
-$powerShellHost = Get-PowerShellHost
-
 function Quote-SqlString {
   param([AllowNull()][string]$Value)
 
@@ -485,7 +464,8 @@ function Invoke-CollectorScript {
   }
 
   $scriptPath = $null
-  $arguments = @()
+  $scriptParameters = @{}
+  $expectedIdentity = $null
 
   switch ($kind) {
     "app_store" {
@@ -496,19 +476,20 @@ function Invoke-CollectorScript {
 
       $scriptPath = Join-Path $PSScriptRoot "collect-app-store-prices.ps1"
       $appStoreUrl = Get-ConfigValue -Config $config -Name "url" -Fallback $Job.source_url
-      $arguments = @(
-        "-ProductSlug", $productSlug,
-        "-AppId", $appId,
-        "-AppStoreUrl", $appStoreUrl,
-        "-CountryCodes", ($countryCodes -join ","),
-        "-ContainerName", $ContainerName,
-        "-DbName", $DbName,
-        "-DbUser", $DbUser,
-        "-Force"
-      )
+      $scriptParameters = @{
+        ProductSlug = $productSlug
+        AppId = $appId
+        AppStoreUrl = $appStoreUrl
+        CountryCodes = @($countryCodes)
+        ContainerName = $ContainerName
+        DbName = $DbName
+        DbUser = $DbUser
+        Force = $true
+      }
+      $expectedIdentity = "Using App Store app id $appId for $productSlug."
 
       if (![string]::IsNullOrWhiteSpace($ChromePath)) {
-        $arguments += @("-ChromePath", $ChromePath)
+        $scriptParameters.ChromePath = $ChromePath
       }
     }
     "google_play" {
@@ -518,15 +499,15 @@ function Invoke-CollectorScript {
       }
 
       $scriptPath = Join-Path $PSScriptRoot "collect-google-play-prices.ps1"
-      $arguments = @(
-        "-ProductSlug", $productSlug,
-        "-PackageName", $packageName,
-        "-CountryCodes", ($countryCodes -join ","),
-        "-ContainerName", $ContainerName,
-        "-DbName", $DbName,
-        "-DbUser", $DbUser,
-        "-Force"
-      )
+      $scriptParameters = @{
+        ProductSlug = $productSlug
+        PackageName = $packageName
+        CountryCodes = @($countryCodes)
+        ContainerName = $ContainerName
+        DbName = $DbName
+        DbUser = $DbUser
+        Force = $true
+      }
     }
     "pricing_page" {
       $genericUrl = Get-ConfigValue -Config $config -Name "url" -Fallback $Job.source_url
@@ -547,12 +528,16 @@ function Invoke-CollectorScript {
     }
   }
 
-  $output = & $powerShellHost -NoProfile -ExecutionPolicy Bypass -File $scriptPath @arguments 2>&1
-  $exitCode = $LASTEXITCODE
+  $output = & $scriptPath @scriptParameters *>&1
+  $exitCode = if ($?) { 0 } else { 1 }
   $text = ($output | ForEach-Object { [string]$_ }) -join "`n"
 
   if ($exitCode -ne 0) {
     throw "Collector script failed with exit code $exitCode. $text"
+  }
+
+  if ($expectedIdentity -and $text -notlike "*$expectedIdentity*") {
+    throw "Collector identity mismatch. Expected '$expectedIdentity' Output: $text"
   }
 
   return [pscustomobject]@{
@@ -744,6 +729,8 @@ foreach ($job in $jobs) {
 if (!$SkipAutoReview -and $summary.appStoreSucceeded -gt 0) {
   Write-Host "Running App Store stability auto-review after collection."
   Invoke-Psql @"
+SELECT refresh_matching_app_store_prices() AS revalidated_prices;
+
 SELECT *
 FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14);
 

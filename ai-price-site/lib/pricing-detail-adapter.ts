@@ -738,7 +738,13 @@ export async function getPricingDetailProduct(
         AND po.plan_id = pl.id
         AND po.country_id = rp.country_id
         AND po.billing_platform = rp.billing_platform
-        AND po.status = 'approved'
+        AND (
+          po.status = 'approved'
+          OR (
+            po.status = 'ignored'
+            AND po.raw_payload ->> 'auto_review_reason_code' = 'superseded_by_published_price'
+          )
+        )
       ORDER BY po.observed_at DESC, po.created_at DESC
       LIMIT 1
     ) latest_observation ON TRUE

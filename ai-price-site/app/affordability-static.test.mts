@@ -49,7 +49,24 @@ test("collector success refreshes affordability after App Store auto review", ()
   const collectorRunner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
   const adminRunner = readRepoFile("ai-price-site/app/admin/review/collection-runner.ts");
 
+  assert.match(collectorRunner, /refresh_matching_app_store_prices\(\)/);
   assert.match(collectorRunner, /run_app_store_stability_auto_review\(FALSE, 3, 80, 14\)/);
   assert.match(collectorRunner, /SELECT refresh_plan_affordability_metrics\(\) AS refreshed_rows/);
+  assert.ok(
+    collectorRunner.indexOf("refresh_matching_app_store_prices()") <
+      collectorRunner.indexOf("run_app_store_stability_auto_review(FALSE, 3, 80, 14)"),
+    "matching published prices should refresh before duplicate observations are archived",
+  );
   assert.match(adminRunner, /revalidatePath\("\/admin\/affordability"\)/);
+});
+
+test("collector runner keeps product identity stable and serializes shell launches", () => {
+  const collectorRunner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
+  const shellRunner = readRepoFile("geosub-backend/deploy/linux-arm64/run-collector-jobs.sh");
+
+  assert.match(collectorRunner, /& \$scriptPath @scriptParameters/);
+  assert.match(collectorRunner, /Collector identity mismatch/);
+  assert.doesNotMatch(collectorRunner, /-File \$scriptPath @arguments/);
+  assert.match(shellRunner, /flock 9/);
+  assert.match(shellRunner, /GEOSUB_COLLECTOR_LOCK_FILE/);
 });

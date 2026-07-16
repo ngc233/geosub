@@ -63,6 +63,14 @@ function getSortedRegions(plan: ProductPlan) {
   return [...plan.regions].sort((a, b) => a.priceUsd - b.priceUsd);
 }
 
+function getLatestPlanReviewDate(plan: ProductPlan, fallback?: string) {
+  return plan.regions.reduce<string | undefined>((latest, region) => {
+    if (!region.lastCheckedAt) return latest;
+    if (!latest || region.lastCheckedAt > latest) return region.lastCheckedAt;
+    return latest;
+  }, undefined) || fallback;
+}
+
 function getReferenceRegion(plan: ProductPlan) {
   return (
     plan.regions.find((region) => region.code.toUpperCase() === "US") ||
@@ -379,7 +387,7 @@ function PricingLead({
 
           <div className="text-xs text-zinc-400 lg:text-right">
             {updatedAt
-              ? locale === "en" ? `Published prices updated: ${updatedAt}` : `正式价更新：${updatedAt}`
+              ? locale === "en" ? `Latest plan review: ${updatedAt}` : `本套餐最近复核：${updatedAt}`
               : locale === "en" ? `${plan.regions.length} regions` : `${plan.regions.length} 个地区`}
           </div>
         </div>
@@ -588,6 +596,10 @@ export default function PricingPlatformView({
   }, [plan, platform]);
 
   const platformLabel = getPlatformLabel(platform, locale);
+  const activePlanReviewDate = getLatestPlanReviewDate(
+    filteredPlan.regions.length > 0 ? filteredPlan : plan,
+    updatedAt,
+  );
 
   return (
     <div className="space-y-5">
@@ -599,7 +611,7 @@ export default function PricingPlatformView({
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             cnyExchangeRate={effectiveCnyExchangeRate}
-            updatedAt={updatedAt}
+            updatedAt={activePlanReviewDate}
             onCurrencyChange={handleCurrencyChange}
             locale={locale}
           />
@@ -613,7 +625,7 @@ export default function PricingPlatformView({
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             cnyExchangeRate={effectiveCnyExchangeRate}
-            updatedAt={updatedAt}
+            updatedAt={activePlanReviewDate}
             onCurrencyChange={handleCurrencyChange}
             locale={locale}
           />

@@ -26,6 +26,11 @@ const autoReviewSql = readFileSync(
   "utf8",
 );
 
+const matchingPriceRefreshSql = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/055_refresh_matching_app_store_prices.sql"),
+  "utf8",
+);
+
 const appStoreCollector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
@@ -57,6 +62,19 @@ test("global peer outlier guard still catches extreme country-level conversions"
   assert.match(autoReviewSql, /g\.stable_converted_usd < peer_median_usd \* 0\.2/);
   assert.match(autoReviewSql, /g\.stable_converted_usd > peer_median_usd \* 3\.5/);
   assert.match(autoReviewSql, /v_reason_code := 'app_store_global_price_outlier'/);
+});
+
+test("matching App Store observations refresh published dates and FX conversions", () => {
+  assert.match(matchingPriceRefreshSql, /observation\.status = 'pending'/);
+  assert.match(
+    matchingPriceRefreshSql,
+    /auto_review_reason_code' = 'superseded_by_published_price'/,
+  );
+  assert.match(matchingPriceRefreshSql, /price_usd = matching\.converted_usd/);
+  assert.match(matchingPriceRefreshSql, /last_checked_at = matching\.observed_at/);
+  assert.match(matchingPriceRefreshSql, /COALESCE\(observation\.anomaly_flag, FALSE\) = FALSE/);
+  assert.match(matchingPriceRefreshSql, /observation\.converted_usd >= 1/);
+  assert.match(matchingPriceRefreshSql, /<= 0\.02/);
 });
 
 test("collector compares parsed App Store prices against plan-specific USD ranges", () => {

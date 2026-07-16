@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0-beta.15 - 2026-07-16
+
+- Refreshed published App Store rows when a newer trusted observation confirms the same local price, keeping review dates and FX conversions current without creating duplicate prices.
+- Scoped public freshness labels to the active plan and included trusted matching observations when resolving the displayed FX date.
+- Serialized collector launches and added App Store product identity checks to prevent concurrent jobs from crossing product arguments.
+
 ## 0.3.0-beta.14 - 2026-07-16
 
 - Made public AI and streaming pricing pages dynamically read current database prices and exchange-rate metadata instead of retaining build-time snapshots.

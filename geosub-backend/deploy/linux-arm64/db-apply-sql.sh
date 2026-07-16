@@ -110,6 +110,7 @@ core_files=(
   "sql/052_collector_job_runs_running_status.sql"
   "sql/053_admin_collection_performance.sql"
   "sql/054_refresh_affordability_app_store_scope.sql"
+  "sql/055_refresh_matching_app_store_prices.sql"
 )
 
 content_files=(

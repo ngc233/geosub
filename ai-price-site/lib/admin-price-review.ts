@@ -45,6 +45,10 @@ export async function rejectPriceObservation(observationId: string, note: string
 
 export async function runAppStoreStabilityAutoReview() {
   await prisma.$queryRaw`
+    SELECT refresh_matching_app_store_prices() AS revalidated_prices
+  `;
+
+  await prisma.$queryRaw`
     SELECT *
     FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14)
   `;

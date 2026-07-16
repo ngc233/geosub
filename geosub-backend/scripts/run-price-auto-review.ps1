@@ -22,7 +22,15 @@ $percentToleranceText = $PercentTolerance.ToString([Globalization.CultureInfo]::
 $maxChangeText = $MaxChangePercent.ToString([Globalization.CultureInfo]::InvariantCulture)
 
 if ($Rule -eq "AppStoreStability") {
+  $refreshMatchingSql = if ($Execute) {
+    "SELECT refresh_matching_app_store_prices() AS revalidated_prices;"
+  } else {
+    ""
+  }
+
   $sql = @"
+$refreshMatchingSql
+
 SELECT
   decision,
   reason_code,

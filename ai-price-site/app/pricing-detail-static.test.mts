@@ -80,3 +80,14 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   assert.doesNotMatch(platformView, /\$\{productName\} \$\{plan\.name\}/);
   assert.doesNotMatch(shareModal, /\$\{product\.name\} \$\{plan\.name\}/);
 });
+
+test("pricing detail freshness follows the active plan and trusted matching observations", () => {
+  const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
+  const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
+
+  assert.match(platformView, /getLatestPlanReviewDate/);
+  assert.match(platformView, /本套餐最近复核/);
+  assert.match(platformView, /Latest plan review/);
+  assert.match(adapter, /po\.status = 'approved'/);
+  assert.match(adapter, /auto_review_reason_code' = 'superseded_by_published_price'/);
+});
