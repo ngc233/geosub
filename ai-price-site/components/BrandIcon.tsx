@@ -405,14 +405,14 @@ export default function BrandIcon({
   useEffect(() => {
     const image = logoImageRef.current;
 
-    if (!logoSrc || !image || !image.complete) {
+    if (!logoSrc || !image) {
       return;
     }
 
     const frame = window.requestAnimationFrame(() => {
       if (image.naturalWidth > 0) {
         setLoadedLogoSrc(logoSrc);
-      } else {
+      } else if (image.complete) {
         setFailedLogoSrc(logoSrc);
       }
     });

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0-beta.21 - 2026-07-16
+
+- Made cached official logos visible as soon as their decoded dimensions are available, even while the browser completion flag is still settling after hydration.
+- Strengthened the regression test so successful cached-image dimensions take precedence over completion-state failure handling.
+
 ## 0.3.0-beta.20 - 2026-07-16
 
 - Fixed official product logos remaining invisible when the browser loaded a cached image before React hydration attached its load handler.
