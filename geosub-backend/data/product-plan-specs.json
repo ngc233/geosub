@@ -156,6 +156,65 @@
       }
     ]
   },
+  "disney": {
+    "name": "Disney+",
+    "app_store_id": "1446075923",
+    "plans": [
+      {
+        "slug": "standard-with-ads",
+        "name": "Disney+ Standard with Ads",
+        "aliases": [
+          "standard with ads",
+          "standard mit werbung",
+          "standard avec pub",
+          "standard con pubblicita",
+          "estandar con anuncios",
+          "basic monthly",
+          "monthly basic",
+          "basic",
+          "広告付きスタンダード",
+          "광고형 스탠다드"
+        ],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 3.0,
+        "expected_monthly_usd_max": 18.0
+      },
+      {
+        "slug": "standard",
+        "name": "Disney+ Standard",
+        "aliases": [
+          "standard",
+          "estandar mensual",
+          "estandar",
+          "padrao mensal",
+          "padrao",
+          "スタンダード",
+          "스탠다드",
+          "標準",
+          "标准"
+        ],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 5.0,
+        "expected_monthly_usd_max": 25.0
+      },
+      {
+        "slug": "premium",
+        "name": "Disney+ Premium",
+        "aliases": [
+          "premium mensual",
+          "premium mensal",
+          "premium",
+          "プレミアム",
+          "프리미엄",
+          "高級",
+          "高级"
+        ],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 8.0,
+        "expected_monthly_usd_max": 38.0
+      }
+    ]
+  },
   "netflix": {
     "name": "Netflix",
     "plans": [

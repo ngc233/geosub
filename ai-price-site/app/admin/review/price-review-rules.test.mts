@@ -122,7 +122,7 @@ test("collector compares parsed App Store prices against plan-specific USD range
 });
 
 test("tracked products and plans keep explicit sanity ranges", () => {
-  for (const productSlug of ["chatgpt", "claude", "gemini", "grok", "manus", "netflix"]) {
+  for (const productSlug of ["chatgpt", "claude", "disney", "gemini", "grok", "manus", "netflix"]) {
     assert.ok(productPlanSpecs[productSlug], `${productSlug} should stay in the plan specs`);
   }
 
@@ -146,4 +146,38 @@ test("tracked products and plans keep explicit sanity ranges", () => {
       );
     }
   }
+});
+
+test("Disney App Store plans collapse to three canonical monthly tiers", () => {
+  const disney = productPlanSpecs.disney;
+  assert.ok(disney, "Disney+ should have a product-specific plan spec");
+  assert.deepEqual(
+    disney.plans.map((plan) => plan.slug),
+    ["standard-with-ads", "standard", "premium"],
+  );
+
+  const aliases = disney.plans.flatMap((plan) => plan.aliases);
+  for (const localizedAlias of [
+    "estandar con anuncios",
+    "padrao mensal",
+    "スタンダード",
+    "프리미엄",
+    "高級",
+  ]) {
+    assert.ok(aliases.includes(localizedAlias), `missing Disney+ alias: ${localizedAlias}`);
+  }
+});
+
+test("App Store plan matching preserves non-Latin names and excludes non-monthly artifacts", () => {
+  assert.ok(
+    appStoreCollector.includes('"[^\\p{L}\\p{N}]+"'),
+    "plan matching should preserve Unicode letters and numbers",
+  );
+  assert.match(appStoreCollector, /premier\\s\+access/);
+  assert.match(appStoreCollector, /jaarabonnement/);
+  assert.match(appStoreCollector, /CountryCode\.ToUpperInvariant\(\) -ne "US"/);
+  assert.match(
+    appStoreCollector,
+    /Should-IgnoreInAppPurchase -ItemName \$item\.Name -CountryCode \$code/,
+  );
 });

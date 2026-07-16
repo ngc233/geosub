@@ -119,7 +119,16 @@ function Normalize-PlanMatchText {
   }
 
   $text = [System.Net.WebUtility]::HtmlDecode($Value).ToLowerInvariant()
-  $text = [regex]::Replace($text, "[^a-z0-9]+", " ")
+  $decomposed = $text.Normalize([Text.NormalizationForm]::FormD)
+  $builder = [Text.StringBuilder]::new()
+  foreach ($character in $decomposed.ToCharArray()) {
+    $category = [Globalization.CharUnicodeInfo]::GetUnicodeCategory($character)
+    if ($category -ne [Globalization.UnicodeCategory]::NonSpacingMark) {
+      [void]$builder.Append($character)
+    }
+  }
+  $text = $builder.ToString().Normalize([Text.NormalizationForm]::FormC)
+  $text = [regex]::Replace($text, "[^\p{L}\p{N}]+", " ")
   $text = [regex]::Replace($text, "\s+", " ").Trim()
   return $text
 }
@@ -263,7 +272,10 @@ function Get-PlanSlugFromItemName {
 }
 
 function Should-IgnoreInAppPurchase {
-  param([string]$ItemName)
+  param(
+    [string]$ItemName,
+    [AllowNull()][string]$CountryCode = $null
+  )
 
   if ([string]::IsNullOrWhiteSpace($ItemName)) {
     return $true
@@ -272,6 +284,29 @@ function Should-IgnoreInAppPurchase {
   $normalized = $ItemName.Trim()
 
   if ($normalized -match "(?i)\b(credit|credits|coin|coins|token|tokens|point|points|pack|bundle|top[- ]?up|one[- ]?time)\b") {
+    return $true
+  }
+
+  if ($normalized -match "(?i)\bpremier\s+access\b") {
+    return $true
+  }
+
+  # GeoSub's public ranking compares recurring monthly prices. Explicit annual
+  # purchases must not become separate plans or compete with monthly variants.
+  if (
+    $normalized -match "(?i)\b(annual|annually|yearly|year|anual|anualmente|annuel|annuelle|annuale|annuo|jaarabonnement|jaarlijks|jahresabo|jahrlich|jährlich|årsabonnement|årsabonnemang)\b" -or
+    $normalized -match "(年度|年額|年费|年費|연간)"
+  ) {
+    return $true
+  }
+
+  # App Store pages can expose a US-only IAP in other storefronts. Keep it
+  # only for the US instead of presenting it as a locally available price.
+  if (
+    $normalized -match "(?i)\b(?:us|u\.s\.)\s*only\b" -and
+    ![string]::IsNullOrWhiteSpace($CountryCode) -and
+    $CountryCode.ToUpperInvariant() -ne "US"
+  ) {
     return $true
   }
 
@@ -1359,7 +1394,7 @@ foreach ($countryCode in $CountryCodes) {
   $candidateItemsBySlug = @{}
   $ignoredItemCount = 0
   foreach ($item in $items) {
-    if (Should-IgnoreInAppPurchase -ItemName $item.Name) {
+    if (Should-IgnoreInAppPurchase -ItemName $item.Name -CountryCode $code) {
       Write-Host "Ignoring non-subscription App Store item: $code $($item.Name)"
       $ignoredItemCount += 1
       continue

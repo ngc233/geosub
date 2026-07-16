@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0-beta.18 - 2026-07-16
+
+- Normalized Disney+ App Store prices into Standard with Ads, Standard, and Premium monthly tiers across localized storefront labels.
+- Preserved non-Latin plan names during matching and folded accented Latin labels before alias comparison.
+- Excluded explicit annual, one-time Premier Access, and non-US US-only purchases before they can create public plans.
+- Added a data migration that consolidates valid Disney+ evidence and archives the fallback-generated duplicate plans.
+
 ## 0.3.0-beta.17 - 2026-07-16
 
 - Replaced hard-coded price-quality product lists with automatic discovery of every active App Store collector product.
