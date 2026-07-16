@@ -27,6 +27,11 @@ if ($Rule -eq "AppStoreStability") {
   } else {
     ""
   }
+  $quarantinePublishedOutliersSql = if ($Execute) {
+    "SELECT quarantine_published_app_store_price_outliers() AS quarantined_published_outliers;"
+  } else {
+    ""
+  }
 
   $sql = @"
 $refreshMatchingSql
@@ -47,6 +52,8 @@ FROM run_app_store_stability_auto_review(
   $MinConfidence,
   $MaxSampleAgeDays
 );
+
+$quarantinePublishedOutliersSql
 "@
 } else {
   $sql = @"

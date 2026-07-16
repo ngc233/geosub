@@ -54,3 +54,34 @@ test("price quality gate requires tax profiles for published App Store countries
   assert.match(source, /published App Store country\/countries are missing tax profiles/);
   assert.match(source, /await checkTaxProfileCoverage\(client\)/);
 });
+
+test("price quality gate discovers every active App Store product", () => {
+  const source = readProjectFile("scripts/check-price-quality.cjs");
+
+  assert.doesNotMatch(source, /chatgpt,claude,gemini,grok,netflix/);
+  assert.match(source, /async function resolveTrackedProducts/);
+  assert.match(source, /collector_jobs\.job_config ->> 'collector_kind' = 'app_store'/);
+  assert.match(source, /collector_jobs\.status = 'active'/);
+  assert.match(source, /const trackedProducts = await resolveTrackedProducts\(client\)/);
+  assert.match(source, /async function checkAppStoreProductRunFreshness/);
+  assert.match(source, /GEOSUB_MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS \|\| 8/);
+  assert.match(source, /await checkAppStoreProductRunFreshness\(client, trackedProducts\)/);
+});
+
+test("price quality gates reject globally unrefreshed exact-local prices", () => {
+  const source = readProjectFile("scripts/check-price-quality.cjs");
+  const postDeploy = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/post-deploy-check.sh"
+  );
+
+  for (const script of [source, postDeploy]) {
+    assert.match(script, /unrefreshed|Unrefreshed|exact-local/);
+    assert.match(script, /published\.local_price IS NOT DISTINCT FROM observation\.raw_price/);
+    assert.match(script, /published\.currency IS NOT DISTINCT FROM observation\.currency/);
+    assert.match(script, /COALESCE\(observation\.anomaly_flag, FALSE\) = FALSE/);
+  }
+
+  assert.doesNotMatch(postDeploy, /p\.slug IN \('chatgpt'/);
+  assert.match(postDeploy, /all active App Store products have published coverage/);
+  assert.match(postDeploy, /all active App Store products collected within/);
+});

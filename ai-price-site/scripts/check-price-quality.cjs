@@ -15,9 +15,7 @@ for (const fileName of [".env.local", ".env"]) {
 }
 
 const databaseUrl = process.env.DATABASE_URL;
-const trackedProducts = (
-  process.env.GEOSUB_PRICE_CHECK_PRODUCTS || "chatgpt,claude,gemini,grok,netflix"
-)
+const configuredTrackedProducts = (process.env.GEOSUB_PRICE_CHECK_PRODUCTS || "")
   .split(",")
   .map((item) => item.trim().toLowerCase())
   .filter(Boolean);
@@ -26,6 +24,9 @@ const minPublishedSubscriptionUsd = Number(process.env.GEOSUB_MIN_PUBLISHED_SUBS
 const maxExchangeRateAgeHours = Number(process.env.GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS || 18);
 const maxRunningMinutes = Number(process.env.GEOSUB_MAX_COLLECTOR_RUNNING_MINUTES || 45);
 const maxPublishedAgeDays = Number(process.env.GEOSUB_MAX_PUBLISHED_PRICE_AGE_DAYS || 14);
+const maxAppStoreProductRunAgeDays = Number(
+  process.env.GEOSUB_MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS || 8
+);
 const maxPendingAnomalyRatio = Number(process.env.GEOSUB_MAX_PENDING_ANOMALY_RATIO || 0.35);
 
 const failures = [];
@@ -82,6 +83,23 @@ async function requireTables(client, tableNames) {
   return true;
 }
 
+async function resolveTrackedProducts(client) {
+  if (configuredTrackedProducts.length > 0) {
+    return configuredTrackedProducts;
+  }
+
+  const result = await client.query(`
+    SELECT DISTINCT products.slug
+    FROM products
+    JOIN collector_jobs ON collector_jobs.product_id = products.id
+    WHERE collector_jobs.status = 'active'
+      AND collector_jobs.job_config ->> 'collector_kind' = 'app_store'
+    ORDER BY products.slug
+  `);
+
+  return result.rows.map((row) => row.slug).filter(Boolean);
+}
+
 async function checkExchangeRates(client) {
   if (!(await tableExists(client, "exchange_rates"))) {
     failures.push("exchange_rates table is missing.");
@@ -119,7 +137,7 @@ async function checkExchangeRates(client) {
   );
 }
 
-async function checkTrackedProductCoverage(client) {
+async function checkTrackedProductCoverage(client, trackedProducts) {
   const result = await client.query(
     `
       WITH tracked AS (
@@ -226,7 +244,7 @@ async function checkTrackedProductCoverage(client) {
   }
 }
 
-async function checkPublishedLowPrices(client) {
+async function checkPublishedLowPrices(client, trackedProducts) {
   const result = await client.query(
     `
       SELECT
@@ -270,7 +288,7 @@ async function checkPublishedLowPrices(client) {
   }
 }
 
-async function checkPublishedMedianOutliers(client) {
+async function checkPublishedMedianOutliers(client, trackedProducts) {
   const result = await client.query(
     `
       WITH published AS (
@@ -325,8 +343,8 @@ async function checkPublishedMedianOutliers(client) {
     return;
   }
 
-  warnings.push(`${result.rowCount} published price(s) are extreme versus plan median.`);
-  printRow("warn", "published outliers", `${result.rowCount} row(s)`);
+  failures.push(`${result.rowCount} published price(s) are extreme versus plan median.`);
+  printRow("fail", "published outliers", `${result.rowCount} row(s)`);
   for (const row of result.rows.slice(0, 10)) {
     console.log(
       `      ${row.product}/${row.plan}/${row.country}: $${Number(row.price_usd).toFixed(
@@ -426,10 +444,109 @@ async function checkCollectorRuns(client) {
   printRow("ok", "collector 7d runs", summary);
 }
 
+async function checkAppStoreProductRunFreshness(client, trackedProducts) {
+  if (!(await tableExists(client, "collector_job_runs"))) {
+    return;
+  }
+
+  const result = await client.query(
+    `
+      WITH tracked AS (
+        SELECT unnest($1::text[]) AS slug
+      )
+      SELECT
+        tracked.slug,
+        MAX(runs.started_at) FILTER (
+          WHERE runs.status = 'succeeded'
+            AND runs.collector_kind = 'app_store'
+        ) AS latest_success
+      FROM tracked
+      LEFT JOIN products ON products.slug = tracked.slug
+      LEFT JOIN collector_job_runs runs ON runs.product_id = products.id
+      GROUP BY tracked.slug
+      ORDER BY tracked.slug
+    `,
+    [trackedProducts]
+  );
+
+  for (const row of result.rows) {
+    const age = daysSince(row.latest_success);
+    const stale = age === null || age > maxAppStoreProductRunAgeDays;
+    if (stale) {
+      failures.push(
+        `${row.slug} has no successful App Store collection within ${maxAppStoreProductRunAgeDays} days.`
+      );
+    }
+    printRow(
+      stale ? "fail" : "ok",
+      `collector ${row.slug}`,
+      `latest success ${formatDate(row.latest_success)}`
+    );
+  }
+}
+
+async function checkUnrefreshedExactLocalPrices(client, trackedProducts) {
+  const result = await client.query(
+    `
+      WITH candidates AS (
+        SELECT DISTINCT ON (published.id)
+          published.id,
+          products.slug AS product,
+          plans.slug AS plan,
+          countries.code AS country
+        FROM region_prices published
+        JOIN products ON products.id = published.product_id
+        JOIN plans ON plans.id = published.plan_id
+        JOIN countries ON countries.id = published.country_id
+        JOIN price_observations observation
+          ON observation.product_id = published.product_id
+         AND observation.plan_id = published.plan_id
+         AND observation.country_id = published.country_id
+         AND observation.billing_platform = published.billing_platform
+         AND observation.price_type = published.price_type
+        WHERE products.slug = ANY($1::text[])
+          AND published.status = 'published'
+          AND published.billing_platform = 'ios'
+          AND observation.billing_platform = 'ios'
+          AND (
+            observation.status = 'pending'
+            OR (
+              observation.status = 'ignored'
+              AND observation.raw_payload ->> 'auto_review_reason_code' = 'superseded_by_published_price'
+            )
+          )
+          AND COALESCE(observation.anomaly_flag, FALSE) = FALSE
+          AND observation.observed_at > COALESCE(published.last_checked_at, '-infinity'::timestamptz)
+          AND published.currency IS NOT DISTINCT FROM observation.currency
+          AND published.local_price IS NOT DISTINCT FROM observation.raw_price
+          AND observation.converted_usd IS NOT NULL
+          AND observation.converted_usd >= $2
+        ORDER BY published.id, observation.observed_at DESC, observation.created_at DESC
+      )
+      SELECT product, plan, country
+      FROM candidates
+      ORDER BY product, plan, country
+      LIMIT 25
+    `,
+    [trackedProducts, minPublishedSubscriptionUsd]
+  );
+
+  if (result.rowCount === 0) {
+    printRow("ok", "exact-local refresh", "none pending");
+    return;
+  }
+
+  failures.push(
+    `${result.rowCount} published App Store price(s) have a newer exact-local observation.`
+  );
+  printRow("fail", "exact-local refresh", `${result.rowCount} row(s)`);
+  for (const row of result.rows) {
+    console.log(`      ${row.product}/${row.plan}/${row.country}`);
+  }
+}
+
 async function main() {
   console.log("GeoSub price quality check");
-  console.log(`Tracked products: ${trackedProducts.join(", ")}`);
-  console.log("");
 
   if (!databaseUrl) {
     failures.push("DATABASE_URL is not configured.");
@@ -452,15 +569,26 @@ async function main() {
       "region_prices",
       "price_observations",
       "country_tax_profiles",
+      "collector_jobs",
     ]);
 
     if (required) {
-      await checkExchangeRates(client);
-      await checkTrackedProductCoverage(client);
-      await checkPublishedLowPrices(client);
-      await checkPublishedMedianOutliers(client);
-      await checkTaxProfileCoverage(client);
-      await checkCollectorRuns(client);
+      const trackedProducts = await resolveTrackedProducts(client);
+      if (trackedProducts.length === 0) {
+        failures.push("No active App Store collector products were found.");
+        printRow("fail", "tracked products", "none");
+      } else {
+        console.log(`Tracked products: ${trackedProducts.join(", ")}`);
+        console.log("");
+        await checkExchangeRates(client);
+        await checkTrackedProductCoverage(client, trackedProducts);
+        await checkPublishedLowPrices(client, trackedProducts);
+        await checkPublishedMedianOutliers(client, trackedProducts);
+        await checkUnrefreshedExactLocalPrices(client, trackedProducts);
+        await checkTaxProfileCoverage(client);
+        await checkCollectorRuns(client);
+        await checkAppStoreProductRunFreshness(client, trackedProducts);
+      }
     }
   } catch (error) {
     failures.push(error?.message || String(error));

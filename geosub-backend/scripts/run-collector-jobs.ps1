@@ -734,6 +734,8 @@ SELECT refresh_matching_app_store_prices() AS revalidated_prices;
 SELECT *
 FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14);
 
+SELECT quarantine_published_app_store_price_outliers() AS quarantined_published_outliers;
+
 SELECT refresh_plan_affordability_metrics() AS refreshed_rows;
 
 SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;

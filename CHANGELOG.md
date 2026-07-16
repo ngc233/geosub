@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0-beta.17 - 2026-07-16
+
+- Replaced hard-coded price-quality product lists with automatic discovery of every active App Store collector product.
+- Added global release and post-deploy gates for product collection freshness, published coverage, sub-dollar prices, median outliers, stale prices, and unrefreshed exact-local observations.
+- Automatically quarantined legacy published App Store prices that are extreme against the same plan's peer-region median.
+- Completed a full App Store collection and auto-review pass for ChatGPT, Claude, Disney+, Gemini, Grok, Manus, and Netflix.
+
 ## 0.3.0-beta.16 - 2026-07-16
 
 - Allowed an exact, non-anomalous App Store local price to refresh its USD conversion and review date without being blocked by normal exchange-rate movement.

@@ -53,5 +53,9 @@ export async function runAppStoreStabilityAutoReview() {
     FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14)
   `;
 
+  await prisma.$queryRaw`
+    SELECT quarantine_published_app_store_price_outliers() AS quarantined_rows
+  `;
+
   await refreshPricingReviewDerivatives({ taxProfiles: true });
 }

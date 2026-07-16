@@ -36,6 +36,14 @@ const exactLocalPriceRefreshSql = readFileSync(
   "utf8",
 );
 
+const publishedOutlierQuarantineSql = readFileSync(
+  resolve(
+    repoRoot,
+    "geosub-backend/sql/057_quarantine_published_app_store_price_outliers.sql",
+  ),
+  "utf8",
+);
+
 const appStoreCollector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
@@ -67,6 +75,15 @@ test("global peer outlier guard still catches extreme country-level conversions"
   assert.match(autoReviewSql, /g\.stable_converted_usd < peer_median_usd \* 0\.2/);
   assert.match(autoReviewSql, /g\.stable_converted_usd > peer_median_usd \* 3\.5/);
   assert.match(autoReviewSql, /v_reason_code := 'app_store_global_price_outlier'/);
+});
+
+test("published App Store peer outliers are automatically quarantined", () => {
+  assert.match(publishedOutlierQuarantineSql, /CREATE OR REPLACE FUNCTION quarantine_published_app_store_price_outliers/);
+  assert.match(publishedOutlierQuarantineSql, /HAVING COUNT\(\*\) >= p_min_peer_count/);
+  assert.match(publishedOutlierQuarantineSql, /published\.price_usd < peer_stats\.median_usd \* p_low_multiplier/);
+  assert.match(publishedOutlierQuarantineSql, /published\.price_usd > peer_stats\.median_usd \* p_high_multiplier/);
+  assert.match(publishedOutlierQuarantineSql, /status = 'review'/);
+  assert.match(publishedOutlierQuarantineSql, /data_quality = 'pending_review'/);
 });
 
 test("matching App Store observations refresh published dates and FX conversions", () => {

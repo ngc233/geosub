@@ -112,6 +112,7 @@ core_files=(
   "sql/054_refresh_affordability_app_store_scope.sql"
   "sql/055_refresh_matching_app_store_prices.sql"
   "sql/056_refresh_exact_local_app_store_prices.sql"
+  "sql/057_quarantine_published_app_store_price_outliers.sql"
 )
 
 content_files=(

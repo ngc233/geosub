@@ -51,11 +51,17 @@ test("collector success refreshes affordability after App Store auto review", ()
 
   assert.match(collectorRunner, /refresh_matching_app_store_prices\(\)/);
   assert.match(collectorRunner, /run_app_store_stability_auto_review\(FALSE, 3, 80, 14\)/);
+  assert.match(collectorRunner, /quarantine_published_app_store_price_outliers\(\)/);
   assert.match(collectorRunner, /SELECT refresh_plan_affordability_metrics\(\) AS refreshed_rows/);
   assert.ok(
     collectorRunner.indexOf("refresh_matching_app_store_prices()") <
       collectorRunner.indexOf("run_app_store_stability_auto_review(FALSE, 3, 80, 14)"),
     "matching published prices should refresh before duplicate observations are archived",
+  );
+  assert.ok(
+    collectorRunner.indexOf("quarantine_published_app_store_price_outliers()") <
+      collectorRunner.indexOf("refresh_plan_affordability_metrics()"),
+    "published outliers should be quarantined before affordability is refreshed",
   );
   assert.match(adminRunner, /revalidatePath\("\/admin\/affordability"\)/);
 });

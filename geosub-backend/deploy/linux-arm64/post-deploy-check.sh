@@ -17,6 +17,8 @@ DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 WEB_HEALTH_URL="${GEOSUB_WEB_HEALTH_URL:-http://127.0.0.1:3000/zh/ai-pricing}"
 MAX_EXCHANGE_RATE_AGE_HOURS="${GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS:-18}"
 MIN_PUBLISHED_SUBSCRIPTION_USD="${GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD:-1}"
+MAX_PUBLISHED_PRICE_AGE_DAYS="${GEOSUB_MAX_PUBLISHED_PRICE_AGE_DAYS:-14}"
+MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS="${GEOSUB_MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS:-8}"
 
 failures=0
 warnings=0
@@ -198,7 +200,8 @@ if (( failures == 0 )); then
     "sql/053_admin_collection_performance.sql" \
     "sql/054_refresh_affordability_app_store_scope.sql" \
     "sql/055_refresh_matching_app_store_prices.sql" \
-    "sql/056_refresh_exact_local_app_store_prices.sql"; do
+    "sql/056_refresh_exact_local_app_store_prices.sql" \
+    "sql/057_quarantine_published_app_store_price_outliers.sql"; do
     check_migration "$migration"
   done
 
@@ -257,25 +260,46 @@ if (( failures == 0 )); then
   IFS='|' read -r products_count published_prices pending_observations <<< "$data_summary"
   pass "data summary products=$products_count published_prices=$published_prices pending_observations=$pending_observations"
 
-  key_product_gaps="$(psql_scalar "WITH tracked(slug) AS (VALUES ('chatgpt'), ('claude'), ('gemini'), ('grok'), ('netflix')), coverage AS (SELECT tracked.slug, products.id, COUNT(region_prices.id) FILTER (WHERE region_prices.status = 'published' AND region_prices.billing_platform = 'ios' AND region_prices.price_usd IS NOT NULL) AS published_prices FROM tracked LEFT JOIN products ON products.slug = tracked.slug LEFT JOIN region_prices ON region_prices.product_id = products.id GROUP BY tracked.slug, products.id) SELECT COUNT(*) FROM coverage WHERE id IS NULL OR published_prices = 0;")"
-  if [[ "$key_product_gaps" == "0" ]]; then
-    pass "key product published App Store coverage"
+  app_store_product_gaps="$(psql_scalar "WITH tracked AS (SELECT DISTINCT products.id, products.slug FROM products JOIN collector_jobs ON collector_jobs.product_id = products.id WHERE collector_jobs.status = 'active' AND collector_jobs.job_config ->> 'collector_kind' = 'app_store'), coverage AS (SELECT tracked.slug, COUNT(region_prices.id) FILTER (WHERE region_prices.status = 'published' AND region_prices.billing_platform = 'ios' AND region_prices.price_usd IS NOT NULL) AS published_prices FROM tracked LEFT JOIN region_prices ON region_prices.product_id = tracked.id GROUP BY tracked.slug) SELECT COUNT(*) FROM coverage WHERE published_prices = 0;")"
+  if [[ "$app_store_product_gaps" == "0" ]]; then
+    pass "all active App Store products have published coverage"
   else
-    fail "key products missing published App Store prices: $key_product_gaps"
+    fail "active App Store products missing published prices: $app_store_product_gaps"
   fi
 
-  low_published_prices="$(psql_scalar "SELECT COUNT(*) FROM region_prices rp JOIN products p ON p.id = rp.product_id WHERE p.slug IN ('chatgpt', 'claude', 'gemini', 'grok', 'netflix') AND rp.status = 'published' AND rp.billing_platform = 'ios' AND rp.price_usd IS NOT NULL AND rp.price_usd < ${MIN_PUBLISHED_SUBSCRIPTION_USD};")"
+  app_store_products_without_recent_success="$(psql_scalar "WITH tracked AS (SELECT DISTINCT products.id FROM products JOIN collector_jobs ON collector_jobs.product_id = products.id WHERE collector_jobs.status = 'active' AND collector_jobs.job_config ->> 'collector_kind' = 'app_store') SELECT COUNT(*) FROM tracked WHERE NOT EXISTS (SELECT 1 FROM collector_job_runs runs WHERE runs.product_id = tracked.id AND runs.collector_kind = 'app_store' AND runs.status = 'succeeded' AND runs.started_at >= NOW() - ('${MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS} days')::interval);")"
+  if [[ "$app_store_products_without_recent_success" == "0" ]]; then
+    pass "all active App Store products collected within ${MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS} days"
+  else
+    fail "active App Store products without a recent successful collection: $app_store_products_without_recent_success"
+  fi
+
+  low_published_prices="$(psql_scalar "SELECT COUNT(*) FROM region_prices WHERE status = 'published' AND billing_platform = 'ios' AND price_usd IS NOT NULL AND price_usd < ${MIN_PUBLISHED_SUBSCRIPTION_USD};")"
   if [[ "$low_published_prices" == "0" ]]; then
     pass "no sub-dollar published App Store subscription prices"
   else
     fail "sub-dollar published App Store prices: $low_published_prices"
   fi
 
-  published_outliers="$(psql_scalar "WITH published AS (SELECT rp.*, p.slug AS product, pl.slug AS plan FROM region_prices rp JOIN products p ON p.id = rp.product_id JOIN plans pl ON pl.id = rp.plan_id WHERE p.slug IN ('chatgpt', 'claude', 'gemini', 'grok', 'netflix') AND rp.status = 'published' AND rp.billing_platform = 'ios' AND rp.price_usd IS NOT NULL AND rp.price_usd >= ${MIN_PUBLISHED_SUBSCRIPTION_USD}), stats AS (SELECT product_id, plan_id, percentile_cont(0.5) WITHIN GROUP (ORDER BY price_usd)::numeric AS median_usd, COUNT(*) AS region_count FROM published GROUP BY product_id, plan_id HAVING COUNT(*) >= 8) SELECT COUNT(*) FROM published JOIN stats ON stats.product_id = published.product_id AND stats.plan_id = published.plan_id WHERE published.price_usd < stats.median_usd * 0.2 OR published.price_usd > stats.median_usd * 3.5;")"
+  published_outliers="$(psql_scalar "WITH published AS (SELECT rp.* FROM region_prices rp WHERE rp.status = 'published' AND rp.billing_platform = 'ios' AND rp.price_usd IS NOT NULL AND rp.price_usd >= ${MIN_PUBLISHED_SUBSCRIPTION_USD}), stats AS (SELECT product_id, plan_id, percentile_cont(0.5) WITHIN GROUP (ORDER BY price_usd)::numeric AS median_usd, COUNT(*) AS region_count FROM published GROUP BY product_id, plan_id HAVING COUNT(*) >= 8) SELECT COUNT(*) FROM published JOIN stats ON stats.product_id = published.product_id AND stats.plan_id = published.plan_id WHERE published.price_usd < stats.median_usd * 0.2 OR published.price_usd > stats.median_usd * 3.5;")"
   if [[ "$published_outliers" == "0" ]]; then
     pass "no extreme published App Store price outliers"
   else
-    warn "extreme published App Store price outliers: $published_outliers"
+    fail "extreme published App Store price outliers: $published_outliers"
+  fi
+
+  stale_published_prices="$(psql_scalar "SELECT COUNT(*) FROM region_prices WHERE status = 'published' AND billing_platform = 'ios' AND price_usd IS NOT NULL AND last_checked_at < NOW() - ('${MAX_PUBLISHED_PRICE_AGE_DAYS} days')::interval;")"
+  if [[ "$stale_published_prices" == "0" ]]; then
+    pass "no published App Store prices older than ${MAX_PUBLISHED_PRICE_AGE_DAYS} days"
+  else
+    warn "published App Store prices older than ${MAX_PUBLISHED_PRICE_AGE_DAYS} days: $stale_published_prices"
+  fi
+
+  unrefreshed_exact_local_prices="$(psql_scalar "WITH candidates AS (SELECT DISTINCT ON (published.id) published.id FROM region_prices published JOIN price_observations observation ON observation.product_id = published.product_id AND observation.plan_id = published.plan_id AND observation.country_id = published.country_id AND observation.billing_platform = published.billing_platform AND observation.price_type = published.price_type WHERE published.status = 'published' AND published.billing_platform = 'ios' AND observation.billing_platform = 'ios' AND (observation.status = 'pending' OR (observation.status = 'ignored' AND observation.raw_payload ->> 'auto_review_reason_code' = 'superseded_by_published_price')) AND COALESCE(observation.anomaly_flag, FALSE) = FALSE AND observation.observed_at > COALESCE(published.last_checked_at, '-infinity'::timestamptz) AND published.currency IS NOT DISTINCT FROM observation.currency AND published.local_price IS NOT DISTINCT FROM observation.raw_price AND observation.converted_usd IS NOT NULL AND observation.converted_usd >= ${MIN_PUBLISHED_SUBSCRIPTION_USD} ORDER BY published.id, observation.observed_at DESC, observation.created_at DESC) SELECT COUNT(*) FROM candidates;")"
+  if [[ "$unrefreshed_exact_local_prices" == "0" ]]; then
+    pass "no unrefreshed exact-local App Store prices"
+  else
+    fail "published App Store prices have newer exact-local observations: $unrefreshed_exact_local_prices"
   fi
 fi
 
