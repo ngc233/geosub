@@ -54,3 +54,42 @@ test("scheduled App Store maintenance keeps daily, weekly and anomaly recheck la
   assert.match(qualityGate, /GEOSUB_MAX_PUBLISHED_PRICE_AGE_DAYS \|\| 14/);
   assert.match(qualityGate, /latest published price check is older than/);
 });
+
+test("stale published prices get a focused retry lifecycle", () => {
+  const lifecycle = readRepoFile("geosub-backend/sql/059_stale_app_store_price_lifecycle.sql");
+  const runner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
+  const maintenance = readRepoFile("geosub-backend/scripts/run-price-accuracy-maintenance.ps1");
+  const migrations = readRepoFile("geosub-backend/deploy/linux-arm64/db-apply-sql.sh");
+  const deployCheck = readRepoFile("geosub-backend/deploy/linux-arm64/post-deploy-check.sh");
+
+  assert.match(lifecycle, /queue_stale_app_store_price_rechecks/);
+  assert.match(lifecycle, /schedule_strategy', 'stale_refresh'/);
+  assert.match(lifecycle, /queued_reason', 'stale_published_prices'/);
+  assert.match(lifecycle, /p_retry_cooldown_hours INTEGER DEFAULT 24/);
+  assert.match(lifecycle, /p_min_successful_rechecks INTEGER DEFAULT 3/);
+  assert.match(lifecycle, /status = 'review'/);
+  assert.match(lifecycle, /UPPER\(country\.code\) = ANY\(stale_job\.country_codes\)/);
+  assert.match(lifecycle, /availability\.status IN \('not_available', 'available_no_iap'\)/);
+  assert.match(runner, /Queue-AppStoreRechecks/);
+  assert.match(runner, /queue_stale_app_store_price_rechecks\(14, 20, 24\)/);
+  assert.match(runner, /quarantine_unconfirmed_stale_app_store_prices\(14, 3\)/);
+  assert.match(runner, /\$Job\.schedule -eq "stale_refresh"/);
+  assert.match(runner, /\$jobStatusSql = "'paused'"/);
+  assert.match(maintenance, /published prices older than 14 days/);
+  assert.match(migrations, /sql\/059_stale_app_store_price_lifecycle\.sql/);
+  assert.match(deployCheck, /sql\/059_stale_app_store_price_lifecycle\.sql/);
+});
+
+test("admin data quality pages use the same fourteen day freshness policy", () => {
+  const overview = readAppFile("app/admin/data-quality/page.tsx");
+  const detail = readAppFile("app/admin/data-quality/[slug]/page.tsx");
+
+  assert.match(overview, /INTERVAL '14 days'/);
+  assert.doesNotMatch(overview, /INTERVAL '7 days'/);
+  assert.match(overview, /price\.billing_platform::text = 'ios'/);
+  assert.match(overview, /自动复采已排队/);
+  assert.match(overview, /stale_refresh_success_count/);
+  assert.match(detail, /INTERVAL '14 days'/);
+  assert.doesNotMatch(detail, /INTERVAL '7 days'/);
+  assert.match(detail, /三轮仍无法确认的价格会移出前台/);
+});

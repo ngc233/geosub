@@ -334,9 +334,9 @@ function getDiagnosisConclusion(
     return {
       level: "warning",
       label: "需要复采",
-      title: "部分正式价超过 7 天未刷新",
-      detail: "价格仍可展示，但不适合长期当作最新数据。建议下一轮轻量复采。",
-      nextAction: "只采这个产品或等待定时任务。",
+      title: "部分正式价超过 14 天未刷新",
+      detail: "系统会按产品和过期地区自动复采；三轮仍无法确认的价格会移出前台并进入审核区。",
+      nextAction: "等待自动复采，也可以只采这个产品。",
     };
   }
 
@@ -458,7 +458,7 @@ async function getProductSummary(slug: string) {
             AND price.billing_platform = 'ios'::billing_platform
             AND (
               price.last_checked_at IS NULL
-              OR price.last_checked_at < NOW() - INTERVAL '7 days'
+              OR price.last_checked_at < NOW() - INTERVAL '14 days'
             )
         )::int AS stale_published_count,
         MAX(price.last_checked_at) FILTER (

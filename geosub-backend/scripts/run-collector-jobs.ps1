@@ -226,7 +226,7 @@ function Get-NextRunSql {
   }
 }
 
-function Queue-AnomalyRechecks {
+function Queue-AppStoreRechecks {
   if ($DryRun) {
     return
   }
@@ -235,9 +235,12 @@ function Queue-AnomalyRechecks {
     Invoke-Psql @"
 SELECT *
 FROM queue_app_store_anomaly_rechecks(7, 12);
+
+SELECT *
+FROM queue_stale_app_store_price_rechecks(14, 20, 24);
 "@
   } catch {
-    Write-Host "Anomaly recheck queue skipped: $($_.Exception.Message)"
+    Write-Host "App Store recheck queue skipped: $($_.Exception.Message)"
   }
 }
 
@@ -649,6 +652,20 @@ function Complete-JobRun {
   $errorMessage = if ($Result.Error) { [string]$Result.Error } else { $null }
   $nextRunSql = Get-NextRunSql -Job $Job -Status $status
   $jobStatusSql = if ($status -eq "failed") { "'failed'" } else { "'active'" }
+  $jobConfigSql = "job_config"
+
+  if ($Job.schedule -eq "stale_refresh" -and $status -eq "succeeded") {
+    $nextRunSql = "NULL"
+    $jobStatusSql = "'paused'"
+    $jobConfigSql = @"
+jsonb_set(
+    job_config,
+    '{stale_success_count}',
+    TO_JSONB(COALESCE((job_config ->> 'stale_success_count')::INTEGER, 0) + 1),
+    TRUE
+  )
+"@
+  }
 
   $runWriteSql = if (![string]::IsNullOrWhiteSpace($RunId)) {
 @"
@@ -706,6 +723,7 @@ SET
   error_count = error_count + $(if ($status -eq "failed") { 1 } else { 0 }),
   last_error = $(Quote-SqlString $errorMessage),
   status = $jobStatusSql,
+  job_config = $jobConfigSql,
   updated_at = NOW()
 WHERE id = $(Quote-SqlString $Job.id)::uuid;
 "@
@@ -713,7 +731,7 @@ WHERE id = $(Quote-SqlString $Job.id)::uuid;
   Invoke-Psql ($runWriteSql + "`n" + $jobWriteSql)
 }
 
-Queue-AnomalyRechecks
+Queue-AppStoreRechecks
 
 $jobs = @(Get-DueJobs)
 $requestedRunId = $RunId
@@ -770,6 +788,8 @@ SELECT *
 FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14);
 
 SELECT quarantine_published_app_store_price_outliers() AS quarantined_published_outliers;
+
+SELECT quarantine_unconfirmed_stale_app_store_prices(14, 3) AS quarantined_unconfirmed_stale_prices;
 
 SELECT refresh_plan_affordability_metrics() AS refreshed_rows;
 

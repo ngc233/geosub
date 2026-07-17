@@ -92,9 +92,11 @@ test("price quality gate requires the database automation functions", () => {
   assert.match(source, /async function requireDatabaseFunctions/);
   assert.match(source, /run_app_store_stability_auto_review/);
   assert.match(source, /queue_app_store_anomaly_rechecks/);
+  assert.match(source, /queue_stale_app_store_price_rechecks/);
   assert.match(source, /refresh_plan_affordability_metrics/);
   assert.match(source, /refresh_matching_app_store_prices/);
   assert.match(source, /quarantine_published_app_store_price_outliers/);
+  assert.match(source, /quarantine_unconfirmed_stale_app_store_prices/);
   assert.match(source, /refresh_inferred_app_store_tax_profiles/);
   assert.match(source, /Missing required database function\(s\)/);
 });

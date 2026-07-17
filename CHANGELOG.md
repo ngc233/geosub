@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3 - 2026-07-18
+
+- Added a 14-day App Store published-price freshness lifecycle that automatically queues focused country rechecks instead of leaving old prices live indefinitely.
+- Required three successful focused refresh rounds before an unconfirmed price is moved from the public catalog into the review queue, while immediately hiding regions that App Store reports as unavailable.
+- Added admin visibility, deployment migrations, quality gates, and regression coverage for queued freshness checks, retry progress, and stale-price quarantine.
+
 ## 1.0.2 - 2026-07-18
 
 - Fixed the production collector runner lock so systemd jobs use a service-owned runtime directory instead of colliding with a root-owned file in `/tmp`.

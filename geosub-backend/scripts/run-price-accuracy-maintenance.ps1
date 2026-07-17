@@ -100,14 +100,17 @@ if ($SkipExchangeRates) {
 
 if ($DryRun) {
   Write-Host ""
-  Write-Host "=== 2/6 Queue anomaly rechecks ==="
-  Write-Host "[dry-run] Would queue recent App Store anomaly rechecks."
+  Write-Host "=== 2/6 Queue focused App Store rechecks ==="
+  Write-Host "[dry-run] Would queue recent anomalies and published prices older than 14 days."
 } else {
   Write-Host ""
-  Write-Host "=== 2/6 Queue anomaly rechecks ==="
+  Write-Host "=== 2/6 Queue focused App Store rechecks ==="
   Invoke-Psql @"
 SELECT *
 FROM queue_app_store_anomaly_rechecks(7, 12);
+
+SELECT *
+FROM queue_stale_app_store_price_rechecks(14, 20, 24);
 "@
 }
 

@@ -30,6 +30,9 @@ type ProductQualityRow = {
   queued_job_count: number;
   stale_queue_count: number;
   latest_queued_at: Date | string | null;
+  stale_refresh_status: string | null;
+  stale_refresh_retry_count: number;
+  stale_refresh_success_count: number;
   running_run_count: number;
   latest_run_status: string | null;
   latest_run_started_at: Date | string | null;
@@ -190,6 +193,24 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
+  if (row.stale_published_count > 0 && row.stale_refresh_status === "active") {
+    return {
+      level: "info",
+      label: "自动复采已排队",
+      reason: `${row.stale_published_count} 条正式价格超过 14 天未确认，系统正在执行第 ${Math.max(1, row.stale_refresh_retry_count)} 轮定向复采。`,
+      nextAction: "等待自动复采",
+    };
+  }
+
+  if (row.stale_published_count > 0 && row.stale_refresh_success_count > 0) {
+    return {
+      level: "warning",
+      label: "自动复采观察中",
+      reason: `已完成 ${row.stale_refresh_success_count}/3 轮定向复采；仍未确认的价格会在下一轮继续核验，三轮后自动移出前台。`,
+      nextAction: "等待下一轮复采",
+    };
+  }
+
   if (row.pending_anomaly_count > 0) {
     return {
       level: "warning",
@@ -212,8 +233,8 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
     return {
       level: "warning",
       label: "价格需复采",
-      reason: "部分正式价格超过 7 天没有刷新，不适合继续当作最新价格。",
-      nextAction: "重新采集",
+      reason: "部分正式价格超过 14 天没有刷新，调度器下一次运行会自动按产品和地区复采。",
+      nextAction: "等待自动排队",
     };
   }
 
@@ -306,20 +327,30 @@ async function getProductQualityRows() {
     price_state AS (
       SELECT
         price.product_id,
-        COUNT(*) FILTER (WHERE price.status::text = 'published')::int AS published_price_count,
-        COUNT(DISTINCT price.country_id) FILTER (WHERE price.status::text = 'published')::int AS published_country_count,
+        COUNT(*) FILTER (
+          WHERE price.status::text = 'published'
+            AND price.billing_platform::text = 'ios'
+        )::int AS published_price_count,
+        COUNT(DISTINCT price.country_id) FILTER (
+          WHERE price.status::text = 'published'
+            AND price.billing_platform::text = 'ios'
+        )::int AS published_country_count,
         COUNT(*) FILTER (
           WHERE price.status::text = 'published'
             AND price.billing_platform::text = 'ios'
         )::int AS app_store_price_count,
         COUNT(*) FILTER (
           WHERE price.status::text = 'published'
+            AND price.billing_platform::text = 'ios'
             AND (
               price.last_checked_at IS NULL
-              OR price.last_checked_at < NOW() - INTERVAL '7 days'
+              OR price.last_checked_at < NOW() - INTERVAL '14 days'
             )
         )::int AS stale_published_count,
-        MAX(price.last_checked_at) FILTER (WHERE price.status::text = 'published') AS latest_price_checked_at
+        MAX(price.last_checked_at) FILTER (
+          WHERE price.status::text = 'published'
+            AND price.billing_platform::text = 'ios'
+        ) AS latest_price_checked_at
       FROM region_prices price
       GROUP BY price.product_id
     ),
@@ -394,7 +425,19 @@ async function getProductQualityRows() {
               job.next_run_at IS NULL
               OR job.next_run_at <= NOW()
             )
-        ) AS latest_queued_at
+        ) AS latest_queued_at,
+        MAX(job.status) FILTER (
+          WHERE job.schedule = 'stale_refresh'
+            AND job.status <> 'archived'
+        ) AS stale_refresh_status,
+        MAX(COALESCE((job.job_config ->> 'stale_retry_count')::int, 0)) FILTER (
+          WHERE job.schedule = 'stale_refresh'
+            AND job.status <> 'archived'
+        )::int AS stale_refresh_retry_count,
+        MAX(COALESCE((job.job_config ->> 'stale_success_count')::int, 0)) FILTER (
+          WHERE job.schedule = 'stale_refresh'
+            AND job.status <> 'archived'
+        )::int AS stale_refresh_success_count
       FROM collector_jobs job
       LEFT JOIN price_sources source ON source.id = job.source_id
       WHERE job.product_id IS NOT NULL
@@ -444,6 +487,9 @@ async function getProductQualityRows() {
       COALESCE(job_state.queued_job_count, 0)::int AS queued_job_count,
       COALESCE(job_state.stale_queue_count, 0)::int AS stale_queue_count,
       job_state.latest_queued_at,
+      job_state.stale_refresh_status,
+      COALESCE(job_state.stale_refresh_retry_count, 0)::int AS stale_refresh_retry_count,
+      COALESCE(job_state.stale_refresh_success_count, 0)::int AS stale_refresh_success_count,
       COALESCE(running_state.running_run_count, 0)::int AS running_run_count,
       latest_run.latest_run_status,
       latest_run.latest_run_started_at,
@@ -549,7 +595,7 @@ export default async function AdminDataQualityPage() {
                 后台判断规则
               </h2>
               <p className="mt-1 max-w-4xl text-sm leading-6 text-blue-800">
-                绿色产品不需要反复采集。红色代表缺任务、采集失败、硬异常或没有正式价格；橙色代表待审核积压、异常样本或价格超过 7 天未刷新。这样可以把手工维护从“几百条记录”压缩成“几个产品的下一步动作”。
+                绿色产品不需要反复采集。红色代表缺任务、采集失败、硬异常或没有正式价格；橙色代表待审核积压、异常样本或价格超过 14 天未刷新。陈旧价格会自动定向复采，连续三轮仍无法确认才移出前台。
               </p>
             </div>
           </div>
@@ -648,6 +694,9 @@ export default async function AdminDataQualityPage() {
                       App Store 任务 {row.active_app_store_job_count}
                       {row.stale_queue_count > 0 && unconsumedQueue
                         ? ` · 未消费 ${row.stale_queue_count}`
+                        : ""}
+                      {row.stale_refresh_retry_count > 0
+                        ? ` · 复采 ${row.stale_refresh_success_count}/3`
                         : ""}
                     </p>
                   </div>

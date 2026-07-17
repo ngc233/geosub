@@ -600,9 +600,11 @@ async function main() {
       const requiredFunctions = await requireDatabaseFunctions(client, [
         "run_app_store_stability_auto_review",
         "queue_app_store_anomaly_rechecks",
+        "queue_stale_app_store_price_rechecks",
         "refresh_plan_affordability_metrics",
         "refresh_matching_app_store_prices",
         "quarantine_published_app_store_price_outliers",
+        "quarantine_unconfirmed_stale_app_store_prices",
         "refresh_inferred_app_store_tax_profiles",
       ]);
       if (!requiredFunctions) {

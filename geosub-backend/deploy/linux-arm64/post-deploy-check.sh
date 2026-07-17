@@ -229,7 +229,8 @@ if (( failures == 0 )); then
     "sql/055_refresh_matching_app_store_prices.sql" \
     "sql/056_refresh_exact_local_app_store_prices.sql" \
     "sql/057_quarantine_published_app_store_price_outliers.sql" \
-    "sql/058_normalize_disney_app_store_plans.sql"; do
+    "sql/058_normalize_disney_app_store_plans.sql" \
+    "sql/059_stale_app_store_price_lifecycle.sql"; do
     check_migration "$migration"
   done
 
