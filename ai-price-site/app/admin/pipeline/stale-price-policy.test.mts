@@ -75,6 +75,10 @@ test("stale published prices get a focused retry lifecycle", () => {
   assert.match(runner, /quarantine_unconfirmed_stale_app_store_prices\(14, 3\)/);
   assert.match(runner, /\$Job\.schedule -eq "stale_refresh"/);
   assert.match(runner, /\$jobStatusSql = "'paused'"/);
+  assert.match(
+    runner,
+    /function Complete-JobRun[\s\S]*?if \(\$DryRun\) \{\s*return\s*\}/,
+  );
   assert.match(maintenance, /published prices older than 14 days/);
   assert.match(migrations, /sql\/059_stale_app_store_price_lifecycle\.sql/);
   assert.match(deployCheck, /sql\/059_stale_app_store_price_lifecycle\.sql/);

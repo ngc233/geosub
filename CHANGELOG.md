@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.4 - 2026-07-18
+
+- Prevented collector dry runs, including post-deploy startup checks, from changing job status, retry timing, counters, or run history.
+- Added a regression guard so stale-price rechecks remain immediately due after a deployment dry run and can be consumed by the real collector service.
+
 ## 1.0.3 - 2026-07-18
 
 - Added a 14-day App Store published-price freshness lifecycle that automatically queues focused country rechecks instead of leaving old prices live indefinitely.

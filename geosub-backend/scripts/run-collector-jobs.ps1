@@ -645,6 +645,10 @@ function Complete-JobRun {
     [AllowNull()][string]$RunId
   )
 
+  if ($DryRun) {
+    return
+  }
+
   $finishedAt = Get-Date
   $durationMs = [int]([Math]::Max(0, ($finishedAt - $StartedAt).TotalMilliseconds))
   $output = if ($Result.Output -and $Result.Output.Length -gt 2000) { $Result.Output.Substring(0, 2000) } else { $Result.Output }
