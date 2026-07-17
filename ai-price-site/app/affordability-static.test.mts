@@ -69,10 +69,21 @@ test("collector success refreshes affordability after App Store auto review", ()
 test("collector runner keeps product identity stable and serializes shell launches", () => {
   const collectorRunner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
   const shellRunner = readRepoFile("geosub-backend/deploy/linux-arm64/run-collector-jobs.sh");
+  const serviceUnit = readRepoFile(
+    "geosub-backend/deploy/linux-arm64/systemd/geosub-collector-jobs.service",
+  );
+  const postDeploy = readRepoFile(
+    "geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
+  );
 
   assert.match(collectorRunner, /& \$scriptPath @scriptParameters/);
   assert.match(collectorRunner, /Collector identity mismatch/);
   assert.doesNotMatch(collectorRunner, /-File \$scriptPath @arguments/);
   assert.match(shellRunner, /flock 9/);
   assert.match(shellRunner, /GEOSUB_COLLECTOR_LOCK_FILE/);
+  assert.match(shellRunner, /GEOSUB_COLLECTOR_LOCK_DIR/);
+  assert.doesNotMatch(shellRunner, /\/tmp\/geosub-collector-jobs\.lock/);
+  assert.match(serviceUnit, /RuntimeDirectory=geosub/);
+  assert.match(serviceUnit, /GEOSUB_COLLECTOR_LOCK_DIR=\/run\/geosub/);
+  assert.match(postDeploy, /check_unit_not_failed "geosub-collector-jobs\.service"/);
 });

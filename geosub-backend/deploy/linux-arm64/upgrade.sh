@@ -199,6 +199,10 @@ systemctl start geosub-analytics-aggregation.timer 2>/dev/null || true
 systemctl start geosub-db-backup.timer 2>/dev/null || true
 systemctl start geosub-event-retention.timer 2>/dev/null || true
 
+log "Checking collector runner startup"
+systemctl reset-failed geosub-collector-jobs.service 2>/dev/null || true
+run_as_geosub "set -a && source '$ENV_FILE' && set +a && bash '$BACKEND_DIR/deploy/linux-arm64/run-collector-jobs.sh' -DryRun"
+
 log "Refreshing exchange rates once"
 systemctl start geosub-exchange-rate-sync.service 2>/dev/null || true
 

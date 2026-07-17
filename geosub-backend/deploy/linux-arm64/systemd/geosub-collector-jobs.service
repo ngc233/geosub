@@ -6,10 +6,13 @@ After=docker.service network-online.target
 [Service]
 Type=oneshot
 EnvironmentFile=-/etc/geosub/geosub.env
+Environment=GEOSUB_COLLECTOR_LOCK_DIR=/run/geosub
 WorkingDirectory=/opt/geosub/geosub-backend
 ExecStart=/usr/bin/env bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh
 User=geosub
 Group=geosub
+RuntimeDirectory=geosub
+RuntimeDirectoryMode=0700
 NoNewPrivileges=true
 MemoryMax=1800M
 CPUQuota=120%

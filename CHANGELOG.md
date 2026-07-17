@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 - 2026-07-18
+
+- Fixed the production collector runner lock so systemd jobs use a service-owned runtime directory instead of colliding with a root-owned file in `/tmp`.
+- Added collector failure-state and dry-run startup checks to deployment validation, preventing an active timer from masking a broken runner.
+- Marked analytics aggregation, event retention, and database backup maintenance scripts executable in Git release metadata.
+
 ## 1.0.1 - 2026-07-18
 
 - Added a visible admin navigation entry for Google Analytics settings, including GA4/GTM configuration status and explicit save confirmation.

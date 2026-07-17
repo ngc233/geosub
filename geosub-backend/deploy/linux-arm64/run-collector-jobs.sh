@@ -14,7 +14,8 @@ DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 LIMIT="${GEOSUB_COLLECTOR_JOB_LIMIT:-5}"
-LOCK_FILE="${GEOSUB_COLLECTOR_LOCK_FILE:-/tmp/geosub-collector-jobs.lock}"
+LOCK_DIR="${GEOSUB_COLLECTOR_LOCK_DIR:-${XDG_RUNTIME_DIR:-/tmp}/geosub-${UID}}"
+LOCK_FILE="${GEOSUB_COLLECTOR_LOCK_FILE:-$LOCK_DIR/collector-jobs.lock}"
 EXTRA_ARGS=("$@")
 
 cd "$BACKEND_DIR"
@@ -24,6 +25,7 @@ if ! command -v flock >/dev/null 2>&1; then
   exit 1
 fi
 
+install -d -m 0700 "$LOCK_DIR"
 exec 9>"$LOCK_FILE"
 flock 9
 

@@ -145,6 +145,21 @@ check_timer_enabled_active() {
   fi
 }
 
+check_unit_not_failed() {
+  local unit="$1"
+
+  if ! command -v systemctl >/dev/null 2>&1; then
+    warn "systemctl not available; skipped $unit failure state"
+    return
+  fi
+
+  if systemctl is-failed --quiet "$unit"; then
+    fail "systemd failed: $unit"
+  else
+    pass "systemd not failed: $unit"
+  fi
+}
+
 printf 'GeoSub post-deploy check\n'
 printf 'env=%s\n' "$ENV_FILE"
 printf 'database=%s/%s\n\n' "$DB_CONTAINER" "$DB_NAME"
@@ -320,6 +335,7 @@ check_unit_active "geosub-web.service"
 check_timer_enabled_active "geosub-exchange-rate-sync.timer"
 check_timer_enabled_active "geosub-price-pipeline.timer"
 check_timer_enabled_active "geosub-collector-jobs.timer"
+check_unit_not_failed "geosub-collector-jobs.service"
 check_timer_enabled_active "geosub-discovery-scan.timer"
 check_timer_enabled_active "geosub-analytics-aggregation.timer"
 check_timer_enabled_active "geosub-db-backup.timer"
