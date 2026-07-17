@@ -1,5 +1,5 @@
 export const metadata = {
-  title: '数据说明 - GeoSub',
+  title: '数据说明',
   description:
     '了解 GeoSub 的价格来源、汇率折算方式、税费说明、价差计算方式和数据更新时间。',
 };

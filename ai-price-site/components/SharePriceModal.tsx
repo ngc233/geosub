@@ -590,6 +590,10 @@ export default function SharePriceModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
+        data-track-event="open_share_modal"
+        data-track-name="Open price share modal"
+        data-track-button={`${product.slug}:${plan.slug}`}
+        data-track-placement="share_modal"
         className="group inline-flex items-center justify-center gap-2 rounded-xl border border-lime-300 bg-lime-50 px-3.5 py-2 text-sm font-semibold text-lime-900 transition-colors hover:border-lime-400 hover:bg-lime-100 dark:border-lime-500/30 dark:bg-lime-500/10 dark:text-lime-200 dark:hover:bg-lime-500/20"
       >
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-lime-800 transition-colors dark:bg-lime-950/30 dark:text-lime-200">
@@ -778,6 +782,10 @@ export default function SharePriceModal({
                 type="button"
                 onClick={handleDownload}
                 disabled={downloading}
+                data-track-event="download_share_image"
+                data-track-name="Download price share image"
+                data-track-button={`${product.slug}:${plan.slug}`}
+                data-track-placement="share_modal"
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 py-4 text-base font-black text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <svg
@@ -801,6 +809,10 @@ export default function SharePriceModal({
                 <button
                   type="button"
                   onClick={() => handleSocialShare('x')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to X"
+                  data-track-button={`${product.slug}:${plan.slug}:x`}
+                  data-track-placement="share_modal"
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
                   aria-label={text.shareTo('X')}
                 >
@@ -810,6 +822,10 @@ export default function SharePriceModal({
                 <button
                   type="button"
                   onClick={() => handleSocialShare('facebook')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to Facebook"
+                  data-track-button={`${product.slug}:${plan.slug}:facebook`}
+                  data-track-placement="share_modal"
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
                   aria-label={text.shareTo('Facebook')}
                 >
@@ -819,6 +835,10 @@ export default function SharePriceModal({
                 <button
                   type="button"
                   onClick={() => handleSocialShare('telegram')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to Telegram"
+                  data-track-button={`${product.slug}:${plan.slug}:telegram`}
+                  data-track-placement="share_modal"
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
                   aria-label={text.shareTo('Telegram')}
                 >
@@ -834,6 +854,10 @@ export default function SharePriceModal({
                 <button
                   type="button"
                   onClick={() => handleSocialShare('reddit')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to Reddit"
+                  data-track-button={`${product.slug}:${plan.slug}:reddit`}
+                  data-track-placement="share_modal"
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
                   aria-label={text.shareTo('Reddit')}
                 >
@@ -843,6 +867,10 @@ export default function SharePriceModal({
                 <button
                   type="button"
                   onClick={handleCopyLink}
+                  data-track-event="copy_share_link"
+                  data-track-name="Copy price page link"
+                  data-track-button={`${product.slug}:${plan.slug}`}
+                  data-track-placement="share_modal"
                   className="ml-auto min-w-[86px] rounded-lg border border-zinc-200 px-3 py-2 text-sm font-black text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
                 >
                   {copyText}

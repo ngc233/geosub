@@ -3,6 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { shouldHideFromPublicNavigation } from "../lib/public-launch-routes";
+import {
+  getSiteLocaleFromPath,
+  replaceSiteLocaleInPath,
+  siteLocaleDefinitions,
+  stripSiteLocale,
+  supportedSiteLocales,
+  withSiteLocale,
+  type SiteLocale,
+} from "../lib/site-locale";
 
 export type NavChild = {
   name: string;
@@ -19,7 +29,7 @@ export type NavItem = {
   children?: NavChild[];
 };
 
-const fallbackNavItemsByLocale: Record<"zh" | "en", NavItem[]> = {
+const fallbackNavItemsByLocale: Record<SiteLocale, NavItem[]> = {
   zh: [
     { name: "首页", href: "/", match: ["/"] },
     {
@@ -108,32 +118,43 @@ const fallbackNavItemsByLocale: Record<"zh" | "en", NavItem[]> = {
   ],
 };
 
-const languages = [
-  {
-    code: "zh",
-    short: "CN",
-    name: "中文",
-  },
-  {
-    code: "en",
-    short: "US",
-    name: "English",
-  },
-];
+const languages = supportedSiteLocales.map((code) => ({
+  code,
+  short: siteLocaleDefinitions[code].shortLabel,
+  name: siteLocaleDefinitions[code].label,
+}));
 
-const hiddenNavigationPaths = [
-  "/ai-rankings",
-  "/software-subscriptions",
-  "/gaming-steam",
-  "/gift-cards",
-  "/vpn",
-];
+const headerCopy: Record<
+  SiteLocale,
+  {
+    home: string;
+    homeLinkLabel: string;
+    primaryNavigationLabel: string;
+    openMenuLabel: string;
+    closeMenuLabel: string;
+    currentSectionLabel: string;
+  }
+> = {
+  zh: {
+    home: "首页",
+    homeLinkLabel: "GeoSub 首页",
+    primaryNavigationLabel: "主导航",
+    openMenuLabel: "打开菜单",
+    closeMenuLabel: "关闭菜单",
+    currentSectionLabel: "当前栏目：",
+  },
+  en: {
+    home: "Home",
+    homeLinkLabel: "GeoSub home",
+    primaryNavigationLabel: "Primary navigation",
+    openMenuLabel: "Open menu",
+    closeMenuLabel: "Close menu",
+    currentSectionLabel: "Current section:",
+  },
+};
 
 function shouldHideNavigationHref(href: string) {
-  const path = stripLocale(normalizePath(href));
-  return hiddenNavigationPaths.some(
-    (hiddenPath) => path === hiddenPath || path.startsWith(`${hiddenPath}/`),
-  );
+  return shouldHideFromPublicNavigation(stripSiteLocale(normalizePath(href)));
 }
 
 function filterNavigationItems(items: NavItem[]) {
@@ -158,54 +179,10 @@ function normalizePath(pathname: string) {
   return normalized || "/";
 }
 
-function getLocaleFromPath(pathname: string): "zh" | "en" {
-  const segment = pathname.split("/")[1];
-
-  return segment === "en" ? "en" : "zh";
-}
-
-function stripLocale(pathname: string) {
-  const parts = normalizePath(pathname).split("/");
-  const maybeLocale = parts[1];
-
-  if (languages.some((item) => item.code === maybeLocale)) {
-    const stripped = `/${parts.slice(2).join("/")}`;
-    return normalizePath(stripped);
-  }
-
-  return normalizePath(pathname);
-}
-
-function withLocale(href: string, locale: string) {
-  const cleanHref = href.startsWith("/") ? href : `/${href}`;
-
-  if (cleanHref === `/${locale}` || cleanHref.startsWith(`/${locale}/`)) {
-    return cleanHref;
-  }
-
-  if (cleanHref === "/") {
-    return `/${locale}/`;
-  }
-
-  return `/${locale}${cleanHref}`;
-}
-
-function replaceLocaleInPath(pathname: string, nextLocale: string) {
-  const parts = pathname.split("/");
-  const currentLocale = parts[1];
-
-  if (languages.some((item) => item.code === currentLocale)) {
-    parts[1] = nextLocale;
-    return parts.join("/") || `/${nextLocale}/`;
-  }
-
-  return `/${nextLocale}${pathname}`;
-}
-
 function isNavItemActive(item: NavItem, pathname: string) {
   if (item.external) return false;
 
-  const currentPath = stripLocale(pathname);
+  const currentPath = stripSiteLocale(pathname);
 
   if (item.href === "/") {
     return currentPath === "/";
@@ -266,19 +243,26 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
-export default function Header({ initialNavItems = [] }: { initialNavItems?: NavItem[] }) {
+export default function Header({
+  initialNavItemsByLocale = {},
+}: {
+  initialNavItemsByLocale?: Partial<Record<SiteLocale, NavItem[]>>;
+}) {
   const pathname = usePathname();
   const navDropdownRef = useRef<HTMLDivElement | null>(null);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopDropdown, setDesktopDropdown] = useState<string | null>(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
-  const currentLocaleCode = getLocaleFromPath(pathname);
+  const currentLocaleCode = getSiteLocaleFromPath(pathname);
   const currentLocale =
     languages.find((item) => item.code === currentLocaleCode) || languages[0];
+  const copy = headerCopy[currentLocaleCode];
+  const currentLocaleNavItems =
+    initialNavItemsByLocale[currentLocaleCode] || [];
   const navItems = filterNavigationItems(
-    initialNavItems && initialNavItems.length > 0
-      ? initialNavItems
+    currentLocaleNavItems.length > 0
+      ? currentLocaleNavItems
       : fallbackNavItemsByLocale[currentLocaleCode],
   );
 
@@ -333,7 +317,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
         <Link
           href={`/${currentLocaleCode}/`}
           className="group inline-flex items-center gap-2 rounded-full pr-3 text-zinc-950 transition duration-200 ease-out hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
-          aria-label="GeoSub 首页"
+          aria-label={copy.homeLinkLabel}
         >
           <span className="relative flex h-8 w-8 items-center justify-center rounded-2xl bg-zinc-950 text-sm font-black text-white shadow-sm shadow-zinc-950/20 transition duration-200 ease-out group-hover:scale-[1.03] dark:bg-white dark:text-zinc-950">
             G
@@ -345,13 +329,13 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
         <nav
           ref={navDropdownRef}
           className="hidden items-center gap-1 rounded-xl bg-zinc-100/70 p-1 text-sm font-semibold text-zinc-500 dark:bg-zinc-900/80 dark:text-zinc-400 md:flex"
-          aria-label="主导航"
+          aria-label={copy.primaryNavigationLabel}
         >
           {navItems.map((item) => {
             const active = isNavItemActive(item, pathname);
             const href = item.external
               ? item.href
-              : withLocale(item.href, currentLocaleCode);
+              : withSiteLocale(item.href, currentLocaleCode);
             const hasChildren = Boolean(item.children?.length);
             const dropdownOpen = desktopDropdown === item.name;
 
@@ -418,7 +402,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
                           href={
                             child.external
                               ? child.href
-                              : withLocale(child.href, currentLocaleCode)
+                              : withSiteLocale(child.href, currentLocaleCode)
                           }
                           onClick={() => setDesktopDropdown(null)}
                           className="block rounded-lg px-3 py-3 transition duration-200 ease-out hover:bg-lime-50 dark:hover:bg-lime-500/10"
@@ -487,7 +471,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
                   return (
                     <Link
                       key={language.code}
-                      href={replaceLocaleInPath(pathname, language.code)}
+                      href={replaceSiteLocaleInPath(pathname, language.code)}
                       onClick={() => setLanguageMenuOpen(false)}
                       className={[
                         "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors duration-200 ease-out",
@@ -521,7 +505,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
                 ? "border-lime-300 bg-lime-50 text-lime-700 ring-4 ring-lime-500/10"
                 : "border-zinc-200 bg-white hover:bg-zinc-50",
             ].join(" ")}
-            aria-label="打开菜单"
+            aria-label={mobileOpen ? copy.closeMenuLabel : copy.openMenuLabel}
             aria-expanded={mobileOpen}
           >
             <MenuIcon open={mobileOpen} />
@@ -532,7 +516,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
       {mobileOpen ? (
         <div className="border-t border-zinc-200 bg-white px-5 py-4 shadow-xl shadow-zinc-950/5 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
           <div className="mb-3 text-xs font-bold text-zinc-400">
-            当前栏目：{activeItemName || "首页"}
+            {copy.currentSectionLabel} {activeItemName || copy.home}
           </div>
 
           <div className="space-y-1">
@@ -545,7 +529,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
                     href={
                       item.external
                         ? item.href
-                        : withLocale(item.href, currentLocaleCode)
+                        : withSiteLocale(item.href, currentLocaleCode)
                     }
                     onClick={() => setMobileOpen(false)}
                     className={[
@@ -567,7 +551,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
                           href={
                             child.external
                               ? child.href
-                              : withLocale(child.href, currentLocaleCode)
+                              : withSiteLocale(child.href, currentLocaleCode)
                           }
                           onClick={() => setMobileOpen(false)}
                           className="block rounded-xl px-3 py-2 text-sm font-semibold text-zinc-500 transition duration-200 ease-out hover:bg-lime-50 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-lime-500/10 dark:hover:text-white"
@@ -589,7 +573,7 @@ export default function Header({ initialNavItems = [] }: { initialNavItems?: Nav
               return (
                 <Link
                   key={language.code}
-                  href={replaceLocaleInPath(pathname, language.code)}
+                  href={replaceSiteLocaleInPath(pathname, language.code)}
                   className={[
                     "rounded-lg px-3 py-2 text-center text-sm font-bold transition-all duration-200 ease-out",
                     active

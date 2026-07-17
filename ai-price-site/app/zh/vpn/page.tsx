@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
+import { guardUnreleasedPublicPage } from "../../../lib/public-page-guard";
+
+export const metadata: Metadata = {
+  title: "VPN 对比",
+  description: "GeoSub VPN 对比数据仍在建设中，暂不作为正式页面展示。",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
 export default function VpnPage() {
+  guardUnreleasedPublicPage();
+
   return (
     <main className="max-w-7xl mx-auto px-6 py-16">
       <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">

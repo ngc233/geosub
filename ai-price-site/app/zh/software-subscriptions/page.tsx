@@ -1,9 +1,15 @@
 ﻿import type { Metadata } from "next";
 
+import { guardUnreleasedPublicPage } from "../../../lib/public-page-guard";
+
 export const metadata: Metadata = {
   title: "软件订阅价格对比 - Microsoft 365、Adobe、Canva、Notion 等",
   description:
     "比较 Microsoft 365、Adobe、Canva、Notion、Dropbox、Grammarly、Cursor、JetBrains 等软件订阅在不同国家和地区的价格差异。",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 const softwareItems = [
@@ -34,6 +40,8 @@ const softwareItems = [
 ];
 
 export default function SoftwareSubscriptionsPage() {
+  guardUnreleasedPublicPage();
+
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
       <section className="mx-auto max-w-6xl">

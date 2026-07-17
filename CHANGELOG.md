@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.1 - 2026-07-18
+
+- Added a visible admin navigation entry for Google Analytics settings, including GA4/GTM configuration status and explicit save confirmation.
+- Kept analytics configuration ID-only, authenticated, and automatically injected on public pages without allowing arbitrary script input.
+- Centralized public locale registration and client-side locale synchronization so header, footer, plan controls, metadata language, and document language update correctly during Chinese/English route changes.
+- Completed runtime translation audits for the English AI listing, ChatGPT detail, Netflix streaming detail, purchasing-power section, and footer.
+
+## 1.0.0 - 2026-07-18
+
+- Established the first production release baseline for bilingual AI and streaming subscription price comparison, backed by reviewed App Store regional prices, current exchange rates, tax notes, risk signals, maps, purchasing-power views, and share cards.
+- Completed the product-level collection and automatic review workflow with durable run progress, stale-run recovery, product identity checks, anomaly quarantine, freshness gates, and database-backed price refreshes.
+- Added operational admin coverage for data quality, collection diagnosis, articles, navigation, analytics, event retention, login throttling, backups, deployment health, and Google Analytics settings.
+- Synchronized Chinese and English public navigation, product detail behavior, official cached product artwork, dynamic sitemap entries, metadata, canonical URLs, and production security headers.
+- Defined one shared launch-scope policy so unfinished rankings, software, gaming, gift-card, VPN, CMS-test, and tracking-test pages remain available for local development but return 404 and stay out of search indexes in production.
+- Verified the release with source-encoding, type, lint, automated test, price-quality, database-function, and production-build gates before publication.
+
 ## 0.3.0-beta.23 - 2026-07-17
 
 - Changed cached official product images from inset logos to full-bleed, cover-fitted artwork inside the shared rounded icon frame.

@@ -340,6 +340,19 @@ model AdminSession {
   @@map("admin_sessions")
 }
 
+model AdminLoginAttempt {
+  keyHash         String    @id @map("key_hash") @db.Char(64)
+  scope           String    @db.VarChar(20)
+  attemptCount    Int       @default(0) @map("attempt_count")
+  windowStartedAt DateTime  @map("window_started_at") @db.Timestamptz(6)
+  blockedUntil    DateTime? @map("blocked_until") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([blockedUntil])
+  @@index([updatedAt])
+  @@map("admin_login_attempts")
+}
+
 model MediaAsset {
   id           String  @id @default(uuid()) @db.Uuid
   fileName     String  @map("file_name")
@@ -1167,6 +1180,8 @@ model EventLog {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([eventKey, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([anonymousId, createdAt])
   @@index([pagePath])
   @@index([productId])
   @@index([planId])

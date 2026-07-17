@@ -4,6 +4,15 @@ import {
   getCountryCode,
   getCountryName,
 } from '../../../lib/directus';
+import { guardUnreleasedPublicPage } from '../../../lib/public-page-guard';
+
+export const metadata = {
+  title: 'CMS 集成测试',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 function formatUsd(value: string | number | null | undefined) {
   if (value === null || value === undefined) return '-';
@@ -51,6 +60,8 @@ function statusLabel(value: string) {
 }
 
 export default async function CmsTestPage() {
+  guardUnreleasedPublicPage();
+
   const data = await getCmsProductPricingPage('chatgpt', 'plus', 'zh');
 
   if (!data) {

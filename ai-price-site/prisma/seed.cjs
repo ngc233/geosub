@@ -66,19 +66,30 @@ async function upsertAdSlot(slotKey, name, position, pageType, provider, priorit
 async function main() {
   console.log("Start seeding GeoSub app database...");
 
-  const adminEmail = "admin@geosub.local";
-  const adminPassword = "GeosubAdmin_2026!";
+  const adminEmail = String(process.env.GEOSUB_ADMIN_EMAIL || "")
+    .trim()
+    .toLowerCase();
+  const adminPassword = String(process.env.GEOSUB_ADMIN_PASSWORD || "");
+
+  if (!adminEmail || !adminPassword || adminPassword.length < 14) {
+    throw new Error(
+      "GEOSUB_ADMIN_EMAIL and GEOSUB_ADMIN_PASSWORD (at least 14 characters) are required for seeding."
+    );
+  }
+
+  const adminPasswordHash = hashPassword(adminPassword);
 
   await prisma.adminUser.upsert({
     where: { email: adminEmail },
     update: {
+      passwordHash: adminPasswordHash,
       name: "GeoSub Admin",
       role: "OWNER",
       status: "ACTIVE",
     },
     create: {
       email: adminEmail,
-      passwordHash: hashPassword(adminPassword),
+      passwordHash: adminPasswordHash,
       name: "GeoSub Admin",
       role: "OWNER",
       status: "ACTIVE",
@@ -86,7 +97,6 @@ async function main() {
   });
 
   console.log("Admin user ready: " + adminEmail);
-  console.log("Initial password: " + adminPassword);
 
   await upsertSetting("site_name", "general", "Site Name", "GeoSub", true);
   await upsertSetting("site_description", "general", "Site Description", "Global digital subscription and game price database", true);

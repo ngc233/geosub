@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "隐私政策 - GeoSub",
+  title: "隐私政策",
   description: "本页面说明 GeoSub 如何处理访问数据、基础统计信息和用户在使用网站时可能产生的非敏感数据。",
 };
 

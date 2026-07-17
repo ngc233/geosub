@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
+import { guardUnreleasedPublicPage } from "../../../lib/public-page-guard";
 
 export const metadata: Metadata = {
-  title: "Software Subscription Prices - GeoSub",
+  title: "Software Subscription Prices",
   description: "Compare Microsoft 365, Adobe, Canva, Notion, JetBrains, Dropbox, Grammarly, and other software subscription prices by region.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function EnglishPage() {
+  guardUnreleasedPublicPage();
+
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
       <section className="mx-auto max-w-6xl">

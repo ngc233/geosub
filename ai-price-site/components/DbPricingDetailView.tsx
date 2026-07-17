@@ -686,6 +686,10 @@ export default function DbPricingDetailView({
                   href={product.officialUrl}
                   target="_blank"
                   rel="noreferrer"
+                  data-track-event="click_official"
+                  data-track-name="Open official website"
+                  data-track-button={product.slug}
+                  data-track-placement="product_hero"
                   className="rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-black text-white transition hover:bg-zinc-800"
                 >
                   {copy.official} →

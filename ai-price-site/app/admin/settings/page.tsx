@@ -1,6 +1,11 @@
 import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
+import AdminAlert from "../../../components/admin/AdminAlert";
 import { prisma } from "../../../lib/prisma";
 import { updateAnalyticsSettings } from "./actions";
+
+type SettingsSearchParams = {
+  saved?: string;
+};
 
 async function getAnalyticsSettings() {
   const rows = await prisma.siteSetting.findMany({
@@ -24,8 +29,16 @@ async function getAnalyticsSettings() {
   };
 }
 
-export default async function AdminSettingsPage() {
-  const settings = await getAnalyticsSettings();
+export default async function AdminSettingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SettingsSearchParams>;
+}) {
+  const [settings, query] = await Promise.all([
+    getAnalyticsSettings(),
+    searchParams ?? Promise.resolve<SettingsSearchParams>({}),
+  ]);
+  const saved = query.saved === "1";
 
   return (
     <>
@@ -35,11 +48,38 @@ export default async function AdminSettingsPage() {
         description="管理站点级配置。当前已开放 Google Analytics / Tag Manager 入口，后续再扩展广告、合规和全局开关。"
       />
 
-      <AdminCard>
+      {saved ? (
+        <AdminAlert title="Google 统计设置已保存" variant="success">
+          新访问页面会自动读取最新配置；无需重启前端服务，也不要重复粘贴完整脚本。
+        </AdminAlert>
+      ) : null}
+
+      <AdminCard className={saved ? "mt-5" : undefined}>
         <AdminSectionHeader
           title="Google 统计代码"
           description="填写 Google 后台给出的 ID 即可，前台会自动注入统计代码。不要粘贴完整 script 代码。"
         />
+
+        <div className="mt-5 flex flex-wrap gap-2 border-y border-slate-100 py-4 text-xs font-bold">
+          <span
+            className={
+              settings.ga4Id
+                ? "rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-700"
+                : "rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-500"
+            }
+          >
+            GA4 {settings.ga4Id ? "已配置" : "未配置"}
+          </span>
+          <span
+            className={
+              settings.gtmId
+                ? "rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-700"
+                : "rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-500"
+            }
+          >
+            GTM {settings.gtmId ? "已配置" : "未配置"}
+          </span>
+        </div>
 
         <form action={updateAnalyticsSettings} className="mt-6 space-y-6">
           <label className="block">

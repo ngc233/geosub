@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Data Sources and Pricing Methodology - GeoSub",
+  title: "Data Sources and Pricing Methodology",
   description:
     "GeoSub currently uses App Store regional subscription prices as the official ranking source, with exchange rates, tax notes, anomaly checks and review records used for quality control.",
 };

@@ -10,7 +10,7 @@ import {
 } from "../../../lib/articles";
 
 export const metadata: Metadata = {
-  title: "GeoSub 指南 - 数字订阅价格、支付与账号教程",
+  title: "数字订阅价格、支付与账号指南",
   description:
     "GeoSub 指南汇总数字订阅价格、地区订阅、礼品卡、支付方式、账号注册和 AI 工具测评内容。",
 };

@@ -22,12 +22,25 @@ type Props = {
   showSourceColumn?: boolean;
 };
 
-const platformOptions: Array<{ value: PlatformFilter; label: string }> = [
-  { value: "ios", label: "App Store" },
-  { value: "web", label: "Web 线索" },
-  { value: "android", label: "Google Play 线索" },
-  { value: "all", label: "全部诊断" },
+const platformOptions: Array<{ value: PlatformFilter }> = [
+  { value: "ios" },
+  { value: "web" },
+  { value: "android" },
+  { value: "all" },
 ];
+
+function getPlatformOptionLabel(
+  value: PlatformFilter,
+  locale: "zh" | "en",
+) {
+  if (value === "ios") return "App Store";
+  if (value === "web") return locale === "en" ? "Web lead" : "Web 线索";
+  if (value === "android") {
+    return locale === "en" ? "Google Play lead" : "Google Play 线索";
+  }
+
+  return locale === "en" ? "All diagnostics" : "全部诊断";
+}
 
 function getPlatform(region: RegionPrice) {
   const platform = (region.billingPlatform || "unknown").toLowerCase();
@@ -354,10 +367,12 @@ function CountryFlag({ code }: { code: string }) {
 function HeaderHelp({
   label,
   help,
+  locale,
   className = "",
 }: {
   label: string;
   help: string;
+  locale: "zh" | "en";
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -378,7 +393,7 @@ function HeaderHelp({
       <button
         type="button"
         className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-[10px] font-semibold leading-none text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300/60"
-        aria-label={`${label}说明：${help}`}
+        aria-label={locale === "en" ? `${label}: ${help}` : `${label}说明：${help}`}
         onMouseEnter={showTooltip}
         onFocus={showTooltip}
         onMouseLeave={() => setOpen(false)}
@@ -531,7 +546,7 @@ function RegionPriceRow({
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
           {formatDisplayPrice(region.priceUsd)}
           <span className="ml-0.5 text-xs font-normal text-zinc-400">
-            {displayCurrency === "cny" ? "/月" : "/mo"}
+            {displayCurrency === "cny" && locale === "zh" ? "/月" : "/mo"}
           </span>
         </div>
         {displayCurrency === "cny" ? (
@@ -589,7 +604,7 @@ export default function ExpandableRegionPriceTable({
   locale = "zh",
   platformLabel,
   displayCurrency = "usd",
-  displayCurrencyLabel = "美元 USD",
+  displayCurrencyLabel,
   formatDisplayPrice = formatUsd,
   showPlatformFilter = true,
   showSourceColumn = false,
@@ -618,9 +633,13 @@ export default function ExpandableRegionPriceTable({
 
   const referenceRegion = getReferenceRegion(filteredRegions);
   const referencePrice = referenceRegion?.priceUsd || 0;
+  const effectiveDisplayCurrencyLabel =
+    displayCurrencyLabel || (locale === "en" ? "USD" : "美元 USD");
   const activePlatformLabel =
     platformLabel ||
-    (effectivePlatform === "all" ? "全部来源" : getPlatformLabel(effectivePlatform));
+    (effectivePlatform === "all"
+      ? locale === "en" ? "All sources" : "全部来源"
+      : getPlatformLabel(effectivePlatform));
   const activeIndex = platformOptions.findIndex(
     (option) => option.value === effectivePlatform,
   );
@@ -687,7 +706,9 @@ export default function ExpandableRegionPriceTable({
                       : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200",
                   ].join(" ")}
                 >
-                  <span className="truncate">{option.label}</span>
+                  <span className="truncate">
+                    {getPlatformOptionLabel(option.value, locale)}
+                  </span>
                   <span className="text-xs text-zinc-400">{count}</span>
                 </button>
               );
@@ -713,6 +734,7 @@ export default function ExpandableRegionPriceTable({
                 ? "Converts local prices into a common currency for comparison."
                 : "把本地价格按汇率折算成统一货币，方便横向比较。"
             }
+            locale={locale}
           />
           <HeaderHelp
             label={locale === "en" ? "vs US" : "对比美国"}
@@ -721,6 +743,7 @@ export default function ExpandableRegionPriceTable({
                 ? "Uses the US price as the baseline and shows how much cheaper or more expensive each region is."
                 : "以美国地区价格为基准，显示该地区便宜或贵多少。"
             }
+            locale={locale}
           />
           <HeaderHelp
             label={locale === "en" ? "Tax note" : "税费说明"}
@@ -729,6 +752,7 @@ export default function ExpandableRegionPriceTable({
                 ? "VAT, GST, consumption tax or sales tax notes are contextual only. Rankings do not add tax again; final App Store checkout remains authoritative."
                 : "当地 VAT、GST、消费税或销售税说明，仅作背景参考；价格排序不额外加税，最终以 App Store 结算页为准。"
             }
+            locale={locale}
           />
           {shouldShowSourceColumn ? <div>{locale === "en" ? "Source" : "来源"}</div> : null}
           <HeaderHelp
@@ -738,13 +762,16 @@ export default function ExpandableRegionPriceTable({
                 ? "Status compares each region against the US baseline. Risk reflects account region, payment method, billing information and platform controls."
                 : "状态表示该地区价格相对美国是低价、基准、偏高或高价；风险表示跨区订阅时账号地区、付款方式、账单信息和平台风控的综合判断。"
             }
+            locale={locale}
             className="pl-4"
           />
         </div>
 
         {filteredRegions.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-zinc-400">
-            暂无 {activePlatformLabel} 价格数据。
+            {locale === "en"
+              ? `No ${activePlatformLabel} pricing is available yet.`
+              : `暂无 ${activePlatformLabel} 价格数据。`}
           </div>
         ) : (
           <>
@@ -756,7 +783,7 @@ export default function ExpandableRegionPriceTable({
                   rank={index + 1}
                   referencePrice={referencePrice}
                   displayCurrency={displayCurrency}
-                  displayCurrencyLabel={displayCurrencyLabel}
+                  displayCurrencyLabel={effectiveDisplayCurrencyLabel}
                   formatDisplayPrice={formatDisplayPrice}
                   showSourceColumn={shouldShowSourceColumn}
                   locale={locale}
@@ -780,7 +807,7 @@ export default function ExpandableRegionPriceTable({
                   rank={initialVisibleCount + index + 1}
                   referencePrice={referencePrice}
                   displayCurrency={displayCurrency}
-                  displayCurrencyLabel={displayCurrencyLabel}
+                  displayCurrencyLabel={effectiveDisplayCurrencyLabel}
                   formatDisplayPrice={formatDisplayPrice}
                   showSourceColumn={shouldShowSourceColumn}
                   locale={locale}
@@ -792,7 +819,9 @@ export default function ExpandableRegionPriceTable({
       </div>
 
       <div className="border-t border-zinc-100 bg-zinc-50/60 px-5 py-4 text-xs leading-5 text-zinc-500 md:px-6 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-400">
-        风险提示：GeoSub 展示公开价格差异，方便比较不同地区的订阅成本，不鼓励规避平台规则。跨地区订阅可能受到 Apple ID 地区、付款方式、账单信息、税费和平台风控影响，最终是否可订阅请以官方结算页面为准。
+        {locale === "en"
+          ? "Risk note: GeoSub presents public price differences to compare regional subscription costs and does not encourage bypassing platform rules. Cross-region subscriptions may be affected by Apple ID region, payment method, billing information, taxes and platform risk controls. Final availability depends on the official checkout page."
+          : "风险提示：GeoSub 展示公开价格差异，方便比较不同地区的订阅成本，不鼓励规避平台规则。跨地区订阅可能受到 Apple ID 地区、付款方式、账单信息、税费和平台风控影响，最终是否可订阅请以官方结算页面为准。"}
       </div>
     </PublicSection>
   );

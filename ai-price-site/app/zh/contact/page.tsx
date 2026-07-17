@@ -1,5 +1,5 @@
 export const metadata = {
-  title: '联系我们 - GeoSub',
+  title: '联系我们',
   description: '联系 GeoSub，提交数据纠错、功能建议、合作请求或隐私相关问题。',
 };
 

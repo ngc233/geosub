@@ -1,0 +1,19 @@
+[Unit]
+Description=GeoSub analytics daily-stat aggregation
+Wants=network-online.target
+After=network-online.target geosub-web.service
+
+[Service]
+Type=oneshot
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/ai-price-site
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-analytics-aggregation.sh
+TimeoutStartSec=5m
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

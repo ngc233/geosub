@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Global Digital Subscription Pricing - GeoSub",
+  title: "Global Digital Subscription Pricing",
   description:
     "Compare AI and streaming subscription prices across App Store regions, with USD conversion, CNY estimates, tax notes, and purchasing-power context.",
 };

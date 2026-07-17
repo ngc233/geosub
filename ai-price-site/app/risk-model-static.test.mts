@@ -25,6 +25,10 @@ test("detail risk model combines platform, price gap and tax signals", () => {
   assert.match(source, /getRiskLevelFromScore\(finalScore\)/);
   assert.match(source, /Model rating: /);
   assert.match(source, /模型判断：/);
+  assert.match(source, /translateRiskProfileTextToZh/);
+  assert.match(source, /官方结算页和平台规则为准/);
+  assert.match(source, /new Set\(\[requirements, baseNote\]/);
+  assert.doesNotMatch(source, /return zh\?\.trim\(\) \|\| canonical/);
 });
 
 test("detail query loads country tax and App Store risk profiles together", () => {

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { ProductCategory } from "@prisma/client";
 import BrandIcon from "../../../../components/BrandIcon";
+import TrackedLink from "../../../../components/analytics/TrackedLink";
 import ProductSidebar from "../../../../components/ProductSidebar";
 import PlanTabs from "../../../../components/PlanTabs";
 import SharePriceModal from "../../../../components/SharePriceModal";
@@ -19,6 +21,11 @@ import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter"
 import { getPlanAffordability } from "../../../../lib/affordability";
 import { getLatestExchangeRate } from "../../../../lib/exchange-rates";
 import { getPlanDisplayName } from "../../../../lib/pricing-labels";
+import {
+  getPricingDetailPath,
+  getPricingListPath,
+  stripGeoSubTitleSuffix,
+} from "../../../../lib/pricing-routes";
 import { prisma } from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -280,10 +287,17 @@ function PurchasingPowerSection({
   );
 }
 
-function FaqSection({ productName }: { productName: string }) {
+function FaqSection({
+  productName,
+  planName,
+}: {
+  productName: string;
+  planName: string;
+}) {
+  const planDisplayName = getPlanDisplayName(productName, planName);
   const faqs = [
     {
-      q: `截至 2026 年，哪个国家的 ${productName} Plus 订阅最便宜？`,
+      q: `截至 2026 年，哪个国家的 ${planDisplayName} 订阅最便宜？`,
       a: `根据当前已发布的 App Store 地区价格，最低价会显示在本页排行榜和地图中。具体结果会随平台定价、税费和汇率变化而变化。`,
     },
     {
@@ -384,8 +398,10 @@ function NoPublishedPricesSection({
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const [product, seoMeta] = await Promise.all([
     getProduct(slug),
     getProductSeoMeta(slug),
@@ -393,24 +409,34 @@ export async function generateMetadata({
 
   if (!product) {
     return {
-      title: "订阅价格详情 - GeoSub",
+      title: "订阅价格详情",
     };
   }
 
+  const activePlan = getProductPlan(product, resolvedSearchParams.plan);
+  const zhPath = getPricingDetailPath("zh", product.category, product.slug);
+  const enPath = getPricingDetailPath("en", product.category, product.slug);
+  const configuredTitle = hasChineseText(seoMeta?.title)
+    ? stripGeoSubTitleSuffix(seoMeta?.title || "")
+    : "";
+
   return {
-    title: hasChineseText(seoMeta?.title)
-      ? seoMeta?.title || `${product.name} App Store 地区订阅价格 - GeoSub`
-      : `${product.name} App Store 地区订阅价格 - GeoSub`,
+    title:
+      configuredTitle ||
+      `${getPlanDisplayName(product.name, activePlan.name)} App Store 地区订阅价格`,
     description:
       hasChineseText(seoMeta?.description)
         ? seoMeta?.description ||
           `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`
         : `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`,
-    alternates: seoMeta?.canonicalUrl
-      ? {
-          canonical: seoMeta.canonicalUrl,
-        }
-      : undefined,
+    alternates: {
+      canonical: zhPath,
+      languages: {
+        "zh-CN": zhPath,
+        en: enPath,
+        "x-default": enPath,
+      },
+    },
   };
 }
 
@@ -430,9 +456,24 @@ export default async function ProductPricingPage({
   }
 
   const activePlan = getProductPlan(product, resolvedSearchParams.plan);
+  const canonicalDetailPath = getPricingDetailPath(
+    "zh",
+    product.category,
+    product.slug,
+  );
+  const currentPath = (await headers())
+    .get("x-pathname")
+    ?.replace(/\/+$/, "");
+
+  if (currentPath && currentPath !== canonicalDetailPath) {
+    const planQuery = resolvedSearchParams.plan
+      ? `?plan=${encodeURIComponent(resolvedSearchParams.plan)}`
+      : "";
+    redirect(`${canonicalDetailPath}${planQuery}`);
+  }
+
   const sidebarProducts = await getProductNavItems(product.category);
-  const detailBasePath =
-    product.category === "streaming" ? "/zh/streaming-pricing" : "/zh/ai-pricing";
+  const detailBasePath = getPricingListPath("zh", product.category);
   const hasPublishedPrices = activePlan.regions.length > 0;
   const [affordability, cnyExchangeRate] = await Promise.all([
     getPlanAffordability(product.slug, activePlan.slug),
@@ -485,6 +526,21 @@ export default async function ProductPricingPage({
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
                   {getLocalizedDescription(product.name)}
                 </p>
+
+                {product.officialUrl ? (
+                  <TrackedLink
+                    href={product.officialUrl}
+                    eventKey="click_official"
+                    eventName="Open official website"
+                    buttonKey={product.slug}
+                    placement="product_hero"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
+                  >
+                    访问官方网站 ↗
+                  </TrackedLink>
+                ) : null}
               </div>
             </div>
           </div>
@@ -492,6 +548,7 @@ export default async function ProductPricingPage({
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-zinc-400">套餐</span>
             <PlanTabs
+              productName={product.name}
               productSlug={product.slug}
               plans={product.plans}
               activePlanSlug={activePlan.slug}
@@ -529,7 +586,7 @@ export default async function ProductPricingPage({
           />
         )}
 
-        <FaqSection productName={product.name} />
+        <FaqSection productName={product.name} planName={activePlan.name} />
       </div>
     </main>
   );

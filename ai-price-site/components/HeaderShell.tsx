@@ -1,29 +1,17 @@
-import { headers } from "next/headers";
 import Header from "./Header";
 import {
-  getSiteNavigation,
-  type SiteNavigationItem,
+  getSiteNavigationByLocale,
+  type SiteNavigationByLocale,
 } from "../lib/site-navigation";
 
-async function getCurrentLocale() {
-  const headerList = await headers();
-  const locale = headerList.get("x-geosub-locale");
-
-  return locale === "en" ? "en" : "zh";
-}
-
 export default async function HeaderShell() {
-  const locale = await getCurrentLocale();
-  let navItems: SiteNavigationItem[] = [];
+  let navItemsByLocale: SiteNavigationByLocale = {};
 
   try {
-    navItems = await getSiteNavigation({
-      locale,
-      position: "HEADER",
-    });
+    navItemsByLocale = await getSiteNavigationByLocale("HEADER");
   } catch {
-    navItems = [];
+    navItemsByLocale = {};
   }
 
-  return <Header initialNavItems={navItems} />;
+  return <Header initialNavItemsByLocale={navItemsByLocale} />;
 }

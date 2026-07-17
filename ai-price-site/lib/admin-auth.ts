@@ -1,12 +1,140 @@
 ﻿import "server-only";
 
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 
 const COOKIE_NAME = "geosub_admin_session";
-const SESSION_DAYS = 7;
+const DEFAULT_SESSION_HOURS = 24;
+const MAX_SESSION_HOURS = 24 * 7;
+const MAX_ACTIVE_SESSIONS = 5;
+const LOGIN_WINDOW_MINUTES = 15;
+const LOGIN_BLOCK_MINUTES = 30;
+const LOGIN_ATTEMPT_RETENTION_DAYS = 7;
+
+type LoginThrottleKey = {
+  keyHash: string;
+  scope: "account" | "ip";
+  limit: number;
+};
+
+type LoginThrottleRow = {
+  blocked_until: Date | null;
+};
+
+function getSessionHours() {
+  const configured = Number(process.env.GEOSUB_ADMIN_SESSION_HOURS);
+
+  if (!Number.isFinite(configured)) {
+    return DEFAULT_SESSION_HOURS;
+  }
+
+  return Math.min(Math.max(Math.trunc(configured), 1), MAX_SESSION_HOURS);
+}
+
+function hashLoginThrottleKey(scope: LoginThrottleKey["scope"], value: string) {
+  return createHash("sha256")
+    .update(`${scope}:${value.trim().toLowerCase()}`)
+    .digest("hex");
+}
+
+function getLoginThrottleKeys(email: string, ipAddress: string): LoginThrottleKey[] {
+  return [
+    {
+      keyHash: hashLoginThrottleKey("ip", ipAddress || "unknown"),
+      scope: "ip",
+      limit: 5,
+    },
+    {
+      keyHash: hashLoginThrottleKey("account", email),
+      scope: "account",
+      limit: 8,
+    },
+  ];
+}
+
+export async function getAdminLoginThrottle(email: string, ipAddress: string) {
+  const keys = getLoginThrottleKeys(email, ipAddress);
+  const rows = await prisma.$queryRaw<LoginThrottleRow[]>(Prisma.sql`
+    SELECT blocked_until
+    FROM admin_login_attempts
+    WHERE key_hash IN (${Prisma.join(keys.map((key) => key.keyHash))})
+      AND blocked_until > NOW()
+    ORDER BY blocked_until DESC
+    LIMIT 1
+  `);
+  const blockedUntil = rows[0]?.blocked_until || null;
+
+  return {
+    blocked: Boolean(blockedUntil),
+    retryAfterSeconds: blockedUntil
+      ? Math.max(1, Math.ceil((blockedUntil.getTime() - Date.now()) / 1000))
+      : 0,
+  };
+}
+
+export async function recordAdminLoginFailure(email: string, ipAddress: string) {
+  const keys = getLoginThrottleKeys(email, ipAddress);
+
+  await prisma.$transaction(
+    keys.map((key) =>
+      prisma.$executeRaw(Prisma.sql`
+        INSERT INTO admin_login_attempts (
+          key_hash,
+          scope,
+          attempt_count,
+          window_started_at,
+          blocked_until,
+          updated_at
+        )
+        VALUES (${key.keyHash}, ${key.scope}, 1, NOW(), NULL, NOW())
+        ON CONFLICT (key_hash) DO UPDATE
+        SET
+          scope = EXCLUDED.scope,
+          attempt_count = CASE
+            WHEN admin_login_attempts.window_started_at < NOW() - make_interval(mins => ${LOGIN_WINDOW_MINUTES})
+              THEN 1
+            ELSE admin_login_attempts.attempt_count + 1
+          END,
+          window_started_at = CASE
+            WHEN admin_login_attempts.window_started_at < NOW() - make_interval(mins => ${LOGIN_WINDOW_MINUTES})
+              THEN NOW()
+            ELSE admin_login_attempts.window_started_at
+          END,
+          blocked_until = CASE
+            WHEN admin_login_attempts.blocked_until > NOW()
+              THEN admin_login_attempts.blocked_until
+            WHEN (
+              CASE
+                WHEN admin_login_attempts.window_started_at < NOW() - make_interval(mins => ${LOGIN_WINDOW_MINUTES})
+                  THEN 1
+                ELSE admin_login_attempts.attempt_count + 1
+              END
+            ) >= ${key.limit}
+              THEN NOW() + make_interval(mins => ${LOGIN_BLOCK_MINUTES})
+            ELSE NULL
+          END,
+          updated_at = NOW()
+      `)
+    )
+  );
+
+  await prisma.$executeRaw(Prisma.sql`
+    DELETE FROM admin_login_attempts
+    WHERE updated_at < NOW() - make_interval(days => ${LOGIN_ATTEMPT_RETENTION_DAYS})
+  `);
+}
+
+export async function clearAdminLoginFailures(email: string, ipAddress: string) {
+  const keys = getLoginThrottleKeys(email, ipAddress);
+
+  await prisma.$executeRaw(Prisma.sql`
+    DELETE FROM admin_login_attempts
+    WHERE key_hash IN (${Prisma.join(keys.map((key) => key.keyHash))})
+  `);
+}
 
 export function verifyPassword(password: string, passwordHash: string) {
   const parts = passwordHash.split(":");
@@ -35,7 +163,15 @@ function hashSessionToken(token: string) {
 export async function createAdminSession(userId: string) {
   const token = randomBytes(32).toString("hex");
   const tokenHash = hashSessionToken(token);
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + getSessionHours() * 60 * 60 * 1000);
+
+  await prisma.adminSession.deleteMany({
+    where: {
+      expiresAt: {
+        lt: new Date(),
+      },
+    },
+  });
 
   await prisma.adminSession.create({
     data: {
@@ -45,6 +181,29 @@ export async function createAdminSession(userId: string) {
     },
   });
 
+  const staleSessions = await prisma.adminSession.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip: MAX_ACTIVE_SESSIONS,
+    select: {
+      id: true,
+    },
+  });
+
+  if (staleSessions.length > 0) {
+    await prisma.adminSession.deleteMany({
+      where: {
+        id: {
+          in: staleSessions.map((session) => session.id),
+        },
+      },
+    });
+  }
+
   const cookieStore = await cookies();
 
   cookieStore.set(COOKIE_NAME, token, {
@@ -53,6 +212,7 @@ export async function createAdminSession(userId: string) {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     expires: expiresAt,
+    priority: "high",
   });
 }
 
@@ -90,6 +250,12 @@ export async function getCurrentAdmin() {
   }
 
   if (session.user.status !== "ACTIVE") {
+    await prisma.adminSession.delete({
+      where: {
+        id: session.id,
+      },
+    });
+
     return null;
   }
 

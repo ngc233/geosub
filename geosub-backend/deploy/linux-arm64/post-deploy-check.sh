@@ -20,6 +20,8 @@ MIN_PUBLISHED_SUBSCRIPTION_USD="${GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD:-1}"
 MAX_PUBLISHED_PRICE_AGE_DAYS="${GEOSUB_MAX_PUBLISHED_PRICE_AGE_DAYS:-14}"
 MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS="${GEOSUB_MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS:-8}"
 LOGO_STORAGE_DIR="${GEOSUB_LOGO_STORAGE_DIR:-/var/lib/geosub/product-logos}"
+BACKUP_DIR="${GEOSUB_BACKUP_DIR:-/opt/geosub/backups}"
+MAX_BACKUP_AGE_HOURS="${GEOSUB_MAX_BACKUP_AGE_HOURS:-30}"
 
 failures=0
 warnings=0
@@ -156,6 +158,7 @@ fi
 check_required_path "backend directory" "$BACKEND_DIR"
 check_required_path "frontend directory" "$FRONTEND_DIR"
 check_required_path "product logo storage" "$LOGO_STORAGE_DIR"
+check_required_path "database backup directory" "$BACKUP_DIR"
 
 if sudo -u geosub test -w "$LOGO_STORAGE_DIR"; then
   pass "product logo storage writable by geosub"
@@ -195,6 +198,7 @@ if (( failures == 0 )); then
     site_settings; do
     check_table "$table"
   done
+  check_table "admin_login_attempts"
   check_relation "latest_exchange_rates"
 
   for migration in \
@@ -317,6 +321,29 @@ check_timer_enabled_active "geosub-exchange-rate-sync.timer"
 check_timer_enabled_active "geosub-price-pipeline.timer"
 check_timer_enabled_active "geosub-collector-jobs.timer"
 check_timer_enabled_active "geosub-discovery-scan.timer"
+check_timer_enabled_active "geosub-analytics-aggregation.timer"
+check_timer_enabled_active "geosub-db-backup.timer"
+check_timer_enabled_active "geosub-event-retention.timer"
+
+latest_backup="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name "${DB_NAME}_*.dump" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d ' ' -f2-)"
+if [[ -z "$latest_backup" ]]; then
+  fail "no database backup found in $BACKUP_DIR"
+else
+  backup_age_seconds=$(( $(date +%s) - $(stat -c %Y "$latest_backup") ))
+  backup_age_hours=$(( backup_age_seconds / 3600 ))
+
+  if (( backup_age_hours <= MAX_BACKUP_AGE_HOURS )); then
+    pass "latest database backup age: ${backup_age_hours}h"
+  else
+    fail "latest database backup is stale: ${backup_age_hours}h"
+  fi
+
+  if [[ -f "$latest_backup.sha256" ]] && sha256sum -c "$latest_backup.sha256" >/dev/null; then
+    pass "latest database backup checksum"
+  else
+    fail "latest database backup checksum missing or invalid: $latest_backup"
+  fi
+fi
 
 if command -v curl >/dev/null 2>&1; then
   if curl -fsS --max-time 10 "$WEB_HEALTH_URL" >/dev/null; then

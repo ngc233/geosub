@@ -131,6 +131,10 @@ export default function MobileProductSwitcher({
                       <Link
                         key={product.slug}
                         href={getProductHref(product, basePath)}
+                        data-track-event="click_digital_service_sidebar"
+                        data-track-name="Switch digital service"
+                        data-track-button={product.slug}
+                        data-track-placement="product_sidebar_mobile"
                         onClick={() => setOpen(false)}
                         role="menuitem"
                         className={[

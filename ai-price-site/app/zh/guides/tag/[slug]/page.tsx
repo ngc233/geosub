@@ -22,12 +22,12 @@ export async function generateMetadata({
 
   if (!tag) {
     return {
-      title: "文章标签不存在 - GeoSub",
+      title: "文章标签不存在",
     };
   }
 
   return {
-    title: `${tag.name} - GeoSub 指南标签`,
+    title: `${tag.name}指南标签`,
     description:
       tag.description ||
       `阅读 GeoSub 关于${tag.name}的指南、价格分析、地区订阅和支付方法内容。`,

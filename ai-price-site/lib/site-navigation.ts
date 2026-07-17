@@ -4,7 +4,9 @@ import { prisma } from "./prisma";
 import {
   getNavigationLocaleByValue,
   getNavigationPositionByValue,
+  navigationLocales,
   supportedNavigationLocalePaths,
+  type NavigationLocaleValue,
   type NavigationPositionValue,
 } from "./navigation-config";
 
@@ -21,6 +23,20 @@ export type SiteNavigationItem = {
   external?: boolean;
   match?: string[];
   children?: SiteNavigationChild[];
+};
+
+export type SiteNavigationByLocale = Partial<
+  Record<NavigationLocaleValue, SiteNavigationItem[]>
+>;
+
+type NavigationRow = {
+  id: string;
+  label: string;
+  href: string;
+  external: boolean;
+  parentId: string | null;
+  sortOrder: number;
+  createdAt: Date;
 };
 
 type GetSiteNavigationOptions =
@@ -80,6 +96,39 @@ function normalizeOptions(options: GetSiteNavigationOptions = "zh") {
   };
 }
 
+function buildSiteNavigationItems(items: NavigationRow[]) {
+  const parentItems = items.filter((item) => !item.parentId);
+  const childItems = items.filter((item) => item.parentId);
+  const childrenByParentId = new Map<string, NavigationRow[]>();
+
+  for (const child of childItems) {
+    const list = childrenByParentId.get(child.parentId ?? "") ?? [];
+    list.push(child);
+    childrenByParentId.set(child.parentId ?? "", list);
+  }
+
+  return parentItems.map<SiteNavigationItem>((item) => {
+    const href = normalizeInternalHref(item.href, item.external);
+    const children = childrenByParentId.get(item.id) ?? [];
+
+    return {
+      name: item.label,
+      href,
+      external: item.external,
+      match: buildMatchList(href, item.external),
+      children: children.map((child) => {
+        const childHref = normalizeInternalHref(child.href, child.external);
+
+        return {
+          name: child.label,
+          href: childHref,
+          external: child.external,
+        };
+      }),
+    };
+  });
+}
+
 export async function getSiteNavigation(
   options: GetSiteNavigationOptions = "zh"
 ) {
@@ -112,35 +161,40 @@ export async function getSiteNavigation(
     },
   });
 
-  const parentItems = items.filter((item) => !item.parentId);
-  const childItems = items.filter((item) => item.parentId);
+  return buildSiteNavigationItems(items);
+}
 
-  const childrenByParentId = new Map<string, typeof childItems>();
+export async function getSiteNavigationByLocale(
+  position: NavigationPosition | NavigationPositionValue | string,
+) {
+  noStore();
 
-  for (const child of childItems) {
-    const list = childrenByParentId.get(child.parentId ?? "") ?? [];
-    list.push(child);
-    childrenByParentId.set(child.parentId ?? "", list);
-  }
-
-  return parentItems.map<SiteNavigationItem>((item) => {
-    const href = normalizeInternalHref(item.href, item.external);
-    const children = childrenByParentId.get(item.id) ?? [];
-
-    return {
-      name: item.label,
-      href,
-      external: item.external,
-      match: buildMatchList(href, item.external),
-      children: children.map((child) => {
-        const childHref = normalizeInternalHref(child.href, child.external);
-
-        return {
-          name: child.label,
-          href: childHref,
-          external: child.external,
-        };
-      }),
-    };
+  const normalizedPosition = getNavigationPositionByValue(String(position));
+  const items = await prisma.navigationItem.findMany({
+    where: {
+      locale: {
+        in: navigationLocales.map((locale) => locale.dbValue),
+      },
+      position: normalizedPosition.dbValue,
+      status: "PUBLISHED" as PublishStatus,
+    },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      label: true,
+      href: true,
+      external: true,
+      parentId: true,
+      sortOrder: true,
+      createdAt: true,
+      locale: true,
+    },
   });
+
+  return navigationLocales.reduce<SiteNavigationByLocale>((result, locale) => {
+    result[locale.value] = buildSiteNavigationItems(
+      items.filter((item) => item.locale === locale.dbValue),
+    );
+    return result;
+  }, {});
 }

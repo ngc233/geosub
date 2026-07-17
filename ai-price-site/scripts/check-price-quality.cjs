@@ -83,6 +83,30 @@ async function requireTables(client, tableNames) {
   return true;
 }
 
+async function requireDatabaseFunctions(client, functionNames) {
+  const result = await client.query(
+    `
+      SELECT DISTINCT procedure.proname
+      FROM pg_proc procedure
+      JOIN pg_namespace namespace ON namespace.oid = procedure.pronamespace
+      WHERE namespace.nspname = 'public'
+        AND procedure.proname = ANY($1::text[])
+    `,
+    [functionNames]
+  );
+  const installed = new Set(result.rows.map((row) => row.proname));
+  const missing = functionNames.filter((functionName) => !installed.has(functionName));
+
+  if (missing.length > 0) {
+    failures.push(`Missing required database function(s): ${missing.join(", ")}`);
+    printRow("fail", "required functions", missing.join(", "));
+    return false;
+  }
+
+  printRow("ok", "required functions", "present");
+  return true;
+}
+
 async function resolveTrackedProducts(client) {
   if (configuredTrackedProducts.length > 0) {
     return configuredTrackedProducts;
@@ -573,6 +597,19 @@ async function main() {
     ]);
 
     if (required) {
+      const requiredFunctions = await requireDatabaseFunctions(client, [
+        "run_app_store_stability_auto_review",
+        "queue_app_store_anomaly_rechecks",
+        "refresh_plan_affordability_metrics",
+        "refresh_matching_app_store_prices",
+        "quarantine_published_app_store_price_outliers",
+        "refresh_inferred_app_store_tax_profiles",
+      ]);
+      if (!requiredFunctions) {
+        finish();
+        return;
+      }
+
       const trackedProducts = await resolveTrackedProducts(client);
       if (trackedProducts.length === 0) {
         failures.push("No active App Store collector products were found.");

@@ -26,6 +26,145 @@ type Props = {
 
 type Quadrant = "friendly" | "cheapPressure" | "premiumFair" | "expensivePressure";
 
+const affordabilityCopy = {
+  zh: {
+    levels: {
+      LOW: "低负担",
+      MODERATE_LOW: "较低负担",
+      MODERATE: "中等负担",
+      HIGH: "高负担",
+      VERY_HIGH: "极高负担",
+    },
+    quadrants: {
+      friendly: {
+        label: "便宜且友好",
+        desc: "美元价格低于美国，本地负担也接近或低于美国。",
+      },
+      cheapPressure: {
+        label: "便宜但吃力",
+        desc: "美元价格看起来便宜，但按当地收入仍然偏贵。",
+      },
+      premiumFair: {
+        label: "贵但可承受",
+        desc: "标价高于美国，但本地收入能消化一部分溢价。",
+      },
+      expensivePressure: {
+        label: "贵且负担高",
+        desc: "价格和收入负担都不友好，主要用于风险提示。",
+      },
+    },
+    times: "倍",
+    monthlyFee: "月费",
+    incomeShare: "占月收入",
+    monthlyIncome: "月均收入约",
+    vsUs: "对比美国",
+    judgement: "判断",
+    matrixTitle: "价格 × 本地负担矩阵",
+    matrixDescription:
+      "横轴看美元价格是否比美国便宜，纵轴看本地负担是否高于美国。越靠左下越友好。",
+    usBenchmark: "美国基准：0% / 1.00 倍",
+    highBurden: "高负担",
+    moreExpensive: "更贵",
+    cheaper: "更便宜",
+    sectionTitle: (productName: string) => `${productName} 本地购买力判断`,
+    sectionDescription: (planName: string) =>
+      `不只看哪个地区标价最低，而是把 ${planName} 月费放回当地收入里比较：价格、税务和风险之外，再判断这笔订阅对当地用户到底重不重。`,
+    highestBurden: "本地负担最高",
+    friendlyRegion: "本地更友好",
+    usBase: "美国基准",
+    highestBurdenHelper: (share: string, times: string) =>
+      `占月收入 ${share} · 美国的 ${times} 倍`,
+    friendlyHelper: (share: string) => `占月收入 ${share}`,
+    usBaseHelper: "记为 1.00 倍，用于判断相对负担",
+    balancedTitle: "综合更均衡",
+    balancedNote: "价格和本地负担都相对克制，适合作为友好地区候选。",
+    cheapPressureTitle: "便宜但需谨慎",
+    cheapPressureNote: "美元标价低，但当地收入负担明显偏高，不能只按便宜排序。",
+    highestPressureTitle: "本地压力最高",
+    highestPressureNote: "本地收入压力最明显，适合放入风险和解释提示。",
+    rank: "排名",
+    region: "地区",
+    incomeShareHelp: "月费占当地月均收入的比例，用来估算订阅负担。",
+    vsUsHelp: "以美国订阅负担为 1.00 倍，显示该地区相对美国更重或更轻。",
+    judgementHelp: "结合收入占比、美国基准和美元价差，对地区订阅压力做分层。",
+    helpAria: (label: string, help: string) => `${label}说明：${help}`,
+    decisionDetail: (note: string, price: string, share: string) =>
+      `${note} 月费 ${price}，占月收入 ${share}。`,
+    dataNote: (metric: string, indicator: string, year: string, checked: string) =>
+      `收入指标采用 ${metric}${indicator ? `（${indicator}）` : ""}，收入数据年份为 ${year}，价格检查时间为 ${checked}。购买力判断用于解释价格压力，不等同于实际支付能力或订阅成功率。`,
+  },
+  en: {
+    levels: {
+      LOW: "Low burden",
+      MODERATE_LOW: "Moderately low",
+      MODERATE: "Moderate burden",
+      HIGH: "High burden",
+      VERY_HIGH: "Very high burden",
+    },
+    quadrants: {
+      friendly: {
+        label: "Cheaper and accessible",
+        desc: "The USD price is below the US price and the local burden is close to or below the US level.",
+      },
+      cheapPressure: {
+        label: "Cheaper but burdensome",
+        desc: "The USD price looks lower, but it remains expensive relative to local income.",
+      },
+      premiumFair: {
+        label: "Premium but manageable",
+        desc: "The price is above the US level, but local income offsets part of the premium.",
+      },
+      expensivePressure: {
+        label: "Expensive and burdensome",
+        desc: "Both the price and income burden are unfavorable and merit a clear warning.",
+      },
+    },
+    times: "×",
+    monthlyFee: "Monthly price",
+    incomeShare: "Share of monthly income",
+    monthlyIncome: "Estimated monthly income",
+    vsUs: "Vs US burden",
+    judgement: "Assessment",
+    matrixTitle: "Price × local burden matrix",
+    matrixDescription:
+      "The horizontal axis compares the USD price with the US price. The vertical axis shows the local burden relative to the US. Lower-left is more favorable.",
+    usBenchmark: "US benchmark: 0% / 1.00×",
+    highBurden: "Higher burden",
+    moreExpensive: "More expensive",
+    cheaper: "Cheaper",
+    sectionTitle: (productName: string) => `${productName} local purchasing power`,
+    sectionDescription: (planName: string) =>
+      `This view puts the ${planName} monthly price in the context of local income. It complements price, tax, and risk data by showing how heavy the subscription may feel locally.`,
+    highestBurden: "Highest local burden",
+    friendlyRegion: "Most accessible locally",
+    usBase: "US benchmark",
+    highestBurdenHelper: (share: string, times: string) =>
+      `${share} of monthly income · ${times}× the US burden`,
+    friendlyHelper: (share: string) => `${share} of monthly income`,
+    usBaseHelper: "Defined as 1.00× for relative burden comparisons",
+    balancedTitle: "Best balance",
+    balancedNote: "Both the price and local burden are relatively restrained, making this a more accessible candidate.",
+    cheapPressureTitle: "Cheap, with caution",
+    cheapPressureNote: "The USD price is low, but the local income burden is high, so price alone is misleading.",
+    highestPressureTitle: "Highest local pressure",
+    highestPressureNote: "This region has the strongest income pressure and should carry a clear affordability warning.",
+    rank: "Rank",
+    region: "Region",
+    incomeShareHelp: "The monthly fee as a share of estimated local monthly income.",
+    vsUsHelp: "Uses the US subscription burden as 1.00× and shows whether this region is heavier or lighter.",
+    judgementHelp: "Combines income share, the US benchmark, and the USD price difference into an affordability tier.",
+    helpAria: (label: string, help: string) => `${label}: ${help}`,
+    decisionDetail: (note: string, price: string, share: string) =>
+      `${note} Monthly price ${price}, representing ${share} of monthly income.`,
+    dataNote: (metric: string, indicator: string, year: string, checked: string) =>
+      `Income metric: ${metric}${indicator ? ` (${indicator})` : ""}. Income data year: ${year}. Price checked: ${checked}. Purchasing-power analysis explains relative price pressure; it does not guarantee payment ability or subscription success.`,
+  },
+} as const;
+
+function getAffordabilityCopy(locale: DetailLocale) {
+  return locale === "zh" ? affordabilityCopy.zh : affordabilityCopy.en;
+}
+
 const localeMap: Record<DetailLocale, string> = {
   zh: "zh-CN",
   en: "en",
@@ -71,16 +210,9 @@ function metricLabel(metricType?: string | null) {
   return metricType ? map[metricType] || metricType : "-";
 }
 
-function levelLabel(level: string) {
-  const map: Record<string, string> = {
-    LOW: "低负担",
-    MODERATE_LOW: "较低负担",
-    MODERATE: "中等负担",
-    HIGH: "高负担",
-    VERY_HIGH: "极高负担",
-  };
-
-  return map[level] || level;
+function levelLabel(level: string, locale: DetailLocale) {
+  const labels = getAffordabilityCopy(locale).levels as Record<string, string>;
+  return labels[level] || level;
 }
 
 function levelTone(level: string) {
@@ -145,31 +277,16 @@ function classifyQuadrant(row: PlanAffordabilityRow): Quadrant {
   return "expensivePressure";
 }
 
-function quadrantCopy(quadrant: Quadrant) {
-  const map: Record<Quadrant, { label: string; desc: string; dot: string }> = {
-    friendly: {
-      label: "便宜且友好",
-      desc: "美元价格低于美国，本地负担也接近或低于美国。",
-      dot: "bg-emerald-500",
-    },
-    cheapPressure: {
-      label: "便宜但吃力",
-      desc: "美元价格看起来便宜，但按当地收入仍然偏贵。",
-      dot: "bg-amber-500",
-    },
-    premiumFair: {
-      label: "贵但可承受",
-      desc: "标价高于美国，但本地收入能消化一部分溢价。",
-      dot: "bg-sky-500",
-    },
-    expensivePressure: {
-      label: "贵且负担高",
-      desc: "价格和收入负担都不友好，主要用于风险提示。",
-      dot: "bg-rose-500",
-    },
+function quadrantCopy(quadrant: Quadrant, locale: DetailLocale) {
+  const item = getAffordabilityCopy(locale).quadrants[quadrant];
+  const dotMap: Record<Quadrant, string> = {
+    friendly: "bg-emerald-500",
+    cheapPressure: "bg-amber-500",
+    premiumFair: "bg-sky-500",
+    expensivePressure: "bg-rose-500",
   };
 
-  return map[quadrant];
+  return { ...item, dot: dotMap[quadrant] };
 }
 
 function quadrantPointClass(quadrant: Quadrant) {
@@ -182,10 +299,12 @@ function quadrantPointClass(quadrant: Quadrant) {
 function HeaderHelp({
   label,
   help,
+  locale,
   className = "",
 }: {
   label: string;
   help: string;
+  locale: DetailLocale;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -206,7 +325,7 @@ function HeaderHelp({
       <button
         type="button"
         className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-[10px] font-semibold leading-none text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300/60"
-        aria-label={`${label}说明：${help}`}
+        aria-label={getAffordabilityCopy(locale).helpAria(label, help)}
         onMouseEnter={showTooltip}
         onFocus={showTooltip}
         onMouseLeave={() => setOpen(false)}
@@ -241,6 +360,8 @@ function DecisionCard({
 }) {
   if (!row) return null;
 
+  const copy = getAffordabilityCopy(locale);
+
   const toneClass =
     tone === "green"
       ? "border-emerald-200 bg-emerald-50/60 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200"
@@ -257,11 +378,15 @@ function DecisionCard({
           <div className="mt-1 text-xs opacity-75">{row.countryCode}</div>
         </div>
         <div className="text-right text-sm font-semibold tabular-nums">
-          {row.burdenVsUs.toFixed(2)} 倍
+          {row.burdenVsUs.toFixed(2)}{copy.times}
         </div>
       </div>
       <div className="mt-3 text-xs leading-5 opacity-80">
-        {note} 月费 {formatUsd(row.priceUsd)}，占月收入 {formatPercent(row.incomeSharePercent)}。
+        {copy.decisionDetail(
+          note,
+          formatUsd(row.priceUsd),
+          formatPercent(row.incomeSharePercent),
+        )}
       </div>
     </div>
   );
@@ -269,9 +394,12 @@ function DecisionCard({
 
 function AffordabilityMatrix({
   rows,
+  locale,
 }: {
   rows: PlanAffordabilityRow[];
+  locale: DetailLocale;
 }) {
+  const copy = getAffordabilityCopy(locale);
   const matrixRows = rows.slice(0, 24);
   const xValues = matrixRows.map((row) => row.diffVsUsPercent);
   const yValues = matrixRows.map((row) => row.burdenVsUs);
@@ -291,21 +419,21 @@ function AffordabilityMatrix({
           <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 className="text-base font-semibold text-zinc-950 dark:text-white">
-                价格 × 本地负担矩阵
+                {copy.matrixTitle}
               </h3>
               <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                横轴看美元价格是否比美国便宜，纵轴看本地负担是否高于美国。越靠左下越友好。
+                {copy.matrixDescription}
               </p>
             </div>
-            <div className="text-xs text-zinc-400">美国基准：0% / 1.00 倍</div>
+            <div className="text-xs text-zinc-400">{copy.usBenchmark}</div>
           </div>
 
           <div className="relative h-[320px] overflow-hidden rounded-lg border border-zinc-200 bg-[linear-gradient(to_right,rgba(113,113,122,0.10)_1px,transparent_1px),linear-gradient(to_bottom,rgba(113,113,122,0.10)_1px,transparent_1px)] bg-[size:25%_25%] dark:border-zinc-800 dark:bg-zinc-950/30">
             <div className="absolute inset-y-0 border-l border-zinc-300/80 dark:border-zinc-700" style={{ left: `${usX}%` }} />
             <div className="absolute inset-x-0 border-t border-zinc-300/80 dark:border-zinc-700" style={{ bottom: `${usY}%` }} />
-            <div className="absolute left-3 top-3 text-xs text-zinc-400">高负担</div>
-            <div className="absolute bottom-3 right-3 text-xs text-zinc-400">更贵</div>
-            <div className="absolute bottom-3 left-3 text-xs text-zinc-400">更便宜</div>
+            <div className="absolute left-3 top-3 text-xs text-zinc-400">{copy.highBurden}</div>
+            <div className="absolute bottom-3 right-3 text-xs text-zinc-400">{copy.moreExpensive}</div>
+            <div className="absolute bottom-3 left-3 text-xs text-zinc-400">{copy.cheaper}</div>
 
             {matrixRows.map((row) => {
               const x = Math.max(4, Math.min(96, ((row.diffVsUsPercent - minX) / xRange) * 100));
@@ -338,19 +466,19 @@ function AffordabilityMatrix({
 
         <div className="grid gap-2 content-start">
           {(["friendly", "cheapPressure", "premiumFair", "expensivePressure"] as Quadrant[]).map((quadrant) => {
-            const copy = quadrantCopy(quadrant);
+            const quadrantText = quadrantCopy(quadrant, locale);
             const count = rows.filter((row) => classifyQuadrant(row) === quadrant).length;
 
             return (
               <div key={quadrant} className="rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${copy.dot}`} />
-                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{copy.label}</span>
+                    <span className={`h-2 w-2 rounded-full ${quadrantText.dot}`} />
+                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{quadrantText.label}</span>
                   </div>
                   <span className="text-xs tabular-nums text-zinc-400">{count}</span>
                 </div>
-                <div className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{copy.desc}</div>
+                <div className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{quadrantText.desc}</div>
               </div>
             );
           })}
@@ -372,7 +500,8 @@ function BurdenRow({
   locale: DetailLocale;
 }) {
   const tone = levelTone(row.affordabilityLevel);
-  const quadrant = quadrantCopy(classifyQuadrant(row));
+  const copy = getAffordabilityCopy(locale);
+  const quadrant = quadrantCopy(classifyQuadrant(row), locale);
 
   return (
     <div className="grid gap-3 border-b border-zinc-100 px-5 py-3.5 last:border-b-0 md:grid-cols-[54px_minmax(150px,1fr)_110px_minmax(190px,1.25fr)_110px_120px] md:items-center md:px-6 dark:border-zinc-800">
@@ -386,7 +515,7 @@ function BurdenRow({
       </div>
 
       <div>
-        <div className="mb-1 text-xs text-zinc-400 md:hidden">月费</div>
+        <div className="mb-1 text-xs text-zinc-400 md:hidden">{copy.monthlyFee}</div>
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
           {formatUsd(row.priceUsd)}
         </div>
@@ -395,7 +524,7 @@ function BurdenRow({
 
       <div>
         <div className="mb-1 flex items-center justify-between gap-3">
-          <span className="text-xs text-zinc-400">占月收入</span>
+          <span className="text-xs text-zinc-400">{copy.incomeShare}</span>
           <span className={`text-sm font-semibold tabular-nums ${tone.text}`}>
             {formatPercent(row.incomeSharePercent)}
           </span>
@@ -407,22 +536,22 @@ function BurdenRow({
           />
         </div>
         <div className="mt-1 text-xs text-zinc-400">
-          月均收入约 {formatUsd(row.monthlyIncomeUsd, 0)}
+          {copy.monthlyIncome} {formatUsd(row.monthlyIncomeUsd, 0)}
         </div>
       </div>
 
       <div>
-        <div className="mb-1 text-xs text-zinc-400 md:hidden">对比美国</div>
+        <div className="mb-1 text-xs text-zinc-400 md:hidden">{copy.vsUs}</div>
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
-          {row.burdenVsUs.toFixed(2)} 倍
+          {row.burdenVsUs.toFixed(2)}{copy.times}
         </div>
       </div>
 
       <div>
-        <div className="mb-1 text-xs text-zinc-400 md:hidden">判断</div>
+        <div className="mb-1 text-xs text-zinc-400 md:hidden">{copy.judgement}</div>
         <div className="flex flex-col items-start gap-1.5">
           <span className={["inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset", tone.badge].join(" ")}>
-            {levelLabel(row.affordabilityLevel)}
+            {levelLabel(row.affordabilityLevel, locale)}
           </span>
           <span className="text-xs text-zinc-400">{quadrant.label}</span>
         </div>
@@ -438,6 +567,7 @@ export default function AffordabilityComparison({
   rows,
   locale = "zh",
 }: Props) {
+  const copy = getAffordabilityCopy(locale);
   const model = useMemo(() => {
     const byBurdenDesc = [...rows].sort((a, b) => b.incomeSharePercent - a.incomeSharePercent);
     const byBurdenAsc = [...rows].sort((a, b) => a.incomeSharePercent - b.incomeSharePercent);
@@ -472,76 +602,80 @@ export default function AffordabilityComparison({
   return (
     <PublicSection>
       <PublicSectionHeader
-        title={`${productName} 本地购买力判断`}
-        description={
-          <>
-            不只看哪个地区标价最低，而是把 {planName} 月费放回当地收入里比较：价格、税务和风险之外，再判断这笔订阅对当地用户到底重不重。
-          </>
-        }
+        title={copy.sectionTitle(productName)}
+        description={copy.sectionDescription(planName)}
       />
 
       <MetricStrip columns={3}>
         <MetricItem
-          label="本地负担最高"
+          label={copy.highestBurden}
           value={getCountryName(model.highest, locale)}
-          helper={`占月收入 ${formatPercent(model.highest.incomeSharePercent)} · 美国的 ${model.highest.burdenVsUs.toFixed(2)} 倍`}
+          helper={copy.highestBurdenHelper(
+            formatPercent(model.highest.incomeSharePercent),
+            model.highest.burdenVsUs.toFixed(2),
+          )}
           tone="red"
         />
         <MetricItem
-          label="本地更友好"
+          label={copy.friendlyRegion}
           value={getCountryName(model.lowest, locale)}
-          helper={`占月收入 ${formatPercent(model.lowest.incomeSharePercent)}`}
+          helper={copy.friendlyHelper(
+            formatPercent(model.lowest.incomeSharePercent),
+          )}
           tone="green"
         />
         <MetricItem
-          label="美国基准"
+          label={copy.usBase}
           value={model.us ? formatPercent(model.us.incomeSharePercent) : "-"}
-          helper="记为 1.00 倍，用于判断相对负担"
+          helper={copy.usBaseHelper}
         />
       </MetricStrip>
 
       <div className="grid gap-3 border-t border-zinc-100 px-5 py-5 dark:border-zinc-800 md:grid-cols-3 md:px-6">
         <DecisionCard
-          title="综合更均衡"
+          title={copy.balancedTitle}
           row={model.balanced}
           locale={locale}
           tone="green"
-          note="价格和本地负担都相对克制，适合作为友好地区候选。"
+          note={copy.balancedNote}
         />
         <DecisionCard
-          title="便宜但需谨慎"
+          title={copy.cheapPressureTitle}
           row={model.cheapButHeavy}
           locale={locale}
           tone="amber"
-          note="美元标价低，但当地收入负担明显偏高，不能只按便宜排序。"
+          note={copy.cheapPressureNote}
         />
         <DecisionCard
-          title="本地压力最高"
+          title={copy.highestPressureTitle}
           row={model.highest}
           locale={locale}
           tone="red"
-          note="本地收入压力最明显，适合放入风险和解释提示。"
+          note={copy.highestPressureNote}
         />
       </div>
 
-      <AffordabilityMatrix rows={rows} />
+      <AffordabilityMatrix rows={rows} locale={locale} />
 
       <div className="overflow-hidden border-t border-zinc-100 dark:border-zinc-800">
         <div className="hidden gap-3 border-b border-zinc-100 bg-zinc-50/70 px-5 py-3 text-xs font-medium text-zinc-400 md:grid md:grid-cols-[54px_minmax(150px,1fr)_110px_minmax(190px,1.25fr)_110px_120px] md:px-6 dark:border-zinc-800 dark:bg-zinc-900/40">
-          <div>排名</div>
-          <div>地区</div>
-          <div>月费</div>
+          <div>{copy.rank}</div>
+          <div>{copy.region}</div>
+          <div>{copy.monthlyFee}</div>
           <HeaderHelp
-            label="占月收入"
-            help="月费占当地月均收入的比例，用来估算订阅负担。"
+            label={copy.incomeShare}
+            help={copy.incomeShareHelp}
+            locale={locale}
           />
           <HeaderHelp
-            label="对比美国"
-            help="以美国订阅负担为 1.00 倍，显示该地区相对美国更重或更轻。"
+            label={copy.vsUs}
+            help={copy.vsUsHelp}
+            locale={locale}
           />
           <HeaderHelp
-            label="判断"
-            help="结合收入占比、美国基准和美元价差，对地区订阅压力做分层。"
+            label={copy.judgement}
+            help={copy.judgementHelp}
+            locale={locale}
           />
         </div>
 
@@ -555,7 +689,7 @@ export default function AffordabilityComparison({
           />
         ))}
 
-        <ExpandableAffordabilityRows hiddenCount={hiddenRows.length}>
+        <ExpandableAffordabilityRows hiddenCount={hiddenRows.length} locale={locale}>
           {hiddenRows.map((row, index) => (
             <BurdenRow
               key={`${row.planSlug}-${row.countryCode}`}
@@ -569,9 +703,12 @@ export default function AffordabilityComparison({
       </div>
 
       <DataNote>
-        收入指标采用 {metricLabel(summary.incomeMetricType)}
-        {summary.incomeIndicatorCode ? `（${summary.incomeIndicatorCode}）` : ""}，收入数据年份为{" "}
-        {summary.incomeDataYear || "-"}，价格检查时间为 {formatDate(latestPriceCheckedAt)}。购买力判断用于解释价格压力，不等同于实际支付能力或订阅成功率。
+        {copy.dataNote(
+          metricLabel(summary.incomeMetricType),
+          summary.incomeIndicatorCode || "",
+          String(summary.incomeDataYear || "-"),
+          formatDate(latestPriceCheckedAt),
+        )}
       </DataNote>
     </PublicSection>
   );

@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   buildCollectorRunTimeline,
   isAppStoreCollectorJob,
@@ -8,6 +11,8 @@ import {
   type CollectorJobStateInput,
   type CollectorRunTimelineInput,
 } from "./job-state.ts";
+
+const testDir = dirname(fileURLToPath(import.meta.url));
 
 function job(overrides: Partial<CollectorJobStateInput> = {}): CollectorJobStateInput {
   return {
@@ -67,6 +72,22 @@ test("low-priority or future app store jobs are not shown as manually queued", (
 
 test("consumed app store queue is not shown as manually queued", () => {
   assert.equal(isManuallyQueuedAppStoreJob(job({ queue_pending: false })), false);
+});
+
+test("scheduled collector runner deduplicates product and collector kind", () => {
+  const runner = readFileSync(
+    resolve(testDir, "../../../../geosub-backend/scripts/run-collector-jobs.ps1"),
+    "utf8",
+  );
+
+  assert.match(runner, /ROW_NUMBER\(\) OVER/);
+  assert.match(runner, /PARTITION BY\s+job\.product_id,[\s\S]*collector_kind/);
+  assert.match(runner, /WHERE product_kind_rank = 1/);
+  assert.match(runner, /\[string\]\$CollectorKind/);
+  assert.match(runner, /collectorKindFilterSql/);
+  assert.match(runner, /\$requestedRunId = \$RunId/);
+  assert.match(runner, /\$jobRunId = Start-JobRun/);
+  assert.doesNotMatch(runner, /\$runId = Start-JobRun/);
 });
 
 test("queued admin run shows process startup as the active timeline step", () => {

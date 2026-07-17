@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "工具测评 - GeoSub",
+  title: "工具测评",
   description: "这里将整理 AI 工具、软件工具、效率工具和数字服务的测评内容，帮助用户选择更适合自己的工具。",
 };
 

@@ -119,6 +119,7 @@ if ($SkipCollectors) {
     "-ExecutionPolicy", "Bypass",
     "-File", (Join-Path $scriptDir "run-collector-jobs.ps1"),
     "-Limit", [string]$CollectorLimit,
+    "-CollectorKind", "app_store",
     "-ContainerName", $ContainerName,
     "-DbName", $DbName,
     "-DbUser", $DbUser

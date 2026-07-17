@@ -28,6 +28,11 @@ if [[ ! -f "$BACKUP_FILE" ]]; then
   exit 1
 fi
 
+if [[ ! -s "$BACKUP_FILE" ]]; then
+  echo "Backup file is empty: $BACKUP_FILE"
+  exit 1
+fi
+
 if [[ -f "$BACKUP_FILE.sha256" ]]; then
   sha256sum -c "$BACKUP_FILE.sha256"
 fi
@@ -36,6 +41,9 @@ if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
   echo "Database container '$DB_CONTAINER' is not running."
   exit 1
 fi
+
+echo "Checking backup catalog before destructive restore"
+docker exec -i "$DB_CONTAINER" pg_restore --list < "$BACKUP_FILE" >/dev/null
 
 echo "Dropping and recreating database: $DB_NAME"
 docker exec "$DB_CONTAINER" dropdb -U "$DB_USER" --if-exists --force "$DB_NAME"

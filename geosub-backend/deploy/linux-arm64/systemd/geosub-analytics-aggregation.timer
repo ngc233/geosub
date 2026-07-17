@@ -1,0 +1,12 @@
+[Unit]
+Description=Aggregate GeoSub analytics every 15 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=15min
+RandomizedDelaySec=2min
+Persistent=true
+Unit=geosub-analytics-aggregation.service
+
+[Install]
+WantedBy=timers.target

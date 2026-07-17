@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "礼品卡教程 - GeoSub",
+  title: "礼品卡教程",
   description: "这里将整理 Apple、Google、Steam 等礼品卡的购买渠道、面值选择、地区限制、充值方式和常见问题。",
 };
 

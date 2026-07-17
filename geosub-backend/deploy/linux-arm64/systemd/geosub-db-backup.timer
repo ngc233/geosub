@@ -1,0 +1,11 @@
+[Unit]
+Description=Create a verified GeoSub database backup every day
+
+[Timer]
+OnCalendar=*-*-* 02:40:00
+RandomizedDelaySec=20min
+Persistent=true
+Unit=geosub-db-backup.service
+
+[Install]
+WantedBy=timers.target

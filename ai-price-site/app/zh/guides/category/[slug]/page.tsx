@@ -5,6 +5,7 @@ import {
   getPublishedArticleCategoryBySlug,
   getPublishedArticlesByCategorySlug,
 } from "../../../../../lib/articles";
+import { stripGeoSubTitleSuffix } from "../../../../../lib/pricing-routes";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org";
 
@@ -22,12 +23,12 @@ export async function generateMetadata({
 
   if (!category) {
     return {
-      title: "文章分类不存在 - GeoSub",
+      title: "文章分类不存在",
     };
   }
 
   return {
-    title: category.seoTitle || `${category.name} - GeoSub 指南`,
+    title: stripGeoSubTitleSuffix(category.seoTitle || `${category.name}指南`),
     description:
       category.seoDescription ||
       category.description ||

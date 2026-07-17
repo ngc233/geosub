@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { ProductCategory } from "@prisma/client";
 import BrandIcon from "../../../../components/BrandIcon";
+import TrackedLink from "../../../../components/analytics/TrackedLink";
 import ProductSidebar from "../../../../components/ProductSidebar";
 import PlanTabs from "../../../../components/PlanTabs";
 import SharePriceModal from "../../../../components/SharePriceModal";
@@ -17,6 +19,10 @@ import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter"
 import { getPlanAffordability } from "../../../../lib/affordability";
 import { getLatestExchangeRate } from "../../../../lib/exchange-rates";
 import { getPlanDisplayName } from "../../../../lib/pricing-labels";
+import {
+  getPricingDetailPath,
+  getPricingListPath,
+} from "../../../../lib/pricing-routes";
 import { prisma } from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -156,21 +162,33 @@ function NoPublishedPricesSection({
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const product = await getProduct(slug);
 
   if (!product) {
     return {
-      title: "Pricing Detail - GeoSub",
+      title: "Pricing Detail",
     };
   }
 
-  const activePlan = getProductPlan(product);
+  const activePlan = getProductPlan(product, resolvedSearchParams.plan);
+  const enPath = getPricingDetailPath("en", product.category, product.slug);
+  const zhPath = getPricingDetailPath("zh", product.category, product.slug);
 
   return {
-    title: `${getH1(product.name, activePlan.name)} - GeoSub`,
+    title: getH1(product.name, activePlan.name),
     description: getDescription(product.name),
+    alternates: {
+      canonical: enPath,
+      languages: {
+        "zh-CN": zhPath,
+        en: enPath,
+        "x-default": enPath,
+      },
+    },
   };
 }
 
@@ -187,9 +205,24 @@ export default async function EnglishProductPricingPage({
   }
 
   const activePlan = getProductPlan(product, resolvedSearchParams.plan);
+  const canonicalDetailPath = getPricingDetailPath(
+    "en",
+    product.category,
+    product.slug,
+  );
+  const currentPath = (await headers())
+    .get("x-pathname")
+    ?.replace(/\/+$/, "");
+
+  if (currentPath && currentPath !== canonicalDetailPath) {
+    const planQuery = resolvedSearchParams.plan
+      ? `?plan=${encodeURIComponent(resolvedSearchParams.plan)}`
+      : "";
+    redirect(`${canonicalDetailPath}${planQuery}`);
+  }
+
   const sidebarProducts = await getProductNavItems(product.category);
-  const detailBasePath =
-    product.category === "streaming" ? "/en/streaming-pricing" : "/en/ai-pricing";
+  const detailBasePath = getPricingListPath("en", product.category);
   const hasPublishedPrices = activePlan.regions.length > 0;
   const [affordability, cnyExchangeRate] = await Promise.all([
     getPlanAffordability(product.slug, activePlan.slug),
@@ -240,6 +273,21 @@ export default async function EnglishProductPricingPage({
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
                   {getDescription(product.name)}
                 </p>
+
+                {product.officialUrl ? (
+                  <TrackedLink
+                    href={product.officialUrl}
+                    eventKey="click_official"
+                    eventName="Open official website"
+                    buttonKey={product.slug}
+                    placement="product_hero"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
+                  >
+                    Visit official website ↗
+                  </TrackedLink>
+                ) : null}
               </div>
             </div>
           </div>
@@ -247,6 +295,7 @@ export default async function EnglishProductPricingPage({
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-zinc-400">Plans</span>
             <PlanTabs
+              productName={product.name}
               productSlug={product.slug}
               plans={product.plans}
               activePlanSlug={activePlan.slug}

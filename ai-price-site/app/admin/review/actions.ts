@@ -8,6 +8,7 @@ import {
   rejectPriceObservation,
   runAppStoreStabilityAutoReview,
 } from "../../../lib/admin-price-review";
+import { requireAdmin } from "../../../lib/admin-auth";
 import { buildCollectionRedirectPath } from "./collection-status";
 import { queueAndRunAppStoreCollection } from "./collection-runner";
 
@@ -22,6 +23,7 @@ function getObservationId(formData: FormData) {
 }
 
 export async function approveObservation(formData: FormData) {
+  await requireAdmin();
   const id = getObservationId(formData);
 
   await approvePriceObservation(id, { taxProfiles: true });
@@ -32,6 +34,7 @@ export async function approveObservation(formData: FormData) {
 }
 
 export async function ignoreObservation(formData: FormData) {
+  await requireAdmin();
   const id = getObservationId(formData);
 
   await ignorePriceObservation(id, "Ignored from review center");
@@ -40,6 +43,7 @@ export async function ignoreObservation(formData: FormData) {
 }
 
 export async function rejectObservation(formData: FormData) {
+  await requireAdmin();
   const id = getObservationId(formData);
 
   await rejectPriceObservation(id, "Rejected from review center");
@@ -48,6 +52,7 @@ export async function rejectObservation(formData: FormData) {
 }
 
 export async function runAutoReview() {
+  await requireAdmin();
   await runAppStoreStabilityAutoReview();
 
   revalidatePath("/admin/review");
@@ -58,6 +63,7 @@ export async function runAutoReview() {
 }
 
 export async function queueAppStoreCollectionAndReview(formData?: FormData) {
+  await requireAdmin();
   const productSlug = String(formData?.get("productSlug") ?? "").trim();
   const result = await queueAndRunAppStoreCollection(productSlug);
 

@@ -376,6 +376,28 @@ function getRiskLevelLabel(level: RegionPrice["riskLevel"], locale: DetailLocale
   return "待核验";
 }
 
+function translateRiskProfileTextToZh(value: string) {
+  const raw = value.trim();
+
+  if (/Apple ID region|account region|payment method|billing information/i.test(raw)) {
+    return "跨区订阅可能受到 Apple ID 或账号地区、付款方式、账单信息和平台风控影响。";
+  }
+
+  if (/gift card|local payment|local billing|VPN/i.test(raw)) {
+    return "可能需要当地付款方式或账单资料；使用礼品卡或网络位置切换仍可能触发平台核验。";
+  }
+
+  if (/tax|checkout|final price/i.test(raw)) {
+    return "展示价格可能与最终结算价存在税费差异，请以官方结算页为准。";
+  }
+
+  if (/availability|not available|region restriction/i.test(raw)) {
+    return "该服务或套餐可能受地区可用性限制，请以当地 App Store 实际展示为准。";
+  }
+
+  return "该地区的跨区订阅条件仍需核验，请以官方结算页和平台规则为准。";
+}
+
 function getLocalizedRiskProfileText({
   zh,
   en,
@@ -385,12 +407,18 @@ function getLocalizedRiskProfileText({
   en: string | null;
   locale: DetailLocale;
 }) {
-  const canonical = en?.trim() || zh?.trim();
+  const zhText = zh?.trim();
+  const enText = en?.trim();
+  const canonical = enText || zhText;
 
   if (!canonical) return undefined;
   if (locale !== "zh") return canonical;
 
-  return zh?.trim() || canonical;
+  if (zhText && !hasBrokenText(zhText) && hasCjkText(zhText)) {
+    return zhText;
+  }
+
+  return enText ? translateRiskProfileTextToZh(enText) : undefined;
 }
 
 function assessAppStoreRisk({
@@ -479,7 +507,7 @@ function assessAppStoreRisk({
 
   const finalScore = clampRiskScore(score);
   const finalLevel = getRiskLevelFromScore(finalScore);
-  const noteParts = [requirements, baseNote].filter(Boolean);
+  const noteParts = [...new Set([requirements, baseNote].filter(Boolean))];
   const riskNote =
     noteParts.join(" ") ||
     (locale === "zh"

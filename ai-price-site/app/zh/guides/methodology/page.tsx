@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "数据方法 - GeoSub",
+  title: "数据方法",
   description:
     "了解 GeoSub 如何整理全球数字订阅、AI 工具、软件订阅、游戏服务和礼品卡的价格数据。",
 };

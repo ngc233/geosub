@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { requireAdmin } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
 
 function normalizeOptionalText(value: FormDataEntryValue | null) {
@@ -57,6 +59,7 @@ async function upsertSetting({
 }
 
 export async function updateAnalyticsSettings(formData: FormData) {
+  await requireAdmin();
   const ga4Id = normalizeOptionalText(formData.get("ga4_id")).toUpperCase();
   const gtmId = normalizeOptionalText(formData.get("gtm_id")).toUpperCase();
 
@@ -84,4 +87,5 @@ export async function updateAnalyticsSettings(formData: FormData) {
   revalidatePath("/zh");
   revalidatePath("/en");
   revalidatePath("/admin/settings");
+  redirect("/admin/settings?saved=1");
 }

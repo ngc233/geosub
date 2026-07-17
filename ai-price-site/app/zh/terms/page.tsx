@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "服务条款 - GeoSub",
+  title: "服务条款",
   description: "本页面说明用户访问和使用 GeoSub 时需要了解的基础规则、信息边界和免责声明。",
 };
 

@@ -44,7 +44,9 @@ test("plan tabs use short labels on narrow screens", () => {
 
   assert.match(planTabs, /shortLabel/);
   assert.match(planTabs, /getShortPlanName/);
-  assert.match(planTabs, /replace\(\/\^\(ChatGPT\|Claude\|Gemini\|Google AI\|Google\)/);
+  assert.match(planTabs, /productName/);
+  assert.match(planTabs, /escapeRegExp\(productName\)/);
+  assert.doesNotMatch(planTabs, /ChatGPT\|Claude\|Gemini/);
   assert.match(segmentedControl, /sm:hidden/);
   assert.match(segmentedControl, /hidden truncate sm:inline/);
   assert.match(segmentedControl, /relative inline-grid rounded-lg/);
@@ -99,4 +101,41 @@ test("share modal keeps the generated card as the primary preview", () => {
   assert.doesNotMatch(source, />分享到</);
   assert.doesNotMatch(source, /min-w-\[86px\] rounded-xl/);
   assert.match(source, /min-w-\[86px\] rounded-lg/);
+});
+
+test("site chrome derives language from the client route", () => {
+  const header = readComponent("Header.tsx");
+  const footer = readComponent("Footer.tsx");
+  const headerShell = readComponent("HeaderShell.tsx");
+  const footerShell = readComponent("FooterShell.tsx");
+  const documentLocaleSync = readComponent("DocumentLocaleSync.tsx");
+  const localeRegistry = readFileSync(
+    resolve(componentsDir, "..", "lib", "site-locale.ts"),
+    "utf8",
+  );
+
+  assert.match(localeRegistry, /export const siteLocaleDefinitions/);
+  assert.match(localeRegistry, /export const supportedSiteLocales/);
+  assert.match(header, /usePathname\(\)/);
+  assert.match(header, /initialNavItemsByLocale\[currentLocaleCode\]/);
+  assert.match(header, /const headerCopy: Record</);
+  assert.match(header, /currentSectionLabel: "Current section:"/);
+  assert.match(header, /aria-label=\{copy\.primaryNavigationLabel\}/);
+  assert.match(footer, /"use client"/);
+  assert.match(footer, /usePathname\(\)/);
+  assert.match(footer, /navItemsByLocale\[currentLocale\]/);
+  assert.match(
+    footer,
+    /GeoSub is a global digital subscription pricing platform/,
+  );
+  assert.match(headerShell, /getSiteNavigationByLocale\("HEADER"\)/);
+  assert.match(footerShell, /getSiteNavigationByLocale\("FOOTER"\)/);
+  assert.match(
+    documentLocaleSync,
+    /document\.documentElement\.lang = definition\.htmlLang/,
+  );
+  assert.match(
+    documentLocaleSync,
+    /document\.documentElement\.dir = definition\.direction/,
+  );
 });

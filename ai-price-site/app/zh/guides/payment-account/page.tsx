@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "支付与账号 - GeoSub",
+  title: "支付与账号",
   description: "这里将整理数字订阅相关的支付方式、账号注册、地区切换、订阅限制和常见问题。",
 };
 

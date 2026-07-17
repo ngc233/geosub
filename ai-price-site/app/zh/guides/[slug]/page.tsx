@@ -8,6 +8,7 @@ import {
   getPublishedArticleBySlug,
   renderArticleMarkdown,
 } from "../../../../lib/articles";
+import { stripGeoSubTitleSuffix } from "../../../../lib/pricing-routes";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org";
 
@@ -25,11 +26,13 @@ export async function generateMetadata({
 
   if (!article) {
     return {
-      title: "文章不存在 - GeoSub",
+      title: "文章不存在",
     };
   }
 
-  const title = article.seoTitle || article.ogTitle || `${article.title} - GeoSub`;
+  const title = stripGeoSubTitleSuffix(
+    article.seoTitle || article.ogTitle || article.title,
+  );
   const description = article.seoDescription || article.ogDescription || article.excerpt || undefined;
   const url = article.canonicalUrl || absoluteUrl(`/zh/guides/${article.slug}`);
   const image = article.ogImageUrl || article.coverImageUrl || undefined;
@@ -46,7 +49,7 @@ export async function generateMetadata({
     },
     openGraph: {
       type: "article",
-      title: article.ogTitle || title,
+      title: stripGeoSubTitleSuffix(article.ogTitle || title),
       description,
       url,
       images: image ? [{ url: image }] : undefined,

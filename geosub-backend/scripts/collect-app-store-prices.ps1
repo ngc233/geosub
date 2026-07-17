@@ -90,7 +90,8 @@ function Load-ProductPlanSpecs {
     return $null
   }
 
-  return Get-Content -LiteralPath $specPath -Raw | ConvertFrom-Json
+  $specJson = [IO.File]::ReadAllText($specPath, [Text.Encoding]::UTF8)
+  return $specJson | ConvertFrom-Json
 }
 
 function Get-ProductPlanSpec {

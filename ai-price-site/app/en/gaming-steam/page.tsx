@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 
+import { guardUnreleasedPublicPage } from "../../../lib/public-page-guard";
+
 export const metadata: Metadata = {
-  title: "Gaming and Steam Regional Pricing - GeoSub",
+  title: "Gaming and Steam Regional Pricing",
   description: "Compare Steam, Xbox Game Pass, PlayStation Plus, Nintendo, game gift cards, and gaming subscription prices across regions.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function EnglishPage() {
+  guardUnreleasedPublicPage();
+
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
       <section className="mx-auto max-w-6xl">

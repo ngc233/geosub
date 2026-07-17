@@ -18,6 +18,10 @@ export default async function AdminLoginPage({
     errorText = "邮箱或密码不正确。";
   }
 
+  if (error === "throttled") {
+    errorText = "登录尝试过于频繁，请 30 分钟后重试。";
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="grid min-h-screen lg:grid-cols-[1fr_520px]">
@@ -111,9 +115,9 @@ export default async function AdminLoginPage({
                   <input
                     name="email"
                     type="email"
-                    defaultValue="admin@geosub.local"
+                    autoComplete="username"
                     className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
-                    placeholder="admin@geosub.local"
+                    placeholder="管理员邮箱"
                   />
                 </div>
 
@@ -124,6 +128,7 @@ export default async function AdminLoginPage({
                   <input
                     name="password"
                     type="password"
+                    autoComplete="current-password"
                     className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
                     placeholder="请输入管理员密码"
                   />
@@ -136,14 +141,6 @@ export default async function AdminLoginPage({
                   登录
                 </button>
               </form>
-
-              <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 text-xs leading-6 text-slate-500">
-                <p>初始账号：admin@geosub.local</p>
-                <p>初始密码：GeosubAdmin_2026!</p>
-                <p className="mt-2">
-                  本地开发阶段使用，后续会加入修改密码和管理员管理功能。
-                </p>
-              </div>
             </div>
           </div>
         </section>

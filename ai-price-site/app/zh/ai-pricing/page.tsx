@@ -9,9 +9,6 @@ export const metadata: Metadata = {
   title: "AI 订阅价格对比 - ChatGPT、Claude、Gemini 全球价格",
   description:
     "比较 ChatGPT、Claude、Gemini 等 AI 订阅在不同国家和地区的 App Store 价格、美元折算、人民币估算、税费说明和价格差异。",
-  alternates: {
-    canonical: "/zh/ai-pricing",
-  },
 };
 
 export default async function AiPricingPage() {

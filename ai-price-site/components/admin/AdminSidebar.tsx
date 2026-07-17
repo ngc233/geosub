@@ -12,8 +12,10 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MousePointerClick,
   Radar,
   Search,
+  Settings,
   ShieldCheck,
   Workflow,
   type LucideIcon,
@@ -31,7 +33,9 @@ const navGroups: Array<{
     label: "工作台",
     items: [
       { label: "总览", href: "/admin", icon: LayoutDashboard },
+      { label: "事件日志", href: "/admin/events", icon: MousePointerClick },
       { label: "系统状态", href: "/admin/system", icon: Activity },
+      { label: "系统设置", href: "/admin/settings", icon: Settings },
     ],
   },
   {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - GeoSub",
+  title: "Privacy Policy",
   description: "This page explains how GeoSub handles basic usage data, analytics events, and non-sensitive website interaction data.",
 };
 

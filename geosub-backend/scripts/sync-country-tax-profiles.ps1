@@ -114,7 +114,8 @@ if (!(Test-Path -LiteralPath $ProfileFile)) {
   throw "Tax profile file not found: $ProfileFile"
 }
 
-$profiles = Get-Content -LiteralPath $ProfileFile -Raw | ConvertFrom-Json
+$profileJson = [IO.File]::ReadAllText($ProfileFile, [Text.Encoding]::UTF8)
+$profiles = $profileJson | ConvertFrom-Json
 if ($null -eq $profiles) {
   throw "Tax profile file is empty: $ProfileFile"
 }

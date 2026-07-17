@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdmin } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
 import { getDefaultNavigationItems } from "../../../lib/navigation-defaults";
 import { getNavigationLinkHealth } from "../../../lib/navigation-health";
@@ -55,6 +56,7 @@ function canPublishNavigationItem({
 }
 
 export async function toggleNavigationItemStatus(itemId: string) {
+  await requireAdmin();
   const item = await prisma.navigationItem.findUnique({
     where: {
       id: itemId,
@@ -105,6 +107,7 @@ export async function moveNavigationItem(
   itemId: string,
   direction: "up" | "down"
 ) {
+  await requireAdmin();
   const item = await prisma.navigationItem.findUnique({
     where: {
       id: itemId,
@@ -192,6 +195,7 @@ export async function updateNavigationItem(
   itemId: string,
   formData: FormData
 ) {
+  await requireAdmin();
   const currentItem = await prisma.navigationItem.findUnique({
     where: {
       id: itemId,
@@ -259,6 +263,7 @@ export async function updateNavigationItem(
 }
 
 export async function createNavigationItem(formData: FormData) {
+  await requireAdmin();
   const label = String(formData.get("label") || "").trim();
   const rawHref = String(formData.get("href") || "").trim();
   const rawLocale = String(formData.get("locale") || "zh");
@@ -349,6 +354,7 @@ export async function createNavigationItem(formData: FormData) {
 }
 
 export async function seedDefaultNavigation(formData: FormData) {
+  await requireAdmin();
   const rawLocale = String(formData.get("locale") || "zh");
   const rawPosition = String(formData.get("position") || "footer");
   const localeEntry = getNavigationLocaleByValue(rawLocale);

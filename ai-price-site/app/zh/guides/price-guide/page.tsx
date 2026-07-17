@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "价格指南 - GeoSub",
+  title: "价格指南",
   description: "这里将整理 AI 订阅、软件订阅、游戏服务、流媒体和礼品卡在不同国家与地区的价格差异、省钱区域和价格变化。",
 };
 

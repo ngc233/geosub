@@ -10,6 +10,13 @@ export type SegmentedControlItem = {
   href?: string;
   icon?: ReactNode;
   disabled?: boolean;
+  tracking?: {
+    event: string;
+    name?: string;
+    button?: string;
+    placement?: string;
+    source?: string;
+  };
 };
 
 type SegmentedControlProps = {
@@ -127,12 +134,22 @@ export default function SegmentedControl({
       {items.map((item) => {
         const active = item.value === value;
         const className = sharedClassName(active, item.disabled);
+        const trackingProps = item.tracking
+          ? {
+              "data-track-event": item.tracking.event,
+              "data-track-name": item.tracking.name,
+              "data-track-button": item.tracking.button,
+              "data-track-placement": item.tracking.placement,
+              "data-track-source": item.tracking.source || "segmented_control",
+            }
+          : {};
 
         if (item.href && !item.disabled) {
           return (
             <Link
               key={item.value}
               href={item.href}
+              {...trackingProps}
               className={className}
               role="tab"
               aria-selected={active}
@@ -146,6 +163,7 @@ export default function SegmentedControl({
           <button
             key={item.value}
             type="button"
+            {...trackingProps}
             className={className}
             role="tab"
             aria-selected={active}

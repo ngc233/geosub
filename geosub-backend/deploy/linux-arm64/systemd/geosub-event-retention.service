@@ -1,0 +1,19 @@
+[Unit]
+Description=GeoSub raw analytics retention cleanup
+Wants=network-online.target
+After=network-online.target geosub-analytics-aggregation.service
+
+[Service]
+Type=oneshot
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/ai-price-site
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-event-retention.sh
+TimeoutStartSec=10m
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

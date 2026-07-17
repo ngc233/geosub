@@ -6,7 +6,7 @@ import { getDbAiPricingProducts } from "../../../lib/db-ai-pricing";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "AI Subscription Pricing - ChatGPT, Claude, Gemini Global Prices - GeoSub",
+  title: "AI Subscription Pricing - ChatGPT, Claude, Gemini Global Prices",
   description:
     "Compare ChatGPT, Claude, Gemini and other AI subscription prices across countries and regions, including App Store prices, USD equivalents, tax notes and regional price differences.",
 };

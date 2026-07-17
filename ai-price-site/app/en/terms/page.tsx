@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service - GeoSub",
+  title: "Terms of Service",
   description: "This page explains the basic terms, information boundaries, and disclaimers for using GeoSub.",
 };
 

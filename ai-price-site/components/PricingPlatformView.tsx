@@ -47,9 +47,9 @@ const platformOptions: Array<{ value: PlatformFilter; label: string }> = [
   { value: "all", label: "全部来源诊断" },
 ];
 
-const currencyOptions: Array<{ value: DisplayCurrency; label: string }> = [
-  { value: "usd", label: "美元 USD" },
-  { value: "cny", label: "人民币 CNY" },
+const currencyOptions: Array<{ value: DisplayCurrency }> = [
+  { value: "usd" },
+  { value: "cny" },
 ];
 
 const UNAVAILABLE_CNY_PER_USD = 0;
@@ -103,11 +103,15 @@ function getPlatformLabel(platform: PlatformFilter, locale: "zh" | "en" = "zh") 
   );
 }
 
-function getCurrencyLabel(currency: DisplayCurrency) {
-  return (
-    currencyOptions.find((option) => option.value === currency)?.label ||
-    "美元 USD"
-  );
+function getCurrencyLabel(
+  currency: DisplayCurrency,
+  locale: "zh" | "en" = "zh",
+) {
+  if (currency === "cny") {
+    return locale === "en" ? "CNY estimate" : "人民币 CNY";
+  }
+
+  return locale === "en" ? "USD" : "美元 USD";
 }
 
 function formatSyncDate(value: string | null | undefined, locale: "zh" | "en") {
@@ -189,20 +193,31 @@ function formatMonthlyPrice(
   value: number,
   currency: DisplayCurrency,
   exchangeRate: number,
+  locale: "zh" | "en",
 ) {
   return currency === "cny"
-    ? `${formatCnyFromUsd(value, exchangeRate)}/月`
+    ? `${formatCnyFromUsd(value, exchangeRate)}${locale === "en" ? "/mo" : "/月"}`
     : `${formatUsd(value)}/mo`;
 }
 
-function EmptyPriceState({ platformLabel }: { platformLabel: string }) {
+function EmptyPriceState({
+  platformLabel,
+  locale,
+}: {
+  platformLabel: string;
+  locale: "zh" | "en";
+}) {
   return (
     <section className="rounded-xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
       <div className="text-sm font-semibold text-zinc-950 dark:text-white">
-        暂无 {platformLabel} 价格数据
+        {locale === "en"
+          ? `No ${platformLabel} pricing yet`
+          : `暂无 ${platformLabel} 价格数据`}
       </div>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-        该来源还没有进入正式价格库。后续补齐后，这里会自动显示价格分布、地区排行和明细表。
+        {locale === "en"
+          ? "This source has not entered the reviewed price database yet. Price distribution, regional rankings and the detail table will appear automatically once verified data is available."
+          : "该来源还没有进入正式价格库。后续补齐后，这里会自动显示价格分布、地区排行和明细表。"}
       </p>
     </section>
   );
@@ -265,7 +280,7 @@ function CurrencySelect({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="truncate">{activeItem.label}</span>
+        <span className="truncate">{getCurrencyLabel(activeItem.value, locale)}</span>
         <ChevronDown
           className={[
             "h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform duration-200 ease-out",
@@ -305,7 +320,7 @@ function CurrencySelect({
                 role="menuitemradio"
                 aria-checked={active}
               >
-                <span>{item.label}</span>
+                <span>{getCurrencyLabel(item.value, locale)}</span>
                 {active ? <span className="h-1.5 w-1.5 rounded-full bg-lime-500" /> : null}
               </button>
             );
@@ -337,7 +352,7 @@ function PricingLead({
 }) {
   const stats = getPlanStats(plan);
   const referenceRegion = getReferenceRegion(plan);
-  const displayCurrencyLabel = getCurrencyLabel(displayCurrency);
+  const displayCurrencyLabel = getCurrencyLabel(displayCurrency, locale);
   const cnyRate = cnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
   const cnyDisabled = Boolean(cnyExchangeRate.isFallback || cnyExchangeRate.isStale);
   const cnyRateNote = getCnyRateNote(cnyExchangeRate, cnyRate, locale);
@@ -361,11 +376,11 @@ function PricingLead({
                 <>
                   Based on official {platformLabel} pricing, {stats.minRegion.country} is currently the cheapest at about{" "}
                   <strong className="font-semibold text-lime-700 dark:text-lime-300">
-                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}
+                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate, locale)}
                   </strong>
                   ; {stats.maxRegion.country} is the most expensive at about{" "}
                   <strong className="font-semibold text-rose-600 dark:text-rose-300">
-                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}
+                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate, locale)}
                   </strong>
                   , with a spread of about {stats.spreadPercent}%.
                 </>
@@ -373,11 +388,11 @@ function PricingLead({
                 <>
                   当前以 {platformLabel} 正式价格比较，{stats.minRegion.country} 最便宜，约{" "}
                   <strong className="font-semibold text-lime-700 dark:text-lime-300">
-                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}
+                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate, locale)}
                   </strong>
                   ；{stats.maxRegion.country} 最贵，约{" "}
                   <strong className="font-semibold text-rose-600 dark:text-rose-300">
-                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}
+                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate, locale)}
                   </strong>
                   ，价差约 {stats.spreadPercent}%。
                 </>
@@ -615,7 +630,7 @@ export default function PricingPlatformView({
             onCurrencyChange={handleCurrencyChange}
             locale={locale}
           />
-          <EmptyPriceState platformLabel={platformLabel} />
+          <EmptyPriceState platformLabel={platformLabel} locale={locale} />
         </>
       ) : (
         <>
@@ -641,7 +656,7 @@ export default function PricingPlatformView({
             locale={locale}
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
-            displayCurrencyLabel={getCurrencyLabel(displayCurrency)}
+            displayCurrencyLabel={getCurrencyLabel(displayCurrency, locale)}
             formatDisplayPrice={(value) =>
               formatDisplayPrice(value, displayCurrency, cnyRate)
             }

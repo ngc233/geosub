@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Gift Card Guide - GeoSub",
+  title: "Gift Card Guide",
   description: "Learn how digital gift cards work across regions, including redemption limits, supported currencies, and platform restrictions.",
 };
 

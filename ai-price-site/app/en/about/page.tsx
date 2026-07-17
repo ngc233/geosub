@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About GeoSub - GeoSub",
+  title: "About GeoSub",
   description: "GeoSub is a global digital subscription pricing platform focused on AI subscriptions, software subscriptions, gaming services, gift cards, and digital tools.",
 };
 

@@ -4,6 +4,11 @@ import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { getPlanDisplayName } from "../lib/pricing-labels.ts";
+import {
+  getPricingDetailPath,
+  getPricingListPath,
+  stripGeoSubTitleSuffix,
+} from "../lib/pricing-routes.ts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
@@ -51,9 +56,57 @@ test("pricing detail pages keep AI and streaming paths synchronized", () => {
 
   for (const page of [zhPage, enPage]) {
     assert.match(page, /detailBasePath =/);
-    assert.match(page, /product\.category === "streaming"/);
+    assert.match(page, /getPricingListPath/);
     assert.match(page, /href=\{detailBasePath\}/);
     assert.match(page, /basePath=\{detailBasePath\}/);
+  }
+
+  assert.equal(getPricingListPath("zh", "ai"), "/zh/ai-pricing");
+  assert.equal(getPricingListPath("en", "streaming"), "/en/streaming-pricing");
+  assert.equal(
+    getPricingDetailPath("zh", "streaming", "netflix"),
+    "/zh/streaming-pricing/netflix",
+  );
+});
+
+test("streaming detail routes render directly and preserve plan query links", () => {
+  const planTabs = readAppFile("..", "components", "PlanTabs.tsx");
+
+  for (const locale of ["zh", "en"]) {
+    const streamingPage = readAppFile(
+      locale,
+      "streaming-pricing",
+      "[slug]",
+      "page.tsx",
+    );
+
+    assert.match(streamingPage, /generateMetadata, default/);
+    assert.match(streamingPage, /ai-pricing\/\[slug\]\/page/);
+    assert.doesNotMatch(streamingPage, /redirect\(/);
+  }
+
+  assert.match(planTabs, /\?plan=\$\{plan\.slug\}/);
+
+  for (const locale of ["zh", "en"]) {
+    const detailPage = readAppFile(locale, "ai-pricing", "[slug]", "page.tsx");
+
+    assert.match(detailPage, /currentPath && currentPath !== canonicalDetailPath/);
+    assert.match(detailPage, /encodeURIComponent\(resolvedSearchParams\.plan\)/);
+    assert.match(detailPage, /redirect\(`\$\{canonicalDetailPath\}\$\{planQuery\}`\)/);
+  }
+});
+
+test("pricing detail metadata owns canonical paths without duplicating the site name", () => {
+  assert.equal(stripGeoSubTitleSuffix("Netflix Prices - GeoSub"), "Netflix Prices");
+  assert.equal(stripGeoSubTitleSuffix("Netflix Prices"), "Netflix Prices");
+
+  for (const locale of ["zh", "en"]) {
+    const page = readAppFile(locale, "ai-pricing", "[slug]", "page.tsx");
+
+    assert.match(page, /canonical:/);
+    assert.match(page, /"zh-CN":/);
+    assert.match(page, /"x-default":/);
+    assert.doesNotMatch(page, /title:\s*`[^`]+ - GeoSub`/);
   }
 });
 
@@ -87,6 +140,8 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   assert.match(shareModal, /Share price card/);
   assert.match(zhPage, /<SharePriceModal product=\{product\} plan=\{activePlan\} stats=\{stats\} locale="zh" \/>/);
   assert.match(enPage, /<SharePriceModal product=\{product\} plan=\{activePlan\} stats=\{stats\} locale="en" \/>/);
+  assert.match(zhPage, /planDisplayName = getPlanDisplayName\(productName, planName\)/);
+  assert.doesNotMatch(zhPage, /\$\{productName\} Plus 订阅/);
   assert.doesNotMatch(platformView, /\$\{productName\} \$\{plan\.name\}/);
   assert.doesNotMatch(shareModal, /\$\{product\.name\} \$\{plan\.name\}/);
 });

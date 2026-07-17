@@ -1,4 +1,5 @@
 import type { NavigationPositionValue } from "./navigation-config";
+import type { SiteLocale } from "./site-locale";
 
 export type DefaultNavigationChild = {
   label: string;
@@ -12,7 +13,7 @@ export type DefaultNavigationGroup = {
 };
 
 type DefaultNavigationMap = Record<
-  "zh" | "en",
+  SiteLocale,
   Record<NavigationPositionValue, DefaultNavigationGroup[]>
 >;
 

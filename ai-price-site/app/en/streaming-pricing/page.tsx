@@ -6,7 +6,7 @@ import { getDbAiPricingProducts } from "../../../lib/db-ai-pricing";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Streaming Subscription Pricing - Netflix, YouTube Premium, Spotify - GeoSub",
+  title: "Streaming Subscription Pricing - Netflix, YouTube Premium, Spotify",
   description:
     "Compare Netflix, YouTube Premium, Spotify, Disney+ and other streaming subscription prices across countries and regions.",
 };

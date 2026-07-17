@@ -114,6 +114,9 @@ systemctl stop geosub-price-pipeline.timer 2>/dev/null || true
 systemctl stop geosub-collector-jobs.timer 2>/dev/null || true
 systemctl stop geosub-discovery-scan.timer 2>/dev/null || true
 systemctl stop geosub-exchange-rate-sync.timer 2>/dev/null || true
+systemctl stop geosub-analytics-aggregation.timer 2>/dev/null || true
+systemctl stop geosub-db-backup.timer 2>/dev/null || true
+systemctl stop geosub-event-retention.timer 2>/dev/null || true
 systemctl stop geosub-web.service 2>/dev/null || true
 
 log "Creating database backup"
@@ -139,6 +142,9 @@ run_as_geosub "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && n
 log "Applying core database migrations"
 bash "$BACKEND_DIR/deploy/linux-arm64/db-apply-sql.sh" core
 
+log "Applying Prisma database migrations"
+run_as_geosub "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && npx prisma migrate deploy"
+
 if [[ "$RUN_CONTENT_MIGRATIONS" == "true" ]]; then
   log "Applying content database migrations"
   bash "$BACKEND_DIR/deploy/linux-arm64/db-apply-sql.sh" content
@@ -151,6 +157,9 @@ chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-price-pipeline.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-collector-jobs.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-discovery-scan.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-exchange-rate-sync.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-analytics-aggregation.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-event-retention.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/db-backup.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/post-deploy-check.sh"
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-web.service" /etc/systemd/system/geosub-web.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-exchange-rate-sync.service" /etc/systemd/system/geosub-exchange-rate-sync.service
@@ -161,12 +170,21 @@ install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-collector-jobs.s
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-collector-jobs.timer" /etc/systemd/system/geosub-collector-jobs.timer
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-discovery-scan.service" /etc/systemd/system/geosub-discovery-scan.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-discovery-scan.timer" /etc/systemd/system/geosub-discovery-scan.timer
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-analytics-aggregation.service" /etc/systemd/system/geosub-analytics-aggregation.service
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-analytics-aggregation.timer" /etc/systemd/system/geosub-analytics-aggregation.timer
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-db-backup.service" /etc/systemd/system/geosub-db-backup.service
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-db-backup.timer" /etc/systemd/system/geosub-db-backup.timer
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-event-retention.service" /etc/systemd/system/geosub-event-retention.service
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-event-retention.timer" /etc/systemd/system/geosub-event-retention.timer
 systemctl daemon-reload
 systemctl enable geosub-web.service
 systemctl enable geosub-exchange-rate-sync.timer
 systemctl enable geosub-price-pipeline.timer
 systemctl enable geosub-collector-jobs.timer
 systemctl enable geosub-discovery-scan.timer
+systemctl enable geosub-analytics-aggregation.timer
+systemctl enable geosub-db-backup.timer
+systemctl enable geosub-event-retention.timer
 
 log "Running database smoke check"
 bash "$BACKEND_DIR/deploy/linux-arm64/db-smoke-check.sh"
@@ -177,9 +195,15 @@ systemctl start geosub-exchange-rate-sync.timer 2>/dev/null || true
 systemctl start geosub-price-pipeline.timer 2>/dev/null || true
 systemctl start geosub-collector-jobs.timer 2>/dev/null || true
 systemctl start geosub-discovery-scan.timer 2>/dev/null || true
+systemctl start geosub-analytics-aggregation.timer 2>/dev/null || true
+systemctl start geosub-db-backup.timer 2>/dev/null || true
+systemctl start geosub-event-retention.timer 2>/dev/null || true
 
 log "Refreshing exchange rates once"
 systemctl start geosub-exchange-rate-sync.service 2>/dev/null || true
+
+log "Refreshing analytics aggregates once"
+systemctl start geosub-analytics-aggregation.service 2>/dev/null || true
 
 log "Running post-deploy check"
 bash "$BACKEND_DIR/deploy/linux-arm64/post-deploy-check.sh"

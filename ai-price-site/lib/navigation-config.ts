@@ -1,6 +1,10 @@
 import type { Locale, NavigationPosition } from "@prisma/client";
+import {
+  siteLocaleDefinitions,
+  type SiteLocale,
+} from "./site-locale";
 
-export type NavigationLocaleValue = "zh" | "en";
+export type NavigationLocaleValue = SiteLocale;
 
 export type NavigationPositionValue = "header" | "footer";
 
@@ -20,18 +24,18 @@ export type NavigationPositionConfig = {
 
 export const navigationLocales: NavigationLocaleConfig[] = [
   {
-    label: "简体中文",
+    label: siteLocaleDefinitions.zh.label,
     value: "zh",
     dbValue: "ZH" as Locale,
-    path: "zh",
-    prefix: "/zh/",
+    path: siteLocaleDefinitions.zh.path,
+    prefix: `/${siteLocaleDefinitions.zh.path}/`,
   },
   {
-    label: "English",
+    label: siteLocaleDefinitions.en.label,
     value: "en",
     dbValue: "EN" as Locale,
-    path: "en",
-    prefix: "/en/",
+    path: siteLocaleDefinitions.en.path,
+    prefix: `/${siteLocaleDefinitions.en.path}/`,
   },
 ];
 

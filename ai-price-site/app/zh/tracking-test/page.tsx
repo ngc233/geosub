@@ -1,7 +1,18 @@
 ﻿import TrackedLink from "../../../components/analytics/TrackedLink";
 import TrackedButton from "../../../components/analytics/TrackedButton";
+import { guardUnreleasedPublicPage } from "../../../lib/public-page-guard";
+
+export const metadata = {
+  title: "埋点测试",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function TrackingTestPage() {
+  guardUnreleasedPublicPage();
+
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-950">
       <div className="mx-auto max-w-3xl">

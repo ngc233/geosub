@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { supportedNavigationLocalePaths } from "./navigation-config";
+import { shouldHideFromPublicNavigation } from "./public-launch-routes";
 
 export type NavigationLinkHealthTone =
   | "success"
@@ -99,6 +100,16 @@ export function getNavigationLinkHealth({
       label: disabled ? "停用异常" : "路径异常",
       tone: "danger",
       detail: "内部链接必须以当前已启用的语言路径开头，例如 /zh/ 或 /en/。",
+    };
+  }
+
+  if (shouldHideFromPublicNavigation(normalizedHref)) {
+    return {
+      label: disabled ? "已停用" : "未上线",
+      tone: disabled ? "muted" : "warning",
+      detail: disabled
+        ? "该菜单对应页面尚未进入公开上线范围，当前停用状态正确。"
+        : "该菜单对应页面尚未上线，请先停用；完成内容、数据和发布检查后再启用。",
     };
   }
 

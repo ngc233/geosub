@@ -9,9 +9,6 @@ export const metadata: Metadata = {
   title: "流媒体订阅价格对比 - Netflix、YouTube Premium、Spotify 全球价格",
   description:
     "比较 Netflix、YouTube Premium、Spotify、Disney+ 等流媒体订阅在不同国家和地区的价格、税费和区域价格差异。",
-  alternates: {
-    canonical: "/zh/streaming-pricing",
-  },
 };
 
 export default async function StreamingPricingPage() {

@@ -108,7 +108,17 @@ async function main() {
     SELECT
       (created_at AT TIME ZONE 'UTC')::date AS stat_date,
       COUNT(*) FILTER (WHERE event_key = 'page_view')::int AS page_views,
-      COUNT(*) FILTER (WHERE event_key LIKE 'click_%')::int AS click_events,
+      COUNT(*) FILTER (
+        WHERE event_key LIKE 'click_%'
+          OR event_key IN (
+            'select_plan',
+            'open_share_modal',
+            'copy_share_link',
+            'download_share_image',
+            'share_to_social',
+            'search_digital_service'
+          )
+      )::int AS click_events,
       COUNT(*) FILTER (WHERE event_key = 'click_affiliate')::int AS click_affiliate,
       COUNT(*) FILTER (WHERE event_key = 'click_official')::int AS click_official,
       COUNT(*) FILTER (WHERE event_key = 'click_button')::int AS click_button,

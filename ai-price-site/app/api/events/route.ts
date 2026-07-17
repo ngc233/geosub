@@ -1,6 +1,12 @@
 ﻿import { randomUUID } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { ANALYTICS_EVENTS } from "../../../lib/analytics-events";
 import { prisma } from "../../../lib/prisma";
+
+const MAX_REQUEST_BYTES = 32 * 1024;
+const MAX_METADATA_BYTES = 8 * 1024;
+const ALLOWED_EVENT_KEYS = new Set<string>(Object.values(ANALYTICS_EVENTS));
 
 function cleanString(value: unknown, maxLength = 500) {
   if (typeof value !== "string") {
@@ -30,6 +36,24 @@ function cleanUuid(value: unknown) {
   return text;
 }
 
+function cleanMetadata(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  try {
+    const serialized = JSON.stringify(value);
+
+    if (Buffer.byteLength(serialized, "utf8") > MAX_METADATA_BYTES) {
+      return undefined;
+    }
+
+    return JSON.parse(serialized) as Prisma.InputJsonValue;
+  } catch {
+    return undefined;
+  }
+}
+
 function getDeviceType(userAgent: string | null) {
   if (!userAgent) {
     return "unknown";
@@ -49,10 +73,27 @@ function getDeviceType(userAgent: string | null) {
 }
 
 export async function POST(request: NextRequest) {
+  const contentLength = Number(request.headers.get("content-length") || "0");
+
+  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Request body is too large.",
+      },
+      {
+        status: 413,
+      }
+    );
+  }
+
   let body: Record<string, unknown> | null = null;
 
   try {
-    body = await request.json();
+    const parsed = await request.json();
+    body = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
   } catch {
     return NextResponse.json(
       {
@@ -91,6 +132,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!ALLOWED_EVENT_KEYS.has(eventKey)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Unsupported eventKey.",
+      },
+      {
+        status: 422,
+      }
+    );
+  }
+
   const existingAnonymousId = request.cookies.get("geosub_anon_id")?.value;
   const anonymousId = existingAnonymousId || randomUUID();
 
@@ -121,10 +174,7 @@ export async function POST(request: NextRequest) {
 
     userAgent: cleanString(userAgent, 1000),
 
-    metadata:
-      body.metadata && typeof body.metadata === "object"
-        ? body.metadata
-        : undefined,
+    metadata: cleanMetadata(body.metadata),
   };
 
   try {

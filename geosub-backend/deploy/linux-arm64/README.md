@@ -21,6 +21,7 @@ systemd timers
   -> geosub-price-pipeline.timer     price collectors + auto-review
   -> geosub-collector-jobs.timer     queued product-level collectors
   -> geosub-discovery-scan.timer     discovery source scanner
+  -> geosub-analytics-aggregation.timer  event_logs -> daily_stats aggregation
 ```
 
 ## Why browser rendering will not slow the website
@@ -140,7 +141,33 @@ sudo systemctl start geosub-discovery-scan.service
 sudo systemctl start geosub-discovery-scan.timer
 ```
 
-11. Run the production post-deploy check:
+11. Install the analytics aggregation timer:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-analytics-aggregation.sh
+sudo systemctl start geosub-analytics-aggregation.service
+sudo systemctl start geosub-analytics-aggregation.timer
+```
+
+The timer refreshes the latest three UTC days every 15 minutes. The admin
+dashboard overlays the current UTC day directly from `event_logs`, so its
+today totals remain live between aggregation runs.
+
+12. Install the verified daily database backup timer:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-db-backup.sh
+sudo systemctl start geosub-db-backup.service
+```
+
+13. Install raw analytics retention. Raw events default to 180 days and are
+deleted only when their UTC day has already been aggregated into `daily_stats`:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-event-retention.sh
+```
+
+14. Run the production post-deploy check:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/post-deploy-check.sh
@@ -158,10 +185,16 @@ systemctl status geosub-exchange-rate-sync.timer
 systemctl status geosub-price-pipeline.timer
 systemctl status geosub-collector-jobs.timer
 systemctl status geosub-discovery-scan.timer
+systemctl status geosub-analytics-aggregation.timer
+systemctl status geosub-db-backup.timer
+systemctl status geosub-event-retention.timer
 journalctl -u geosub-exchange-rate-sync.service -n 200 --no-pager
 journalctl -u geosub-price-pipeline.service -n 200 --no-pager
 journalctl -u geosub-collector-jobs.service -n 200 --no-pager
 journalctl -u geosub-discovery-scan.service -n 200 --no-pager
+journalctl -u geosub-analytics-aggregation.service -n 200 --no-pager
+journalctl -u geosub-db-backup.service -n 200 --no-pager
+journalctl -u geosub-event-retention.service -n 200 --no-pager
 docker ps
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/post-deploy-check.sh
 ```
@@ -174,8 +207,11 @@ Create a production backup before migrations, deployments, or manual data edits:
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-backup.sh
 ```
 
-Backups are written to `/opt/geosub/backups` by default. Each dump has a
-matching `.sha256` checksum file.
+Backups are written to `/opt/geosub/backups` by default. A temporary dump is
+first checked with `pg_restore --list`; only a non-empty valid dump is promoted
+to the final filename. Each dump has matching `.sha256` and metadata files.
+Set `GEOSUB_BACKUP_MIRROR_DIR` to a mounted second disk or remote filesystem to
+keep a second copy outside the main application directory.
 
 Restore is intentionally explicit and destructive:
 
@@ -189,6 +225,20 @@ sudo systemctl start geosub-price-pipeline.timer
 ```
 
 Never restore over a production database without first taking a fresh backup.
+
+## Admin credentials and sessions
+
+The application does not ship a public default password. Seed and password
+rotation commands require credentials through environment variables:
+
+```bash
+cd /opt/geosub/ai-price-site
+sudo -u geosub bash -lc 'set -a; source /etc/geosub/geosub.env; set +a; GEOSUB_ADMIN_EMAIL="you@example.org" GEOSUB_ADMIN_PASSWORD="replace-with-a-long-random-password" npm run admin:set-password'
+```
+
+Password rotation revokes every existing session for that account. Admin
+sessions default to 24 hours and are capped at five active sessions per user.
+Failed logins are rate limited by both source IP and account identifier.
 
 ## Upgrade without redeploying from scratch
 
@@ -206,12 +256,12 @@ The upgrade script performs the production-safe sequence:
 3. Pull the latest backend and frontend code from the configured Git branch.
 4. Install Node dependencies.
 5. Build the Next.js frontend.
-6. Apply core database migrations.
+6. Apply core SQL and Prisma database migrations.
 7. Refresh systemd unit files.
 8. Run a database smoke check.
-9. Enable and restart the web service and timers.
+9. Enable and restart the web service and timers, including backup and retention.
 10. Refresh exchange rates once.
-11. Run the production post-deploy check.
+11. Run the production post-deploy check, including backup freshness.
 12. Record the deployed version and commit.
 
 Environment controls in `/etc/geosub/geosub.env`:

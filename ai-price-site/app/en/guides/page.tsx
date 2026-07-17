@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Subscription and Pricing Guides - GeoSub",
+  title: "Subscription and Pricing Guides",
   description: "Read practical guides about digital subscriptions, regional pricing, gift cards, payments, accounts, and tool comparisons.",
 };
 

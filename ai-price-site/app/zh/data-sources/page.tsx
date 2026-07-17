@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "数据来源与价格口径 - GeoSub",
+  title: "数据来源与价格口径",
   description:
     "GeoSub 当前正式榜单优先使用 App Store 各地区公开订阅价格，并通过汇率、税费规则、异常审核和人工复核记录控制数据质量。",
 };

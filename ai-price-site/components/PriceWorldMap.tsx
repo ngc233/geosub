@@ -211,10 +211,13 @@ function getSummaryLabel({
   return copy.recorded;
 }
 
-function getMarkerMeta(kind: KeyMarker["kind"]) {
+function getMarkerMeta(
+  kind: KeyMarker["kind"],
+  copy: ReturnType<typeof getDetailMapCopy>,
+) {
   if (kind === "min") {
     return {
-      label: "最低",
+      label: copy.lowest,
       dot: "#16a34a",
       border: "#16a34a",
       fill: "#ecfccb",
@@ -224,7 +227,7 @@ function getMarkerMeta(kind: KeyMarker["kind"]) {
 
   if (kind === "max") {
     return {
-      label: "最高",
+      label: copy.highest,
       dot: "#f97316",
       border: "#f97316",
       fill: "#fff7ed",
@@ -233,7 +236,7 @@ function getMarkerMeta(kind: KeyMarker["kind"]) {
   }
 
   return {
-    label: "基准",
+    label: copy.reference,
     dot: "#71717a",
     border: "#d4d4d8",
     fill: "#ffffff",
@@ -623,7 +626,7 @@ export default function PriceWorldMap({
             })}
 
             {keyMarkers.map((marker) => {
-              const meta = getMarkerMeta(marker.kind);
+              const meta = getMarkerMeta(marker.kind, mapCopy);
               const isRightSide = marker.x > WIDTH * 0.58;
               const tagWidth = marker.kind === "reference" ? 94 : 118;
               const tagHeight = 44;

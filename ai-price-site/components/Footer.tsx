@@ -1,8 +1,21 @@
-import Link from "next/link";
-import { getDefaultNavigationItems } from "../lib/navigation-defaults";
-import type { SiteNavigationItem } from "../lib/site-navigation";
+"use client";
 
-const footerCopy = {
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { getDefaultNavigationItems } from "../lib/navigation-defaults";
+import { shouldHideFromPublicNavigation } from "../lib/public-launch-routes";
+import type { SiteNavigationItem } from "../lib/site-navigation";
+import {
+  getSiteLocaleFromPath,
+  stripSiteLocale,
+  withSiteLocale,
+  type SiteLocale,
+} from "../lib/site-locale";
+
+const footerCopy: Record<
+  SiteLocale,
+  { description: string; rights: string; note: string; tagline: string }
+> = {
   zh: {
     description:
       "GeoSub 是全球数字订阅价格数据平台，当前优先整理 AI 订阅和流媒体订阅在不同国家与地区的价格差异。",
@@ -19,41 +32,11 @@ const footerCopy = {
   },
 };
 
-const hiddenFooterPaths = [
-  "/ai-rankings",
-  "/software-subscriptions",
-  "/gaming-steam",
-  "/gift-cards",
-  "/vpn",
-];
-
-function normalizePath(pathname: string) {
-  if (!pathname) return "/";
-  const normalized =
-    pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
-  return normalized || "/";
-}
-
-function stripLocale(pathname: string) {
-  const parts = normalizePath(pathname).split("/");
-  const maybeLocale = parts[1];
-
-  if (maybeLocale === "zh" || maybeLocale === "en") {
-    const stripped = `/${parts.slice(2).join("/")}`;
-    return normalizePath(stripped);
-  }
-
-  return normalizePath(pathname);
-}
-
 function shouldHideHref(href: string) {
-  const path = stripLocale(href);
-  return hiddenFooterPaths.some(
-    (hiddenPath) => path === hiddenPath || path.startsWith(`${hiddenPath}/`),
-  );
+  return shouldHideFromPublicNavigation(stripSiteLocale(href));
 }
 
-function toSiteNavigationItems(locale: string): SiteNavigationItem[] {
+function toSiteNavigationItems(locale: SiteLocale): SiteNavigationItem[] {
   return getDefaultNavigationItems({
     locale,
     position: "footer",
@@ -77,39 +60,21 @@ function filterFooterItems(items: SiteNavigationItem[]) {
     .filter((group) => group.href || (group.children && group.children.length > 0));
 }
 
-function withLocale(href: string, locale: string) {
-  if (href.startsWith("https://") || href.startsWith("http://")) {
-    return href;
-  }
-
-  const cleanHref = href.startsWith("/") ? href : `/${href}`;
-  const alreadyLocalized =
-    cleanHref === `/${locale}` || cleanHref.startsWith(`/${locale}/`);
-
-  if (alreadyLocalized) {
-    return cleanHref;
-  }
-
-  if (cleanHref === "/") {
-    return `/${locale}/`;
-  }
-
-  return `/${locale}${cleanHref}`;
-}
-
 export default function Footer({
-  navItems = [],
-  locale = "zh",
+  navItemsByLocale = {},
 }: {
-  navItems?: SiteNavigationItem[];
-  locale?: string;
+  navItemsByLocale?: Partial<Record<SiteLocale, SiteNavigationItem[]>>;
 }) {
-  const normalizedLocale = locale === "en" ? "en" : "zh";
+  const pathname = usePathname();
+  const currentLocale = getSiteLocaleFromPath(pathname);
+  const localeNavItems = navItemsByLocale[currentLocale] || [];
   const footerItems = filterFooterItems(
-    navItems.length > 0 ? navItems : toSiteNavigationItems(normalizedLocale),
+    localeNavItems.length > 0
+      ? localeNavItems
+      : toSiteNavigationItems(currentLocale),
   );
   const currentYear = new Date().getFullYear();
-  const copy = normalizedLocale === "en" ? footerCopy.en : footerCopy.zh;
+  const copy = footerCopy[currentLocale];
 
   return (
     <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">
@@ -117,7 +82,7 @@ export default function Footer({
         <div className="grid gap-10 lg:grid-cols-[1.25fr_2fr]">
           <div>
             <Link
-              href={`/${normalizedLocale}/`}
+              href={withSiteLocale("/", currentLocale)}
               className="inline-flex items-center gap-2 text-zinc-950 transition hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
               aria-label="GeoSub"
             >
@@ -147,7 +112,7 @@ export default function Footer({
                     href={
                       group.external
                         ? group.href
-                        : withLocale(group.href, normalizedLocale)
+                        : withSiteLocale(group.href, currentLocale)
                     }
                     className="text-sm font-black text-zinc-950 transition hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
                   >
@@ -162,7 +127,7 @@ export default function Footer({
                           href={
                             item.external
                               ? item.href
-                              : withLocale(item.href, normalizedLocale)
+                              : withSiteLocale(item.href, currentLocale)
                           }
                           className="block text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
                         >

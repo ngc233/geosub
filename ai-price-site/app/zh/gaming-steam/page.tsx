@@ -1,9 +1,15 @@
 ﻿import type { Metadata } from "next";
 
+import { guardUnreleasedPublicPage } from "../../../lib/public-page-guard";
+
 export const metadata: Metadata = {
   title: "游戏与 Steam 区域价格对比 - Steam、Xbox、PlayStation、Nintendo",
   description:
     "比较 Steam、Xbox、PlayStation、Nintendo、游戏订阅和充值卡在不同国家和地区的价格差异。",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 const gamingItems = [
@@ -34,6 +40,8 @@ const gamingItems = [
 ];
 
 export default function GamingSteamPage() {
+  guardUnreleasedPublicPage();
+
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
       <section className="mx-auto max-w-6xl">

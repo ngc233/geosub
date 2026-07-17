@@ -1,6 +1,7 @@
 param(
   [int]$Limit = 5,
   [string]$JobId,
+  [string]$CollectorKind,
   [string]$ContainerName = "geosub-postgres",
   [string]$DbName = "geosub_app",
   [string]$DbUser = "geosub_admin",
@@ -99,10 +100,14 @@ function Get-DueJobs {
   } else {
     "AND job.id = $(Quote-SqlString $JobId)::uuid"
   }
+  $collectorKindFilterSql = if ([string]::IsNullOrWhiteSpace($CollectorKind)) {
+    ""
+  } else {
+    "AND COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = $(Quote-SqlString $CollectorKind)"
+  }
 
   $jobs = Invoke-PsqlJson @"
-SELECT COALESCE(json_agg(row_to_json(j)), '[]'::json)
-FROM (
+WITH ranked_jobs AS (
   SELECT
     job.id,
     job.product_id,
@@ -115,19 +120,47 @@ FROM (
     product.slug AS product_slug,
     product.name AS product_name,
     source.type::text AS source_type,
-    source.base_url AS source_url
+    source.base_url AS source_url,
+    job.priority,
+    job.created_at,
+    COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') AS collector_kind_key,
+    ROW_NUMBER() OVER (
+      PARTITION BY
+        job.product_id,
+        COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown')
+      ORDER BY job.priority DESC, job.next_run_at NULLS FIRST, job.created_at
+    ) AS product_kind_rank
   FROM collector_jobs job
   JOIN products product ON product.id = job.product_id
   LEFT JOIN price_sources source ON source.id = job.source_id
   WHERE job.status = 'active'
     AND job.job_type = 'ai_pricing'
     $jobFilterSql
+    $collectorKindFilterSql
     AND (
       $forceSql
       OR job.next_run_at IS NULL
       OR job.next_run_at <= NOW()
     )
-  ORDER BY job.priority DESC, job.next_run_at NULLS FIRST, job.created_at
+)
+SELECT COALESCE(json_agg(row_to_json(j)), '[]'::json)
+FROM (
+  SELECT
+    id,
+    product_id,
+    source_id,
+    job_type,
+    schedule,
+    status,
+    next_run_at,
+    job_config,
+    product_slug,
+    product_name,
+    source_type,
+    source_url
+  FROM ranked_jobs
+  WHERE product_kind_rank = 1
+  ORDER BY priority DESC, next_run_at NULLS FIRST, created_at
   LIMIT $Limit
 ) j;
 "@
@@ -683,6 +716,7 @@ WHERE id = $(Quote-SqlString $Job.id)::uuid;
 Queue-AnomalyRechecks
 
 $jobs = @(Get-DueJobs)
+$requestedRunId = $RunId
 
 if ($jobs.Count -eq 0) {
   Write-Host "No collector jobs are due."
@@ -700,7 +734,8 @@ $summary = @{
 foreach ($job in $jobs) {
   $summary.checked += 1
   $startedAt = Get-Date
-  $runId = Start-JobRun -Job $job -StartedAt $startedAt -ExistingRunId $RunId
+  $existingRunId = if ($summary.checked -eq 1) { $requestedRunId } else { $null }
+  $jobRunId = Start-JobRun -Job $job -StartedAt $startedAt -ExistingRunId $existingRunId
   Write-Host "Running collector job: $($job.id) product=$($job.product_slug)"
 
   try {
@@ -711,7 +746,7 @@ foreach ($job in $jobs) {
     if ($result.Status -eq "succeeded" -and $result.CollectorKind -eq "app_store") {
       $summary.appStoreSucceeded += 1
     }
-    Complete-JobRun -Job $job -Result $result -StartedAt $startedAt -RunId $runId
+    Complete-JobRun -Job $job -Result $result -StartedAt $startedAt -RunId $jobRunId
   } catch {
     $summary.failed += 1
     $failedResult = [pscustomobject]@{
@@ -721,7 +756,7 @@ foreach ($job in $jobs) {
       Error = $_.Exception.Message
       RawPayload = @{ error = $_.Exception.Message }
     }
-    Complete-JobRun -Job $job -Result $failedResult -StartedAt $startedAt -RunId $runId
+    Complete-JobRun -Job $job -Result $failedResult -StartedAt $startedAt -RunId $jobRunId
     Write-Host "Failed: $($_.Exception.Message)"
   }
 }

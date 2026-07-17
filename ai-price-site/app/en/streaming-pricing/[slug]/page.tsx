@@ -1,10 +1,3 @@
-import { redirect } from "next/navigation";
+export const dynamic = "force-dynamic";
 
-export default async function EnglishStreamingDetailRedirect({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  redirect(`/en/ai-pricing/${slug}/`);
-}
+export { generateMetadata, default } from "../../ai-pricing/[slug]/page";

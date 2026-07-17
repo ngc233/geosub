@@ -1,29 +1,17 @@
-import { headers } from "next/headers";
 import Footer from "./Footer";
 import {
-  getSiteNavigation,
-  type SiteNavigationItem,
+  getSiteNavigationByLocale,
+  type SiteNavigationByLocale,
 } from "../lib/site-navigation";
 
-async function getCurrentLocale() {
-  const headerList = await headers();
-  const locale = headerList.get("x-geosub-locale");
-
-  return locale === "en" ? "en" : "zh";
-}
-
 export default async function FooterShell() {
-  const locale = await getCurrentLocale();
-  let navItems: SiteNavigationItem[] = [];
+  let navItemsByLocale: SiteNavigationByLocale = {};
 
   try {
-    navItems = await getSiteNavigation({
-      locale,
-      position: "FOOTER",
-    });
+    navItemsByLocale = await getSiteNavigationByLocale("FOOTER");
   } catch {
-    navItems = [];
+    navItemsByLocale = {};
   }
 
-  return <Footer navItems={navItems} locale={locale} />;
+  return <Footer navItemsByLocale={navItemsByLocale} />;
 }

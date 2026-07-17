@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { guardUnreleasedPublicPage } from "../../../lib/public-page-guard";
 
 export const metadata: Metadata = {
-  title: "AI Tool Rankings Under Review - GeoSub",
+  title: "AI Tool Rankings Under Review",
   description:
     "GeoSub AI tool rankings are under review while model coverage, scoring evidence, pricing data and editorial checks are improved.",
   robots: {
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default function EnglishAiRankingsPage() {
+  guardUnreleasedPublicPage();
+
   return (
     <main className="mx-auto flex min-h-[60vh] max-w-3xl items-center px-6 py-20">
       <div>

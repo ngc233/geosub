@@ -328,7 +328,7 @@ export default async function EditProductPage({
               name="title"
               label="SEO 标题 *"
               required
-              defaultValue={productSeoMeta?.title || `${product.name} 全球价格对比 - GeoSub`}
+              defaultValue={productSeoMeta?.title || `${product.name} 全球价格对比`}
               helperText="建议包含产品名、价格对比、地区或订阅关键词。"
             />
 

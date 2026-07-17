@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply GeoSub raw analytics retention every day
+
+[Timer]
+OnCalendar=*-*-* 04:30:00
+RandomizedDelaySec=20min
+Persistent=true
+Unit=geosub-event-retention.service
+
+[Install]
+WantedBy=timers.target

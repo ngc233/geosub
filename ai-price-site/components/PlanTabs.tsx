@@ -1,17 +1,50 @@
 ﻿import SegmentedControl from "./ui/SegmentedControl";
 import type { ProductPlan } from "../data/ai-pricing";
+import type { SiteLocale } from "../lib/site-locale";
 
 type PlanTabsProps = {
+  productName: string;
   productSlug: string;
   plans: ProductPlan[];
   activePlanSlug: string;
   basePath?: string;
-  locale?: "zh" | "en";
+  locale?: SiteLocale;
 };
 
-function getShortPlanName(name: string) {
+const planTabsCopy: Record<
+  SiteLocale,
+  {
+    ariaLabel: string;
+    pending: string;
+    pendingShort: string;
+    noPrice: string;
+    noPriceShort: string;
+  }
+> = {
+  zh: {
+    ariaLabel: "套餐切换",
+    pending: "待审核",
+    pendingShort: "待审",
+    noPrice: "暂无价格",
+    noPriceShort: "暂无",
+  },
+  en: {
+    ariaLabel: "Plan selector",
+    pending: "pending",
+    pendingShort: "pending",
+    noPrice: "no price",
+    noPriceShort: "no price",
+  },
+};
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getShortPlanName(name: string, productName: string) {
+  const productPrefix = new RegExp(`^${escapeRegExp(productName)}\\s+`, "i");
   const shortened = name
-    .replace(/^(ChatGPT|Claude|Gemini|Google AI|Google)\s+/i, "")
+    .replace(productPrefix, "")
     .replace(/\s+Subscription$/i, "")
     .trim();
 
@@ -19,6 +52,7 @@ function getShortPlanName(name: string) {
 }
 
 export default function PlanTabs({
+  productName,
   productSlug,
   plans,
   activePlanSlug,
@@ -29,9 +63,11 @@ export default function PlanTabs({
     return null;
   }
 
+  const copy = planTabsCopy[locale];
+
   return (
     <SegmentedControl
-      ariaLabel="套餐切换"
+      ariaLabel={copy.ariaLabel}
       value={activePlanSlug}
       tone="green"
       items={plans.map((plan) => ({
@@ -39,23 +75,21 @@ export default function PlanTabs({
           plan.regions.length > 0
             ? plan.name
             : plan.priceStatus === "pending"
-              ? locale === "en"
-                ? `${plan.name} pending`
-                : `${plan.name} 待审核`
-              : locale === "en"
-                ? `${plan.name} no price`
-                : `${plan.name} 暂无价格`,
+              ? `${plan.name} ${copy.pending}`
+              : `${plan.name} ${copy.noPrice}`,
         shortLabel:
           plan.regions.length > 0
-            ? getShortPlanName(plan.name)
+            ? getShortPlanName(plan.name, productName)
             : plan.priceStatus === "pending"
-              ? locale === "en"
-                ? `${getShortPlanName(plan.name)} pending`
-                : `${getShortPlanName(plan.name)} 待审`
-              : locale === "en"
-                ? `${getShortPlanName(plan.name)} no price`
-                : `${getShortPlanName(plan.name)} 暂无`,
+              ? `${getShortPlanName(plan.name, productName)} ${copy.pendingShort}`
+              : `${getShortPlanName(plan.name, productName)} ${copy.noPriceShort}`,
         value: plan.slug,
+        tracking: {
+          event: "select_plan",
+          name: "Select subscription plan",
+          button: `${productSlug}:${plan.slug}`,
+          placement: "plan_tabs",
+        },
         href:
           plan.regions.length > 0
             ? `${basePath.replace(/\/$/, "")}/${productSlug}/?plan=${plan.slug}`
