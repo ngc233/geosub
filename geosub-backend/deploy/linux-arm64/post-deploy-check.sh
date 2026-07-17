@@ -231,7 +231,8 @@ if (( failures == 0 )); then
     "sql/057_quarantine_published_app_store_price_outliers.sql" \
     "sql/058_normalize_disney_app_store_plans.sql" \
     "sql/059_stale_app_store_price_lifecycle.sql" \
-    "sql/060_reclassify_app_store_selection_false_positives.sql"; do
+    "sql/060_reclassify_app_store_selection_false_positives.sql" \
+    "sql/061_ignore_legacy_non_primary_app_store_tiers.sql"; do
     check_migration "$migration"
   done
 

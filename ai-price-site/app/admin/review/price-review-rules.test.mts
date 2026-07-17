@@ -54,6 +54,14 @@ const selectionFalsePositiveReclassificationSql = readFileSync(
   "utf8",
 );
 
+const legacyTierCleanupSql = readFileSync(
+  resolve(
+    repoRoot,
+    "geosub-backend/sql/061_ignore_legacy_non_primary_app_store_tiers.sql",
+  ),
+  "utf8",
+);
+
 const appStoreCollector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
@@ -148,6 +156,16 @@ test("existing collector false positives are reclassified without publishing the
   assert.match(selectionFalsePositiveReclassificationSql, /anomaly_flag = FALSE/);
   assert.match(selectionFalsePositiveReclassificationSql, /observation\.status = 'pending'/);
   assert.doesNotMatch(selectionFalsePositiveReclassificationSql, /status\s*=\s*'approved'/);
+});
+
+test("legacy non-primary App Store tiers are retained as ignored evidence", () => {
+  assert.match(legacyTierCleanupSql, /product\.slug = 'manus'/);
+  assert.match(legacyTierCleanupSql, /plan\.slug = 'pro'/);
+  assert.match(legacyTierCleanupSql, /status = 'ignored'/);
+  assert.match(legacyTierCleanupSql, /superseded_non_primary_app_store_tier/);
+  assert.match(legacyTierCleanupSql, /observation\.converted_usd > 140\.0 \* 1\.03/);
+  assert.doesNotMatch(legacyTierCleanupSql, /DELETE FROM price_observations/);
+  assert.doesNotMatch(legacyTierCleanupSql, /status\s*=\s*'approved'/);
 });
 
 test("tracked products and plans keep explicit sanity ranges", () => {

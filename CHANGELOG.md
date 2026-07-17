@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.6 - 2026-07-18
+
+- Automatically ignored legacy Manus Pro non-primary tier observations that predated plan-level price selection, retaining their evidence while preventing stability approval.
+- Added deployment and regression guards for the legacy tier cleanup migration.
+
 ## 1.0.5 - 2026-07-18
 
 - Added a default 3% exchange-rate tolerance around App Store plan sanity ranges so legitimate local prices are not blocked by small FX movements.

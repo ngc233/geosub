@@ -105,6 +105,7 @@ test("current price data repairs remain required core migrations", () => {
   const migrationNames = [
     "sql/058_normalize_disney_app_store_plans.sql",
     "sql/060_reclassify_app_store_selection_false_positives.sql",
+    "sql/061_ignore_legacy_non_primary_app_store_tiers.sql",
   ];
   const migrationRunner = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/db-apply-sql.sh"
