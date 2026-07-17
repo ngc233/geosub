@@ -9,6 +9,8 @@ type PlanSpec = {
   name: string;
   aliases: string[];
   sort_order: number;
+  price_selection_strategy?: string;
+  expected_range_tolerance_percent?: number;
   expected_monthly_usd_min: number;
   expected_monthly_usd_max: number;
 };
@@ -40,6 +42,14 @@ const publishedOutlierQuarantineSql = readFileSync(
   resolve(
     repoRoot,
     "geosub-backend/sql/057_quarantine_published_app_store_price_outliers.sql",
+  ),
+  "utf8",
+);
+
+const selectionFalsePositiveReclassificationSql = readFileSync(
+  resolve(
+    repoRoot,
+    "geosub-backend/sql/060_reclassify_app_store_selection_false_positives.sql",
   ),
   "utf8",
 );
@@ -120,6 +130,24 @@ test("collector compares parsed App Store prices against plan-specific USD range
   assert.match(appStoreCollector, /Converted App Store price is below the expected range/);
   assert.match(appStoreCollector, /Converted App Store price is above the expected range/);
   assert.match(appStoreCollector, /runnerUpExpectedFitPenalty/);
+  assert.match(appStoreCollector, /expected_range_tolerance_percent/);
+  assert.match(appStoreCollector, /\$tolerancePercent = \[decimal\]3/);
+});
+
+test("tiered App Store plans can explicitly choose their lowest valid monthly tier", () => {
+  assert.equal(productPlanSpecs.manus.plans.find((plan) => plan.slug === "pro")?.price_selection_strategy, "lowest_in_expected_range");
+  assert.match(appStoreCollector, /Get-AppStorePriceSelectionStrategy/);
+  assert.match(appStoreCollector, /\$hasExplicitTierStrategy/);
+  assert.match(appStoreCollector, /if \(\$strategy -eq "lowest_in_expected_range"\)/);
+});
+
+test("existing collector false positives are reclassified without publishing them directly", () => {
+  assert.match(selectionFalsePositiveReclassificationSql, /product\.slug = 'manus'/);
+  assert.match(selectionFalsePositiveReclassificationSql, /product\.slug = 'netflix'/);
+  assert.match(selectionFalsePositiveReclassificationSql, /observation\.anomaly_flag = TRUE/);
+  assert.match(selectionFalsePositiveReclassificationSql, /anomaly_flag = FALSE/);
+  assert.match(selectionFalsePositiveReclassificationSql, /observation\.status = 'pending'/);
+  assert.doesNotMatch(selectionFalsePositiveReclassificationSql, /status\s*=\s*'approved'/);
 });
 
 test("tracked products and plans keep explicit sanity ranges", () => {
@@ -161,9 +189,9 @@ test("Disney App Store plans collapse to three canonical monthly tiers", () => {
   for (const localizedAlias of [
     "estandar con anuncios",
     "padrao mensal",
-    "スタンダード",
-    "프리미엄",
-    "高級",
+    "広告付きスタンダード",
+    "스탠다드",
+    "高级套餐",
   ]) {
     assert.ok(aliases.includes(localizedAlias), `missing Disney+ alias: ${localizedAlias}`);
   }

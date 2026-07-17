@@ -905,6 +905,56 @@ SELECT json_build_object(
 "@
 }
 
+function Get-AppStoreExpectedRange {
+  param(
+    [AllowNull()][object]$PlanSpec = $null
+  )
+
+  if (
+    $null -eq $PlanSpec -or
+    !($PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_min") -or
+    !($PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_max") -or
+    $null -eq $PlanSpec.expected_monthly_usd_min -or
+    $null -eq $PlanSpec.expected_monthly_usd_max
+  ) {
+    return $null
+  }
+
+  $tolerancePercent = [decimal]3
+  if (
+    $PlanSpec.PSObject.Properties.Name -contains "expected_range_tolerance_percent" -and
+    $null -ne $PlanSpec.expected_range_tolerance_percent
+  ) {
+    $tolerancePercent = [math]::Max([decimal]0, [decimal]$PlanSpec.expected_range_tolerance_percent)
+  }
+
+  $toleranceRatio = $tolerancePercent / [decimal]100
+  $expectedMin = [decimal]$PlanSpec.expected_monthly_usd_min
+  $expectedMax = [decimal]$PlanSpec.expected_monthly_usd_max
+
+  return [pscustomobject]@{
+    Min = [math]::Max([decimal]0, $expectedMin * ([decimal]1 - $toleranceRatio))
+    Max = $expectedMax * ([decimal]1 + $toleranceRatio)
+    TolerancePercent = $tolerancePercent
+  }
+}
+
+function Get-AppStorePriceSelectionStrategy {
+  param(
+    [AllowNull()][object]$PlanSpec = $null
+  )
+
+  if (
+    $null -ne $PlanSpec -and
+    $PlanSpec.PSObject.Properties.Name -contains "price_selection_strategy" -and
+    ![string]::IsNullOrWhiteSpace([string]$PlanSpec.price_selection_strategy)
+  ) {
+    return ([string]$PlanSpec.price_selection_strategy).Trim().ToLowerInvariant()
+  }
+
+  return "consensus"
+}
+
 function Get-AppStoreObservationAnomaly {
   param(
     [string]$CountryCurrency,
@@ -937,20 +987,13 @@ function Get-AppStoreObservationAnomaly {
     $reasons += "Parsed currency is USD for a non-USD storefront, but the original price text did not explicitly contain USD."
   }
 
-  if ($null -ne $PlanSpec) {
-    if (
-      $PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_min" -and
-      $null -ne $PlanSpec.expected_monthly_usd_min -and
-      $ConvertedUsd -lt [decimal]$PlanSpec.expected_monthly_usd_min
-    ) {
+  $expectedRange = Get-AppStoreExpectedRange -PlanSpec $PlanSpec
+  if ($null -ne $expectedRange) {
+    if ($ConvertedUsd -lt [decimal]$expectedRange.Min) {
       $reasons += "Converted App Store price is below the expected range for $($PlanSpec.slug). This may indicate a currency or decimal parsing error."
     }
 
-    if (
-      $PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_max" -and
-      $null -ne $PlanSpec.expected_monthly_usd_max -and
-      $ConvertedUsd -gt [decimal]$PlanSpec.expected_monthly_usd_max
-    ) {
+    if ($ConvertedUsd -gt [decimal]$expectedRange.Max) {
       $reasons += "Converted App Store price is above the expected range for $($PlanSpec.slug). This may indicate a currency, billing-cycle, or decimal parsing error."
     }
   }
@@ -961,8 +1004,11 @@ function Get-AppStoreObservationAnomaly {
     $runnerUpCount = if ($null -ne $PriceSelection.runnerUpCount) { [int]$PriceSelection.runnerUpCount } else { 0 }
     $selectedPenalty = if ($null -ne $PriceSelection.expectedFitPenalty) { [decimal]$PriceSelection.expectedFitPenalty } else { [decimal]0 }
     $runnerUpPenalty = if ($null -ne $PriceSelection.runnerUpExpectedFitPenalty) { [decimal]$PriceSelection.runnerUpExpectedFitPenalty } else { [decimal]0 }
+    $selectionStrategy = Get-AppStorePriceSelectionStrategy -PlanSpec $PlanSpec
+    $hasExplicitTierStrategy = $selectionStrategy -eq "lowest_in_expected_range" -and $selectedPenalty -eq 0
 
     if (
+      !$hasExplicitTierStrategy -and
       $variantCount -gt 1 -and
       $selectedCount -le $runnerUpCount -and
       ($null -eq $PlanSpec -or $selectedPenalty -ge $runnerUpPenalty)
@@ -991,12 +1037,8 @@ function Get-AppStorePriceSelectionPenalty {
     return [decimal]0
   }
 
-  if (
-    !($PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_min") -or
-    !($PlanSpec.PSObject.Properties.Name -contains "expected_monthly_usd_max") -or
-    $null -eq $PlanSpec.expected_monthly_usd_min -or
-    $null -eq $PlanSpec.expected_monthly_usd_max
-  ) {
+  $expectedRange = Get-AppStoreExpectedRange -PlanSpec $PlanSpec
+  if ($null -eq $expectedRange) {
     return [decimal]0
   }
 
@@ -1016,8 +1058,8 @@ function Get-AppStorePriceSelectionPenalty {
     return [decimal]999999
   }
 
-  $expectedMin = [decimal]$PlanSpec.expected_monthly_usd_min
-  $expectedMax = [decimal]$PlanSpec.expected_monthly_usd_max
+  $expectedMin = [decimal]$expectedRange.Min
+  $expectedMax = [decimal]$expectedRange.Max
 
   if ($convertedUsd -ge $expectedMin -and $convertedUsd -le $expectedMax) {
     return [decimal]0
@@ -1445,7 +1487,13 @@ foreach ($countryCode in $CountryCodes) {
       $candidateItemsBySlug[$planSlug] |
         Group-Object -Property Currency, RawPrice |
         Sort-Object `
-          @{ Expression = "Count"; Descending = $true },
+          @{
+            Expression = {
+              $strategy = Get-AppStorePriceSelectionStrategy -PlanSpec $_.Group[0].PlanSpec
+              if ($strategy -eq "lowest_in_expected_range") { [decimal]0 } else { -[decimal]$_.Count }
+            }
+            Descending = $false
+          },
           @{
             Expression = {
               Get-AppStorePriceSelectionPenalty `
@@ -1458,6 +1506,14 @@ foreach ($countryCode in $CountryCodes) {
             }
             Descending = $false
           },
+          @{
+            Expression = {
+              $strategy = Get-AppStorePriceSelectionStrategy -PlanSpec $_.Group[0].PlanSpec
+              if ($strategy -eq "lowest_in_expected_range") { [decimal]$_.Group[0].RawPrice } else { [decimal]0 }
+            }
+            Descending = $false
+          },
+          @{ Expression = "Count"; Descending = $true },
           @{ Expression = { [decimal]$_.Group[0].RawPrice }; Descending = $false }
     )
 

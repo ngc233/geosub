@@ -101,8 +101,11 @@ test("price quality gate requires the database automation functions", () => {
   assert.match(source, /Missing required database function\(s\)/);
 });
 
-test("the current Disney plan repair is a required core migration", () => {
-  const migrationName = "sql/058_normalize_disney_app_store_plans.sql";
+test("current price data repairs remain required core migrations", () => {
+  const migrationNames = [
+    "sql/058_normalize_disney_app_store_plans.sql",
+    "sql/060_reclassify_app_store_selection_false_positives.sql",
+  ];
   const migrationRunner = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/db-apply-sql.sh"
   );
@@ -110,6 +113,8 @@ test("the current Disney plan repair is a required core migration", () => {
     "../geosub-backend/deploy/linux-arm64/post-deploy-check.sh"
   );
 
-  assert.ok(migrationRunner.includes(migrationName));
-  assert.ok(postDeploy.includes(migrationName));
+  for (const migrationName of migrationNames) {
+    assert.ok(migrationRunner.includes(migrationName));
+    assert.ok(postDeploy.includes(migrationName));
+  }
 });

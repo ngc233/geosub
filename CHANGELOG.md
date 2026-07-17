@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.5 - 2026-07-18
+
+- Added a default 3% exchange-rate tolerance around App Store plan sanity ranges so legitimate local prices are not blocked by small FX movements.
+- Added a declarative lowest-valid-tier selection strategy for subscriptions advertised with a starting price, while preserving ambiguity blocking for ordinary plans.
+- Reclassified existing Manus tier and Netflix Switzerland false positives back into the normal stability-review flow without publishing them directly.
+- Repaired corrupted Disney+ Japanese, Korean, Simplified Chinese, and Traditional Chinese plan aliases so the shared product-plan rules remain valid UTF-8 JSON.
+
 ## 1.0.4 - 2026-07-18
 
 - Prevented collector dry runs, including post-deploy startup checks, from changing job status, retry timing, counters, or run history.
