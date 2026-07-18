@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const chromium = await loadChromium();
@@ -16,6 +16,7 @@ for (let index = 2; index < process.argv.length; index += 2) {
 const country = (args.get("country") ?? "US").toLowerCase();
 const appId = args.get("app-id") ?? "6448311069";
 const configuredUrl = args.get("url");
+const outputFile = args.get("output-file");
 const executablePath = resolveBrowserPath(args.get("chrome-path") ?? process.env.CHROME_PATH);
 const url = getAppStoreUrl(country, appId, configuredUrl);
 
@@ -157,7 +158,12 @@ try {
     capturedAt: new Date().toISOString()
   };
 
-  process.stdout.write(JSON.stringify(result));
+  const serializedResult = JSON.stringify(result);
+  if (outputFile) {
+    writeFileSync(outputFile, serializedResult, "utf8");
+  } else {
+    process.stdout.write(serializedResult);
+  }
 } finally {
   await browser.close();
 }

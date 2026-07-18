@@ -17,7 +17,7 @@ Docker Compose
   -> geosub-directus                 content/admin CMS
 
 systemd timers
-  -> geosub-exchange-rate-sync.timer  USD/CNY exchange-rate refresh
+  -> geosub-exchange-rate-sync.timer  App Store currency refresh
   -> geosub-price-pipeline.timer     price collectors + auto-review
   -> geosub-collector-jobs.timer     queued product-level collectors
   -> geosub-discovery-scan.timer     discovery source scanner
@@ -111,8 +111,10 @@ sudo systemctl start geosub-exchange-rate-sync.service
 sudo systemctl start geosub-exchange-rate-sync.timer
 ```
 
-The public site can show CNY estimates only after this job has written a fresh
-USD/CNY rate. The default timer refreshes every 12 hours.
+The public site can show CNY estimates and collectors can convert regional
+prices only after this job has written all required USD quote rates. The
+default timer refreshes every 12 hours; collectors reject rates older than 18
+hours.
 
 8. Install the price pipeline timer:
 

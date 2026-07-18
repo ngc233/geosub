@@ -14,6 +14,7 @@ import {
   AdminPageHeader,
   AdminStatCard,
 } from "../../../../components/admin/AdminCard";
+import { DEFAULT_APP_STORE_COUNTRY_CODES } from "../../../../lib/app-store-country-policy";
 import { prisma } from "../../../../lib/prisma";
 import CollectorRunTimeline, {
   CollectorRunOutcomeSummary,
@@ -24,29 +25,6 @@ import ManualCollectionProgressForm from "../../review/ManualCollectionProgressF
 import { reviewReasonAction, reviewReasonLabel } from "../../review/review-reason-copy";
 
 export const dynamic = "force-dynamic";
-
-const COMMON_APP_STORE_COUNTRY_CODES = [
-  "US",
-  "JP",
-  "GB",
-  "DE",
-  "FR",
-  "IN",
-  "TR",
-  "BR",
-  "CA",
-  "SG",
-  "AU",
-  "KR",
-  "MX",
-  "ID",
-  "PH",
-  "TH",
-  "MY",
-  "VN",
-  "ZA",
-  "AE",
-];
 
 type ProductSummaryRow = {
   id: string;
@@ -222,6 +200,44 @@ function availabilityLabel(status: string | null) {
   if (status === "blocked") return "访问受限";
   if (status === "unknown_error") return "检测异常";
   return status || "未检测";
+}
+
+function missingPlanCountryLabel(row: MissingCountryRow) {
+  if (row.pending_observation_count > 0) {
+    return `已采集，等待自动审核 ${row.pending_observation_count} 条`;
+  }
+
+  if (row.latest_availability_status === "available_with_prices") {
+    return "该套餐尚缺正式价格";
+  }
+
+  if (
+    row.latest_availability_status === "blocked" ||
+    row.latest_availability_status === "unknown_error"
+  ) {
+    return "采集受阻，等待自动重试";
+  }
+
+  return "尚未完成该套餐采集";
+}
+
+function missingPlanCountryDetail(row: MissingCountryRow) {
+  if (row.pending_observation_count > 0) {
+    return "系统已取得候选价格，稳定样本通过后会自动写入正式价格库。";
+  }
+
+  if (row.latest_availability_status === "available_with_prices") {
+    return "产品页可以访问，但该套餐在此地区仍缺少可发布的稳定价格。";
+  }
+
+  if (
+    row.latest_availability_status === "blocked" ||
+    row.latest_availability_status === "unknown_error"
+  ) {
+    return "系统会按退避策略自动重试，无需逐地区人工核验。";
+  }
+
+  return "系统尚未取得该地区的稳定套餐价格，将由覆盖补采任务继续处理。";
 }
 
 function levelClasses(level: DiagnosisLevel) {
@@ -512,10 +528,18 @@ async function getProductSummary(slug: string) {
 async function getPlanCoverageRows(productId: string) {
   return prisma.$queryRaw<PlanCoverageRow[]>`
     WITH target_country AS (
-      SELECT id, code
-      FROM countries
-      WHERE code IN (${Prisma.join(COMMON_APP_STORE_COUNTRY_CODES)})
-        AND code NOT IN ('CN', 'HK')
+      SELECT country.id, country.code
+      FROM countries country
+      WHERE country.code IN (${Prisma.join(DEFAULT_APP_STORE_COUNTRY_CODES)})
+        AND country.code NOT IN ('CN', 'HK')
+        AND NOT EXISTS (
+          SELECT 1
+          FROM app_store_availability_latest_view availability
+          WHERE availability.product_id = ${productId}::uuid
+            AND availability.country_id = country.id
+            AND availability.billing_platform = 'ios'::billing_platform
+            AND availability.status IN ('not_available', 'available_no_iap')
+        )
     )
     SELECT
       plan.id::text AS plan_id,
@@ -590,10 +614,24 @@ async function getPlanCoverageRows(productId: string) {
 async function getMissingCountryRows(productId: string, limit = 80) {
   return prisma.$queryRaw<MissingCountryRow[]>`
     WITH target_country AS (
-      SELECT id, code, name_zh, name_en, currency, sort_order
-      FROM countries
-      WHERE code IN (${Prisma.join(COMMON_APP_STORE_COUNTRY_CODES)})
-        AND code NOT IN ('CN', 'HK')
+      SELECT
+        country.id,
+        country.code,
+        country.name_zh,
+        country.name_en,
+        country.currency,
+        country.sort_order
+      FROM countries country
+      WHERE country.code IN (${Prisma.join(DEFAULT_APP_STORE_COUNTRY_CODES)})
+        AND country.code NOT IN ('CN', 'HK')
+        AND NOT EXISTS (
+          SELECT 1
+          FROM app_store_availability_latest_view availability
+          WHERE availability.product_id = ${productId}::uuid
+            AND availability.country_id = country.id
+            AND availability.billing_platform = 'ios'::billing_platform
+            AND availability.status IN ('not_available', 'available_no_iap')
+        )
     ),
     plan_scope AS (
       SELECT id, slug, name, sort_order
@@ -870,6 +908,8 @@ export default async function ProductDataQualityPage({
       sum + Math.max(0, plan.common_country_count - plan.common_published_country_count),
     0,
   );
+  const eligibleCountryCount =
+    plans[0]?.common_country_count ?? DEFAULT_APP_STORE_COUNTRY_CODES.length;
   const conclusion = getDiagnosisConclusion(product, commonMissingCount);
   const conclusionClasses = levelClasses(conclusion.level);
   const ConclusionIcon = conclusionClasses.icon;
@@ -953,7 +993,11 @@ export default async function ProductDataQualityPage({
         <AdminStatCard label="套餐" value={product.plan_count} helper={categoryLabel(product.category)} />
         <AdminStatCard label="采集任务" value={product.app_store_job_count} helper={`到期 ${product.due_job_count}`} />
         <AdminStatCard label="正式价" value={product.published_price_count} helper={`${product.published_country_count} 地区`} />
-        <AdminStatCard label="常见缺口" value={commonMissingCount} helper={`${COMMON_APP_STORE_COUNTRY_CODES.length} 个核心地区`} />
+        <AdminStatCard
+          label="默认地区缺口"
+          value={commonMissingCount}
+          helper={`${eligibleCountryCount} 个可采集地区`}
+        />
         <AdminStatCard label="待审" value={product.pending_observation_count} helper={`异常 ${product.pending_anomaly_count}`} />
         <AdminStatCard label="硬异常" value={product.hard_anomaly_count} helper="不会自动上线" />
       </div>
@@ -1023,7 +1067,7 @@ export default async function ProductDataQualityPage({
             <div>
               <h2 className="text-lg font-bold text-slate-950">常见国家缺口</h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                这里只列核心地区。若某国家显示“可用但无订阅”或“地区不可用”，通常不是采集脚本失败。
+                已确认“无订阅”或“地区不可用”的国家不会计入套餐缺口；这里只显示仍需系统补采或审核的套餐地区。
               </p>
             </div>
           </div>
@@ -1051,15 +1095,11 @@ export default async function ProductDataQualityPage({
                     </td>
                     <td className="px-3 py-3">
                       <div className="font-semibold text-slate-700">
-                        {row.pending_observation_count > 0
-                          ? `待审 ${row.pending_observation_count}`
-                          : availabilityLabel(row.latest_availability_status)}
+                        {missingPlanCountryLabel(row)}
                       </div>
-                      {row.latest_availability_reason ? (
-                        <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">
-                          {row.latest_availability_reason}
-                        </div>
-                      ) : null}
+                      <div className="mt-1 text-xs leading-5 text-slate-400">
+                        {missingPlanCountryDetail(row)}
+                      </div>
                     </td>
                   </tr>
                 ))}

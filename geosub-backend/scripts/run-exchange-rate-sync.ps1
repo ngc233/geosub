@@ -1,7 +1,12 @@
 param(
   [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
   [string]$BaseCurrency = "USD",
-  [string[]]$QuoteCurrencies = @("CNY")
+  [string[]]$QuoteCurrencies = @(
+    "AED", "ARS", "AUD", "BRL", "CAD", "CHF", "CLP", "CNY", "COP",
+    "DKK", "EGP", "EUR", "GBP", "IDR", "ILS", "INR", "JPY", "KES",
+    "KRW", "MXN", "MYR", "NGN", "NOK", "NZD", "PHP", "PKR", "PLN",
+    "SAR", "SEK", "SGD", "THB", "TRY", "TWD", "VND", "ZAR"
+  )
 )
 
 $ErrorActionPreference = "Stop"

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
 import {
   AlertTriangle,
   ArrowRight,
@@ -13,9 +14,11 @@ import {
   AdminPageHeader,
   AdminStatCard,
 } from "../../../components/admin/AdminCard";
+import { DEFAULT_APP_STORE_COUNTRY_CODES } from "../../../lib/app-store-country-policy";
 import { prisma } from "../../../lib/prisma";
 import { reconcileStaleCollectorRuns } from "../review/collection-runner";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
+import { reviewReasonLabel } from "../review/review-reason-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,14 @@ type ProductQualityRow = {
   category: string;
   status: string;
   plan_count: number;
+  target_country_count: number;
+  target_pair_count: number;
+  covered_pair_count: number;
+  unavailable_pair_count: number;
+  confirmed_unavailable_country_count: number;
+  missing_pair_count: number;
+  missing_country_count: number;
+  missing_country_codes: string | null;
   active_app_store_job_count: number;
   queued_job_count: number;
   stale_queue_count: number;
@@ -33,6 +44,13 @@ type ProductQualityRow = {
   stale_refresh_status: string | null;
   stale_refresh_retry_count: number;
   stale_refresh_success_count: number;
+  coverage_refresh_status: string | null;
+  coverage_refresh_retry_count: number;
+  coverage_refresh_success_count: number;
+  coverage_refresh_missing_pair_count: number;
+  next_scheduled_run_at: Date | string | null;
+  stale_refresh_next_run_at: Date | string | null;
+  coverage_refresh_next_run_at: Date | string | null;
   running_run_count: number;
   latest_run_status: string | null;
   latest_run_started_at: Date | string | null;
@@ -48,7 +66,10 @@ type ProductQualityRow = {
   pending_observation_count: number;
   pending_app_store_count: number;
   pending_anomaly_count: number;
+  pending_stability_count: number;
   hard_anomaly_count: number;
+  ignored_observation_count: number;
+  ignored_reason_codes: string | null;
   latest_observed_at: Date | string | null;
   review_reason_codes: string | null;
 };
@@ -107,6 +128,49 @@ function formatDuration(seconds: number | null) {
   return `${hours} 小时`;
 }
 
+function formatNextCollection(row: ProductQualityRow) {
+  if (row.running_run_count > 0 || row.latest_run_status === "running") {
+    return "正在执行";
+  }
+
+  if (row.queued_job_count > 0 || row.stale_queue_count > 0) {
+    return "等待执行";
+  }
+
+  const nextRun =
+    row.stale_refresh_next_run_at ||
+    row.coverage_refresh_next_run_at ||
+    row.next_scheduled_run_at;
+  if (nextRun) return formatDate(nextRun);
+
+  return row.active_app_store_job_count > 0 ? "下轮调度执行" : "无可用任务";
+}
+
+function formatIgnoredReasons(value: string | null) {
+  if (!value) return "暂无自动忽略";
+
+  return value
+    .split(",")
+    .map((reason) => reason.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((reason) => reviewReasonLabel(reason))
+    .join("、");
+}
+
+function getCoverage(row: ProductQualityRow) {
+  const effectiveTarget = Math.max(
+    0,
+    row.target_pair_count - row.unavailable_pair_count,
+  );
+  const percent =
+    effectiveTarget > 0
+      ? Math.min(100, Math.round((row.covered_pair_count / effectiveTarget) * 100))
+      : 0;
+
+  return { effectiveTarget, percent };
+}
+
 function hasUnconsumedQueue(row: ProductQualityRow) {
   const latestRunAt = toDate(row.latest_run_started_at);
   const latestQueuedAt = toDate(row.latest_queued_at);
@@ -157,7 +221,7 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
-  if (row.hard_anomaly_count > 0) {
+  if (row.hard_anomaly_count > 0 && row.published_price_count <= 0) {
     return {
       level: "danger",
       label: "硬异常拦截",
@@ -211,12 +275,30 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
+  if (row.hard_anomaly_count > 0) {
+    return {
+      level: "info",
+      label: "异常已隔离",
+      reason: `${row.hard_anomaly_count} 条高风险样本已被系统隔离，不影响现有稳定正式价格。`,
+      nextAction: "等待自动复采",
+    };
+  }
+
   if (row.pending_anomaly_count > 0) {
     return {
-      level: "warning",
-      label: "异常待处理",
-      reason: "自动审核没有直接放行这些价格，但它们不会影响已上线稳定价格。",
-      nextAction: "查看异常明细",
+      level: "info",
+      label: "异常观察中",
+      reason: "自动审核没有放行这些样本，它们不会影响已上线的稳定价格。",
+      nextAction: "等待自动复采",
+    };
+  }
+
+  if (row.pending_stability_count > 0) {
+    return {
+      level: "info",
+      label: "自动补采中",
+      reason: `${row.pending_stability_count} 条样本正在等待三次稳定一致，系统会继续采集并自动判断。`,
+      nextAction: "等待稳定样本",
     };
   }
 
@@ -235,6 +317,46 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
       label: "价格需复采",
       reason: "部分正式价格超过 14 天没有刷新，调度器下一次运行会自动按产品和地区复采。",
       nextAction: "等待自动排队",
+    };
+  }
+
+  if (row.missing_pair_count > 0 && row.coverage_refresh_status === "active") {
+    return {
+      level: "info",
+      label: "覆盖补采已排队",
+      reason: `${row.missing_country_count} 个地区仍有套餐缺价，系统正在执行第 ${Math.max(1, row.coverage_refresh_retry_count)} 轮定向补采。`,
+      nextAction: "等待自动补采",
+    };
+  }
+
+  if (
+    row.missing_pair_count > 0 &&
+    row.coverage_refresh_success_count >= 3 &&
+    row.coverage_refresh_status === "paused"
+  ) {
+    return {
+      level: "good",
+      label: "地区差异已复核",
+      reason: "三轮补采仍未发现这些套餐，系统按地区上架差异保留，并由周度采集继续监测。",
+      nextAction: "无需手工处理",
+    };
+  }
+
+  if (row.missing_pair_count > 0 && row.coverage_refresh_success_count > 0) {
+    return {
+      level: "info",
+      label: "覆盖补采观察中",
+      reason: `已完成 ${row.coverage_refresh_success_count}/3 轮定向补采；相同缺口每 24 小时复核一次。`,
+      nextAction: "等待下一轮补采",
+    };
+  }
+
+  if (row.missing_pair_count > 0) {
+    return {
+      level: "warning",
+      label: "地区覆盖有缺口",
+      reason: `${row.missing_country_count} 个默认地区仍有套餐缺价，已确认不可售地区不计入缺口。`,
+      nextAction: "等待自动定向补采",
     };
   }
 
@@ -307,7 +429,13 @@ function countByHealth(rows: ProductQualityRow[], level: HealthLevel) {
 
 async function getProductQualityRows() {
   return prisma.$queryRaw<ProductQualityRow[]>`
-    WITH product_base AS (
+    WITH target_country AS (
+      SELECT id, code
+      FROM countries
+      WHERE code IN (${Prisma.join(DEFAULT_APP_STORE_COUNTRY_CODES)})
+        AND code NOT IN ('CN', 'HK')
+    ),
+    product_base AS (
       SELECT
         product.id,
         product.slug,
@@ -317,11 +445,57 @@ async function getProductQualityRows() {
       FROM products product
       WHERE product.status::text <> 'archived'
     ),
+    active_plan AS (
+      SELECT plan.id, plan.product_id
+      FROM plans plan
+      WHERE plan.status::text <> 'archived'
+    ),
+    published_pair AS (
+      SELECT DISTINCT price.plan_id, price.country_id
+      FROM region_prices price
+      WHERE price.status::text = 'published'
+        AND price.billing_platform::text = 'ios'
+    ),
     plan_state AS (
       SELECT
         plan.product_id,
         COUNT(*)::int AS plan_count
-      FROM plans plan
+      FROM active_plan plan
+      GROUP BY plan.product_id
+    ),
+    coverage_state AS (
+      SELECT
+        plan.product_id,
+        (SELECT COUNT(*)::int FROM target_country)::int AS target_country_count,
+        COUNT(*)::int AS target_pair_count,
+        COUNT(*) FILTER (WHERE price.plan_id IS NOT NULL)::int AS covered_pair_count,
+        COUNT(*) FILTER (
+          WHERE availability.status IN ('not_available', 'available_no_iap')
+        )::int AS unavailable_pair_count,
+        COUNT(DISTINCT country.id) FILTER (
+          WHERE availability.status IN ('not_available', 'available_no_iap')
+        )::int AS confirmed_unavailable_country_count,
+        COUNT(*) FILTER (
+          WHERE price.plan_id IS NULL
+            AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
+        )::int AS missing_pair_count,
+        COUNT(DISTINCT country.id) FILTER (
+          WHERE price.plan_id IS NULL
+            AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
+        )::int AS missing_country_count,
+        STRING_AGG(DISTINCT country.code, ', ' ORDER BY country.code) FILTER (
+          WHERE price.plan_id IS NULL
+            AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
+        ) AS missing_country_codes
+      FROM active_plan plan
+      CROSS JOIN target_country country
+      LEFT JOIN published_pair price
+        ON price.plan_id = plan.id
+        AND price.country_id = country.id
+      LEFT JOIN app_store_availability_latest_view availability
+        ON availability.product_id = plan.product_id
+        AND availability.country_id = country.id
+        AND availability.billing_platform::text = 'ios'
       GROUP BY plan.product_id
     ),
     price_state AS (
@@ -364,10 +538,22 @@ async function getProductQualityRows() {
         )::int AS pending_app_store_count,
         COUNT(*) FILTER (
           WHERE observation.status::text = 'pending'
+            AND observation.billing_platform::text = 'ios'
             AND observation.anomaly_flag
         )::int AS pending_anomaly_count,
         COUNT(*) FILTER (
           WHERE observation.status::text = 'pending'
+            AND observation.billing_platform::text = 'ios'
+            AND COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '') IN (
+              'waiting_for_more_app_store_samples',
+              'app_store_price_changed',
+              'app_store_samples_too_old',
+              'low_confidence'
+            )
+        )::int AS pending_stability_count,
+        COUNT(*) FILTER (
+          WHERE observation.status::text = 'pending'
+            AND observation.billing_platform::text = 'ios'
             AND (
               observation.anomaly_flag
               OR lower(COALESCE(observation.anomaly_reason, '')) LIKE '%hard%'
@@ -378,6 +564,22 @@ async function getProductQualityRows() {
               )
             )
         )::int AS hard_anomaly_count,
+        COUNT(*) FILTER (
+          WHERE observation.status::text = 'ignored'
+            AND observation.billing_platform::text = 'ios'
+            AND observation.updated_at > NOW() - INTERVAL '30 days'
+        )::int AS ignored_observation_count,
+        string_agg(
+          DISTINCT NULLIF(COALESCE(
+            observation.raw_payload ->> 'auto_review_reason_code',
+            observation.anomaly_reason
+          ), ''),
+          ','
+        ) FILTER (
+          WHERE observation.status::text = 'ignored'
+            AND observation.billing_platform::text = 'ios'
+            AND observation.updated_at > NOW() - INTERVAL '30 days'
+        ) AS ignored_reason_codes,
         MAX(observation.observed_at) AS latest_observed_at,
         string_agg(
           DISTINCT NULLIF(COALESCE(
@@ -437,7 +639,39 @@ async function getProductQualityRows() {
         MAX(COALESCE((job.job_config ->> 'stale_success_count')::int, 0)) FILTER (
           WHERE job.schedule = 'stale_refresh'
             AND job.status <> 'archived'
-        )::int AS stale_refresh_success_count
+        )::int AS stale_refresh_success_count,
+        MAX(job.status) FILTER (
+          WHERE job.schedule = 'coverage_refresh'
+            AND job.status <> 'archived'
+        ) AS coverage_refresh_status,
+        MAX(COALESCE((job.job_config ->> 'coverage_retry_count')::int, 0)) FILTER (
+          WHERE job.schedule = 'coverage_refresh'
+            AND job.status <> 'archived'
+        )::int AS coverage_refresh_retry_count,
+        MAX(COALESCE((job.job_config ->> 'coverage_success_count')::int, 0)) FILTER (
+          WHERE job.schedule = 'coverage_refresh'
+            AND job.status <> 'archived'
+        )::int AS coverage_refresh_success_count,
+        MAX(COALESCE((job.job_config ->> 'coverage_missing_pair_count')::int, 0)) FILTER (
+          WHERE job.schedule = 'coverage_refresh'
+            AND job.status <> 'archived'
+        )::int AS coverage_refresh_missing_pair_count,
+        MIN(job.next_run_at) FILTER (
+          WHERE source.type::text = 'app_store'
+            AND job.status = 'active'
+            AND job.next_run_at > NOW()
+        ) AS next_scheduled_run_at,
+        MIN(job.next_run_at) FILTER (
+          WHERE source.type::text = 'app_store'
+            AND job.status = 'active'
+            AND job.schedule = 'stale_refresh'
+            AND job.next_run_at > NOW()
+        ) AS stale_refresh_next_run_at,
+        MIN(job.next_run_at) FILTER (
+          WHERE source.type::text = 'app_store'
+            AND job.status = 'active'
+            AND job.schedule = 'coverage_refresh'
+        ) AS coverage_refresh_next_run_at
       FROM collector_jobs job
       LEFT JOIN price_sources source ON source.id = job.source_id
       WHERE job.product_id IS NOT NULL
@@ -483,6 +717,14 @@ async function getProductQualityRows() {
       product.category,
       product.status,
       COALESCE(plan_state.plan_count, 0)::int AS plan_count,
+      COALESCE(coverage_state.target_country_count, 0)::int AS target_country_count,
+      COALESCE(coverage_state.target_pair_count, 0)::int AS target_pair_count,
+      COALESCE(coverage_state.covered_pair_count, 0)::int AS covered_pair_count,
+      COALESCE(coverage_state.unavailable_pair_count, 0)::int AS unavailable_pair_count,
+      COALESCE(coverage_state.confirmed_unavailable_country_count, 0)::int AS confirmed_unavailable_country_count,
+      COALESCE(coverage_state.missing_pair_count, 0)::int AS missing_pair_count,
+      COALESCE(coverage_state.missing_country_count, 0)::int AS missing_country_count,
+      coverage_state.missing_country_codes,
       COALESCE(job_state.active_app_store_job_count, 0)::int AS active_app_store_job_count,
       COALESCE(job_state.queued_job_count, 0)::int AS queued_job_count,
       COALESCE(job_state.stale_queue_count, 0)::int AS stale_queue_count,
@@ -490,6 +732,13 @@ async function getProductQualityRows() {
       job_state.stale_refresh_status,
       COALESCE(job_state.stale_refresh_retry_count, 0)::int AS stale_refresh_retry_count,
       COALESCE(job_state.stale_refresh_success_count, 0)::int AS stale_refresh_success_count,
+      job_state.coverage_refresh_status,
+      COALESCE(job_state.coverage_refresh_retry_count, 0)::int AS coverage_refresh_retry_count,
+      COALESCE(job_state.coverage_refresh_success_count, 0)::int AS coverage_refresh_success_count,
+      COALESCE(job_state.coverage_refresh_missing_pair_count, 0)::int AS coverage_refresh_missing_pair_count,
+      job_state.next_scheduled_run_at,
+      job_state.stale_refresh_next_run_at,
+      job_state.coverage_refresh_next_run_at,
       COALESCE(running_state.running_run_count, 0)::int AS running_run_count,
       latest_run.latest_run_status,
       latest_run.latest_run_started_at,
@@ -505,11 +754,15 @@ async function getProductQualityRows() {
       COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
       COALESCE(observation_state.pending_app_store_count, 0)::int AS pending_app_store_count,
       COALESCE(observation_state.pending_anomaly_count, 0)::int AS pending_anomaly_count,
+      COALESCE(observation_state.pending_stability_count, 0)::int AS pending_stability_count,
       COALESCE(observation_state.hard_anomaly_count, 0)::int AS hard_anomaly_count,
+      COALESCE(observation_state.ignored_observation_count, 0)::int AS ignored_observation_count,
+      observation_state.ignored_reason_codes,
       observation_state.latest_observed_at,
       observation_state.review_reason_codes
     FROM product_base product
     LEFT JOIN plan_state ON plan_state.product_id = product.id
+    LEFT JOIN coverage_state ON coverage_state.product_id = product.id
     LEFT JOIN price_state ON price_state.product_id = product.id
     LEFT JOIN observation_state ON observation_state.product_id = product.id
     LEFT JOIN job_state ON job_state.product_id = product.id
@@ -558,13 +811,24 @@ export default async function AdminDataQualityPage() {
     0
   );
   const staleTotal = rows.reduce((sum, row) => sum + row.stale_published_count, 0);
+  const stabilityTotal = rows.reduce(
+    (sum, row) => sum + row.pending_stability_count,
+    0,
+  );
+  const ignoredTotal = rows.reduce(
+    (sum, row) => sum + row.ignored_observation_count,
+    0,
+  );
+  const coverageGapProductCount = rows.filter(
+    (row) => row.missing_pair_count > 0,
+  ).length;
 
   return (
     <div>
       <AdminPageHeader
         eyebrow="数据质量"
         title="产品数据健康总览"
-        description="把采集、自动审核、异常拦截和正式价格按产品归因。日常先看这里，只处理红色和橙色产品，不再逐条翻待审核记录。"
+        description="把采集、自动审核、地区覆盖和正式价格按产品归因。日常先处理红色产品，蓝色状态由系统继续采集和判断。"
         action={
           <Link
             href="/admin/collector-jobs"
@@ -576,16 +840,17 @@ export default async function AdminDataQualityPage() {
         }
       />
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <AdminStatCard label="产品总数" value={rows.length} helper="服务库内未归档产品" />
         <AdminStatCard label="健康" value={goodCount} helper="无需手工处理" />
         <AdminStatCard label="采集中/排队" value={infoCount} helper="等待后台脚本写回" />
+        <AdminStatCard label="覆盖有缺口" value={coverageGapProductCount} helper={`${DEFAULT_APP_STORE_COUNTRY_CODES.length} 个默认地区`} />
         <AdminStatCard label="需关注" value={warningCount} helper="建议复采或看原因" />
         <AdminStatCard label="需处理" value={dangerCount} helper="会影响上线或采集" />
       </div>
 
       <AdminCard className="mb-6 border-blue-200 bg-blue-50/70">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <div className="flex gap-3">
             <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white">
               <DatabaseZap size={20} strokeWidth={2.2} />
@@ -595,17 +860,23 @@ export default async function AdminDataQualityPage() {
                 后台判断规则
               </h2>
               <p className="mt-1 max-w-4xl text-sm leading-6 text-blue-800">
-                绿色产品不需要反复采集。红色代表缺任务、采集失败、硬异常或没有正式价格；橙色代表待审核积压、异常样本或价格超过 14 天未刷新。陈旧价格会自动定向复采，连续三轮仍无法确认才移出前台。
+                绿色产品不需要反复采集。覆盖率按采集脚本实际使用的 {DEFAULT_APP_STORE_COUNTRY_CODES.length} 个默认地区计算；已确认不可售的地区不会算作缺口。红色代表会影响上线的问题，橙色和蓝色由周度全量采集、稳定性审核或陈旧价格复采自动处理。
               </p>
             </div>
           </div>
 
-          <div className="grid min-w-[260px] grid-cols-2 gap-2 text-xs font-semibold text-blue-800">
+          <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-blue-800 2xl:min-w-[520px] 2xl:grid-cols-4">
             <div className="rounded-xl bg-white/70 px-3 py-2">
               待审核总量：{pendingTotal}
             </div>
             <div className="rounded-xl bg-white/70 px-3 py-2">
+              等稳定样本：{stabilityTotal}
+            </div>
+            <div className="rounded-xl bg-white/70 px-3 py-2">
               需复采价格：{staleTotal}
+            </div>
+            <div className="rounded-xl bg-white/70 px-3 py-2">
+              30 天自动忽略：{ignoredTotal}
             </div>
           </div>
         </div>
@@ -618,7 +889,7 @@ export default async function AdminDataQualityPage() {
               产品级处理队列
             </h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">
-              一行代表一个产品。需要处理时先看“结论”和“下一步”，再进入对应的审核或采集页面。
+              一行代表一个产品。覆盖、稳定样本和下次采集都在这里汇总；只有红色问题需要人工介入。
             </p>
           </div>
           <p className="text-xs font-semibold text-slate-400">
@@ -627,12 +898,12 @@ export default async function AdminDataQualityPage() {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <div className="hidden grid-cols-[1.25fr_0.65fr_0.8fr_0.9fr_0.9fr_1.1fr_0.8fr] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500 lg:grid">
+          <div className="hidden grid-cols-[1.05fr_1.05fr_1fr_0.9fr_0.9fr_1.15fr_0.85fr] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500 lg:grid">
             <div>产品</div>
-            <div>正式价格</div>
-            <div>待处理</div>
+            <div>地区覆盖</div>
+            <div>自动审核</div>
             <div>采集状态</div>
-            <div>最近更新</div>
+            <div>下次采集</div>
             <div>结论</div>
             <div className="text-right">操作</div>
           </div>
@@ -643,12 +914,13 @@ export default async function AdminDataQualityPage() {
               const classes = healthClasses(health.level);
               const Icon = healthIcon(health.level);
               const unconsumedQueue = hasUnconsumedQueue(row);
+              const coverage = getCoverage(row);
 
               return (
                 <div
                   key={row.id}
                   className={[
-                    "grid gap-4 px-4 py-4 text-sm lg:grid-cols-[1.25fr_0.65fr_0.8fr_0.9fr_0.9fr_1.1fr_0.8fr] lg:items-center",
+                    "grid gap-4 px-4 py-4 text-sm lg:grid-cols-[1.05fr_1.05fr_1fr_0.9fr_0.9fr_1.15fr_0.85fr] lg:items-center",
                     classes.row,
                   ].join(" ")}
                 >
@@ -663,24 +935,36 @@ export default async function AdminDataQualityPage() {
                   </div>
 
                   <div>
+                    <p className="text-[11px] font-bold text-slate-400 lg:hidden">地区覆盖</p>
                     <p className="font-bold text-slate-950">
-                      {row.published_price_count} 条
+                      {row.covered_pair_count} / {coverage.effectiveTarget} 套餐地区
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {row.published_country_count} 地区
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                      <div
+                        className="h-full rounded-full bg-emerald-500"
+                        style={{ width: `${coverage.percent}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500" title={row.missing_country_codes || undefined}>
+                      {coverage.percent}% · 缺 {row.missing_country_count} 地区 · 不可售 {row.confirmed_unavailable_country_count}
                     </p>
                   </div>
 
                   <div>
+                    <p className="text-[11px] font-bold text-slate-400 lg:hidden">自动审核</p>
                     <p className="font-bold text-slate-950">
-                      {row.pending_observation_count} 待审
+                      {row.pending_stability_count} 等稳定 · {row.pending_anomaly_count} 异常
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      异常 {row.pending_anomaly_count} · 硬异常 {row.hard_anomaly_count}
+                      近 30 天自动忽略 {row.ignored_observation_count}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-400" title={formatIgnoredReasons(row.ignored_reason_codes)}>
+                      {formatIgnoredReasons(row.ignored_reason_codes)}
                     </p>
                   </div>
 
                   <div>
+                    <p className="text-[11px] font-bold text-slate-400 lg:hidden">采集状态</p>
                     <span
                       className={[
                         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ring-1",
@@ -698,19 +982,27 @@ export default async function AdminDataQualityPage() {
                       {row.stale_refresh_retry_count > 0
                         ? ` · 复采 ${row.stale_refresh_success_count}/3`
                         : ""}
+                      {row.coverage_refresh_retry_count > 0
+                        ? ` · 补采 ${Math.min(row.coverage_refresh_success_count, 3)}/3`
+                        : ""}
                     </p>
                   </div>
 
                   <div>
+                    <p className="text-[11px] font-bold text-slate-400 lg:hidden">下次采集</p>
                     <p className="font-semibold text-slate-700">
-                      采集 {formatRelative(row.latest_run_started_at)}
+                      {formatNextCollection(row)}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      价格 {formatRelative(row.latest_price_checked_at)}
+                      上次采集 {formatRelative(row.latest_run_started_at)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      价格确认 {formatRelative(row.latest_price_checked_at)}
                     </p>
                   </div>
 
                   <div>
+                    <p className="text-[11px] font-bold text-slate-400 lg:hidden">结论</p>
                     <p className="font-semibold text-slate-800">{health.reason}</p>
                     <p className="mt-1 text-xs text-slate-500">
                       最近运行：{row.latest_run_status || "暂无"} · {formatDuration(row.latest_run_age_seconds)}
@@ -720,7 +1012,7 @@ export default async function AdminDataQualityPage() {
                   <div className="flex flex-wrap gap-2 lg:justify-end">
                     <ManualCollectionProgressForm
                       productSlug={row.slug}
-                      buttonLabel="只采这个产品"
+                      buttonLabel="采集"
                       pendingLabel="正在采集"
                       disabled={
                         row.active_app_store_job_count <= 0 ||

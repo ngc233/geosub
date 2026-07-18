@@ -16,6 +16,7 @@ DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 WEB_HEALTH_URL="${GEOSUB_WEB_HEALTH_URL:-http://127.0.0.1:3000/zh/ai-pricing}"
 MAX_EXCHANGE_RATE_AGE_HOURS="${GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS:-18}"
+REQUIRED_EXCHANGE_RATE_QUOTES="AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR"
 MIN_PUBLISHED_SUBSCRIPTION_USD="${GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD:-1}"
 MAX_PUBLISHED_PRICE_AGE_DAYS="${GEOSUB_MAX_PUBLISHED_PRICE_AGE_DAYS:-14}"
 MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS="${GEOSUB_MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS:-8}"
@@ -232,7 +233,8 @@ if (( failures == 0 )); then
     "sql/058_normalize_disney_app_store_plans.sql" \
     "sql/059_stale_app_store_price_lifecycle.sql" \
     "sql/060_reclassify_app_store_selection_false_positives.sql" \
-    "sql/061_ignore_legacy_non_primary_app_store_tiers.sql"; do
+    "sql/061_ignore_legacy_non_primary_app_store_tiers.sql" \
+    "sql/062_app_store_coverage_gap_rechecks.sql"; do
     check_migration "$migration"
   done
 
@@ -240,7 +242,8 @@ if (( failures == 0 )); then
     "collector_jobs_admin_queue_idx" \
     "collector_job_runs_started_idx" \
     "collector_job_runs_product_started_idx" \
-    "collector_job_runs_running_started_idx"; do
+    "collector_job_runs_running_started_idx" \
+    "collector_jobs_coverage_refresh_product_idx"; do
     check_index "$index_name"
   done
 
@@ -251,17 +254,17 @@ if (( failures == 0 )); then
     fail "collector_job_runs status constraint does not support running"
   fi
 
-  fx_state="$(psql_scalar "SELECT CASE WHEN MAX(fetched_at) IS NULL THEN 'missing' WHEN MAX(fetched_at) < NOW() - ('${MAX_EXCHANGE_RATE_AGE_HOURS} hours')::interval THEN 'stale' ELSE 'ok' END || '|' || COALESCE(MAX(fetched_at)::text, '') || '|' || COALESCE(MAX(rate)::text, '') FROM latest_exchange_rates WHERE base_currency = 'USD' AND quote_currency = 'CNY';")"
-  IFS='|' read -r fx_status fx_fetched_at fx_rate <<< "$fx_state"
+  fx_state="$(psql_scalar "WITH required AS (SELECT regexp_split_to_table('${REQUIRED_EXCHANGE_RATE_QUOTES}', ',') AS quote_currency), latest_by_quote AS (SELECT DISTINCT ON (quote_currency) quote_currency, fetched_at FROM latest_exchange_rates WHERE base_currency = 'USD' ORDER BY quote_currency, fetched_at DESC, rate_date DESC), summary AS (SELECT COUNT(*)::int AS required_count, COUNT(latest.quote_currency)::int AS available_count, COUNT(latest.quote_currency) FILTER (WHERE latest.fetched_at >= NOW() - ('${MAX_EXCHANGE_RATE_AGE_HOURS} hours')::interval)::int AS fresh_count, MIN(latest.fetched_at) AS oldest_fetched_at, STRING_AGG(required.quote_currency, ',' ORDER BY required.quote_currency) FILTER (WHERE latest.quote_currency IS NULL) AS missing_quotes, STRING_AGG(required.quote_currency, ',' ORDER BY required.quote_currency) FILTER (WHERE latest.quote_currency IS NOT NULL AND latest.fetched_at < NOW() - ('${MAX_EXCHANGE_RATE_AGE_HOURS} hours')::interval) AS stale_quotes FROM required LEFT JOIN latest_by_quote latest ON latest.quote_currency = required.quote_currency) SELECT CASE WHEN available_count < required_count THEN 'missing' WHEN fresh_count < required_count THEN 'stale' ELSE 'ok' END || '|' || required_count || '|' || available_count || '|' || fresh_count || '|' || COALESCE(oldest_fetched_at::text, '') || '|' || COALESCE(missing_quotes, '') || '|' || COALESCE(stale_quotes, '') FROM summary;")"
+  IFS='|' read -r fx_status fx_required fx_available fx_fresh fx_oldest fx_missing fx_stale <<< "$fx_state"
   case "$fx_status" in
     ok)
-      pass "USD/CNY exchange rate fresh: $fx_rate at $fx_fetched_at"
+      pass "required USD exchange rates fresh: $fx_fresh/$fx_required, oldest $fx_oldest"
       ;;
     stale)
-      fail "USD/CNY exchange rate stale: $fx_rate at $fx_fetched_at"
+      fail "required USD exchange rates stale: $fx_fresh/$fx_required fresh; stale=$fx_stale"
       ;;
     *)
-      fail "USD/CNY exchange rate missing"
+      fail "required USD exchange rates missing: $fx_available/$fx_required available; missing=$fx_missing"
       ;;
   esac
 
@@ -278,6 +281,27 @@ if (( failures == 0 )); then
     warn "no collector jobs configured"
   else
     pass "collector jobs total=$collector_total active=$collector_active due=$collector_due"
+  fi
+
+  coverage_policy_count="$(psql_scalar "SELECT CARDINALITY(default_app_store_country_codes());")"
+  if [[ "$coverage_policy_count" == "39" ]]; then
+    pass "App Store coverage policy has 39 default countries"
+  else
+    fail "App Store coverage policy country count is ${coverage_policy_count:-missing}, expected 39"
+  fi
+
+  coverage_refresh_duplicates="$(psql_scalar "SELECT COUNT(*) FROM (SELECT product_id FROM collector_jobs WHERE schedule = 'coverage_refresh' AND status <> 'archived' GROUP BY product_id HAVING COUNT(*) > 1) duplicate_jobs;")"
+  if [[ "$coverage_refresh_duplicates" == "0" ]]; then
+    pass "no duplicate product-level coverage refresh jobs"
+  else
+    fail "duplicate product-level coverage refresh jobs: $coverage_refresh_duplicates"
+  fi
+
+  exhausted_coverage_jobs="$(psql_scalar "SELECT COUNT(*) FROM collector_jobs WHERE schedule = 'coverage_refresh' AND status = 'active' AND COALESCE((job_config ->> 'coverage_success_count')::integer, 0) >= 3;")"
+  if [[ "$exhausted_coverage_jobs" == "0" ]]; then
+    pass "no exhausted coverage refresh jobs remain active"
+  else
+    fail "exhausted coverage refresh jobs still active: $exhausted_coverage_jobs"
   fi
 
   latest_collector_run="$(psql_scalar "SELECT COALESCE(MAX(started_at)::text, 'missing') FROM collector_job_runs;")"

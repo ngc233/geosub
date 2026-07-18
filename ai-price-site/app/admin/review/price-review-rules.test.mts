@@ -67,6 +67,11 @@ const appStoreCollector = readFileSync(
   "utf8",
 );
 
+const appStoreRenderer = readFileSync(
+  resolve(repoRoot, "geosub-backend/scripts/render-app-store-prices.mjs"),
+  "utf8",
+);
+
 const productPlanSpecs = JSON.parse(
   readFileSync(resolve(repoRoot, "geosub-backend/data/product-plan-specs.json"), "utf8"),
 ) as Record<string, ProductSpec>;
@@ -142,6 +147,13 @@ test("collector compares parsed App Store prices against plan-specific USD range
   assert.match(appStoreCollector, /\$tolerancePercent = \[decimal\]3/);
 });
 
+test("rendered App Store JSON crosses the PowerShell boundary as UTF-8", () => {
+  assert.match(appStoreRenderer, /args\.get\("output-file"\)/);
+  assert.match(appStoreRenderer, /writeFileSync\(outputFile, serializedResult, "utf8"\)/);
+  assert.match(appStoreCollector, /ReadAllText\(\$outputPath, \[Text\.Encoding\]::UTF8\)/);
+  assert.match(appStoreCollector, /Remove-Item -LiteralPath \$outputPath/);
+});
+
 test("tiered App Store plans can explicitly choose their lowest valid monthly tier", () => {
   assert.equal(productPlanSpecs.manus.plans.find((plan) => plan.slug === "pro")?.price_selection_strategy, "lowest_in_expected_range");
   assert.match(appStoreCollector, /Get-AppStorePriceSelectionStrategy/);
@@ -213,6 +225,23 @@ test("Disney App Store plans collapse to three canonical monthly tiers", () => {
   ]) {
     assert.ok(aliases.includes(localizedAlias), `missing Disney+ alias: ${localizedAlias}`);
   }
+});
+
+test("Netflix plan aliases cover common localized screen-count labels", () => {
+  const netflix = productPlanSpecs.netflix;
+  assert.ok(netflix, "Netflix should have a product-specific plan spec");
+
+  const aliasesByPlan = Object.fromEntries(
+    netflix.plans.map((plan) => [plan.slug, plan.aliases]),
+  );
+  assert.ok(aliasesByPlan.basic.includes("basico"));
+  assert.ok(aliasesByPlan.basic.includes("1 pantalla"));
+  assert.ok(aliasesByPlan.standard.includes("2 telas"));
+  assert.ok(aliasesByPlan.standard.includes("2 gerate"));
+  assert.ok(aliasesByPlan.standard.includes("2 gerate gleichzeitig"));
+  assert.ok(aliasesByPlan.premium.includes("4 telas"));
+  assert.ok(aliasesByPlan.premium.includes("4 gerate"));
+  assert.ok(aliasesByPlan.premium.includes("4 gerate gleichzeitig"));
 });
 
 test("App Store plan matching preserves non-Latin names and excludes non-monthly artifacts", () => {

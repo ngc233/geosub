@@ -19,6 +19,8 @@ for (const fileName of [".env.local", ".env"]) {
 const databaseUrl = process.env.DATABASE_URL;
 const maxExchangeRateAgeHours = Number(process.env.GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS || 18);
 const maxRunningMinutes = Number(process.env.GEOSUB_MAX_COLLECTOR_RUNNING_MINUTES || 45);
+const requiredExchangeRateQuotes =
+  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR".split(",");
 
 function maskDatabaseTarget(url) {
   if (!url) return "not configured";
@@ -55,13 +57,6 @@ async function safeCount(client, tableName, label) {
   printRow(label, `${result.rows[0]?.count ?? 0} rows`);
 }
 
-function hoursSince(value) {
-  if (!value) return null;
-  const time = new Date(value).getTime();
-  if (!Number.isFinite(time)) return null;
-  return Math.max(0, (Date.now() - time) / 36e5);
-}
-
 function formatDate(value) {
   if (!value) return "none";
   const date = new Date(value);
@@ -76,35 +71,44 @@ async function checkExchangeRates(client) {
     return;
   }
 
-  const result = await client.query(`
-    SELECT quote_currency, rate, rate_date, fetched_at
-    FROM exchange_rates
-    WHERE base_currency = 'USD' AND quote_currency IN ('CNY', 'USD')
-    ORDER BY fetched_at DESC NULLS LAST, rate_date DESC NULLS LAST
-    LIMIT 3
-  `);
+  const result = await client.query(
+    `
+      WITH required AS (SELECT unnest($1::text[]) AS quote_currency),
+      latest_by_quote AS (
+        SELECT DISTINCT ON (quote_currency)
+          quote_currency, fetched_at
+        FROM latest_exchange_rates
+        WHERE base_currency = 'USD'
+        ORDER BY quote_currency, fetched_at DESC, rate_date DESC
+      )
+      SELECT
+        COUNT(latest.quote_currency)::int AS available_count,
+        COUNT(latest.quote_currency) FILTER (
+          WHERE latest.fetched_at >= NOW() - ($2::text || ' hours')::interval
+        )::int AS fresh_count,
+        MIN(latest.fetched_at) AS oldest_fetched_at
+      FROM required
+      LEFT JOIN latest_by_quote latest
+        ON latest.quote_currency = required.quote_currency
+    `,
+    [requiredExchangeRateQuotes, String(maxExchangeRateAgeHours)]
+  );
 
-  if (result.rowCount === 0) {
-    warnings.push("No USD exchange-rate rows found.");
-    printRow("exchange rates", "no USD rows", "warning");
-    return;
-  }
+  const summary = result.rows[0];
+  const requiredCount = requiredExchangeRateQuotes.length;
+  const freshCount = Number(summary.fresh_count || 0);
+  const incomplete = freshCount !== requiredCount;
 
-  const cny = result.rows.find((row) => row.quote_currency === "CNY");
-  const latest = cny || result.rows[0];
-  const age = hoursSince(latest.fetched_at || latest.rate_date);
-  const stale = age === null || age > maxExchangeRateAgeHours;
-
-  if (stale) {
-    warnings.push(`USD/CNY exchange rate is older than ${maxExchangeRateAgeHours} hours.`);
+  if (incomplete) {
+    warnings.push(
+      `Only ${freshCount}/${requiredCount} required USD exchange rates are fresh within ${maxExchangeRateAgeHours} hours.`
+    );
   }
 
   printRow(
     "exchange rates",
-    `${latest.quote_currency} ${Number(latest.rate).toFixed(4)}, updated ${formatDate(
-      latest.fetched_at || latest.rate_date
-    )}`,
-    stale ? "warning" : "ok"
+    `${freshCount}/${requiredCount} fresh, oldest ${formatDate(summary.oldest_fetched_at)}`,
+    incomplete ? "warning" : "ok"
   );
 }
 

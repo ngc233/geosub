@@ -238,6 +238,9 @@ FROM queue_app_store_anomaly_rechecks(7, 12);
 
 SELECT *
 FROM queue_stale_app_store_price_rechecks(14, 20, 24);
+
+SELECT *
+FROM queue_app_store_coverage_gap_rechecks(39, 24, 3);
 "@
   } catch {
     Write-Host "App Store recheck queue skipped: $($_.Exception.Message)"
@@ -666,6 +669,19 @@ jsonb_set(
     job_config,
     '{stale_success_count}',
     TO_JSONB(COALESCE((job_config ->> 'stale_success_count')::INTEGER, 0) + 1),
+    TRUE
+  )
+"@
+  }
+
+  if ($Job.schedule -eq "coverage_refresh" -and $status -eq "succeeded") {
+    $nextRunSql = "NULL"
+    $jobStatusSql = "'paused'"
+    $jobConfigSql = @"
+jsonb_set(
+    job_config,
+    '{coverage_success_count}',
+    TO_JSONB(COALESCE((job_config ->> 'coverage_success_count')::INTEGER, 0) + 1),
     TRUE
   )
 "@

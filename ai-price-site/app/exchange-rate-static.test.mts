@@ -33,10 +33,34 @@ test("exchange-rate freshness is stricter than the public 12-hour refresh window
   const exchangeRates = readProjectFile("lib/exchange-rates.ts");
   const cronRoute = readProjectFile("app/api/cron/exchange-rates/route.ts");
   const syncScript = readProjectFile("scripts/sync-exchange-rates.cjs");
+  const localCheck = readProjectFile("scripts/check-local-env.cjs");
+  const qualityCheck = readProjectFile("scripts/check-price-quality.cjs");
+  const collector = readProjectFile("../geosub-backend/scripts/collect-app-store-prices.ps1");
+  const linuxSync = readProjectFile("../geosub-backend/deploy/linux-arm64/run-exchange-rate-sync.sh");
+  const postDeployCheck = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
+  );
+  const requiredQuotes =
+    "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR";
 
   assert.match(cronRoute, /recommendedSchedule:\s*"Every 12 hours"/);
   assert.match(exchangeRates, /const MAX_FRESH_RATE_AGE_HOURS = 18;/);
+  assert.equal(requiredQuotes.split(",").length, 35);
+  assert.ok(syncScript.includes(requiredQuotes));
+  assert.ok(localCheck.includes(requiredQuotes));
+  assert.ok(qualityCheck.includes(requiredQuotes));
+  assert.ok(linuxSync.includes(requiredQuotes));
+  assert.ok(postDeployCheck.includes(requiredQuotes));
   assert.match(syncScript, /api\.frankfurter\.app\/latest/);
   assert.match(syncScript, /open\.er-api\.com\/v6\/latest/);
+  assert.match(syncScript, /Frankfurter omitted/);
+  assert.match(syncScript, /frankfurter\+open-er-api/);
   assert.match(syncScript, /upsert_exchange_rate/);
+  assert.match(collector, /FROM latest_exchange_rates/);
+  assert.match(collector, /SELECT DISTINCT ON \(quote_currency\)/);
+  assert.match(collector, /jsonb_object_agg/);
+  assert.match(collector, /fetched_at >= NOW\(\) - INTERVAL '18 hours'/);
+  assert.match(collector, /Run the exchange-rate sync first/);
+  assert.match(collector, /transientFailures/);
+  assert.match(collector, /Temporary storefront failures must be retried/);
 });

@@ -28,6 +28,8 @@ const maxAppStoreProductRunAgeDays = Number(
   process.env.GEOSUB_MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS || 8
 );
 const maxPendingAnomalyRatio = Number(process.env.GEOSUB_MAX_PENDING_ANOMALY_RATIO || 0.35);
+const requiredExchangeRateQuotes =
+  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR".split(",");
 
 const failures = [];
 const warnings = [];
@@ -49,13 +51,6 @@ function daysSince(value) {
   const time = new Date(value).getTime();
   if (!Number.isFinite(time)) return null;
   return Math.max(0, (Date.now() - time) / 864e5);
-}
-
-function hoursSince(value) {
-  if (!value) return null;
-  const time = new Date(value).getTime();
-  if (!Number.isFinite(time)) return null;
-  return Math.max(0, (Date.now() - time) / 36e5);
 }
 
 async function tableExists(client, tableName) {
@@ -131,33 +126,59 @@ async function checkExchangeRates(client) {
     return;
   }
 
-  const result = await client.query(`
-    SELECT quote_currency, rate, rate_date, fetched_at
-    FROM exchange_rates
-    WHERE base_currency = 'USD' AND quote_currency = 'CNY'
-    ORDER BY fetched_at DESC NULLS LAST, rate_date DESC NULLS LAST
-    LIMIT 1
-  `);
+  const result = await client.query(
+    `
+      WITH required AS (
+        SELECT unnest($1::text[]) AS quote_currency
+      ),
+      latest_by_quote AS (
+        SELECT DISTINCT ON (quote_currency)
+          quote_currency, fetched_at
+        FROM latest_exchange_rates
+        WHERE base_currency = 'USD'
+        ORDER BY quote_currency, fetched_at DESC, rate_date DESC
+      )
+      SELECT
+        COUNT(latest.quote_currency)::int AS available_count,
+        COUNT(latest.quote_currency) FILTER (
+          WHERE latest.fetched_at >= NOW() - ($2::text || ' hours')::interval
+        )::int AS fresh_count,
+        MIN(latest.fetched_at) AS oldest_fetched_at,
+        STRING_AGG(required.quote_currency, ', ' ORDER BY required.quote_currency)
+          FILTER (WHERE latest.quote_currency IS NULL) AS missing_quotes,
+        STRING_AGG(required.quote_currency, ', ' ORDER BY required.quote_currency)
+          FILTER (
+            WHERE latest.quote_currency IS NOT NULL
+              AND latest.fetched_at < NOW() - ($2::text || ' hours')::interval
+          ) AS stale_quotes
+      FROM required
+      LEFT JOIN latest_by_quote latest
+        ON latest.quote_currency = required.quote_currency
+    `,
+    [requiredExchangeRateQuotes, String(maxExchangeRateAgeHours)]
+  );
 
-  const latest = result.rows[0];
-  if (!latest) {
-    failures.push("USD/CNY exchange rate is missing.");
-    printRow("fail", "exchange rates", "USD/CNY missing");
-    return;
+  const summary = result.rows[0];
+  const requiredCount = requiredExchangeRateQuotes.length;
+  const availableCount = Number(summary.available_count || 0);
+  const freshCount = Number(summary.fresh_count || 0);
+  const healthy = availableCount === requiredCount && freshCount === requiredCount;
+
+  if (availableCount !== requiredCount) {
+    failures.push(`Required USD exchange rates are missing: ${summary.missing_quotes || "unknown"}.`);
   }
-
-  const age = hoursSince(latest.fetched_at || latest.rate_date);
-  const stale = age === null || age > maxExchangeRateAgeHours;
-  if (stale) {
-    failures.push(`USD/CNY exchange rate is older than ${maxExchangeRateAgeHours} hours.`);
+  if (freshCount !== availableCount) {
+    failures.push(
+      `Required USD exchange rates are older than ${maxExchangeRateAgeHours} hours: ${
+        summary.stale_quotes || "unknown"
+      }.`
+    );
   }
 
   printRow(
-    stale ? "fail" : "ok",
+    healthy ? "ok" : "fail",
     "exchange rates",
-    `CNY ${Number(latest.rate).toFixed(4)}, updated ${formatDate(
-      latest.fetched_at || latest.rate_date
-    )}`
+    `${freshCount}/${requiredCount} fresh, oldest ${formatDate(summary.oldest_fetched_at)}`
   );
 }
 
@@ -601,6 +622,7 @@ async function main() {
         "run_app_store_stability_auto_review",
         "queue_app_store_anomaly_rechecks",
         "queue_stale_app_store_price_rechecks",
+        "queue_app_store_coverage_gap_rechecks",
         "refresh_plan_affordability_metrics",
         "refresh_matching_app_store_prices",
         "quarantine_published_app_store_price_outliers",

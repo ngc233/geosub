@@ -16,10 +16,12 @@ for (const fileName of [".env.local", ".env"]) {
 
 const databaseUrl = process.env.DATABASE_URL;
 const baseCurrency = normalizeCurrency(process.env.GEOSUB_FX_BASE || "USD");
-const quoteCurrencies = (process.env.GEOSUB_FX_QUOTES || "CNY")
+const defaultQuoteCurrencies =
+  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR";
+const quoteCurrencies = `${defaultQuoteCurrencies},${process.env.GEOSUB_FX_QUOTES || ""}`
   .split(",")
   .map(normalizeCurrency)
-  .filter((value) => value && value !== baseCurrency);
+  .filter((value, index, values) => value && value !== baseCurrency && values.indexOf(value) === index);
 
 function normalizeCurrency(value) {
   return String(value || "").trim().toUpperCase();
@@ -69,13 +71,39 @@ async function fetchOpenErApiRates(base) {
 }
 
 async function getRates(base, quotes) {
+  let primary;
   try {
-    return await fetchFrankfurterRates(base, quotes);
+    primary = await fetchFrankfurterRates(base, quotes);
   } catch (error) {
     console.warn(`WARN  Frankfurter lookup failed: ${error.message}`);
     console.warn("WARN  Falling back to open.er-api.");
     return fetchOpenErApiRates(base);
   }
+
+  const missingQuotes = quotes.filter((quote) => {
+    const rate = Number(primary.rates[quote]);
+    return !Number.isFinite(rate) || rate <= 0;
+  });
+  if (missingQuotes.length === 0) {
+    return primary;
+  }
+
+  console.warn(
+    `WARN  Frankfurter omitted ${missingQuotes.length} quote currencies; filling them from open.er-api.`,
+  );
+  const fallback = await fetchOpenErApiRates(base);
+
+  return {
+    source: "frankfurter+open-er-api",
+    requestedUrl: `${primary.requestedUrl} | ${fallback.requestedUrl}`,
+    rateDate: fallback.rateDate || primary.rateDate,
+    rates: { ...primary.rates, ...fallback.rates },
+    payload: {
+      primary: primary.payload,
+      fallback: fallback.payload,
+      fallbackQuotes: missingQuotes,
+    },
+  };
 }
 
 async function upsertRate(client, { base, quote, rate, rateDate, source, providerPayload }) {

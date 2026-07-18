@@ -117,6 +117,7 @@ core_files=(
   "sql/059_stale_app_store_price_lifecycle.sql"
   "sql/060_reclassify_app_store_selection_false_positives.sql"
   "sql/061_ignore_legacy_non_primary_app_store_tiers.sql"
+  "sql/062_app_store_coverage_gap_rechecks.sql"
 )
 
 content_files=(

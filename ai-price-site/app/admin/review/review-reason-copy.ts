@@ -72,6 +72,22 @@ export const REVIEW_REASON_COPY = {
     label: "已被新共识覆盖",
     action: "更新的 App Store 共识样本已经取代旧样本，无需人工处理。",
   },
+  superseded_non_primary_app_store_tier: {
+    label: "旧套餐层级已停用",
+    action: "旧版或非主套餐价格已保留为证据，但不会继续参与正式价格排行。",
+  },
+  app_store_likely_annual_price: {
+    label: "疑似年付价格",
+    action: "该记录与当前月付套餐周期不一致，系统已自动隔离。",
+  },
+  app_store_legacy_plan_mapping: {
+    label: "旧套餐映射已替换",
+    action: "旧的套餐名称或映射已被新规则替换，历史记录不再参与正式价格。",
+  },
+  app_store_non_monthly_or_region_restricted_item: {
+    label: "非月付或地区限定项目",
+    action: "该项目不是当前月付套餐，或仅在少数地区提供，系统已自动排除。",
+  },
 } as const;
 
 export type ReviewReasonCode = keyof typeof REVIEW_REASON_COPY;

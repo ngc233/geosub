@@ -13,12 +13,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\sync-exchange-rates.ps1
 Default behavior:
 
 - Base currency: `USD`
-- Quote currencies: `CNY`
+- Quote currencies: all 35 currencies used by the default App Store country policy
 - Provider: `frankfurter`
 - Database target: Docker container `geosub-postgres`
 - Database name: `geosub_app`
 
-## Add more currencies later
+## Override the currency set
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\sync-exchange-rates.ps1 -BaseCurrency USD -QuoteCurrencies CNY,JPY,SGD,EUR
@@ -26,8 +26,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\sync-exchange-rates.ps1 -Base
 
 ## Scheduling recommendation
 
-Run once per day, for example shortly after midnight server time. If the
-provider request fails, the previous latest active rate remains available.
+Run every 12 hours. If the provider request fails, the previous rate remains
+available to the public site, but collectors reject it after 18 hours so stale
+conversion data cannot silently enter the price pipeline.
 
 ## Install the Windows scheduled task
 

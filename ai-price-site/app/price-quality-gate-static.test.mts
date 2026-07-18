@@ -93,6 +93,7 @@ test("price quality gate requires the database automation functions", () => {
   assert.match(source, /run_app_store_stability_auto_review/);
   assert.match(source, /queue_app_store_anomaly_rechecks/);
   assert.match(source, /queue_stale_app_store_price_rechecks/);
+  assert.match(source, /queue_app_store_coverage_gap_rechecks/);
   assert.match(source, /refresh_plan_affordability_metrics/);
   assert.match(source, /refresh_matching_app_store_prices/);
   assert.match(source, /quarantine_published_app_store_price_outliers/);
@@ -106,6 +107,7 @@ test("current price data repairs remain required core migrations", () => {
     "sql/058_normalize_disney_app_store_plans.sql",
     "sql/060_reclassify_app_store_selection_false_positives.sql",
     "sql/061_ignore_legacy_non_primary_app_store_tiers.sql",
+    "sql/062_app_store_coverage_gap_rechecks.sql",
   ];
   const migrationRunner = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/db-apply-sql.sh"

@@ -491,24 +491,39 @@ function Get-AppStoreRenderedPage {
   )
 
   $scriptPath = Join-Path $PSScriptRoot "render-app-store-prices.mjs"
+  $outputPath = Join-Path ([IO.Path]::GetTempPath()) "geosub-app-store-$([Guid]::NewGuid().ToString('N')).json"
   $renderArgs = @(
     $scriptPath,
     "--country", $CountryCode,
     "--app-id", $AppleAppId,
-    "--chrome-path", $ChromePath
+    "--chrome-path", $ChromePath,
+    "--output-file", $outputPath
   )
 
   if (![string]::IsNullOrWhiteSpace($ConfiguredUrl)) {
     $renderArgs += @("--url", $ConfiguredUrl)
   }
 
-  $output = node @renderArgs
+  try {
+    node @renderArgs
 
-  if ($LASTEXITCODE -ne 0) {
-    throw "Browser-rendered App Store collection failed with exit code $LASTEXITCODE."
+    if ($LASTEXITCODE -ne 0) {
+      throw "Browser-rendered App Store collection failed with exit code $LASTEXITCODE."
+    }
+
+    if (!(Test-Path -LiteralPath $outputPath)) {
+      throw "Browser-rendered App Store collection did not produce a result file."
+    }
+
+    $resultJson = [IO.File]::ReadAllText($outputPath, [Text.Encoding]::UTF8).Trim()
+    if ([string]::IsNullOrWhiteSpace($resultJson)) {
+      throw "Browser-rendered App Store collection produced an empty result file."
+    }
+
+    $result = $resultJson | ConvertFrom-Json
+  } finally {
+    Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
   }
-
-  $result = ($output -join "").Trim() | ConvertFrom-Json
 
   $items = @($result.items | ForEach-Object {
     [pscustomobject]@{
@@ -655,19 +670,66 @@ function Get-UsdRates {
   $rateDate = (Get-Date).ToString("yyyy-MM-dd")
 
   if ($quotes.Count -gt 0) {
-    $quoteList = ($quotes -join ",")
-    $url = "https://api.frankfurter.app/latest?from=USD&to=$quoteList"
+    $quoteSqlArray = "ARRAY[" + (($quotes | ForEach-Object { Quote-SqlString $_ }) -join ",") + "]::text[]"
     try {
-      $response = Invoke-RestMethod -Uri $url -TimeoutSec 30
-      $rateDate = [string]$response.date
+      $databaseRateMap = Invoke-PsqlJson @"
+SELECT COALESCE(
+  jsonb_object_agg(
+    rate_row.quote_currency,
+    jsonb_build_object(
+      'rate', rate_row.rate,
+      'rate_date', rate_row.rate_date,
+      'fetched_at', rate_row.fetched_at
+    )
+  ),
+  '{}'::jsonb
+)
+FROM (
+  SELECT DISTINCT ON (quote_currency)
+    quote_currency, rate, rate_date, fetched_at
+  FROM latest_exchange_rates
+  WHERE base_currency = 'USD'
+    AND quote_currency = ANY($quoteSqlArray)
+    AND fetched_at >= NOW() - INTERVAL '18 hours'
+    AND rate > 0
+  ORDER BY quote_currency, fetched_at DESC, rate_date DESC
+) rate_row;
+"@
 
-      foreach ($quote in $quotes) {
-        if ($response.rates.PSObject.Properties.Name -contains $quote) {
-          $rates[$quote] = [decimal]$response.rates.$quote
+      $databaseRateCount = 0
+      foreach ($rateProperty in @($databaseRateMap.PSObject.Properties)) {
+        $quote = [string]$rateProperty.Name
+        $databaseRate = $rateProperty.Value
+        if ($quote -and $null -ne $databaseRate.rate) {
+          $rates[$quote] = [decimal]$databaseRate.rate
+          $databaseRateCount += 1
+          if ($databaseRate.rate_date) {
+            $rateDate = ([datetime]$databaseRate.rate_date).ToString("yyyy-MM-dd")
+          }
         }
       }
+
+      Write-Host "Loaded $databaseRateCount/$($quotes.Count) fresh FX rates from the database."
     } catch {
-      Write-Warning "Frankfurter FX lookup failed: $($_.Exception.Message)"
+      Write-Warning "Database FX lookup failed: $($_.Exception.Message)"
+    }
+
+    $missingQuotes = @($quotes | Where-Object { !$rates.ContainsKey($_) })
+    if ($missingQuotes.Count -gt 0) {
+      $quoteList = ($missingQuotes -join ",")
+      $url = "https://api.frankfurter.app/latest?from=USD&to=$quoteList"
+      try {
+        $response = Invoke-RestMethod -Uri $url -TimeoutSec 30
+        $rateDate = [string]$response.date
+
+        foreach ($quote in $missingQuotes) {
+          if ($response.rates.PSObject.Properties.Name -contains $quote) {
+            $rates[$quote] = [decimal]$response.rates.$quote
+          }
+        }
+      } catch {
+        Write-Warning "Frankfurter FX lookup failed: $($_.Exception.Message)"
+      }
     }
 
     $missingQuotes = @($quotes | Where-Object { !$rates.ContainsKey($_) })
@@ -691,7 +753,7 @@ function Get-UsdRates {
 
     $stillMissing = @($quotes | Where-Object { !$rates.ContainsKey($_) })
     if ($stillMissing.Count -gt 0) {
-      throw "Missing FX rates for currencies: $($stillMissing -join ', ')."
+      throw "Missing fresh FX rates for currencies: $($stillMissing -join ', '). Run the exchange-rate sync first."
     }
   }
 
@@ -1364,6 +1426,8 @@ $summary = @{
   dryRun = 0
   missing = 0
   availability = 0
+  confirmedStorefronts = 0
+  transientFailures = 0
 }
 
 foreach ($countryCode in $CountryCodes) {
@@ -1430,6 +1494,11 @@ foreach ($countryCode in $CountryCodes) {
           error = $message
         }
       $summary.availability += 1
+      if ($status -eq "not_available") {
+        $summary.confirmedStorefronts += 1
+      } else {
+        $summary.transientFailures += 1
+      }
       continue
     }
   }
@@ -1604,6 +1673,7 @@ foreach ($countryCode in $CountryCodes) {
       items = $items
     }
   $summary.availability += 1
+  $summary.confirmedStorefronts += 1
 
   if ($subscriptionItemCount -eq 0) {
     Write-Host "No subscription App Store prices found for $code. Availability recorded as $availabilityStatus."
@@ -1690,4 +1760,9 @@ foreach ($countryCode in $CountryCodes) {
   }
 }
 
-Write-Host "App Store collection complete. Inserted: $($summary.inserted). Skipped: $($summary.skipped). Dry-run: $($summary.dryRun). Missing: $($summary.missing). Availability checks: $($summary.availability)."
+$summaryText = "Inserted: $($summary.inserted). Skipped: $($summary.skipped). Dry-run: $($summary.dryRun). Missing: $($summary.missing). Confirmed storefronts: $($summary.confirmedStorefronts). Transient failures: $($summary.transientFailures)."
+if ($summary.transientFailures -gt 0) {
+  throw "App Store collection incomplete. $summaryText Temporary storefront failures must be retried."
+}
+
+Write-Host "App Store collection complete. $summaryText"
