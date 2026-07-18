@@ -110,6 +110,7 @@ function Get-OpenErApiRates {
 
 $base = Normalize-CurrencyCode $BaseCurrency
 $quotes = @($QuoteCurrencies |
+  ForEach-Object { $_ -split "," } |
   ForEach-Object { Normalize-CurrencyCode $_ } |
   Where-Object { $_ -and $_ -ne $base } |
   Select-Object -Unique)

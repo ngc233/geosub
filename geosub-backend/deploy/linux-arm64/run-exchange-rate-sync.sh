@@ -17,16 +17,7 @@ DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 
-QUOTE_ARGS=()
-IFS=',' read -r -a RAW_QUOTES <<< "$QUOTE_CURRENCIES"
-for quote in "${RAW_QUOTES[@]}"; do
-  quote="${quote//[[:space:]]/}"
-  if [[ -n "$quote" ]]; then
-    QUOTE_ARGS+=("$quote")
-  fi
-done
-
-if [[ "${#QUOTE_ARGS[@]}" -eq 0 ]]; then
+if [[ -z "${QUOTE_CURRENCIES//[[:space:],]/}" ]]; then
   echo "No quote currencies configured. Set GEOSUB_EXCHANGE_RATE_QUOTES in $ENV_FILE."
   exit 1
 fi
@@ -36,7 +27,7 @@ cd "$BACKEND_DIR"
 pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass \
   -File "$BACKEND_DIR/scripts/sync-exchange-rates.ps1" \
   -BaseCurrency "$BASE_CURRENCY" \
-  -QuoteCurrencies "${QUOTE_ARGS[@]}" \
+  -QuoteCurrencies "$QUOTE_CURRENCIES" \
   -ContainerName "$DB_CONTAINER" \
   -DbName "$DB_NAME" \
   -DbUser "$DB_USER"

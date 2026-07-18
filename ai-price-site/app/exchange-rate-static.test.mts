@@ -51,6 +51,12 @@ test("exchange-rate freshness is stricter than the public 12-hour refresh window
   assert.ok(qualityCheck.includes(requiredQuotes));
   assert.ok(linuxSync.includes(requiredQuotes));
   assert.ok(postDeployCheck.includes(requiredQuotes));
+  assert.match(linuxSync, /-QuoteCurrencies "\$QUOTE_CURRENCIES"/);
+  assert.doesNotMatch(linuxSync, /-QuoteCurrencies "\$\{QUOTE_ARGS\[@\]\}"/);
+  assert.match(
+    readProjectFile("../geosub-backend/scripts/sync-exchange-rates.ps1"),
+    /ForEach-Object \{ \$_ -split "," \}/,
+  );
   assert.match(syncScript, /api\.frankfurter\.app\/latest/);
   assert.match(syncScript, /open\.er-api\.com\/v6\/latest/);
   assert.match(syncScript, /Frankfurter omitted/);
