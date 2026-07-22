@@ -210,7 +210,7 @@ function getLogoSrc(
   }
 
   if (src.startsWith('https://') || src.startsWith('http://')) {
-    return `/api/product-logos/${encodeURIComponent(productSlug)}`;
+    return `/api/product-logos/${encodeURIComponent(productSlug)}?source=${encodeURIComponent(src)}`;
   }
 
   if (src.startsWith('/') || src.startsWith('data:image/')) {
@@ -443,7 +443,7 @@ export default function BrandIcon({
           src={logoSrc}
           alt={product.name ? `${product.name} logo` : ''}
           className={`absolute inset-0 h-full w-full object-cover ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
-          loading="lazy"
+          loading="eager"
           decoding="async"
           onLoad={() => setLoadedLogoSrc(logoSrc)}
           onError={(event) => {

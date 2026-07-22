@@ -1,31 +1,32 @@
-import type { Metadata } from "next";
 import { ProductCategory } from "@prisma/client";
 import DbAiPricingClient from "../../../components/DbAiPricingClient";
 import { getDbAiPricingProducts } from "../../../lib/db-ai-pricing";
+import { getPublicPricingCopy } from "../../../lib/public-pricing-copy";
+import { getPricingListMetadata } from "../../../lib/pricing-list-seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "AI 订阅价格对比 - ChatGPT、Claude、Gemini 全球价格",
-  description:
-    "比较 ChatGPT、Claude、Gemini 等 AI 订阅在不同国家和地区的 App Store 价格、美元折算、人民币估算、税费说明和价格差异。",
-};
+export const metadata = getPricingListMetadata("zh", "ai");
 
 export default async function AiPricingPage() {
   const products = await getDbAiPricingProducts({
     locale: "zh",
     categories: [ProductCategory.AI],
   });
+  const copy = getPublicPricingCopy("zh").listing.pages.ai;
 
   return (
     <main className="mx-auto max-w-7xl overflow-visible px-6 py-16">
       <div className="mb-10 text-center">
+        <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
+          {copy.eyebrow}
+        </p>
         <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-zinc-950 md:text-5xl dark:text-white">
-          AI 订阅价格对比
+          {copy.title}
         </h1>
 
         <p className="mx-auto max-w-2xl text-base leading-7 text-zinc-500 dark:text-zinc-400">
-          比较 ChatGPT、Claude、Gemini 等 AI 工具在不同地区的订阅价格，查看最低价地区、高价地区、税费说明和价格差距。
+          {copy.description}
         </p>
       </div>
 

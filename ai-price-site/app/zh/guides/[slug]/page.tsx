@@ -22,7 +22,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getPublishedArticleBySlug(slug, "ZH");
+  const [article, englishArticle] = await Promise.all([
+    getPublishedArticleBySlug(slug, "ZH"),
+    getPublishedArticleBySlug(slug, "EN"),
+  ]);
 
   if (!article) {
     return {
@@ -42,6 +45,13 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: url,
+      languages: englishArticle
+        ? {
+            "zh-CN": `/zh/guides/${article.slug}`,
+            en: `/en/guides/${englishArticle.slug}`,
+            "x-default": `/zh/guides/${article.slug}`,
+          }
+        : undefined,
     },
     robots: {
       index: !article.noindex,
@@ -55,6 +65,12 @@ export async function generateMetadata({
       images: image ? [{ url: image }] : undefined,
       publishedTime: article.publishedAt?.toISOString(),
       modifiedTime: article.updatedAt.toISOString(),
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: image ? [image] : undefined,
     },
   };
 }
@@ -73,6 +89,7 @@ export default async function GuideArticlePage({
 
   const html = article.bodyHtml || renderArticleMarkdown(article.bodyMarkdown);
   const url = article.canonicalUrl || absoluteUrl(`/zh/guides/${article.slug}`);
+  const image = article.ogImageUrl || article.coverImageUrl || undefined;
   const structuredData =
     article.structuredDataType === "NONE"
       ? null
@@ -81,6 +98,7 @@ export default async function GuideArticlePage({
           "@type": article.structuredDataType.replace("_", ""),
           headline: article.title,
           description: article.seoDescription || article.excerpt || undefined,
+          image,
           datePublished: article.publishedAt?.toISOString(),
           dateModified: article.updatedAt.toISOString(),
           author: {
@@ -89,7 +107,12 @@ export default async function GuideArticlePage({
           },
           publisher: {
             "@type": "Organization",
+            "@id": `${siteUrl}/#organization`,
             name: "GeoSub",
+            logo: {
+              "@type": "ImageObject",
+              url: `${siteUrl}/logo.png`,
+            },
           },
           mainEntityOfPage: url,
         };
@@ -153,7 +176,7 @@ export default async function GuideArticlePage({
                 const href = relation.relatedArticle
                   ? `/zh/guides/${relation.relatedArticle.slug}`
                   : relation.product
-                    ? `/zh/ai-pricing/${relation.product.slug}`
+                    ? `/zh/${relation.product.category === "STREAMING" ? "streaming-pricing" : "ai-pricing"}/${relation.product.slug}`
                     : null;
 
                 if (!href) return null;

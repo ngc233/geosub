@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin } from "../../../lib/admin-auth";
+import {
+  changeCurrentAdminPassword,
+  getAdminPasswordPolicyError,
+  requireAdmin,
+} from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
 
 function normalizeOptionalText(value: FormDataEntryValue | null) {
@@ -88,4 +92,41 @@ export async function updateAnalyticsSettings(formData: FormData) {
   revalidatePath("/en");
   revalidatePath("/admin/settings");
   redirect("/admin/settings?saved=1");
+}
+
+export async function updateAdminPassword(formData: FormData) {
+  const admin = await requireAdmin();
+  const currentPassword = String(formData.get("current_password") || "");
+  const newPassword = String(formData.get("new_password") || "");
+  const confirmPassword = String(formData.get("confirm_password") || "");
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    redirect("/admin/settings?passwordError=missing");
+  }
+
+  if (newPassword !== confirmPassword) {
+    redirect("/admin/settings?passwordError=mismatch");
+  }
+
+  const policyError = getAdminPasswordPolicyError(newPassword);
+  if (policyError) {
+    redirect("/admin/settings?passwordError=policy");
+  }
+
+  const result = await changeCurrentAdminPassword({
+    userId: admin.id,
+    currentPassword,
+    newPassword,
+  });
+
+  if (!result.ok) {
+    if (result.reason === "session") {
+      redirect("/admin-login");
+    }
+
+    redirect(`/admin/settings?passwordError=${result.reason}`);
+  }
+
+  revalidatePath("/admin/settings");
+  redirect(`/admin/settings?passwordChanged=1&revoked=${result.revokedSessions}`);
 }

@@ -1,6 +1,12 @@
 import "server-only";
 
 import { prisma } from "./prisma";
+import {
+  getAutomationTaskMonitor,
+  getOperationalRecoveryMonitor,
+  type AutomationTask,
+  type OperationalRecoveryOverview,
+} from "./system-task-monitor";
 
 export type HealthStatus = "ok" | "warning" | "critical" | "unknown";
 
@@ -26,6 +32,8 @@ export type SystemHealth = {
     issueCount: number;
   };
   sections: HealthSection[];
+  automationTasks: AutomationTask[];
+  operationalRecovery: OperationalRecoveryOverview | null;
   issues: string[];
 };
 
@@ -582,16 +590,37 @@ export async function getSystemHealth(): Promise<SystemHealth> {
         issueCount: issues.length,
       },
       sections,
+      automationTasks: [],
+      operationalRecovery: null,
       issues,
     };
   }
 
   const environmentSection = getEnvironmentSection();
-  const [exchangeSection, collectorSection, reviewSection, contentSection] = await Promise.all([
+  const [
+    exchangeSection,
+    collectorSection,
+    reviewSection,
+    contentSection,
+    automationTasks,
+    operationalRecovery,
+  ] = await Promise.all([
     getExchangeSection(issues),
     getCollectorSection(issues),
     getReviewSection(issues),
     getContentSection(issues),
+    safeQuery(
+      () => getAutomationTaskMonitor(),
+      [] as AutomationTask[],
+      issues,
+      "无法读取自动任务运行记录。请确认最新数据库迁移已执行。",
+    ),
+    safeQuery(
+      () => getOperationalRecoveryMonitor(),
+      null as OperationalRecoveryOverview | null,
+      issues,
+      "无法读取任务自恢复记录。请确认最新数据库迁移已执行。",
+    ),
   ]);
   const sections = [
     databaseSection,
@@ -601,16 +630,30 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     reviewSection,
     contentSection,
   ];
-  const summaryStatus = worstStatus(sections.map((section) => section.status));
+  const taskStatuses = automationTasks.map((task) => task.status);
+  const summaryStatus = worstStatus([
+    ...sections.map((section) => section.status),
+    ...taskStatuses,
+    ...(operationalRecovery ? [operationalRecovery.status] : []),
+  ]);
+  const taskIssueCount = automationTasks.filter(
+    (task) => task.status === "critical" || task.status === "warning",
+  ).length;
 
   return {
     checkedAt,
     summary: {
       status: summaryStatus,
       label: statusLabel(summaryStatus),
-      issueCount: issues.length + sections.filter((section) => section.status !== "ok").length,
+      issueCount:
+        issues.length +
+        sections.filter((section) => section.status !== "ok").length +
+        taskIssueCount +
+        (operationalRecovery?.incidents.length || 0),
     },
     sections,
+    automationTasks,
+    operationalRecovery,
     issues,
   };
 }

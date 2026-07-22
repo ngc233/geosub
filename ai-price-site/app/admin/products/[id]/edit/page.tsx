@@ -9,6 +9,7 @@ import { AdminCheckbox } from "../../../../../components/admin/AdminCheckbox";
 import { AdminInput, AdminTextarea } from "../../../../../components/admin/AdminInput";
 import AdminSelect from "../../../../../components/admin/AdminSelect";
 import BrandIcon from "../../../../../components/BrandIcon";
+import { getPricingDetailPath } from "../../../../../lib/pricing-routes";
 import { prisma } from "../../../../../lib/prisma";
 import ProductOnboardingSteps from "../../ProductOnboardingSteps";
 import {
@@ -65,12 +66,20 @@ export default async function EditProductPage({
     notFound();
   }
 
-  const [appStoreSource, appStoreJob, productSeoMeta] = await Promise.all([
-    prisma.priceSource.findUnique({
-      where: {
-        sourceKey: `product-${product.id}-app-store`,
-      },
-    }),
+  const [appStoreSources, appStoreJob, productSeoMeta] = await Promise.all([
+    prisma.$queryRaw<Array<{ baseUrl: string | null }>>`
+      SELECT source.base_url AS "baseUrl"
+      FROM collector_jobs job
+      JOIN price_sources source ON source.id = job.source_id
+      WHERE job.product_id = ${product.id}::uuid
+        AND source.type = 'app_store'
+        AND job.status <> 'archived'
+      ORDER BY
+        (job.status = 'active') DESC,
+        (job.schedule = 'daily') DESC,
+        job.updated_at DESC
+      LIMIT 1
+    `,
     prisma.$queryRaw<Array<{
       id: string;
       status: string;
@@ -85,9 +94,12 @@ export default async function EditProductPage({
       FROM collector_jobs job
       JOIN price_sources source ON source.id = job.source_id
       WHERE job.product_id = ${product.id}::uuid
-        AND source.source_key = ${`product-${product.id}-app-store`}
+        AND source.type = 'app_store'
         AND job.status <> 'archived'
-      ORDER BY job.created_at DESC
+      ORDER BY
+        (job.status = 'active') DESC,
+        (job.schedule = 'daily') DESC,
+        job.updated_at DESC
       LIMIT 1
     `,
     prisma.seoMeta.findFirst({
@@ -100,6 +112,7 @@ export default async function EditProductPage({
       },
     }),
   ]);
+  const appStoreSource = appStoreSources[0] || null;
   const latestAppStoreJob = appStoreJob[0] || null;
 
   return (
@@ -159,13 +172,13 @@ export default async function EditProductPage({
 
       {query?.logoSynced ? (
         <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
-          官网 Logo 已同步并保存到 GeoSub 服务器，前台不再直接加载第三方图片。
+          官方 Logo 已同步并保存到 GeoSub 服务器，前台不再直接加载第三方图片。
         </div>
       ) : null}
 
       {query?.logoError === "official-not-found" || query?.logoError === "not-found" ? (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
-          暂未找到高可信官网 Logo，系统不会自动写入 App Store artwork。请补充官方网站或手动填写官方 SVG/PNG Logo URL。
+          暂未找到高可信官网图标或 Apple 官方应用图标。请补充官方网站或手动填写官方 SVG/PNG Logo URL。
         </div>
       ) : null}
 
@@ -287,7 +300,7 @@ export default async function EditProductPage({
       <AdminCard className="mt-6">
         <AdminSectionHeader
           title="官方 Logo"
-          description="只同步官方网站高可信 icon，并下载到 GeoSub 持久目录；官网不可用时保留系统兜底图标。"
+          description="优先同步官方网站高可信图标，找不到时使用 Apple 官方应用图标；图片统一下载到 GeoSub 持久目录。"
         />
 
         <div className="flex flex-col gap-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -341,7 +354,10 @@ export default async function EditProductPage({
             <AdminInput
               name="canonicalUrl"
               label="Canonical"
-              defaultValue={productSeoMeta?.canonicalUrl || `/zh/ai-pricing/${product.slug}`}
+              defaultValue={
+                productSeoMeta?.canonicalUrl ||
+                getPricingDetailPath("zh", product.category, product.slug)
+              }
               helperText="可填相对路径或完整 URL。"
             />
 

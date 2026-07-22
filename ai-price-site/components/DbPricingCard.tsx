@@ -7,33 +7,29 @@ import {
   getPlanSpread,
   type DbPricingProduct,
 } from "../lib/db-pricing-types";
+import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import type { SiteLocale } from "../lib/site-locale";
 
 type DbPricingCardProps = {
   product: DbPricingProduct;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 };
 
-function priceSuffix(locale: "zh" | "en", billingCycle: string) {
-  if (billingCycle === "MONTHLY") return locale === "en" ? "/mo" : "/月";
-  if (billingCycle === "YEARLY") return locale === "en" ? "/yr" : "/年";
-  if (billingCycle === "WEEKLY") return locale === "en" ? "/wk" : "/周";
+type CardCopy = ReturnType<typeof getPublicPricingCopy>["listing"]["card"];
+
+function priceSuffix(copy: CardCopy, billingCycle: string) {
+  if (billingCycle === "MONTHLY") return copy.monthlySuffix;
+  if (billingCycle === "YEARLY") return copy.yearlySuffix;
+  if (billingCycle === "WEEKLY") return copy.weeklySuffix;
   return "";
 }
 
-function taxConfidenceLabel(locale: "zh" | "en", confidence?: string, sourceKind?: string) {
-  if (locale === "en") {
-    if (sourceKind === "inferred") return "Platform inferred";
-    if (confidence === "high") return "Verified";
-    if (confidence === "medium") return "Medium";
-    if (confidence === "low") return "Needs review";
-    return "Unverified";
-  }
-
-  if (sourceKind === "inferred") return "平台推断";
-  if (confidence === "high") return "高可信";
-  if (confidence === "medium") return "中可信";
-  if (confidence === "low") return "待复核";
-  return "待核验";
+function taxConfidenceLabel(copy: CardCopy, confidence?: string, sourceKind?: string) {
+  if (sourceKind === "inferred") return copy.taxInferred;
+  if (confidence === "high") return copy.taxVerified;
+  if (confidence === "medium") return copy.taxMedium;
+  if (confidence === "low") return copy.taxNeedsReview;
+  return copy.taxUnverified;
 }
 
 function taxConfidenceClass(confidence?: string, sourceKind?: string) {
@@ -52,15 +48,15 @@ function taxConfidenceClass(confidence?: string, sourceKind?: string) {
   return "bg-zinc-100 text-zinc-500 ring-zinc-200";
 }
 
-function formatTaxNote(locale: "zh" | "en", note?: string, confidence?: string, reviewStatus?: string) {
+function formatTaxNote(locale: SiteLocale, copy: CardCopy, note?: string, confidence?: string, reviewStatus?: string) {
   const raw = (note || "").trim();
 
   if (!raw && (reviewStatus === "needs_review" || confidence === "low")) {
-    return locale === "en" ? "Needs review" : "待复核";
+    return copy.taxNeedsReview;
   }
 
   if (locale === "en") {
-    return raw || "Checkout applies";
+    return raw || copy.checkoutApplies;
   }
 
   const includeMatch = raw.match(/^(?:Includes|Usually includes)\s+(.+)$/i);
@@ -79,7 +75,7 @@ function formatTaxNote(locale: "zh" | "en", note?: string, confidence?: string, 
   if (/Sales tax varies by region/i.test(raw)) return "销售税因地区不同";
   if (/VAT treatment needs review/i.test(raw)) return "VAT 规则需复核";
 
-  return raw || "结算页为准";
+  return raw || copy.checkoutApplies;
 }
 
 export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
@@ -97,34 +93,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
       : cheapRegions;
   const spread = getPlanSpread(defaultPlan);
 
-  const copy =
-    locale === "en"
-      ? {
-          titleSuffix: "Regional Pricing",
-          region: "Region",
-          price: "Price",
-          tax: "Tax note",
-          base: "Base",
-          updated: "Updated",
-          spread: "price spread",
-          regions: "regions",
-          detail: "View details",
-          highest: "Highest",
-          lowest: "Lowest",
-        }
-      : {
-          titleSuffix: "各地区定价",
-          region: "地区",
-          price: "价格",
-          tax: "税费说明",
-          base: "基准",
-          updated: "更新时间",
-          spread: "价差",
-          regions: "个地区",
-          detail: "查看详情",
-          highest: "最高价",
-          lowest: "最低价",
-        };
+  const copy = getPublicPricingCopy(locale).listing.card;
 
   const detailBase =
     product.category === "streaming" ? "streaming-pricing" : "ai-pricing";
@@ -248,7 +217,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                       }`}
                     >
                       {formatUsd(region.priceUsd)}
-                      {priceSuffix(locale, defaultPlan.billingCycle)}
+                      {priceSuffix(copy, defaultPlan.billingCycle)}
                     </div>
 
                     <div className="mt-1.5 font-mono text-[11px] text-zinc-400">
@@ -261,6 +230,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                       <div className="truncate" title={region.taxFrontendNote || region.taxNote}>
                         {formatTaxNote(
                           locale,
+                          copy,
                           region.taxNote,
                           region.taxConfidence,
                           region.taxReviewStatus,
@@ -272,7 +242,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                           taxConfidenceClass(region.taxConfidence, region.taxSourceKind),
                         ].join(" ")}
                       >
-                        {taxConfidenceLabel(locale, region.taxConfidence, region.taxSourceKind)}
+                        {taxConfidenceLabel(copy, region.taxConfidence, region.taxSourceKind)}
                       </span>
                     </div>
                   </td>

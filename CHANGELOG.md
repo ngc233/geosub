@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.0 - 2026-07-22
+
+- Rebuilt GeoSub around one database-driven catalog for AI and streaming subscriptions, with seven reviewed launch products, canonical plan definitions, category-correct navigation, and synchronized Chinese and English public pages.
+- Reworked App Store collection into a product-level automated pipeline with durable progress, scheduled refresh layers, stability review, regional availability checks, bounded retries, stale-run recovery, and automatic isolation of hard anomalies.
+- Unified price freshness semantics across collection dates, exchange-rate dates, plan review dates, and page update dates; added full-catalog gates for stale prices, sub-dollar conversions, peer outliers, duplicate plans, tax coverage, and superseded evidence.
+- Added operational admin views for product data quality, collection diagnosis, review outcomes, system task health, article lifecycle, navigation, event analytics, Google Analytics configuration, and single-administrator password management.
+- Completed public mobile and desktop UI consistency, official cached product artwork, category-specific sidebars, localized purchasing-power and tax/risk content, interactive maps, share cards, and accessible dropdown behavior.
+- Expanded SEO and publishing support with localized guides, metadata, canonical and alternate URLs, structured data, dynamic sitemap coverage, robots policy, and production guards for unfinished sections.
+- Hardened ARM64 deployment with verified database backups, immutable migration tracking, service health checks, persistent logo synchronization, deployment evidence, failure recovery, and explicit rollback without implicit database restoration.
+
 ## 1.0.6 - 2026-07-18
 
 - Automatically ignored legacy Manus Pro non-primary tier observations that predated plan-level price selection, retaining their evidence while preventing stability approval.

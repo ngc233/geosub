@@ -2,7 +2,7 @@ import {
   formatUsd,
   type PlanStats,
   type ProductPlan,
-} from '../data/ai-pricing';
+} from '../lib/public-pricing-model';
 
 type PriceSummaryChartProps = {
   plan: ProductPlan;

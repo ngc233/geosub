@@ -153,19 +153,32 @@ export async function getArticleSeoDraft(articleId: string) {
   const productNames = relatedProducts.map((product) => product?.name);
   const categoryName = article.category?.name;
   const bodyText = stripMarkdown(article.bodyMarkdown);
+  const isEnglish = article.locale === "EN";
   const fallbackDescription =
     article.excerpt ||
     article.subtitle ||
     bodyText ||
-    `阅读 GeoSub 关于 ${article.title} 的指南、价格分析和订阅方法。`;
+    (isEnglish
+      ? `Read GeoSub's guide, pricing analysis and subscription advice for ${article.title}.`
+      : `阅读 GeoSub 关于 ${article.title} 的指南、价格分析和订阅方法。`);
 
-  const titleTail = categoryName ? `｜${categoryName}` : "｜GeoSub 指南";
+  const titleTail = categoryName
+    ? isEnglish
+      ? ` | ${categoryName}`
+      : `｜${categoryName}`
+    : isEnglish
+      ? " | GeoSub Guides"
+      : "｜GeoSub 指南";
   const seoTitle = truncateText(`${article.title}${titleTail}`, 58);
   const seoDescription = truncateText(
     `${fallbackDescription} ${
       productNames.length > 0
-        ? `关联 ${productNames.slice(0, 3).join("、")} 等价格页。`
-        : "覆盖订阅价格、地区差异和购买决策信息。"
+        ? isEnglish
+          ? `Includes pricing links for ${productNames.slice(0, 3).join(", ")}.`
+          : `关联 ${productNames.slice(0, 3).join("、")} 等价格页。`
+        : isEnglish
+          ? "Covers subscription pricing, regional differences and purchase decisions."
+          : "覆盖订阅价格、地区差异和购买决策信息。"
     }`,
     155,
   );
@@ -175,8 +188,8 @@ export async function getArticleSeoDraft(articleId: string) {
     categoryName,
     article.title,
     "GeoSub",
-    "订阅价格",
-    "地区订阅",
+    isEnglish ? "subscription pricing" : "订阅价格",
+    isEnglish ? "regional subscriptions" : "地区订阅",
   ]).slice(0, 12);
 
   const draft = {
@@ -185,7 +198,7 @@ export async function getArticleSeoDraft(articleId: string) {
     seoKeywords: keywords.join(", "),
     ogTitle: seoTitle,
     ogDescription: seoDescription,
-    canonicalUrl: `/zh/guides/${article.slug}`,
+    canonicalUrl: `/${isEnglish ? "en" : "zh"}/guides/${article.slug}`,
     structuredDataType: structuredDataTypeForArticle(article.articleType),
     relatedProductCount: relatedProducts.length,
     relatedArticleCount: relatedArticles.length,

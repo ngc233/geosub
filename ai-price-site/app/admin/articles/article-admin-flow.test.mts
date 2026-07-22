@@ -49,3 +49,23 @@ test("article SEO draft action has no unreachable legacy generator branch", () =
   assert.doesNotMatch(source, /uniqueText/);
   assert.doesNotMatch(source, /findUniqueOrThrow/);
 });
+
+test("article admin keeps language-specific taxonomy, links and cache paths", () => {
+  const list = readArticleFile("page.tsx");
+  const form = readArticleFile("ArticleForm.tsx");
+  const createPage = readArticleFile("new/page.tsx");
+  const editPage = readArticleFile("[id]/edit/page.tsx");
+  const taxonomy = readArticleFile("taxonomy/page.tsx");
+  const actions = readArticleFile("actions.ts");
+
+  assert.match(list, /article\.locale === "EN" \? "en" : "zh"/);
+  assert.match(form, /defaultLocale/);
+  assert.match(createPage, /getArticleCategories\(locale\)/);
+  assert.match(createPage, /getArticleTags\(locale\)/);
+  assert.match(editPage, /getArticleCategories\(article\.locale\)/);
+  assert.match(editPage, /locale: article\.locale/);
+  assert.match(taxonomy, /query\.locale === "EN"/);
+  assert.match(taxonomy, /name="locale" value=\{locale\}/);
+  assert.match(actions, /revalidatePath\("\/en\/guides"\)/);
+  assert.match(actions, /revalidatePath\(`\/en\/guides\/\$\{slug\}`\)/);
+});

@@ -88,6 +88,7 @@ test("scheduled collector runner deduplicates product and collector kind", () =>
   assert.match(runner, /\$requestedRunId = \$RunId/);
   assert.match(runner, /\$jobRunId = Start-JobRun/);
   assert.doesNotMatch(runner, /\$runId = Start-JobRun/);
+  assert.match(runner, /Console\]::OutputEncoding = \$utf8Encoding/);
 });
 
 test("queued admin run shows process startup as the active timeline step", () => {
@@ -111,6 +112,22 @@ test("spawned run keeps the process step active and waits for collection output"
   assert.equal(timeline[1].state, "active");
   assert.match(timeline[1].detail, /12345/);
   assert.equal(timeline[2].state, "waiting");
+});
+
+test("collected run waits visibly for the shared automatic review", () => {
+  const timeline = buildCollectorRunTimeline(
+    run({
+      runner_state: "collected_waiting_review",
+      output_excerpt: "App Store collection complete.",
+      run_age_seconds: 90,
+    }),
+  );
+
+  assert.deepEqual(
+    timeline.map((step) => step.state),
+    ["done", "done", "done", "active"],
+  );
+  assert.match(timeline[3].detail, /统一自动审核/);
 });
 
 test("successful run completes the collection and handoff timeline", () => {
@@ -156,4 +173,54 @@ test("stale running collection is visible as a failed run", () => {
   assert.equal(timeline[1].state, "failed");
   assert.equal(timeline[2].state, "failed");
   assert.match(timeline[1].detail, /3 minutes/);
+});
+
+test("App Store runs persist a product-scoped outcome only after automatic review", () => {
+  const runner = readFileSync(
+    resolve(testDir, "../../../../geosub-backend/scripts/run-collector-jobs.ps1"),
+    "utf8",
+  );
+  const reviewCall = runner.indexOf("run_app_store_stability_auto_review");
+  const outcomeCall = runner.indexOf("Add-AppStoreReviewOutcome", reviewCall);
+  const completionCall = runner.indexOf("Complete-JobRun", outcomeCall);
+
+  assert.ok(reviewCall >= 0);
+  assert.ok(outcomeCall > reviewCall);
+  assert.ok(completionCall > outcomeCall);
+  assert.match(runner, /review_outcome/);
+  assert.match(runner, /pending_stability_count/);
+  assert.match(runner, /isolated_count/);
+  assert.match(runner, /published_price_count/);
+  assert.match(runner, /collected_waiting_review/);
+});
+
+test("collector dashboard prefers persisted outcomes and shows a product summary", () => {
+  const page = readFileSync(resolve(testDir, "page.tsx"), "utf8");
+  const timelineComponent = readFileSync(
+    resolve(testDir, "../review/CollectorRunTimeline.tsx"),
+    "utf8",
+  );
+
+  assert.match(page, /review_outcome,observed_count/);
+  assert.match(page, /latest_pending_stability_count/);
+  assert.match(page, /latest_has_review_outcome/);
+  assert.match(page, /本轮检查/);
+  assert.match(page, /下次计划/);
+  assert.match(page, /已到期，等待执行器/);
+  assert.match(timelineComponent, /自动通过/);
+  assert.match(timelineComponent, /待稳定/);
+  assert.match(timelineComponent, /隔离/);
+  assert.match(timelineComponent, /正式更新/);
+});
+
+test("automatic review failure remains failed without a successful outcome", () => {
+  const runner = readFileSync(
+    resolve(testDir, "../../../../geosub-backend/scripts/run-collector-jobs.ps1"),
+    "utf8",
+  );
+  const failurePayload = runner.indexOf('auto_review_status = "failed"');
+  const failedCompletion = runner.indexOf("Complete-JobRun", failurePayload);
+
+  assert.ok(failurePayload >= 0);
+  assert.ok(failedCompletion > failurePayload);
 });

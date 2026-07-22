@@ -118,6 +118,15 @@ core_files=(
   "sql/060_reclassify_app_store_selection_false_positives.sql"
   "sql/061_ignore_legacy_non_primary_app_store_tiers.sql"
   "sql/062_app_store_coverage_gap_rechecks.sql"
+  "sql/063_system_task_runs.sql"
+  "sql/064_data_quality_repair_cycles.sql"
+  "sql/065_operational_self_healing.sql"
+  "sql/066_public_product_lifecycle.sql"
+  "sql/067_app_store_availability_semantics.sql"
+  "sql/068_plan_region_availability.sql"
+  "sql/069_required_catalog_products.sql"
+  "sql/070_disney_app_store_source.sql"
+  "sql/071_archive_superseded_app_store_ambiguities.sql"
 )
 
 content_files=(

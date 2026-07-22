@@ -8,7 +8,7 @@ Type=oneshot
 EnvironmentFile=-/etc/geosub/geosub.env
 Environment=GEOSUB_COLLECTOR_LOCK_DIR=/run/geosub
 WorkingDirectory=/opt/geosub/geosub-backend
-ExecStart=/usr/bin/env bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-system-task.sh collector_runner -- /usr/bin/env bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh
 User=geosub
 Group=geosub
 RuntimeDirectory=geosub

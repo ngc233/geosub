@@ -7,25 +7,47 @@ export type RegionPrice = {
   priceUsd: number;
   localPrice: string;
   tax: string;
+  taxConfidence?: "high" | "medium" | "low" | "unknown";
+  taxSourceKind?: "manual" | "official" | "apple" | "provider" | "inferred";
+  taxTreatment?: "included_likely" | "varies_by_region" | "checkout_may_add" | "unknown";
+  taxCalculationPolicy?: "do_not_calculate" | "informational_only";
+  taxReviewStatus?: "verified" | "needs_review" | "unknown";
+  taxFrontendNote?: string;
+  riskLevel?: "low" | "medium" | "high" | "unknown";
+  riskScore?: number;
+  riskNote?: string;
+  riskRequirements?: string;
+  riskFactors?: string;
   billingPlatform?: string;
   billingPlatformLabel?: string;
+  lastCheckedAt?: string;
+  fxRateDate?: string;
+  reviewedAt?: string;
+  sourceName?: string;
+  confidenceScore?: number;
+  dataQuality?: "verified" | "estimated" | "stale" | "pending_review" | "unknown";
   isCheap?: boolean;
   isExpensive?: boolean;
   isReference?: boolean;
 };
 
+export type PlanDataFreshness = {
+  sourceLabel: string;
+  priceCollectedAt?: string;
+  fxRateDate?: string;
+  planReviewedAt?: string;
+  pageUpdatedAt?: string;
+  trustStatus: "verified" | "reviewed" | "needs_review";
+};
+
 export type ProductPlan = {
   slug: string;
   name: string;
-  billing:
-    | "monthly"
-    | "yearly"
-    | "weekly"
-    | "quarterly"
-    | "one_time"
-    | "lifetime"
-    | "unknown";
+  billing: "monthly" | "yearly";
   description?: string;
+  priceStatus?: "published" | "pending" | "empty";
+  pendingObservationCount?: number;
+  freshness?: PlanDataFreshness;
   regions: RegionPrice[];
 };
 
@@ -37,6 +59,7 @@ export type SubscriptionProduct = {
   description: string;
   icon?: string;
   logoUrl?: string;
+  officialUrl?: string;
   accentIcon?: string;
   defaultPlan: string;
   updatedAt: string;
@@ -57,9 +80,12 @@ export function formatUsd(price: number) {
 }
 
 export function getProductPlan(product: SubscriptionProduct, planSlug?: string) {
+  const availablePlans = product.plans.filter((plan) => plan.regions.length > 0);
+
   return (
-    product.plans.find((plan) => plan.slug === planSlug) ||
-    product.plans.find((plan) => plan.slug === product.defaultPlan) ||
+    availablePlans.find((plan) => plan.slug === planSlug) ||
+    availablePlans.find((plan) => plan.slug === product.defaultPlan) ||
+    availablePlans[0] ||
     product.plans[0]
   );
 }
@@ -76,16 +102,8 @@ export function getPlanStats(plan: ProductPlan): PlanStats {
   const minRegion = sorted[0];
   const maxRegion = sorted[sorted.length - 1];
   const referenceRegion = getReferenceRegion(plan);
-
-  const spreadPercent =
-    minRegion.priceUsd > 0
-      ? ((maxRegion.priceUsd - minRegion.priceUsd) / minRegion.priceUsd) * 100
-      : 0;
-
-  const savingPercent =
-    maxRegion.priceUsd > 0
-      ? ((maxRegion.priceUsd - minRegion.priceUsd) / maxRegion.priceUsd) * 100
-      : 0;
+  const spreadPercent = ((maxRegion.priceUsd - minRegion.priceUsd) / minRegion.priceUsd) * 100;
+  const savingPercent = ((maxRegion.priceUsd - minRegion.priceUsd) / maxRegion.priceUsd) * 100;
 
   return {
     minRegion,
@@ -95,3 +113,4 @@ export function getPlanStats(plan: ProductPlan): PlanStats {
     savingPercent: Math.round(savingPercent),
   };
 }
+

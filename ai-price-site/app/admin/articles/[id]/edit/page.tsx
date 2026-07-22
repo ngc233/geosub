@@ -40,22 +40,27 @@ export default async function EditArticlePage({
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
 
-  const [article, categories, tags, products, relatedArticles] = await Promise.all([
-    prisma.article.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        tagLinks: {
-          include: {
-            tag: true,
-          },
+  const article = await prisma.article.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      tagLinks: {
+        include: {
+          tag: true,
         },
-        relations: true,
       },
-    }),
-    getArticleCategories("ZH"),
-    getArticleTags("ZH"),
+      relations: true,
+    },
+  });
+
+  if (!article || article.deletedAt) {
+    notFound();
+  }
+
+  const [categories, tags, products, relatedArticles] = await Promise.all([
+    getArticleCategories(article.locale),
+    getArticleTags(article.locale),
     prisma.product.findMany({
       where: {
         status: "PUBLISHED",
@@ -71,7 +76,7 @@ export default async function EditArticlePage({
     }),
     prisma.article.findMany({
       where: {
-        locale: "ZH",
+        locale: article.locale,
         status: "PUBLISHED",
         noindex: false,
         deletedAt: null,
@@ -93,10 +98,6 @@ export default async function EditArticlePage({
       take: 30,
     }),
   ]);
-
-  if (!article || article.deletedAt) {
-    notFound();
-  }
 
   const articleText = normalizeText(
     [
@@ -190,7 +191,7 @@ export default async function EditArticlePage({
           <div className="flex gap-3">
             {article.status === "PUBLISHED" && !article.noindex ? (
               <Link
-                href={`/zh/guides/${article.slug}`}
+                href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                 target="_blank"
                 className="text-sm font-black text-slate-700 hover:text-slate-950"
               >

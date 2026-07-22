@@ -1,5 +1,7 @@
 import Link from "next/link";
 import BrandIcon from "./BrandIcon";
+import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import type { SiteLocale } from "../lib/site-locale";
 
 export type ProductNavCategory = "ai" | "streaming";
 
@@ -15,18 +17,7 @@ type ProductSidebarProps = {
   products: ProductNavItem[];
   currentSlug: string;
   basePath?: string;
-  locale?: "zh" | "en";
-};
-
-const categoryLabels: Record<"zh" | "en", Record<ProductNavCategory, string>> = {
-  zh: {
-    ai: "AI 订阅",
-    streaming: "流媒体",
-  },
-  en: {
-    ai: "AI Subscriptions",
-    streaming: "Streaming",
-  },
+  locale?: SiteLocale;
 };
 
 const categoryOrder: ProductNavCategory[] = ["ai", "streaming"];
@@ -48,6 +39,11 @@ export default function ProductSidebar({
   basePath,
   locale = "zh",
 }: ProductSidebarProps) {
+  const copy = getPublicPricingCopy(locale).navigation;
+  const categoryLabels: Record<ProductNavCategory, string> = {
+    ai: copy.ai,
+    streaming: copy.streaming,
+  };
   const groupedProducts = products.reduce<Record<ProductNavCategory, ProductNavItem[]>>(
     (acc, product) => {
       acc[product.category].push(product);
@@ -63,7 +59,7 @@ export default function ProductSidebar({
     <aside className="hidden shrink-0 lg:block lg:w-60">
       <div className="sticky top-24 rounded-xl border border-zinc-200 bg-white/75 p-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/60">
         <div className="px-2 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-          {locale === "en" ? "Products" : "产品总览"}
+          {copy.products}
         </div>
 
         <div className="space-y-4">
@@ -77,7 +73,7 @@ export default function ProductSidebar({
             return (
               <div key={category}>
                 <div className="px-2 pb-2 text-xs font-medium text-zinc-400">
-                  {categoryLabels[locale][category]}
+                  {categoryLabels[category]}
                 </div>
 
                 <div className="space-y-1">

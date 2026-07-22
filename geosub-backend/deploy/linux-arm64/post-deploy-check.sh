@@ -207,6 +207,9 @@ if (( failures == 0 )); then
     countries \
     exchange_rates \
     exchange_rate_sync_runs \
+    system_task_runs \
+    data_quality_repair_cycles \
+    operational_recovery_cycles \
     collector_jobs \
     collector_job_runs \
     price_observations \
@@ -234,7 +237,16 @@ if (( failures == 0 )); then
     "sql/059_stale_app_store_price_lifecycle.sql" \
     "sql/060_reclassify_app_store_selection_false_positives.sql" \
     "sql/061_ignore_legacy_non_primary_app_store_tiers.sql" \
-    "sql/062_app_store_coverage_gap_rechecks.sql"; do
+    "sql/062_app_store_coverage_gap_rechecks.sql" \
+    "sql/063_system_task_runs.sql" \
+    "sql/064_data_quality_repair_cycles.sql" \
+    "sql/065_operational_self_healing.sql" \
+    "sql/066_public_product_lifecycle.sql" \
+    "sql/067_app_store_availability_semantics.sql" \
+    "sql/068_plan_region_availability.sql" \
+    "sql/069_required_catalog_products.sql" \
+    "sql/070_disney_app_store_source.sql" \
+    "sql/071_archive_superseded_app_store_ambiguities.sql"; do
     check_migration "$migration"
   done
 
@@ -243,7 +255,14 @@ if (( failures == 0 )); then
     "collector_job_runs_started_idx" \
     "collector_job_runs_product_started_idx" \
     "collector_job_runs_running_started_idx" \
-    "collector_jobs_coverage_refresh_product_idx"; do
+    "collector_jobs_coverage_refresh_product_idx" \
+    "collector_jobs_anomaly_watch_product_idx" \
+    "data_quality_repair_cycles_created_idx" \
+    "operational_recovery_cycles_created_idx" \
+    "collector_job_runs_one_running_per_job_idx" \
+    "system_task_runs_task_started_idx" \
+    "system_task_runs_status_started_idx" \
+    "system_task_runs_running_started_idx"; do
     check_index "$index_name"
   done
 
@@ -275,6 +294,13 @@ if (( failures == 0 )); then
     fail "stale running collector runs: $stale_running"
   fi
 
+  stale_system_tasks="$(psql_scalar "SELECT COUNT(*) FROM system_task_runs WHERE status = 'running' AND started_at < NOW() - INTERVAL '6 hours';")"
+  if [[ "$stale_system_tasks" == "0" ]]; then
+    pass "no stale running system tasks"
+  else
+    fail "stale running system tasks: $stale_system_tasks"
+  fi
+
   collector_summary="$(psql_scalar "SELECT COUNT(*)::text || '|' || COUNT(*) FILTER (WHERE status = 'active')::text || '|' || COUNT(*) FILTER (WHERE status = 'active' AND (next_run_at IS NULL OR next_run_at <= NOW()))::text FROM collector_jobs;")"
   IFS='|' read -r collector_total collector_active collector_due <<< "$collector_summary"
   if [[ "${collector_total:-0}" == "0" ]]; then
@@ -302,6 +328,20 @@ if (( failures == 0 )); then
     pass "no exhausted coverage refresh jobs remain active"
   else
     fail "exhausted coverage refresh jobs still active: $exhausted_coverage_jobs"
+  fi
+
+  anomaly_refresh_duplicates="$(psql_scalar "SELECT COUNT(*) FROM (SELECT product_id FROM collector_jobs WHERE schedule = 'anomaly_watch' AND status <> 'archived' GROUP BY product_id HAVING COUNT(*) > 1) duplicate_jobs;")"
+  if [[ "$anomaly_refresh_duplicates" == "0" ]]; then
+    pass "no duplicate product-level anomaly refresh jobs"
+  else
+    fail "duplicate product-level anomaly refresh jobs: $anomaly_refresh_duplicates"
+  fi
+
+  exhausted_anomaly_jobs="$(psql_scalar "SELECT COUNT(*) FROM collector_jobs WHERE schedule = 'anomaly_watch' AND status = 'active' AND COALESCE((job_config ->> 'anomaly_success_count')::integer, 0) >= 3;")"
+  if [[ "$exhausted_anomaly_jobs" == "0" ]]; then
+    pass "no exhausted anomaly refresh jobs remain active"
+  else
+    fail "exhausted anomaly refresh jobs still active: $exhausted_anomaly_jobs"
   fi
 
   latest_collector_run="$(psql_scalar "SELECT COALESCE(MAX(started_at)::text, 'missing') FROM collector_job_runs;")"
@@ -356,6 +396,12 @@ if (( failures == 0 )); then
   else
     fail "published App Store prices have newer exact-local observations: $unrefreshed_exact_local_prices"
   fi
+fi
+
+if sudo -u geosub bash -lc "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && npm run check:logos"; then
+  pass "all published product logos are cached locally"
+else
+  fail "published product logo cache is incomplete"
 fi
 
 check_unit_active "geosub-web.service"

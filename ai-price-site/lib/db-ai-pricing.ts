@@ -6,8 +6,10 @@ import type {
   DbPricingPlan,
   DbPricingRegion,
 } from "./db-pricing-types";
+import type { SiteLocale } from "./site-locale";
+import { getLocalizedCountryName } from "./country-name";
 
-type DbPricingLocale = "zh" | "en";
+type DbPricingLocale = SiteLocale;
 type TaxProfileRow = {
   country_code: string;
   display_note_zh: string | null;
@@ -19,69 +21,6 @@ type TaxProfileRow = {
   frontend_note_zh: string | null;
   frontend_note_en: string | null;
 };
-const countryNameZhMap: Record<string, string> = {
-  US: "美国",
-  CA: "加拿大",
-  MX: "墨西哥",
-  GB: "英国",
-  DE: "德国",
-  FR: "法国",
-  ES: "西班牙",
-  IT: "意大利",
-  NL: "荷兰",
-  DK: "丹麦",
-  SE: "瑞典",
-  NO: "挪威",
-  CH: "瑞士",
-  PL: "波兰",
-  TR: "土耳其",
-  JP: "日本",
-  KR: "韩国",
-  SG: "新加坡",
-  HK: "中国香港",
-  TW: "中国台湾",
-  IN: "印度",
-  PH: "菲律宾",
-  TH: "泰国",
-  MY: "马来西亚",
-  ID: "印度尼西亚",
-  VN: "越南",
-  AU: "澳大利亚",
-  NZ: "新西兰",
-  BR: "巴西",
-  AR: "阿根廷",
-  CL: "智利",
-  CO: "哥伦比亚",
-  ZA: "南非",
-  AE: "阿联酋",
-};
-
-const productDisplayNameMap: Record<string, string> = {
-  chatgpt: "ChatGPT",
-  gemini: "Gemini",
-  netflix: "Netflix",
-};
-
-function getCountryName({
-  code,
-  nameZh,
-  nameEn,
-  locale,
-}: {
-  code: string;
-  nameZh: string;
-  nameEn: string;
-  locale: DbPricingLocale;
-}) {
-  const normalizedCode = code.toUpperCase();
-
-  if (locale === "en") {
-    return nameEn;
-  }
-
-  return countryNameZhMap[normalizedCode] || nameZh || nameEn;
-}
-
 function getProductDescription({
   name,
   locale,
@@ -105,10 +44,11 @@ function mapCategory(category: ProductCategory): DbPricingCategory | null {
   return null;
 }
 
-function formatYearMonth(date: Date) {
+function formatDate(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function billingSuffix(billingCycle: string) {
@@ -322,21 +262,17 @@ export async function getDbAiPricingProducts({
         category: {
           in: categories,
         },
-        OR: [
-          { status: "PUBLISHED" },
-          {
-            plans: {
+        status: "PUBLISHED",
+        plans: {
+          some: {
+            status: "PUBLISHED",
+            regionPrices: {
               some: {
                 status: "PUBLISHED",
-                regionPrices: {
-                  some: {
-                    status: "PUBLISHED",
-                  },
-                },
               },
             },
           },
-        ],
+        },
       },
       orderBy: [
         { sortOrder: "asc" },
@@ -396,7 +332,7 @@ export async function getDbAiPricingProducts({
         return null;
       }
 
-      const displayName = productDisplayNameMap[product.slug] || product.name;
+      const displayName = product.name;
 
       const plans = product.plans
         .map<DbPricingPlan | null>((plan) => {
@@ -417,7 +353,7 @@ export async function getDbAiPricingProducts({
             return {
               rank: index + 1,
               code,
-              countryName: getCountryName({
+              countryName: getLocalizedCountryName({
                 code: price.country.code,
                 nameZh: price.country.nameZh,
                 nameEn: price.country.nameEn,
@@ -479,7 +415,7 @@ export async function getDbAiPricingProducts({
           locale,
         }),
         logoUrl: product.logoUrl || undefined,
-        updatedAt: formatYearMonth(latestDate),
+        updatedAt: formatDate(latestDate),
         plans,
       };
     })

@@ -47,6 +47,13 @@ type JobRow = {
   latest_runner_state: string | null;
   latest_process_id: string | null;
   latest_run_age_seconds: number | null;
+  latest_has_review_outcome: boolean;
+  latest_observed_count: number;
+  latest_approved_count: number;
+  latest_pending_stability_count: number;
+  latest_isolated_count: number;
+  latest_published_price_count: number;
+  latest_storefront_count: number;
   published_price_count: number;
   pending_observation_count: number;
   approved_observation_count: number;
@@ -115,6 +122,7 @@ type ProductJobGroup = {
   recentAppStoreObservationCount: number;
   successCount: number;
   errorCount: number;
+  nextRunAt: Date | string | null;
 };
 
 function formatDate(value: Date | string | null) {
@@ -128,6 +136,12 @@ function formatDate(value: Date | string | null) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatNextRun(value: Date | string | null) {
+  if (!value) return "按数据状态自动安排";
+  if (dateValue(value) <= Date.now()) return "已到期，等待执行器";
+  return formatDate(value);
 }
 
 function formatDuration(value: number | null) {
@@ -185,7 +199,8 @@ function statusClassName(status: string | null) {
 
 function availabilityLabel(status: string | null) {
   if (status === "available_with_prices") return "可采集价格";
-  if (status === "available_no_iap") return "无订阅价格";
+  if (status === "available_no_iap") return "确认无订阅";
+  if (status === "available_unmatched_items") return "发现未识别套餐";
   if (status === "not_available") return "未上架";
   if (status === "blocked") return "访问受限";
   if (status === "unknown_error") return "检查异常";
@@ -201,7 +216,11 @@ function availabilityClassName(status: string | null) {
     return "bg-amber-50 text-amber-700 ring-amber-200";
   }
 
-  if (status === "blocked" || status === "unknown_error") {
+  if (
+    status === "available_unmatched_items" ||
+    status === "blocked" ||
+    status === "unknown_error"
+  ) {
     return "bg-red-50 text-red-700 ring-red-200";
   }
 
@@ -336,6 +355,7 @@ function groupCollectorJobs(jobs: JobRow[]) {
         recentAppStoreObservationCount: job.recent_app_store_observation_count,
         successCount: job.success_count,
         errorCount: job.error_count,
+        nextRunAt: job.status === "active" ? job.next_run_at : null,
       });
       continue;
     }
@@ -370,6 +390,12 @@ function groupCollectorJobs(jobs: JobRow[]) {
     );
     existing.successCount += job.success_count;
     existing.errorCount += job.error_count;
+    if (
+      job.status === "active" &&
+      (!existing.nextRunAt || dateValue(job.next_run_at) < dateValue(existing.nextRunAt))
+    ) {
+      existing.nextRunAt = job.next_run_at;
+    }
 
     const latestCurrent = dateValue(
       existing.latestJob?.latest_run_started_at || existing.latestJob?.last_run_at || null
@@ -534,6 +560,13 @@ export default async function CollectorJobsPage() {
         latest_runs.raw_payload ->> 'diagnosis' AS latest_run_diagnosis,
         latest_runs.raw_payload ->> 'state' AS latest_runner_state,
         latest_runs.raw_payload ->> 'pid' AS latest_process_id,
+        COALESCE(latest_runs.raw_payload ? 'review_outcome', FALSE) AS latest_has_review_outcome,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,observed_count}')::int, 0) AS latest_observed_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,approved_count}')::int, 0) AS latest_approved_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,pending_stability_count}')::int, 0) AS latest_pending_stability_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,isolated_count}')::int, 0) AS latest_isolated_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,published_price_count}')::int, 0) AS latest_published_price_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,storefront_count}')::int, 0) AS latest_storefront_count,
         CASE
           WHEN latest_runs.started_at IS NULL THEN NULL
           ELSE GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(latest_runs.finished_at, NOW()) - latest_runs.started_at)))::int
@@ -608,13 +641,41 @@ export default async function CollectorJobsPage() {
         run.raw_payload ->> 'pid' AS process_id,
         run.raw_payload ->> 'state' AS runner_state,
         GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(run.finished_at, NOW()) - run.started_at)))::int AS run_age_seconds,
-        COALESCE(observation_outcome.observed_count, 0)::int AS observed_count,
-        COALESCE(observation_outcome.pending_observation_count, 0)::int AS pending_observation_count,
-        COALESCE(observation_outcome.approved_observation_count, 0)::int AS approved_observation_count,
-        COALESCE(observation_outcome.rejected_observation_count, 0)::int AS rejected_observation_count,
-        COALESCE(observation_outcome.ignored_observation_count, 0)::int AS ignored_observation_count,
-        COALESCE(observation_outcome.anomaly_observation_count, 0)::int AS anomaly_observation_count,
-        COALESCE(published_outcome.published_price_count, 0)::int AS published_price_count
+        COALESCE(
+          (run.raw_payload #>> '{review_outcome,observed_count}')::int,
+          observation_outcome.observed_count,
+          0
+        )::int AS observed_count,
+        COALESCE(
+          (run.raw_payload #>> '{review_outcome,pending_stability_count}')::int,
+          observation_outcome.pending_observation_count,
+          0
+        )::int AS pending_observation_count,
+        COALESCE(
+          (run.raw_payload #>> '{review_outcome,approved_count}')::int,
+          observation_outcome.approved_observation_count,
+          0
+        )::int AS approved_observation_count,
+        COALESCE(
+          (run.raw_payload #>> '{review_outcome,rejected_count}')::int,
+          observation_outcome.rejected_observation_count,
+          0
+        )::int AS rejected_observation_count,
+        COALESCE(
+          (run.raw_payload #>> '{review_outcome,ignored_count}')::int,
+          observation_outcome.ignored_observation_count,
+          0
+        )::int AS ignored_observation_count,
+        COALESCE(
+          (run.raw_payload #>> '{review_outcome,anomaly_count}')::int,
+          observation_outcome.anomaly_observation_count,
+          0
+        )::int AS anomaly_observation_count,
+        COALESCE(
+          (run.raw_payload #>> '{review_outcome,published_price_count}')::int,
+          published_outcome.published_price_count,
+          0
+        )::int AS published_price_count
       FROM collector_job_runs run
       LEFT JOIN products product ON product.id = run.product_id
       LEFT JOIN price_sources source ON source.id = run.source_id
@@ -924,6 +985,37 @@ export default async function CollectorJobsPage() {
                             }}
                           />
                         </div>
+                        {group.latestJob.collector_kind === "app_store" &&
+                        group.latestJob.latest_run_status === "succeeded" &&
+                        group.latestJob.latest_has_review_outcome ? (
+                          <div className="mt-3">
+                            <CollectorRunOutcomeSummary
+                              compact
+                              run={{
+                                status: group.latestJob.latest_run_status,
+                                runner_state: group.latestJob.latest_runner_state,
+                                process_id: group.latestJob.latest_process_id,
+                                error_message: group.latestJob.latest_run_error,
+                                output_excerpt: group.latestJob.latest_run_output,
+                                duration_ms: null,
+                                run_age_seconds: group.latestJob.latest_run_age_seconds,
+                                observed_count: group.latestJob.latest_observed_count,
+                                approved_observation_count:
+                                  group.latestJob.latest_approved_count,
+                                pending_observation_count:
+                                  group.latestJob.latest_pending_stability_count,
+                                anomaly_observation_count:
+                                  group.latestJob.latest_isolated_count,
+                                published_price_count:
+                                  group.latestJob.latest_published_price_count,
+                              }}
+                            />
+                            <p className="mt-2 text-[11px] leading-5 text-slate-400">
+                              本轮检查 {group.latestJob.latest_storefront_count} 个地区；下次计划：
+                              {formatNextRun(group.nextRunAt)}
+                            </p>
+                          </div>
+                        ) : null}
                       </>
                     ) : (
                       <div className="text-xs text-slate-400">暂无运行记录</div>
@@ -932,6 +1024,9 @@ export default async function CollectorJobsPage() {
                   <td className="px-4 py-4">
                     <div className="max-w-[300px] text-xs leading-5 text-slate-600">
                       {autoReviewSummary(group)}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-400">
+                      下次计划：{formatNextRun(group.nextRunAt)}
                     </div>
                   </td>
                   <td className="px-4 py-4">

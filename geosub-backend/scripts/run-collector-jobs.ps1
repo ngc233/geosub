@@ -15,6 +15,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$utf8Encoding = New-Object System.Text.UTF8Encoding($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
+
 function Quote-SqlString {
   param([AllowNull()][string]$Value)
 
@@ -105,6 +110,11 @@ function Get-DueJobs {
   } else {
     "AND COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = $(Quote-SqlString $CollectorKind)"
   }
+  $currentRunFilterSql = if ([string]::IsNullOrWhiteSpace($RunId)) {
+    ""
+  } else {
+    "AND running_run.id <> $(Quote-SqlString $RunId)::uuid"
+  }
 
   $jobs = Invoke-PsqlJson @"
 WITH ranked_jobs AS (
@@ -116,6 +126,8 @@ WITH ranked_jobs AS (
     job.schedule,
     job.status,
     job.next_run_at,
+    job.error_count,
+    job.last_error,
     job.job_config,
     product.slug AS product_slug,
     product.name AS product_name,
@@ -142,6 +154,14 @@ WITH ranked_jobs AS (
       OR job.next_run_at IS NULL
       OR job.next_run_at <= NOW()
     )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM collector_job_runs running_run
+      WHERE running_run.job_id = job.id
+        AND running_run.status = 'running'
+        AND running_run.started_at > NOW() - INTERVAL '20 minutes'
+        $currentRunFilterSql
+    )
 )
 SELECT COALESCE(json_agg(row_to_json(j)), '[]'::json)
 FROM (
@@ -153,6 +173,8 @@ FROM (
     schedule,
     status,
     next_run_at,
+    error_count,
+    last_error,
     job_config,
     product_slug,
     product_name,
@@ -226,6 +248,107 @@ function Get-NextRunSql {
   }
 }
 
+function Get-FailureNextRunSql {
+  param([int]$Attempt)
+
+  switch ($Attempt) {
+    1 { return "NOW() + INTERVAL '30 minutes'" }
+    2 { return "NOW() + INTERVAL '2 hours'" }
+    default { return "NOW() + INTERVAL '6 hours'" }
+  }
+}
+
+function Test-PermanentCollectorFailure {
+  param([object]$Job, [object]$Result)
+
+  $kind = Get-ConfigValue -Config $Job.job_config -Name "collector_kind" -Fallback "unknown"
+  $errorText = [string]$Result.Error
+  $unsupported = $Result.RawPayload -and $Result.RawPayload.unsupported
+
+  if ($unsupported -or $kind -notin @("app_store", "google_play", "pricing_page", "official_site")) {
+    return $true
+  }
+
+  if ($kind -eq "app_store" -and [string]::IsNullOrWhiteSpace((Get-ConfigValue -Config $Job.job_config -Name "app_store_id"))) {
+    return $true
+  }
+
+  if ($kind -eq "google_play" -and [string]::IsNullOrWhiteSpace((Get-ConfigValue -Config $Job.job_config -Name "google_play_package"))) {
+    return $true
+  }
+
+  return $errorText -match "missing (app_store_id|google_play_package|url/base_url)|Collector identity mismatch|No collector is implemented"
+}
+
+function Invoke-OperationalRecovery {
+  if ($DryRun) {
+    return
+  }
+
+  try {
+    Invoke-Psql @"
+SELECT *
+FROM run_operational_recovery_cycle('collector_runner');
+"@
+  } catch {
+    Write-Host "Operational recovery cycle failed: $($_.Exception.Message)"
+    throw
+  }
+}
+
+function Repair-ResolvedSharedSpecFailures {
+  if ($DryRun) {
+    return
+  }
+
+  $specPath = Join-Path (Split-Path $PSScriptRoot -Parent) "data/product-plan-specs.json"
+  try {
+    Get-Content -LiteralPath $specPath -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null
+  } catch {
+    throw "Product plan specification JSON is invalid. $($_.Exception.Message)"
+  }
+
+  Invoke-Psql @"
+WITH repaired_jobs AS (
+  UPDATE collector_jobs
+  SET
+    status = 'active',
+    next_run_at = NOW(),
+    error_count = 0,
+    last_error = NULL,
+    job_config = COALESCE(job_config, '{}'::jsonb)
+      - 'operational_state'
+      - 'operational_note'
+      - 'retry_attempt'
+      - 'last_failure_at'
+      - 'last_recovered_at',
+    updated_at = NOW()
+  WHERE status = 'failed'
+    AND job_config ->> 'operational_state' = 'retry_exhausted'
+    AND (
+      last_error ILIKE 'Invalid array passed in%'
+      OR last_error ILIKE '%ConvertFrom-Json%'
+      OR last_error ILIKE '%product plan specification JSON is invalid%'
+    )
+  RETURNING id
+), repaired_count AS (
+  SELECT COUNT(*)::int AS count
+  FROM repaired_jobs
+)
+INSERT INTO operational_recovery_cycles (
+  trigger_kind,
+  transient_jobs_requeued,
+  details
+)
+SELECT
+  'shared_spec_repaired',
+  repaired_count.count,
+  jsonb_build_object('reason', 'shared_product_plan_spec_validated')
+FROM repaired_count
+WHERE repaired_count.count > 0;
+"@
+}
+
 function Queue-AppStoreRechecks {
   if ($DryRun) {
     return
@@ -234,13 +357,7 @@ function Queue-AppStoreRechecks {
   try {
     Invoke-Psql @"
 SELECT *
-FROM queue_app_store_anomaly_rechecks(7, 12);
-
-SELECT *
-FROM queue_stale_app_store_price_rechecks(14, 20, 24);
-
-SELECT *
-FROM queue_app_store_coverage_gap_rechecks(39, 24, 3);
+FROM run_data_quality_repair_cycle('collector_runner');
 "@
   } catch {
     Write-Host "App Store recheck queue skipped: $($_.Exception.Message)"
@@ -640,6 +757,35 @@ SELECT row_to_json(inserted) FROM inserted;
   }
 }
 
+function Set-JobRunAwaitingReview {
+  param(
+    [AllowNull()][string]$RunId,
+    [object]$Result
+  )
+
+  if ($DryRun -or [string]::IsNullOrWhiteSpace($RunId)) {
+    return
+  }
+
+  $output = if ($Result.Output -and $Result.Output.Length -gt 2000) {
+    $Result.Output.Substring(0, 2000)
+  } else {
+    $Result.Output
+  }
+
+  Invoke-Psql @"
+UPDATE collector_job_runs
+SET
+  output_excerpt = $(Quote-SqlString $output),
+  raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
+    'state', 'collected_waiting_review',
+    'collector_status', $(Quote-SqlString ([string]$Result.Status))
+  )
+WHERE id = $(Quote-SqlString $RunId)::uuid
+  AND status = 'running';
+"@
+}
+
 function Complete-JobRun {
   param(
     [object]$Job,
@@ -658,15 +804,64 @@ function Complete-JobRun {
   $status = [string]$Result.Status
   $errorMessage = if ($Result.Error) { [string]$Result.Error } else { $null }
   $nextRunSql = Get-NextRunSql -Job $Job -Status $status
-  $jobStatusSql = if ($status -eq "failed") { "'failed'" } else { "'active'" }
+  $jobStatusSql = "'active'"
   $jobConfigSql = "job_config"
+  $errorCountSql = "error_count"
+  $lastErrorSql = "last_error"
+  $failureAttempt = [int]$Job.error_count + 1
+  $permanentFailure = Test-PermanentCollectorFailure -Job $Job -Result $Result
+  $unsupportedFailure = $status -eq "skipped" -and $permanentFailure
+  $failedAttempt = $status -eq "failed" -or $unsupportedFailure
+
+  if ($status -eq "succeeded") {
+    $errorCountSql = "0"
+    $lastErrorSql = "NULL"
+    $jobConfigSql = "COALESCE(job_config, '{}'::jsonb) - 'operational_state' - 'operational_note' - 'retry_attempt' - 'last_failure_at' - 'last_recovered_at'"
+  }
+
+  if ($failedAttempt) {
+    $errorCountSql = "error_count + 1"
+    $jobLastError = if ($errorMessage) { $errorMessage } else { [string]$output }
+    $lastErrorSql = Quote-SqlString $jobLastError
+    $operationalState = if ($permanentFailure) {
+      "permanent_failure"
+    } elseif ($failureAttempt -gt 3) {
+      "retry_exhausted"
+    } else {
+      "retry_scheduled"
+    }
+    $operationalNote = if ($permanentFailure) {
+      "Collector configuration is incomplete or unsupported."
+    } elseif ($failureAttempt -gt 3) {
+      "Automatic retry attempts were exhausted."
+    } else {
+      "Transient collector failure scheduled for automatic retry."
+    }
+
+    if ($permanentFailure -or $failureAttempt -gt 3) {
+      $nextRunSql = "NULL"
+      $jobStatusSql = "'failed'"
+    } else {
+      $nextRunSql = Get-FailureNextRunSql -Attempt $failureAttempt
+      $jobStatusSql = "'active'"
+    }
+
+    $jobConfigSql = @"
+COALESCE(job_config, '{}'::jsonb) || jsonb_build_object(
+    'operational_state', $(Quote-SqlString $operationalState),
+    'operational_note', $(Quote-SqlString $operationalNote),
+    'retry_attempt', $failureAttempt,
+    'last_failure_at', NOW()
+  )
+"@
+  }
 
   if ($Job.schedule -eq "stale_refresh" -and $status -eq "succeeded") {
     $nextRunSql = "NULL"
     $jobStatusSql = "'paused'"
     $jobConfigSql = @"
 jsonb_set(
-    job_config,
+    $jobConfigSql,
     '{stale_success_count}',
     TO_JSONB(COALESCE((job_config ->> 'stale_success_count')::INTEGER, 0) + 1),
     TRUE
@@ -679,9 +874,22 @@ jsonb_set(
     $jobStatusSql = "'paused'"
     $jobConfigSql = @"
 jsonb_set(
-    job_config,
+    $jobConfigSql,
     '{coverage_success_count}',
     TO_JSONB(COALESCE((job_config ->> 'coverage_success_count')::INTEGER, 0) + 1),
+    TRUE
+  )
+"@
+  }
+
+  if ($Job.schedule -eq "anomaly_watch" -and $status -eq "succeeded") {
+    $nextRunSql = "NULL"
+    $jobStatusSql = "'paused'"
+    $jobConfigSql = @"
+jsonb_set(
+    $jobConfigSql,
+    '{anomaly_success_count}',
+    TO_JSONB(COALESCE((job_config ->> 'anomaly_success_count')::INTEGER, 0) + 1),
     TRUE
   )
 "@
@@ -740,8 +948,8 @@ SET
   last_run_at = NOW(),
   next_run_at = $nextRunSql,
   success_count = success_count + $(if ($status -eq "succeeded") { 1 } else { 0 }),
-  error_count = error_count + $(if ($status -eq "failed") { 1 } else { 0 }),
-  last_error = $(Quote-SqlString $errorMessage),
+  error_count = $errorCountSql,
+  last_error = $lastErrorSql,
   status = $jobStatusSql,
   job_config = $jobConfigSql,
   updated_at = NOW()
@@ -751,6 +959,95 @@ WHERE id = $(Quote-SqlString $Job.id)::uuid;
   Invoke-Psql ($runWriteSql + "`n" + $jobWriteSql)
 }
 
+function Get-AppStoreReviewOutcome {
+  param(
+    [object]$Job,
+    [datetime]$StartedAt
+  )
+
+  $startedAtSql = Quote-SqlString ($StartedAt.ToUniversalTime().ToString("o"))
+  return Invoke-PsqlJson @"
+SELECT row_to_json(outcome)
+FROM (
+  SELECT
+    COUNT(observation.id)::int AS observed_count,
+    COUNT(*) FILTER (
+      WHERE observation.status = 'approved'::observation_status
+    )::int AS approved_count,
+    COUNT(*) FILTER (
+      WHERE observation.status = 'pending'::observation_status
+        AND NOT COALESCE(observation.anomaly_flag, FALSE)
+    )::int AS pending_stability_count,
+    COUNT(*) FILTER (
+      WHERE COALESCE(observation.anomaly_flag, FALSE)
+        OR observation.status IN (
+          'rejected'::observation_status,
+          'ignored'::observation_status
+        )
+    )::int AS isolated_count,
+    COUNT(*) FILTER (
+      WHERE observation.status = 'rejected'::observation_status
+    )::int AS rejected_count,
+    COUNT(*) FILTER (
+      WHERE observation.status = 'ignored'::observation_status
+    )::int AS ignored_count,
+    COUNT(*) FILTER (
+      WHERE COALESCE(observation.anomaly_flag, FALSE)
+    )::int AS anomaly_count,
+    (
+      SELECT COUNT(price.id)::int
+      FROM region_prices price
+      WHERE price.product_id = $(Quote-SqlString $Job.product_id)::uuid
+        AND price.status = 'published'::publish_status
+        AND price.last_checked_at >= $startedAtSql::timestamptz
+        AND price.last_checked_at <= NOW() + INTERVAL '1 minute'
+    ) AS published_price_count,
+    (
+      SELECT COUNT(DISTINCT availability.country_id)::int
+      FROM app_store_availability_checks availability
+      WHERE availability.product_id = $(Quote-SqlString $Job.product_id)::uuid
+        AND availability.checked_at >= $startedAtSql::timestamptz
+        AND availability.checked_at <= NOW() + INTERVAL '1 minute'
+    ) AS storefront_count,
+    NOW() AS captured_at
+  FROM price_observations observation
+  WHERE observation.product_id = $(Quote-SqlString $Job.product_id)::uuid
+    AND observation.observed_at >= $startedAtSql::timestamptz
+    AND observation.observed_at <= NOW() + INTERVAL '1 minute'
+) outcome;
+"@
+}
+
+function Add-AppStoreReviewOutcome {
+  param(
+    [object]$Job,
+    [object]$Result,
+    [datetime]$StartedAt
+  )
+
+  $outcome = Get-AppStoreReviewOutcome -Job $Job -StartedAt $StartedAt
+  $payload = @{}
+
+  if ($Result.RawPayload -is [System.Collections.IDictionary]) {
+    foreach ($key in $Result.RawPayload.Keys) {
+      $payload[[string]$key] = $Result.RawPayload[$key]
+    }
+  } elseif ($Result.RawPayload) {
+    foreach ($property in $Result.RawPayload.PSObject.Properties) {
+      $payload[$property.Name] = $property.Value
+    }
+  }
+
+  $payload["auto_review_status"] = "succeeded"
+  $payload["review_outcome"] = $outcome
+  $payload["country_codes"] = @(Get-CountryCodes -Config $Job.job_config)
+  $payload["schedule"] = [string]$Job.schedule
+  $Result.RawPayload = $payload
+  return $Result
+}
+
+Repair-ResolvedSharedSpecFailures
+Invoke-OperationalRecovery
 Queue-AppStoreRechecks
 
 $jobs = @(Get-DueJobs)
@@ -768,6 +1065,7 @@ $summary = @{
   failed = 0
   appStoreSucceeded = 0
 }
+$pendingAppStoreCompletions = @()
 
 foreach ($job in $jobs) {
   $summary.checked += 1
@@ -784,7 +1082,21 @@ foreach ($job in $jobs) {
     if ($result.Status -eq "succeeded" -and $result.CollectorKind -eq "app_store") {
       $summary.appStoreSucceeded += 1
     }
-    Complete-JobRun -Job $job -Result $result -StartedAt $startedAt -RunId $jobRunId
+    if (
+      !$SkipAutoReview -and
+      $result.Status -eq "succeeded" -and
+      $result.CollectorKind -eq "app_store"
+    ) {
+      Set-JobRunAwaitingReview -RunId $jobRunId -Result $result
+      $pendingAppStoreCompletions += [pscustomobject]@{
+        Job = $job
+        Result = $result
+        StartedAt = $startedAt
+        RunId = $jobRunId
+      }
+    } else {
+      Complete-JobRun -Job $job -Result $result -StartedAt $startedAt -RunId $jobRunId
+    }
   } catch {
     $summary.failed += 1
     $failedResult = [pscustomobject]@{
@@ -799,9 +1111,10 @@ foreach ($job in $jobs) {
   }
 }
 
-if (!$SkipAutoReview -and $summary.appStoreSucceeded -gt 0) {
+if (!$SkipAutoReview -and $pendingAppStoreCompletions.Count -gt 0) {
   Write-Host "Running App Store stability auto-review after collection."
-  Invoke-Psql @"
+  try {
+    Invoke-Psql @"
 SELECT refresh_matching_app_store_prices() AS revalidated_prices;
 
 SELECT *
@@ -811,10 +1124,52 @@ SELECT quarantine_published_app_store_price_outliers() AS quarantined_published_
 
 SELECT quarantine_unconfirmed_stale_app_store_prices(14, 3) AS quarantined_unconfirmed_stale_prices;
 
+SELECT *
+FROM close_exhausted_app_store_anomalies(3);
+
 SELECT refresh_plan_affordability_metrics() AS refreshed_rows;
 
 SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
 "@
+
+    foreach ($completion in $pendingAppStoreCompletions) {
+      $completedResult = Add-AppStoreReviewOutcome `
+        -Job $completion.Job `
+        -Result $completion.Result `
+        -StartedAt $completion.StartedAt
+      Complete-JobRun `
+        -Job $completion.Job `
+        -Result $completedResult `
+        -StartedAt $completion.StartedAt `
+        -RunId $completion.RunId
+    }
+  } catch {
+    $reviewError = $_.Exception.Message
+    $summary.succeeded -= $pendingAppStoreCompletions.Count
+    $summary.failed += $pendingAppStoreCompletions.Count
+
+    foreach ($completion in $pendingAppStoreCompletions) {
+      $failedResult = [pscustomobject]@{
+        Status = "failed"
+        CollectorKind = "app_store"
+        Output = $completion.Result.Output
+        Error = "Automatic review failed after collection: $reviewError"
+        RawPayload = @{
+          error = $reviewError
+          collector_status = $completion.Result.Status
+          collector_payload = $completion.Result.RawPayload
+          auto_review_status = "failed"
+        }
+      }
+      Complete-JobRun `
+        -Job $completion.Job `
+        -Result $failedResult `
+        -StartedAt $completion.StartedAt `
+        -RunId $completion.RunId
+    }
+
+    Write-Host "App Store auto-review failed. Affected jobs were scheduled for retry: $reviewError"
+  }
 }
 
 Write-Host "Collector jobs complete. Checked: $($summary.checked). Succeeded: $($summary.succeeded). Skipped: $($summary.skipped). Failed: $($summary.failed)."

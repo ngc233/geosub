@@ -2,7 +2,7 @@ import {
   formatUsd,
   type ProductPlan,
   type RegionPrice,
-} from '../data/ai-pricing';
+} from '../lib/public-pricing-model';
 
 type RegionPriceTableProps = {
   plan: ProductPlan;

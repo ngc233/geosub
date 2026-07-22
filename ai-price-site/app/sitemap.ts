@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { ProductCategory, PublishStatus } from "@prisma/client";
+import { Locale, ProductCategory, PublishStatus } from "@prisma/client";
 import {
   getPublishedArticleCategories,
   getPublishedArticleTags,
@@ -33,11 +33,11 @@ function route(
   path: string,
   changeFrequency: SitemapEntry["changeFrequency"],
   priority: number,
-  lastModified: Date,
+  lastModified?: Date,
 ): SitemapEntry {
   return {
     url: absoluteUrl(path),
-    lastModified,
+    ...(lastModified ? { lastModified } : {}),
     changeFrequency,
     priority,
   };
@@ -129,17 +129,21 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
   });
 }
 
-async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
+async function getArticleRoutesForLocale(
+  now: Date,
+  locale: Locale,
+  pathLocale: "zh" | "en",
+): Promise<MetadataRoute.Sitemap> {
   const [articles, categories, tags] = await Promise.all([
-    getPublishedArticles("ZH"),
-    getPublishedArticleCategories("ZH"),
-    getPublishedArticleTags("ZH"),
+    getPublishedArticles(locale),
+    getPublishedArticleCategories(locale),
+    getPublishedArticleTags(locale),
   ]);
 
   return [
     ...articles.map((article) =>
       route(
-        `/zh/guides/${article.slug}`,
+        `/${pathLocale}/guides/${article.slug}`,
         "weekly",
         article.isFeatured ? 0.78 : 0.64,
         latestDate([article.updatedAt, article.publishedAt], now),
@@ -147,7 +151,7 @@ async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
     ),
     ...categories.map((category) =>
       route(
-        `/zh/guides/category/${category.slug}`,
+        `/${pathLocale}/guides/category/${category.slug}`,
         "weekly",
         0.58,
         latestDate([category.updatedAt], now),
@@ -155,7 +159,7 @@ async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
     ),
     ...tags.map((tag) =>
       route(
-        `/zh/guides/tag/${tag.slug}`,
+        `/${pathLocale}/guides/tag/${tag.slug}`,
         "weekly",
         0.5,
         latestDate([tag.updatedAt], now),
@@ -164,26 +168,35 @@ async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
   ];
 }
 
+async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
+  const [chineseRoutes, englishRoutes] = await Promise.all([
+    getArticleRoutesForLocale(now, Locale.ZH, "zh"),
+    getArticleRoutesForLocale(now, Locale.EN, "en"),
+  ]);
+
+  return [...chineseRoutes, ...englishRoutes];
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
-    route("/zh", "daily", 1, now),
-    route("/zh/ai-pricing", "daily", 0.95, now),
-    route("/zh/streaming-pricing", "daily", 0.82, now),
-    route("/zh/guides", "weekly", 0.72, now),
-    route("/zh/data-sources", "monthly", 0.64, now),
-    route("/zh/about", "monthly", 0.45, now),
-    route("/zh/contact", "monthly", 0.35, now),
-    route("/zh/privacy", "yearly", 0.25, now),
-    route("/zh/terms", "yearly", 0.25, now),
-    route("/en", "daily", 0.72, now),
-    route("/en/ai-pricing", "daily", 0.74, now),
-    route("/en/streaming-pricing", "daily", 0.62, now),
-    route("/en/guides", "weekly", 0.48, now),
-    route("/en/data-sources", "monthly", 0.42, now),
-    route("/en/about", "monthly", 0.32, now),
-    route("/en/privacy", "yearly", 0.2, now),
-    route("/en/terms", "yearly", 0.2, now),
+    route("/zh", "daily", 1),
+    route("/zh/ai-pricing", "daily", 0.95),
+    route("/zh/streaming-pricing", "daily", 0.82),
+    route("/zh/guides", "weekly", 0.72),
+    route("/zh/data-sources", "monthly", 0.64),
+    route("/zh/about", "monthly", 0.45),
+    route("/zh/contact", "monthly", 0.35),
+    route("/zh/privacy", "yearly", 0.25),
+    route("/zh/terms", "yearly", 0.25),
+    route("/en", "daily", 0.72),
+    route("/en/ai-pricing", "daily", 0.74),
+    route("/en/streaming-pricing", "daily", 0.62),
+    route("/en/guides", "weekly", 0.48),
+    route("/en/data-sources", "monthly", 0.42),
+    route("/en/about", "monthly", 0.32),
+    route("/en/privacy", "yearly", 0.2),
+    route("/en/terms", "yearly", 0.2),
   ];
 
   try {

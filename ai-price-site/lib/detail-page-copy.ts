@@ -1,12 +1,15 @@
-export type DetailLocale =
-  | "zh"
-  | "en"
+import type { SiteLocale } from "./site-locale";
+
+type PreparedDetailLocale =
+  | SiteLocale
   | "es"
   | "ja"
   | "ko"
   | "de"
   | "fr"
   | "ar";
+
+export type DetailLocale = SiteLocale;
 
 export type DetailModuleKey =
   | "priceOverview"
@@ -33,7 +36,7 @@ type DetailCopyTemplate = Record<
   }
 >;
 
-const detailCopyTemplates: Record<DetailLocale, DetailCopyTemplate> = {
+const detailCopyTemplates: Record<PreparedDetailLocale, DetailCopyTemplate> = {
   zh: {
     priceOverview: {
       title: "{planName} 全球价格分布概览",
@@ -254,8 +257,8 @@ export function getDetailModuleCopy(
   key: DetailModuleKey,
   input: DetailCopyInput = {}
 ): DetailModuleCopy {
-  const templates = detailCopyTemplates[locale] || detailCopyTemplates.zh;
-  const item = templates[key] || detailCopyTemplates.zh[key];
+  const templates = detailCopyTemplates[locale];
+  const item = templates[key];
 
   return {
     title: fillTemplate(item.title, input).trim(),
@@ -302,7 +305,7 @@ export type DetailMapCopy = {
   perMonth: string;
 };
 
-const detailMapCopy: Record<DetailLocale, DetailMapCopy> = {
+const detailMapCopy: Record<PreparedDetailLocale, DetailMapCopy> = {
   zh: {
     currentBenchmark: "当前基准",
     covered: "已覆盖",
@@ -537,7 +540,7 @@ const detailMapCopy: Record<DetailLocale, DetailMapCopy> = {
 };
 
 export function getDetailMapCopy(locale: DetailLocale): DetailMapCopy {
-  return detailMapCopy[locale] || detailMapCopy.zh;
+  return detailMapCopy[locale];
 }
 export type DetailTableCopy = {
   rank: string;
@@ -569,7 +572,7 @@ export type DetailTableCopy = {
   clearlyHigh: string;
 };
 
-const detailTableCopy: Record<DetailLocale, DetailTableCopy> = {
+const detailTableCopy: Record<PreparedDetailLocale, DetailTableCopy> = {
   zh: {
     rank: "#",
     region: "地区",
@@ -820,5 +823,5 @@ const detailTableCopy: Record<DetailLocale, DetailTableCopy> = {
 };
 
 export function getDetailTableCopy(locale: DetailLocale): DetailTableCopy {
-  return detailTableCopy[locale] || detailTableCopy.zh;
+  return detailTableCopy[locale];
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Locale } from "@prisma/client";
 import { AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { getArticleCategories, getArticleTags } from "../../../../lib/articles";
 import { prisma } from "../../../../lib/prisma";
@@ -7,12 +8,13 @@ import ArticleForm from "../ArticleForm";
 export default async function NewArticlePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; locale?: string }>;
 }) {
   const params = searchParams ? await searchParams : {};
+  const locale: Locale = params.locale === "EN" ? "EN" : "ZH";
   const [categories, tags, products, relatedArticles] = await Promise.all([
-    getArticleCategories("ZH"),
-    getArticleTags("ZH"),
+    getArticleCategories(locale),
+    getArticleTags(locale),
     prisma.product.findMany({
       where: {
         status: "PUBLISHED",
@@ -28,7 +30,7 @@ export default async function NewArticlePage({
     }),
     prisma.article.findMany({
       where: {
-        locale: "ZH",
+        locale,
         status: "PUBLISHED",
         noindex: false,
         deletedAt: null,
@@ -52,9 +54,25 @@ export default async function NewArticlePage({
         title="新建文章"
         description="创建可发布到前台指南页的内容。保存为发布状态后，文章会进入指南列表和 sitemap。"
         action={
-          <Link href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
-            返回文章列表
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+              <Link
+                href="/admin/articles/new?locale=ZH"
+                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "ZH" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >
+                中文
+              </Link>
+              <Link
+                href="/admin/articles/new?locale=EN"
+                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "EN" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >
+                English
+              </Link>
+            </div>
+            <Link href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
+              返回文章列表
+            </Link>
+          </div>
         }
       />
 
@@ -71,6 +89,7 @@ export default async function NewArticlePage({
       ) : null}
 
       <ArticleForm
+        defaultLocale={locale}
         categories={categories}
         tags={tags}
         products={products}

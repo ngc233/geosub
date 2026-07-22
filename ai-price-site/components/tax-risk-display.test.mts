@@ -13,15 +13,16 @@ function readComponent(fileName: string) {
 test("region table tax and risk labels follow the active locale", () => {
   const source = readComponent("ExpandableRegionPriceTable.tsx");
 
-  assert.match(source, /function getRiskLabel\(level: RegionPrice\["riskLevel"\], locale: "zh" \| "en"\)/);
-  assert.match(source, /if \(locale === "en"\)[\s\S]*return "needs review"/);
-  assert.match(source, /function getTaxConfidenceLabel\(region: RegionPrice, locale: "zh" \| "en"\)/);
-  assert.match(source, /return "Platform inferred"/);
-  assert.match(source, /return "Verified"/);
-  assert.match(source, /return "Medium confidence"/);
-  assert.match(source, /return "Needs review"/);
-  assert.match(source, /Risk \$\{getRiskLabel\(region\.riskLevel, locale\)\}/);
-  assert.match(source, /风险\$\{getRiskLabel\(region\.riskLevel, locale\)\}/);
+  assert.match(source, /import type \{ SiteLocale \} from "\.\.\/lib\/site-locale"/);
+  assert.match(source, /function getRiskLabel\(level: RegionPrice\["riskLevel"\], locale: SiteLocale\)/);
+  assert.match(source, /function getTaxConfidenceLabel\(region: RegionPrice, locale: SiteLocale\)/);
+  assert.match(source, /getPublicPricingCopy\(locale\)\.table/);
+  assert.match(source, /return copy\.riskNeedsReview/);
+  assert.match(source, /return copy\.taxInferred/);
+  assert.match(source, /return copy\.taxVerified/);
+  assert.match(source, /return copy\.taxMedium/);
+  assert.match(source, /return copy\.taxNeedsReview/);
+  assert.match(source, /copy\.riskPrefix\(getRiskLabel\(region\.riskLevel, locale\)\)/);
 });
 
 test("Chinese tax display translates common English tax source phrases", () => {

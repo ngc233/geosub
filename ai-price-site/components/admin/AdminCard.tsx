@@ -16,7 +16,7 @@ export function AdminCard({
   return (
     <div
       className={joinClasses(
-        "rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60",
+        "min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60",
         className
       )}
     >
@@ -39,7 +39,7 @@ export function AdminStatCard({
   const card = (
     <div
       className={joinClasses(
-        "h-full rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition",
+        "h-full min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition",
         href
           ? "cursor-pointer hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80"
           : ""
@@ -74,7 +74,7 @@ export function AdminStatCard({
   }
 
   return (
-    <Link href={href} className="group block h-full">
+    <Link href={href} className="group block h-full min-w-0">
       {card}
     </Link>
   );

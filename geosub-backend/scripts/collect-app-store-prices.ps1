@@ -460,6 +460,53 @@ FROM (
 "@
 }
 
+function Get-Utf8ResponseContent {
+  param([object]$Response)
+
+  $bytes = $null
+
+  try {
+    if (
+      $Response.BaseResponse -and
+      $Response.BaseResponse.PSObject.Properties.Name -contains "Content" -and
+      $Response.BaseResponse.Content
+    ) {
+      $bytes = $Response.BaseResponse.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+    }
+  } catch {
+    $bytes = $null
+  }
+
+  if ($null -eq $bytes -and $Response.RawContentStream) {
+    $stream = $Response.RawContentStream
+    $originalPosition = if ($stream.CanSeek) { $stream.Position } else { $null }
+    $memory = New-Object IO.MemoryStream
+    try {
+      if ($stream.CanSeek) {
+        $stream.Position = 0
+      }
+      $stream.CopyTo($memory)
+      $bytes = $memory.ToArray()
+    } finally {
+      if ($null -ne $originalPosition -and $stream.CanSeek) {
+        $stream.Position = $originalPosition
+      }
+      $memory.Dispose()
+    }
+  }
+
+  if ($null -ne $bytes -and $bytes.Length -gt 0) {
+    try {
+      $strictUtf8 = New-Object Text.UTF8Encoding($false, $true)
+      return $strictUtf8.GetString($bytes)
+    } catch {
+      # Preserve the platform decoder only when the response is not valid UTF-8.
+    }
+  }
+
+  return [string]$Response.Content
+}
+
 function Get-AppStoreHtml {
   param(
     [string]$CountryCode,
@@ -479,7 +526,7 @@ function Get-AppStoreHtml {
 
   return [pscustomobject]@{
     Url = $url
-    Html = $response.Content
+    Html = Get-Utf8ResponseContent -Response $response
   }
 }
 
@@ -1362,6 +1409,80 @@ DO UPDATE SET
 "@
 }
 
+function Record-AppStorePlanAvailability {
+  param(
+    [string]$ProductId,
+    [string]$PlanId,
+    [string]$CountryId,
+    [string]$CountryCode,
+    [string]$PlanSlug,
+    [bool]$Found
+  )
+
+  $status = if ($Found) { "available" } else { "pending_absence" }
+  $reason = if ($Found) {
+    "Canonical plan was present in the latest successful App Store storefront collection."
+  } else {
+    "Canonical plan was not present in the latest successful App Store storefront collection."
+  }
+
+  if ($DryRun) {
+    Write-Host "[dry-run] plan availability $CountryCode $PlanSlug $status"
+    return
+  }
+
+  Invoke-Psql @"
+INSERT INTO app_store_plan_availability_checks (
+  id,
+  product_id,
+  plan_id,
+  country_id,
+  billing_platform,
+  status,
+  consecutive_missing_count,
+  reason,
+  checked_at,
+  last_seen_at,
+  created_at,
+  updated_at
+)
+VALUES (
+  gen_random_uuid(),
+  $(Quote-SqlString $ProductId)::uuid,
+  $(Quote-SqlString $PlanId)::uuid,
+  $(Quote-SqlString $CountryId)::uuid,
+  'ios'::billing_platform,
+  $(Quote-SqlString $status),
+  $(if ($Found) { 0 } else { 1 }),
+  $(Quote-SqlString $reason),
+  NOW(),
+  $(if ($Found) { "NOW()" } else { "NULL" }),
+  NOW(),
+  NOW()
+)
+ON CONFLICT (plan_id, country_id, billing_platform)
+DO UPDATE SET
+  product_id = EXCLUDED.product_id,
+  consecutive_missing_count = CASE
+    WHEN EXCLUDED.status = 'available' THEN 0
+    ELSE app_store_plan_availability_checks.consecutive_missing_count + 1
+  END,
+  status = CASE
+    WHEN EXCLUDED.status = 'available' THEN 'available'
+    WHEN app_store_plan_availability_checks.consecutive_missing_count + 1 >= 3
+      THEN 'confirmed_absent'
+    ELSE 'pending_absence'
+  END,
+  reason = EXCLUDED.reason,
+  checked_at = NOW(),
+  last_seen_at = CASE
+    WHEN EXCLUDED.status = 'available' THEN NOW()
+    ELSE app_store_plan_availability_checks.last_seen_at
+  END,
+  updated_at = NOW();
+"@
+}
+
 $context = Get-ProductContext -Slug $ProductSlug -Countries $CountryCodes
 if ($null -eq $context.product) {
   throw "Product '$ProductSlug' not found."
@@ -1444,10 +1565,12 @@ foreach ($countryCode in $CountryCodes) {
   $collectorName = "collect-app-store-prices.ps1"
   $page = $null
   $items = @()
+  $renderedPageHadNoItems = $false
 
   try {
     $renderedPage = Get-AppStoreRenderedPage -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
     if ($renderedPage.Items.Count -eq 0) {
+      $renderedPageHadNoItems = $true
       throw "No in-app purchases found in rendered App Store page."
     }
 
@@ -1466,7 +1589,7 @@ foreach ($countryCode in $CountryCodes) {
       $page = Get-AppStoreHtml -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
       $items = @(Get-InAppPurchases -Html $page.Html)
 
-      if ($items.Count -eq 0) {
+      if ($items.Count -eq 0 -and !$renderedPageHadNoItems) {
         throw "No in-app purchases found in static App Store HTML."
       }
     } catch {
@@ -1640,10 +1763,10 @@ foreach ($countryCode in $CountryCodes) {
 
   if ($items.Count -eq 0) {
     $availabilityStatus = "available_no_iap"
-    $availabilityReason = "App Store page is available, but no in-app purchase items were found."
+    $availabilityReason = "App Store page was fetched by both rendered and static collectors, but no in-app purchase items were found."
   } elseif ($subscriptionItemCount -eq 0) {
-    $availabilityStatus = "available_no_iap"
-    $availabilityReason = "App Store in-app purchases were found, but none looked like recurring subscription prices."
+    $availabilityStatus = "available_unmatched_items"
+    $availabilityReason = "App Store in-app purchases were found, but none matched the maintained subscription plan specification."
   }
 
   Record-AppStoreAvailability `
@@ -1674,6 +1797,23 @@ foreach ($countryCode in $CountryCodes) {
     }
   $summary.availability += 1
   $summary.confirmedStorefronts += 1
+
+  if ($subscriptionItemCount -gt 0 -and $null -ne $productPlanSpec) {
+    foreach ($planSpec in @($productPlanSpec.plans)) {
+      $planSlug = [string]$planSpec.slug
+      if (!$plansBySlug.ContainsKey($planSlug)) {
+        continue
+      }
+
+      Record-AppStorePlanAvailability `
+        -ProductId $context.product.id `
+        -PlanId $plansBySlug[$planSlug].id `
+        -CountryId $country.id `
+        -CountryCode $code `
+        -PlanSlug $planSlug `
+        -Found ($selectedItemsBySlug.ContainsKey($planSlug))
+    }
+  }
 
   if ($subscriptionItemCount -eq 0) {
     Write-Host "No subscription App Store prices found for $code. Availability recorded as $availabilityStatus."

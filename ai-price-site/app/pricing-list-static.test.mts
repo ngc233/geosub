@@ -36,13 +36,15 @@ test("AI and streaming listing pages request distinct product categories", () =>
   }
 });
 
-test("pricing list query honors the category filter from each page", () => {
+test("pricing list query requires published products, plans and prices", () => {
   const source = readSiteFile("lib", "db-ai-pricing.ts");
 
   assert.match(source, /categories = \[ProductCategory\.AI, ProductCategory\.STREAMING\]/);
   assert.match(source, /category:\s*\{\s*in: categories/);
-  assert.match(source, /OR:\s*\[/);
-  assert.match(source, /\{ status: "PUBLISHED" \}/);
+  assert.match(source, /status:\s*"PUBLISHED"/);
+  assert.doesNotMatch(source, /OR:\s*\[/);
   assert.match(source, /plans:\s*\{\s*some:/);
   assert.match(source, /regionPrices:\s*\{\s*some:/);
+  assert.match(source, /getLocalizedCountryName/);
+  assert.doesNotMatch(source, /countryNameZhMap/);
 });

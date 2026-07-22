@@ -68,6 +68,10 @@ export const REVIEW_REASON_COPY = {
     label: "已被正式价格覆盖",
     action: "无需处理，系统会隐藏或忽略旧样本。",
   },
+  automated_anomaly_rechecks_exhausted: {
+    label: "自动复核已收口",
+    action: "系统已完成三轮定向复采，仍无法取得可信替代证据；该样本只保留为隔离证据，不会影响正式价格。",
+  },
   superseded_by_app_store_consensus: {
     label: "已被新共识覆盖",
     action: "更新的 App Store 共识样本已经取代旧样本，无需人工处理。",

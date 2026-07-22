@@ -10,6 +10,7 @@ BACKEND_DIR="${GEOSUB_BACKEND_DIR:-/opt/geosub/geosub-backend}"
 BACKUP_DIR="${GEOSUB_BACKUP_DIR:-/opt/geosub/backups}"
 
 install -d -m 0700 "$BACKUP_DIR"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-system-task.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/db-backup.sh"
 
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-db-backup.service" /etc/systemd/system/geosub-db-backup.service

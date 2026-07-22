@@ -1,4 +1,4 @@
-import type { Article, ArticleCategory, ArticleTag, Product } from "@prisma/client";
+import type { Article, ArticleCategory, ArticleTag, Locale, Product } from "@prisma/client";
 import Link from "next/link";
 import { Save } from "lucide-react";
 import { articleTypeLabels } from "../../../lib/articles";
@@ -63,6 +63,7 @@ export default function ArticleForm({
   selectedRelatedArticleIds = [],
   recommendedProductIds = [],
   recommendedRelatedArticleIds = [],
+  defaultLocale = "ZH",
 }: {
   article?: Article | null;
   categories: ArticleCategory[];
@@ -74,6 +75,7 @@ export default function ArticleForm({
   selectedRelatedArticleIds?: string[];
   recommendedProductIds?: string[];
   recommendedRelatedArticleIds?: string[];
+  defaultLocale?: Locale;
 }) {
   const action = article ? updateArticleAction : createArticleAction;
 
@@ -105,7 +107,7 @@ export default function ArticleForm({
             </Field>
 
             <Field label="语言">
-              <select className={inputClass} name="locale" defaultValue={article?.locale || "ZH"}>
+              <select className={inputClass} name="locale" defaultValue={article?.locale || defaultLocale}>
                 <option value="ZH">中文</option>
                 <option value="EN">English</option>
               </select>

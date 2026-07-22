@@ -1,7 +1,16 @@
 import "server-only";
 
-import type { Article, ArticleCategory, ArticleStatus, ArticleTag, ArticleType, Locale } from "@prisma/client";
+import type {
+  Article,
+  ArticleCategory,
+  ArticleStatus,
+  ArticleTag,
+  ArticleType,
+  Locale,
+  ProductCategory,
+} from "@prisma/client";
 import { prisma } from "./prisma";
+import type { SiteLocale } from "./site-locale";
 
 export type ArticleListItem = Article & {
   category: ArticleCategory | null;
@@ -29,6 +38,7 @@ export type ArticleDetail = ArticleListItem & {
     product: {
       slug: string;
       name: string;
+      category: ProductCategory;
     } | null;
     relatedArticle: {
       slug: string;
@@ -49,6 +59,28 @@ export const articleTypeLabels: Record<ArticleType, string> = {
   ANNOUNCEMENT: "公告",
   OTHER: "其他",
 };
+
+const articleTypeLabelsEn: Record<ArticleType, string> = {
+  GUIDE: "Guide",
+  HOW_TO: "How-to",
+  COMPARISON: "Comparison",
+  RANKING: "Ranking",
+  NEWS: "Update",
+  METHODOLOGY: "Methodology",
+  FAQ_HUB: "FAQ",
+  REVIEW: "Review",
+  ANNOUNCEMENT: "Announcement",
+  OTHER: "Other",
+};
+
+export function getArticleTypeLabel(
+  articleType: ArticleType,
+  locale: SiteLocale = "zh",
+) {
+  return locale === "en"
+    ? articleTypeLabelsEn[articleType]
+    : articleTypeLabels[articleType];
+}
 
 export const articleStatusLabels: Record<ArticleStatus, string> = {
   DRAFT: "草稿",
@@ -231,6 +263,7 @@ export async function getPublishedArticleBySlug(slug: string, locale: Locale = "
             select: {
               slug: true,
               name: true,
+              category: true,
             },
           },
           relatedArticle: {
@@ -446,10 +479,13 @@ export async function getAdminArticles({
   });
 }
 
-export function formatArticleDate(value: Date | null | undefined) {
-  if (!value) return "未发布";
+export function formatArticleDate(
+  value: Date | null | undefined,
+  locale: SiteLocale = "zh",
+) {
+  if (!value) return locale === "en" ? "Unpublished" : "未发布";
 
-  return value.toLocaleDateString("zh-CN", {
+  return value.toLocaleDateString(locale === "en" ? "en-US" : "zh-CN", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

@@ -61,16 +61,85 @@ test("sitemap includes public subscription and article routes only", () => {
   const source = readAppFile("sitemap.ts");
 
   assert.match(source, /https:\/\/geosub\.org/);
-  assert.match(source, /getPublishedArticles\("ZH"\)/);
-  assert.match(source, /getPublishedArticleCategories\("ZH"\)/);
-  assert.match(source, /getPublishedArticleTags\("ZH"\)/);
+  assert.match(source, /getArticleRoutesForLocale\(now, Locale\.ZH, "zh"\)/);
+  assert.match(source, /getArticleRoutesForLocale\(now, Locale\.EN, "en"\)/);
   assert.match(source, /\/zh\/ai-pricing/);
   assert.match(source, /\/en\/ai-pricing/);
   assert.match(source, /\/zh\/streaming-pricing/);
-  assert.match(source, /\/zh\/guides\/category/);
-  assert.match(source, /\/zh\/guides\/tag/);
+  assert.match(source, /`\/\$\{pathLocale\}\/guides\/\$\{article\.slug\}`/);
+  assert.match(source, /`\/\$\{pathLocale\}\/guides\/category\/\$\{category\.slug\}`/);
+  assert.match(source, /`\/\$\{pathLocale\}\/guides\/tag\/\$\{tag\.slug\}`/);
   assert.doesNotMatch(source, /\/admin/);
   assert.doesNotMatch(source, /\/api/);
+  assert.doesNotMatch(source, /route\("\/zh", "daily", 1, now\)/);
+  assert.match(source, /\.\.\.\(lastModified \? \{ lastModified \} : \{\}\)/);
+});
+
+test("published guide routes and metadata are localized end to end", () => {
+  const englishIndex = readAppFile("en/guides/page.tsx");
+  const englishDetail = readAppFile("en/guides/[slug]/page.tsx");
+  const chineseDetail = readAppFile("zh/guides/[slug]/page.tsx");
+  const collection = readFileSync(
+    resolve(appDir, "..", "components", "ArticleCollectionView.tsx"),
+    "utf8",
+  );
+  const articles = readFileSync(resolve(appDir, "..", "lib", "articles.ts"), "utf8");
+
+  assert.match(englishIndex, /getPublishedArticles\("EN"\)/);
+  assert.match(englishDetail, /getPublishedArticleBySlug\(slug, "EN"\)/);
+  assert.match(englishDetail, /streaming-pricing/);
+  assert.match(chineseDetail, /getPublishedArticleBySlug\(slug, "ZH"\)/);
+  assert.match(chineseDetail, /twitter:/);
+  assert.match(chineseDetail, /streaming-pricing/);
+  assert.match(collection, /const guidesPath = `\/\$\{locale\}\/guides`/);
+  assert.match(collection, /getArticleTypeLabel/);
+  assert.match(articles, /category: ProductCategory/);
+});
+
+test("pricing details publish page-specific metadata and matching structured data", () => {
+  const englishDetail = readAppFile("en/ai-pricing/[slug]/page.tsx");
+  const chineseDetail = readAppFile("zh/ai-pricing/[slug]/page.tsx");
+  const pricingSeo = readFileSync(
+    resolve(appDir, "..", "lib", "pricing-seo.ts"),
+    "utf8",
+  );
+
+  for (const source of [englishDetail, chineseDetail]) {
+    assert.match(source, /buildPricingStructuredData/);
+    assert.match(source, /type="application\/ld\+json"/);
+    assert.match(source, /openGraph:/);
+    assert.match(source, /twitter:/);
+  }
+
+  assert.match(pricingSeo, /"@type": "Dataset"/);
+  assert.match(pricingSeo, /"@type": "FAQPage"/);
+  assert.match(pricingSeo, /dateModified/);
+  assert.match(pricingSeo, /spatialCoverage/);
+  assert.doesNotMatch(englishDetail, /in 2026/);
+  assert.doesNotMatch(chineseDetail, /截至 2026 年/);
+});
+
+test("pricing lists share localized metadata and social previews", () => {
+  const pricingListSeo = readFileSync(
+    resolve(appDir, "..", "lib", "pricing-list-seo.ts"),
+    "utf8",
+  );
+
+  for (const fileName of [
+    "en/ai-pricing/page.tsx",
+    "zh/ai-pricing/page.tsx",
+    "en/streaming-pricing/page.tsx",
+    "zh/streaming-pricing/page.tsx",
+  ]) {
+    const source = readAppFile(fileName);
+    assert.match(source, /getPricingListMetadata/);
+    assert.match(source, /getPublicPricingCopy/);
+  }
+
+  assert.match(pricingListSeo, /canonical: canonicalPath/);
+  assert.match(pricingListSeo, /languages:/);
+  assert.match(pricingListSeo, /openGraph:/);
+  assert.match(pricingListSeo, /twitter:/);
 });
 
 test("unfinished software subscription pages stay out of search indexes", () => {

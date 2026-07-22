@@ -265,6 +265,19 @@ The upgrade script performs the production-safe sequence:
 10. Refresh exchange rates once.
 11. Run the production post-deploy check, including backup freshness.
 12. Record the deployed version and commit.
+13. Mark the deployment attempt successful only after every health gate passes.
+
+Before services are changed, the script creates a root-only attempt record in:
+
+```text
+/opt/geosub/releases/attempts/YYYYMMDDTHHMMSSZ/deployment.env
+/opt/geosub/releases/latest-attempt.env
+```
+
+The record contains the previous and target commits, verified backup path,
+active step and final status. If any upgrade step fails, the script records the
+failure line and exit code and performs a best-effort restart of the web service
+and all production timers.
 
 Environment controls in `/etc/geosub/geosub.env`:
 
@@ -303,6 +316,36 @@ Each successful upgrade writes the deployed version and commit to:
 /opt/geosub/releases/current.env
 /opt/geosub/releases/history.log
 ```
+
+### Explicit application rollback
+
+Inspect the latest attempt and copy its deployment ID:
+
+```bash
+sudo cat /opt/geosub/releases/latest-attempt.env
+```
+
+Then provide that exact ID twice, once as the selected attempt and once as the
+confirmation token:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/rollback.sh \
+  --attempt 20260721T120000Z \
+  --confirm 20260721T120000Z
+```
+
+`--attempt latest` is also supported, but `--confirm` must still contain the
+exact `GEOSUB_DEPLOYMENT_ID`. The rollback refuses missing or untrusted attempt
+records, invalid Git commits, or a missing/invalid backup checksum. It stops the
+runtime, checks out the recorded previous commit in detached mode, reinstalls
+dependencies, rebuilds the frontend, restarts services and runs the regular
+post-deploy health check. Its outcome is stored beside `deployment.env` as
+`rollback.env`, and `current.env` is updated to the restored code revision.
+
+Application rollback does **not** restore the database. Core migrations are
+designed to be forward compatible; replacing production data with a backup can
+discard writes made after deployment and therefore remains the separate,
+explicit `db-restore.sh ... DROP_AND_RESTORE` procedure documented above.
 
 ## Migration behavior
 

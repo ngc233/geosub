@@ -3,8 +3,8 @@ import { Archive, FileText, Plus, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import {
   articleStatusLabels,
-  articleTypeLabels,
   formatArticleDate,
+  getArticleTypeLabel,
   getAdminArticles,
 } from "../../../lib/articles";
 import { archiveArticleAction, moveArticleToTrashAction } from "./actions";
@@ -35,7 +35,7 @@ export default async function AdminArticlesPage() {
       <AdminPageHeader
         eyebrow="Articles"
         title="文章发布"
-        description="管理指南、价格分析、产品对比和方法论内容。发布后的中文文章会进入前台指南页和 sitemap。"
+        description="统一管理中文和英文指南、价格分析、产品对比及方法论内容。发布后会进入对应语言的指南页和 sitemap。"
         action={
           <div className="flex flex-wrap gap-3">
             <Link
@@ -52,11 +52,18 @@ export default async function AdminArticlesPage() {
               回收站 {trashedArticles.length}
             </Link>
             <Link
-              href="/admin/articles/new"
+              href="/admin/articles/new?locale=ZH"
               className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800"
             >
               <Plus size={16} />
-              新建文章
+              新建中文
+            </Link>
+            <Link
+              href="/admin/articles/new?locale=EN"
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700 transition hover:bg-blue-100"
+            >
+              <Plus size={16} />
+              New English
             </Link>
           </div>
         }
@@ -133,15 +140,18 @@ export default async function AdminArticlesPage() {
                       {article.title}
                     </Link>
                     <div className="mt-1 font-mono text-xs text-slate-400">
-                      /zh/guides/{article.slug}
+                      /{article.locale === "EN" ? "en" : "zh"}/guides/{article.slug}
                     </div>
+                    <span className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-600">
+                      {article.locale === "EN" ? "English" : "简体中文"}
+                    </span>
                     {article.excerpt ? (
                       <div className="mt-2 line-clamp-1 text-xs text-slate-500">{article.excerpt}</div>
                     ) : null}
                   </div>
 
                   <div className="font-bold text-slate-600">
-                    {articleTypeLabels[article.articleType]}
+                    {getArticleTypeLabel(article.articleType, article.locale === "EN" ? "en" : "zh")}
                   </div>
 
                   <div>
@@ -167,11 +177,11 @@ export default async function AdminArticlesPage() {
                   </div>
 
                   <div className="text-xs font-bold text-slate-500">
-                    {formatArticleDate(article.publishedAt)}
+                    {formatArticleDate(article.publishedAt, article.locale === "EN" ? "en" : "zh")}
                   </div>
 
                   <div className="text-xs font-bold text-slate-500">
-                    {formatArticleDate(article.updatedAt)}
+                    {formatArticleDate(article.updatedAt, article.locale === "EN" ? "en" : "zh")}
                   </div>
 
                   <div className="flex flex-wrap gap-3">
@@ -183,7 +193,7 @@ export default async function AdminArticlesPage() {
                     </Link>
                     {article.status === "PUBLISHED" && !article.noindex ? (
                       <Link
-                        href={`/zh/guides/${article.slug}`}
+                        href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                         target="_blank"
                         className="text-xs font-black text-slate-600 hover:text-slate-950"
                       >

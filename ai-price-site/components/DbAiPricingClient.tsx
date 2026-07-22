@@ -7,64 +7,42 @@ import type {
   DbPricingCategory,
   DbPricingProduct,
 } from "../lib/db-pricing-types";
+import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import type { SiteLocale } from "../lib/site-locale";
 
 type DbAiPricingClientProps = {
   products: DbPricingProduct[];
-  locale: "zh" | "en";
-};
-
-const pageCopy = {
-  zh: {
-    tabs: [
-      {
-        key: "ai" as DbPricingCategory,
-        label: "AI 订阅",
-        desc: "比较 ChatGPT、Claude、Gemini、Grok 等 AI 产品在不同国家和地区的价格。",
-      },
-      {
-        key: "streaming" as DbPricingCategory,
-        label: "流媒体",
-        desc: "比较 Netflix、YouTube Premium、Spotify、Disney+ 等流媒体和数字娱乐订阅价格。",
-      },
-    ],
-    countPrefix: "当前收录",
-    countSuffix: "个产品",
-    empty: "当前分类暂无已发布价格数据。",
-    defaultPlanHint: "默认展示主流月付套餐",
-  },
-  en: {
-    tabs: [
-      {
-        key: "ai" as DbPricingCategory,
-        label: "AI Subscriptions",
-        desc: "Compare ChatGPT, Claude, Gemini, Grok and other AI subscription prices across countries and regions.",
-      },
-      {
-        key: "streaming" as DbPricingCategory,
-        label: "Streaming",
-        desc: "Compare Netflix, YouTube Premium, Spotify, Disney+ and other digital entertainment subscription prices.",
-      },
-    ],
-    countPrefix: "Currently tracking",
-    countSuffix: "products",
-    empty: "No published pricing data is available for this category yet.",
-    defaultPlanHint: "Popular monthly plan shown by default",
-  },
+  locale: SiteLocale;
 };
 
 export default function DbAiPricingClient({
   products,
   locale,
 }: DbAiPricingClientProps) {
-  const copy = pageCopy[locale];
+  const copy = getPublicPricingCopy(locale).listing;
+  const tabs = useMemo(
+    () => [
+      {
+        key: "ai" as DbPricingCategory,
+        label: copy.aiLabel,
+        desc: copy.aiDescription,
+      },
+      {
+        key: "streaming" as DbPricingCategory,
+        label: copy.streamingLabel,
+        desc: copy.streamingDescription,
+      },
+    ],
+    [copy],
+  );
   const availableTabs = useMemo(
     () =>
-      copy.tabs.filter((tab) =>
+      tabs.filter((tab) =>
         products.some((product) => product.category === tab.key),
       ),
-    [copy.tabs, products],
+    [products, tabs],
   );
-  const defaultCategory = availableTabs[0]?.key || copy.tabs[0].key;
+  const defaultCategory = availableTabs[0]?.key || tabs[0].key;
   const [selectedCategory, setSelectedCategory] =
     useState<DbPricingCategory>(defaultCategory);
   const activeCategory = availableTabs.some(
@@ -74,7 +52,7 @@ export default function DbAiPricingClient({
     : defaultCategory;
 
   const activeTab =
-    copy.tabs.find((tab) => tab.key === activeCategory) || copy.tabs[0];
+    tabs.find((tab) => tab.key === activeCategory) || tabs[0];
 
   const filteredProducts = useMemo(
     () => products.filter((product) => product.category === activeCategory),
@@ -86,7 +64,7 @@ export default function DbAiPricingClient({
       {availableTabs.length > 1 ? (
         <div className="mb-10 flex justify-center">
           <SegmentedControl
-            ariaLabel={locale === "en" ? "Digital service category" : "数字服务分类"}
+            ariaLabel={copy.categoryAria}
             value={activeCategory}
             tone="green"
             items={availableTabs.map((tab) => ({
@@ -115,7 +93,7 @@ export default function DbAiPricingClient({
         </div>
 
         <div className="text-sm font-bold text-zinc-400">
-          {copy.countPrefix} {filteredProducts.length} {copy.countSuffix}
+          {copy.productCount(filteredProducts.length)}
         </div>
       </div>
 

@@ -141,6 +141,15 @@ export default async function AdminLoginPage({
                   登录
                 </button>
               </form>
+
+              <details className="mt-6 border-t border-slate-200 pt-5 text-sm text-slate-600">
+                <summary className="cursor-pointer font-semibold text-slate-700 outline-none focus:text-blue-700">
+                  无法登录？
+                </summary>
+                <p className="mt-3 leading-6">
+                  当前为单管理员模式，不通过邮件发送重置链接。请使用服务器管理通道运行管理员密码重置工具，恢复后再回到这里登录。
+                </p>
+              </details>
             </div>
           </div>
         </section>

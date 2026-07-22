@@ -1,10 +1,21 @@
 import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
 import AdminAlert from "../../../components/admin/AdminAlert";
 import { prisma } from "../../../lib/prisma";
-import { updateAnalyticsSettings } from "./actions";
+import { updateAdminPassword, updateAnalyticsSettings } from "./actions";
 
 type SettingsSearchParams = {
   saved?: string;
+  passwordChanged?: string;
+  passwordError?: string;
+  revoked?: string;
+};
+
+const passwordErrorCopy: Record<string, string> = {
+  missing: "请完整填写当前密码、新密码和确认密码。",
+  mismatch: "两次输入的新密码不一致。",
+  policy: "新密码至少 14 个字符，并同时包含大小写字母、数字和符号。",
+  current: "当前密码不正确。",
+  unchanged: "新密码不能与当前密码相同。",
 };
 
 async function getAnalyticsSettings() {
@@ -39,6 +50,11 @@ export default async function AdminSettingsPage({
     searchParams ?? Promise.resolve<SettingsSearchParams>({}),
   ]);
   const saved = query.saved === "1";
+  const passwordChanged = query.passwordChanged === "1";
+  const revokedSessions = Math.max(0, Number.parseInt(query.revoked || "0", 10) || 0);
+  const passwordError = query.passwordError
+    ? passwordErrorCopy[query.passwordError] || "密码修改失败，请重新检查后再试。"
+    : "";
 
   return (
     <>
@@ -54,7 +70,19 @@ export default async function AdminSettingsPage({
         </AdminAlert>
       ) : null}
 
-      <AdminCard className={saved ? "mt-5" : undefined}>
+      {passwordChanged ? (
+        <AdminAlert title="管理员密码已更新" variant="success">
+          当前设备保持登录，另外 {revokedSessions} 个登录会话已安全注销。
+        </AdminAlert>
+      ) : null}
+
+      {passwordError ? (
+        <AdminAlert title="密码未修改" variant="danger">
+          {passwordError}
+        </AdminAlert>
+      ) : null}
+
+      <AdminCard className={saved || passwordChanged || passwordError ? "mt-5" : undefined}>
         <AdminSectionHeader
           title="Google 统计代码"
           description="填写 Google 后台给出的 ID 即可，前台会自动注入统计代码。不要粘贴完整 script 代码。"
@@ -121,6 +149,67 @@ export default async function AdminSettingsPage({
               className="h-11 rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700"
             >
               保存设置
+            </button>
+          </div>
+        </form>
+      </AdminCard>
+
+      <AdminCard className="mt-5">
+        <AdminSectionHeader
+          title="管理员账户安全"
+          description="单管理员模式下可在这里主动更换密码。修改后当前设备保持登录，其他设备上的后台会话会全部注销。"
+        />
+
+        <form action={updateAdminPassword} className="mt-6 space-y-5">
+          <div className="grid gap-5 lg:grid-cols-3">
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">当前密码</span>
+              <input
+                name="current_password"
+                type="password"
+                autoComplete="current-password"
+                required
+                maxLength={128}
+                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">新密码</span>
+              <input
+                name="new_password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={14}
+                maxLength={128}
+                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">确认新密码</span>
+              <input
+                name="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={14}
+                maxLength={128}
+                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-3xl text-xs leading-5 text-slate-500">
+              至少 14 个字符，并同时包含大小写字母、数字和符号。系统不会通过网页展示或发送现有密码。
+            </p>
+            <button
+              type="submit"
+              className="h-11 shrink-0 rounded-lg bg-slate-950 px-5 text-sm font-bold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-200"
+            >
+              更新密码
             </button>
           </div>
         </form>

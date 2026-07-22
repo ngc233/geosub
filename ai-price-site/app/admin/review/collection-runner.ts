@@ -119,43 +119,14 @@ async function markCollectorRunSpawned(runId: string | null, started: StartedCol
 }
 
 export async function reconcileStaleCollectorRuns(jobId?: string | null) {
-  const jobFilter = jobId ? Prisma.sql`AND job_id = ${jobId}::uuid` : Prisma.empty;
-  const startTimeoutMessage = `Collector process did not start reporting within ${COLLECTOR_START_TIMEOUT_MINUTES} minutes.`;
-  const runTimeoutMessage = "Collector process did not finish within the expected time window.";
-
-  await prisma.$executeRaw`
-    UPDATE collector_job_runs
-    SET
-      status = 'failed',
-      finished_at = NOW(),
-      duration_ms = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000)::int,
-      error_message = COALESCE(
-        error_message,
-        CASE
-          WHEN raw_payload ->> 'state' = 'queued_from_admin'
-            THEN ${startTimeoutMessage}
-          ELSE ${runTimeoutMessage}
-        END
-      ),
-      raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
-        'state',
-        'stale_running_marked_failed',
-        'timeout_minutes',
-        CASE
-          WHEN raw_payload ->> 'state' = 'queued_from_admin'
-            THEN ${COLLECTOR_START_TIMEOUT_MINUTES}
-          ELSE ${COLLECTOR_RUN_TIMEOUT_MINUTES}
-        END
-      )
-    WHERE status = 'running'
-      ${jobFilter}
-      AND (
-        (
-          raw_payload ->> 'state' = 'queued_from_admin'
-          AND started_at < NOW() - (${COLLECTOR_START_TIMEOUT_MINUTES} || ' minutes')::interval
-        )
-        OR started_at < NOW() - (${COLLECTOR_RUN_TIMEOUT_MINUTES} || ' minutes')::interval
-      )
+  void jobId;
+  await prisma.$queryRaw`
+    SELECT *
+    FROM reconcile_stale_collector_runs(
+      ${COLLECTOR_START_TIMEOUT_MINUTES},
+      ${COLLECTOR_RUN_TIMEOUT_MINUTES},
+      3
+    )
   `;
 }
 
@@ -360,6 +331,24 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
           WHERE slug = ${productSlug}
           LIMIT 1
         ),
+        ranked_jobs AS (
+          SELECT
+            job.id,
+            ROW_NUMBER() OVER (
+              PARTITION BY job.product_id
+              ORDER BY
+                job.priority DESC,
+                (COALESCE(job.job_config ->> 'app_store_id', '') <> '') DESC,
+                job.updated_at DESC,
+                job.created_at DESC
+            ) AS product_rank
+          FROM collector_jobs job
+          JOIN price_sources source ON source.id = job.source_id
+          JOIN scoped_product product ON product.id = job.product_id
+          WHERE source.type = 'app_store'::price_source_type
+            AND job.job_type = 'ai_pricing'
+            AND job.status <> 'archived'
+        ),
         queued AS (
           UPDATE collector_jobs job
           SET
@@ -368,12 +357,9 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
             last_error = NULL,
             priority = GREATEST(priority, 100),
             updated_at = NOW()
-          FROM price_sources source, scoped_product product
-          WHERE source.id = job.source_id
-            AND source.type = 'app_store'::price_source_type
-            AND job.product_id = product.id
-            AND job.job_type = 'ai_pricing'
-            AND job.status <> 'archived'
+          FROM ranked_jobs ranked
+          WHERE ranked.id = job.id
+            AND ranked.product_rank = 1
           RETURNING job.id
         )
         SELECT id::text AS job_id
@@ -386,17 +372,20 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
           WHERE status = 'pending'::observation_status
             AND billing_platform = 'ios'::billing_platform
         ),
-        queued AS (
-          UPDATE collector_jobs job
-          SET
-            status = 'active',
-            next_run_at = NOW(),
-            last_error = NULL,
-            priority = GREATEST(priority, 100),
-            updated_at = NOW()
-          FROM price_sources source
-          WHERE source.id = job.source_id
-            AND source.type = 'app_store'::price_source_type
+        ranked_jobs AS (
+          SELECT
+            job.id,
+            ROW_NUMBER() OVER (
+              PARTITION BY job.product_id
+              ORDER BY
+                job.priority DESC,
+                (COALESCE(job.job_config ->> 'app_store_id', '') <> '') DESC,
+                job.updated_at DESC,
+                job.created_at DESC
+            ) AS product_rank
+          FROM collector_jobs job
+          JOIN price_sources source ON source.id = job.source_id
+          WHERE source.type = 'app_store'::price_source_type
             AND job.job_type = 'ai_pricing'
             AND job.status <> 'archived'
             AND (
@@ -414,6 +403,18 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
                 AND run.status = 'succeeded'
                 AND run.started_at > NOW() - (${MANUAL_COLLECTION_FRESH_HOURS} || ' hours')::interval
             )
+        ),
+        queued AS (
+          UPDATE collector_jobs job
+          SET
+            status = 'active',
+            next_run_at = NOW(),
+            last_error = NULL,
+            priority = GREATEST(priority, 100),
+            updated_at = NOW()
+          FROM ranked_jobs ranked
+          WHERE ranked.id = job.id
+            AND ranked.product_rank = 1
           RETURNING job.id
         )
         SELECT id::text AS job_id
@@ -454,7 +455,16 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
   revalidatePath("/admin/pipeline");
   revalidatePath("/admin/collector-jobs");
   revalidatePath("/admin/affordability");
-  revalidatePath("/zh/ai-pricing/chatgpt");
+  revalidatePath("/zh/ai-pricing");
+  revalidatePath("/en/ai-pricing");
+  revalidatePath("/zh/streaming-pricing");
+  revalidatePath("/en/streaming-pricing");
+  if (productSlug) {
+    revalidatePath(`/zh/ai-pricing/${productSlug}`);
+    revalidatePath(`/en/ai-pricing/${productSlug}`);
+    revalidatePath(`/zh/streaming-pricing/${productSlug}`);
+    revalidatePath(`/en/streaming-pricing/${productSlug}`);
+  }
 
   return {
     queuedCount,

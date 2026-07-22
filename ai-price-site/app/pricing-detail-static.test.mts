@@ -33,7 +33,9 @@ test("pricing detail pages keep product navigation database-driven", () => {
     assert.match(page, /async function getProductNavItems/);
     assert.match(page, /export const dynamic = "force-dynamic"/);
     assert.match(page, /prisma\.product\.findMany/);
-    assert.match(page, /status:\s*\{\s*in:\s*\["PUBLISHED", "REVIEW"\]/);
+    assert.match(page, /status:\s*"PUBLISHED"/);
+    assert.match(page, /plans:\s*\{\s*some:/);
+    assert.match(page, /regionPrices:\s*\{\s*some:/);
     assert.match(page, /sortOrder: "asc"/);
     assert.match(page, /logoUrl: true/);
     assert.match(page, /officialUrl: true/);
@@ -45,9 +47,39 @@ test("database-only streaming products keep their real category on detail pages"
   const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
 
   assert.match(adapter, /p\.category::text AS product_category/);
+  assert.match(adapter, /p\.provider AS product_provider/);
+  assert.match(adapter, /p\.description AS product_description/);
   assert.match(adapter, /p\.official_url AS product_official_url/);
   assert.match(adapter, /firstRow\.product_category === "streaming"/);
-  assert.doesNotMatch(adapter, /category: staticProduct\?\.category \|\| "ai"/);
+  assert.match(adapter, /p\.status = 'published'/);
+  assert.doesNotMatch(adapter, /subscriptionPricingData/);
+  assert.doesNotMatch(adapter, /staticProduct/);
+});
+
+test("public pricing products require published product, plan and price state", () => {
+  const listAdapter = readAppFile("..", "lib", "db-ai-pricing.ts");
+  const defaultPlan = readAppFile("..", "lib", "db-pricing-types.ts");
+
+  assert.match(listAdapter, /status:\s*"PUBLISHED"/);
+  assert.match(listAdapter, /plans:\s*\{\s*some:/);
+  assert.match(listAdapter, /regionPrices:\s*\{\s*some:/);
+  assert.doesNotMatch(listAdapter, /productDisplayNameMap/);
+  assert.match(defaultPlan, /return product\.plans\[0\]/);
+  assert.doesNotMatch(defaultPlan, /featuredPlanByProduct/);
+});
+
+test("public pricing runtime does not import the legacy static product catalog", () => {
+  const runtimeFiles = [
+    readAppFile("zh", "ai-pricing", "[slug]", "page.tsx"),
+    readAppFile("en", "ai-pricing", "[slug]", "page.tsx"),
+    readAppFile("..", "lib", "pricing-detail-adapter.ts"),
+    readAppFile("..", "components", "PricingPlatformView.tsx"),
+  ];
+
+  for (const source of runtimeFiles) {
+    assert.doesNotMatch(source, /data\/ai-pricing/);
+    assert.match(source, /public-pricing-model/);
+  }
 });
 
 test("pricing detail pages keep AI and streaming paths synchronized", () => {
@@ -63,6 +95,10 @@ test("pricing detail pages keep AI and streaming paths synchronized", () => {
 
   assert.equal(getPricingListPath("zh", "ai"), "/zh/ai-pricing");
   assert.equal(getPricingListPath("en", "streaming"), "/en/streaming-pricing");
+  assert.equal(
+    getPricingListPath("zh", "STREAMING"),
+    "/zh/streaming-pricing",
+  );
   assert.equal(
     getPricingDetailPath("zh", "streaming", "netflix"),
     "/zh/streaming-pricing/netflix",
@@ -129,14 +165,17 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   const enPage = readAppFile("en", "ai-pricing", "[slug]", "page.tsx");
   const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
   const shareModal = readAppFile("..", "components", "SharePriceModal.tsx");
+  const pricingCopy = readAppFile("..", "lib", "public-pricing-copy.ts");
 
   assert.match(zhPage, /import \{ getPlanDisplayName \}/);
   assert.match(enPage, /import \{ getPlanDisplayName \}/);
   assert.match(platformView, /const planDisplayName = getPlanDisplayName\(productName, plan\.name\)/);
-  assert.match(platformView, /\$\{planDisplayName\} 全球价格结论/);
-  assert.match(platformView, /\$\{planDisplayName\} global price conclusion/);
+  assert.match(platformView, /copy\.conclusionTitle\(planDisplayName\)/);
+  assert.match(pricingCopy, /\$\{planName\} 全球价格结论/);
+  assert.match(pricingCopy, /\$\{planName\} global price conclusion/);
   assert.match(shareModal, /const planDisplayName = getPlanDisplayName\(product\.name, plan\.name\)/);
-  assert.match(shareModal, /type ShareLocale = 'zh' \| 'en'/);
+  assert.match(shareModal, /import type \{ SiteLocale \} from '\.\.\/lib\/site-locale'/);
+  assert.match(shareModal, /satisfies Record<SiteLocale, ShareCopy>/);
   assert.match(shareModal, /Share price card/);
   assert.match(zhPage, /<SharePriceModal product=\{product\} plan=\{activePlan\} stats=\{stats\} locale="zh" \/>/);
   assert.match(enPage, /<SharePriceModal product=\{product\} plan=\{activePlan\} stats=\{stats\} locale="en" \/>/);
@@ -149,10 +188,42 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
 test("pricing detail freshness follows the active plan and trusted matching observations", () => {
   const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
   const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
+  const shareModal = readAppFile("..", "components", "SharePriceModal.tsx");
+  const pricingCopy = readAppFile("..", "lib", "public-pricing-copy.ts");
 
-  assert.match(platformView, /getLatestPlanReviewDate/);
-  assert.match(platformView, /本套餐最近复核/);
-  assert.match(platformView, /Latest plan review/);
+  assert.match(platformView, /plan\.freshness\?\.pageUpdatedAt/);
+  assert.match(platformView, /copy\.pageUpdated/);
+  assert.match(pricingCopy, /页面更新/);
+  assert.match(platformView, /copy\.latestCollection/);
+  assert.match(platformView, /copy\.fxBasis/);
+  assert.match(platformView, /copy\.planReview/);
+  assert.match(platformView, /copy\.trustStatus/);
+  assert.match(pricingCopy, /最近采集/);
+  assert.match(pricingCopy, /汇率基准/);
+  assert.match(pricingCopy, /套餐复核/);
+  assert.match(pricingCopy, /可信状态/);
+  assert.doesNotMatch(platformView, /getLatestPlanReviewDate/);
+  assert.match(adapter, /freshness: getPlanFreshness\(regions\)/);
+  assert.match(adapter, /pageUpdatedAt: getLatestDate\(\[planReviewedAt, priceCollectedAt\]\)/);
+  assert.doesNotMatch(adapter, /latestCheckedAt \|\| staticProduct\?\.updatedAt/);
+  assert.match(shareModal, /plan\.freshness\?\.pageUpdatedAt \|\| product\.updatedAt/);
   assert.match(adapter, /po\.status = 'approved'/);
   assert.match(adapter, /auto_review_reason_code' = 'superseded_by_published_price'/);
+});
+
+test("detail copy separates active locales from prepared translations", () => {
+  const detailCopy = readAppFile("..", "lib", "detail-page-copy.ts");
+  const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
+
+  assert.match(detailCopy, /import type \{ SiteLocale \} from "\.\/site-locale"/);
+  assert.match(detailCopy, /type PreparedDetailLocale =\s*\| SiteLocale/);
+  assert.match(detailCopy, /export type DetailLocale = SiteLocale/);
+  assert.match(detailCopy, /Record<PreparedDetailLocale, DetailCopyTemplate>/);
+  assert.match(detailCopy, /Record<PreparedDetailLocale, DetailMapCopy>/);
+  assert.match(detailCopy, /Record<PreparedDetailLocale, DetailTableCopy>/);
+  assert.doesNotMatch(detailCopy, /detailCopyTemplates\[locale\] \|\|/);
+  assert.doesNotMatch(detailCopy, /detailMapCopy\[locale\] \|\|/);
+  assert.doesNotMatch(detailCopy, /detailTableCopy\[locale\] \|\|/);
+  assert.doesNotMatch(adapter, /\bes:\s*"es"/);
+  assert.doesNotMatch(adapter, /\bja:\s*"ja"/);
 });

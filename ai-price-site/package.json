@@ -1,12 +1,16 @@
 {
     "name":  "ai-price-site",
-    "version":  "1.0.7",
+    "version":  "2.0.0",
     "private":  true,
     "scripts":  {
                     "dev":  "next dev",
                     "build":  "next build",
                     "check:local":  "node scripts/check-local-env.cjs",
+                    "check:migrations":  "node scripts/check-migrations.cjs",
                     "check:prices":  "node scripts/check-price-quality.cjs",
+                    "check:plans":  "node scripts/check-product-plan-specs.cjs",
+                    "check:logos":  "node --conditions=react-server --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-product-logos.mts --check",
+                    "sync:logos":  "node --conditions=react-server --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-product-logos.mts",
                     "check:encoding":  "node scripts/check-source-encoding.cjs",
                     "db:up":  "node scripts/local-db.cjs up",
                     "db:status":  "node scripts/local-db.cjs status",
@@ -18,11 +22,11 @@
                     "admin:set-password":  "node scripts/set-admin-password.cjs",
                     "typecheck":  "tsc --noEmit",
                     "preflight:code":  "npm run check:encoding \u0026\u0026 npm run typecheck \u0026\u0026 npm run lint \u0026\u0026 npm test \u0026\u0026 npm run build",
-                    "preflight:full":  "npm run check:local \u0026\u0026 npm run check:prices \u0026\u0026 npm run preflight:code",
+                    "preflight:full":  "npm run check:local \u0026\u0026 npm run check:migrations \u0026\u0026 npm run check:plans \u0026\u0026 npm run check:logos \u0026\u0026 npm run check:prices \u0026\u0026 npm run preflight:code",
                     "seed:local-demo":  "powershell -ExecutionPolicy Bypass -File scripts/seed-local-demo.ps1",
                     "sync:worldbank-income":  "node scripts/sync-world-bank-income.mjs",
                     "start":  "next start",
-                    "test":  "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test app/admin/admin-navigation-static.test.mts app/admin/admin-ui-consistency.test.mts app/admin/articles/article-admin-flow.test.mts app/admin/collector-jobs/job-state.test.mts app/admin/discovery/discovery-flow.test.mts app/admin/events/events-admin.test.mts app/admin/pipeline/stale-price-policy.test.mts app/admin/products/product-logo-policy.test.mts app/admin/review/collection-progress.test.mts app/admin/review/collection-status.test.mts app/admin/review/manual-review-policy.test.mts app/admin/review/pending-product-diagnosis.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts app/admin/settings/settings-admin.test.mts app/affordability-static.test.mts app/data-sources-static.test.mts app/exchange-rate-static.test.mts app/homepage-static.test.mts app/price-quality-gate-static.test.mts app/pricing-detail-static.test.mts app/pricing-list-static.test.mts app/risk-model-static.test.mts app/security-static.test.mts app/seo-static.test.mts app/trust-pages-static.test.mts components/dropdown-interactions.test.mts components/public-ui-consistency.test.mts components/tax-risk-display.test.mts",
+                    "test":  "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test app/admin/admin-navigation-static.test.mts app/admin/admin-ui-consistency.test.mts app/admin/articles/article-admin-flow.test.mts app/admin/collector-jobs/job-state.test.mts app/admin/discovery/discovery-flow.test.mts app/admin/events/events-admin.test.mts app/admin/pipeline/stale-price-policy.test.mts app/admin/products/product-logo-policy.test.mts app/admin/review/collection-progress.test.mts app/admin/review/collection-runner-static.test.mts app/admin/review/collection-status.test.mts app/admin/review/manual-review-policy.test.mts app/admin/review/pending-product-diagnosis.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts app/admin/settings/settings-admin.test.mts app/admin/system/system-monitor.test.mts app/affordability-static.test.mts app/data-sources-static.test.mts app/exchange-rate-static.test.mts app/homepage-static.test.mts app/price-quality-gate-static.test.mts app/pricing-detail-static.test.mts app/pricing-list-static.test.mts app/public-product-lifecycle-static.test.mts app/release-automation-static.test.mts app/risk-model-static.test.mts app/security-static.test.mts app/seo-static.test.mts app/trust-pages-static.test.mts components/dropdown-interactions.test.mts components/public-ui-consistency.test.mts components/tax-risk-display.test.mts lib/country-name.test.mts",
                     "lint":  "eslint"
                 },
     "dependencies":  {

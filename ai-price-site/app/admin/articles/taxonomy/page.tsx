@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Locale } from "@prisma/client";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { prisma } from "../../../../lib/prisma";
 import {
@@ -51,14 +52,15 @@ function ToggleButton({
 export default async function ArticleTaxonomyPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; created?: string }>;
+  searchParams?: Promise<{ error?: string; created?: string; locale?: string }>;
 }) {
   const query = searchParams ? await searchParams : {};
+  const locale: Locale = query.locale === "EN" ? "EN" : "ZH";
 
   const [categories, tags] = await Promise.all([
     prisma.articleCategory.findMany({
       where: {
-        locale: "ZH",
+        locale,
       },
       include: {
         _count: {
@@ -78,7 +80,7 @@ export default async function ArticleTaxonomyPage({
     }),
     prisma.articleTag.findMany({
       where: {
-        locale: "ZH",
+        locale,
       },
       include: {
         _count: {
@@ -100,9 +102,25 @@ export default async function ArticleTaxonomyPage({
         title="分类与标签"
         description="维护文章内容的基础信息架构。分类负责栏目归属，标签负责主题聚合和后续内链。"
         action={
-          <Link href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
-            返回文章列表
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+              <Link
+                href="/admin/articles/taxonomy?locale=ZH"
+                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "ZH" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >
+                中文
+              </Link>
+              <Link
+                href="/admin/articles/taxonomy?locale=EN"
+                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "EN" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >
+                English
+              </Link>
+            </div>
+            <Link href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
+              返回文章列表
+            </Link>
+          </div>
         }
       />
 
@@ -128,7 +146,7 @@ export default async function ArticleTaxonomyPage({
           </div>
 
           <form action={createArticleCategoryAction} className="grid gap-4">
-            <input type="hidden" name="locale" value="ZH" />
+            <input type="hidden" name="locale" value={locale} />
             <input className={inputClass} name="name" placeholder="分类名称" required />
             <input className={inputClass} name="slug" placeholder="URL 标识，例如 price-guides" />
             <textarea className={`${inputClass} min-h-20 resize-y`} name="description" placeholder="分类说明" />
@@ -149,7 +167,7 @@ export default async function ArticleTaxonomyPage({
           </div>
 
           <form action={createArticleTagAction} className="grid gap-4">
-            <input type="hidden" name="locale" value="ZH" />
+            <input type="hidden" name="locale" value={locale} />
             <input className={inputClass} name="name" placeholder="标签名称" required />
             <input className={inputClass} name="slug" placeholder="URL 标识，例如 app-store" />
             <textarea className={`${inputClass} min-h-20 resize-y`} name="description" placeholder="标签说明" />

@@ -108,15 +108,56 @@ async function resolveTrackedProducts(client) {
   }
 
   const result = await client.query(`
-    SELECT DISTINCT products.slug
+    SELECT products.slug
     FROM products
-    JOIN collector_jobs ON collector_jobs.product_id = products.id
-    WHERE collector_jobs.status = 'active'
-      AND collector_jobs.job_config ->> 'collector_kind' = 'app_store'
+    WHERE EXISTS (
+        SELECT 1
+        FROM plans
+        WHERE plans.product_id = products.id
+          AND plans.status = 'published'
+      )
+      AND EXISTS (
+        SELECT 1
+        FROM region_prices
+        WHERE region_prices.product_id = products.id
+          AND region_prices.status = 'published'
+          AND region_prices.billing_platform = 'ios'
+      )
     ORDER BY products.slug
   `);
 
   return result.rows.map((row) => row.slug).filter(Boolean);
+}
+
+async function checkDuplicatePublishedPlans(client, trackedProducts) {
+  const result = await client.query(
+    `
+      SELECT
+        product.slug AS product,
+        lower(trim(plan.name)) AS normalized_name,
+        string_agg(plan.slug, ', ' ORDER BY plan.slug) AS plan_slugs,
+        COUNT(*)::int AS duplicate_count
+      FROM plans plan
+      JOIN products product ON product.id = plan.product_id
+      WHERE product.slug = ANY($1::text[])
+        AND plan.status = 'published'
+      GROUP BY product.slug, lower(trim(plan.name))
+      HAVING COUNT(*) > 1
+      ORDER BY product.slug, normalized_name
+    `,
+    [trackedProducts]
+  );
+
+  if (result.rowCount === 0) {
+    printRow("ok", "duplicate plans", "none");
+    return;
+  }
+
+  failures.push(`${result.rowCount} duplicate published plan group(s) were found.`);
+  printRow("fail", "duplicate plans", `${result.rowCount} group(s)`);
+  for (const row of result.rows) {
+    console.log(`      ${row.product}: ${row.plan_slugs}`);
+  }
 }
 
 async function checkExchangeRates(client) {
@@ -399,28 +440,33 @@ async function checkPublishedMedianOutliers(client, trackedProducts) {
   }
 }
 
-async function checkTaxProfileCoverage(client) {
+async function checkTaxProfileCoverage(client, trackedProducts) {
   const result = await client.query(`
     WITH published_countries AS (
-      SELECT DISTINCT country_id
-      FROM region_prices
-      WHERE status = 'published'::publish_status
-        AND billing_platform = 'ios'::billing_platform
+      SELECT DISTINCT price.product_id, price.country_id
+      FROM region_prices price
+      JOIN products product ON product.id = price.product_id
+      WHERE product.slug = ANY($1::text[])
+        AND price.status = 'published'::publish_status
+        AND price.billing_platform = 'ios'::billing_platform
     ),
     coverage AS (
       SELECT
+        product.slug AS product,
         country.code,
         country.name_en,
         tax.id AS tax_profile_id,
         tax.confidence,
         tax.review_status
       FROM published_countries published_country
+      JOIN products product ON product.id = published_country.product_id
       JOIN countries country ON country.id = published_country.country_id
       LEFT JOIN country_tax_profiles tax
         ON tax.country_id = published_country.country_id
        AND tax.status = 'active'
     )
     SELECT
+      product,
       COUNT(*)::int AS published_country_count,
       COUNT(*) FILTER (WHERE tax_profile_id IS NOT NULL)::int AS covered_country_count,
       COUNT(*) FILTER (WHERE tax_profile_id IS NULL)::int AS missing_country_count,
@@ -430,27 +476,30 @@ async function checkTaxProfileCoverage(client) {
       )::int AS verified_high_confidence_count,
       STRING_AGG(code, ', ' ORDER BY code) FILTER (WHERE tax_profile_id IS NULL) AS missing_country_codes
     FROM coverage
-  `);
+    GROUP BY product
+    ORDER BY product
+  `, [trackedProducts]);
 
-  const row = result.rows[0] || {};
-  const missing = Number(row.missing_country_count || 0);
-  const total = Number(row.published_country_count || 0);
-  const covered = Number(row.covered_country_count || 0);
-  const verified = Number(row.verified_high_confidence_count || 0);
+  for (const row of result.rows) {
+    const missing = Number(row.missing_country_count || 0);
+    const total = Number(row.published_country_count || 0);
+    const covered = Number(row.covered_country_count || 0);
+    const verified = Number(row.verified_high_confidence_count || 0);
 
-  if (missing > 0) {
-    failures.push(
-      `${missing} published App Store country/countries are missing tax profiles: ${
-        row.missing_country_codes || "unknown"
-      }.`
+    if (missing > 0) {
+      failures.push(
+        `${row.product} has ${missing} published App Store country/countries without tax profiles: ${
+          row.missing_country_codes || "unknown"
+        }.`
+      );
+    }
+
+    printRow(
+      missing > 0 ? "fail" : "ok",
+      `tax ${row.product}`,
+      `${covered}/${total} covered, ${verified} high-confidence verified`
     );
   }
-
-  printRow(
-    missing > 0 ? "fail" : "ok",
-    "tax profiles",
-    `${covered}/${total} covered, ${verified} high-confidence verified`
-  );
 }
 
 async function checkCollectorRuns(client) {
@@ -615,6 +664,8 @@ async function main() {
       "price_observations",
       "country_tax_profiles",
       "collector_jobs",
+      "data_quality_repair_cycles",
+      "operational_recovery_cycles",
     ]);
 
     if (required) {
@@ -623,6 +674,11 @@ async function main() {
         "queue_app_store_anomaly_rechecks",
         "queue_stale_app_store_price_rechecks",
         "queue_app_store_coverage_gap_rechecks",
+        "run_data_quality_repair_cycle",
+        "reconcile_stale_collector_runs",
+        "recover_failed_collector_jobs",
+        "run_operational_recovery_cycle",
+        "close_exhausted_app_store_anomalies",
         "refresh_plan_affordability_metrics",
         "refresh_matching_app_store_prices",
         "quarantine_published_app_store_price_outliers",
@@ -645,8 +701,9 @@ async function main() {
         await checkTrackedProductCoverage(client, trackedProducts);
         await checkPublishedLowPrices(client, trackedProducts);
         await checkPublishedMedianOutliers(client, trackedProducts);
+        await checkDuplicatePublishedPlans(client, trackedProducts);
         await checkUnrefreshedExactLocalPrices(client, trackedProducts);
-        await checkTaxProfileCoverage(client);
+        await checkTaxProfileCoverage(client, trackedProducts);
         await checkCollectorRuns(client);
         await checkAppStoreProductRunFreshness(client, trackedProducts);
       }

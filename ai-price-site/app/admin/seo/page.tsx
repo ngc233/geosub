@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
+import { getPricingDetailPath } from "../../../lib/pricing-routes";
 import { prisma } from "../../../lib/prisma";
 
 function scoreSeo(item: {
@@ -53,35 +54,40 @@ export default async function AdminSeoPage() {
     }),
   ]);
 
-  const articleAudits = articles.map((article) => ({
-    id: article.id,
-    type: "文章",
-    title: article.title,
-    path: `/zh/guides/${article.slug}`,
-    editPath: `/admin/articles/${article.id}/edit`,
-    status: article.status,
-    ...scoreSeo({
-      title: article.seoTitle || article.title,
-      description: article.seoDescription || article.excerpt,
-      canonicalUrl: article.canonicalUrl,
-      noindex: article.noindex,
-    }),
-  }));
+  const articleAudits = articles.map((article) => {
+    const path = `/zh/guides/${article.slug}`;
+
+    return {
+      id: article.id,
+      type: "文章",
+      title: article.title,
+      path,
+      editPath: `/admin/articles/${article.id}/edit`,
+      status: article.status,
+      ...scoreSeo({
+        title: article.seoTitle || article.title,
+        description: article.seoDescription || article.excerpt,
+        canonicalUrl: article.canonicalUrl || path,
+        noindex: article.noindex,
+      }),
+    };
+  });
 
   const productAudits = products.map((product) => {
     const meta = product.seoMetas[0];
+    const path = getPricingDetailPath("zh", product.category, product.slug);
 
     return {
       id: product.id,
       type: "价格页",
       title: product.name,
-      path: `/zh/ai-pricing/${product.slug}`,
+      path,
       editPath: `/admin/products/${product.id}/edit`,
       status: product.status,
       ...scoreSeo({
         title: meta?.title || product.name,
         description: meta?.description || product.description,
-        canonicalUrl: meta?.canonicalUrl,
+        canonicalUrl: path,
         noindex: false,
       }),
     };

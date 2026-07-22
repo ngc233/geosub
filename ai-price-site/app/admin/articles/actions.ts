@@ -71,12 +71,14 @@ function parseDate(value: FormDataEntryValue | null) {
 
 function revalidateArticlePaths(slug?: string | null) {
   revalidatePath("/zh/guides");
+  revalidatePath("/en/guides");
   revalidatePath("/sitemap.xml");
   revalidatePath("/admin/articles");
   revalidatePath("/admin/articles/trash");
 
   if (slug) {
     revalidatePath(`/zh/guides/${slug}`);
+    revalidatePath(`/en/guides/${slug}`);
   }
 }
 
@@ -223,7 +225,7 @@ export async function createArticleAction(formData: FormData) {
   const relatedArticleIds = parseIds(formData, "relatedArticleIds");
 
   if (!data.title || !data.slug) {
-    redirect("/admin/articles/new?error=missing");
+    redirect(`/admin/articles/new?locale=${data.locale}&error=missing`);
   }
 
   const exists = await prisma.article.findUnique({
@@ -236,7 +238,7 @@ export async function createArticleAction(formData: FormData) {
   });
 
   if (exists) {
-    redirect("/admin/articles/new?error=slug");
+    redirect(`/admin/articles/new?locale=${data.locale}&error=slug`);
   }
 
   const article = await prisma.article.create({
@@ -585,7 +587,7 @@ export async function createArticleCategoryAction(formData: FormData) {
   const locale = parseLocale(formData.get("locale"));
 
   if (!name || !slug) {
-    redirect("/admin/articles/taxonomy?error=missing");
+    redirect(`/admin/articles/taxonomy?locale=${locale}&error=missing`);
   }
 
   const exists = await prisma.articleCategory.findUnique({
@@ -598,7 +600,7 @@ export async function createArticleCategoryAction(formData: FormData) {
   });
 
   if (exists) {
-    redirect("/admin/articles/taxonomy?error=category-slug");
+    redirect(`/admin/articles/taxonomy?locale=${locale}&error=category-slug`);
   }
 
   const category = await prisma.articleCategory.create({
@@ -627,8 +629,9 @@ export async function createArticleCategoryAction(formData: FormData) {
     },
   });
 
+  revalidateArticlePaths();
   revalidatePath("/admin/articles/taxonomy");
-  redirect("/admin/articles/taxonomy?created=category");
+  redirect(`/admin/articles/taxonomy?locale=${locale}&created=category`);
 }
 
 export async function createArticleTagAction(formData: FormData) {
@@ -638,7 +641,7 @@ export async function createArticleTagAction(formData: FormData) {
   const locale = parseLocale(formData.get("locale"));
 
   if (!name || !slug) {
-    redirect("/admin/articles/taxonomy?error=missing");
+    redirect(`/admin/articles/taxonomy?locale=${locale}&error=missing`);
   }
 
   const exists = await prisma.articleTag.findUnique({
@@ -651,7 +654,7 @@ export async function createArticleTagAction(formData: FormData) {
   });
 
   if (exists) {
-    redirect("/admin/articles/taxonomy?error=tag-slug");
+    redirect(`/admin/articles/taxonomy?locale=${locale}&error=tag-slug`);
   }
 
   const tag = await prisma.articleTag.create({
@@ -678,8 +681,9 @@ export async function createArticleTagAction(formData: FormData) {
     },
   });
 
+  revalidateArticlePaths();
   revalidatePath("/admin/articles/taxonomy");
-  redirect("/admin/articles/taxonomy?created=tag");
+  redirect(`/admin/articles/taxonomy?locale=${locale}&created=tag`);
 }
 
 export async function toggleArticleCategoryStatusAction(formData: FormData) {
@@ -705,8 +709,9 @@ export async function toggleArticleCategoryStatusAction(formData: FormData) {
     },
   });
 
+  revalidateArticlePaths();
   revalidatePath("/admin/articles/taxonomy");
-  redirect("/admin/articles/taxonomy");
+  redirect(`/admin/articles/taxonomy?locale=${category.locale}`);
 }
 
 export async function toggleArticleTagStatusAction(formData: FormData) {
@@ -732,6 +737,7 @@ export async function toggleArticleTagStatusAction(formData: FormData) {
     },
   });
 
+  revalidateArticlePaths();
   revalidatePath("/admin/articles/taxonomy");
-  redirect("/admin/articles/taxonomy");
+  redirect(`/admin/articles/taxonomy?locale=${tag.locale}`);
 }

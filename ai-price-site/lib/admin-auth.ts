@@ -156,6 +156,33 @@ export function verifyPassword(password: string, passwordHash: string) {
   return timingSafeEqual(inputHash, storedBuffer);
 }
 
+export function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+
+  return `scrypt:${salt}:${hash}`;
+}
+
+export function getAdminPasswordPolicyError(password: string) {
+  if (password.length < 14) {
+    return "新密码至少需要 14 个字符。";
+  }
+
+  if (password.length > 128) {
+    return "新密码不能超过 128 个字符。";
+  }
+
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
+    return "新密码需要同时包含大写和小写英文字母。";
+  }
+
+  if (!/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    return "新密码需要同时包含数字和符号。";
+  }
+
+  return null;
+}
+
 function hashSessionToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
@@ -270,6 +297,90 @@ export async function requireAdmin() {
   }
 
   return admin;
+}
+
+export async function changeCurrentAdminPassword({
+  userId,
+  currentPassword,
+  newPassword,
+}: {
+  userId: string;
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+
+  if (!token) {
+    return { ok: false as const, reason: "session" as const };
+  }
+
+  const tokenHash = hashSessionToken(token);
+  const session = await prisma.adminSession.findUnique({
+    where: {
+      tokenHash,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  if (
+    !session ||
+    session.userId !== userId ||
+    session.expiresAt.getTime() < Date.now() ||
+    session.user.status !== "ACTIVE"
+  ) {
+    return { ok: false as const, reason: "session" as const };
+  }
+
+  if (!verifyPassword(currentPassword, session.user.passwordHash)) {
+    return { ok: false as const, reason: "current" as const };
+  }
+
+  if (verifyPassword(newPassword, session.user.passwordHash)) {
+    return { ok: false as const, reason: "unchanged" as const };
+  }
+
+  const deletedSessions = await prisma.$transaction(async (tx) => {
+    await tx.adminUser.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        passwordHash: hashPassword(newPassword),
+      },
+    });
+
+    const revoked = await tx.adminSession.deleteMany({
+      where: {
+        userId,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorId: userId,
+        action: "change_password",
+        targetType: "admin_user",
+        targetId: userId,
+        newValue: {
+          otherSessionsRevoked: Math.max(0, revoked.count - 1),
+          currentSessionRotated: true,
+        },
+        note: "Administrator changed the account password from system settings.",
+      },
+    });
+
+    return revoked.count;
+  });
+
+  await createAdminSession(userId);
+
+  return {
+    ok: true as const,
+    revokedSessions: Math.max(0, deletedSessions - 1),
+  };
 }
 
 export async function clearAdminSession() {

@@ -14,11 +14,15 @@ import AffordabilityComparison from "../../../../components/AffordabilityCompari
 import {
   getPlanStats,
   getProductPlan,
-} from "../../../../data/ai-pricing";
+} from "../../../../lib/public-pricing-model";
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../../../../lib/affordability";
 import { getLatestExchangeRate } from "../../../../lib/exchange-rates";
 import { getPlanDisplayName } from "../../../../lib/pricing-labels";
+import {
+  buildPricingStructuredData,
+  type PricingFaq,
+} from "../../../../lib/pricing-seo";
 import {
   getPricingDetailPath,
   getPricingListPath,
@@ -48,8 +52,16 @@ async function getProductNavItems(category: string) {
   const products = await prisma.product.findMany({
     where: {
       category: toDbProductCategory(category),
-      status: {
-        in: ["PUBLISHED", "REVIEW"],
+      status: "PUBLISHED",
+      plans: {
+        some: {
+          status: "PUBLISHED",
+          regionPrices: {
+            some: {
+              status: "PUBLISHED",
+            },
+          },
+        },
       },
     },
     orderBy: [
@@ -82,10 +94,12 @@ function getDescription(productName: string) {
   return `Compare ${productName} public App Store subscription prices by plan and region, with USD, CNY and purchasing-power views.`;
 }
 
-function FaqSection({ productName }: { productName: string }) {
-  const faqs = [
+function getPricingFaqs(productName: string): PricingFaq[] {
+  const currentYear = new Date().getFullYear();
+
+  return [
     {
-      q: `Which country has the cheapest ${productName} subscription in 2026?`,
+      q: `Which country has the cheapest ${productName} subscription in ${currentYear}?`,
       a: "The current lowest region is shown in the ranking, map and price conclusion on this page. Results may change as App Store pricing, taxes and exchange rates change.",
     },
     {
@@ -101,6 +115,10 @@ function FaqSection({ productName }: { productName: string }) {
       a: "The map helps explain public price differences. Actual subscription availability can still depend on account region, payment method, billing information, taxes and platform risk controls.",
     },
   ];
+}
+
+function FaqSection({ productName }: { productName: string }) {
+  const faqs = getPricingFaqs(productName);
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -189,6 +207,17 @@ export async function generateMetadata({
         "x-default": enPath,
       },
     },
+    openGraph: {
+      type: "website",
+      title: getH1(product.name, activePlan.name),
+      description: getDescription(product.name),
+      url: enPath,
+    },
+    twitter: {
+      card: "summary",
+      title: getH1(product.name, activePlan.name),
+      description: getDescription(product.name),
+    },
   };
 }
 
@@ -229,9 +258,24 @@ export default async function EnglishProductPricingPage({
     getLatestExchangeRate("USD", "CNY"),
   ]);
   const stats = hasPublishedPrices ? getPlanStats(activePlan) : null;
+  const pageTitle = getH1(product.name, activePlan.name);
+  const pageDescription = getDescription(product.name);
+  const structuredData = buildPricingStructuredData({
+    locale: "en",
+    path: canonicalDetailPath,
+    title: pageTitle,
+    description: pageDescription,
+    product,
+    plan: activePlan,
+    faqs: getPricingFaqs(product.name),
+  });
 
   return (
     <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <ProductSidebar
         products={sidebarProducts}
         currentSlug={product.slug}
@@ -267,11 +311,11 @@ export default async function EnglishProductPricingPage({
                 </div>
 
                 <h1 className="mt-0.5 text-[26px] font-semibold leading-tight text-zinc-950 md:text-[32px] dark:text-white">
-                  {getH1(product.name, activePlan.name)}
+                  {pageTitle}
                 </h1>
 
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
-                  {getDescription(product.name)}
+                  {pageDescription}
                 </p>
 
                 {product.officialUrl ? (
@@ -310,7 +354,6 @@ export default async function EnglishProductPricingPage({
             <PricingPlatformView
               productName={product.name}
               plan={activePlan}
-              updatedAt={product.updatedAt}
               cnyExchangeRate={cnyExchangeRate}
               locale="en"
               shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} locale="en" />}

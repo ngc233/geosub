@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import BrandIcon from "./BrandIcon";
+import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import type { SiteLocale } from "../lib/site-locale";
 import {
   getProductHref,
   type ProductNavCategory,
@@ -14,13 +16,16 @@ type MobileProductSwitcherProps = {
   products: ProductNavItem[];
   currentSlug: string;
   basePath?: string;
-  locale?: "zh" | "en";
+  locale?: SiteLocale;
 };
 
-function categoryLabel(category: ProductNavCategory, locale: "zh" | "en") {
-  if (category === "ai") return locale === "en" ? "AI Subscriptions" : "AI 订阅";
-  if (category === "streaming") return locale === "en" ? "Streaming" : "流媒体";
-  return locale === "en" ? "Other" : "其他";
+function categoryLabel(
+  category: ProductNavCategory,
+  copy: ReturnType<typeof getPublicPricingCopy>["navigation"],
+) {
+  if (category === "ai") return copy.ai;
+  if (category === "streaming") return copy.streaming;
+  return copy.other;
 }
 
 export default function MobileProductSwitcher({
@@ -29,6 +34,7 @@ export default function MobileProductSwitcher({
   basePath,
   locale = "zh",
 }: MobileProductSwitcherProps) {
+  const copy = getPublicPricingCopy(locale).navigation;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const currentProduct =
@@ -92,7 +98,7 @@ export default function MobileProductSwitcher({
 
           <span className="min-w-0">
             <span className="block text-xs font-black text-zinc-400">
-              {locale === "en" ? "Current product" : "当前产品"}
+              {copy.currentProduct}
             </span>
             <span className="block truncate text-sm font-black text-zinc-950">
               {currentProduct.name}
@@ -120,7 +126,7 @@ export default function MobileProductSwitcher({
             {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
               <div key={category} className="py-2">
                 <div className="px-3 pb-2 text-xs font-black text-zinc-400">
-                  {categoryLabel(category as ProductNavCategory, locale)}
+                  {categoryLabel(category as ProductNavCategory, copy)}
                 </div>
 
                 <div className="grid gap-1.5">

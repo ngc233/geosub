@@ -16,11 +16,15 @@ import {
   getPlanStats,
   getProductPlan,
   type ProductPlan,
-} from "../../../../data/ai-pricing";
+} from "../../../../lib/public-pricing-model";
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../../../../lib/affordability";
 import { getLatestExchangeRate } from "../../../../lib/exchange-rates";
 import { getPlanDisplayName } from "../../../../lib/pricing-labels";
+import {
+  buildPricingStructuredData,
+  type PricingFaq,
+} from "../../../../lib/pricing-seo";
 import {
   getPricingDetailPath,
   getPricingListPath,
@@ -51,8 +55,16 @@ async function getProductNavItems(category: string) {
   const products = await prisma.product.findMany({
     where: {
       category: toDbProductCategory(category),
-      status: {
-        in: ["PUBLISHED", "REVIEW"],
+      status: "PUBLISHED",
+      plans: {
+        some: {
+          status: "PUBLISHED",
+          regionPrices: {
+            some: {
+              status: "PUBLISHED",
+            },
+          },
+        },
       },
     },
     orderBy: [
@@ -104,9 +116,9 @@ function getLocalizedH1({
   productName: string;
   planName: string;
   seoH1?: string | null;
-}) {
+}): string {
   if (hasChineseText(seoH1)) {
-    return seoH1;
+    return seoH1 || `${getPlanDisplayName(productName, planName)} 全球价格对比`;
   }
 
   return `${getPlanDisplayName(productName, planName)} 全球价格对比`;
@@ -287,18 +299,17 @@ function PurchasingPowerSection({
   );
 }
 
-function FaqSection({
-  productName,
-  planName,
-}: {
-  productName: string;
-  planName: string;
-}) {
+function getPricingFaqs(
+  productName: string,
+  planName: string,
+): PricingFaq[] {
   const planDisplayName = getPlanDisplayName(productName, planName);
-  const faqs = [
+  const currentYear = new Date().getFullYear();
+
+  return [
     {
-      q: `截至 2026 年，哪个国家的 ${planDisplayName} 订阅最便宜？`,
-      a: `根据当前已发布的 App Store 地区价格，最低价会显示在本页排行榜和地图中。具体结果会随平台定价、税费和汇率变化而变化。`,
+      q: `截至 ${currentYear} 年，哪个国家的 ${planDisplayName} 订阅最便宜？`,
+      a: "根据当前已发布的 App Store 地区价格，最低价会显示在本页排行榜和地图中。具体结果会随平台定价、税费和汇率变化而变化。",
     },
     {
       q: `${productName} 在不同 App Store 地区的定价为什么不同？`,
@@ -313,6 +324,16 @@ function FaqSection({
       a: "地图可以帮助你快速理解 App Store 各地区价格差异，但最终是否可购买仍取决于账号地区、支付方式、税费和平台规则。",
     },
   ];
+}
+
+function FaqSection({
+  productName,
+  planName,
+}: {
+  productName: string;
+  planName: string;
+}) {
+  const faqs = getPricingFaqs(productName, planName);
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -420,15 +441,16 @@ export async function generateMetadata({
     ? stripGeoSubTitleSuffix(seoMeta?.title || "")
     : "";
 
+  const title =
+    configuredTitle ||
+    `${getPlanDisplayName(product.name, activePlan.name)} App Store 地区订阅价格`;
+  const description = hasChineseText(seoMeta?.description)
+    ? seoMeta?.description || getLocalizedDescription(product.name)
+    : getLocalizedDescription(product.name);
+
   return {
-    title:
-      configuredTitle ||
-      `${getPlanDisplayName(product.name, activePlan.name)} App Store 地区订阅价格`,
-    description:
-      hasChineseText(seoMeta?.description)
-        ? seoMeta?.description ||
-          `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`
-        : `比较 ${product.name} 在不同 App Store 地区的订阅价格、美元折算、人民币估算和本地订阅负担。`,
+    title,
+    description,
     alternates: {
       canonical: zhPath,
       languages: {
@@ -436,6 +458,17 @@ export async function generateMetadata({
         en: enPath,
         "x-default": enPath,
       },
+    },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: zhPath,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
     },
   };
 }
@@ -480,9 +513,28 @@ export default async function ProductPricingPage({
     getLatestExchangeRate("USD", "CNY"),
   ]);
   const stats = hasPublishedPrices ? getPlanStats(activePlan) : null;
+  const pageTitle = getLocalizedH1({
+    productName: product.name,
+    planName: activePlan.name,
+    seoH1: seoMeta?.h1,
+  });
+  const pageDescription = getLocalizedDescription(product.name);
+  const structuredData = buildPricingStructuredData({
+    locale: "zh",
+    path: canonicalDetailPath,
+    title: pageTitle,
+    description: pageDescription,
+    product,
+    plan: activePlan,
+    faqs: getPricingFaqs(product.name, activePlan.name),
+  });
 
   return (
     <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <ProductSidebar
         products={sidebarProducts}
         currentSlug={product.slug}
@@ -516,15 +568,11 @@ export default async function ProductPricingPage({
                 </div>
 
                 <h1 className="mt-0.5 text-[26px] font-semibold leading-tight text-zinc-950 md:text-[32px] dark:text-white">
-                  {getLocalizedH1({
-                    productName: product.name,
-                    planName: activePlan.name,
-                    seoH1: seoMeta?.h1,
-                  })}
+                  {pageTitle}
                 </h1>
 
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
-                  {getLocalizedDescription(product.name)}
+                  {pageDescription}
                 </p>
 
                 {product.officialUrl ? (
@@ -562,7 +610,6 @@ export default async function ProductPricingPage({
             <PricingPlatformView
               productName={product.name}
               plan={activePlan}
-              updatedAt={product.updatedAt}
               cnyExchangeRate={cnyExchangeRate}
               shareAction={<SharePriceModal product={product} plan={activePlan} stats={stats} locale="zh" />}
             />

@@ -398,13 +398,15 @@ export async function createProductAction(formData: FormData) {
       !product.logoUrl && officialUrl
         ? await fetchOfficialSiteIcon(officialUrl).catch(() => null)
         : null;
-    const cachedOfficialLogo = officialLogoUrl
+    const selectedLogoUrl =
+      officialLogoUrl || (!product.logoUrl ? appStoreApp.artworkUrl : null);
+    const cachedOfficialLogo = selectedLogoUrl
       ? await cacheRemoteProductLogo({
           productSlug: product.slug,
-          sourceUrl: officialLogoUrl,
+          sourceUrl: selectedLogoUrl,
         }).catch(() => null)
       : null;
-    const verifiedOfficialLogoUrl = cachedOfficialLogo ? officialLogoUrl : null;
+    const verifiedOfficialLogoUrl = cachedOfficialLogo ? selectedLogoUrl : null;
 
     if (
       (!product.logoUrl && verifiedOfficialLogoUrl) ||
@@ -443,7 +445,11 @@ export async function createProductAction(formData: FormData) {
           sellerName: appStoreApp.sellerName,
           sellerUrl: appStoreApp.sellerUrl,
           logoUrl: product.logoUrl || verifiedOfficialLogoUrl,
-          logoSource: verifiedOfficialLogoUrl ? "official-site-cached" : null,
+          logoSource: verifiedOfficialLogoUrl
+            ? officialLogoUrl
+              ? "official-site-cached"
+              : "app-store-cached"
+            : null,
         },
         note: "Automatically configured App Store source from product onboarding.",
       },
@@ -641,20 +647,21 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
   const storedAppStoreId =
     appStoreRows[0]?.app_store_id || extractAppStoreId(appStoreRows[0]?.app_store_url || null);
   const appStoreId = formAppStoreId || storedAppStoreId;
-  const appStoreLogo =
-    product.officialUrl || !appStoreId
-      ? null
-      : await lookupAppStoreArtwork(appStoreId).catch(() => null);
+  const appStoreLogo = appStoreId
+    ? await lookupAppStoreArtwork(appStoreId).catch(() => null)
+    : null;
   const officialUrl = product.officialUrl || appStoreLogo?.sellerUrl || null;
   const officialSiteLogo = await fetchOfficialSiteIcon(officialUrl).catch(() => null);
+  const selectedLogoUrl = officialSiteLogo || appStoreLogo?.logoUrl || null;
+  const logoSource = officialSiteLogo ? "official-site-cached" : "app-store-cached";
 
-  if (!officialSiteLogo) {
+  if (!selectedLogoUrl) {
     redirect(`/admin/products/${product.id}/edit?logoError=official-not-found`);
   }
 
   const cachedOfficialSiteLogo = await cacheRemoteProductLogo({
     productSlug: product.slug,
-    sourceUrl: officialSiteLogo,
+    sourceUrl: selectedLogoUrl,
   }).catch(() => null);
 
   if (!cachedOfficialSiteLogo) {
@@ -666,7 +673,7 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
       id: product.id,
     },
     data: {
-      logoUrl: officialSiteLogo,
+      logoUrl: selectedLogoUrl,
       officialUrl: product.officialUrl || officialUrl,
     },
   });
@@ -681,8 +688,8 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
         logoUrl: product.logoUrl,
       },
       newValue: {
-        logoUrl: officialSiteLogo,
-        logoSource: "official-site-cached",
+        logoUrl: selectedLogoUrl,
+        logoSource,
         cachedFileName: cachedOfficialSiteLogo.fileName,
         cachedChecksum: cachedOfficialSiteLogo.checksum,
         appStoreId,
@@ -690,11 +697,15 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
         appName: appStoreLogo?.appName || null,
         sellerName: appStoreLogo?.sellerName || null,
       },
-      note: "Synced product logo from high-confidence official website icon.",
+      note: officialSiteLogo
+        ? "Synced product logo from high-confidence official website icon."
+        : "Synced product logo from official App Store artwork.",
     },
   });
 
-  redirect(`/admin/products/${product.id}/edit?logoSynced=official-site`);
+  redirect(
+    `/admin/products/${product.id}/edit?logoSynced=${officialSiteLogo ? "official-site" : "app-store"}`,
+  );
 }
 
 export async function saveProductSeoAction(formData: FormData) {

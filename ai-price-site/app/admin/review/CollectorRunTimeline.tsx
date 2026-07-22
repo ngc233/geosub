@@ -70,14 +70,13 @@ export function CollectorRunOutcomeSummary({ run, compact = false }: OutcomeProp
   const published = numberValue(run.published_price_count);
   const total = observed + published;
   const note = outcomeNote(run, total);
+  const isolated = Math.max(anomaly, ignored + rejected);
   const chips = [
-    { label: "观测", value: observed, kind: "neutral" as const },
-    { label: "待审", value: pending, kind: "pending" as const },
-    { label: "通过", value: approved, kind: "ok" as const },
-    { label: "忽略", value: ignored, kind: "neutral" as const },
-    { label: "拒绝", value: rejected, kind: "bad" as const },
-    { label: "异常", value: anomaly, kind: "warn" as const },
-    { label: "正式价", value: published, kind: "ok" as const },
+    { label: "采集", value: observed, kind: "neutral" as const },
+    { label: "自动通过", value: approved, kind: "ok" as const },
+    { label: "待稳定", value: pending, kind: "pending" as const },
+    { label: "隔离", value: isolated, kind: "warn" as const },
+    { label: "正式更新", value: published, kind: "ok" as const },
   ];
 
   return (

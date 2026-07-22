@@ -1,8 +1,4 @@
-import { prisma } from "../../../../lib/prisma";
-import { fetchOfficialSiteIcon } from "../../../../lib/official-site-logo";
 import {
-  cacheRemoteProductLogo,
-  getRemoteProductLogoUrl,
   normalizeProductLogoSlug,
   readStoredProductLogo,
 } from "../../../../lib/product-logo-storage";
@@ -33,31 +29,8 @@ export async function GET(_request: Request, context: RouteContext) {
     return notFoundResponse();
   }
 
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    select: { logoUrl: true, officialUrl: true },
-  });
-  let logo = await readStoredProductLogo(slug);
-
-  if (!logo) {
-    const officialLogoUrl = await fetchOfficialSiteIcon(product?.officialUrl || null).catch(
-      () => null,
-    );
-    const sourceUrl = officialLogoUrl || getRemoteProductLogoUrl(product?.logoUrl);
-
-    if (!sourceUrl) {
-      return notFoundResponse();
-    }
-
-    try {
-      logo = await cacheRemoteProductLogo({
-        productSlug: slug,
-        sourceUrl,
-      });
-    } catch {
-      return notFoundResponse();
-    }
-  }
+  const logo = await readStoredProductLogo(slug);
+  if (!logo) return notFoundResponse();
 
   const body = logo.data.buffer.slice(
     logo.data.byteOffset,

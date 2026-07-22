@@ -100,20 +100,14 @@ if ($SkipExchangeRates) {
 
 if ($DryRun) {
   Write-Host ""
-  Write-Host "=== 2/6 Queue focused App Store rechecks ==="
-  Write-Host "[dry-run] Would queue recent anomalies, published prices older than 14 days and missing plan-country coverage."
+  Write-Host "=== 2/6 Run product-level data-quality repair cycle ==="
+  Write-Host "[dry-run] Would debounce anomaly rechecks, queue stale and coverage refreshes, and close exhausted isolated evidence."
 } else {
   Write-Host ""
-  Write-Host "=== 2/6 Queue focused App Store rechecks ==="
+  Write-Host "=== 2/6 Run product-level data-quality repair cycle ==="
   Invoke-Psql @"
 SELECT *
-FROM queue_app_store_anomaly_rechecks(7, 12);
-
-SELECT *
-FROM queue_stale_app_store_price_rechecks(14, 20, 24);
-
-SELECT *
-FROM queue_app_store_coverage_gap_rechecks(39, 24, 3);
+FROM run_data_quality_repair_cycle('price_accuracy_maintenance');
 "@
 }
 

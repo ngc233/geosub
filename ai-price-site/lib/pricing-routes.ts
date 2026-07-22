@@ -1,7 +1,9 @@
 export type PricingLocale = "zh" | "en";
 
 export function getPricingSection(category: string) {
-  return category === "streaming" ? "streaming-pricing" : "ai-pricing";
+  return category.trim().toLowerCase() === "streaming"
+    ? "streaming-pricing"
+    : "ai-pricing";
 }
 
 export function getPricingListPath(locale: PricingLocale, category: string) {

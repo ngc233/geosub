@@ -6,7 +6,7 @@ import type {
   PlanAffordabilityRow,
   PlanAffordabilitySummary,
 } from "../lib/affordability";
-import type { DetailLocale } from "../lib/detail-page-copy";
+import type { SiteLocale } from "../lib/site-locale";
 import ExpandableAffordabilityRows from "./ExpandableAffordabilityRows";
 import {
   DataNote,
@@ -21,7 +21,7 @@ type Props = {
   planName: string;
   summary: PlanAffordabilitySummary | null;
   rows: PlanAffordabilityRow[];
-  locale?: DetailLocale;
+  locale?: SiteLocale;
 };
 
 type Quadrant = "friendly" | "cheapPressure" | "premiumFair" | "expensivePressure";
@@ -159,21 +159,15 @@ const affordabilityCopy = {
     dataNote: (metric: string, indicator: string, year: string, checked: string) =>
       `Income metric: ${metric}${indicator ? ` (${indicator})` : ""}. Income data year: ${year}. Price checked: ${checked}. Purchasing-power analysis explains relative price pressure; it does not guarantee payment ability or subscription success.`,
   },
-} as const;
+} satisfies Record<SiteLocale, object>;
 
-function getAffordabilityCopy(locale: DetailLocale) {
-  return locale === "zh" ? affordabilityCopy.zh : affordabilityCopy.en;
+function getAffordabilityCopy(locale: SiteLocale) {
+  return affordabilityCopy[locale];
 }
 
-const localeMap: Record<DetailLocale, string> = {
+const localeMap: Record<SiteLocale, string> = {
   zh: "zh-CN",
   en: "en",
-  es: "es",
-  ja: "ja",
-  ko: "ko",
-  de: "de",
-  fr: "fr",
-  ar: "ar",
 };
 
 function formatPercent(value: number, digits = 2) {
@@ -210,7 +204,7 @@ function metricLabel(metricType?: string | null) {
   return metricType ? map[metricType] || metricType : "-";
 }
 
-function levelLabel(level: string, locale: DetailLocale) {
+function levelLabel(level: string, locale: SiteLocale) {
   const labels = getAffordabilityCopy(locale).levels as Record<string, string>;
   return labels[level] || level;
 }
@@ -242,7 +236,7 @@ function levelTone(level: string) {
   };
 }
 
-function getCountryName(row: PlanAffordabilityRow | null | undefined, locale: DetailLocale) {
+function getCountryName(row: PlanAffordabilityRow | null | undefined, locale: SiteLocale) {
   if (!row) return "-";
 
   try {
@@ -277,7 +271,7 @@ function classifyQuadrant(row: PlanAffordabilityRow): Quadrant {
   return "expensivePressure";
 }
 
-function quadrantCopy(quadrant: Quadrant, locale: DetailLocale) {
+function quadrantCopy(quadrant: Quadrant, locale: SiteLocale) {
   const item = getAffordabilityCopy(locale).quadrants[quadrant];
   const dotMap: Record<Quadrant, string> = {
     friendly: "bg-emerald-500",
@@ -304,7 +298,7 @@ function HeaderHelp({
 }: {
   label: string;
   help: string;
-  locale: DetailLocale;
+  locale: SiteLocale;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -354,7 +348,7 @@ function DecisionCard({
 }: {
   title: string;
   row?: PlanAffordabilityRow;
-  locale: DetailLocale;
+  locale: SiteLocale;
   tone: "green" | "amber" | "red";
   note: string;
 }) {
@@ -397,7 +391,7 @@ function AffordabilityMatrix({
   locale,
 }: {
   rows: PlanAffordabilityRow[];
-  locale: DetailLocale;
+  locale: SiteLocale;
 }) {
   const copy = getAffordabilityCopy(locale);
   const matrixRows = rows.slice(0, 24);
@@ -497,7 +491,7 @@ function BurdenRow({
   row: PlanAffordabilityRow;
   rank: number;
   maxShare: number;
-  locale: DetailLocale;
+  locale: SiteLocale;
 }) {
   const tone = levelTone(row.affordabilityLevel);
   const copy = getAffordabilityCopy(locale);

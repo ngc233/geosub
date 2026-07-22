@@ -1,7 +1,7 @@
 import {
   formatUsd,
   type ProductPlan,
-} from '../data/ai-pricing';
+} from '../lib/public-pricing-model';
 
 type PriceRankBarsProps = {
   plan: ProductPlan;

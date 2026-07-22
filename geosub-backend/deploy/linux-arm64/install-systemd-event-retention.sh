@@ -8,6 +8,7 @@ fi
 
 BACKEND_DIR="${GEOSUB_BACKEND_DIR:-/opt/geosub/geosub-backend}"
 
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-system-task.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-event-retention.sh"
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-event-retention.service" /etc/systemd/system/geosub-event-retention.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-event-retention.timer" /etc/systemd/system/geosub-event-retention.timer

@@ -3,17 +3,19 @@
 import Image from "next/image";
 import type { FocusEvent, MouseEvent } from "react";
 import { useMemo, useState } from "react";
-import type { ProductPlan, RegionPrice } from "../data/ai-pricing";
-import { formatUsd } from "../data/ai-pricing";
+import type { ProductPlan, RegionPrice } from "../lib/public-pricing-model";
+import { formatUsd } from "../lib/public-pricing-model";
 import AppleStyleExpandableRows from "./AppleStyleExpandableRows";
 import { PublicSection, PublicSectionHeader } from "./ui/PublicPage";
+import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import type { SiteLocale } from "../lib/site-locale";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 
 type Props = {
   plan: ProductPlan;
   initialVisibleCount?: number;
-  locale?: "zh" | "en";
+  locale?: SiteLocale;
   platformLabel?: string;
   displayCurrency?: "usd" | "cny";
   displayCurrencyLabel?: string;
@@ -31,15 +33,13 @@ const platformOptions: Array<{ value: PlatformFilter }> = [
 
 function getPlatformOptionLabel(
   value: PlatformFilter,
-  locale: "zh" | "en",
+  locale: SiteLocale,
 ) {
+  const copy = getPublicPricingCopy(locale).table;
   if (value === "ios") return "App Store";
-  if (value === "web") return locale === "en" ? "Web lead" : "Web 线索";
-  if (value === "android") {
-    return locale === "en" ? "Google Play lead" : "Google Play 线索";
-  }
-
-  return locale === "en" ? "All diagnostics" : "全部诊断";
+  if (value === "web") return copy.webLead;
+  if (value === "android") return copy.googlePlayLead;
+  return copy.allDiagnostics;
 }
 
 function getPlatform(region: RegionPrice) {
@@ -89,17 +89,11 @@ function getDiffPercent(region: RegionPrice, referencePrice: number) {
   return Math.round(((region.priceUsd - referencePrice) / referencePrice) * 100);
 }
 
-function getDiffText(diffPercent: number) {
-  if (diffPercent === 0) return "与美国相同";
-  if (diffPercent > 0) return `比美国贵 ${diffPercent}%`;
-  return `比美国便宜 ${Math.abs(diffPercent)}%`;
-}
-
-function getDiffTextByLocale(diffPercent: number, locale: "zh" | "en") {
-  if (locale === "zh") return getDiffText(diffPercent);
-  if (diffPercent === 0) return "Same as US";
-  if (diffPercent > 0) return `${diffPercent}% above US`;
-  return `${Math.abs(diffPercent)}% below US`;
+function getDiffTextByLocale(diffPercent: number, locale: SiteLocale) {
+  const copy = getPublicPricingCopy(locale).table;
+  if (diffPercent === 0) return copy.sameAsUs;
+  if (diffPercent > 0) return copy.aboveUs(diffPercent);
+  return copy.belowUs(Math.abs(diffPercent));
 }
 
 function getDiffTone(diffPercent: number) {
@@ -109,19 +103,12 @@ function getDiffTone(diffPercent: number) {
   return "text-zinc-500 dark:text-zinc-400";
 }
 
-function getStatus(diffPercent: number) {
-  if (diffPercent < -5) return "低价";
-  if (diffPercent > 18) return "高价";
-  if (diffPercent > 5) return "偏高";
-  return "基准";
-}
-
-function getStatusByLocale(diffPercent: number, locale: "zh" | "en") {
-  if (locale === "zh") return getStatus(diffPercent);
-  if (diffPercent < -5) return "Low";
-  if (diffPercent > 18) return "High";
-  if (diffPercent > 5) return "Above";
-  return "Base";
+function getStatusByLocale(diffPercent: number, locale: SiteLocale) {
+  const copy = getPublicPricingCopy(locale).table;
+  if (diffPercent < -5) return copy.statusLow;
+  if (diffPercent > 18) return copy.statusHigh;
+  if (diffPercent > 5) return copy.statusAbove;
+  return copy.statusBase;
 }
 
 function getStatusDot(diffPercent: number) {
@@ -131,18 +118,12 @@ function getStatusDot(diffPercent: number) {
   return "bg-zinc-300";
 }
 
-function getRiskLabel(level: RegionPrice["riskLevel"], locale: "zh" | "en") {
-  if (locale === "en") {
-    if (level === "low") return "low";
-    if (level === "high") return "high";
-    if (level === "medium") return "medium";
-    return "needs review";
-  }
-
-  if (level === "low") return "低";
-  if (level === "high") return "高";
-  if (level === "medium") return "中";
-  return "待核验";
+function getRiskLabel(level: RegionPrice["riskLevel"], locale: SiteLocale) {
+  const copy = getPublicPricingCopy(locale).table;
+  if (level === "low") return copy.riskLow;
+  if (level === "high") return copy.riskHigh;
+  if (level === "medium") return copy.riskMedium;
+  return copy.riskNeedsReview;
 }
 
 function getRiskClass(level: RegionPrice["riskLevel"]) {
@@ -161,20 +142,13 @@ function getRiskClass(level: RegionPrice["riskLevel"]) {
   return "bg-zinc-50 text-zinc-500 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-800";
 }
 
-function getTaxConfidenceLabel(region: RegionPrice, locale: "zh" | "en") {
-  if (locale === "en") {
-    if (region.taxSourceKind === "inferred") return "Platform inferred";
-    if (region.taxConfidence === "high") return "Verified";
-    if (region.taxConfidence === "medium") return "Medium confidence";
-    if (region.taxConfidence === "low") return "Needs review";
-    return "Unverified";
-  }
-
-  if (region.taxSourceKind === "inferred") return "平台推断";
-  if (region.taxConfidence === "high") return "高可信";
-  if (region.taxConfidence === "medium") return "中可信";
-  if (region.taxConfidence === "low") return "待复核";
-  return "待核验";
+function getTaxConfidenceLabel(region: RegionPrice, locale: SiteLocale) {
+  const copy = getPublicPricingCopy(locale).table;
+  if (region.taxSourceKind === "inferred") return copy.taxInferred;
+  if (region.taxConfidence === "high") return copy.taxVerified;
+  if (region.taxConfidence === "medium") return copy.taxMedium;
+  if (region.taxConfidence === "low") return copy.taxNeedsReview;
+  return copy.taxUnverified;
 }
 
 function getTaxConfidenceClass(region: RegionPrice) {
@@ -244,47 +218,39 @@ function translateTaxTextToZh(value: string) {
   return raw;
 }
 
-function formatTaxDisplay(region: RegionPrice, locale: "zh" | "en") {
+function formatTaxDisplay(region: RegionPrice, locale: SiteLocale) {
   const raw = (region.tax || "").trim();
+  const copy = getPublicPricingCopy(locale).table;
 
   if (!raw && (region.taxReviewStatus === "needs_review" || region.taxConfidence === "low")) {
-    return locale === "en" ? "Needs review" : "待复核";
+    return copy.taxNeedsReview;
   }
 
-  if (locale === "en") {
-    return raw || "Checkout applies";
+  if (locale !== "zh") {
+    return raw || copy.checkoutApplies;
   }
 
-  return raw ? translateTaxTextToZh(raw) : "结算页为准";
+  return raw ? translateTaxTextToZh(raw) : copy.checkoutApplies;
 }
 
-function getTaxTooltip(region: RegionPrice, locale: "zh" | "en") {
+function getTaxTooltip(region: RegionPrice, locale: SiteLocale) {
+  const copy = getPublicPricingCopy(locale).table;
   const noteRaw = region.taxFrontendNote || region.tax || "";
-  const note = locale === "en" ? noteRaw : translateTaxTextToZh(noteRaw);
+  const note = locale === "zh" ? translateTaxTextToZh(noteRaw) : noteRaw;
   const base =
     region.taxReviewStatus === "verified" && region.taxConfidence === "high"
-      ? locale === "en"
-        ? "Tax profile comes from the country tax database and is verified."
-        : "税务资料来自国家税务资料库，高可信。"
+      ? copy.taxVerifiedHelp
       : region.taxSourceKind === "inferred"
-        ? locale === "en"
-          ? "Generated from App Store billing assumptions; final checkout remains authoritative."
-          : "系统根据 App Store 平台结算逻辑生成说明；具体税率仍以官方结算页为准。"
+        ? copy.taxInferredHelp
         : region.taxConfidence === "medium"
-          ? locale === "en"
-            ? "Tax profile comes from country or regional tax data and needs periodic review."
-            : "税务资料来自国家或地区税务资料库，仍需定期复核。"
-          : locale === "en"
-            ? "Tax profile is not verified yet; final checkout remains authoritative."
-            : "该地区税务资料尚未核验，最终以结算页为准。";
+          ? copy.taxMediumHelp
+          : copy.taxUnverifiedHelp;
 
   return [
     base,
     note,
     region.taxCalculationPolicy === "do_not_calculate"
-      ? locale === "en"
-        ? "GeoSub does not add tax again; rankings use the App Store list price converted to USD."
-        : "GeoSub 不把税率额外加入采集价格；价格排序使用 App Store 标价折算。"
+      ? copy.taxRankingPolicy
       : "",
   ].filter(Boolean).join(" ");
 }
@@ -296,7 +262,7 @@ function TaxTooltip({
 }: {
   region: RegionPrice;
   taxDisplay: string;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 }) {
   const [open, setOpen] = useState(false);
   const label = getTaxConfidenceLabel(region, locale);
@@ -372,7 +338,7 @@ function HeaderHelp({
 }: {
   label: string;
   help: string;
-  locale: "zh" | "en";
+  locale: SiteLocale;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -393,7 +359,7 @@ function HeaderHelp({
       <button
         type="button"
         className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-[10px] font-semibold leading-none text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300/60"
-        aria-label={locale === "en" ? `${label}: ${help}` : `${label}说明：${help}`}
+        aria-label={getPublicPricingCopy(locale).table.helpAria(label, help)}
         onMouseEnter={showTooltip}
         onFocus={showTooltip}
         onMouseLeave={() => setOpen(false)}
@@ -420,19 +386,14 @@ function RiskStatus({
 }: {
   region: RegionPrice;
   diffPercent: number;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 }) {
   const [open, setOpen] = useState(false);
-  const fallback =
-    locale === "en"
-      ? "Cross-region subscriptions may be affected by account region, payment method and platform risk controls."
-      : "跨区订阅可能受账号地区、付款方式和平台风控影响。";
+  const copy = getPublicPricingCopy(locale).table;
+  const fallback = copy.riskFallback;
   const tooltip = [region.riskNote, region.riskFactors].filter(Boolean).join(" ") || fallback;
   const statusLabel = getStatusByLocale(diffPercent, locale);
-  const riskLabel =
-    locale === "en"
-      ? `Risk ${getRiskLabel(region.riskLevel, locale)}`
-      : `风险${getRiskLabel(region.riskLevel, locale)}`;
+  const riskLabel = copy.riskPrefix(getRiskLabel(region.riskLevel, locale));
 
   return (
     <div
@@ -494,13 +455,14 @@ function RegionPriceRow({
   displayCurrencyLabel: string;
   formatDisplayPrice: (value: number) => string;
   showSourceColumn: boolean;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 }) {
   const diffPercent = getDiffPercent(region, referencePrice);
   const columns = showSourceColumn
     ? "md:grid-cols-[44px_minmax(142px,1.05fr)_120px_108px_124px_minmax(136px,1fr)_82px_118px]"
     : "md:grid-cols-[44px_minmax(150px,1.05fr)_122px_108px_124px_minmax(144px,1fr)_118px]";
   const taxDisplay = formatTaxDisplay(region, locale);
+  const copy = getPublicPricingCopy(locale).table;
 
   return (
     <div
@@ -530,7 +492,7 @@ function RegionPriceRow({
 
       <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {locale === "en" ? "Local price" : "本地价格"}
+          {copy.localPrice}
         </div>
         <div className="text-sm text-zinc-600 dark:text-zinc-300">
           {region.localPrice}
@@ -539,14 +501,12 @@ function RegionPriceRow({
 
       <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {displayCurrency === "cny"
-            ? locale === "en" ? "CNY estimate" : "人民币折算"
-            : locale === "en" ? "USD equivalent" : "美元折算"}
+          {displayCurrency === "cny" ? copy.cnyEstimate : copy.usdEquivalent}
         </div>
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
           {formatDisplayPrice(region.priceUsd)}
           <span className="ml-0.5 text-xs font-normal text-zinc-400">
-            {displayCurrency === "cny" && locale === "zh" ? "/月" : "/mo"}
+            {copy.perMonth}
           </span>
         </div>
         {displayCurrency === "cny" ? (
@@ -554,16 +514,16 @@ function RegionPriceRow({
         ) : null}
         {region.lastCheckedAt || region.fxRateDate ? (
           <div className="mt-0.5 text-xs text-zinc-400">
-            {region.lastCheckedAt ? `${locale === "en" ? "Price collected" : "价格采集"} ${region.lastCheckedAt}` : ""}
+            {region.lastCheckedAt ? `${copy.priceCollected} ${region.lastCheckedAt}` : ""}
             {region.lastCheckedAt && region.fxRateDate ? " · " : ""}
-            {region.fxRateDate ? `${locale === "en" ? "FX basis" : "采集汇率基准"} ${region.fxRateDate}` : ""}
+            {region.fxRateDate ? `${copy.fxBasis} ${region.fxRateDate}` : ""}
           </div>
         ) : null}
       </div>
 
       <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {locale === "en" ? "vs US" : "对比美国"}
+          {copy.vsUs}
         </div>
         <div className={`text-sm font-medium ${getDiffTone(diffPercent)}`}>
           {getDiffTextByLocale(diffPercent, locale)}
@@ -572,7 +532,7 @@ function RegionPriceRow({
 
       <div className="min-w-0">
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {locale === "en" ? "Tax note" : "税费说明"}
+          {copy.taxNote}
         </div>
         <TaxTooltip region={region} taxDisplay={taxDisplay} locale={locale} />
       </div>
@@ -580,7 +540,7 @@ function RegionPriceRow({
       {showSourceColumn ? (
         <div>
           <div className="mb-1 text-xs text-zinc-400 md:hidden">
-            {locale === "en" ? "Source" : "来源"}
+            {copy.source}
           </div>
           <div className="text-sm text-zinc-500 dark:text-zinc-400">
             {getRegionPlatformLabel(region)}
@@ -590,7 +550,7 @@ function RegionPriceRow({
 
       <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {locale === "en" ? "Status / risk" : "状态/风险"}
+          {copy.statusRisk}
         </div>
         <RiskStatus region={region} diffPercent={diffPercent} locale={locale} />
       </div>
@@ -633,25 +593,22 @@ export default function ExpandableRegionPriceTable({
 
   const referenceRegion = getReferenceRegion(filteredRegions);
   const referencePrice = referenceRegion?.priceUsd || 0;
+  const copy = getPublicPricingCopy(locale).table;
   const effectiveDisplayCurrencyLabel =
-    displayCurrencyLabel || (locale === "en" ? "USD" : "美元 USD");
+    displayCurrencyLabel || copy.usd;
   const activePlatformLabel =
     platformLabel ||
     (effectivePlatform === "all"
-      ? locale === "en" ? "All sources" : "全部来源"
+      ? copy.allSources
       : getPlatformLabel(effectivePlatform));
   const activeIndex = platformOptions.findIndex(
     (option) => option.value === effectivePlatform,
   );
   const shouldShowSourceColumn = showSourceColumn || (showPlatformFilter && effectivePlatform === "all");
   const displayPriceColumnLabel =
-    displayCurrency === "cny"
-      ? locale === "en" ? "CNY estimate" : "人民币折算"
-      : locale === "en" ? "USD equivalent" : "美元折算";
+    displayCurrency === "cny" ? copy.cnyEstimate : copy.usdEquivalent;
   const sortCurrencyLabel =
-    displayCurrency === "cny"
-      ? locale === "en" ? "CNY estimate" : "人民币折算价"
-      : locale === "en" ? "USD equivalent" : "美元折算价";
+    displayCurrency === "cny" ? copy.cnySort : copy.usdSort;
 
   const visibleRegions = filteredRegions.slice(0, initialVisibleCount);
   const hiddenRegions = filteredRegions.slice(initialVisibleCount);
@@ -662,16 +619,12 @@ export default function ExpandableRegionPriceTable({
   return (
     <PublicSection>
       <PublicSectionHeader
-        eyebrow="Region prices"
-        title={locale === "en" ? `${plan.name} regional price details` : `${plan.name} 地区价格明细`}
-        description={
-          locale === "en"
-            ? `GeoSub V1 prioritizes App Store prices. Current view: ${activePlatformLabel}, sorted by ${sortCurrencyLabel} from low to high.`
-            : `V1 正式榜单优先按 App Store 展示；当前视图为 ${activePlatformLabel}，按${sortCurrencyLabel}从低到高排序。`
-        }
+        eyebrow={copy.eyebrow}
+        title={copy.title(plan.name)}
+        description={copy.description(activePlatformLabel, sortCurrencyLabel)}
         actions={
           <div className="text-xs text-zinc-400">
-            {locale === "en" ? `${filteredRegions.length} regions` : `${filteredRegions.length} 个地区`}
+            {copy.regionCount(filteredRegions.length)}
           </div>
         }
       />
@@ -724,44 +677,28 @@ export default function ExpandableRegionPriceTable({
             headerColumns,
           ].join(" ")}
         >
-          <div>{locale === "en" ? "Rank" : "排名"}</div>
-          <div className="pl-[52px]">{locale === "en" ? "Region" : "地区"}</div>
-          <div>{locale === "en" ? "Local price" : "本地价格"}</div>
+          <div>{copy.rank}</div>
+          <div className="pl-[52px]">{copy.region}</div>
+          <div>{copy.localPrice}</div>
           <HeaderHelp
             label={displayPriceColumnLabel}
-            help={
-              locale === "en"
-                ? "Converts local prices into a common currency for comparison."
-                : "把本地价格按汇率折算成统一货币，方便横向比较。"
-            }
+            help={copy.convertedHelp}
             locale={locale}
           />
           <HeaderHelp
-            label={locale === "en" ? "vs US" : "对比美国"}
-            help={
-              locale === "en"
-                ? "Uses the US price as the baseline and shows how much cheaper or more expensive each region is."
-                : "以美国地区价格为基准，显示该地区便宜或贵多少。"
-            }
+            label={copy.vsUs}
+            help={copy.vsUsHelp}
             locale={locale}
           />
           <HeaderHelp
-            label={locale === "en" ? "Tax note" : "税费说明"}
-            help={
-              locale === "en"
-                ? "VAT, GST, consumption tax or sales tax notes are contextual only. Rankings do not add tax again; final App Store checkout remains authoritative."
-                : "当地 VAT、GST、消费税或销售税说明，仅作背景参考；价格排序不额外加税，最终以 App Store 结算页为准。"
-            }
+            label={copy.taxNote}
+            help={copy.taxHelp}
             locale={locale}
           />
-          {shouldShowSourceColumn ? <div>{locale === "en" ? "Source" : "来源"}</div> : null}
+          {shouldShowSourceColumn ? <div>{copy.source}</div> : null}
           <HeaderHelp
-            label={locale === "en" ? "Status / risk" : "状态/风险"}
-            help={
-              locale === "en"
-                ? "Status compares each region against the US baseline. Risk reflects account region, payment method, billing information and platform controls."
-                : "状态表示该地区价格相对美国是低价、基准、偏高或高价；风险表示跨区订阅时账号地区、付款方式、账单信息和平台风控的综合判断。"
-            }
+            label={copy.statusRisk}
+            help={copy.riskHelp}
             locale={locale}
             className="pl-4"
           />
@@ -769,9 +706,7 @@ export default function ExpandableRegionPriceTable({
 
         {filteredRegions.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-zinc-400">
-            {locale === "en"
-              ? `No ${activePlatformLabel} pricing is available yet.`
-              : `暂无 ${activePlatformLabel} 价格数据。`}
+            {copy.empty(activePlatformLabel)}
           </div>
         ) : (
           <>
@@ -793,12 +728,8 @@ export default function ExpandableRegionPriceTable({
 
             <AppleStyleExpandableRows
               hiddenCount={hiddenRegions.length}
-              showLabel={
-                locale === "en"
-                  ? `Show ${hiddenRegions.length} more regions`
-                  : `显示更多 ${hiddenRegions.length} 个地区`
-              }
-              hideLabel={locale === "en" ? "Collapse regions" : "收起地区列表"}
+              showLabel={copy.showMore(hiddenRegions.length)}
+              hideLabel={copy.collapse}
             >
               {hiddenRegions.map((region, index) => (
                 <RegionPriceRow
@@ -819,9 +750,7 @@ export default function ExpandableRegionPriceTable({
       </div>
 
       <div className="border-t border-zinc-100 bg-zinc-50/60 px-5 py-4 text-xs leading-5 text-zinc-500 md:px-6 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-400">
-        {locale === "en"
-          ? "Risk note: GeoSub presents public price differences to compare regional subscription costs and does not encourage bypassing platform rules. Cross-region subscriptions may be affected by Apple ID region, payment method, billing information, taxes and platform risk controls. Final availability depends on the official checkout page."
-          : "风险提示：GeoSub 展示公开价格差异，方便比较不同地区的订阅成本，不鼓励规避平台规则。跨地区订阅可能受到 Apple ID 地区、付款方式、账单信息、税费和平台风控影响，最终是否可订阅请以官方结算页面为准。"}
+        {copy.riskNote}
       </div>
     </PublicSection>
   );

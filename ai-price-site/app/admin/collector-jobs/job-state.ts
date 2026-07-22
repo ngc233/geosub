@@ -54,7 +54,12 @@ export function isRunningAppStoreJob(job: CollectorJobStateInput) {
 }
 
 function hasProcessStarted(run: CollectorRunTimelineInput) {
-  return Boolean(run.process_id) || run.runner_state === "spawned" || run.runner_state === "started";
+  return (
+    Boolean(run.process_id) ||
+    run.runner_state === "spawned" ||
+    run.runner_state === "started" ||
+    run.runner_state === "collected_waiting_review"
+  );
 }
 
 function formatRunSeconds(seconds: number | null) {
@@ -72,6 +77,7 @@ export function buildCollectorRunTimeline(run: CollectorRunTimelineInput): Colle
   const isSkipped = run.status === "skipped";
   const isFailed = run.status === "failed";
   const processStarted = hasProcessStarted(run);
+  const awaitingReview = isRunning && run.runner_state === "collected_waiting_review";
   const spawnFailed = isFailed && run.runner_state === "spawn_failed";
   const processFailed = isFailed && run.runner_state === "process_failed";
   const staleFailed = isFailed && run.runner_state === "stale_running_marked_failed";
@@ -96,12 +102,19 @@ export function buildCollectorRunTimeline(run: CollectorRunTimelineInput): Colle
             : processFailed || staleFailed
               ? run.error_message || "脚本启动后没有正常完成。"
               : "脚本已接管这一轮任务。",
-      state: spawnFailed || processFailed || staleFailed ? "failed" : isRunning ? "active" : "done",
+      state:
+        spawnFailed || processFailed || staleFailed
+          ? "failed"
+          : awaitingReview
+            ? "done"
+            : isRunning
+              ? "active"
+              : "done",
     },
     {
       key: "collect",
       label: "采集结果",
-      detail: isSucceeded
+      detail: isSucceeded || awaitingReview
         ? "采集结果已写回，页面可查看输出摘要。"
         : isSkipped
           ? "脚本判断本轮无需采集或该来源暂不支持。"
@@ -110,15 +123,24 @@ export function buildCollectorRunTimeline(run: CollectorRunTimelineInput): Colle
             : isRunning
               ? `等待采集结果写回${elapsedText ? `，已运行 ${elapsedText}` : ""}。`
               : "等待采集结果。",
-      state: isSucceeded ? "done" : isSkipped ? "skipped" : isFailed && !spawnFailed ? "failed" : "waiting",
+      state:
+        isSucceeded || awaitingReview
+          ? "done"
+          : isSkipped
+            ? "skipped"
+            : isFailed && !spawnFailed
+              ? "failed"
+              : "waiting",
     },
     {
       key: "review",
       label: "审核入库",
       detail: isSucceeded
         ? "结果已进入后续自动审核；稳定样本会进入正式价格库，异常会留在审核中心。"
+        : awaitingReview
+          ? "本产品已采集完成，正在等待本轮统一自动审核和正式价格更新。"
         : "采集成功后才会进入自动审核和正式价格入库。",
-      state: isSucceeded ? "done" : "waiting",
+      state: isSucceeded ? "done" : awaitingReview ? "active" : "waiting",
     },
   ];
 }

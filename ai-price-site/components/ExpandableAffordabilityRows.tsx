@@ -1,12 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { DetailLocale } from "../lib/detail-page-copy";
+import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import type { SiteLocale } from "../lib/site-locale";
 import AppleStyleExpandableRows from "./AppleStyleExpandableRows";
 
 type Props = {
   hiddenCount: number;
-  locale?: DetailLocale;
+  locale?: SiteLocale;
   children: ReactNode;
 };
 
@@ -15,17 +16,13 @@ export default function ExpandableAffordabilityRows({
   locale = "zh",
   children,
 }: Props) {
-  const english = locale !== "zh";
+  const copy = getPublicPricingCopy(locale).table;
 
   return (
     <AppleStyleExpandableRows
       hiddenCount={hiddenCount}
-      showLabel={
-        english
-          ? `Show ${hiddenCount} more regions`
-          : `显示更多 ${hiddenCount} 个地区`
-      }
-      hideLabel={english ? "Collapse region list" : "收起地区列表"}
+      showLabel={copy.showMore(hiddenCount)}
+      hideLabel={copy.collapse}
     >
       {children}
     </AppleStyleExpandableRows>

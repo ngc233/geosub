@@ -23,6 +23,7 @@ if getent group docker >/dev/null 2>&1; then
 fi
 
 chown -R geosub:geosub /opt/geosub
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-system-task.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-price-pipeline.sh"
 
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-price-pipeline.service" /etc/systemd/system/geosub-price-pipeline.service

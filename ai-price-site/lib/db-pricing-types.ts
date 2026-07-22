@@ -40,38 +40,8 @@ export function formatUsd(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
-const featuredPlanByProduct: Record<string, string[]> = {
-  chatgpt: ["plus"],
-  gemini: ["pro", "plus"],
-  claude: ["pro"],
-};
-
-const featuredPlanFallback = [
-  "plus",
-  "pro",
-  "premium",
-  "standard",
-  "basic",
-];
-
 export function getDefaultPlan(product: DbPricingProduct) {
-  const explicitSlugs = featuredPlanByProduct[product.slug] || [];
-
-  for (const slug of explicitSlugs) {
-    const plan = product.plans.find((item) => item.slug === slug);
-
-    if (plan) {
-      return plan;
-    }
-  }
-
-  const popularPlan = product.plans.find((plan) => {
-    const slug = plan.slug.toLowerCase();
-
-    return featuredPlanFallback.some((keyword) => slug.includes(keyword));
-  });
-
-  return popularPlan || product.plans[0];
+  return product.plans[0];
 }
 
 export function getPlanSpread(plan: DbPricingPlan) {

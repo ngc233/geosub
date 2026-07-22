@@ -80,6 +80,8 @@ type MissingCountryRow = {
   pending_observation_count: number;
   latest_availability_status: string | null;
   latest_availability_reason: string | null;
+  plan_availability_status: string | null;
+  consecutive_missing_count: number;
 };
 
 type PendingReasonRow = {
@@ -195,7 +197,8 @@ function statusLabel(status: string | null) {
 
 function availabilityLabel(status: string | null) {
   if (status === "available_with_prices") return "可采到价格";
-  if (status === "available_no_iap") return "可用但无订阅";
+  if (status === "available_no_iap") return "确认无订阅";
+  if (status === "available_unmatched_items") return "发现未识别套餐";
   if (status === "not_available") return "地区不可用";
   if (status === "blocked") return "访问受限";
   if (status === "unknown_error") return "检测异常";
@@ -208,7 +211,14 @@ function missingPlanCountryLabel(row: MissingCountryRow) {
   }
 
   if (row.latest_availability_status === "available_with_prices") {
+    if (row.plan_availability_status === "pending_absence") {
+      return `套餐本轮未出现（${row.consecutive_missing_count}/3）`;
+    }
     return "该套餐尚缺正式价格";
+  }
+
+  if (row.latest_availability_status === "available_unmatched_items") {
+    return "发现新套餐名称，等待规则复核";
   }
 
   if (
@@ -227,7 +237,14 @@ function missingPlanCountryDetail(row: MissingCountryRow) {
   }
 
   if (row.latest_availability_status === "available_with_prices") {
+    if (row.plan_availability_status === "pending_absence") {
+      return "该地区已成功取得其他套餐，但本套餐本轮未出现；连续 3 次成功采集仍缺失后，系统才会确认为地区套餐差异并停止空跑。";
+    }
     return "产品页可以访问，但该套餐在此地区仍缺少可发布的稳定价格。";
+  }
+
+  if (row.latest_availability_status === "available_unmatched_items") {
+    return "App Store 已返回内购项目，但尚未匹配到维护中的套餐规则；系统会继续补采，原始项目已保留用于规则诊断。";
   }
 
   if (
@@ -549,7 +566,18 @@ async function getPlanCoverageRows(productId: string) {
       plan.status::text AS status,
       COALESCE(price_state.published_price_count, 0)::int AS published_price_count,
       COALESCE(price_state.published_country_count, 0)::int AS published_country_count,
-      (SELECT COUNT(*)::int FROM target_country)::int AS common_country_count,
+      (
+        SELECT COUNT(*)::int
+        FROM target_country country
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM app_store_plan_availability_checks plan_availability
+          WHERE plan_availability.plan_id = plan.id
+            AND plan_availability.country_id = country.id
+            AND plan_availability.billing_platform = 'ios'::billing_platform
+            AND plan_availability.status = 'confirmed_absent'
+        )
+      )::int AS common_country_count,
       COALESCE(price_state.common_published_country_count, 0)::int AS common_published_country_count,
       COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
       COALESCE(observation_state.pending_anomaly_count, 0)::int AS pending_anomaly_count,
@@ -647,7 +675,10 @@ async function getMissingCountryRows(productId: string, limit = 80) {
       country.currency,
       COALESCE(pending.pending_observation_count, 0)::int AS pending_observation_count,
       availability.status AS latest_availability_status,
-      availability.reason AS latest_availability_reason
+      availability.reason AS latest_availability_reason,
+      plan_availability.status AS plan_availability_status,
+      COALESCE(plan_availability.consecutive_missing_count, 0)::int
+        AS consecutive_missing_count
     FROM plan_scope plan
     CROSS JOIN target_country country
     LEFT JOIN region_prices price
@@ -667,7 +698,12 @@ async function getMissingCountryRows(productId: string, limit = 80) {
       ON availability.product_id = ${productId}::uuid
       AND availability.country_id = country.id
       AND availability.billing_platform = 'ios'::billing_platform
+    LEFT JOIN app_store_plan_availability_checks plan_availability
+      ON plan_availability.plan_id = plan.id
+      AND plan_availability.country_id = country.id
+      AND plan_availability.billing_platform = 'ios'::billing_platform
     WHERE price.id IS NULL
+      AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
     ORDER BY plan.sort_order ASC, country.sort_order ASC
     LIMIT ${limit}
   `;

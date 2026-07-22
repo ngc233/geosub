@@ -1,13 +1,13 @@
 param(
   [string]$TaskName = "GeoSub Collector Jobs",
-  [int]$IntervalMinutes = 5,
-  [int]$Limit = 5,
+  [int]$IntervalMinutes = 30,
+  [int]$Limit = 8,
   [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 )
 
 $ErrorActionPreference = "Stop"
 
-$runnerScript = Join-Path $ProjectRoot "scripts\run-collector-jobs.ps1"
+$runnerScript = Join-Path $ProjectRoot "scripts\run-collector-jobs-task.ps1"
 
 if (!(Test-Path -LiteralPath $runnerScript)) {
   throw "Runner script not found: $runnerScript"
@@ -15,7 +15,8 @@ if (!(Test-Path -LiteralPath $runnerScript)) {
 
 $action = New-ScheduledTaskAction `
   -Execute "powershell.exe" `
-  -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$runnerScript`" -Limit $Limit"
+  -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$runnerScript`" -Limit $Limit" `
+  -WorkingDirectory $ProjectRoot
 
 $trigger = New-ScheduledTaskTrigger `
   -Once `
@@ -26,6 +27,8 @@ $settings = New-ScheduledTaskSettingsSet `
   -StartWhenAvailable `
   -MultipleInstances IgnoreNew `
   -ExecutionTimeLimit (New-TimeSpan -Minutes 20) `
+  -RestartCount 2 `
+  -RestartInterval (New-TimeSpan -Minutes 5) `
   -AllowStartIfOnBatteries `
   -DontStopIfGoingOnBatteries
 
@@ -40,7 +43,7 @@ Register-ScheduledTask `
   -Trigger $trigger `
   -Settings $settings `
   -Principal $principal `
-  -Description "Runs queued GeoSub collector jobs from PostgreSQL." `
+  -Description "Runs queued GeoSub collector jobs and records an operational heartbeat." `
   -Force | Out-Null
 
 Write-Host "Scheduled task installed: $TaskName"

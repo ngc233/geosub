@@ -13,19 +13,18 @@ import {
   type ProductPlan,
   type RegionPrice,
   type SubscriptionProduct,
-} from '../data/ai-pricing';
+} from '../lib/public-pricing-model';
 import { getPlanDisplayName } from '../lib/pricing-labels';
-
-type ShareLocale = 'zh' | 'en';
+import type { SiteLocale } from '../lib/site-locale';
 
 type SharePriceModalProps = {
   product: SubscriptionProduct;
   plan: ProductPlan;
   stats: PlanStats;
-  locale?: ShareLocale;
+  locale?: SiteLocale;
 };
 
-const shareCopy: Record<ShareLocale, {
+type ShareCopy = {
   button: string;
   dialogLabel: string;
   close: string;
@@ -47,7 +46,15 @@ const shareCopy: Record<ShareLocale, {
   shareText: (planName: string, low: string, high: string, spread: number) => string;
   mapAria: (planName: string) => string;
   shareTo: (platform: string) => string;
-}> = {
+  diffAbove: (percent: number) => string;
+  diffBelow: (percent: number) => string;
+  diffSame: string;
+  comparisonLead: (lowest: string, highest: string) => string;
+  comparisonTrail: string;
+  monthlySuffix: string;
+};
+
+const shareCopy = {
   zh: {
     button: '分享价格图',
     dialogLabel: '分享价格图',
@@ -71,6 +78,12 @@ const shareCopy: Record<ShareLocale, {
       `${planName} 全球订阅价格对比：最低 ${low}，最高 ${high}，价差 ${spread}%。`,
     mapAria: (planName) => `${planName} 分享地图`,
     shareTo: (platform) => `分享到 ${platform}`,
+    diffAbove: (percent) => `比美国贵 ${percent}%`,
+    diffBelow: (percent) => `比美国便宜 ${percent}%`,
+    diffSame: '与美国价格相同',
+    comparisonLead: (lowest, highest) => `${lowest} 与 ${highest} 的价格差约 `,
+    comparisonTrail: '。',
+    monthlySuffix: '/月',
   },
   en: {
     button: 'Share price card',
@@ -95,8 +108,15 @@ const shareCopy: Record<ShareLocale, {
       `${planName} global subscription price comparison: lowest ${low}, highest ${high}, spread ${spread}%.`,
     mapAria: (planName) => `${planName} share map`,
     shareTo: (platform) => `Share to ${platform}`,
+    diffAbove: (percent) => `${percent}% more than the US`,
+    diffBelow: (percent) => `${percent}% cheaper than the US`,
+    diffSame: 'Same as the US',
+    comparisonLead: (lowest, highest) =>
+      `The price gap between ${lowest} and ${highest} is about `,
+    comparisonTrail: '.',
+    monthlySuffix: '/mo',
   },
-};
+} satisfies Record<SiteLocale, ShareCopy>;
 
 type MapFeature = {
   id?: number | string;
@@ -200,20 +220,17 @@ function getShortDiff(diffPercent: number) {
   return '0%';
 }
 
-function getReadableDiffByLocale(diffPercent: number, locale: ShareLocale) {
+function getReadableDiffByLocale(diffPercent: number, locale: SiteLocale) {
+  const text = shareCopy[locale];
   if (diffPercent > 0) {
-    return locale === 'en'
-      ? `${diffPercent}% more than the US`
-      : `比美国贵 ${diffPercent}%`;
+    return text.diffAbove(diffPercent);
   }
 
   if (diffPercent < 0) {
-    return locale === 'en'
-      ? `${Math.abs(diffPercent)}% cheaper than the US`
-      : `比美国便宜 ${Math.abs(diffPercent)}%`;
+    return text.diffBelow(Math.abs(diffPercent));
   }
 
-  return locale === 'en' ? 'Same as the US' : '与美国价格相同';
+  return text.diffSame;
 }
 
 function getMapColor(region?: RegionPrice, referencePrice?: number) {
@@ -264,7 +281,7 @@ function ShareMiniMap({
 }: {
   plan: ProductPlan;
   referenceRegion: RegionPrice;
-  locale: ShareLocale;
+  locale: SiteLocale;
 }) {
   const text = shareCopy[locale];
   const mapData = useMemo(() => {
@@ -642,7 +659,7 @@ export default function SharePriceModal({
                     <div>
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-500">
                         <span className="h-[3px] w-10 rounded-full bg-blue-500" />
-                        {product.brand} · {text.global} · {product.updatedAt}
+                        {product.brand} · {text.global} · {plan.freshness?.pageUpdatedAt || product.updatedAt}
                       </div>
 
                       <h2 className="mt-3 text-[32px] font-black leading-[0.95] tracking-tight text-zinc-950">
@@ -688,20 +705,21 @@ export default function SharePriceModal({
                           {formatUsd(stats.minRegion.priceUsd)}
                         </div>
                         <div className="mt-1 text-[11px] font-bold text-zinc-500">
-                          /mo
+                          {text.monthlySuffix}
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="my-4 text-center text-sm font-bold italic text-zinc-600">
-                    “{locale === 'en'
-                      ? `${stats.minRegion.country} is about `
-                      : `${stats.minRegion.country} 比 ${stats.maxRegion.country} 便宜约 `}
+                    “{text.comparisonLead(
+                      stats.minRegion.country,
+                      stats.maxRegion.country,
+                    )}
                     <span className="text-rose-500">
                       {stats.spreadPercent}%
                     </span>
-                    {locale === 'en' ? ` cheaper than ${stats.maxRegion.country}.` : '。'}”
+                    {text.comparisonTrail}”
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -773,7 +791,7 @@ export default function SharePriceModal({
                   <div className="mt-4 flex items-center justify-center gap-2 border-t border-orange-100 pt-3 text-[10px] font-bold text-zinc-400">
                     <span className="h-3 w-3 rounded bg-blue-500" />
                     <span>
-                      {text.verifiedAt(product.updatedAt)}
+                      {text.verifiedAt(plan.freshness?.pageUpdatedAt || product.updatedAt)}
                     </span>
                   </div>
                 </div>

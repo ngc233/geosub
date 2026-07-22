@@ -8,7 +8,7 @@ import {
   getPlanStats,
   type ProductPlan,
   type RegionPrice,
-} from "../data/ai-pricing";
+} from "../lib/public-pricing-model";
 import ExpandableRegionPriceTable from "./ExpandableRegionPriceTable";
 import PriceWorldMap from "./PriceWorldMap";
 import {
@@ -18,6 +18,11 @@ import {
   PublicSectionHeader,
 } from "./ui/PublicPage";
 import { getPlanDisplayName } from "../lib/pricing-labels";
+import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import {
+  getSiteLocaleDefinition,
+  type SiteLocale,
+} from "../lib/site-locale";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 type DisplayCurrency = "usd" | "cny";
@@ -34,18 +39,10 @@ type CurrencyExchangeRate = {
 type PricingPlatformViewProps = {
   productName: string;
   plan: ProductPlan;
-  updatedAt?: string;
   cnyExchangeRate?: CurrencyExchangeRate;
   shareAction?: ReactNode;
-  locale?: "zh" | "en";
+  locale?: SiteLocale;
 };
-
-const platformOptions: Array<{ value: PlatformFilter; label: string }> = [
-  { value: "ios", label: "App Store" },
-  { value: "web", label: "Web 官方价" },
-  { value: "android", label: "Google Play" },
-  { value: "all", label: "全部来源诊断" },
-];
 
 const currencyOptions: Array<{ value: DisplayCurrency }> = [
   { value: "usd" },
@@ -61,14 +58,6 @@ function getPlatform(region: RegionPrice) {
 
 function getSortedRegions(plan: ProductPlan) {
   return [...plan.regions].sort((a, b) => a.priceUsd - b.priceUsd);
-}
-
-function getLatestPlanReviewDate(plan: ProductPlan, fallback?: string) {
-  return plan.regions.reduce<string | undefined>((latest, region) => {
-    if (!region.lastCheckedAt) return latest;
-    if (!latest || region.lastCheckedAt > latest) return region.lastCheckedAt;
-    return latest;
-  }, undefined) || fallback;
 }
 
 function getReferenceRegion(plan: ProductPlan) {
@@ -89,32 +78,28 @@ function getSignedPercent(diffPercent: number) {
   return `${diffPercent}%`;
 }
 
-function getPlatformLabel(platform: PlatformFilter, locale: "zh" | "en" = "zh") {
-  if (locale === "en") {
-    if (platform === "ios") return "App Store";
-    if (platform === "web") return "official web pricing";
-    if (platform === "android") return "Google Play";
-    if (platform === "all") return "all diagnostic sources";
-  }
-
-  return (
-    platformOptions.find((option) => option.value === platform)?.label ||
-    "全部来源"
-  );
+function getPlatformLabel(platform: PlatformFilter, locale: SiteLocale = "zh") {
+  const copy = getPublicPricingCopy(locale).pricing;
+  if (platform === "ios") return "App Store";
+  if (platform === "web") return copy.officialWebPricing;
+  if (platform === "android") return "Google Play";
+  if (platform === "all") return copy.allDiagnosticSources;
+  return copy.allSources;
 }
 
 function getCurrencyLabel(
   currency: DisplayCurrency,
-  locale: "zh" | "en" = "zh",
+  locale: SiteLocale = "zh",
 ) {
+  const copy = getPublicPricingCopy(locale).pricing;
   if (currency === "cny") {
-    return locale === "en" ? "CNY estimate" : "人民币 CNY";
+    return copy.cnyLabel;
   }
 
-  return locale === "en" ? "USD" : "美元 USD";
+  return copy.usdLabel;
 }
 
-function formatSyncDate(value: string | null | undefined, locale: "zh" | "en") {
+function formatSyncDate(value: string | null | undefined, locale: SiteLocale) {
   if (!value) return null;
 
   const date = new Date(value);
@@ -122,7 +107,7 @@ function formatSyncDate(value: string | null | undefined, locale: "zh" | "en") {
     return value.slice(0, 10);
   }
 
-  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "zh-CN", {
+  return new Intl.DateTimeFormat(getSiteLocaleDefinition(locale).htmlLang, {
     timeZone: "Asia/Shanghai",
     year: "numeric",
     month: "2-digit",
@@ -135,42 +120,29 @@ function formatSyncDate(value: string | null | undefined, locale: "zh" | "en") {
 function getCnyRateNote(
   cnyExchangeRate: CurrencyExchangeRate,
   cnyRate: number,
-  locale: "zh" | "en",
+  locale: SiteLocale,
 ) {
+  const copy = getPublicPricingCopy(locale).pricing;
   const syncedDate = formatSyncDate(cnyExchangeRate.fetchedAt, locale);
   const basisDate = cnyExchangeRate.rateDate || null;
 
   if (cnyExchangeRate.isFallback) {
-    return locale === "en"
-      ? "CNY estimate unavailable: exchange-rate sync is pending"
-      : "人民币估算暂不可用：汇率待同步";
+    return copy.cnyUnavailable;
   }
 
-  const suffixParts =
-    locale === "en"
-      ? [
-          syncedDate ? `synced ${syncedDate}` : null,
-          basisDate ? `rate basis ${basisDate}` : null,
-        ]
-      : [
-          syncedDate ? `同步 ${syncedDate}` : null,
-          basisDate ? `汇率基准 ${basisDate}` : null,
-        ];
+  const suffixParts = [
+    syncedDate ? copy.synced(syncedDate) : null,
+    basisDate ? copy.rateBasis(basisDate) : null,
+  ];
   const suffix = suffixParts.filter(Boolean).join(" · ");
 
   if (cnyExchangeRate.isStale) {
-    const prefix =
-      locale === "en"
-        ? "CNY estimate paused: exchange-rate sync is stale"
-        : "人民币估算暂停：汇率同步已过期";
+    const prefix = copy.cnyStale;
 
     return suffix ? `${prefix} · ${suffix}` : prefix;
   }
 
-  const prefix =
-    locale === "en"
-      ? `CNY uses ${cnyRate.toFixed(4)} USD/CNY`
-      : `人民币按 ${cnyRate.toFixed(4)} 汇率估算`;
+  const prefix = copy.cnyRate(cnyRate);
 
   return suffix ? `${prefix} · ${suffix}` : prefix;
 }
@@ -193,10 +165,11 @@ function formatMonthlyPrice(
   value: number,
   currency: DisplayCurrency,
   exchangeRate: number,
-  locale: "zh" | "en",
+  locale: SiteLocale,
 ) {
+  const copy = getPublicPricingCopy(locale).pricing;
   return currency === "cny"
-    ? `${formatCnyFromUsd(value, exchangeRate)}${locale === "en" ? "/mo" : "/月"}`
+    ? `${formatCnyFromUsd(value, exchangeRate)}${copy.monthlySuffix}`
     : `${formatUsd(value)}/mo`;
 }
 
@@ -205,19 +178,17 @@ function EmptyPriceState({
   locale,
 }: {
   platformLabel: string;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 }) {
+  const copy = getPublicPricingCopy(locale).pricing;
+
   return (
     <section className="rounded-xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
       <div className="text-sm font-semibold text-zinc-950 dark:text-white">
-        {locale === "en"
-          ? `No ${platformLabel} pricing yet`
-          : `暂无 ${platformLabel} 价格数据`}
+        {copy.noPrices(platformLabel)}
       </div>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-        {locale === "en"
-          ? "This source has not entered the reviewed price database yet. Price distribution, regional rankings and the detail table will appear automatically once verified data is available."
-          : "该来源还没有进入正式价格库。后续补齐后，这里会自动显示价格分布、地区排行和明细表。"}
+        {copy.noPricesDescription}
       </p>
     </section>
   );
@@ -232,7 +203,7 @@ function CurrencySelect({
   value: DisplayCurrency;
   onChange: (currency: DisplayCurrency) => void;
   cnyDisabled?: boolean;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -276,7 +247,7 @@ function CurrencySelect({
             ? "border-lime-300 bg-white text-zinc-950 ring-4 ring-lime-500/10 dark:border-lime-500/40 dark:bg-zinc-900 dark:text-white"
             : "border-zinc-200 bg-zinc-50/80 text-zinc-700 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
         ].join(" ")}
-        aria-label={locale === "en" ? "Display currency" : "显示币种"}
+        aria-label={getPublicPricingCopy(locale).pricing.displayCurrency}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -337,7 +308,6 @@ function PricingLead({
   platformLabel,
   displayCurrency,
   cnyExchangeRate,
-  updatedAt,
   onCurrencyChange,
   locale,
 }: {
@@ -346,9 +316,8 @@ function PricingLead({
   platformLabel: string;
   displayCurrency: DisplayCurrency;
   cnyExchangeRate: CurrencyExchangeRate;
-  updatedAt?: string;
   onCurrencyChange: (currency: DisplayCurrency) => void;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 }) {
   const stats = getPlanStats(plan);
   const referenceRegion = getReferenceRegion(plan);
@@ -357,60 +326,43 @@ function PricingLead({
   const cnyDisabled = Boolean(cnyExchangeRate.isFallback || cnyExchangeRate.isStale);
   const cnyRateNote = getCnyRateNote(cnyExchangeRate, cnyRate, locale);
   const planDisplayName = getPlanDisplayName(productName, plan.name);
+  const copy = getPublicPricingCopy(locale).pricing;
 
   return (
     <PublicSection>
       <div className="p-5 md:p-6">
         <div className="mb-3 inline-flex rounded-md bg-lime-50 px-2.5 py-1 text-xs font-semibold text-lime-700 ring-1 ring-lime-200 dark:bg-lime-950/30 dark:text-lime-300 dark:ring-lime-900">
-          {locale === "en" ? "V1 official price source: App Store" : "V1 正式价格源：App Store"}
+          {copy.appStoreSource}
         </div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <h2 className="text-[24px] font-semibold leading-tight text-zinc-950 md:whitespace-nowrap md:text-[28px] dark:text-white">
-              {locale === "en"
-                ? `${planDisplayName} global price conclusion`
-                : `${planDisplayName} 全球价格结论`}
+              {copy.conclusionTitle(planDisplayName)}
             </h2>
             <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
-              {locale === "en" ? (
-                <>
-                  Based on official {platformLabel} pricing, {stats.minRegion.country} is currently the cheapest at about{" "}
-                  <strong className="font-semibold text-lime-700 dark:text-lime-300">
-                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate, locale)}
-                  </strong>
-                  ; {stats.maxRegion.country} is the most expensive at about{" "}
-                  <strong className="font-semibold text-rose-600 dark:text-rose-300">
-                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate, locale)}
-                  </strong>
-                  , with a spread of about {stats.spreadPercent}%.
-                </>
-              ) : (
-                <>
-                  当前以 {platformLabel} 正式价格比较，{stats.minRegion.country} 最便宜，约{" "}
-                  <strong className="font-semibold text-lime-700 dark:text-lime-300">
-                    {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate, locale)}
-                  </strong>
-                  ；{stats.maxRegion.country} 最贵，约{" "}
-                  <strong className="font-semibold text-rose-600 dark:text-rose-300">
-                    {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate, locale)}
-                  </strong>
-                  ，价差约 {stats.spreadPercent}%。
-                </>
-              )}
+              {copy.conclusionLead(platformLabel, stats.minRegion.country)}{" "}
+              <strong className="font-semibold text-lime-700 dark:text-lime-300">
+                {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate, locale)}
+              </strong>
+              {copy.conclusionMiddle(stats.maxRegion.country)}{" "}
+              <strong className="font-semibold text-rose-600 dark:text-rose-300">
+                {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate, locale)}
+              </strong>
+              {copy.conclusionSpread(stats.spreadPercent)}
             </p>
           </div>
 
           <div className="text-xs text-zinc-400 lg:text-right">
-            {updatedAt
-              ? locale === "en" ? `Latest plan review: ${updatedAt}` : `本套餐最近复核：${updatedAt}`
-              : locale === "en" ? `${plan.regions.length} regions` : `${plan.regions.length} 个地区`}
+            {plan.freshness?.pageUpdatedAt
+              ? copy.pageUpdated(plan.freshness.pageUpdatedAt)
+              : copy.regionCount(plan.regions.length)}
           </div>
         </div>
 
         <div className="mt-4 grid gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800 md:grid-cols-[auto_1fr] md:items-center">
           <div className="flex items-center gap-3">
             <span className="shrink-0 text-xs font-semibold text-zinc-400">
-              {locale === "en" ? "Display currency" : "显示币种"}
+              {copy.displayCurrency}
             </span>
             <CurrencySelect
               value={displayCurrency}
@@ -430,28 +382,50 @@ function PricingLead({
 
       <MetricStrip>
         <MetricItem
-          label={locale === "en" ? "Lowest" : "最低价"}
+          label={copy.lowest}
           value={`${stats.minRegion.country} · ${formatDisplayPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}`}
           helper={stats.minRegion.localPrice}
           tone="green"
         />
         <MetricItem
-          label={locale === "en" ? "Highest" : "最高价"}
+          label={copy.highest}
           value={`${stats.maxRegion.country} · ${formatDisplayPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}`}
           helper={stats.maxRegion.localPrice}
           tone="red"
         />
         <MetricItem
-          label={locale === "en" ? "US base" : "美国基准"}
+          label={copy.usBase}
           value={`${referenceRegion.country} · ${formatDisplayPrice(referenceRegion.priceUsd, displayCurrency, cnyRate)}`}
           helper={referenceRegion.code}
         />
         <MetricItem
-          label={locale === "en" ? "Regions" : "覆盖地区"}
-          value={locale === "en" ? `${plan.regions.length}` : `${plan.regions.length} 个`}
+          label={copy.regions}
+          value={copy.regionCount(plan.regions.length)}
           helper={platformLabel}
         />
       </MetricStrip>
+
+      <div className="grid border-t border-zinc-100 text-xs dark:border-zinc-800 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          [copy.source, plan.freshness?.sourceLabel || "App Store"],
+          [copy.latestCollection, plan.freshness?.priceCollectedAt],
+          [copy.fxBasis, plan.freshness?.fxRateDate],
+          [copy.planReview, plan.freshness?.planReviewedAt],
+          [
+            copy.trustStatus,
+            plan.freshness?.trustStatus === "verified"
+              ? copy.verified
+              : plan.freshness?.trustStatus === "reviewed"
+                ? copy.reviewed
+                : copy.needsReview,
+          ],
+        ].map(([label, value]) => (
+          <div key={label} className="border-b border-zinc-100 px-5 py-3 last:border-b-0 sm:border-r lg:border-b-0 dark:border-zinc-800">
+            <div className="font-medium text-zinc-400">{label}</div>
+            <div className="mt-1 font-semibold text-zinc-700 dark:text-zinc-200">{value || copy.unavailable}</div>
+          </div>
+        ))}
+      </div>
     </PublicSection>
   );
 }
@@ -525,29 +499,20 @@ function PriceDistribution({
   productName: string;
   plan: ProductPlan;
   shareAction?: ReactNode;
-  locale: "zh" | "en";
+  locale: SiteLocale;
 }) {
   const sortedRegions = getSortedRegions(plan);
   const referenceRegion = getReferenceRegion(plan);
   const cheapRegions = sortedRegions.slice(0, 5);
   const expensiveRegions = sortedRegions.slice(-5).reverse();
+  const copy = getPublicPricingCopy(locale).pricing;
 
   return (
     <PublicSection>
       <PublicSectionHeader
-        eyebrow="Price distribution"
-        title={locale === "en" ? "Global price distribution and regional ranking" : "全球价格分布与地区排行"}
-        description={
-          locale === "en" ? (
-            <>
-              The map helps explain {productName} regional price differences; the lists highlight lower-price and higher-price regions.
-            </>
-          ) : (
-            <>
-              地图用于快速理解 {productName} 的全球价格差异；榜单用于辅助定位低价区和高价区。
-            </>
-          )
-        }
+        eyebrow={copy.distributionEyebrow}
+        title={copy.distributionTitle}
+        description={copy.distributionDescription(productName)}
         actions={shareAction}
       />
 
@@ -557,13 +522,13 @@ function PriceDistribution({
 
       <div className="grid gap-6 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800 lg:grid-cols-2">
         <RankingList
-          title={locale === "en" ? "Lower-price regions" : "更便宜的地区"}
+          title={copy.lowerRegions}
           regions={cheapRegions}
           referenceRegion={referenceRegion}
           tone="green"
         />
         <RankingList
-          title={locale === "en" ? "Higher-price regions" : "更贵的地区"}
+          title={copy.higherRegions}
           regions={expensiveRegions}
           referenceRegion={referenceRegion}
           tone="red"
@@ -576,7 +541,6 @@ function PriceDistribution({
 export default function PricingPlatformView({
   productName,
   plan,
-  updatedAt,
   cnyExchangeRate,
   shareAction,
   locale = "zh",
@@ -611,11 +575,6 @@ export default function PricingPlatformView({
   }, [plan, platform]);
 
   const platformLabel = getPlatformLabel(platform, locale);
-  const activePlanReviewDate = getLatestPlanReviewDate(
-    filteredPlan.regions.length > 0 ? filteredPlan : plan,
-    updatedAt,
-  );
-
   return (
     <div className="space-y-5">
       {filteredPlan.regions.length === 0 ? (
@@ -626,7 +585,6 @@ export default function PricingPlatformView({
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             cnyExchangeRate={effectiveCnyExchangeRate}
-            updatedAt={activePlanReviewDate}
             onCurrencyChange={handleCurrencyChange}
             locale={locale}
           />
@@ -640,7 +598,6 @@ export default function PricingPlatformView({
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             cnyExchangeRate={effectiveCnyExchangeRate}
-            updatedAt={activePlanReviewDate}
             onCurrencyChange={handleCurrencyChange}
             locale={locale}
           />

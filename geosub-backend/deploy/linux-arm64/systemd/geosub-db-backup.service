@@ -6,7 +6,7 @@ After=docker.service
 [Service]
 Type=oneshot
 EnvironmentFile=-/etc/geosub/geosub.env
-ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/db-backup.sh
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-system-task.sh database_backup -- /opt/geosub/geosub-backend/deploy/linux-arm64/db-backup.sh
 TimeoutStartSec=30m
 Nice=10
 NoNewPrivileges=true

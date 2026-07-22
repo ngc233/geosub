@@ -53,11 +53,23 @@ const selectionFalsePositiveReclassificationSql = readFileSync(
   ),
   "utf8",
 );
+const supersededAmbiguitySql = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/071_archive_superseded_app_store_ambiguities.sql"),
+  "utf8",
+);
 
 const legacyTierCleanupSql = readFileSync(
   resolve(
     repoRoot,
     "geosub-backend/sql/061_ignore_legacy_non_primary_app_store_tiers.sql",
+  ),
+  "utf8",
+);
+
+const availabilitySemanticsSql = readFileSync(
+  resolve(
+    repoRoot,
+    "geosub-backend/sql/067_app_store_availability_semantics.sql",
   ),
   "utf8",
 );
@@ -154,6 +166,38 @@ test("rendered App Store JSON crosses the PowerShell boundary as UTF-8", () => {
   assert.match(appStoreCollector, /Remove-Item -LiteralPath \$outputPath/);
 });
 
+test("static App Store fallback decodes the original response bytes as UTF-8", () => {
+  assert.match(appStoreCollector, /function Get-Utf8ResponseContent/);
+  assert.match(appStoreCollector, /ReadAsByteArrayAsync\(\)/);
+  assert.match(appStoreCollector, /RawContentStream/);
+  assert.match(appStoreCollector, /New-Object Text\.UTF8Encoding\(\$false, \$true\)/);
+  assert.match(appStoreCollector, /Html = Get-Utf8ResponseContent -Response \$response/);
+  assert.doesNotMatch(appStoreCollector, /Html = \$response\.Content/);
+});
+
+test("visible but unmatched App Store items remain retryable coverage gaps", () => {
+  assert.match(availabilitySemanticsSql, /'available_unmatched_items'/);
+  assert.match(availabilitySemanticsSql, /item_count > 0/);
+  assert.match(availabilitySemanticsSql, /subscription_item_count = 0/);
+  assert.match(appStoreCollector, /\$renderedPageHadNoItems = \$true/);
+  assert.match(
+    appStoreCollector,
+    /\$items\.Count -eq 0 -and !\$renderedPageHadNoItems/,
+  );
+  assert.match(
+    appStoreCollector,
+    /\$availabilityStatus = "available_unmatched_items"/,
+  );
+  assert.match(
+    appStoreCollector,
+    /none matched the maintained subscription plan specification/,
+  );
+  assert.doesNotMatch(
+    availabilitySemanticsSql,
+    /DELETE FROM app_store_availability_checks/,
+  );
+});
+
 test("tiered App Store plans can explicitly choose their lowest valid monthly tier", () => {
   assert.equal(productPlanSpecs.manus.plans.find((plan) => plan.slug === "pro")?.price_selection_strategy, "lowest_in_expected_range");
   assert.match(appStoreCollector, /Get-AppStorePriceSelectionStrategy/);
@@ -168,6 +212,16 @@ test("existing collector false positives are reclassified without publishing the
   assert.match(selectionFalsePositiveReclassificationSql, /anomaly_flag = FALSE/);
   assert.match(selectionFalsePositiveReclassificationSql, /observation\.status = 'pending'/);
   assert.doesNotMatch(selectionFalsePositiveReclassificationSql, /status\s*=\s*'approved'/);
+});
+
+test("newer exact local prices archive superseded ambiguous evidence generically", () => {
+  assert.match(supersededAmbiguitySql, /archive_superseded_app_store_ambiguities/);
+  assert.match(supersededAmbiguitySql, /published\.local_price IS NOT DISTINCT FROM observation\.raw_price/);
+  assert.match(supersededAmbiguitySql, /published\.currency IS NOT DISTINCT FROM observation\.currency/);
+  assert.match(supersededAmbiguitySql, /published\.last_checked_at >= observation\.observed_at/);
+  assert.match(supersededAmbiguitySql, /AFTER INSERT OR UPDATE OF/);
+  assert.match(supersededAmbiguitySql, /superseded_by_published_price/);
+  assert.doesNotMatch(supersededAmbiguitySql, /product\.slug\s*=/);
 });
 
 test("legacy non-primary App Store tiers are retained as ignored evidence", () => {
@@ -242,6 +296,23 @@ test("Netflix plan aliases cover common localized screen-count labels", () => {
   assert.ok(aliasesByPlan.premium.includes("4 telas"));
   assert.ok(aliasesByPlan.premium.includes("4 gerate"));
   assert.ok(aliasesByPlan.premium.includes("4 gerate gleichzeitig"));
+});
+
+test("Netflix plan aliases cover maintained East Asian storefront labels", () => {
+  const netflix = productPlanSpecs.netflix;
+  const aliases = Object.fromEntries(
+    netflix.plans.map((plan) => [plan.slug, new Set(plan.aliases)]),
+  );
+
+  for (const alias of ["ベーシック", "기본", "基本", "單螢幕"]) {
+    assert.ok(aliases.basic.has(alias), `basic should match ${alias}`);
+  }
+  for (const alias of ["スタンダード", "스탠다드", "標準", "雙螢幕"]) {
+    assert.ok(aliases.standard.has(alias), `standard should match ${alias}`);
+  }
+  for (const alias of ["プレミアム", "프리미엄", "高級", "四螢幕"]) {
+    assert.ok(aliases.premium.has(alias), `premium should match ${alias}`);
+  }
 });
 
 test("App Store plan matching preserves non-Latin names and excludes non-monthly artifacts", () => {

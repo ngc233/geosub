@@ -91,6 +91,9 @@ const findings = [];
 
 for (const file of listSourceFiles().filter(shouldScan)) {
   const absolutePath = path.join(repoRoot, file);
+  if (!fs.existsSync(absolutePath)) {
+    continue;
+  }
   const content = fs.readFileSync(absolutePath, "utf8");
   content.split(/\r?\n/).forEach((line, index) => {
     if (line.includes("\uFFFD")) {

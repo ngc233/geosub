@@ -1,9 +1,8 @@
 ﻿import {
-  subscriptionPricingData,
   type ProductPlan,
   type RegionPrice,
   type SubscriptionProduct,
-} from "../data/ai-pricing";
+} from "./public-pricing-model";
 import { prisma } from "./prisma";
 import type { DetailLocale } from "./detail-page-copy";
 
@@ -11,6 +10,8 @@ type PricingDetailRow = {
   product_slug: string;
   product_name: string;
   product_category: string;
+  product_provider: string | null;
+  product_description: string | null;
   product_logo_url: string | null;
   product_official_url: string | null;
   plan_slug: string;
@@ -52,17 +53,15 @@ type PricingDetailRow = {
   billing_platform: string | null;
   last_checked_at: Date | string | null;
   fx_rate_date: string | null;
+  reviewed_at: Date | string | null;
+  source_name: string | null;
+  confidence_score: number | null;
+  data_quality: string | null;
 };
 
 const localeMap: Record<DetailLocale, string> = {
   zh: "zh-CN",
   en: "en",
-  es: "es",
-  ja: "ja",
-  ko: "ko",
-  de: "de",
-  fr: "fr",
-  ar: "ar",
 };
 
 function toNumber(value: unknown) {
@@ -99,8 +98,30 @@ function getLatestDate(values: Array<Date | string | null | undefined>) {
   return latest ? formatDate(latest) : undefined;
 }
 
-function getStaticProduct(productSlug: string) {
-  return subscriptionPricingData.find((product) => product.slug === productSlug) || null;
+function getPlanFreshness(regions: RegionPrice[]) {
+  const priceCollectedAt = getLatestDate(regions.map((region) => region.lastCheckedAt));
+  const fxRateDate = getLatestDate(regions.map((region) => region.fxRateDate));
+  const planReviewedAt = getLatestDate(regions.map((region) => region.reviewedAt));
+  const sourceNames = [...new Set(regions.map((region) => region.sourceName).filter(Boolean))];
+  const minimumConfidence = Math.min(
+    ...regions.map((region) => region.confidenceScore ?? 0),
+  );
+  const qualities = regions.map((region) => region.dataQuality || "unknown");
+  const trustStatus = qualities.every((quality) => quality === "verified") && minimumConfidence >= 80
+    ? "verified"
+    : qualities.every((quality) => quality === "verified" || quality === "estimated") &&
+        minimumConfidence >= 60
+      ? "reviewed"
+      : "needs_review";
+
+  return {
+    sourceLabel: sourceNames.length > 0 ? sourceNames.join(" + ") : "App Store",
+    priceCollectedAt,
+    fxRateDate,
+    planReviewedAt,
+    pageUpdatedAt: getLatestDate([planReviewedAt, priceCollectedAt]),
+    trustStatus,
+  } satisfies NonNullable<ProductPlan["freshness"]>;
 }
 
 function getCountryName(
@@ -534,14 +555,12 @@ function getLocalizedRiskText({
 }
 
 function buildProductFromRows(
-  productSlug: string,
+  _productSlug: string,
   rows: PricingDetailRow[],
   locale: DetailLocale,
 ): SubscriptionProduct | null {
-  const staticProduct = getStaticProduct(productSlug);
-
   if (rows.length === 0) {
-    return staticProduct;
+    return null;
   }
 
   const firstRow = rows[0];
@@ -643,6 +662,16 @@ function buildProductFromRows(
       billingPlatformLabel: getBillingPlatformLabel(row.billing_platform),
       lastCheckedAt: formatDate(row.last_checked_at),
       fxRateDate: row.fx_rate_date || undefined,
+      reviewedAt: formatDate(row.reviewed_at),
+      sourceName: row.source_name || (row.billing_platform === "ios" ? "App Store" : undefined),
+      confidenceScore: Number(row.confidence_score || 0),
+      dataQuality:
+        row.data_quality === "verified" ||
+        row.data_quality === "estimated" ||
+        row.data_quality === "stale" ||
+        row.data_quality === "pending_review"
+          ? row.data_quality
+          : "unknown",
       isReference: Boolean(row.is_reference) || countryCode === "US",
       isCheap: diffPercent < -5,
       isExpensive: diffPercent > 18,
@@ -671,34 +700,27 @@ function buildProductFromRows(
               ? "pending"
               : "empty",
         pendingObservationCount: plan.pendingObservationCount,
+        freshness: getPlanFreshness(regions),
         regions,
       };
     });
 
-  const defaultPlan =
-    staticProduct?.defaultPlan && plans.some((plan) => plan.slug === staticProduct.defaultPlan)
-      ? staticProduct.defaultPlan
-      : plans[0]?.slug || staticProduct?.defaultPlan || "plus";
-  const latestCheckedAt = getLatestDate(rows.map((row) => row.last_checked_at));
-
+  const defaultPlan = plans[0]?.slug || "";
   return {
     slug: firstRow.product_slug,
-    category:
-      firstRow.product_category === "streaming"
-        ? "streaming"
-        : staticProduct?.category || "ai",
-    name: staticProduct?.name || firstRow.product_name,
-    brand: staticProduct?.brand || firstRow.product_name,
+    category: firstRow.product_category === "streaming" ? "streaming" : "ai",
+    name: firstRow.product_name,
+    brand: firstRow.product_provider || firstRow.product_name,
     description:
-      staticProduct?.description ||
-      `比较 ${firstRow.product_name} 不同地区的订阅价格。`,
-    icon: staticProduct?.icon,
-    logoUrl: staticProduct?.logoUrl || firstRow.product_logo_url || undefined,
+      firstRow.product_description ||
+      (locale === "zh"
+        ? `比较 ${firstRow.product_name} 不同地区的订阅价格。`
+        : `Compare ${firstRow.product_name} subscription prices across regions.`),
+    logoUrl: firstRow.product_logo_url || undefined,
     officialUrl: firstRow.product_official_url || undefined,
-    accentIcon: staticProduct?.accentIcon,
     defaultPlan,
-    updatedAt: latestCheckedAt || staticProduct?.updatedAt || "2026-06",
-    sourceNote: "价格数据来自 GeoSub 数据库；缺失产品会回退到静态示例数据。",
+    updatedAt: plans[0]?.freshness?.pageUpdatedAt || "",
+    sourceNote: "正式价格来自已复核的公开平台地区价格，页面按当前套餐单独计算日期与可信状态。",
     plans,
   };
 }
@@ -712,6 +734,8 @@ export async function getPricingDetailProduct(
       p.slug AS product_slug,
       p.name AS product_name,
       p.category::text AS product_category,
+      p.provider AS product_provider,
+      p.description AS product_description,
       p.logo_url AS product_logo_url,
       p.official_url AS product_official_url,
       pl.slug AS plan_slug,
@@ -752,15 +776,20 @@ export async function getPricingDetailProduct(
       rp.availability_note,
       rp.billing_platform::text AS billing_platform,
       rp.last_checked_at,
-      latest_observation.raw_payload ->> 'fx_rate_date' AS fx_rate_date
+      latest_observation.raw_payload ->> 'fx_rate_date' AS fx_rate_date,
+      latest_observation.reviewed_at,
+      source.name AS source_name,
+      rp.confidence_score,
+      rp.data_quality::text AS data_quality
     FROM products p
     JOIN plans pl ON pl.product_id = p.id
-    LEFT JOIN region_prices rp
+    JOIN region_prices rp
       ON rp.product_id = p.id
       AND rp.plan_id = pl.id
       AND rp.status = 'published'
       AND rp.price_usd IS NOT NULL
-    LEFT JOIN countries c ON c.id = rp.country_id
+    JOIN countries c ON c.id = rp.country_id
+    LEFT JOIN price_sources source ON source.id = rp.primary_source_id
     LEFT JOIN country_tax_profiles tax_profile
       ON tax_profile.country_id = c.id
       AND tax_profile.status = 'active'
@@ -768,7 +797,13 @@ export async function getPricingDetailProduct(
       ON risk_profile.country_id = c.id
       AND risk_profile.status = 'active'
     LEFT JOIN LATERAL (
-      SELECT po.raw_payload
+      SELECT
+        po.raw_payload,
+        COALESCE(
+          NULLIF(po.raw_payload ->> 'approved_at', '')::timestamptz,
+          NULLIF(po.raw_payload ->> 'auto_approved_at', '')::timestamptz,
+          po.updated_at
+        ) AS reviewed_at
       FROM price_observations po
       WHERE po.product_id = p.id
         AND po.plan_id = pl.id
@@ -792,6 +827,8 @@ export async function getPricingDetailProduct(
         AND po.status = 'pending'
     ) pending ON TRUE
     WHERE p.slug = ${productSlug}
+      AND p.status = 'published'
+      AND p.category IN ('ai'::product_category, 'streaming'::product_category)
       AND pl.status = 'published'
     ORDER BY pl.sort_order ASC, rp.price_usd ASC, rp.billing_platform ASC
   `;

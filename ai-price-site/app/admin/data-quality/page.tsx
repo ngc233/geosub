@@ -48,9 +48,13 @@ type ProductQualityRow = {
   coverage_refresh_retry_count: number;
   coverage_refresh_success_count: number;
   coverage_refresh_missing_pair_count: number;
+  anomaly_refresh_status: string | null;
+  anomaly_refresh_retry_count: number;
+  anomaly_refresh_success_count: number;
   next_scheduled_run_at: Date | string | null;
   stale_refresh_next_run_at: Date | string | null;
   coverage_refresh_next_run_at: Date | string | null;
+  anomaly_refresh_next_run_at: Date | string | null;
   running_run_count: number;
   latest_run_status: string | null;
   latest_run_started_at: Date | string | null;
@@ -62,6 +66,9 @@ type ProductQualityRow = {
   published_country_count: number;
   app_store_price_count: number;
   stale_published_count: number;
+  published_outlier_count: number;
+  duplicate_plan_group_count: number;
+  missing_tax_profile_count: number;
   latest_price_checked_at: Date | string | null;
   pending_observation_count: number;
   pending_app_store_count: number;
@@ -69,9 +76,22 @@ type ProductQualityRow = {
   pending_stability_count: number;
   hard_anomaly_count: number;
   ignored_observation_count: number;
+  auto_closed_observation_count: number;
   ignored_reason_codes: string | null;
   latest_observed_at: Date | string | null;
   review_reason_codes: string | null;
+};
+
+type RepairCycleRow = {
+  id: string;
+  trigger_kind: string;
+  anomaly_jobs_queued: number;
+  stale_jobs_queued: number;
+  coverage_jobs_queued: number;
+  anomaly_observations_closed: number;
+  published_outliers_quarantined: number;
+  stale_prices_quarantined: number;
+  created_at: Date | string;
 };
 
 type HealthLevel = "good" | "info" | "warning" | "danger";
@@ -138,6 +158,7 @@ function formatNextCollection(row: ProductQualityRow) {
   }
 
   const nextRun =
+    row.anomaly_refresh_next_run_at ||
     row.stale_refresh_next_run_at ||
     row.coverage_refresh_next_run_at ||
     row.next_scheduled_run_at;
@@ -221,6 +242,37 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
+  if (row.hard_anomaly_count > 0 && row.anomaly_refresh_status === "active") {
+    return {
+      level: "info",
+      label: "异常复核已排队",
+      reason: `${row.hard_anomaly_count} 条隔离样本正在执行第 ${Math.max(1, row.anomaly_refresh_retry_count)} 轮定向复采，不需要逐条人工核验。`,
+      nextAction: "等待自动复核",
+    };
+  }
+
+  if (
+    row.hard_anomaly_count > 0 &&
+    row.anomaly_refresh_success_count > 0 &&
+    row.anomaly_refresh_success_count < 3
+  ) {
+    return {
+      level: "info",
+      label: "异常自动复核中",
+      reason: `已完成 ${row.anomaly_refresh_success_count}/3 轮定向复采；仍不可信的样本会在三轮后自动隔离收口。`,
+      nextAction: "等待下一轮复采",
+    };
+  }
+
+  if (row.hard_anomaly_count > 0 && row.anomaly_refresh_success_count >= 3) {
+    return {
+      level: "info",
+      label: "等待自动收口",
+      reason: "三轮异常复采已经完成，系统将在本轮维护中把仍不可信的样本转为隔离证据。",
+      nextAction: "等待自动收口",
+    };
+  }
+
   if (row.hard_anomaly_count > 0 && row.published_price_count <= 0) {
     return {
       level: "danger",
@@ -236,6 +288,24 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
       label: "未上线",
       reason: "还没有正式价格，前台不会可靠展示这个产品。",
       nextAction: "立即采集",
+    };
+  }
+
+  if (row.duplicate_plan_group_count > 0) {
+    return {
+      level: "danger",
+      label: "套餐重复",
+      reason: `${row.duplicate_plan_group_count} 组已上线套餐名称重复，会造成同一套餐分栏和日期口径不一致。`,
+      nextAction: "合并重复套餐",
+    };
+  }
+
+  if (row.published_outlier_count > 0) {
+    return {
+      level: "warning",
+      label: "正式价需复核",
+      reason: `${row.published_outlier_count} 条正式价格明显偏离同套餐中位数，系统应先定向复采再决定是否保留。`,
+      nextAction: "等待异常复采",
     };
   }
 
@@ -360,6 +430,15 @@ function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
+  if (row.missing_tax_profile_count > 0) {
+    return {
+      level: "warning",
+      label: "税务资料待补",
+      reason: `${row.missing_tax_profile_count} 个已上线地区缺少有效税务资料，价格仍可展示，但税务说明不完整。`,
+      nextAction: "补齐税务资料",
+    };
+  }
+
   if (!row.latest_run_started_at) {
     return {
       level: "warning",
@@ -471,6 +550,7 @@ async function getProductQualityRows() {
         COUNT(*) FILTER (WHERE price.plan_id IS NOT NULL)::int AS covered_pair_count,
         COUNT(*) FILTER (
           WHERE availability.status IN ('not_available', 'available_no_iap')
+            OR plan_availability.status = 'confirmed_absent'
         )::int AS unavailable_pair_count,
         COUNT(DISTINCT country.id) FILTER (
           WHERE availability.status IN ('not_available', 'available_no_iap')
@@ -478,14 +558,17 @@ async function getProductQualityRows() {
         COUNT(*) FILTER (
           WHERE price.plan_id IS NULL
             AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
+            AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
         )::int AS missing_pair_count,
         COUNT(DISTINCT country.id) FILTER (
           WHERE price.plan_id IS NULL
             AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
+            AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
         )::int AS missing_country_count,
         STRING_AGG(DISTINCT country.code, ', ' ORDER BY country.code) FILTER (
           WHERE price.plan_id IS NULL
             AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
+            AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
         ) AS missing_country_codes
       FROM active_plan plan
       CROSS JOIN target_country country
@@ -496,6 +579,10 @@ async function getProductQualityRows() {
         ON availability.product_id = plan.product_id
         AND availability.country_id = country.id
         AND availability.billing_platform::text = 'ios'
+      LEFT JOIN app_store_plan_availability_checks plan_availability
+        ON plan_availability.plan_id = plan.id
+        AND plan_availability.country_id = country.id
+        AND plan_availability.billing_platform::text = 'ios'
       GROUP BY plan.product_id
     ),
     price_state AS (
@@ -526,6 +613,66 @@ async function getProductQualityRows() {
             AND price.billing_platform::text = 'ios'
         ) AS latest_price_checked_at
       FROM region_prices price
+      GROUP BY price.product_id
+    ),
+    published_plan_stats AS (
+      SELECT
+        price.product_id,
+        price.plan_id,
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY price.price_usd)::numeric AS median_usd,
+        COUNT(*)::int AS region_count
+      FROM region_prices price
+      WHERE price.status::text = 'published'
+        AND price.billing_platform::text = 'ios'
+        AND price.price_usd IS NOT NULL
+        AND price.price_usd >= 1
+      GROUP BY price.product_id, price.plan_id
+    ),
+    outlier_state AS (
+      SELECT
+        price.product_id,
+        COUNT(*) FILTER (
+          WHERE price.price_usd < 1
+            OR (
+              stats.region_count >= 8
+              AND (
+                price.price_usd < stats.median_usd * 0.2
+                OR price.price_usd > stats.median_usd * 3.5
+              )
+            )
+        )::int AS published_outlier_count
+      FROM region_prices price
+      LEFT JOIN published_plan_stats stats
+        ON stats.product_id = price.product_id
+       AND stats.plan_id = price.plan_id
+      WHERE price.status::text = 'published'
+        AND price.billing_platform::text = 'ios'
+        AND price.price_usd IS NOT NULL
+      GROUP BY price.product_id
+    ),
+    duplicate_plan_state AS (
+      SELECT duplicate.product_id, COUNT(*)::int AS duplicate_plan_group_count
+      FROM (
+        SELECT
+          plan.product_id,
+          lower(trim(plan.name)) AS normalized_name
+        FROM plans plan
+        WHERE plan.status::text = 'published'
+        GROUP BY plan.product_id, lower(trim(plan.name))
+        HAVING COUNT(*) > 1
+      ) duplicate
+      GROUP BY duplicate.product_id
+    ),
+    tax_state AS (
+      SELECT
+        price.product_id,
+        COUNT(DISTINCT price.country_id) FILTER (WHERE tax.id IS NULL)::int AS missing_tax_profile_count
+      FROM region_prices price
+      LEFT JOIN country_tax_profiles tax
+        ON tax.country_id = price.country_id
+       AND tax.status = 'active'
+      WHERE price.status::text = 'published'
+        AND price.billing_platform::text = 'ios'
       GROUP BY price.product_id
     ),
     observation_state AS (
@@ -569,6 +716,13 @@ async function getProductQualityRows() {
             AND observation.billing_platform::text = 'ios'
             AND observation.updated_at > NOW() - INTERVAL '30 days'
         )::int AS ignored_observation_count,
+        COUNT(*) FILTER (
+          WHERE observation.status::text = 'ignored'
+            AND observation.billing_platform::text = 'ios'
+            AND observation.updated_at > NOW() - INTERVAL '30 days'
+            AND COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '')
+              = 'automated_anomaly_rechecks_exhausted'
+        )::int AS auto_closed_observation_count,
         string_agg(
           DISTINCT NULLIF(COALESCE(
             observation.raw_payload ->> 'auto_review_reason_code',
@@ -656,6 +810,18 @@ async function getProductQualityRows() {
           WHERE job.schedule = 'coverage_refresh'
             AND job.status <> 'archived'
         )::int AS coverage_refresh_missing_pair_count,
+        MAX(job.status) FILTER (
+          WHERE job.schedule = 'anomaly_watch'
+            AND job.status <> 'archived'
+        ) AS anomaly_refresh_status,
+        MAX(COALESCE((job.job_config ->> 'anomaly_retry_count')::int, 0)) FILTER (
+          WHERE job.schedule = 'anomaly_watch'
+            AND job.status <> 'archived'
+        )::int AS anomaly_refresh_retry_count,
+        MAX(COALESCE((job.job_config ->> 'anomaly_success_count')::int, 0)) FILTER (
+          WHERE job.schedule = 'anomaly_watch'
+            AND job.status <> 'archived'
+        )::int AS anomaly_refresh_success_count,
         MIN(job.next_run_at) FILTER (
           WHERE source.type::text = 'app_store'
             AND job.status = 'active'
@@ -672,6 +838,12 @@ async function getProductQualityRows() {
             AND job.status = 'active'
             AND job.schedule = 'coverage_refresh'
         ) AS coverage_refresh_next_run_at
+        ,
+        MIN(job.next_run_at) FILTER (
+          WHERE source.type::text = 'app_store'
+            AND job.status = 'active'
+            AND job.schedule = 'anomaly_watch'
+        ) AS anomaly_refresh_next_run_at
       FROM collector_jobs job
       LEFT JOIN price_sources source ON source.id = job.source_id
       WHERE job.product_id IS NOT NULL
@@ -736,9 +908,13 @@ async function getProductQualityRows() {
       COALESCE(job_state.coverage_refresh_retry_count, 0)::int AS coverage_refresh_retry_count,
       COALESCE(job_state.coverage_refresh_success_count, 0)::int AS coverage_refresh_success_count,
       COALESCE(job_state.coverage_refresh_missing_pair_count, 0)::int AS coverage_refresh_missing_pair_count,
+      job_state.anomaly_refresh_status,
+      COALESCE(job_state.anomaly_refresh_retry_count, 0)::int AS anomaly_refresh_retry_count,
+      COALESCE(job_state.anomaly_refresh_success_count, 0)::int AS anomaly_refresh_success_count,
       job_state.next_scheduled_run_at,
       job_state.stale_refresh_next_run_at,
       job_state.coverage_refresh_next_run_at,
+      job_state.anomaly_refresh_next_run_at,
       COALESCE(running_state.running_run_count, 0)::int AS running_run_count,
       latest_run.latest_run_status,
       latest_run.latest_run_started_at,
@@ -750,6 +926,9 @@ async function getProductQualityRows() {
       COALESCE(price_state.published_country_count, 0)::int AS published_country_count,
       COALESCE(price_state.app_store_price_count, 0)::int AS app_store_price_count,
       COALESCE(price_state.stale_published_count, 0)::int AS stale_published_count,
+      COALESCE(outlier_state.published_outlier_count, 0)::int AS published_outlier_count,
+      COALESCE(duplicate_plan_state.duplicate_plan_group_count, 0)::int AS duplicate_plan_group_count,
+      COALESCE(tax_state.missing_tax_profile_count, 0)::int AS missing_tax_profile_count,
       price_state.latest_price_checked_at,
       COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
       COALESCE(observation_state.pending_app_store_count, 0)::int AS pending_app_store_count,
@@ -757,6 +936,7 @@ async function getProductQualityRows() {
       COALESCE(observation_state.pending_stability_count, 0)::int AS pending_stability_count,
       COALESCE(observation_state.hard_anomaly_count, 0)::int AS hard_anomaly_count,
       COALESCE(observation_state.ignored_observation_count, 0)::int AS ignored_observation_count,
+      COALESCE(observation_state.auto_closed_observation_count, 0)::int AS auto_closed_observation_count,
       observation_state.ignored_reason_codes,
       observation_state.latest_observed_at,
       observation_state.review_reason_codes
@@ -764,6 +944,9 @@ async function getProductQualityRows() {
     LEFT JOIN plan_state ON plan_state.product_id = product.id
     LEFT JOIN coverage_state ON coverage_state.product_id = product.id
     LEFT JOIN price_state ON price_state.product_id = product.id
+    LEFT JOIN outlier_state ON outlier_state.product_id = product.id
+    LEFT JOIN duplicate_plan_state ON duplicate_plan_state.product_id = product.id
+    LEFT JOIN tax_state ON tax_state.product_id = product.id
     LEFT JOIN observation_state ON observation_state.product_id = product.id
     LEFT JOIN job_state ON job_state.product_id = product.id
     LEFT JOIN running_state ON running_state.product_id = product.id
@@ -787,10 +970,34 @@ async function getProductQualityRows() {
   `;
 }
 
+async function getLatestRepairCycle() {
+  const rows = await prisma.$queryRaw<RepairCycleRow[]>`
+    SELECT
+      cycle.id::text,
+      cycle.trigger_kind,
+      cycle.anomaly_jobs_queued,
+      cycle.stale_jobs_queued,
+      cycle.coverage_jobs_queued,
+      cycle.anomaly_observations_closed,
+      cycle.published_outliers_quarantined,
+      cycle.stale_prices_quarantined,
+      cycle.created_at
+    FROM data_quality_repair_cycles cycle
+    ORDER BY cycle.created_at DESC
+    LIMIT 1
+  `;
+
+  return rows[0] || null;
+}
+
 export default async function AdminDataQualityPage() {
   await reconcileStaleCollectorRuns();
 
-  const rows = (await getProductQualityRows()).sort((a, b) => {
+  const [qualityRows, latestRepairCycle] = await Promise.all([
+    getProductQualityRows(),
+    getLatestRepairCycle(),
+  ]);
+  const rows = qualityRows.sort((a, b) => {
     const healthA = getProductHealth(a);
     const healthB = getProductHealth(b);
     const priorityDiff = healthPriority(healthA.level) - healthPriority(healthB.level);
@@ -806,19 +1013,24 @@ export default async function AdminDataQualityPage() {
   const infoCount = countByHealth(rows, "info");
   const warningCount = countByHealth(rows, "warning");
   const dangerCount = countByHealth(rows, "danger");
-  const pendingTotal = rows.reduce(
-    (sum, row) => sum + row.pending_observation_count,
-    0
-  );
-  const staleTotal = rows.reduce((sum, row) => sum + row.stale_published_count, 0);
-  const stabilityTotal = rows.reduce(
-    (sum, row) => sum + row.pending_stability_count,
+  const autoClosedTotal = rows.reduce(
+    (sum, row) => sum + row.auto_closed_observation_count,
     0,
   );
-  const ignoredTotal = rows.reduce(
-    (sum, row) => sum + row.ignored_observation_count,
-    0,
-  );
+  const autoRepairProductCount = rows.filter(
+    (row) =>
+      row.anomaly_refresh_status === "active" ||
+      row.stale_refresh_status === "active" ||
+      row.coverage_refresh_status === "active" ||
+      (row.hard_anomaly_count > 0 && row.anomaly_refresh_success_count < 3) ||
+      (row.stale_published_count > 0 && row.stale_refresh_success_count < 3) ||
+      (row.missing_pair_count > 0 && row.coverage_refresh_success_count < 3) ||
+      row.pending_stability_count > 0,
+  ).length;
+  const needsConfigurationCount = rows.filter(
+    (row) =>
+      row.active_app_store_job_count <= 0 || row.latest_run_status === "failed",
+  ).length;
   const coverageGapProductCount = rows.filter(
     (row) => row.missing_pair_count > 0,
   ).length;
@@ -843,10 +1055,10 @@ export default async function AdminDataQualityPage() {
       <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <AdminStatCard label="产品总数" value={rows.length} helper="服务库内未归档产品" />
         <AdminStatCard label="健康" value={goodCount} helper="无需手工处理" />
-        <AdminStatCard label="采集中/排队" value={infoCount} helper="等待后台脚本写回" />
-        <AdminStatCard label="覆盖有缺口" value={coverageGapProductCount} helper={`${DEFAULT_APP_STORE_COUNTRY_CODES.length} 个默认地区`} />
+        <AdminStatCard label="自动处理中" value={autoRepairProductCount} helper={`${infoCount} 个产品处于系统处理状态`} />
+        <AdminStatCard label="自动收口" value={autoClosedTotal} helper="近 30 天隔离的无效证据" />
         <AdminStatCard label="需关注" value={warningCount} helper="建议复采或看原因" />
-        <AdminStatCard label="需处理" value={dangerCount} helper="会影响上线或采集" />
+        <AdminStatCard label="需配置" value={needsConfigurationCount} helper={`${dangerCount} 个产品影响上线或采集`} />
       </div>
 
       <AdminCard className="mb-6 border-blue-200 bg-blue-50/70">
@@ -857,26 +1069,34 @@ export default async function AdminDataQualityPage() {
             </span>
             <div>
               <h2 className="text-base font-bold text-blue-950">
-                后台判断规则
+              产品更新判断
               </h2>
               <p className="mt-1 max-w-4xl text-sm leading-6 text-blue-800">
-                绿色产品不需要反复采集。覆盖率按采集脚本实际使用的 {DEFAULT_APP_STORE_COUNTRY_CODES.length} 个默认地区计算；已确认不可售的地区不会算作缺口。红色代表会影响上线的问题，橙色和蓝色由周度全量采集、稳定性审核或陈旧价格复采自动处理。
+                系统按所有已上线 AI 与流媒体产品统一检查覆盖、价格时效、极端值、重复套餐和税务资料。每个产品会说明是否需要更新、更新原因以及任务是否已经进入队列。
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-blue-800 2xl:min-w-[520px] 2xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-blue-800 2xl:min-w-[620px] 2xl:grid-cols-4">
             <div className="rounded-xl bg-white/70 px-3 py-2">
-              待审核总量：{pendingTotal}
+              最近闭环：{latestRepairCycle ? formatRelative(latestRepairCycle.created_at) : "等待首次运行"}
             </div>
             <div className="rounded-xl bg-white/70 px-3 py-2">
-              等稳定样本：{stabilityTotal}
+              本轮排队：{latestRepairCycle
+                ? latestRepairCycle.anomaly_jobs_queued +
+                  latestRepairCycle.stale_jobs_queued +
+                  latestRepairCycle.coverage_jobs_queued
+                : 0}
             </div>
             <div className="rounded-xl bg-white/70 px-3 py-2">
-              需复采价格：{staleTotal}
+              本轮隔离：{latestRepairCycle
+                ? latestRepairCycle.anomaly_observations_closed +
+                  latestRepairCycle.published_outliers_quarantined +
+                  latestRepairCycle.stale_prices_quarantined
+                : 0}
             </div>
             <div className="rounded-xl bg-white/70 px-3 py-2">
-              30 天自动忽略：{ignoredTotal}
+              覆盖缺口：{coverageGapProductCount} 个产品
             </div>
           </div>
         </div>
@@ -904,7 +1124,7 @@ export default async function AdminDataQualityPage() {
             <div>自动审核</div>
             <div>采集状态</div>
             <div>下次采集</div>
-            <div>结论</div>
+            <div>更新原因</div>
             <div className="text-right">操作</div>
           </div>
 
@@ -931,6 +1151,9 @@ export default async function AdminDataQualityPage() {
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
                       {row.slug} · {categoryLabel(row.category)} · {row.plan_count} 个套餐
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      极端价 {row.published_outlier_count} · 重复套餐 {row.duplicate_plan_group_count} · 税务缺口 {row.missing_tax_profile_count}
                     </p>
                   </div>
 
@@ -985,6 +1208,9 @@ export default async function AdminDataQualityPage() {
                       {row.coverage_refresh_retry_count > 0
                         ? ` · 补采 ${Math.min(row.coverage_refresh_success_count, 3)}/3`
                         : ""}
+                      {row.anomaly_refresh_retry_count > 0
+                        ? ` · 异常复核 ${Math.min(row.anomaly_refresh_success_count, 3)}/3`
+                        : ""}
                     </p>
                   </div>
 
@@ -1005,7 +1231,7 @@ export default async function AdminDataQualityPage() {
                     <p className="text-[11px] font-bold text-slate-400 lg:hidden">结论</p>
                     <p className="font-semibold text-slate-800">{health.reason}</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      最近运行：{row.latest_run_status || "暂无"} · {formatDuration(row.latest_run_age_seconds)}
+                      建议：{health.nextAction} · 最近运行 {row.latest_run_status || "暂无"} · {formatDuration(row.latest_run_age_seconds)}
                     </p>
                   </div>
 

@@ -1,5 +1,5 @@
 ﻿import SegmentedControl from "./ui/SegmentedControl";
-import type { ProductPlan } from "../data/ai-pricing";
+import type { ProductPlan } from "../lib/public-pricing-model";
 import type { SiteLocale } from "../lib/site-locale";
 
 type PlanTabsProps = {
