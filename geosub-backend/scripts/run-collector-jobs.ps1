@@ -717,6 +717,15 @@ function Start-JobRun {
   }
 
   if (![string]::IsNullOrWhiteSpace($ExistingRunId)) {
+    Invoke-Psql @"
+UPDATE collector_job_runs
+SET raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
+  'state', 'started',
+  'runner_started_at', NOW()
+)
+WHERE id = $(Quote-SqlString $ExistingRunId)::uuid
+  AND status = 'running';
+"@
     return $ExistingRunId
   }
 

@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(resolve(currentDir, "collection-runner.ts"), "utf8");
+const collectorRunnerSource = readFileSync(
+  resolve(currentDir, "../../../../geosub-backend/scripts/run-collector-jobs.ps1"),
+  "utf8",
+);
 
 test("manual collection selects one canonical App Store job per product", () => {
   assert.match(source, /ROW_NUMBER\(\) OVER \(\s*PARTITION BY job\.product_id/);
@@ -25,4 +29,11 @@ test("product collection revalidates localized AI and streaming routes", () => {
   ]) {
     assert.ok(source.includes(`revalidatePath(\`${route}\`)`));
   }
+});
+
+test("collector runner records startup when it adopts an admin-created run", () => {
+  assert.match(
+    collectorRunnerSource,
+    /if \(!\[string\]::IsNullOrWhiteSpace\(\$ExistingRunId\)\) \{[\s\S]*?UPDATE collector_job_runs[\s\S]*?'state', 'started'[\s\S]*?'runner_started_at', NOW\(\)[\s\S]*?return \$ExistingRunId/,
+  );
 });
