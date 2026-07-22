@@ -355,18 +355,18 @@ if (( failures == 0 )); then
   IFS='|' read -r products_count published_prices pending_observations <<< "$data_summary"
   pass "data summary products=$products_count published_prices=$published_prices pending_observations=$pending_observations"
 
-  app_store_product_gaps="$(psql_scalar "WITH tracked AS (SELECT DISTINCT products.id, products.slug FROM products JOIN collector_jobs ON collector_jobs.product_id = products.id WHERE collector_jobs.status = 'active' AND collector_jobs.job_config ->> 'collector_kind' = 'app_store'), coverage AS (SELECT tracked.slug, COUNT(region_prices.id) FILTER (WHERE region_prices.status = 'published' AND region_prices.billing_platform = 'ios' AND region_prices.price_usd IS NOT NULL) AS published_prices FROM tracked LEFT JOIN region_prices ON region_prices.product_id = tracked.id GROUP BY tracked.slug) SELECT COUNT(*) FROM coverage WHERE published_prices = 0;")"
+  app_store_product_gaps="$(psql_scalar "WITH tracked AS (SELECT DISTINCT products.id, products.slug FROM products JOIN collector_jobs ON collector_jobs.product_id = products.id WHERE products.status = 'published' AND collector_jobs.status = 'active' AND collector_jobs.job_config ->> 'collector_kind' = 'app_store'), coverage AS (SELECT tracked.slug, COUNT(region_prices.id) FILTER (WHERE region_prices.status = 'published' AND region_prices.billing_platform = 'ios' AND region_prices.price_usd IS NOT NULL) AS published_prices FROM tracked LEFT JOIN region_prices ON region_prices.product_id = tracked.id GROUP BY tracked.slug) SELECT COUNT(*) FROM coverage WHERE published_prices = 0;")"
   if [[ "$app_store_product_gaps" == "0" ]]; then
-    pass "all active App Store products have published coverage"
+    pass "all published App Store products have published coverage"
   else
-    fail "active App Store products missing published prices: $app_store_product_gaps"
+    fail "published App Store products missing published prices: $app_store_product_gaps"
   fi
 
-  app_store_products_without_recent_success="$(psql_scalar "WITH tracked AS (SELECT DISTINCT products.id FROM products JOIN collector_jobs ON collector_jobs.product_id = products.id WHERE collector_jobs.status = 'active' AND collector_jobs.job_config ->> 'collector_kind' = 'app_store') SELECT COUNT(*) FROM tracked WHERE NOT EXISTS (SELECT 1 FROM collector_job_runs runs WHERE runs.product_id = tracked.id AND runs.collector_kind = 'app_store' AND runs.status = 'succeeded' AND runs.started_at >= NOW() - ('${MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS} days')::interval);")"
+  app_store_products_without_recent_success="$(psql_scalar "WITH tracked AS (SELECT DISTINCT products.id FROM products JOIN collector_jobs ON collector_jobs.product_id = products.id WHERE products.status = 'published' AND collector_jobs.status = 'active' AND collector_jobs.job_config ->> 'collector_kind' = 'app_store') SELECT COUNT(*) FROM tracked WHERE NOT EXISTS (SELECT 1 FROM collector_job_runs runs WHERE runs.product_id = tracked.id AND runs.collector_kind = 'app_store' AND runs.status = 'succeeded' AND runs.started_at >= NOW() - ('${MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS} days')::interval);")"
   if [[ "$app_store_products_without_recent_success" == "0" ]]; then
-    pass "all active App Store products collected within ${MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS} days"
+    pass "all published App Store products collected within ${MAX_APP_STORE_PRODUCT_RUN_AGE_DAYS} days"
   else
-    fail "active App Store products without a recent successful collection: $app_store_products_without_recent_success"
+    fail "published App Store products without a recent successful collection: $app_store_products_without_recent_success"
   fi
 
   low_published_prices="$(psql_scalar "SELECT COUNT(*) FROM region_prices WHERE status = 'published' AND billing_platform = 'ios' AND price_usd IS NOT NULL AND price_usd < ${MIN_PUBLISHED_SUBSCRIPTION_USD};")"

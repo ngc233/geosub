@@ -106,8 +106,9 @@ test("price quality gates reject globally unrefreshed exact-local prices", () =>
   }
 
   assert.doesNotMatch(postDeploy, /p\.slug IN \('chatgpt'/);
-  assert.match(postDeploy, /all active App Store products have published coverage/);
-  assert.match(postDeploy, /all active App Store products collected within/);
+  assert.match(postDeploy, /products\.status = 'published'/);
+  assert.match(postDeploy, /all published App Store products have published coverage/);
+  assert.match(postDeploy, /all published App Store products collected within/);
 });
 
 test("price quality gate requires the database automation functions", () => {

@@ -29,5 +29,6 @@ test("published prices align public product and plan lifecycle state", () => {
   assert.doesNotMatch(migration, /status IN \('draft', 'review', 'archived'\)/);
   assert.match(deploy, /sql\/066_public_product_lifecycle\.sql/);
   assert.match(postDeploy, /sql\/066_public_product_lifecycle\.sql/);
+  assert.match(postDeploy, /products\.status = 'published'/);
+  assert.match(postDeploy, /all published App Store products have published coverage/);
 });
-
