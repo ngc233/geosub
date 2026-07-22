@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "数据来源与价格口径",
   description:
-    "GeoSub 当前正式榜单优先使用 App Store 各地区公开订阅价格，并通过汇率、税费规则、异常审核和人工复核记录控制数据质量。",
+    "GeoSub 使用经过核验的 App Store 地区订阅价格，并同时标注汇率日期、税费说明和数据可信状态。",
 };
 
 const sourceLayers = [
@@ -26,12 +26,12 @@ const sourceLayers = [
     ],
   },
   {
-    title: "诊断线索",
-    badge: "不混入排行",
+    title: "辅助参考",
+    badge: "单独标注",
     items: [
-      "Web 官网价格、Google Play、公开价格页和人工线索",
-      "仅用于后台排错、交叉验证和未来补充",
-      "稳定前不会默认进入正式价格排名",
+      "Web 官网价格、Google Play 和其他公开价格",
+      "用于核对 App Store 套餐名称、周期和价格差异",
+      "不同来源不会混入同一价格排名",
     ],
   },
 ];
@@ -90,11 +90,11 @@ export default function DataSourcesPage() {
           <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
             <div className="space-y-4 text-sm leading-8 text-zinc-600">
               <p>
-                正式榜单目前不把 Web 官网价、Google Play 或其他公开页面混入排序。它们会先进入后台诊断或未来数据源计划，只有当解析、税费和审核规则足够稳定时，才会在产品页中单独标注。
+                地区排名只比较页面明确标注的同一价格来源。Web 官网价、Google Play 和其他公开价格不会与 App Store 价格混合排序；如有展示，会作为独立来源清楚标注。
               </p>
 
               <p>
-                汇率用于把各地区本地价格折算为美元和人民币视角，方便横向比较。后台每 12 小时同步一次汇率；如果人民币汇率缺失或过期，前台会暂停人民币估算并提示最近汇率日期，不再用固定兜底数值展示。
+                汇率用于把各地区本地价格折算为美元和人民币视角，方便横向比较。汇率通常每 12 小时更新一次；如果人民币汇率缺失或过期，页面会暂停人民币估算并显示最近的汇率日期。
               </p>
 
               <p>

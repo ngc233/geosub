@@ -25,11 +25,11 @@ export default function GuideCategoryPage() {
 
         <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
           <h2 className="text-xl font-black text-zinc-950">
-            内容建设中
+            暂无已发布内容
           </h2>
 
           <p className="mt-3 text-sm leading-7 text-zinc-500">
-            当前页面用于承接导航入口，避免已发布菜单指向 404。后续可以从后台文章系统读取该分类下的内容列表。
+            该分类目前还没有已发布文章。购买礼品卡前，请先核对发行地区、适用账号、币种和退款规则。
           </p>
         </div>
       </section>

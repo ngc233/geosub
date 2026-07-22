@@ -31,7 +31,7 @@ export default function EnglishTrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            GeoSub V1 prioritizes reviewed App Store subscription prices, exchange-rate timestamps, tax notes, anomaly review and pricing risk explanations. New sources such as official web prices or Google Play will be labelled separately before they affect rankings.
+            GeoSub presents reviewed App Store regional prices alongside exchange-rate dates, tax notes, price confidence and subscription risk. Data from different sources is labelled and compared separately rather than mixed into one ranking.
           </p>
         </div>
       </section>

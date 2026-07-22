@@ -15,6 +15,7 @@ import {
   formatUsd,
   getPlanStats,
   getProductPlan,
+  type PlanStats,
   type ProductPlan,
 } from "../../../../lib/public-pricing-model";
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
@@ -302,26 +303,34 @@ function PurchasingPowerSection({
 function getPricingFaqs(
   productName: string,
   planName: string,
+  stats: PlanStats | null,
 ): PricingFaq[] {
   const planDisplayName = getPlanDisplayName(productName, planName);
   const currentYear = new Date().getFullYear();
+  const cheapestAnswer = stats
+    ? `按本页最近核验的 App Store 价格，${stats.minRegion.country}当前最低，美元折算约 ${formatUsd(stats.minRegion.priceUsd)}/月。价格可能随平台定价、税费和汇率变化，请同时查看页面标注日期，并以官方结算价为准。`
+    : "本页会在取得足够的已核验地区价格后显示最低价地区。价格可能随平台定价、税费和汇率变化，请以页面标注日期和官方结算价为准。";
 
   return [
     {
-      q: `截至 ${currentYear} 年，哪个国家的 ${planDisplayName} 订阅最便宜？`,
-      a: "根据当前已发布的 App Store 地区价格，最低价会显示在本页排行榜和地图中。具体结果会随平台定价、税费和汇率变化而变化。",
+      q: `截至 ${currentYear} 年，${planDisplayName} 哪个地区价格最低？`,
+      a: cheapestAnswer,
     },
     {
-      q: `${productName} 在不同 App Store 地区的定价为什么不同？`,
-      a: "不同地区会受到本地定价策略、税费、汇率、平台政策和购买力差异影响，因此同一个套餐在不同国家可能价格不同。",
+      q: `${planDisplayName} 的显示价格是否含税？`,
+      a: "是否含税取决于地区和平台结算规则。本页会在价格明细中标注已知的 VAT、GST、销售税或待核验状态；银行换汇费和结算时新增的税费可能不包含在展示价格中，最终应以官方结算页为准。",
     },
     {
-      q: "本页追踪的是 App Store 价格、网页价格还是两者？",
-      a: "V1 正式榜单优先追踪 App Store 各地区公开订阅价格。Web 官网和 Google Play 暂作为后台采集诊断与未来补充来源，不默认混入正式排名。",
+      q: `我可以直接购买最便宜地区的 ${planDisplayName} 吗？`,
+      a: "不一定。能否订阅通常取决于 Apple ID 地区、付款方式、账单信息、当地可用性和平台风控。GeoSub 用于比较公开价格，不建议通过虚假资料或违反平台规则的方式跨区订阅。",
     },
     {
-      q: `本站地图能帮助我找到更便宜的 ${productName} 地区订阅吗？`,
-      a: "地图可以帮助你快速理解 App Store 各地区价格差异，但最终是否可购买仍取决于账号地区、支付方式、税费和平台规则。",
+      q: `${productName} 在不同地区为什么价格不同？`,
+      a: "地区价格会受到本地定价策略、税费、汇率、市场定位和购买力差异影响。美元折算价用于横向比较，但不代表平台仅按实时汇率换算各地价格。",
+    },
+    {
+      q: `${planDisplayName} 地区价格多久更新一次？`,
+      a: "GeoSub 会定期重新核验已发布价格，并在页面分别标注价格采集日期、汇率日期、套餐复核日期和页面更新时间。若平台刚刚调价，页面可能需要经过一致性检查后才会更新。",
     },
   ];
 }
@@ -329,11 +338,13 @@ function getPricingFaqs(
 function FaqSection({
   productName,
   planName,
+  stats,
 }: {
   productName: string;
   planName: string;
+  stats: PlanStats | null;
 }) {
-  const faqs = getPricingFaqs(productName, planName);
+  const faqs = getPricingFaqs(productName, planName, stats);
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -386,8 +397,8 @@ function NoPublishedPricesSection({
         </h2>
 
         <p className="mt-3 text-sm leading-7 text-zinc-500 dark:text-zinc-400">
-          该套餐已经进入采集流程，但还没有写入正式价格库。后台完成 App Store
-          稳定性审核后，这里会自动显示地区价格、地图和购买力对比。
+          该套餐暂时没有足够的已核验地区价格。价格通过来源、币种、周期和一致性检查后，
+          本页才会展示地区排名、地图和购买力对比。
         </p>
       </div>
 
@@ -526,7 +537,7 @@ export default async function ProductPricingPage({
     description: pageDescription,
     product,
     plan: activePlan,
-    faqs: getPricingFaqs(product.name, activePlan.name),
+    faqs: getPricingFaqs(product.name, activePlan.name, stats),
   });
 
   return (
@@ -633,7 +644,7 @@ export default async function ProductPricingPage({
           />
         )}
 
-        <FaqSection productName={product.name} planName={activePlan.name} />
+        <FaqSection productName={product.name} planName={activePlan.name} stats={stats} />
       </div>
     </main>
   );

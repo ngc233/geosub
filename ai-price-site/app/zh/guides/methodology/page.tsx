@@ -34,7 +34,7 @@ export default function MethodologyPage() {
             },
             {
               title: "保留更新时间",
-              text: "价格数据后续会保留采集时间和更新时间，避免旧价格长期误导用户。",
+              text: "价格数据会标注采集时间和更新时间，帮助用户识别数据新鲜度。",
             },
             {
               title: "官方价格为准",

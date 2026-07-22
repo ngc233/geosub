@@ -31,7 +31,7 @@ export default function TrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            GeoSub V1 优先把 App Store 正式价格、汇率更新时间、税务说明、异常审核和价格风险讲清楚。后续新增官网价、Google Play 或其他来源时，会在数据来源页和产品页单独标注口径，不默认混入现有榜单。
+            GeoSub 展示经过核验的 App Store 地区价格，并同时说明汇率日期、税费信息、价格可信度和订阅风险。不同来源的数据会分别标注和比较，不会混入同一排名。
           </p>
         </div>
       </section>

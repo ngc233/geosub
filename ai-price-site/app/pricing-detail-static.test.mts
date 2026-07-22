@@ -185,6 +185,23 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   assert.doesNotMatch(shareModal, /\$\{product\.name\} \$\{plan\.name\}/);
 });
 
+test("pricing FAQs answer customer questions instead of explaining internal source policy", () => {
+  const zhPage = readAppFile("zh", "ai-pricing", "[slug]", "page.tsx");
+  const enPage = readAppFile("en", "ai-pricing", "[slug]", "page.tsx");
+
+  assert.match(zhPage, /价格是否含税/);
+  assert.match(zhPage, /可以直接购买最便宜地区/);
+  assert.match(zhPage, /地区价格多久更新一次/);
+  assert.match(zhPage, /stats\.minRegion\.country/);
+  assert.doesNotMatch(zhPage, /本页追踪的是 App Store 价格/);
+
+  assert.match(enPage, /Does the displayed.*price include tax/);
+  assert.match(enPage, /Can I subscribe.*through the cheapest region/);
+  assert.match(enPage, /How often are.*regional prices updated/);
+  assert.match(enPage, /stats\.minRegion\.country/);
+  assert.doesNotMatch(enPage, /Does this page rank App Store/);
+});
+
 test("pricing detail freshness follows the active plan and trusted matching observations", () => {
   const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
   const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");

@@ -26,12 +26,12 @@ const sourceLayers = [
     ],
   },
   {
-    title: "Diagnostic signals",
-    badge: "Not ranked",
+    title: "Reference sources",
+    badge: "Labelled separately",
     items: [
-      "Official web pricing, Google Play, public pages and manual leads",
-      "Used for internal debugging, cross-checks and future coverage",
-      "Not mixed into the official ranking until parsing and review rules are stable",
+      "Official web pricing, Google Play and other public prices",
+      "Used to cross-check plan names, billing cycles and price differences",
+      "Prices from different sources are not mixed into one ranking",
     ],
   },
 ];
@@ -90,11 +90,11 @@ export default function EnglishDataSourcesPage() {
           <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
             <div className="space-y-4 text-sm leading-8 text-zinc-600">
               <p>
-                Official web prices, Google Play prices and other public pages are not mixed into ranking tables by default. They first enter internal diagnostics or future source planning. Once parsing, tax handling and review rules are reliable enough, GeoSub can label them separately on product pages.
+                Regional rankings compare prices from the same clearly labelled source. Official web prices, Google Play and other public prices are not mixed with App Store rankings; when shown, they are presented as separate sources.
               </p>
 
               <p>
-                Exchange rates are used to normalize regional prices into USD and optional CNY views for comparison. The backend refreshes rates every 12 hours. If a fresh CNY rate is missing or stale, the public page pauses CNY estimates and shows the latest rate date instead of displaying a fixed fallback number.
+                Exchange rates normalize regional prices into USD and optional CNY views for comparison. Rates are normally refreshed every 12 hours. If a fresh CNY rate is unavailable, the page pauses CNY estimates and shows the latest rate date.
               </p>
 
               <p>

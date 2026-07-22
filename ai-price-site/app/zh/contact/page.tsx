@@ -41,7 +41,7 @@ export default function ContactPage() {
         </h2>
 
         <p className="mt-4 text-zinc-500 dark:text-zinc-400 leading-7">
-          当前可以先使用以下邮箱联系我们。后续我们会增加表单提交功能。
+          请通过以下邮箱联系我们，并在邮件中注明相关产品、地区和问题类型。
         </p>
 
         <div className="mt-5 rounded-2xl bg-zinc-50 p-5 font-mono text-sm font-bold text-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-300">

@@ -12,8 +12,10 @@ import MobileProductSwitcher from "../../../../components/MobileProductSwitcher"
 import PricingPlatformView from "../../../../components/PricingPlatformView";
 import AffordabilityComparison from "../../../../components/AffordabilityComparison";
 import {
+  formatUsd,
   getPlanStats,
   getProductPlan,
+  type PlanStats,
 } from "../../../../lib/public-pricing-model";
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../../../../lib/affordability";
@@ -94,31 +96,51 @@ function getDescription(productName: string) {
   return `Compare ${productName} public App Store subscription prices by plan and region, with USD, CNY and purchasing-power views.`;
 }
 
-function getPricingFaqs(productName: string): PricingFaq[] {
+function getPricingFaqs(
+  productName: string,
+  planName: string,
+  stats: PlanStats | null,
+): PricingFaq[] {
+  const planDisplayName = getPlanDisplayName(productName, planName);
   const currentYear = new Date().getFullYear();
+  const cheapestAnswer = stats
+    ? `Based on the latest reviewed App Store prices on this page, ${stats.minRegion.country} is currently the lowest at about ${formatUsd(stats.minRegion.priceUsd)} per month. Prices can change with platform pricing, tax and exchange rates, so check the displayed dates and the official checkout price.`
+    : "The lowest-price region will appear once enough reviewed regional prices are available. Prices can change with platform pricing, tax and exchange rates, so check the displayed dates and the official checkout price.";
 
   return [
     {
-      q: `Which country has the cheapest ${productName} subscription in ${currentYear}?`,
-      a: "The current lowest region is shown in the ranking, map and price conclusion on this page. Results may change as App Store pricing, taxes and exchange rates change.",
+      q: `Which region has the lowest ${planDisplayName} price in ${currentYear}?`,
+      a: cheapestAnswer,
     },
     {
-      q: `Why does ${productName} pricing differ by App Store region?`,
-      a: "Regional prices can differ because of local pricing strategy, tax treatment, exchange rates, platform policy and purchasing-power differences.",
+      q: `Does the displayed ${planDisplayName} price include tax?`,
+      a: "Tax treatment depends on the region and platform checkout rules. The price table notes known VAT, GST, sales tax or review status. Bank conversion fees and taxes added at checkout may not be included, so the official checkout page remains authoritative.",
     },
     {
-      q: "Does this page rank App Store, web pricing or Google Play?",
-      a: "GeoSub V1 official rankings use reviewed App Store regional subscription prices. Web and Google Play signals are kept for diagnostics unless they are labeled separately.",
+      q: `Can I subscribe to ${planDisplayName} through the cheapest region?`,
+      a: "Not always. Availability can depend on the Apple ID region, payment method, billing information, local availability and platform risk controls. GeoSub compares public prices and does not recommend using false information or bypassing platform rules.",
     },
     {
-      q: "Can I use this map to choose a cheaper subscription region?",
-      a: "The map helps explain public price differences. Actual subscription availability can still depend on account region, payment method, billing information, taxes and platform risk controls.",
+      q: `Why does ${productName} cost more in some regions?`,
+      a: "Regional prices can differ because of local pricing strategy, tax treatment, exchange rates, market positioning and purchasing power. USD equivalents support comparison, but platforms do not necessarily convert every regional price at the live exchange rate.",
+    },
+    {
+      q: `How often are ${planDisplayName} regional prices updated?`,
+      a: "GeoSub regularly rechecks published prices and separately displays the price collection date, exchange-rate date, plan review date and page update date. A new platform price may remain pending until consistency checks are complete.",
     },
   ];
 }
 
-function FaqSection({ productName }: { productName: string }) {
-  const faqs = getPricingFaqs(productName);
+function FaqSection({
+  productName,
+  planName,
+  stats,
+}: {
+  productName: string;
+  planName: string;
+  stats: PlanStats | null;
+}) {
+  const faqs = getPricingFaqs(productName, planName, stats);
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -171,7 +193,7 @@ function NoPublishedPricesSection({
         </h2>
 
         <p className="mt-3 text-sm leading-7 text-zinc-500 dark:text-zinc-400">
-          This plan is already in the collection flow, but it has not entered the official price database yet. After App Store stability checks pass, regional prices, maps and purchasing-power comparison will appear here automatically.
+          This plan does not yet have enough reviewed regional prices. Regional rankings, maps and affordability comparisons are shown only after source, currency, billing-cycle and consistency checks pass.
         </p>
       </div>
     </section>
@@ -267,7 +289,7 @@ export default async function EnglishProductPricingPage({
     description: pageDescription,
     product,
     plan: activePlan,
-    faqs: getPricingFaqs(product.name),
+    faqs: getPricingFaqs(product.name, activePlan.name, stats),
   });
 
   return (
@@ -376,7 +398,7 @@ export default async function EnglishProductPricingPage({
           />
         )}
 
-        <FaqSection productName={product.name} />
+        <FaqSection productName={product.name} planName={activePlan.name} stats={stats} />
       </div>
     </main>
   );

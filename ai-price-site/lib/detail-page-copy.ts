@@ -312,7 +312,7 @@ const detailMapCopy: Record<PreparedDetailLocale, DetailMapCopy> = {
     none: "暂无",
     regionsSuffix: "个地区",
     noUsBenchmarkNotice:
-      "当前套餐暂未录入美国价格，地图暂时以最低价地区作为临时基准。后续补齐 US 数据后，会自动改为美国基准。",
+      "当前套餐暂缺美国价格，地图使用已收录的最低价地区作为比较基准，并在图中明确标注。",
     zoomOutAria: "缩小地图",
     resetAria: "重置地图",
     zoomInAria: "放大地图",

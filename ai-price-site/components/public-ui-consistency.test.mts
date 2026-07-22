@@ -59,10 +59,14 @@ test("English pricing details localize purchasing power and shared controls", ()
     "utf8",
   );
 
-  assert.match(affordability, /local purchasing power/);
-  assert.match(affordability, /Price × local burden matrix/);
-  assert.match(affordability, /Highest local burden/);
+  assert.match(affordability, /local affordability/);
+  assert.match(affordability, /Local subscription burden ranking/);
+  assert.match(affordability, /Hardest to afford/);
+  assert.match(affordability, /Easiest to afford/);
+  assert.match(affordability, /US 1\.00× benchmark/);
   assert.match(affordability, /Income metric:/);
+  assert.match(affordability, /setSortMode\(mode\)/);
+  assert.doesNotMatch(affordability, /Price × local burden matrix/);
   assert.match(affordabilityRows, /copy\.showMore\(hiddenCount\)/);
 
   assert.match(pricingView, /getPublicPricingCopy\(locale\)\.pricing/);

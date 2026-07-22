@@ -24,13 +24,12 @@ export default function MethodologyPage() {
           </h2>
 
           <p className="mt-4 text-zinc-500 dark:text-zinc-400 leading-7">
-            当前 V1 正式价格榜优先使用 App Store 各地区公开订阅价格。App Store 的地区价格结构更稳定，
+            GeoSub 的地区价格比较使用 App Store 各地区公开订阅价格。App Store 的地区价格结构更稳定，
             更适合做国家和地区之间的横向比较。
           </p>
 
           <p className="mt-4 text-zinc-500 dark:text-zinc-400 leading-7">
-            Web 官网、Google Play、公开价格页和其他来源会先作为后台采集诊断与辅助线索，不直接混入正式榜单。
-            当这些来源的解析和审核规则稳定后，才会作为独立来源在产品页中明确标注。
+            Web 官网、Google Play 和其他公开价格不会与 App Store 价格混合排序。页面只有在来源经过核验并明确标注时，才会单独展示对应来源的比较结果。
           </p>
         </section>
 

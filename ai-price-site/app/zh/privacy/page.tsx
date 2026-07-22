@@ -31,7 +31,7 @@ export default function TrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            后台可以配置 Google Analytics 或 Tag Manager。若后续启用更多统计、广告或合作追踪，GeoSub 会继续在本页说明用途，并避免收集与价格比较无关的敏感身份信息。
+            GeoSub 可能使用 Google Analytics 或 Tag Manager 统计页面访问和点击，以改进内容与性能。统计用途会在本页说明，并避免收集与价格比较无关的敏感身份信息。
           </p>
         </div>
       </section>
