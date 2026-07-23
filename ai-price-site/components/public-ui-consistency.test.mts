@@ -67,14 +67,16 @@ test("English pricing details localize purchasing power and shared controls", ()
   assert.match(affordability, /Income metric:/);
   assert.match(affordability, /setSortMode\(mode\)/);
   assert.doesNotMatch(affordability, /Price × local burden matrix/);
-  assert.match(affordabilityRows, /copy\.showMore\(hiddenCount\)/);
+  assert.match(affordability, /showLabel=\{copy\.showMore\(hiddenRows\.length\)\}/);
+  assert.match(affordabilityRows, /showLabel=\{showLabel\}/);
+  assert.match(affordabilityRows, /hideLabel=\{hideLabel\}/);
 
-  assert.match(pricingView, /getPublicPricingCopy\(locale\)\.pricing/);
-  assert.match(regionTable, /getPublicPricingCopy\(locale\)\.table/);
+  assert.match(pricingView, /getPricingPlatformCopy\(locale\)/);
+  assert.match(regionTable, /getRegionPriceTableCopy\(locale\)/);
   assert.match(pricingCopy, /No \$\{source\} pricing yet/);
   assert.match(pricingCopy, /No \$\{source\} pricing is available yet/);
   assert.match(pricingCopy, /Risk note: GeoSub presents public price differences/);
-  assert.match(pricingCopy, /satisfies Record<SiteLocale, object>/);
+  assert.match(pricingCopy, /LegacyPublicPricingLocale/);
   assert.match(worldMap, /getMarkerMeta\(marker\.kind, mapCopy\)/);
 });
 
@@ -82,23 +84,23 @@ test("product navigation uses the shared locale dictionary", () => {
   const sidebar = readComponent("ProductSidebar.tsx");
   const mobileSwitcher = readComponent("MobileProductSwitcher.tsx");
   const pricingCopy = readFileSync(
-    resolve(componentsDir, "../lib/public-pricing-copy.ts"),
+    resolve(componentsDir, "../lib/product-navigation-copy.ts"),
     "utf8",
   );
 
-  assert.match(sidebar, /getPublicPricingCopy\(locale\)\.navigation/);
-  assert.match(mobileSwitcher, /getPublicPricingCopy\(locale\)\.navigation/);
+  assert.match(sidebar, /getProductNavigationCopy\(locale\)/);
+  assert.match(mobileSwitcher, /getProductNavigationCopy\(locale\)/);
   assert.doesNotMatch(sidebar, /locale === "en"/);
   assert.doesNotMatch(mobileSwitcher, /locale === "en"/);
   assert.match(pricingCopy, /currentProduct: "Current product"/);
-  assert.match(pricingCopy, /streaming: "流媒体"/);
+  assert.match(pricingCopy, /streaming: "ストリーミング"/);
 });
 
-test("public pricing lists use the active locale contract and exact update dates", () => {
+test("public pricing lists prepare every v2.1 locale and keep exact update dates", () => {
   const listing = readComponent("DbAiPricingClient.tsx");
   const card = readComponent("DbPricingCard.tsx");
-  const pricingCopy = readFileSync(
-    resolve(componentsDir, "../lib/public-pricing-copy.ts"),
+  const listingCopy = readFileSync(
+    resolve(componentsDir, "../lib/pricing-list-copy.ts"),
     "utf8",
   );
   const adapter = readFileSync(
@@ -106,28 +108,56 @@ test("public pricing lists use the active locale contract and exact update dates
     "utf8",
   );
 
-  assert.match(listing, /locale: SiteLocale/);
-  assert.match(listing, /getPublicPricingCopy\(locale\)\.listing/);
+  assert.match(listing, /locale: PreparedSiteLocale/);
+  assert.match(listing, /getPricingListCopy\(locale\)/);
   assert.doesNotMatch(listing, /locale === "en"/);
-  assert.match(card, /locale: SiteLocale/);
-  assert.match(card, /getPublicPricingCopy\(locale\)\.listing\.card/);
+  assert.match(card, /locale: PreparedSiteLocale/);
+  assert.match(card, /getPricingListCopy\(locale\)\.card/);
+  assert.match(card, /localizeTaxNote\(raw, locale/);
   assert.doesNotMatch(card, /const copy =\s*locale === "en"/);
-  assert.match(pricingCopy, /categoryAria: "Digital service category"/);
+  assert.match(
+    listingCopy,
+    /Exclude<PreparedSiteLocale, "zh" \| "en">/,
+  );
+  for (const locale of ["ja", "ko", "es", "tr", "ar"]) {
+    assert.match(listingCopy, new RegExp(`\\n  ${locale}:`));
+  }
   assert.match(adapter, /function formatDate\(date: Date\)/);
   assert.match(adapter, /updatedAt: formatDate\(latestDate\)/);
 });
 
-test("purchasing power and share cards require active locale coverage", () => {
+test("purchasing power prepares every v2.1 locale while share cards cover active locales", () => {
   const affordability = readComponent("AffordabilityComparison.tsx");
   const affordabilityRows = readComponent("ExpandableAffordabilityRows.tsx");
   const shareModal = readComponent("SharePriceModal.tsx");
 
-  assert.match(affordability, /satisfies Record<SiteLocale, object>/);
+  assert.match(
+    affordability,
+    /satisfies Record<PreparedSiteLocale, AffordabilityCopy>/,
+  );
   assert.match(affordability, /return affordabilityCopy\[locale\]/);
-  assert.match(affordabilityRows, /getPublicPricingCopy\(locale\)\.table/);
+  assert.doesNotMatch(affordabilityRows, /getPublicPricingCopy/);
+  assert.match(affordability, /formatLocalizedCurrency/);
+  assert.match(affordability, /formatLocalizedDate/);
+  assert.match(affordability, /formatLocalizedPercent/);
+  assert.match(affordability, /getLocalizedRegionName/);
+  for (const locale of ["zh", "en", "ja", "ko", "es", "tr", "ar"]) {
+    assert.match(affordability, new RegExp(`\\n  ${locale}:`));
+  }
   assert.match(shareModal, /satisfies Record<SiteLocale, ShareCopy>/);
   assert.match(shareModal, /text\.comparisonLead/);
   assert.match(shareModal, /\{text\.comparisonTrail\}/);
   assert.match(shareModal, /text\.monthlySuffix/);
   assert.doesNotMatch(shareModal, /locale === 'en'/);
+});
+
+test("missing US prices use the actual fallback region instead of a false US label", () => {
+  const pricingView = readComponent("PricingPlatformView.tsx");
+  const regionTable = readComponent("ExpandableRegionPriceTable.tsx");
+  const shareModal = readComponent("SharePriceModal.tsx");
+
+  assert.match(pricingView, /hasUsReference \? copy\.usBase : referenceRegion\.country/);
+  assert.match(regionTable, /hasUsReference \? copy\.vsUs : referenceCountry/);
+  assert.match(regionTable, /if \(!hasUsReference\)/);
+  assert.match(shareModal, /referenceRegion\.code\.toUpperCase\(\) === 'US'/);
 });

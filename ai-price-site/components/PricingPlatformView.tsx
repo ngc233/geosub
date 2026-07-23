@@ -18,7 +18,7 @@ import {
   PublicSectionHeader,
 } from "./ui/PublicPage";
 import { getPlanDisplayName } from "../lib/pricing-labels";
-import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import { getPricingPlatformCopy } from "../lib/pricing-platform-copy";
 import {
   getSiteLocaleDefinition,
   type SiteLocale,
@@ -79,7 +79,7 @@ function getSignedPercent(diffPercent: number) {
 }
 
 function getPlatformLabel(platform: PlatformFilter, locale: SiteLocale = "zh") {
-  const copy = getPublicPricingCopy(locale).pricing;
+  const copy = getPricingPlatformCopy(locale);
   if (platform === "ios") return "App Store";
   if (platform === "web") return copy.officialWebPricing;
   if (platform === "android") return "Google Play";
@@ -91,7 +91,7 @@ function getCurrencyLabel(
   currency: DisplayCurrency,
   locale: SiteLocale = "zh",
 ) {
-  const copy = getPublicPricingCopy(locale).pricing;
+  const copy = getPricingPlatformCopy(locale);
   if (currency === "cny") {
     return copy.cnyLabel;
   }
@@ -122,7 +122,7 @@ function getCnyRateNote(
   cnyRate: number,
   locale: SiteLocale,
 ) {
-  const copy = getPublicPricingCopy(locale).pricing;
+  const copy = getPricingPlatformCopy(locale);
   const syncedDate = formatSyncDate(cnyExchangeRate.fetchedAt, locale);
   const basisDate = cnyExchangeRate.rateDate || null;
 
@@ -167,10 +167,10 @@ function formatMonthlyPrice(
   exchangeRate: number,
   locale: SiteLocale,
 ) {
-  const copy = getPublicPricingCopy(locale).pricing;
+  const copy = getPricingPlatformCopy(locale);
   return currency === "cny"
     ? `${formatCnyFromUsd(value, exchangeRate)}${copy.monthlySuffix}`
-    : `${formatUsd(value)}/mo`;
+    : `${formatUsd(value)}${copy.monthlySuffix}`;
 }
 
 function EmptyPriceState({
@@ -180,7 +180,7 @@ function EmptyPriceState({
   platformLabel: string;
   locale: SiteLocale;
 }) {
-  const copy = getPublicPricingCopy(locale).pricing;
+  const copy = getPricingPlatformCopy(locale);
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -247,7 +247,7 @@ function CurrencySelect({
             ? "border-lime-300 bg-white text-zinc-950 ring-4 ring-lime-500/10 dark:border-lime-500/40 dark:bg-zinc-900 dark:text-white"
             : "border-zinc-200 bg-zinc-50/80 text-zinc-700 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
         ].join(" ")}
-        aria-label={getPublicPricingCopy(locale).pricing.displayCurrency}
+        aria-label={getPricingPlatformCopy(locale).displayCurrency}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -321,12 +321,13 @@ function PricingLead({
 }) {
   const stats = getPlanStats(plan);
   const referenceRegion = getReferenceRegion(plan);
+  const hasUsReference = referenceRegion.code.toUpperCase() === "US";
   const displayCurrencyLabel = getCurrencyLabel(displayCurrency, locale);
   const cnyRate = cnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
   const cnyDisabled = Boolean(cnyExchangeRate.isFallback || cnyExchangeRate.isStale);
   const cnyRateNote = getCnyRateNote(cnyExchangeRate, cnyRate, locale);
   const planDisplayName = getPlanDisplayName(productName, plan.name);
-  const copy = getPublicPricingCopy(locale).pricing;
+  const copy = getPricingPlatformCopy(locale);
 
   return (
     <PublicSection>
@@ -394,7 +395,7 @@ function PricingLead({
           tone="red"
         />
         <MetricItem
-          label={copy.usBase}
+          label={hasUsReference ? copy.usBase : referenceRegion.country}
           value={`${referenceRegion.country} · ${formatDisplayPrice(referenceRegion.priceUsd, displayCurrency, cnyRate)}`}
           helper={referenceRegion.code}
         />
@@ -505,7 +506,7 @@ function PriceDistribution({
   const referenceRegion = getReferenceRegion(plan);
   const cheapRegions = sortedRegions.slice(0, 5);
   const expensiveRegions = sortedRegions.slice(-5).reverse();
-  const copy = getPublicPricingCopy(locale).pricing;
+  const copy = getPricingPlatformCopy(locale);
 
   return (
     <PublicSection>

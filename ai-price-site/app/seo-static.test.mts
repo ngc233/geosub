@@ -65,7 +65,19 @@ test("sitemap includes public subscription and article routes only", () => {
   assert.match(source, /getArticleRoutesForLocale\(now, Locale\.EN, "en"\)/);
   assert.match(source, /\/zh\/ai-pricing/);
   assert.match(source, /\/en\/ai-pricing/);
+  assert.match(source, /\/tr\/ai-pricing/);
+  assert.match(source, /\/ar\/ai-pricing/);
+  assert.match(source, /\/fr\/ai-pricing/);
+  assert.match(source, /\/it\/ai-pricing/);
+  assert.match(source, /\/de\/ai-pricing/);
+  assert.match(source, /\/pt\/ai-pricing/);
   assert.match(source, /\/zh\/streaming-pricing/);
+  assert.match(source, /\/tr\/streaming-pricing/);
+  assert.match(source, /\/ar\/streaming-pricing/);
+  assert.match(source, /\/fr\/streaming-pricing/);
+  assert.match(source, /\/it\/streaming-pricing/);
+  assert.match(source, /\/de\/streaming-pricing/);
+  assert.match(source, /\/pt\/streaming-pricing/);
   assert.match(source, /`\/\$\{pathLocale\}\/guides\/\$\{article\.slug\}`/);
   assert.match(source, /`\/\$\{pathLocale\}\/guides\/category\/\$\{category\.slug\}`/);
   assert.match(source, /`\/\$\{pathLocale\}\/guides\/tag\/\$\{tag\.slug\}`/);
@@ -99,24 +111,32 @@ test("published guide routes and metadata are localized end to end", () => {
 test("pricing details publish page-specific metadata and matching structured data", () => {
   const englishDetail = readAppFile("en/ai-pricing/[slug]/page.tsx");
   const chineseDetail = readAppFile("zh/ai-pricing/[slug]/page.tsx");
+  const sharedDetail = readFileSync(
+    resolve(appDir, "..", "components", "PricingDetailPage.tsx"),
+    "utf8",
+  );
   const pricingSeo = readFileSync(
     resolve(appDir, "..", "lib", "pricing-seo.ts"),
     "utf8",
   );
 
-  for (const source of [englishDetail, chineseDetail]) {
-    assert.match(source, /buildPricingStructuredData/);
-    assert.match(source, /type="application\/ld\+json"/);
-    assert.match(source, /openGraph:/);
-    assert.match(source, /twitter:/);
-  }
+  assert.match(englishDetail, /getPricingDetailMetadata/);
+  assert.match(englishDetail, /locale: "en"/);
+  assert.match(chineseDetail, /getPricingDetailMetadata/);
+  assert.match(chineseDetail, /locale: "zh"/);
+  assert.match(sharedDetail, /buildPricingStructuredData/);
+  assert.match(sharedDetail, /type="application\/ld\+json"/);
+  assert.match(sharedDetail, /openGraph:/);
+  assert.match(sharedDetail, /twitter:/);
 
   assert.match(pricingSeo, /"@type": "Dataset"/);
   assert.match(pricingSeo, /"@type": "FAQPage"/);
   assert.match(pricingSeo, /dateModified/);
   assert.match(pricingSeo, /spatialCoverage/);
-  assert.doesNotMatch(englishDetail, /in 2026/);
-  assert.doesNotMatch(chineseDetail, /截至 2026 年/);
+  assert.match(pricingSeo, /getSiteLocaleDefinition\(locale\)\.htmlLang/);
+  assert.match(pricingSeo, /regionalPricePropertyLabels/);
+  assert.doesNotMatch(sharedDetail, /in 2026/);
+  assert.doesNotMatch(sharedDetail, /截至 2026 年/);
 });
 
 test("pricing lists share localized metadata and social previews", () => {
@@ -128,14 +148,31 @@ test("pricing lists share localized metadata and social previews", () => {
   for (const fileName of [
     "en/ai-pricing/page.tsx",
     "zh/ai-pricing/page.tsx",
+    "tr/ai-pricing/page.tsx",
+    "ar/ai-pricing/page.tsx",
+    "fr/ai-pricing/page.tsx",
+    "it/ai-pricing/page.tsx",
+    "de/ai-pricing/page.tsx",
+    "pt/ai-pricing/page.tsx",
     "en/streaming-pricing/page.tsx",
     "zh/streaming-pricing/page.tsx",
+    "tr/streaming-pricing/page.tsx",
+    "ar/streaming-pricing/page.tsx",
+    "fr/streaming-pricing/page.tsx",
+    "it/streaming-pricing/page.tsx",
+    "de/streaming-pricing/page.tsx",
+    "pt/streaming-pricing/page.tsx",
   ]) {
     const source = readAppFile(fileName);
     assert.match(source, /getPricingListMetadata/);
-    assert.match(source, /getPublicPricingCopy/);
+    assert.match(source, /PricingListPage/);
   }
 
+  const sharedList = readFileSync(
+    resolve(appDir, "..", "components", "PricingListPage.tsx"),
+    "utf8",
+  );
+  assert.match(sharedList, /getPricingListCopy/);
   assert.match(pricingListSeo, /canonical: canonicalPath/);
   assert.match(pricingListSeo, /languages:/);
   assert.match(pricingListSeo, /openGraph:/);

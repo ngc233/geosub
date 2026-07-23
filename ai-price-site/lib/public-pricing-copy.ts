@@ -1,4 +1,4 @@
-import type { SiteLocale } from "./site-locale";
+type LegacyPublicPricingLocale = "zh" | "en";
 
 const publicPricingCopy = {
   zh: {
@@ -358,8 +358,8 @@ const publicPricingCopy = {
       helpAria: (label: string, help: string) => `${label}: ${help}`,
     },
   },
-} satisfies Record<SiteLocale, object>;
+} satisfies Record<LegacyPublicPricingLocale, object>;
 
-export function getPublicPricingCopy(locale: SiteLocale) {
+export function getPublicPricingCopy(locale: LegacyPublicPricingLocale) {
   return publicPricingCopy[locale];
 }

@@ -6,9 +6,14 @@ import { fileURLToPath } from "node:url";
 import { getPlanDisplayName } from "../lib/pricing-labels.ts";
 import {
   getPricingDetailPath,
+  getPricingLanguageAlternates,
   getPricingListPath,
   stripGeoSubTitleSuffix,
 } from "../lib/pricing-routes.ts";
+import {
+  siteLocaleDefinitions,
+  supportedSiteLocales,
+} from "../lib/site-locale.ts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
@@ -30,17 +35,21 @@ test("pricing detail pages keep product navigation database-driven", () => {
   for (const locale of ["zh", "en"]) {
     const page = readAppFile(locale, "ai-pricing", "[slug]", "page.tsx");
 
-    assert.match(page, /async function getProductNavItems/);
     assert.match(page, /export const dynamic = "force-dynamic"/);
-    assert.match(page, /prisma\.product\.findMany/);
-    assert.match(page, /status:\s*"PUBLISHED"/);
-    assert.match(page, /plans:\s*\{\s*some:/);
-    assert.match(page, /regionPrices:\s*\{\s*some:/);
-    assert.match(page, /sortOrder: "asc"/);
-    assert.match(page, /logoUrl: true/);
-    assert.match(page, /officialUrl: true/);
-    assert.match(page, /products=\{sidebarProducts\}/);
+    assert.match(page, /import PricingDetailPage/);
+    assert.match(page, new RegExp(`locale="${locale}"`));
   }
+
+  const sharedPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  assert.match(sharedPage, /async function getProductNavItems/);
+  assert.match(sharedPage, /prisma\.product\.findMany/);
+  assert.match(sharedPage, /status:\s*"PUBLISHED"/);
+  assert.match(sharedPage, /plans:\s*\{\s*some:/);
+  assert.match(sharedPage, /regionPrices:\s*\{\s*some:/);
+  assert.match(sharedPage, /sortOrder: "asc"/);
+  assert.match(sharedPage, /logoUrl: true/);
+  assert.match(sharedPage, /officialUrl: true/);
+  assert.match(sharedPage, /products=\{sidebarProducts\}/);
 });
 
 test("database-only streaming products keep their real category on detail pages", () => {
@@ -70,8 +79,7 @@ test("public pricing products require published product, plan and price state", 
 
 test("public pricing runtime does not import the legacy static product catalog", () => {
   const runtimeFiles = [
-    readAppFile("zh", "ai-pricing", "[slug]", "page.tsx"),
-    readAppFile("en", "ai-pricing", "[slug]", "page.tsx"),
+    readAppFile("..", "components", "PricingDetailPage.tsx"),
     readAppFile("..", "lib", "pricing-detail-adapter.ts"),
     readAppFile("..", "components", "PricingPlatformView.tsx"),
   ];
@@ -83,15 +91,12 @@ test("public pricing runtime does not import the legacy static product catalog",
 });
 
 test("pricing detail pages keep AI and streaming paths synchronized", () => {
-  const zhPage = readAppFile("zh", "ai-pricing", "[slug]", "page.tsx");
-  const enPage = readAppFile("en", "ai-pricing", "[slug]", "page.tsx");
+  const sharedPage = readAppFile("..", "components", "PricingDetailPage.tsx");
 
-  for (const page of [zhPage, enPage]) {
-    assert.match(page, /detailBasePath =/);
-    assert.match(page, /getPricingListPath/);
-    assert.match(page, /href=\{detailBasePath\}/);
-    assert.match(page, /basePath=\{detailBasePath\}/);
-  }
+  assert.match(sharedPage, /detailBasePath =/);
+  assert.match(sharedPage, /getPricingListPath\(locale, product\.category\)/);
+  assert.match(sharedPage, /href=\{detailBasePath\}/);
+  assert.match(sharedPage, /basePath=\{detailBasePath\}/);
 
   assert.equal(getPricingListPath("zh", "ai"), "/zh/ai-pricing");
   assert.equal(getPricingListPath("en", "streaming"), "/en/streaming-pricing");
@@ -123,33 +128,58 @@ test("streaming detail routes render directly and preserve plan query links", ()
 
   assert.match(planTabs, /\?plan=\$\{plan\.slug\}/);
 
-  for (const locale of ["zh", "en"]) {
-    const detailPage = readAppFile(locale, "ai-pricing", "[slug]", "page.tsx");
-
-    assert.match(detailPage, /currentPath && currentPath !== canonicalDetailPath/);
-    assert.match(detailPage, /encodeURIComponent\(resolvedSearchParams\.plan\)/);
-    assert.match(detailPage, /redirect\(`\$\{canonicalDetailPath\}\$\{planQuery\}`\)/);
-  }
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  assert.match(detailPage, /currentPath && currentPath !== canonicalDetailPath/);
+  assert.match(detailPage, /encodeURIComponent\(resolvedSearchParams\.plan\)/);
+  assert.match(detailPage, /redirect\(`\$\{canonicalDetailPath\}\$\{planQuery\}`\)/);
 });
 
 test("pricing detail metadata owns canonical paths without duplicating the site name", () => {
   assert.equal(stripGeoSubTitleSuffix("Netflix Prices - GeoSub"), "Netflix Prices");
   assert.equal(stripGeoSubTitleSuffix("Netflix Prices"), "Netflix Prices");
 
-  for (const locale of ["zh", "en"]) {
-    const page = readAppFile(locale, "ai-pricing", "[slug]", "page.tsx");
+  const page = readAppFile("..", "components", "PricingDetailPage.tsx");
+  assert.match(page, /canonical:/);
+  assert.match(page, /getPricingLanguageAlternates/);
+  assert.doesNotMatch(page, /title:\s*`[^`]+ - GeoSub`/);
+});
 
-    assert.match(page, /canonical:/);
-    assert.match(page, /"zh-CN":/);
-    assert.match(page, /"x-default":/);
-    assert.doesNotMatch(page, /title:\s*`[^`]+ - GeoSub`/);
+test("pricing hreflang alternates follow the active locale registry", () => {
+  const listAlternates = getPricingLanguageAlternates("ai");
+  const detailAlternates = getPricingLanguageAlternates("streaming", "netflix");
+
+  for (const locale of supportedSiteLocales) {
+    const htmlLang = siteLocaleDefinitions[locale].htmlLang;
+
+    assert.equal(
+      listAlternates[htmlLang],
+      getPricingListPath(locale, "ai"),
+    );
+    assert.equal(
+      detailAlternates[htmlLang],
+      getPricingDetailPath(locale, "streaming", "netflix"),
+    );
   }
+
+  assert.equal(listAlternates["x-default"], "/en/ai-pricing");
+  assert.equal(
+    detailAlternates["x-default"],
+    "/en/streaming-pricing/netflix",
+  );
+  assert.equal(
+    Object.keys(listAlternates).length,
+    supportedSiteLocales.length + 1,
+  );
 });
 
 test("pricing detail pages do not contain mojibake text tokens", () => {
-  for (const locale of ["zh", "en"]) {
-    const page = readAppFile(locale, "ai-pricing", "[slug]", "page.tsx");
+  const pages = [
+    readAppFile("..", "components", "PricingDetailPage.tsx"),
+    readAppFile("zh", "ai-pricing", "[slug]", "page.tsx"),
+    readAppFile("en", "ai-pricing", "[slug]", "page.tsx"),
+  ];
 
+  for (const page of pages) {
     for (const token of badEncodingTokens) {
       assert.doesNotMatch(page, new RegExp(token));
     }
@@ -161,14 +191,14 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   assert.equal(getPlanDisplayName("Netflix", "Premium"), "Netflix Premium");
   assert.equal(getPlanDisplayName("Google AI", "Google AI Pro"), "Google AI Pro");
 
-  const zhPage = readAppFile("zh", "ai-pricing", "[slug]", "page.tsx");
-  const enPage = readAppFile("en", "ai-pricing", "[slug]", "page.tsx");
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
   const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
   const shareModal = readAppFile("..", "components", "SharePriceModal.tsx");
   const pricingCopy = readAppFile("..", "lib", "public-pricing-copy.ts");
+  const pageCopy = readAppFile("..", "lib", "pricing-detail-page-copy.ts");
 
-  assert.match(zhPage, /import \{ getPlanDisplayName \}/);
-  assert.match(enPage, /import \{ getPlanDisplayName \}/);
+  assert.match(detailPage, /import \{ getPricingDetailPageCopy \}/);
+  assert.match(pageCopy, /const name = getPlanDisplayName\(productName, planName\)/);
   assert.match(platformView, /const planDisplayName = getPlanDisplayName\(productName, plan\.name\)/);
   assert.match(platformView, /copy\.conclusionTitle\(planDisplayName\)/);
   assert.match(pricingCopy, /\$\{planName\} 全球价格结论/);
@@ -177,29 +207,53 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   assert.match(shareModal, /import type \{ SiteLocale \} from '\.\.\/lib\/site-locale'/);
   assert.match(shareModal, /satisfies Record<SiteLocale, ShareCopy>/);
   assert.match(shareModal, /Share price card/);
-  assert.match(zhPage, /<SharePriceModal product=\{product\} plan=\{activePlan\} stats=\{stats\} locale="zh" \/>/);
-  assert.match(enPage, /<SharePriceModal product=\{product\} plan=\{activePlan\} stats=\{stats\} locale="en" \/>/);
-  assert.match(zhPage, /planDisplayName = getPlanDisplayName\(productName, planName\)/);
-  assert.doesNotMatch(zhPage, /\$\{productName\} Plus 订阅/);
+  assert.match(detailPage, /<SharePriceModal[\s\S]*locale=\{locale\}/);
+  assert.match(detailPage, /const pageCopy = getPricingDetailPageCopy/);
+  assert.match(detailPage, /: pageCopy\.pageTitle/);
+  assert.doesNotMatch(detailPage, /\$\{productName\} Plus 订阅/);
   assert.doesNotMatch(platformView, /\$\{productName\} \$\{plan\.name\}/);
   assert.doesNotMatch(shareModal, /\$\{product\.name\} \$\{plan\.name\}/);
 });
 
 test("pricing FAQs answer customer questions instead of explaining internal source policy", () => {
-  const zhPage = readAppFile("zh", "ai-pricing", "[slug]", "page.tsx");
-  const enPage = readAppFile("en", "ai-pricing", "[slug]", "page.tsx");
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const pageCopy = readAppFile("..", "lib", "pricing-detail-page-copy.ts");
 
-  assert.match(zhPage, /价格是否含税/);
-  assert.match(zhPage, /可以直接购买最便宜地区/);
-  assert.match(zhPage, /地区价格多久更新一次/);
-  assert.match(zhPage, /stats\.minRegion\.country/);
-  assert.doesNotMatch(zhPage, /本页追踪的是 App Store 价格/);
+  assert.match(pageCopy, /价格是否含税/);
+  assert.match(pageCopy, /可以直接购买最便宜地区/);
+  assert.match(pageCopy, /地区价格多久更新一次/);
+  assert.match(pageCopy, /stats\?\.minRegion\.country/);
+  assert.doesNotMatch(pageCopy, /本页追踪的是 App Store 价格/);
 
-  assert.match(enPage, /Does the displayed.*price include tax/);
-  assert.match(enPage, /Can I subscribe.*through the cheapest region/);
-  assert.match(enPage, /How often are.*regional prices updated/);
-  assert.match(enPage, /stats\.minRegion\.country/);
-  assert.doesNotMatch(enPage, /Does this page rank App Store/);
+  assert.match(pageCopy, /Does the displayed.*price include tax/);
+  assert.match(pageCopy, /Can I subscribe.*through the cheapest region/);
+  assert.match(pageCopy, /How often are.*regional prices updated/);
+  assert.doesNotMatch(pageCopy, /Does this page rank App Store/);
+  assert.match(detailPage, /faqs: pageCopy\.faqs/);
+  assert.match(detailPage, /faqs=\{pageCopy\.faqs\}/);
+});
+
+test("pricing detail forwards the current locale to affordability content", () => {
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+
+  assert.match(
+    detailPage,
+    /<AffordabilityComparison[\s\S]*locale=\{locale\}/,
+  );
+  assert.doesNotMatch(detailPage, /<AffordabilityComparison[\s\S]*locale="zh"/);
+});
+
+test("pricing detail page copy is complete for every v2.1 prepared locale", () => {
+  const pageCopy = readAppFile("..", "lib", "pricing-detail-page-copy.ts");
+
+  assert.match(pageCopy, /satisfies Record<PreparedSiteLocale, StaticDetailCopy>/);
+  assert.match(pageCopy, /const templates: Record<PreparedSiteLocale, string>/);
+  assert.match(pageCopy, /const descriptions: Record<PreparedSiteLocale, string>/);
+  assert.match(pageCopy, /const faqByLocale: Record<PreparedSiteLocale, PricingFaq\[\]>/);
+
+  for (const locale of ["zh", "en", "ja", "ko", "es", "tr", "ar"]) {
+    assert.match(pageCopy, new RegExp(`\\n  ${locale}:`));
+  }
 });
 
 test("pricing detail freshness follows the active plan and trusted matching observations", () => {
@@ -232,8 +286,8 @@ test("detail copy separates active locales from prepared translations", () => {
   const detailCopy = readAppFile("..", "lib", "detail-page-copy.ts");
   const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
 
-  assert.match(detailCopy, /import type \{ SiteLocale \} from "\.\/site-locale"/);
-  assert.match(detailCopy, /type PreparedDetailLocale =\s*\| SiteLocale/);
+  assert.match(detailCopy, /PreparedSiteLocale/);
+  assert.match(detailCopy, /type PreparedDetailLocale = PreparedSiteLocale/);
   assert.match(detailCopy, /export type DetailLocale = SiteLocale/);
   assert.match(detailCopy, /Record<PreparedDetailLocale, DetailCopyTemplate>/);
   assert.match(detailCopy, /Record<PreparedDetailLocale, DetailMapCopy>/);

@@ -7,19 +7,19 @@ import type {
   DbPricingCategory,
   DbPricingProduct,
 } from "../lib/db-pricing-types";
-import { getPublicPricingCopy } from "../lib/public-pricing-copy";
-import type { SiteLocale } from "../lib/site-locale";
+import { getPricingListCopy } from "../lib/pricing-list-copy";
+import type { PreparedSiteLocale } from "../lib/site-locale";
 
 type DbAiPricingClientProps = {
   products: DbPricingProduct[];
-  locale: SiteLocale;
+  locale: PreparedSiteLocale;
 };
 
 export default function DbAiPricingClient({
   products,
   locale,
 }: DbAiPricingClientProps) {
-  const copy = getPublicPricingCopy(locale).listing;
+  const copy = getPricingListCopy(locale);
   const tabs = useMemo(
     () => [
       {

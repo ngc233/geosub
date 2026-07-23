@@ -1,28 +1,25 @@
 import type { Metadata } from "next";
 import type { ProductCategory } from "./public-pricing-model";
-import { getPublicPricingCopy } from "./public-pricing-copy";
-import { getPricingListPath } from "./pricing-routes";
+import { getPricingListCopy } from "./pricing-list-copy";
+import {
+  getPricingLanguageAlternates,
+  getPricingListPath,
+} from "./pricing-routes";
 import type { SiteLocale } from "./site-locale";
 
 export function getPricingListMetadata(
   locale: SiteLocale,
   category: ProductCategory,
 ): Metadata {
-  const copy = getPublicPricingCopy(locale).listing.pages[category];
+  const copy = getPricingListCopy(locale).pages[category];
   const canonicalPath = getPricingListPath(locale, category);
-  const zhPath = getPricingListPath("zh", category);
-  const enPath = getPricingListPath("en", category);
 
   return {
     title: copy.metaTitle,
     description: copy.metaDescription,
     alternates: {
       canonical: canonicalPath,
-      languages: {
-        "zh-CN": zhPath,
-        en: enPath,
-        "x-default": enPath,
-      },
+      languages: getPricingLanguageAlternates(category),
     },
     openGraph: {
       type: "website",

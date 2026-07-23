@@ -7,15 +7,19 @@ import {
   getPlanSpread,
   type DbPricingProduct,
 } from "../lib/db-pricing-types";
-import { getPublicPricingCopy } from "../lib/public-pricing-copy";
-import type { SiteLocale } from "../lib/site-locale";
+import {
+  getPricingListCopy,
+  type PricingListCopy,
+} from "../lib/pricing-list-copy";
+import type { PreparedSiteLocale } from "../lib/site-locale";
+import { localizeTaxNote } from "../lib/tax-note-localization";
 
 type DbPricingCardProps = {
   product: DbPricingProduct;
-  locale: SiteLocale;
+  locale: PreparedSiteLocale;
 };
 
-type CardCopy = ReturnType<typeof getPublicPricingCopy>["listing"]["card"];
+type CardCopy = PricingListCopy["card"];
 
 function priceSuffix(copy: CardCopy, billingCycle: string) {
   if (billingCycle === "MONTHLY") return copy.monthlySuffix;
@@ -48,34 +52,18 @@ function taxConfidenceClass(confidence?: string, sourceKind?: string) {
   return "bg-zinc-100 text-zinc-500 ring-zinc-200";
 }
 
-function formatTaxNote(locale: SiteLocale, copy: CardCopy, note?: string, confidence?: string, reviewStatus?: string) {
+function formatTaxNote(locale: PreparedSiteLocale, copy: CardCopy, note?: string, confidence?: string, reviewStatus?: string) {
   const raw = (note || "").trim();
 
   if (!raw && (reviewStatus === "needs_review" || confidence === "low")) {
     return copy.taxNeedsReview;
   }
 
-  if (locale === "en") {
-    return raw || copy.checkoutApplies;
-  }
-
-  const includeMatch = raw.match(/^(?:Includes|Usually includes)\s+(.+)$/i);
-  if (includeMatch) {
-    const value = includeMatch[1]
-      .replace(/consumption tax/i, "消费税")
-      .replace(/service tax/i, "服务税")
-      .replace(/sales tax/i, "销售税")
-      .replace(/by region/i, "因地区不同");
-    return /^Usually includes/i.test(raw) ? `通常含 ${value}` : `含 ${value}`;
-  }
-
-  if (/GST\/HST varies by province/i.test(raw)) return "各省 5-15% GST/HST 不同";
-  if (/State ICMS varies/i.test(raw)) return "州税（ICMS）不同";
-  if (/Sales tax varies by state/i.test(raw)) return "各州销售税不同";
-  if (/Sales tax varies by region/i.test(raw)) return "销售税因地区不同";
-  if (/VAT treatment needs review/i.test(raw)) return "VAT 规则需复核";
-
-  return raw || copy.checkoutApplies;
+  return raw
+    ? localizeTaxNote(raw, locale, {
+        unknownFallback: locale !== "zh" && locale !== "en",
+      })
+    : copy.checkoutApplies;
 }
 
 export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
@@ -93,7 +81,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
       : cheapRegions;
   const spread = getPlanSpread(defaultPlan);
 
-  const copy = getPublicPricingCopy(locale).listing.card;
+  const copy = getPricingListCopy(locale).card;
 
   const detailBase =
     product.category === "streaming" ? "streaming-pricing" : "ai-pricing";

@@ -15,25 +15,89 @@ function readSiteFile(...segments: string[]) {
   return readFileSync(resolve(siteDir, ...segments), "utf8");
 }
 
-test("AI and streaming listing pages request distinct product categories", () => {
+test("AI and streaming listing routes delegate locale and category to one shared page", () => {
   const pages = [
-    { source: readAppFile("zh", "ai-pricing", "page.tsx"), category: "AI" },
-    { source: readAppFile("en", "ai-pricing", "page.tsx"), category: "AI" },
+    { source: readAppFile("zh", "ai-pricing", "page.tsx"), locale: "zh", category: "ai" },
+    { source: readAppFile("en", "ai-pricing", "page.tsx"), locale: "en", category: "ai" },
+    { source: readAppFile("ja", "ai-pricing", "page.tsx"), locale: "ja", category: "ai" },
+    { source: readAppFile("ko", "ai-pricing", "page.tsx"), locale: "ko", category: "ai" },
+    { source: readAppFile("es", "ai-pricing", "page.tsx"), locale: "es", category: "ai" },
+    { source: readAppFile("tr", "ai-pricing", "page.tsx"), locale: "tr", category: "ai" },
+    { source: readAppFile("ar", "ai-pricing", "page.tsx"), locale: "ar", category: "ai" },
+    { source: readAppFile("fr", "ai-pricing", "page.tsx"), locale: "fr", category: "ai" },
+    { source: readAppFile("it", "ai-pricing", "page.tsx"), locale: "it", category: "ai" },
+    { source: readAppFile("de", "ai-pricing", "page.tsx"), locale: "de", category: "ai" },
+    { source: readAppFile("pt", "ai-pricing", "page.tsx"), locale: "pt", category: "ai" },
     {
       source: readAppFile("zh", "streaming-pricing", "page.tsx"),
-      category: "STREAMING",
+      locale: "zh",
+      category: "streaming",
     },
     {
       source: readAppFile("en", "streaming-pricing", "page.tsx"),
-      category: "STREAMING",
+      locale: "en",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("ja", "streaming-pricing", "page.tsx"),
+      locale: "ja",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("ko", "streaming-pricing", "page.tsx"),
+      locale: "ko",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("es", "streaming-pricing", "page.tsx"),
+      locale: "es",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("tr", "streaming-pricing", "page.tsx"),
+      locale: "tr",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("ar", "streaming-pricing", "page.tsx"),
+      locale: "ar",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("fr", "streaming-pricing", "page.tsx"),
+      locale: "fr",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("it", "streaming-pricing", "page.tsx"),
+      locale: "it",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("de", "streaming-pricing", "page.tsx"),
+      locale: "de",
+      category: "streaming",
+    },
+    {
+      source: readAppFile("pt", "streaming-pricing", "page.tsx"),
+      locale: "pt",
+      category: "streaming",
     },
   ];
 
-  for (const { source, category } of pages) {
+  for (const { source, locale, category } of pages) {
     assert.match(source, /export const dynamic = "force-dynamic"/);
-    assert.match(source, new RegExp(`categories:\\s*\\[ProductCategory\\.${category}\\]`));
-    assert.match(source, /<DbAiPricingClient products=\{products\}/);
+    assert.match(source, /import PricingListPage/);
+    assert.match(
+      source,
+      new RegExp(`<PricingListPage locale="${locale}" category="${category}"`),
+    );
   }
+
+  const sharedPage = readSiteFile("components", "PricingListPage.tsx");
+  assert.match(sharedPage, /ai:\s*ProductCategory\.AI/);
+  assert.match(sharedPage, /streaming:\s*ProductCategory\.STREAMING/);
+  assert.match(sharedPage, /<DbAiPricingClient products=\{products\} locale=\{locale\}/);
 });
 
 test("pricing list query requires published products, plans and prices", () => {

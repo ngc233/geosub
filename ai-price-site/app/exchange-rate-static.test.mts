@@ -14,7 +14,8 @@ function readProjectFile(fileName: string) {
 test("exchange-rate fallback never shows a hardcoded CNY estimate", () => {
   const exchangeRates = readProjectFile("lib/exchange-rates.ts");
   const pricingView = readProjectFile("components/PricingPlatformView.tsx");
-  const pricingCopy = readProjectFile("lib/public-pricing-copy.ts");
+  const pricingCopy = readProjectFile("lib/pricing-platform-copy.ts");
+  const legacyPricingCopy = readProjectFile("lib/public-pricing-copy.ts");
 
   assert.match(exchangeRates, /const UNAVAILABLE_USD_CNY_RATE = 0;/);
   assert.match(pricingView, /const UNAVAILABLE_CNY_PER_USD = 0;/);
@@ -24,11 +25,17 @@ test("exchange-rate fallback never shows a hardcoded CNY estimate", () => {
     pricingView,
     /cnyDisabled = Boolean\(cnyExchangeRate\.isFallback \|\| cnyExchangeRate\.isStale\)/,
   );
-  assert.match(pricingView, /getPublicPricingCopy\(locale\)\.pricing/);
-  assert.match(pricingCopy, /人民币估算暂不可用：汇率待同步/);
-  assert.match(pricingCopy, /人民币估算暂停：汇率同步已过期/);
-  assert.match(pricingCopy, /CNY estimate unavailable: exchange-rate sync is pending/);
-  assert.match(pricingCopy, /CNY estimate paused: exchange-rate sync is stale/);
+  assert.match(pricingView, /getPricingPlatformCopy\(locale\)/);
+  assert.match(pricingCopy, /getPublicPricingCopy\(locale\)\.pricing/);
+  assert.match(
+    legacyPricingCopy,
+    /CNY estimate unavailable: exchange-rate sync is pending/,
+  );
+  assert.match(
+    legacyPricingCopy,
+    /CNY estimate paused: exchange-rate sync is stale/,
+  );
+  assert.match(pricingCopy, /人民元換算は現在利用できません/);
 });
 
 test("exchange-rate freshness is stricter than the public 12-hour refresh window", () => {

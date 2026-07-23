@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.1.0 - 2026-07-23
+
+- Expanded GeoSub from Chinese and English to eleven active public locales:
+  Chinese, English, Japanese, Korean, Spanish, Turkish, Arabic, French,
+  Italian, German and Portuguese, including a complete RTL document shell for
+  Arabic.
+- Consolidated AI and streaming list and detail routes onto shared,
+  database-backed components with typed locale dictionaries for navigation,
+  pricing conclusions, regional tables, purchasing-power views, tax and risk
+  notes, share cards, empty states and public footer content.
+- Added localized home, trust, methodology and pricing pages with native
+  number, currency, date and country formatting while preserving official
+  product and subscription plan names.
+- Expanded localized SEO metadata, canonical URLs, structured data, sitemap
+  coverage and analytics route recognition; pricing `hreflang` links now derive
+  automatically from the active locale registry.
+- Added the active application version to the authenticated admin navigation
+  so operators can confirm which release is running without server access.
+- Added compile-time localization contracts, source-encoding checks and
+  regression coverage that reject missing locale copy, Chinese leakage,
+  malformed RTL behavior and partial language-route registration.
+- Completed browser acceptance across 66 desktop and 33 mobile localized
+  routes without 404 pages, replacement characters, horizontal overflow,
+  clipped headings or foreign-script leakage.
+- Completed the full local release gate with 10/10 registered migrations,
+  35/35 fresh exchange rates, persistent logos for all eight published
+  products, full-product price-quality checks, 207 tests and a 114-route
+  production build.
+- Normalized HBO Max to three canonical monthly plans and persisted its
+  official artwork; ambiguous legacy observations remain isolated from
+  published prices for automatic re-evaluation.
+
 ## 2.0.0 - 2026-07-22
 
 - Rebuilt GeoSub around one database-driven catalog for AI and streaming subscriptions, with seven reviewed launch products, canonical plan definitions, category-correct navigation, and synchronized Chinese and English public pages.

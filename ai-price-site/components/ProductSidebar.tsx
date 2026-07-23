@@ -1,6 +1,6 @@
 import Link from "next/link";
 import BrandIcon from "./BrandIcon";
-import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import { getProductNavigationCopy } from "../lib/product-navigation-copy";
 import type { SiteLocale } from "../lib/site-locale";
 
 export type ProductNavCategory = "ai" | "streaming";
@@ -39,7 +39,7 @@ export default function ProductSidebar({
   basePath,
   locale = "zh",
 }: ProductSidebarProps) {
-  const copy = getPublicPricingCopy(locale).navigation;
+  const copy = getProductNavigationCopy(locale);
   const categoryLabels: Record<ProductNavCategory, string> = {
     ai: copy.ai,
     streaming: copy.streaming,

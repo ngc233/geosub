@@ -1,33 +1,183 @@
-export const siteLocaleDefinitions = {
+export const preparedSiteLocaleDefinitions = {
   zh: {
     path: "zh",
     htmlLang: "zh-CN",
     direction: "ltr",
     shortLabel: "CN",
     label: "中文",
+    englishLabel: "Chinese",
+    intlLocale: "zh-CN",
+    openGraphLocale: "zh_CN",
   },
   en: {
     path: "en",
-    htmlLang: "en",
+    htmlLang: "en-US",
     direction: "ltr",
     shortLabel: "US",
     label: "English",
+    englishLabel: "English",
+    intlLocale: "en-US",
+    openGraphLocale: "en_US",
+  },
+  ja: {
+    path: "ja",
+    htmlLang: "ja-JP",
+    direction: "ltr",
+    shortLabel: "JP",
+    label: "日本語",
+    englishLabel: "Japanese",
+    intlLocale: "ja-JP",
+    openGraphLocale: "ja_JP",
+  },
+  ko: {
+    path: "ko",
+    htmlLang: "ko-KR",
+    direction: "ltr",
+    shortLabel: "KR",
+    label: "한국어",
+    englishLabel: "Korean",
+    intlLocale: "ko-KR",
+    openGraphLocale: "ko_KR",
+  },
+  es: {
+    path: "es",
+    htmlLang: "es-ES",
+    direction: "ltr",
+    shortLabel: "ES",
+    label: "Español",
+    englishLabel: "Spanish",
+    intlLocale: "es-ES",
+    openGraphLocale: "es_ES",
+  },
+  tr: {
+    path: "tr",
+    htmlLang: "tr-TR",
+    direction: "ltr",
+    shortLabel: "TR",
+    label: "Türkçe",
+    englishLabel: "Turkish",
+    intlLocale: "tr-TR",
+    openGraphLocale: "tr_TR",
+  },
+  ar: {
+    path: "ar",
+    htmlLang: "ar",
+    direction: "rtl",
+    shortLabel: "AR",
+    label: "العربية",
+    englishLabel: "Arabic",
+    intlLocale: "ar",
+    openGraphLocale: "ar_AR",
+  },
+  fr: {
+    path: "fr",
+    htmlLang: "fr-FR",
+    direction: "ltr",
+    shortLabel: "FR",
+    label: "Français",
+    englishLabel: "French",
+    intlLocale: "fr-FR",
+    openGraphLocale: "fr_FR",
+  },
+  it: {
+    path: "it",
+    htmlLang: "it-IT",
+    direction: "ltr",
+    shortLabel: "IT",
+    label: "Italiano",
+    englishLabel: "Italian",
+    intlLocale: "it-IT",
+    openGraphLocale: "it_IT",
+  },
+  de: {
+    path: "de",
+    htmlLang: "de-DE",
+    direction: "ltr",
+    shortLabel: "DE",
+    label: "Deutsch",
+    englishLabel: "German",
+    intlLocale: "de-DE",
+    openGraphLocale: "de_DE",
+  },
+  pt: {
+    path: "pt",
+    htmlLang: "pt-PT",
+    direction: "ltr",
+    shortLabel: "PT",
+    label: "Português",
+    englishLabel: "Portuguese",
+    intlLocale: "pt-PT",
+    openGraphLocale: "pt_PT",
   },
 } as const;
 
-export type SiteLocale = keyof typeof siteLocaleDefinitions;
+export type PreparedSiteLocale = keyof typeof preparedSiteLocaleDefinitions;
+
+export const launchedSiteLocales = [
+  "zh",
+  "en",
+  "ja",
+  "ko",
+  "es",
+  "tr",
+  "ar",
+  "fr",
+  "it",
+  "de",
+  "pt",
+] as const satisfies readonly PreparedSiteLocale[];
+
+export type SiteLocale = (typeof launchedSiteLocales)[number];
+
+export const siteLocaleDefinitions = {
+  zh: preparedSiteLocaleDefinitions.zh,
+  en: preparedSiteLocaleDefinitions.en,
+  ja: preparedSiteLocaleDefinitions.ja,
+  ko: preparedSiteLocaleDefinitions.ko,
+  es: preparedSiteLocaleDefinitions.es,
+  tr: preparedSiteLocaleDefinitions.tr,
+  ar: preparedSiteLocaleDefinitions.ar,
+  fr: preparedSiteLocaleDefinitions.fr,
+  it: preparedSiteLocaleDefinitions.it,
+  de: preparedSiteLocaleDefinitions.de,
+  pt: preparedSiteLocaleDefinitions.pt,
+} as const satisfies Pick<
+  typeof preparedSiteLocaleDefinitions,
+  SiteLocale
+>;
 
 export const defaultSiteLocale: SiteLocale = "zh";
-export const supportedSiteLocales = Object.keys(
-  siteLocaleDefinitions,
-) as SiteLocale[];
+export const supportedSiteLocales = [...launchedSiteLocales];
+export const preparedSiteLocales = Object.keys(
+  preparedSiteLocaleDefinitions,
+) as PreparedSiteLocale[];
+
+export function isPreparedSiteLocale(
+  value?: string | null,
+): value is PreparedSiteLocale {
+  return preparedSiteLocales.includes(
+    String(value || "").toLowerCase() as PreparedSiteLocale,
+  );
+}
+
+export function isSiteLocale(value?: string | null): value is SiteLocale {
+  return supportedSiteLocales.includes(
+    String(value || "").toLowerCase() as SiteLocale,
+  );
+}
 
 export function normalizeSiteLocale(value?: string | null): SiteLocale {
   const normalized = String(value || "").toLowerCase();
 
-  return supportedSiteLocales.includes(normalized as SiteLocale)
+  return isSiteLocale(normalized)
     ? (normalized as SiteLocale)
     : defaultSiteLocale;
+}
+
+export function getPreparedSiteLocaleDefinition(
+  locale: PreparedSiteLocale,
+) {
+  return preparedSiteLocaleDefinitions[locale];
 }
 
 export function getSiteLocaleFromPath(pathname?: string | null): SiteLocale {

@@ -7,15 +7,17 @@ import type { ProductPlan, RegionPrice } from "../lib/public-pricing-model";
 import { formatUsd } from "../lib/public-pricing-model";
 import AppleStyleExpandableRows from "./AppleStyleExpandableRows";
 import { PublicSection, PublicSectionHeader } from "./ui/PublicPage";
-import { getPublicPricingCopy } from "../lib/public-pricing-copy";
-import type { SiteLocale } from "../lib/site-locale";
+import { getLocalizedRegionName } from "../lib/locale-format";
+import { getRegionPriceTableCopy } from "../lib/region-price-table-copy";
+import type { PreparedSiteLocale } from "../lib/site-locale";
+import { localizeTaxNote } from "../lib/tax-note-localization";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 
 type Props = {
   plan: ProductPlan;
   initialVisibleCount?: number;
-  locale?: SiteLocale;
+  locale?: PreparedSiteLocale;
   platformLabel?: string;
   displayCurrency?: "usd" | "cny";
   displayCurrencyLabel?: string;
@@ -33,9 +35,9 @@ const platformOptions: Array<{ value: PlatformFilter }> = [
 
 function getPlatformOptionLabel(
   value: PlatformFilter,
-  locale: SiteLocale,
+  locale: PreparedSiteLocale,
 ) {
-  const copy = getPublicPricingCopy(locale).table;
+  const copy = getRegionPriceTableCopy(locale);
   if (value === "ios") return "App Store";
   if (value === "web") return copy.webLead;
   if (value === "android") return copy.googlePlayLead;
@@ -89,8 +91,17 @@ function getDiffPercent(region: RegionPrice, referencePrice: number) {
   return Math.round(((region.priceUsd - referencePrice) / referencePrice) * 100);
 }
 
-function getDiffTextByLocale(diffPercent: number, locale: SiteLocale) {
-  const copy = getPublicPricingCopy(locale).table;
+function getDiffTextByLocale(
+  diffPercent: number,
+  locale: PreparedSiteLocale,
+  hasUsReference: boolean,
+) {
+  if (!hasUsReference) {
+    if (diffPercent === 0) return "0%";
+    return `${diffPercent > 0 ? "+" : ""}${diffPercent}%`;
+  }
+
+  const copy = getRegionPriceTableCopy(locale);
   if (diffPercent === 0) return copy.sameAsUs;
   if (diffPercent > 0) return copy.aboveUs(diffPercent);
   return copy.belowUs(Math.abs(diffPercent));
@@ -103,8 +114,11 @@ function getDiffTone(diffPercent: number) {
   return "text-zinc-500 dark:text-zinc-400";
 }
 
-function getStatusByLocale(diffPercent: number, locale: SiteLocale) {
-  const copy = getPublicPricingCopy(locale).table;
+function getStatusByLocale(
+  diffPercent: number,
+  locale: PreparedSiteLocale,
+) {
+  const copy = getRegionPriceTableCopy(locale);
   if (diffPercent < -5) return copy.statusLow;
   if (diffPercent > 18) return copy.statusHigh;
   if (diffPercent > 5) return copy.statusAbove;
@@ -118,8 +132,11 @@ function getStatusDot(diffPercent: number) {
   return "bg-zinc-300";
 }
 
-function getRiskLabel(level: RegionPrice["riskLevel"], locale: SiteLocale) {
-  const copy = getPublicPricingCopy(locale).table;
+function getRiskLabel(
+  level: RegionPrice["riskLevel"],
+  locale: PreparedSiteLocale,
+) {
+  const copy = getRegionPriceTableCopy(locale);
   if (level === "low") return copy.riskLow;
   if (level === "high") return copy.riskHigh;
   if (level === "medium") return copy.riskMedium;
@@ -142,8 +159,11 @@ function getRiskClass(level: RegionPrice["riskLevel"]) {
   return "bg-zinc-50 text-zinc-500 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-800";
 }
 
-function getTaxConfidenceLabel(region: RegionPrice, locale: SiteLocale) {
-  const copy = getPublicPricingCopy(locale).table;
+function getTaxConfidenceLabel(
+  region: RegionPrice,
+  locale: PreparedSiteLocale,
+) {
+  const copy = getRegionPriceTableCopy(locale);
   if (region.taxSourceKind === "inferred") return copy.taxInferred;
   if (region.taxConfidence === "high") return copy.taxVerified;
   if (region.taxConfidence === "medium") return copy.taxMedium;
@@ -174,69 +194,33 @@ function getTaxTooltipDotClass(region: RegionPrice) {
   return "bg-zinc-400";
 }
 
-function translateTaxTextToZh(value: string) {
-  const raw = value.trim();
-  const includeMatch = raw.match(/^(?:Includes|Usually includes)\s+(.+)$/i);
-
-  if (includeMatch) {
-    const label = includeMatch[1]
-      .replace(/consumption tax/i, "消费税")
-      .replace(/service tax/i, "服务税")
-      .replace(/sales tax/i, "销售税")
-      .replace(/by region/i, "因地区不同");
-
-    return /^Usually includes/i.test(raw) ? `通常含 ${label}` : `含 ${label}`;
-  }
-
-  const provinceMatch = raw.match(/^GST\/HST varies by province(?:,\s*(.+))?$/i);
-  if (provinceMatch) {
-    return provinceMatch[1]
-      ? `各省 ${provinceMatch[1]} GST/HST 不同`
-      : "各省 GST/HST 不同";
-  }
-
-  if (/State ICMS varies/i.test(raw)) return "州税（ICMS）不同";
-  if (/Sales tax varies by state/i.test(raw)) return "各州销售税不同";
-  if (/Sales tax varies by region/i.test(raw)) return "销售税因地区不同";
-  if (/VAT treatment needs review/i.test(raw)) return "VAT 规则需复核";
-  if (/Usually GST-inclusive/i.test(raw)) return "通常已含 GST，最终以结算页为准";
-  if (/Usually VAT-inclusive/i.test(raw)) return "通常已含 VAT，最终以结算页为准";
-  if (/App Store list price.*GST-inclusive/i.test(raw)) {
-    return "App Store 标价通常已含 GST，最终以结算页为准";
-  }
-  if (/App Store list price.*VAT-inclusive/i.test(raw)) {
-    return "App Store 标价通常已含 VAT，最终以结算页为准";
-  }
-  if (/Digital service tax treatment may vary/i.test(raw)) {
-    return "数字服务税务规则可能随服务类别变化，最终以结算页为准";
-  }
-  if (/No country tax-rate profile matched yet/i.test(raw)) {
-    return "未匹配到国家税率资料；最终以 App Store 结算页为准";
-  }
-  if (/final checkout applies/i.test(raw)) return "最终以结算页为准";
-
-  return raw;
-}
-
-function formatTaxDisplay(region: RegionPrice, locale: SiteLocale) {
+function formatTaxDisplay(
+  region: RegionPrice,
+  locale: PreparedSiteLocale,
+) {
   const raw = (region.tax || "").trim();
-  const copy = getPublicPricingCopy(locale).table;
+  const copy = getRegionPriceTableCopy(locale);
 
   if (!raw && (region.taxReviewStatus === "needs_review" || region.taxConfidence === "low")) {
     return copy.taxNeedsReview;
   }
 
-  if (locale !== "zh") {
-    return raw || copy.checkoutApplies;
-  }
-
-  return raw ? translateTaxTextToZh(raw) : copy.checkoutApplies;
+  return raw
+    ? localizeTaxNote(raw, locale, {
+        unknownFallback: locale !== "zh" && locale !== "en",
+      })
+    : copy.checkoutApplies;
 }
 
-function getTaxTooltip(region: RegionPrice, locale: SiteLocale) {
-  const copy = getPublicPricingCopy(locale).table;
+function getTaxTooltip(
+  region: RegionPrice,
+  locale: PreparedSiteLocale,
+) {
+  const copy = getRegionPriceTableCopy(locale);
   const noteRaw = region.taxFrontendNote || region.tax || "";
-  const note = locale === "zh" ? translateTaxTextToZh(noteRaw) : noteRaw;
+  const note = localizeTaxNote(noteRaw, locale, {
+    unknownFallback: locale !== "zh" && locale !== "en",
+  });
   const base =
     region.taxReviewStatus === "verified" && region.taxConfidence === "high"
       ? copy.taxVerifiedHelp
@@ -246,13 +230,37 @@ function getTaxTooltip(region: RegionPrice, locale: SiteLocale) {
           ? copy.taxMediumHelp
           : copy.taxUnverifiedHelp;
 
-  return [
+  return joinTooltipParts([
     base,
     note,
     region.taxCalculationPolicy === "do_not_calculate"
       ? copy.taxRankingPolicy
       : "",
-  ].filter(Boolean).join(" ");
+  ]);
+}
+
+function joinTooltipParts(parts: Array<string | undefined>) {
+  const sentences = parts
+    .filter(Boolean)
+    .flatMap((part) => part!.split(/(?<=[.!?。！？])\s+/))
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  const seen = new Set<string>();
+
+  return sentences
+    .filter((sentence) => {
+      const normalized = sentence
+        .toLocaleLowerCase()
+        .replace(/[.!?。！？]+$/u, "")
+        .replace(/\s+/g, " ");
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    })
+    .map((sentence) =>
+      /[.!?。！？]$/u.test(sentence) ? sentence : `${sentence}.`,
+    )
+    .join(" ");
 }
 
 function TaxTooltip({
@@ -262,7 +270,7 @@ function TaxTooltip({
 }: {
   region: RegionPrice;
   taxDisplay: string;
-  locale: SiteLocale;
+  locale: PreparedSiteLocale;
 }) {
   const [open, setOpen] = useState(false);
   const label = getTaxConfidenceLabel(region, locale);
@@ -338,7 +346,7 @@ function HeaderHelp({
 }: {
   label: string;
   help: string;
-  locale: SiteLocale;
+  locale: PreparedSiteLocale;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -359,7 +367,7 @@ function HeaderHelp({
       <button
         type="button"
         className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-[10px] font-semibold leading-none text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300/60"
-        aria-label={getPublicPricingCopy(locale).table.helpAria(label, help)}
+        aria-label={getRegionPriceTableCopy(locale).helpAria(label, help)}
         onMouseEnter={showTooltip}
         onFocus={showTooltip}
         onMouseLeave={() => setOpen(false)}
@@ -386,12 +394,13 @@ function RiskStatus({
 }: {
   region: RegionPrice;
   diffPercent: number;
-  locale: SiteLocale;
+  locale: PreparedSiteLocale;
 }) {
   const [open, setOpen] = useState(false);
-  const copy = getPublicPricingCopy(locale).table;
+  const copy = getRegionPriceTableCopy(locale);
   const fallback = copy.riskFallback;
-  const tooltip = [region.riskNote, region.riskFactors].filter(Boolean).join(" ") || fallback;
+  const tooltip =
+    joinTooltipParts([region.riskNote, region.riskFactors]) || fallback;
   const statusLabel = getStatusByLocale(diffPercent, locale);
   const riskLabel = copy.riskPrefix(getRiskLabel(region.riskLevel, locale));
 
@@ -442,6 +451,8 @@ function RegionPriceRow({
   region,
   rank,
   referencePrice,
+  referenceCountry,
+  hasUsReference,
   displayCurrency,
   displayCurrencyLabel,
   formatDisplayPrice,
@@ -451,18 +462,22 @@ function RegionPriceRow({
   region: RegionPrice;
   rank: number;
   referencePrice: number;
+  referenceCountry: string;
+  hasUsReference: boolean;
   displayCurrency: "usd" | "cny";
   displayCurrencyLabel: string;
   formatDisplayPrice: (value: number) => string;
   showSourceColumn: boolean;
-  locale: SiteLocale;
+  locale: PreparedSiteLocale;
 }) {
   const diffPercent = getDiffPercent(region, referencePrice);
   const columns = showSourceColumn
     ? "md:grid-cols-[44px_minmax(142px,1.05fr)_120px_108px_124px_minmax(136px,1fr)_82px_118px]"
     : "md:grid-cols-[44px_minmax(150px,1.05fr)_122px_108px_124px_minmax(144px,1fr)_118px]";
   const taxDisplay = formatTaxDisplay(region, locale);
-  const copy = getPublicPricingCopy(locale).table;
+  const copy = getRegionPriceTableCopy(locale);
+  const localizedCountry =
+    getLocalizedRegionName(region.code, locale) || region.country;
 
   return (
     <div
@@ -482,7 +497,7 @@ function RegionPriceRow({
         </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-zinc-950 dark:text-white">
-            {region.country}
+            {localizedCountry}
           </div>
           <div className="mt-0.5 truncate text-xs text-zinc-400 md:hidden">
             {region.localPrice}
@@ -523,10 +538,10 @@ function RegionPriceRow({
 
       <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {copy.vsUs}
+          {hasUsReference ? copy.vsUs : referenceCountry}
         </div>
         <div className={`text-sm font-medium ${getDiffTone(diffPercent)}`}>
-          {getDiffTextByLocale(diffPercent, locale)}
+          {getDiffTextByLocale(diffPercent, locale, hasUsReference)}
         </div>
       </div>
 
@@ -593,7 +608,11 @@ export default function ExpandableRegionPriceTable({
 
   const referenceRegion = getReferenceRegion(filteredRegions);
   const referencePrice = referenceRegion?.priceUsd || 0;
-  const copy = getPublicPricingCopy(locale).table;
+  const hasUsReference = referenceRegion?.code.toUpperCase() === "US";
+  const referenceCountry = referenceRegion
+    ? getLocalizedRegionName(referenceRegion.code, locale) || referenceRegion.country
+    : "";
+  const copy = getRegionPriceTableCopy(locale);
   const effectiveDisplayCurrencyLabel =
     displayCurrencyLabel || copy.usd;
   const activePlatformLabel =
@@ -686,8 +705,8 @@ export default function ExpandableRegionPriceTable({
             locale={locale}
           />
           <HeaderHelp
-            label={copy.vsUs}
-            help={copy.vsUsHelp}
+            label={hasUsReference ? copy.vsUs : referenceCountry}
+            help={hasUsReference ? copy.vsUsHelp : referenceCountry}
             locale={locale}
           />
           <HeaderHelp
@@ -717,6 +736,8 @@ export default function ExpandableRegionPriceTable({
                   region={region}
                   rank={index + 1}
                   referencePrice={referencePrice}
+                  referenceCountry={referenceCountry}
+                  hasUsReference={hasUsReference}
                   displayCurrency={displayCurrency}
                   displayCurrencyLabel={effectiveDisplayCurrencyLabel}
                   formatDisplayPrice={formatDisplayPrice}
@@ -737,6 +758,8 @@ export default function ExpandableRegionPriceTable({
                   region={region}
                   rank={initialVisibleCount + index + 1}
                   referencePrice={referencePrice}
+                  referenceCountry={referenceCountry}
+                  hasUsReference={hasUsReference}
                   displayCurrency={displayCurrency}
                   displayCurrencyLabel={effectiveDisplayCurrencyLabel}
                   formatDisplayPrice={formatDisplayPrice}

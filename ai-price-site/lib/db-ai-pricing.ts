@@ -8,6 +8,7 @@ import type {
 } from "./db-pricing-types";
 import type { SiteLocale } from "./site-locale";
 import { getLocalizedCountryName } from "./country-name";
+import { localizeTaxNote } from "./tax-note-localization";
 
 type DbPricingLocale = SiteLocale;
 type TaxProfileRow = {
@@ -51,7 +52,73 @@ function formatDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function billingSuffix(billingCycle: string) {
+function billingSuffix(billingCycle: string, locale: DbPricingLocale) {
+  if (locale === "fr") {
+    if (billingCycle === "MONTHLY") return "/mois";
+    if (billingCycle === "YEARLY") return "/an";
+    if (billingCycle === "WEEKLY") return "/semaine";
+    return "";
+  }
+  if (locale === "it") {
+    if (billingCycle === "MONTHLY") return "/mese";
+    if (billingCycle === "YEARLY") return "/anno";
+    if (billingCycle === "WEEKLY") return "/settimana";
+    return "";
+  }
+  if (locale === "de") {
+    if (billingCycle === "MONTHLY") return "/Monat";
+    if (billingCycle === "YEARLY") return "/Jahr";
+    if (billingCycle === "WEEKLY") return "/Woche";
+    return "";
+  }
+  if (locale === "pt") {
+    if (billingCycle === "MONTHLY") return "/mês";
+    if (billingCycle === "YEARLY") return "/ano";
+    if (billingCycle === "WEEKLY") return "/semana";
+    return "";
+  }
+  if (locale === "ar") {
+    if (billingCycle === "MONTHLY") return "/شهر";
+    if (billingCycle === "YEARLY") return "/سنة";
+    if (billingCycle === "WEEKLY") return "/أسبوع";
+    return "";
+  }
+
+  if (locale === "tr") {
+    if (billingCycle === "MONTHLY") return "/ay";
+    if (billingCycle === "YEARLY") return "/yıl";
+    if (billingCycle === "WEEKLY") return "/hafta";
+    return "";
+  }
+
+  if (locale === "es") {
+    if (billingCycle === "MONTHLY") return "/mes";
+    if (billingCycle === "YEARLY") return "/año";
+    if (billingCycle === "WEEKLY") return "/semana";
+    return "";
+  }
+
+  if (locale === "ko") {
+    if (billingCycle === "MONTHLY") return "/월";
+    if (billingCycle === "YEARLY") return "/년";
+    if (billingCycle === "WEEKLY") return "/주";
+    return "";
+  }
+
+  if (locale === "ja") {
+    if (billingCycle === "MONTHLY") return "/月";
+    if (billingCycle === "YEARLY") return "/年";
+    if (billingCycle === "WEEKLY") return "/週";
+    return "";
+  }
+
+  if (locale === "zh") {
+    if (billingCycle === "MONTHLY") return "/月";
+    if (billingCycle === "YEARLY") return "/年";
+    if (billingCycle === "WEEKLY") return "/周";
+    return "";
+  }
+
   if (billingCycle === "MONTHLY") return "/mo";
   if (billingCycle === "YEARLY") return "/yr";
   if (billingCycle === "WEEKLY") return "/wk";
@@ -62,10 +129,12 @@ function formatLocalPrice({
   amount,
   currency,
   billingCycle,
+  locale,
 }: {
   amount: unknown;
   currency: string;
   billingCycle: string;
+  locale: DbPricingLocale;
 }) {
   const numberValue = Number(amount);
 
@@ -73,9 +142,9 @@ function formatLocalPrice({
     return `-- ${currency}`;
   }
 
-  return `${numberValue.toLocaleString("en-US", {
+  return `${numberValue.toLocaleString(locale === "ja" ? "ja-JP" : locale === "ko" ? "ko-KR" : locale === "es" ? "es-ES" : locale === "tr" ? "tr-TR" : locale === "ar" ? "ar" : locale === "fr" ? "fr-FR" : locale === "it" ? "it-IT" : locale === "de" ? "de-DE" : locale === "pt" ? "pt-PT" : locale === "zh" ? "zh-CN" : "en-US", {
     maximumFractionDigits: 2,
-  })} ${currency}${billingSuffix(billingCycle)}`;
+  })} ${currency}${billingSuffix(billingCycle, locale)}`;
 }
 
 function defaultDescription({
@@ -88,6 +157,30 @@ function defaultDescription({
   if (locale === "en") {
     return `Compare ${name} subscription prices, cheapest regions and regional price spread.`;
   }
+
+  if (locale === "ja") {
+    return `${name}のサブスクリプション料金、最安地域、地域別の価格差を比較します。`;
+  }
+
+  if (locale === "ko") {
+    return `${name}의 구독 가격과 최저가 지역, 지역별 가격 차이를 비교합니다.`;
+  }
+
+  if (locale === "es") {
+    return `Compara los precios de suscripción de ${name}, las regiones más baratas y las diferencias regionales.`;
+  }
+
+  if (locale === "tr") {
+    return `${name} abonelik fiyatlarını, en uygun bölgeleri ve bölgesel fiyat farklarını karşılaştırın.`;
+  }
+
+  if (locale === "ar") {
+    return `قارن أسعار اشتراك ${name} والمناطق الأقل سعراً وفروق الأسعار الإقليمية.`;
+  }
+  if (locale === "fr") return `Comparez les prix de ${name}, les régions les moins chères et les écarts régionaux.`;
+  if (locale === "it") return `Confronta i prezzi di ${name}, le regioni meno care e le differenze regionali.`;
+  if (locale === "de") return `Vergleichen Sie die Preise von ${name}, die günstigsten Regionen und regionale Unterschiede.`;
+  if (locale === "pt") return `Compare os preços de ${name}, as regiões mais baratas e as diferenças regionais.`;
 
   return `比较 ${name} 在不同国家与地区的订阅价格、最低价地区和价格差异。`;
 }
@@ -114,12 +207,20 @@ function getTaxNote({
   const explicitNote = priceTaxNote?.trim();
 
   if (explicitNote) {
-    return explicitNote;
+    return localizeTaxNote(explicitNote, locale, { unknownFallback: true });
   }
 
-  return locale === "en"
-    ? "Tax may vary at checkout"
-    : "税费以结算页为准";
+  if (locale === "en") return "Tax may vary at checkout";
+  if (locale === "ja") return "税額は購入画面でご確認ください";
+  if (locale === "ko") return "세금은 결제 화면에서 확인하세요";
+  if (locale === "es") return "Los impuestos pueden variar al pagar";
+  if (locale === "tr") return "Vergiler ödeme sırasında değişebilir";
+  if (locale === "ar") return "قد تختلف الضرائب عند الدفع";
+  if (locale === "fr") return "Les taxes peuvent varier au moment du paiement";
+  if (locale === "it") return "Le imposte possono variare al momento del pagamento";
+  if (locale === "de") return "Steuern können beim Bezahlen abweichen";
+  if (locale === "pt") return "Os impostos podem variar no pagamento";
+  return "税费以结算页为准";
 }
 
 function hasBrokenText(value?: string | null) {
@@ -179,6 +280,22 @@ function getLocalizedTaxProfileText({
 
   if (locale === "en") {
     return enText || zhText || "";
+  }
+
+  if (
+    locale === "ja" ||
+    locale === "ko" ||
+    locale === "es" ||
+    locale === "tr" ||
+    locale === "ar" ||
+    locale === "fr" ||
+    locale === "it" ||
+    locale === "de" ||
+    locale === "pt"
+  ) {
+    return localizeTaxNote(enText || zhText || "", locale, {
+      unknownFallback: true,
+    });
   }
 
   if (zhText && !hasBrokenText(zhText) && hasCjkText(zhText)) {
@@ -363,6 +480,7 @@ export async function getDbAiPricingProducts({
                 amount: price.localPrice,
                 currency: price.currency,
                 billingCycle: String(plan.billingCycle),
+                locale,
               }),
               priceUsd: Number(price.priceUsd),
               taxNote: getTaxNote({

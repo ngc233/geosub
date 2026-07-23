@@ -2,11 +2,28 @@ import type {
   ProductPlan,
   SubscriptionProduct,
 } from "./public-pricing-model";
-import type { SiteLocale } from "./site-locale";
+import {
+  getSiteLocaleDefinition,
+  type SiteLocale,
+} from "./site-locale";
 
 export type PricingFaq = {
   q: string;
   a: string;
+};
+
+const regionalPricePropertyLabels: Record<SiteLocale, string> = {
+  zh: "App Store 地区订阅价格",
+  en: "Regional App Store subscription price",
+  ja: "App Store の地域別サブスクリプション価格",
+  ko: "App Store 지역별 구독 가격",
+  es: "Precio regional de la suscripción en App Store",
+  tr: "Bölgesel App Store abonelik fiyatı",
+  ar: "سعر اشتراك App Store حسب المنطقة",
+  fr: "Prix régional de l’abonnement sur l’App Store",
+  it: "Prezzo regionale dell’abbonamento su App Store",
+  de: "Regionaler App-Store-Abonnementpreis",
+  pt: "Preço regional da subscrição na App Store",
 };
 
 export function buildPricingStructuredData({
@@ -30,7 +47,7 @@ export function buildPricingStructuredData({
     process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org"
   ).replace(/\/$/, "");
   const pageUrl = new URL(path, siteUrl).toString();
-  const language = locale === "zh" ? "zh-CN" : "en";
+  const language = getSiteLocaleDefinition(locale).htmlLang;
   const dateModified = plan.freshness?.pageUpdatedAt || product.updatedAt;
 
   return {
@@ -56,10 +73,7 @@ export function buildPricingStructuredData({
         variableMeasured: [
           {
             "@type": "PropertyValue",
-            name:
-              locale === "zh"
-                ? "App Store 地区订阅价格"
-                : "Regional App Store subscription price",
+            name: regionalPricePropertyLabels[locale],
             unitText: "USD",
           },
         ],

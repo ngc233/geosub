@@ -1,12 +1,12 @@
 # GeoSub Project Handoff
 
-Updated: 2026-07-22
+Updated: 2026-07-23
 
 ## Current Stage
 
-The public v1.0.7 release is online. The complete local v2.0 scope has passed
-technical acceptance and is being packaged as the v2.0.0 release candidate. It
-has not been committed, pushed or deployed yet.
+The public v2.0.0 release is online. The local v2.1.0 multilingual release
+candidate has passed technical acceptance but has not been committed, pushed
+or deployed yet.
 
 The operating pipeline is:
 
@@ -19,6 +19,48 @@ discovery lead
   -> freshness, coverage and anomaly repair cycles
   -> public price and purchasing-power views
 ```
+
+## V2.1 Local Roadmap
+
+1. Eleven public locales are active locally:
+   - Chinese, English, Japanese, Korean, Spanish, Turkish, Arabic, French,
+     Italian, German and Portuguese.
+   - Arabic uses an RTL document shell; the other ten locales use LTR.
+   - Navigation, home pages, AI and streaming lists, product details, regional
+     price tables, purchasing-power views, tax and risk notes, sharing,
+     trust pages and public footer copy use typed locale dictionaries.
+2. Localization is enforced as a platform contract:
+   - Active locales are registered once in `lib/site-locale.ts`.
+   - Pricing list and detail `hreflang` links are generated from that registry
+     instead of duplicated language lists.
+   - Official product and plan names remain unchanged across locales while
+     explanatory UI and SEO copy are localized.
+   - Unknown public locales cannot silently inherit Chinese content.
+3. Browser acceptance completed locally on 2026-07-23:
+   - 66 desktop routes: 11 locales across home, AI list, ChatGPT detail,
+     streaming list, Netflix detail and methodology.
+   - 33 mobile routes at 390 by 844: 11 locales across AI list, ChatGPT detail
+     and Netflix detail.
+   - No 404 pages, replacement characters, horizontal overflow, clipped
+     headings or foreign-script leakage were found in the audited routes.
+4. V2.1 release-candidate status:
+   - The final full preflight passed on 2026-07-23 with database health,
+     10/10 migration checks, all eight canonical products, 35/35 fresh
+     exchange rates, 8/8 persistent product logos, full-product price quality,
+     source encoding, TypeScript, ESLint, all 207 tests and the 114-route
+     production build.
+   - HBO Max has 102 pending anomaly records after canonical-plan
+     normalization. They remain isolated from published prices; the quality
+     gate found no published sub-dollar prices, peer outliers or duplicate
+     plans.
+   - A live French ChatGPT detail page exposes all 11 locale alternates plus
+     the English `x-default` URL from the shared locale registry.
+   - Root, frontend, backend and npm lockfile versions are synchronized at
+     2.1.0, with dated release notes in `CHANGELOG.md`.
+   - `scripts/release-check.ps1` passes version, script syntax, repository
+     hygiene, secret scanning, frontend validation and production build gates.
+   - Commit, GitHub synchronization and production deployment remain pending
+     explicit approval.
 
 ## V2.0 Local Roadmap
 
@@ -224,17 +266,21 @@ discovery lead
 - `069_required_catalog_products.sql`
 - `070_disney_app_store_source.sql`
 - `071_archive_superseded_app_store_ambiguities.sql`
+- `072_normalize_hbo_max_app_store_plans.sql`
 
-All nine migrations have been applied and exercised against the local PostgreSQL
+All ten migrations have been applied and exercised against the local PostgreSQL
 database. The local migration registry contains their final checksums.
 
 ## Verification
 
 - `scripts/release-check.ps1` passes.
-- Frontend tests: 180 passed in the final full preflight.
+- Frontend tests: 207 passed in the final full preflight.
 - TypeScript, ESLint and the production Next.js build pass.
 - The full preflight now runs local-environment, canonical-plan and full-product
   price-quality checks before code validation and the production build.
+- The 2026-07-23 full preflight verified 35/35 fresh exchange rates, 8/8
+  persistent product logos, 10/10 registered migrations and a 114-route
+  production build.
 - The single-admin password form was verified in the signed-in local browser;
   the final password-changing submit was intentionally left to the owner.
 - Migrations 064 through 071 compile in PostgreSQL.

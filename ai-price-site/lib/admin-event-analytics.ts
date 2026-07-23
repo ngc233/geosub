@@ -292,7 +292,7 @@ export function inferEventProductSlug(
   if (buttonSlug && knownSlugs.has(buttonSlug)) return buttonSlug;
 
   const pathSlug = event.pagePath?.match(
-    /^\/(?:zh|en)\/(?:ai-pricing|streaming-pricing)\/([^/?#]+)/,
+    /^\/(?:zh|en|ja|ko|es|tr|ar|fr|it|de|pt)\/(?:ai-pricing|streaming-pricing)\/([^/?#]+)/,
   )?.[1];
 
   return pathSlug && knownSlugs.has(pathSlug) ? pathSlug : null;

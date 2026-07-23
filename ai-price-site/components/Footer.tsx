@@ -9,11 +9,12 @@ import {
   getSiteLocaleFromPath,
   stripSiteLocale,
   withSiteLocale,
+  type PreparedSiteLocale,
   type SiteLocale,
 } from "../lib/site-locale";
 
 const footerCopy: Record<
-  SiteLocale,
+  PreparedSiteLocale,
   { description: string; rights: string; note: string; tagline: string }
 > = {
   zh: {
@@ -29,6 +30,70 @@ const footerCopy: Record<
     rights: "All rights reserved.",
     note: "Prices and availability may change by region, exchange rate, tax, and platform policy. Always verify final prices on the official checkout page.",
     tagline: "Global Digital Subscription Pricing",
+  },
+  ja: {
+    description:
+      "GeoSub は、AI やストリーミングなどのデジタルサブスクリプション料金を国・地域別に比較できるデータプラットフォームです。",
+    rights: "無断転載を禁じます。",
+    note:
+      "料金や提供状況は、地域、為替、税金、プラットフォームの方針によって変わる場合があります。最終的な料金は公式の決済画面でご確認ください。",
+    tagline: "世界のデジタルサブスクリプション料金",
+  },
+  ko: {
+    description:
+      "GeoSub는 AI와 스트리밍 등 디지털 구독 서비스의 국가·지역별 가격을 비교하는 데이터 플랫폼입니다.",
+    rights: "모든 권리 보유.",
+    note:
+      "가격과 이용 가능 여부는 지역, 환율, 세금 및 플랫폼 정책에 따라 달라질 수 있습니다. 최종 결제 금액은 공식 결제 화면에서 확인하세요.",
+    tagline: "글로벌 디지털 구독 가격 데이터",
+  },
+  es: {
+    description:
+      "GeoSub es una plataforma de datos para comparar el precio de suscripciones digitales, como IA y streaming, entre países y regiones.",
+    rights: "Todos los derechos reservados.",
+    note:
+      "Los precios y la disponibilidad pueden variar según la región, el tipo de cambio, los impuestos y las políticas de la plataforma. Comprueba siempre el importe final en la página oficial de pago.",
+    tagline: "Precios globales de suscripciones digitales",
+  },
+  tr: {
+    description:
+      "GeoSub; yapay zekâ, dijital yayın ve diğer abonelik hizmetlerinin ülke ve bölgelere göre fiyatlarını karşılaştıran bir veri platformudur.",
+    rights: "Tüm hakları saklıdır.",
+    note:
+      "Fiyatlar ve kullanılabilirlik; bölgeye, döviz kuruna, vergilere ve platform politikalarına göre değişebilir. Son tutarı her zaman resmî ödeme sayfasından doğrulayın.",
+    tagline: "Dünya genelinde dijital abonelik fiyatları",
+  },
+  ar: {
+    description:
+      "GeoSub منصة بيانات لمقارنة أسعار الاشتراكات الرقمية، مثل خدمات الذكاء الاصطناعي والبث، بين الدول والمناطق.",
+    rights: "جميع الحقوق محفوظة.",
+    note:
+      "قد تختلف الأسعار والتوافر حسب المنطقة وسعر الصرف والضرائب وسياسات المنصة. تحقّق دائمًا من السعر النهائي في صفحة الدفع الرسمية.",
+    tagline: "بيانات أسعار الاشتراكات الرقمية عالميًا",
+  },
+  fr: {
+    description: "GeoSub compare les prix des abonnements numériques, notamment les services d’IA et de streaming, entre les pays et les régions.",
+    rights: "Tous droits réservés.",
+    note: "Les prix et la disponibilité peuvent varier selon la région, le taux de change, les taxes et les règles de la plateforme. Vérifiez toujours le montant final sur la page de paiement officielle.",
+    tagline: "Prix des abonnements numériques dans le monde",
+  },
+  it: {
+    description: "GeoSub confronta i prezzi degli abbonamenti digitali, inclusi i servizi IA e streaming, tra paesi e regioni.",
+    rights: "Tutti i diritti riservati.",
+    note: "Prezzi e disponibilità possono variare in base a regione, cambio, imposte e regole della piattaforma. Verifica sempre l’importo finale nella pagina di pagamento ufficiale.",
+    tagline: "Prezzi degli abbonamenti digitali nel mondo",
+  },
+  de: {
+    description: "GeoSub vergleicht die Preise digitaler Abonnements, darunter KI- und Streaming-Dienste, nach Ländern und Regionen.",
+    rights: "Alle Rechte vorbehalten.",
+    note: "Preise und Verfügbarkeit können je nach Region, Wechselkurs, Steuern und Plattformregeln variieren. Prüfen Sie den Endbetrag immer auf der offiziellen Zahlungsseite.",
+    tagline: "Digitale Abonnementpreise weltweit",
+  },
+  pt: {
+    description: "O GeoSub compara os preços de assinaturas digitais, incluindo serviços de IA e streaming, entre países e regiões.",
+    rights: "Todos os direitos reservados.",
+    note: "Os preços e a disponibilidade podem variar conforme a região, o câmbio, os impostos e as regras da plataforma. Confirme sempre o valor final na página oficial de pagamento.",
+    tagline: "Preços de assinaturas digitais no mundo",
   },
 };
 

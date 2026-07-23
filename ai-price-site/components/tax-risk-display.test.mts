@@ -10,37 +10,39 @@ function readComponent(fileName: string) {
   return readFileSync(resolve(componentsDir, fileName), "utf8");
 }
 
-test("region table tax and risk labels follow the active locale", () => {
+test("region table tax and risk labels cover every prepared locale", () => {
   const source = readComponent("ExpandableRegionPriceTable.tsx");
+  const copySource = readFileSync(
+    resolve(componentsDir, "../lib/region-price-table-copy.ts"),
+    "utf8",
+  );
 
-  assert.match(source, /import type \{ SiteLocale \} from "\.\.\/lib\/site-locale"/);
-  assert.match(source, /function getRiskLabel\(level: RegionPrice\["riskLevel"\], locale: SiteLocale\)/);
-  assert.match(source, /function getTaxConfidenceLabel\(region: RegionPrice, locale: SiteLocale\)/);
-  assert.match(source, /getPublicPricingCopy\(locale\)\.table/);
+  assert.match(
+    source,
+    /import type \{ PreparedSiteLocale \} from "\.\.\/lib\/site-locale"/,
+  );
+  assert.match(source, /locale: PreparedSiteLocale/);
+  assert.match(source, /getRegionPriceTableCopy\(locale\)/);
   assert.match(source, /return copy\.riskNeedsReview/);
   assert.match(source, /return copy\.taxInferred/);
   assert.match(source, /return copy\.taxVerified/);
   assert.match(source, /return copy\.taxMedium/);
   assert.match(source, /return copy\.taxNeedsReview/);
   assert.match(source, /copy\.riskPrefix\(getRiskLabel\(region\.riskLevel, locale\)\)/);
+  assert.match(
+    copySource,
+    /satisfies Record<[\s\S]*Exclude<PreparedSiteLocale, "zh" \| "en">/,
+  );
+  for (const locale of ["ja", "ko", "es", "tr", "ar"]) {
+    assert.match(copySource, new RegExp(`\\n  ${locale}:`));
+  }
 });
 
-test("Chinese tax display translates common English tax source phrases", () => {
+test("region table delegates tax notes and country names to locale helpers", () => {
   const source = readComponent("ExpandableRegionPriceTable.tsx");
 
-  assert.match(source, /function translateTaxTextToZh/);
-  assert.ok(
-    source.includes("return /^Usually includes/i.test(raw) ? `通常含 ${label}` : `含 ${label}`;"),
-  );
-  assert.match(source, /service tax\/i, "服务税"/);
-  assert.match(source, /Sales tax varies by region/);
-  assert.match(source, /销售税因地区不同/);
-  assert.match(source, /VAT treatment needs review/);
-  assert.match(source, /VAT 规则需复核/);
-  assert.match(source, /Usually GST-inclusive/);
-  assert.match(source, /通常已含 GST，最终以结算页为准/);
-  assert.match(source, /App Store list price\.\*VAT-inclusive/);
-  assert.match(source, /App Store 标价通常已含 VAT，最终以结算页为准/);
-  assert.match(source, /Digital service tax treatment may vary/);
-  assert.match(source, /数字服务税务规则可能随服务类别变化，最终以结算页为准/);
+  assert.match(source, /localizeTaxNote\(raw, locale/);
+  assert.match(source, /localizeTaxNote\(noteRaw, locale/);
+  assert.match(source, /unknownFallback: locale !== "zh" && locale !== "en"/);
+  assert.match(source, /getLocalizedRegionName\(region\.code, locale\)/);
 });

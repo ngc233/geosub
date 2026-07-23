@@ -1,13 +1,9 @@
-import type { SiteLocale } from "./site-locale";
+import type {
+  PreparedSiteLocale,
+  SiteLocale,
+} from "./site-locale";
 
-type PreparedDetailLocale =
-  | SiteLocale
-  | "es"
-  | "ja"
-  | "ko"
-  | "de"
-  | "fr"
-  | "ar";
+type PreparedDetailLocale = PreparedSiteLocale | "de" | "fr";
 
 export type DetailLocale = SiteLocale;
 
@@ -167,6 +163,32 @@ const detailCopyTemplates: Record<PreparedDetailLocale, DetailCopyTemplate> = {
     },
   },
 
+  tr: {
+    priceOverview: {
+      title: "{planName} dünya geneli fiyat özeti",
+      description:
+        "Bu paketin en düşük ve en yüksek fiyatını, fiyat aralığını ve bölgesel farklarını tek bakışta inceleyin.",
+    },
+    priceHeatmap: {
+      title: "{planName} dünya geneli fiyat haritası",
+      description:
+        "Ülke ve bölgelere göre göreli abonelik fiyatlarını gösterir. Yeşil daha uygun, sarı referansa yakın, kırmızı ise daha pahalı fiyatları belirtir.",
+    },
+    priceTable: {
+      title: "{planName} bölgesel fiyat tablosu",
+      description:
+        "Yerel fiyatı, USD karşılığını, vergi notlarını ve ABD referans fiyatına göre farkı ülke ve bölge bazında karşılaştırın.",
+    },
+    affordability: {
+      title: "{productName} yerel satın alma gücü karşılaştırması",
+      description:
+        "Aynı abonelik ücreti, yerel gelir düzeyine göre farklı bir yük oluşturabilir. Bu bölüm fiyatı yerel satın alma gücüyle birlikte değerlendirir.",
+    },
+    faq: {
+      title: "Sık sorulan sorular",
+    },
+  },
+
   de: {
     priceOverview: {
       title: "{planName} globale Preisübersicht",
@@ -217,6 +239,20 @@ const detailCopyTemplates: Record<PreparedDetailLocale, DetailCopyTemplate> = {
     faq: {
       title: "Questions fréquentes",
     },
+  },
+  it: {
+    priceOverview: { title: "Panoramica mondiale dei prezzi di {planName}", description: "Un riepilogo dei prezzi minimi, massimi e delle differenze regionali per questo piano." },
+    priceHeatmap: { title: "Mappa mondiale dei prezzi di {planName}", description: "Una mappa per paese e regione: verde indica prezzi più bassi, giallo valori vicini al riferimento e rosso prezzi più alti." },
+    priceTable: { title: "Tabella dei prezzi regionali di {planName}", description: "Dettagli per paese e regione con prezzo locale, equivalente in dollari, imposte e differenza dal riferimento." },
+    affordability: { title: "Confronto del potere d’acquisto locale per {productName}", description: "Lo stesso prezzo può avere un peso diverso a seconda del livello di reddito locale." },
+    faq: { title: "Domande frequenti" },
+  },
+  pt: {
+    priceOverview: { title: "Visão global dos preços de {planName}", description: "Um resumo dos preços mínimo e máximo e das diferenças regionais deste plano." },
+    priceHeatmap: { title: "Mapa mundial dos preços de {planName}", description: "Um mapa por país e região: verde indica preços mais baixos, amarelo valores próximos da referência e vermelho preços mais altos." },
+    priceTable: { title: "Tabela de preços regionais de {planName}", description: "Detalhes por país e região com preço local, equivalente em dólares, impostos e diferença face à referência." },
+    affordability: { title: "Comparação do poder de compra local para {productName}", description: "O mesmo preço pode representar um peso diferente consoante o nível de rendimento local." },
+    faq: { title: "Perguntas frequentes" },
   },
 
   ar: {
@@ -451,6 +487,35 @@ const detailMapCopy: Record<PreparedDetailLocale, DetailMapCopy> = {
     perMonth: "/월",
   },
 
+  tr: {
+    currentBenchmark: "Referans fiyat",
+    covered: "Kapsanan",
+    none: "Yok",
+    regionsSuffix: "bölge",
+    noUsBenchmarkNotice:
+      "Bu paket için henüz ABD fiyatı bulunmuyor. Harita geçici olarak en düşük fiyatlı bölgeyi referans alır; ABD verisi eklendiğinde referans otomatik olarak güncellenir.",
+    zoomOutAria: "Haritayı uzaklaştır",
+    resetAria: "Haritayı sıfırla",
+    zoomInAria: "Haritayı yakınlaştır",
+    mapAria: (planName) => `${planName} dünya geneli fiyat haritası`,
+    noPriceData: "Fiyat verisi yok",
+    sameAsBenchmark: "Referans fiyatla aynı",
+    moreExpensive: (percent) => `Referanstan %${percent} daha pahalı`,
+    cheaper: (percent) => `Referanstan %${Math.abs(percent)} daha ucuz`,
+    localPrice: "Yerel fiyat",
+    tax: "Vergi",
+    noRegionPrice: "Bu bölge için henüz fiyat verisi bulunmuyor.",
+    cheaperLegend: "Daha ucuz",
+    benchmarkLegend: "Referansa yakın",
+    expensiveLegend: "Daha pahalı",
+    lowest: "En düşük fiyat",
+    highest: "En yüksek fiyat",
+    reference: "Referans fiyat",
+    recorded: "İzlenen bölge",
+    closeDetail: "Harita ayrıntısını kapat",
+    perMonth: "/ay",
+  },
+
   de: {
     currentBenchmark: "Referenz",
     covered: "Abgedeckt",
@@ -507,6 +572,30 @@ const detailMapCopy: Record<PreparedDetailLocale, DetailMapCopy> = {
     recorded: "Région suivie",
     closeDetail: "Fermer le détail de la carte",
     perMonth: "/mois",
+  },
+  it: {
+    currentBenchmark: "Riferimento", covered: "Copertura", none: "N/D", regionsSuffix: "regioni",
+    noUsBenchmarkNotice: "Il prezzo statunitense non è ancora disponibile per questo piano. La mappa usa temporaneamente la regione meno cara come riferimento.",
+    zoomOutAria: "Riduci la mappa", resetAria: "Reimposta la mappa", zoomInAria: "Ingrandisci la mappa",
+    mapAria: (p) => `Mappa mondiale dei prezzi di ${p}`, noPriceData: "Nessun dato di prezzo",
+    sameAsBenchmark: "Uguale al riferimento", moreExpensive: (p) => `${p}% sopra il riferimento`,
+    cheaper: (p) => `${Math.abs(p)}% sotto il riferimento`, localPrice: "Prezzo locale", tax: "Imposte",
+    noRegionPrice: "Non sono ancora disponibili prezzi per questa regione.", cheaperLegend: "Più economico",
+    benchmarkLegend: "Vicino al riferimento", expensiveLegend: "Più caro", lowest: "Prezzo minimo",
+    highest: "Prezzo massimo", reference: "Riferimento", recorded: "Regione rilevata",
+    closeDetail: "Chiudi i dettagli della mappa", perMonth: "/mese",
+  },
+  pt: {
+    currentBenchmark: "Referência", covered: "Cobertura", none: "N/D", regionsSuffix: "regiões",
+    noUsBenchmarkNotice: "O preço dos EUA ainda não está disponível para este plano. O mapa usa temporariamente a região mais barata como referência.",
+    zoomOutAria: "Reduzir o mapa", resetAria: "Repor o mapa", zoomInAria: "Ampliar o mapa",
+    mapAria: (p) => `Mapa mundial dos preços de ${p}`, noPriceData: "Sem dados de preço",
+    sameAsBenchmark: "Igual à referência", moreExpensive: (p) => `${p}% acima da referência`,
+    cheaper: (p) => `${Math.abs(p)}% abaixo da referência`, localPrice: "Preço local", tax: "Impostos",
+    noRegionPrice: "Ainda não existem dados de preço para esta região.", cheaperLegend: "Mais barato",
+    benchmarkLegend: "Próximo da referência", expensiveLegend: "Mais caro", lowest: "Preço mínimo",
+    highest: "Preço máximo", reference: "Referência", recorded: "Região acompanhada",
+    closeDetail: "Fechar detalhes do mapa", perMonth: "/mês",
   },
 
   ar: {
@@ -728,6 +817,41 @@ const detailTableCopy: Record<PreparedDetailLocale, DetailTableCopy> = {
     clearlyHigh: "확실히 높음",
   },
 
+  tr: {
+    rank: "#",
+    region: "Bölge",
+    price: "Fiyat",
+    priceHelp:
+      "Bu bölgede izlenen abonelik fiyatı. Ana değer USD karşılığıdır; yerel para birimindeki fiyat alt satırda gösterilir.",
+    difference: "ABD'ye göre",
+    differenceHelp:
+      "ABD fiyatını referans alarak bu bölgenin ne kadar ucuz veya pahalı olduğunu gösterir.",
+    taxNotes: "Vergi / notlar",
+    taxNotesHelp:
+      "Nihai ödeme tutarını etkileyebilecek KDV, GST, diğer vergiler ve ek açıklamaları gösterir.",
+    judgement: "Fiyat değerlendirmesi",
+    judgementHelp:
+      "Bölgeleri ABD referans fiyatından sapmalarına göre düşük, referansa yakın, orta-yüksek veya yüksek fiyat olarak sınıflandırır.",
+    helpAriaSuffix: "ayrıntıları",
+    description: (visibleCount, totalCount) =>
+      `USD karşılığına göre düşükten yükseğe sıralanır. İlk ${Math.min(visibleCount, totalCount)} bölge varsayılan olarak gösterilir.`,
+    totalRegions: (totalCount) => `Toplam ${totalCount} bölge`,
+    showMore: (count) => `${count} bölge daha göster`,
+    collapse: "Bölge listesini daralt",
+    perMonth: "/ay",
+    localApproxPrefix: "≈",
+    sameAsBenchmark: "ABD ile aynı",
+    aboveBenchmark: (percent) => `ABD'den %${percent} daha pahalı`,
+    belowBenchmark: (percent) => `ABD'den %${Math.abs(percent)} daha ucuz`,
+    lowPriceZone: "Düşük fiyat",
+    nearBenchmark: "Referansa yakın",
+    midHighPrice: "Orta-yüksek fiyat",
+    highPriceZone: "Yüksek fiyat",
+    friendly: "Daha avantajlı",
+    slightlyHigh: "Biraz yüksek",
+    clearlyHigh: "Belirgin biçimde yüksek",
+  },
+
   de: {
     rank: "#",
     region: "Region",
@@ -788,6 +912,32 @@ const detailTableCopy: Record<PreparedDetailLocale, DetailTableCopy> = {
     friendly: "Plus favorable",
     slightlyHigh: "Un peu élevé",
     clearlyHigh: "Nettement élevé",
+  },
+  it: {
+    rank: "#", region: "Regione", price: "Prezzo",
+    priceHelp: "Prezzo dell’abbonamento rilevato nella regione. Il valore principale è l’equivalente in dollari, con il prezzo locale sotto.",
+    difference: "Vs Stati Uniti", differenceHelp: "Usa il prezzo statunitense come riferimento e mostra se la regione è più o meno cara.",
+    taxNotes: "Imposte / note", taxNotesHelp: "Mostra IVA, GST, imposte o altri elementi che possono influire sul prezzo finale.",
+    judgement: "Valutazione", judgementHelp: "Classifica ogni regione in base alla differenza dal prezzo di riferimento statunitense.",
+    helpAriaSuffix: "dettagli", description: (v,t) => `Ordinata per equivalente in dollari dal più basso al più alto. Sono mostrate inizialmente ${Math.min(v,t)} regioni.`,
+    totalRegions: (t) => `${t} regioni`, showMore: (c) => `Mostra altre ${c} regioni`, collapse: "Riduci l’elenco delle regioni",
+    perMonth: "/mese", localApproxPrefix: "≈", sameAsBenchmark: "Uguale agli Stati Uniti",
+    aboveBenchmark: (p) => `${p}% sopra gli Stati Uniti`, belowBenchmark: (p) => `${Math.abs(p)}% sotto gli Stati Uniti`,
+    lowPriceZone: "Fascia economica", nearBenchmark: "Vicino al riferimento", midHighPrice: "Prezzo medio-alto",
+    highPriceZone: "Fascia cara", friendly: "Più conveniente", slightlyHigh: "Leggermente alto", clearlyHigh: "Decisamente alto",
+  },
+  pt: {
+    rank: "#", region: "Região", price: "Preço",
+    priceHelp: "Preço da assinatura recolhido na região. O valor principal é o equivalente em dólares, com o preço local por baixo.",
+    difference: "Vs EUA", differenceHelp: "Usa o preço dos EUA como referência e mostra se a região é mais barata ou mais cara.",
+    taxNotes: "Impostos / notas", taxNotesHelp: "Apresenta IVA, GST, impostos ou outros fatores que podem afetar o preço final.",
+    judgement: "Avaliação", judgementHelp: "Classifica cada região segundo a diferença face ao preço de referência dos EUA.",
+    helpAriaSuffix: "detalhes", description: (v,t) => `Ordenada pelo equivalente em dólares do mais baixo ao mais alto. São mostradas inicialmente ${Math.min(v,t)} regiões.`,
+    totalRegions: (t) => `${t} regiões`, showMore: (c) => `Mostrar mais ${c} regiões`, collapse: "Recolher a lista de regiões",
+    perMonth: "/mês", localApproxPrefix: "≈", sameAsBenchmark: "Igual aos EUA",
+    aboveBenchmark: (p) => `${p}% acima dos EUA`, belowBenchmark: (p) => `${Math.abs(p)}% abaixo dos EUA`,
+    lowPriceZone: "Zona de preço baixo", nearBenchmark: "Próximo da referência", midHighPrice: "Preço médio-alto",
+    highPriceZone: "Zona de preço elevado", friendly: "Mais favorável", slightlyHigh: "Ligeiramente elevado", clearlyHigh: "Claramente elevado",
   },
 
   ar: {

@@ -11,6 +11,7 @@ import {
   stripSiteLocale,
   supportedSiteLocales,
   withSiteLocale,
+  type PreparedSiteLocale,
   type SiteLocale,
 } from "../lib/site-locale";
 
@@ -29,7 +30,7 @@ export type NavItem = {
   children?: NavChild[];
 };
 
-const fallbackNavItemsByLocale: Record<SiteLocale, NavItem[]> = {
+const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> = {
   zh: [
     { name: "首页", href: "/", match: ["/"] },
     {
@@ -116,6 +117,174 @@ const fallbackNavItemsByLocale: Record<SiteLocale, NavItem[]> = {
     },
     { name: "Data Sources", href: "/data-sources", match: ["/data-sources"] },
   ],
+  ja: [
+    { name: "ホーム", href: "/", match: ["/"] },
+    {
+      name: "デジタルサブスクリプション",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        {
+          name: "AI サブスクリプション",
+          href: "/ai-pricing",
+          description: "ChatGPT、Claude、Gemini などの地域別料金を比較します。",
+        },
+        {
+          name: "ストリーミング",
+          href: "/streaming-pricing",
+          description: "Netflix、Disney+ などの地域別料金を比較します。",
+        },
+      ],
+    },
+    { name: "ガイド", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "データソース", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  ko: [
+    { name: "홈", href: "/", match: ["/"] },
+    {
+      name: "디지털 구독",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        {
+          name: "AI 구독",
+          href: "/ai-pricing",
+          description: "ChatGPT, Claude, Gemini 등의 국가별 구독료를 비교합니다.",
+        },
+        {
+          name: "스트리밍",
+          href: "/streaming-pricing",
+          description: "Netflix, Disney+ 등의 국가별 구독료를 비교합니다.",
+        },
+      ],
+    },
+    { name: "가이드", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "데이터 출처", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  es: [
+    { name: "Inicio", href: "/", match: ["/"] },
+    {
+      name: "Suscripciones digitales",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        {
+          name: "Suscripciones de IA",
+          href: "/ai-pricing",
+          description: "Compara los precios regionales de ChatGPT, Claude, Gemini y más.",
+        },
+        {
+          name: "Streaming",
+          href: "/streaming-pricing",
+          description: "Compara los precios regionales de Netflix, Disney+ y más.",
+        },
+      ],
+    },
+    { name: "Guías", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "Fuentes de datos", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  tr: [
+    { name: "Ana Sayfa", href: "/", match: ["/"] },
+    {
+      name: "Dijital Abonelikler",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        {
+          name: "Yapay Zekâ Abonelikleri",
+          href: "/ai-pricing",
+          description:
+            "ChatGPT, Claude, Gemini ve diğer hizmetlerin ülkelere göre abonelik fiyatlarını karşılaştırın.",
+        },
+        {
+          name: "Dijital Yayın",
+          href: "/streaming-pricing",
+          description:
+            "Netflix, Disney+ ve diğer yayın hizmetlerinin ülkelere göre fiyatlarını karşılaştırın.",
+        },
+      ],
+    },
+    { name: "Rehberler", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "Veri Kaynakları", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  ar: [
+    { name: "الرئيسية", href: "/", match: ["/"] },
+    {
+      name: "الاشتراكات الرقمية",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        {
+          name: "اشتراكات الذكاء الاصطناعي",
+          href: "/ai-pricing",
+          description: "قارن أسعار ChatGPT وClaude وGemini حسب البلد والمنطقة.",
+        },
+        {
+          name: "خدمات البث",
+          href: "/streaming-pricing",
+          description: "قارن أسعار Netflix وDisney+ وغيرها حسب البلد والمنطقة.",
+        },
+      ],
+    },
+    { name: "الأدلة", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "مصادر البيانات", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  fr: [
+    { name: "Accueil", href: "/", match: ["/"] },
+    {
+      name: "Abonnements numériques",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        { name: "Abonnements IA", href: "/ai-pricing", description: "Comparez les prix de ChatGPT, Claude, Gemini et d’autres services selon les pays." },
+        { name: "Streaming", href: "/streaming-pricing", description: "Comparez les prix de Netflix, Disney+ et d’autres services selon les pays." },
+      ],
+    },
+    { name: "Guides", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "Sources des données", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  it: [
+    { name: "Home", href: "/", match: ["/"] },
+    {
+      name: "Abbonamenti digitali",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        { name: "Abbonamenti IA", href: "/ai-pricing", description: "Confronta i prezzi di ChatGPT, Claude, Gemini e altri servizi nei vari paesi." },
+        { name: "Streaming", href: "/streaming-pricing", description: "Confronta i prezzi di Netflix, Disney+ e altri servizi nei vari paesi." },
+      ],
+    },
+    { name: "Guide", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "Fonti dei dati", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  de: [
+    { name: "Startseite", href: "/", match: ["/"] },
+    {
+      name: "Digitale Abonnements",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        { name: "KI-Abonnements", href: "/ai-pricing", description: "Vergleichen Sie die Preise von ChatGPT, Claude, Gemini und weiteren Diensten nach Land." },
+        { name: "Streaming", href: "/streaming-pricing", description: "Vergleichen Sie die Preise von Netflix, Disney+ und weiteren Diensten nach Land." },
+      ],
+    },
+    { name: "Ratgeber", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "Datenquellen", href: "/data-sources", match: ["/data-sources"] },
+  ],
+  pt: [
+    { name: "Início", href: "/", match: ["/"] },
+    {
+      name: "Assinaturas digitais",
+      href: "/ai-pricing",
+      match: ["/ai-pricing", "/streaming-pricing"],
+      children: [
+        { name: "Assinaturas de IA", href: "/ai-pricing", description: "Compare os preços do ChatGPT, Claude, Gemini e outros serviços por país." },
+        { name: "Streaming", href: "/streaming-pricing", description: "Compare os preços da Netflix, Disney+ e outros serviços por país." },
+      ],
+    },
+    { name: "Guias", href: "/guides", match: ["/guides", "/articles"] },
+    { name: "Fontes de dados", href: "/data-sources", match: ["/data-sources"] },
+  ],
 };
 
 const languages = supportedSiteLocales.map((code) => ({
@@ -125,7 +294,7 @@ const languages = supportedSiteLocales.map((code) => ({
 }));
 
 const headerCopy: Record<
-  SiteLocale,
+  PreparedSiteLocale,
   {
     home: string;
     homeLinkLabel: string;
@@ -150,6 +319,78 @@ const headerCopy: Record<
     openMenuLabel: "Open menu",
     closeMenuLabel: "Close menu",
     currentSectionLabel: "Current section:",
+  },
+  ja: {
+    home: "ホーム",
+    homeLinkLabel: "GeoSub ホーム",
+    primaryNavigationLabel: "メインナビゲーション",
+    openMenuLabel: "メニューを開く",
+    closeMenuLabel: "メニューを閉じる",
+    currentSectionLabel: "現在のセクション：",
+  },
+  ko: {
+    home: "홈",
+    homeLinkLabel: "GeoSub 홈",
+    primaryNavigationLabel: "주요 메뉴",
+    openMenuLabel: "메뉴 열기",
+    closeMenuLabel: "메뉴 닫기",
+    currentSectionLabel: "현재 메뉴:",
+  },
+  es: {
+    home: "Inicio",
+    homeLinkLabel: "Inicio de GeoSub",
+    primaryNavigationLabel: "Navegación principal",
+    openMenuLabel: "Abrir menú",
+    closeMenuLabel: "Cerrar menú",
+    currentSectionLabel: "Sección actual:",
+  },
+  tr: {
+    home: "Ana Sayfa",
+    homeLinkLabel: "GeoSub ana sayfası",
+    primaryNavigationLabel: "Ana menü",
+    openMenuLabel: "Menüyü aç",
+    closeMenuLabel: "Menüyü kapat",
+    currentSectionLabel: "Geçerli bölüm:",
+  },
+  ar: {
+    home: "الرئيسية",
+    homeLinkLabel: "الصفحة الرئيسية لـ GeoSub",
+    primaryNavigationLabel: "التنقل الرئيسي",
+    openMenuLabel: "فتح القائمة",
+    closeMenuLabel: "إغلاق القائمة",
+    currentSectionLabel: "القسم الحالي:",
+  },
+  fr: {
+    home: "Accueil",
+    homeLinkLabel: "Accueil GeoSub",
+    primaryNavigationLabel: "Navigation principale",
+    openMenuLabel: "Ouvrir le menu",
+    closeMenuLabel: "Fermer le menu",
+    currentSectionLabel: "Rubrique actuelle :",
+  },
+  it: {
+    home: "Home",
+    homeLinkLabel: "Home di GeoSub",
+    primaryNavigationLabel: "Navigazione principale",
+    openMenuLabel: "Apri il menu",
+    closeMenuLabel: "Chiudi il menu",
+    currentSectionLabel: "Sezione attuale:",
+  },
+  de: {
+    home: "Startseite",
+    homeLinkLabel: "GeoSub-Startseite",
+    primaryNavigationLabel: "Hauptnavigation",
+    openMenuLabel: "Menü öffnen",
+    closeMenuLabel: "Menü schließen",
+    currentSectionLabel: "Aktueller Bereich:",
+  },
+  pt: {
+    home: "Início",
+    homeLinkLabel: "Início do GeoSub",
+    primaryNavigationLabel: "Navegação principal",
+    openMenuLabel: "Abrir menu",
+    closeMenuLabel: "Fechar menu",
+    currentSectionLabel: "Secção atual:",
   },
 };
 

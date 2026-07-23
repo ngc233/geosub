@@ -26,7 +26,8 @@ export const launchedMirroredStaticPaths = new Set([
 
 function normalizePublicPath(pathname: string) {
   const withoutQuery = pathname.split(/[?#]/, 1)[0] || "/";
-  const withoutLocale = withoutQuery.replace(/^\/(?:zh|en)(?=\/|$)/, "") || "/";
+  const withoutLocale =
+    withoutQuery.replace(/^\/(?:zh|en|ja|ko|es|tr|ar|fr|it|de|pt)(?=\/|$)/, "") || "/";
   return withoutLocale.length > 1
     ? withoutLocale.replace(/\/+$/, "")
     : withoutLocale;

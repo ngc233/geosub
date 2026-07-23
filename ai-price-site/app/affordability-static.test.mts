@@ -34,12 +34,14 @@ test("affordability refresh uses the same published App Store price scope as V1 
 test("public detail pages read affordability from the shared database view", () => {
   const zhPage = readRepoFile("ai-price-site/app/zh/ai-pricing/[slug]/page.tsx");
   const enPage = readRepoFile("ai-price-site/app/en/ai-pricing/[slug]/page.tsx");
+  const sharedPage = readRepoFile("ai-price-site/components/PricingDetailPage.tsx");
   const affordabilityLib = readRepoFile("ai-price-site/lib/affordability.ts");
 
-  assert.match(zhPage, /getPlanAffordability\(product\.slug, activePlan\.slug\)/);
-  assert.match(enPage, /getPlanAffordability\(product\.slug, activePlan\.slug\)/);
-  assert.match(zhPage, /<AffordabilityComparison/);
-  assert.match(enPage, /<AffordabilityComparison/);
+  assert.match(zhPage, /<PricingDetailPage \{\.\.\.props\} locale="zh"/);
+  assert.match(enPage, /<PricingDetailPage \{\.\.\.props\} locale="en"/);
+  assert.match(sharedPage, /getPlanAffordability\(product\.slug, activePlan\.slug\)/);
+  assert.match(sharedPage, /<AffordabilityComparison/);
+  assert.match(sharedPage, /locale=\{locale\}/);
   assert.match(affordabilityLib, /FROM plan_affordability_summary_view/);
   assert.match(affordabilityLib, /FROM plan_affordability_detail_view/);
   assert.match(affordabilityLib, /ORDER BY income_share_percent DESC/);

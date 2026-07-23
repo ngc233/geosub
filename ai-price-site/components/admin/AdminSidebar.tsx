@@ -79,7 +79,13 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-export default function AdminSidebar({ email }: { email: string }) {
+export default function AdminSidebar({
+  email,
+  version,
+}: {
+  email: string;
+  version: string;
+}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const currentItem = navGroups
@@ -164,6 +170,12 @@ export default function AdminSidebar({ email }: { email: string }) {
       </nav>
 
       <div className="border-t border-slate-200 p-4">
+        <div className="mb-3 flex items-center justify-between px-1 text-xs">
+          <span className="font-medium text-slate-400">当前版本</span>
+          <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold tabular-nums text-slate-600">
+            v{version}
+          </span>
+        </div>
         <form action="/admin/logout" method="post">
           <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700">
             <LogOut size={16} strokeWidth={2} />

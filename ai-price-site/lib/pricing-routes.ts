@@ -1,4 +1,10 @@
-export type PricingLocale = "zh" | "en";
+import {
+  siteLocaleDefinitions,
+  supportedSiteLocales,
+  type SiteLocale,
+} from "./site-locale.ts";
+
+export type PricingLocale = SiteLocale;
 
 export function getPricingSection(category: string) {
   return category.trim().toLowerCase() === "streaming"
@@ -16,6 +22,27 @@ export function getPricingDetailPath(
   slug: string,
 ) {
   return `${getPricingListPath(locale, category)}/${slug}`;
+}
+
+export function getPricingLanguageAlternates(
+  category: string,
+  slug?: string,
+): Record<string, string> {
+  const localizedPaths = Object.fromEntries(
+    supportedSiteLocales.map((locale) => [
+      siteLocaleDefinitions[locale].htmlLang,
+      slug
+        ? getPricingDetailPath(locale, category, slug)
+        : getPricingListPath(locale, category),
+    ]),
+  );
+
+  return {
+    ...localizedPaths,
+    "x-default": slug
+      ? getPricingDetailPath("en", category, slug)
+      : getPricingListPath("en", category),
+  };
 }
 
 export function stripGeoSubTitleSuffix(title: string) {

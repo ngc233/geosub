@@ -3,6 +3,15 @@ import type { SiteLocale } from "./site-locale";
 const localeMap: Record<SiteLocale, string> = {
   zh: "zh-CN",
   en: "en",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  es: "es-ES",
+  tr: "tr-TR",
+  ar: "ar",
+  fr: "fr-FR",
+  it: "it-IT",
+  de: "de-DE",
+  pt: "pt-PT",
 };
 
 export function getLocalizedCountryName({

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import BrandIcon from "./BrandIcon";
-import { getPublicPricingCopy } from "../lib/public-pricing-copy";
+import { getProductNavigationCopy } from "../lib/product-navigation-copy";
 import type { SiteLocale } from "../lib/site-locale";
 import {
   getProductHref,
@@ -21,7 +21,7 @@ type MobileProductSwitcherProps = {
 
 function categoryLabel(
   category: ProductNavCategory,
-  copy: ReturnType<typeof getPublicPricingCopy>["navigation"],
+  copy: ReturnType<typeof getProductNavigationCopy>,
 ) {
   if (category === "ai") return copy.ai;
   if (category === "streaming") return copy.streaming;
@@ -34,7 +34,7 @@ export default function MobileProductSwitcher({
   basePath,
   locale = "zh",
 }: MobileProductSwitcherProps) {
-  const copy = getPublicPricingCopy(locale).navigation;
+  const copy = getProductNavigationCopy(locale);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const currentProduct =
