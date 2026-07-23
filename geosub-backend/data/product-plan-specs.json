@@ -218,6 +218,89 @@
       }
     ]
   },
+  "hbo-max": {
+    "name": "HBO Max",
+    "excluded_aliases": [
+      "antes estandar",
+      "antes standard",
+      "estandar antiguo",
+      "old standard",
+      "trimestral",
+      "quarterly",
+      "mobile",
+      "tnt sports",
+      "dazn",
+      "sport add-on",
+      "sports add-on",
+      "premium with sport",
+      "premium med sport",
+      "platino tnt sports",
+      "extra member"
+    ],
+    "plans": [
+      {
+        "slug": "basic-with-ads",
+        "name": "HBO Max Basic with Ads",
+        "aliases": [
+          "basic with ads monthly",
+          "basic with ads",
+          "basic avec pub",
+          "base con pubblicita",
+          "basis mit werbung",
+          "basico con anuncios mensual",
+          "basico con anuncios",
+          "basico com anuncios mensal",
+          "basico com anuncios",
+          "広告付きベーシック",
+          "광고형 베이직",
+          "含广告基础版",
+          "含廣告基本版"
+        ],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 3.0,
+        "expected_monthly_usd_max": 18.0
+      },
+      {
+        "slug": "standard",
+        "name": "HBO Max Standard",
+        "aliases": [
+          "standard monthly",
+          "standard mensal",
+          "standard",
+          "estandar mensual",
+          "estandar",
+          "スタンダード",
+          "스탠다드",
+          "标准",
+          "標準"
+        ],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 4.0,
+        "expected_monthly_usd_max": 30.0
+      },
+      {
+        "slug": "premium",
+        "name": "HBO Max Premium",
+        "aliases": [
+          "premium monthly",
+          "premium mensal",
+          "premium",
+          "platinum monthly",
+          "platinum mensal",
+          "platinum",
+          "platino mensual",
+          "platino",
+          "プレミアム",
+          "프리미엄",
+          "高级",
+          "高級"
+        ],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 6.0,
+        "expected_monthly_usd_max": 45.0
+      }
+    ]
+  },
   "netflix": {
     "name": "Netflix",
     "plans": [

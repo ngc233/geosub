@@ -246,7 +246,8 @@ if (( failures == 0 )); then
     "sql/068_plan_region_availability.sql" \
     "sql/069_required_catalog_products.sql" \
     "sql/070_disney_app_store_source.sql" \
-    "sql/071_archive_superseded_app_store_ambiguities.sql"; do
+    "sql/071_archive_superseded_app_store_ambiguities.sql" \
+    "sql/072_normalize_hbo_max_app_store_plans.sql"; do
     check_migration "$migration"
   done
 

@@ -17,6 +17,7 @@ type PlanSpec = {
 
 type ProductSpec = {
   name: string;
+  excluded_aliases?: string[];
   plans: PlanSpec[];
 };
 
@@ -55,6 +56,10 @@ const selectionFalsePositiveReclassificationSql = readFileSync(
 );
 const supersededAmbiguitySql = readFileSync(
   resolve(repoRoot, "geosub-backend/sql/071_archive_superseded_app_store_ambiguities.sql"),
+  "utf8",
+);
+const hboMaxNormalizationSql = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/072_normalize_hbo_max_app_store_plans.sql"),
   "utf8",
 );
 
@@ -235,7 +240,7 @@ test("legacy non-primary App Store tiers are retained as ignored evidence", () =
 });
 
 test("tracked products and plans keep explicit sanity ranges", () => {
-  for (const productSlug of ["chatgpt", "claude", "disney", "gemini", "grok", "manus", "netflix"]) {
+  for (const productSlug of ["chatgpt", "claude", "disney", "gemini", "grok", "hbo-max", "manus", "netflix"]) {
     assert.ok(productPlanSpecs[productSlug], `${productSlug} should stay in the plan specs`);
   }
 
@@ -279,6 +284,33 @@ test("Disney App Store plans collapse to three canonical monthly tiers", () => {
   ]) {
     assert.ok(aliases.includes(localizedAlias), `missing Disney+ alias: ${localizedAlias}`);
   }
+});
+
+test("HBO Max App Store plans collapse localized tiers and exclude bundles", () => {
+  const hboMax = productPlanSpecs["hbo-max"];
+  assert.ok(hboMax, "HBO Max should have a product-specific plan spec");
+  assert.deepEqual(
+    hboMax.plans.map((plan) => plan.slug),
+    ["basic-with-ads", "standard", "premium"],
+  );
+
+  const aliasesByPlan = Object.fromEntries(
+    hboMax.plans.map((plan) => [plan.slug, new Set(plan.aliases)]),
+  );
+  assert.ok(aliasesByPlan["basic-with-ads"].has("basis mit werbung"));
+  assert.ok(aliasesByPlan["basic-with-ads"].has("basico con anuncios mensual"));
+  assert.ok(aliasesByPlan.standard.has("標準"));
+  assert.ok(aliasesByPlan.premium.has("platino mensual"));
+  assert.ok(hboMax.excluded_aliases?.includes("tnt sports"));
+  assert.ok(hboMax.excluded_aliases?.includes("trimestral"));
+
+  assert.match(appStoreCollector, /excluded_aliases/);
+  assert.match(appStoreCollector, /quarterly\|quarter/);
+  assert.match(hboMaxNormalizationSql, /'basic-with-ads', 'HBO Max Basic with Ads'/);
+  assert.match(hboMaxNormalizationSql, /'standard', 'HBO Max Standard'/);
+  assert.match(hboMaxNormalizationSql, /'premium', 'HBO Max Premium'/);
+  assert.match(hboMaxNormalizationSql, /hbo_max_monthly_plan_normalization/);
+  assert.match(hboMaxNormalizationSql, /tnt\|dazn\|sport/);
 });
 
 test("Netflix plan aliases cover common localized screen-count labels", () => {

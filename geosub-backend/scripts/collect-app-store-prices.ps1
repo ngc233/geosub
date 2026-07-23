@@ -206,6 +206,18 @@ function Resolve-PlanSpec {
   $itemText = Normalize-PlanMatchText -Value $ItemName
   $productText = Normalize-PlanMatchText -Value $ProductName
 
+  if ($ProductSpec.PSObject.Properties.Name -contains "excluded_aliases") {
+    foreach ($excludedAlias in @($ProductSpec.excluded_aliases)) {
+      $excludedText = Normalize-PlanMatchText -Value ([string]$excludedAlias)
+      if (
+        ![string]::IsNullOrWhiteSpace($excludedText) -and
+        ($itemText -eq $excludedText -or $itemText -match "\b$([regex]::Escape($excludedText))\b")
+      ) {
+        return $null
+      }
+    }
+  }
+
   if (![string]::IsNullOrWhiteSpace($productText)) {
     $itemText = [regex]::Replace($itemText, "\b$([regex]::Escape($productText))\b", "").Trim()
     $itemText = [regex]::Replace($itemText, "\s+", " ").Trim()
@@ -295,8 +307,8 @@ function Should-IgnoreInAppPurchase {
   # GeoSub's public ranking compares recurring monthly prices. Explicit annual
   # purchases must not become separate plans or compete with monthly variants.
   if (
-    $normalized -match "(?i)\b(annual|annually|yearly|year|anual|anualmente|annuel|annuelle|annuale|annuo|jaarabonnement|jaarlijks|jahresabo|jahrlich|jährlich|årsabonnement|årsabonnemang)\b" -or
-    $normalized -match "(年度|年額|年费|年費|연간)"
+    $normalized -match "(?i)\b(annual|annually|yearly|year|quarterly|quarter|anual|anualmente|trimestral|trimestre|annuel|annuelle|annuale|annuo|jaarabonnement|jaarlijks|jahresabo|jahrlich|jährlich|årsabonnement|årsabonnemang)\b" -or
+    $normalized -match "(年度|年額|年费|年費|季度|季費|분기|연간)"
   ) {
     return $true
   }
