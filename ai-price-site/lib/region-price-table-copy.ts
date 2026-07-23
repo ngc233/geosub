@@ -2,6 +2,7 @@ import { getPublicPricingCopy } from "./public-pricing-copy";
 import {
   type PreparedSiteLocale,
 } from "./site-locale";
+import { toTraditionalChinese } from "./traditional-chinese";
 
 type WidenCopy<T> =
   T extends string
@@ -477,13 +478,19 @@ const preparedRegionPriceTableCopy = {
     helpAria: (label, help) => `${label}: ${help}`,
   },
 } satisfies Record<
-  Exclude<PreparedSiteLocale, "zh" | "en">,
+  Exclude<PreparedSiteLocale, "zh" | "zh-tw" | "en">,
   RegionPriceTableCopy
 >;
 
 export function getRegionPriceTableCopy(
   locale: PreparedSiteLocale,
 ): RegionPriceTableCopy {
+  if (locale === "zh-tw") {
+    return toTraditionalChinese(
+      getPublicPricingCopy("zh").table,
+    ) as RegionPriceTableCopy;
+  }
+
   if (locale === "zh" || locale === "en") {
     return getPublicPricingCopy(locale).table as RegionPriceTableCopy;
   }

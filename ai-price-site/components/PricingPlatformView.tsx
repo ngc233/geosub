@@ -23,9 +23,14 @@ import {
   getSiteLocaleDefinition,
   type SiteLocale,
 } from "../lib/site-locale";
+import {
+  getDisplayCurrencyFractionDigits,
+  getDisplayCurrencySymbolOverride,
+  supportedDisplayCurrencies,
+  type DisplayCurrency,
+} from "../lib/display-currency";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
-type DisplayCurrency = "usd" | "cny";
 
 type CurrencyExchangeRate = {
   rate: number;
@@ -39,17 +44,13 @@ type CurrencyExchangeRate = {
 type PricingPlatformViewProps = {
   productName: string;
   plan: ProductPlan;
-  cnyExchangeRate?: CurrencyExchangeRate;
+  defaultCurrency: DisplayCurrency;
+  exchangeRates: Partial<Record<DisplayCurrency, CurrencyExchangeRate>>;
   shareAction?: ReactNode;
   locale?: SiteLocale;
 };
 
-const currencyOptions: Array<{ value: DisplayCurrency }> = [
-  { value: "usd" },
-  { value: "cny" },
-];
-
-const UNAVAILABLE_CNY_PER_USD = 0;
+const UNAVAILABLE_EXCHANGE_RATE = 0;
 
 function getPlatform(region: RegionPrice) {
   const platform = (region.billingPlatform || "unknown").toLowerCase();
@@ -87,16 +88,60 @@ function getPlatformLabel(platform: PlatformFilter, locale: SiteLocale = "zh") {
   return copy.allSources;
 }
 
+function getCurrencyName(
+  currency: DisplayCurrency,
+  locale: SiteLocale = "zh",
+) {
+  const definition = getSiteLocaleDefinition(locale);
+
+  try {
+    const displayName = new Intl.DisplayNames([definition.intlLocale], {
+      type: "currency",
+    }).of(currency);
+
+    if (displayName) {
+      const normalizedName = displayName
+        .replace(currency, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+      return normalizedName || displayName;
+    }
+  } catch {
+    // Currency codes remain a stable fallback in older runtimes.
+  }
+
+  return currency;
+}
+
 function getCurrencyLabel(
   currency: DisplayCurrency,
   locale: SiteLocale = "zh",
 ) {
-  const copy = getPricingPlatformCopy(locale);
-  if (currency === "cny") {
-    return copy.cnyLabel;
-  }
+  return `${getCurrencyName(currency, locale)} ${currency}`;
+}
 
-  return copy.usdLabel;
+function getCurrencySymbol(
+  currency: DisplayCurrency,
+  locale: SiteLocale = "zh",
+) {
+  const symbolOverride = getDisplayCurrencySymbolOverride(currency);
+  if (symbolOverride) return symbolOverride;
+
+  try {
+    return (
+      new Intl.NumberFormat(getSiteLocaleDefinition(locale).intlLocale, {
+        style: "currency",
+        currency,
+        currencyDisplay: "narrowSymbol",
+        maximumFractionDigits: 0,
+      })
+        .formatToParts(0)
+        .find((part) => part.type === "currency")?.value || currency
+    );
+  } catch {
+    return currency;
+  }
 }
 
 function formatSyncDate(value: string | null | undefined, locale: SiteLocale) {
@@ -117,48 +162,58 @@ function formatSyncDate(value: string | null | undefined, locale: SiteLocale) {
     .replace(/\//g, "-");
 }
 
-function getCnyRateNote(
-  cnyExchangeRate: CurrencyExchangeRate,
-  cnyRate: number,
+function getExchangeRateNote(
+  exchangeRate: CurrencyExchangeRate,
+  rate: number,
+  currency: DisplayCurrency,
   locale: SiteLocale,
 ) {
   const copy = getPricingPlatformCopy(locale);
-  const syncedDate = formatSyncDate(cnyExchangeRate.fetchedAt, locale);
-  const basisDate = cnyExchangeRate.rateDate || null;
-
-  if (cnyExchangeRate.isFallback) {
-    return copy.cnyUnavailable;
-  }
+  const syncedDate = formatSyncDate(exchangeRate.fetchedAt, locale);
+  const basisDate = exchangeRate.rateDate || null;
 
   const suffixParts = [
     syncedDate ? copy.synced(syncedDate) : null,
     basisDate ? copy.rateBasis(basisDate) : null,
   ];
   const suffix = suffixParts.filter(Boolean).join(" · ");
-
-  if (cnyExchangeRate.isStale) {
-    const prefix = copy.cnyStale;
-
-    return suffix ? `${prefix} · ${suffix}` : prefix;
-  }
-
-  const prefix = copy.cnyRate(cnyRate);
+  const prefix = `1 USD = ${rate.toLocaleString(
+    getSiteLocaleDefinition(locale).intlLocale,
+    { maximumFractionDigits: 4 },
+  )} ${currency}`;
 
   return suffix ? `${prefix} · ${suffix}` : prefix;
-}
-
-function formatCnyFromUsd(value: number, exchangeRate: number) {
-  return `¥${Math.round(value * exchangeRate).toLocaleString("zh-CN")}`;
 }
 
 function formatDisplayPrice(
   value: number,
   currency: DisplayCurrency,
   exchangeRate: number,
+  locale: SiteLocale,
 ) {
-  return currency === "cny"
-    ? formatCnyFromUsd(value, exchangeRate)
-    : formatUsd(value);
+  if (currency === "USD") {
+    return formatUsd(value);
+  }
+
+  const symbolOverride = getDisplayCurrencySymbolOverride(currency);
+  if (symbolOverride) {
+    const formattedValue = new Intl.NumberFormat(
+      getSiteLocaleDefinition(locale).intlLocale,
+      {
+        maximumFractionDigits:
+          getDisplayCurrencyFractionDigits(currency),
+      },
+    ).format(value * exchangeRate);
+
+    return `${symbolOverride}${formattedValue}`;
+  }
+
+  return new Intl.NumberFormat(getSiteLocaleDefinition(locale).intlLocale, {
+    style: "currency",
+    currency,
+    currencyDisplay: "symbol",
+    maximumFractionDigits: getDisplayCurrencyFractionDigits(currency),
+  }).format(value * exchangeRate);
 }
 
 function formatMonthlyPrice(
@@ -168,9 +223,12 @@ function formatMonthlyPrice(
   locale: SiteLocale,
 ) {
   const copy = getPricingPlatformCopy(locale);
-  return currency === "cny"
-    ? `${formatCnyFromUsd(value, exchangeRate)}${copy.monthlySuffix}`
-    : `${formatUsd(value)}${copy.monthlySuffix}`;
+  return `${formatDisplayPrice(
+    value,
+    currency,
+    exchangeRate,
+    locale,
+  )}${copy.monthlySuffix}`;
 }
 
 function EmptyPriceState({
@@ -197,18 +255,20 @@ function EmptyPriceState({
 function CurrencySelect({
   value,
   onChange,
-  cnyDisabled = false,
+  options,
+  disabledCurrencies,
   locale,
 }: {
   value: DisplayCurrency;
   onChange: (currency: DisplayCurrency) => void;
-  cnyDisabled?: boolean;
+  options: DisplayCurrency[];
+  disabledCurrencies: DisplayCurrency[];
   locale: SiteLocale;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const activeItem =
-    currencyOptions.find((item) => item.value === value) || currencyOptions[0];
+    options.find((item) => item === value) || options[0];
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -237,7 +297,7 @@ function CurrencySelect({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-[148px] shrink-0">
+    <div ref={containerRef} className="relative w-[184px] shrink-0">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -251,7 +311,17 @@ function CurrencySelect({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="truncate">{getCurrencyLabel(activeItem.value, locale)}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="w-5 shrink-0 text-center text-zinc-400">
+            {getCurrencySymbol(activeItem, locale)}
+          </span>
+          <span className="truncate">
+            {getCurrencyName(activeItem, locale)}
+          </span>
+          <span className="shrink-0 text-[11px] font-medium text-zinc-400">
+            {activeItem}
+          </span>
+        </span>
         <ChevronDown
           className={[
             "h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform duration-200 ease-out",
@@ -263,39 +333,54 @@ function CurrencySelect({
 
       {open ? (
         <div
-          className="absolute left-0 top-11 z-[70] w-full overflow-hidden rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
+          className="absolute start-0 top-11 z-[70] max-h-[360px] w-[500px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
           role="menu"
         >
-          {currencyOptions.map((item) => {
-            const disabled = item.value === "cny" && cnyDisabled;
-            const active = item.value === value;
+          <div className="grid grid-cols-1 gap-0.5 min-[420px]:grid-cols-2">
+            {options.map((item) => {
+              const disabled = disabledCurrencies.includes(item);
+              const active = item === value;
 
-            return (
-              <button
-                key={item.value}
-                type="button"
-                disabled={disabled}
-                onClick={() => {
-                  if (!disabled) {
-                    onChange(item.value);
-                    setOpen(false);
-                  }
-                }}
-                className={[
-                  "flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-left text-[13px] font-semibold transition-colors duration-200 ease-out",
-                  active
-                    ? "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
-                    : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
-                  disabled ? "cursor-not-allowed opacity-40" : "",
-                ].join(" ")}
-                role="menuitemradio"
-                aria-checked={active}
-              >
-                <span>{getCurrencyLabel(item.value, locale)}</span>
-                {active ? <span className="h-1.5 w-1.5 rounded-full bg-lime-500" /> : null}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    if (!disabled) {
+                      onChange(item);
+                      setOpen(false);
+                    }
+                  }}
+                  className={[
+                    "grid h-10 w-full grid-cols-[34px_minmax(0,1fr)_36px_8px] items-center gap-2 rounded-lg px-2.5 text-left text-[13px] font-semibold transition-colors duration-200 ease-out",
+                    active
+                      ? "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
+                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
+                    disabled ? "cursor-not-allowed opacity-40" : "",
+                  ].join(" ")}
+                  role="menuitemradio"
+                  aria-checked={active}
+                >
+                  <span className="text-center text-zinc-400">
+                    {getCurrencySymbol(item, locale)}
+                  </span>
+                  <span className="truncate whitespace-nowrap">
+                    {getCurrencyName(item, locale)}
+                  </span>
+                  <span className="text-right text-[11px] font-medium tabular-nums text-zinc-400">
+                    {item}
+                  </span>
+                  <span
+                    className={[
+                      "h-1.5 w-1.5 rounded-full",
+                      active ? "bg-lime-500" : "bg-transparent",
+                    ].join(" ")}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
       ) : null}
     </div>
@@ -307,7 +392,7 @@ function PricingLead({
   plan,
   platformLabel,
   displayCurrency,
-  cnyExchangeRate,
+  exchangeRates,
   onCurrencyChange,
   locale,
 }: {
@@ -315,7 +400,7 @@ function PricingLead({
   plan: ProductPlan;
   platformLabel: string;
   displayCurrency: DisplayCurrency;
-  cnyExchangeRate: CurrencyExchangeRate;
+  exchangeRates: Partial<Record<DisplayCurrency, CurrencyExchangeRate>>;
   onCurrencyChange: (currency: DisplayCurrency) => void;
   locale: SiteLocale;
 }) {
@@ -323,9 +408,25 @@ function PricingLead({
   const referenceRegion = getReferenceRegion(plan);
   const hasUsReference = referenceRegion.code.toUpperCase() === "US";
   const displayCurrencyLabel = getCurrencyLabel(displayCurrency, locale);
-  const cnyRate = cnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
-  const cnyDisabled = Boolean(cnyExchangeRate.isFallback || cnyExchangeRate.isStale);
-  const cnyRateNote = getCnyRateNote(cnyExchangeRate, cnyRate, locale);
+  const selectedExchangeRate = exchangeRates[displayCurrency] || {
+    rate: UNAVAILABLE_EXCHANGE_RATE,
+    isFallback: true,
+    isStale: true,
+  };
+  const selectedRate =
+    selectedExchangeRate.rate || UNAVAILABLE_EXCHANGE_RATE;
+  const exchangeRateNote = getExchangeRateNote(
+    selectedExchangeRate,
+    selectedRate,
+    displayCurrency,
+    locale,
+  );
+  const disabledCurrencies = supportedDisplayCurrencies.filter((currency) => {
+    const exchangeRate = exchangeRates[currency];
+    return Boolean(
+      !exchangeRate || exchangeRate.isFallback || exchangeRate.isStale,
+    );
+  });
   const planDisplayName = getPlanDisplayName(productName, plan.name);
   const copy = getPricingPlatformCopy(locale);
 
@@ -343,11 +444,11 @@ function PricingLead({
             <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
               {copy.conclusionLead(platformLabel, stats.minRegion.country)}{" "}
               <strong className="font-semibold text-lime-700 dark:text-lime-300">
-                {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate, locale)}
+                {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, selectedRate, locale)}
               </strong>
               {copy.conclusionMiddle(stats.maxRegion.country)}{" "}
               <strong className="font-semibold text-rose-600 dark:text-rose-300">
-                {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate, locale)}
+                {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, selectedRate, locale)}
               </strong>
               {copy.conclusionSpread(stats.spreadPercent)}
             </p>
@@ -368,14 +469,15 @@ function PricingLead({
             <CurrencySelect
               value={displayCurrency}
               onChange={onCurrencyChange}
-              cnyDisabled={cnyDisabled}
+              options={[...supportedDisplayCurrencies]}
+              disabledCurrencies={disabledCurrencies}
               locale={locale}
             />
           </div>
 
           <div className="text-xs leading-5 text-zinc-400 md:text-right">
-            {displayCurrency === "cny"
-              ? cnyRateNote
+            {displayCurrency !== "USD"
+              ? exchangeRateNote
               : displayCurrencyLabel}
           </div>
         </div>
@@ -384,19 +486,19 @@ function PricingLead({
       <MetricStrip>
         <MetricItem
           label={copy.lowest}
-          value={`${stats.minRegion.country} · ${formatDisplayPrice(stats.minRegion.priceUsd, displayCurrency, cnyRate)}`}
+          value={`${stats.minRegion.country} · ${formatDisplayPrice(stats.minRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
           helper={stats.minRegion.localPrice}
           tone="green"
         />
         <MetricItem
           label={copy.highest}
-          value={`${stats.maxRegion.country} · ${formatDisplayPrice(stats.maxRegion.priceUsd, displayCurrency, cnyRate)}`}
+          value={`${stats.maxRegion.country} · ${formatDisplayPrice(stats.maxRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
           helper={stats.maxRegion.localPrice}
           tone="red"
         />
         <MetricItem
           label={hasUsReference ? copy.usBase : referenceRegion.country}
-          value={`${referenceRegion.country} · ${formatDisplayPrice(referenceRegion.priceUsd, displayCurrency, cnyRate)}`}
+          value={`${referenceRegion.country} · ${formatDisplayPrice(referenceRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
           helper={referenceRegion.code}
         />
         <MetricItem
@@ -436,11 +538,13 @@ function RankingList({
   regions,
   referenceRegion,
   tone,
+  formatPrice,
 }: {
   title: string;
   regions: RegionPrice[];
   referenceRegion: RegionPrice;
   tone: "green" | "red";
+  formatPrice: (value: number) => string;
 }) {
   return (
     <div className="min-w-0">
@@ -471,7 +575,7 @@ function RankingList({
                 <div className="mt-0.5 text-xs text-zinc-400">{region.code}</div>
               </div>
               <div className="font-semibold tabular-nums text-zinc-950 dark:text-white">
-                {formatUsd(region.priceUsd)}
+                {formatPrice(region.priceUsd)}
               </div>
               <div
                 className={[
@@ -496,11 +600,13 @@ function PriceDistribution({
   plan,
   shareAction,
   locale,
+  formatPrice,
 }: {
   productName: string;
   plan: ProductPlan;
   shareAction?: ReactNode;
   locale: SiteLocale;
+  formatPrice: (value: number) => string;
 }) {
   const sortedRegions = getSortedRegions(plan);
   const referenceRegion = getReferenceRegion(plan);
@@ -518,7 +624,12 @@ function PriceDistribution({
       />
 
       <div className="p-4 md:p-5">
-        <PriceWorldMap plan={plan} locale={locale} compact />
+        <PriceWorldMap
+          plan={plan}
+          locale={locale}
+          compact
+          formatPrice={formatPrice}
+        />
       </div>
 
       <div className="grid gap-6 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800 lg:grid-cols-2">
@@ -527,12 +638,14 @@ function PriceDistribution({
           regions={cheapRegions}
           referenceRegion={referenceRegion}
           tone="green"
+          formatPrice={formatPrice}
         />
         <RankingList
           title={copy.higherRegions}
           regions={expensiveRegions}
           referenceRegion={referenceRegion}
           tone="red"
+          formatPrice={formatPrice}
         />
       </div>
     </PublicSection>
@@ -542,28 +655,42 @@ function PriceDistribution({
 export default function PricingPlatformView({
   productName,
   plan,
-  cnyExchangeRate,
+  defaultCurrency,
+  exchangeRates,
   shareAction,
   locale = "zh",
 }: PricingPlatformViewProps) {
   const [platform] = useState<PlatformFilter>("ios");
-  const [displayCurrency, setDisplayCurrency] =
-    useState<DisplayCurrency>("usd");
-  const effectiveCnyExchangeRate = cnyExchangeRate || {
-    rate: UNAVAILABLE_CNY_PER_USD,
+  const [currencyPreference, setCurrencyPreference] =
+    useState<DisplayCurrency>(defaultCurrency);
+  const preferredExchangeRate = exchangeRates[currencyPreference];
+  const displayCurrency =
+    currencyPreference !== "USD" &&
+    (!preferredExchangeRate ||
+      preferredExchangeRate.isFallback ||
+      preferredExchangeRate.isStale)
+      ? "USD"
+      : currencyPreference;
+  const selectedExchangeRate = exchangeRates[displayCurrency] || {
+    rate: UNAVAILABLE_EXCHANGE_RATE,
     isFallback: true,
+    isStale: true,
   };
-  const cnyRate = effectiveCnyExchangeRate.rate || UNAVAILABLE_CNY_PER_USD;
+  const selectedRate =
+    selectedExchangeRate.rate || UNAVAILABLE_EXCHANGE_RATE;
+
   const handleCurrencyChange = (currency: DisplayCurrency) => {
+    const exchangeRate = exchangeRates[currency];
     if (
-      currency === "cny" &&
-      (effectiveCnyExchangeRate.isFallback || effectiveCnyExchangeRate.isStale)
+      !exchangeRate ||
+      exchangeRate.isFallback ||
+      exchangeRate.isStale
     ) {
-      setDisplayCurrency("usd");
+      setCurrencyPreference("USD");
       return;
     }
 
-    setDisplayCurrency(currency);
+    setCurrencyPreference(currency);
   };
 
   const filteredPlan = useMemo<ProductPlan>(() => {
@@ -585,7 +712,7 @@ export default function PricingPlatformView({
             plan={plan}
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
-            cnyExchangeRate={effectiveCnyExchangeRate}
+            exchangeRates={exchangeRates}
             onCurrencyChange={handleCurrencyChange}
             locale={locale}
           />
@@ -598,7 +725,7 @@ export default function PricingPlatformView({
             plan={filteredPlan}
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
-            cnyExchangeRate={effectiveCnyExchangeRate}
+            exchangeRates={exchangeRates}
             onCurrencyChange={handleCurrencyChange}
             locale={locale}
           />
@@ -607,6 +734,9 @@ export default function PricingPlatformView({
             plan={filteredPlan}
             shareAction={shareAction}
             locale={locale}
+            formatPrice={(value) =>
+              formatDisplayPrice(value, displayCurrency, selectedRate, locale)
+            }
           />
           <ExpandableRegionPriceTable
             plan={filteredPlan}
@@ -616,7 +746,7 @@ export default function PricingPlatformView({
             displayCurrency={displayCurrency}
             displayCurrencyLabel={getCurrencyLabel(displayCurrency, locale)}
             formatDisplayPrice={(value) =>
-              formatDisplayPrice(value, displayCurrency, cnyRate)
+              formatDisplayPrice(value, displayCurrency, selectedRate, locale)
             }
             showPlatformFilter={false}
             showSourceColumn={platform === "all"}

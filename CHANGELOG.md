@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.2.0 - 2026-07-24
+
+- Added Traditional Chinese as the twelfth public locale, including localized
+  navigation, pricing lists, product details, regional tables, purchasing
+  power, tax and risk notes, sharing, trust pages and locale-aware SEO routes.
+- Expanded the public display-currency system from eight to seventeen
+  currencies, adding HKD, SGD, AUD, CAD, MYR, IDR, THB, PHP and VND alongside
+  unambiguous regional symbols and appropriate decimal formatting.
+- Reworked the currency selector into a compact responsive layout with a
+  two-column desktop menu and a bounded, scrollable narrow-screen menu.
+- Expanded the production exchange-rate contract from 35 to 36 required quote
+  currencies by adding HKD across local checks, Linux timers, deployment
+  validation and Windows maintenance scripts.
+- Unified scheduled and HTTP exchange-rate synchronization so currencies
+  omitted by the primary central-bank source are filled from the configured
+  fallback provider rather than remaining unavailable.
+- Completed source-encoding, TypeScript, ESLint, 209-test and 115-route
+  production-build validation, plus browser verification of all newly exposed
+  currencies and symbols.
+
 ## 2.1.0 - 2026-07-23
 
 - Expanded GeoSub from Chinese and English to eleven active public locales:

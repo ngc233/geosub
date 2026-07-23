@@ -3,7 +3,7 @@ param(
   [string]$BaseCurrency = "USD",
   [string[]]$QuoteCurrencies = @(
     "AED", "ARS", "AUD", "BRL", "CAD", "CHF", "CLP", "CNY", "COP",
-    "DKK", "EGP", "EUR", "GBP", "IDR", "ILS", "INR", "JPY", "KES",
+    "DKK", "EGP", "EUR", "GBP", "HKD", "IDR", "ILS", "INR", "JPY", "KES",
     "KRW", "MXN", "MYR", "NGN", "NOK", "NZD", "PHP", "PKR", "PLN",
     "SAR", "SEK", "SGD", "THB", "TRY", "TWD", "VND", "ZAR"
   )

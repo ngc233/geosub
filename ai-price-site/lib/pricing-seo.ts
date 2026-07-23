@@ -6,13 +6,15 @@ import {
   getSiteLocaleDefinition,
   type SiteLocale,
 } from "./site-locale";
+import { withTraditionalChinese } from "./traditional-chinese";
 
 export type PricingFaq = {
   q: string;
   a: string;
 };
 
-const regionalPricePropertyLabels: Record<SiteLocale, string> = {
+const regionalPricePropertyLabels: Record<SiteLocale, string> =
+  withTraditionalChinese({
   zh: "App Store 地区订阅价格",
   en: "Regional App Store subscription price",
   ja: "App Store の地域別サブスクリプション価格",
@@ -24,7 +26,7 @@ const regionalPricePropertyLabels: Record<SiteLocale, string> = {
   it: "Prezzo regionale dell’abbonamento su App Store",
   de: "Regionaler App-Store-Abonnementpreis",
   pt: "Preço regional da subscrição na App Store",
-};
+  });
 
 export function buildPricingStructuredData({
   locale,

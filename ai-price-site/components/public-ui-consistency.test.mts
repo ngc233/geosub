@@ -117,7 +117,7 @@ test("public pricing lists prepare every v2.1 locale and keep exact update dates
   assert.doesNotMatch(card, /const copy =\s*locale === "en"/);
   assert.match(
     listingCopy,
-    /Exclude<PreparedSiteLocale, "zh" \| "en">/,
+    /Exclude<PreparedSiteLocale, "zh" \| "zh-tw" \| "en">/,
   );
   for (const locale of ["ja", "ko", "es", "tr", "ar"]) {
     assert.match(listingCopy, new RegExp(`\\n  ${locale}:`));
@@ -131,9 +131,10 @@ test("purchasing power prepares every v2.1 locale while share cards cover active
   const affordabilityRows = readComponent("ExpandableAffordabilityRows.tsx");
   const shareModal = readComponent("SharePriceModal.tsx");
 
+  assert.match(affordability, /withTraditionalChinese\(\{/);
   assert.match(
     affordability,
-    /satisfies Record<PreparedSiteLocale, AffordabilityCopy>/,
+    /satisfies Record<[\s\S]*Exclude<PreparedSiteLocale, "zh-tw">,[\s\S]*AffordabilityCopy/,
   );
   assert.match(affordability, /return affordabilityCopy\[locale\]/);
   assert.doesNotMatch(affordabilityRows, /getPublicPricingCopy/);
@@ -144,7 +145,11 @@ test("purchasing power prepares every v2.1 locale while share cards cover active
   for (const locale of ["zh", "en", "ja", "ko", "es", "tr", "ar"]) {
     assert.match(affordability, new RegExp(`\\n  ${locale}:`));
   }
-  assert.match(shareModal, /satisfies Record<SiteLocale, ShareCopy>/);
+  assert.match(shareModal, /withTraditionalChinese\(\{/);
+  assert.match(
+    shareModal,
+    /satisfies Record<Exclude<SiteLocale, "zh-tw">, ShareCopy>/,
+  );
   assert.match(shareModal, /text\.comparisonLead/);
   assert.match(shareModal, /\{text\.comparisonTrail\}/);
   assert.match(shareModal, /text\.monthlySuffix/);

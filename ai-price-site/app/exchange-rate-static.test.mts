@@ -11,19 +11,28 @@ function readProjectFile(fileName: string) {
   return readFileSync(resolve(rootDir, fileName), "utf8");
 }
 
-test("exchange-rate fallback never shows a hardcoded CNY estimate", () => {
+test("localized exchange-rate fallback never shows a hardcoded estimate", () => {
   const exchangeRates = readProjectFile("lib/exchange-rates.ts");
   const pricingView = readProjectFile("components/PricingPlatformView.tsx");
+  const pricingDetail = readProjectFile("components/PricingDetailPage.tsx");
+  const cronRoute = readProjectFile("app/api/cron/exchange-rates/route.ts");
   const pricingCopy = readProjectFile("lib/pricing-platform-copy.ts");
   const legacyPricingCopy = readProjectFile("lib/public-pricing-copy.ts");
 
   assert.match(exchangeRates, /const UNAVAILABLE_USD_CNY_RATE = 0;/);
-  assert.match(pricingView, /const UNAVAILABLE_CNY_PER_USD = 0;/);
+  assert.match(pricingView, /const UNAVAILABLE_EXCHANGE_RATE = 0;/);
+  assert.match(pricingView, /options=\{\[\.\.\.supportedDisplayCurrencies\]\}/);
+  assert.match(pricingView, /min-\[420px\]:grid-cols-2/);
+  assert.match(pricingView, /max-h-\[360px\]/);
+  assert.match(pricingDetail, /supportedDisplayCurrencies\.map/);
+  assert.match(cronRoute, /supportedDisplayCurrencies\.filter/);
+  assert.match(cronRoute, /frankfurter\+open-er-api/);
+  assert.match(cronRoute, /rates:\s*\{\s*\.\.\.primary\.rates,\s*\.\.\.fallback\.rates\s*\}/);
   assert.doesNotMatch(exchangeRates, /7\.25/);
   assert.doesNotMatch(pricingView, /7\.25/);
   assert.match(
     pricingView,
-    /cnyDisabled = Boolean\(cnyExchangeRate\.isFallback \|\| cnyExchangeRate\.isStale\)/,
+    /exchangeRate\.isFallback \|\| exchangeRate\.isStale/,
   );
   assert.match(pricingView, /getPricingPlatformCopy\(locale\)/);
   assert.match(pricingCopy, /getPublicPricingCopy\(locale\)\.pricing/);
@@ -50,11 +59,11 @@ test("exchange-rate freshness is stricter than the public 12-hour refresh window
     "../geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
   );
   const requiredQuotes =
-    "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR";
+    "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,HKD,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR";
 
   assert.match(cronRoute, /recommendedSchedule:\s*"Every 12 hours"/);
   assert.match(exchangeRates, /const MAX_FRESH_RATE_AGE_HOURS = 18;/);
-  assert.equal(requiredQuotes.split(",").length, 35);
+  assert.equal(requiredQuotes.split(",").length, 36);
   assert.ok(syncScript.includes(requiredQuotes));
   assert.ok(localCheck.includes(requiredQuotes));
   assert.ok(qualityCheck.includes(requiredQuotes));

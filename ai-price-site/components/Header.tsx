@@ -14,6 +14,7 @@ import {
   type PreparedSiteLocale,
   type SiteLocale,
 } from "../lib/site-locale";
+import { withTraditionalChinese } from "../lib/traditional-chinese";
 
 export type NavChild = {
   name: string;
@@ -30,7 +31,8 @@ export type NavItem = {
   children?: NavChild[];
 };
 
-const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> = {
+const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
+  withTraditionalChinese({
   zh: [
     { name: "首页", href: "/", match: ["/"] },
     {
@@ -285,7 +287,7 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> = {
     { name: "Guias", href: "/guides", match: ["/guides", "/articles"] },
     { name: "Fontes de dados", href: "/data-sources", match: ["/data-sources"] },
   ],
-};
+  });
 
 const languages = supportedSiteLocales.map((code) => ({
   code,
@@ -303,7 +305,7 @@ const headerCopy: Record<
     closeMenuLabel: string;
     currentSectionLabel: string;
   }
-> = {
+> = withTraditionalChinese({
   zh: {
     home: "首页",
     homeLinkLabel: "GeoSub 首页",
@@ -392,7 +394,7 @@ const headerCopy: Record<
     closeMenuLabel: "Fechar menu",
     currentSectionLabel: "Secção atual:",
   },
-};
+});
 
 function shouldHideNavigationHref(href: string) {
   return shouldHideFromPublicNavigation(stripSiteLocale(normalizePath(href)));

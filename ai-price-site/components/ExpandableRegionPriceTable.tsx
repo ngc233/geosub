@@ -19,7 +19,7 @@ type Props = {
   initialVisibleCount?: number;
   locale?: PreparedSiteLocale;
   platformLabel?: string;
-  displayCurrency?: "usd" | "cny";
+  displayCurrency?: string;
   displayCurrencyLabel?: string;
   formatDisplayPrice?: (value: number) => string;
   showPlatformFilter?: boolean;
@@ -464,7 +464,7 @@ function RegionPriceRow({
   referencePrice: number;
   referenceCountry: string;
   hasUsReference: boolean;
-  displayCurrency: "usd" | "cny";
+  displayCurrency: string;
   displayCurrencyLabel: string;
   formatDisplayPrice: (value: number) => string;
   showSourceColumn: boolean;
@@ -516,7 +516,7 @@ function RegionPriceRow({
 
       <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {displayCurrency === "cny" ? copy.cnyEstimate : copy.usdEquivalent}
+          {displayCurrency === "USD" ? copy.usdEquivalent : displayCurrencyLabel}
         </div>
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
           {formatDisplayPrice(region.priceUsd)}
@@ -524,7 +524,7 @@ function RegionPriceRow({
             {copy.perMonth}
           </span>
         </div>
-        {displayCurrency === "cny" ? (
+        {displayCurrency !== "USD" ? (
           <div className="mt-0.5 text-xs text-zinc-400">{displayCurrencyLabel}</div>
         ) : null}
         {region.lastCheckedAt || region.fxRateDate ? (
@@ -578,7 +578,7 @@ export default function ExpandableRegionPriceTable({
   initialVisibleCount = 8,
   locale = "zh",
   platformLabel,
-  displayCurrency = "usd",
+  displayCurrency = "USD",
   displayCurrencyLabel,
   formatDisplayPrice = formatUsd,
   showPlatformFilter = true,
@@ -625,9 +625,9 @@ export default function ExpandableRegionPriceTable({
   );
   const shouldShowSourceColumn = showSourceColumn || (showPlatformFilter && effectivePlatform === "all");
   const displayPriceColumnLabel =
-    displayCurrency === "cny" ? copy.cnyEstimate : copy.usdEquivalent;
+    displayCurrency === "USD" ? copy.usdEquivalent : effectiveDisplayCurrencyLabel;
   const sortCurrencyLabel =
-    displayCurrency === "cny" ? copy.cnySort : copy.usdSort;
+    displayCurrency === "USD" ? copy.usdSort : effectiveDisplayCurrencyLabel;
 
   const visibleRegions = filteredRegions.slice(0, initialVisibleCount);
   const hiddenRegions = filteredRegions.slice(initialVisibleCount);

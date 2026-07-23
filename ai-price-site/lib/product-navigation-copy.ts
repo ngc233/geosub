@@ -1,4 +1,5 @@
 import type { SiteLocale } from "./site-locale";
+import { withTraditionalChinese } from "./traditional-chinese";
 
 type ProductNavigationCopy = {
   products: string;
@@ -8,7 +9,8 @@ type ProductNavigationCopy = {
   other: string;
 };
 
-const productNavigationCopy: Record<SiteLocale, ProductNavigationCopy> = {
+const productNavigationCopy: Record<SiteLocale, ProductNavigationCopy> =
+  withTraditionalChinese({
   zh: {
     products: "产品总览",
     currentProduct: "当前产品",
@@ -86,7 +88,7 @@ const productNavigationCopy: Record<SiteLocale, ProductNavigationCopy> = {
     streaming: "Streaming",
     other: "Outros",
   },
-};
+  });
 
 export function getProductNavigationCopy(locale: SiteLocale) {
   return productNavigationCopy[locale];

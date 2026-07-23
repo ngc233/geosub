@@ -17,7 +17,7 @@ for (const fileName of [".env.local", ".env"]) {
 const databaseUrl = process.env.DATABASE_URL;
 const baseCurrency = normalizeCurrency(process.env.GEOSUB_FX_BASE || "USD");
 const defaultQuoteCurrencies =
-  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR";
+  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,HKD,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR";
 const quoteCurrencies = `${defaultQuoteCurrencies},${process.env.GEOSUB_FX_QUOTES || ""}`
   .split(",")
   .map(normalizeCurrency)

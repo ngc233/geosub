@@ -2,6 +2,11 @@ import {
   getPreparedSiteLocaleDefinition,
   type PreparedSiteLocale,
 } from "./site-locale.ts";
+import {
+  getDisplayCurrencyFractionDigits,
+  getDisplayCurrencySymbolOverride,
+  isSupportedDisplayCurrency,
+} from "./display-currency.ts";
 
 export type LocalizedDateInput = Date | string | number;
 
@@ -43,9 +48,27 @@ export function formatLocalizedCurrency(
   locale: PreparedSiteLocale,
   options: Omit<Intl.NumberFormatOptions, "style" | "currency"> = {},
 ) {
+  const normalizedCurrency = currency.toUpperCase();
+
+  if (isSupportedDisplayCurrency(normalizedCurrency)) {
+    const symbolOverride =
+      getDisplayCurrencySymbolOverride(normalizedCurrency);
+
+    if (symbolOverride) {
+      const fractionDigits =
+        options.maximumFractionDigits ??
+        getDisplayCurrencyFractionDigits(normalizedCurrency);
+      return `${symbolOverride}${new Intl.NumberFormat(getIntlLocale(locale), {
+        minimumFractionDigits: options.minimumFractionDigits,
+        maximumFractionDigits: fractionDigits,
+        ...options,
+      }).format(value)}`;
+    }
+  }
+
   return new Intl.NumberFormat(getIntlLocale(locale), {
     style: "currency",
-    currency: currency.toUpperCase(),
+    currency: normalizedCurrency,
     currencyDisplay: "symbol",
     ...options,
   }).format(value);

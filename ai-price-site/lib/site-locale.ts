@@ -8,6 +8,18 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Chinese",
     intlLocale: "zh-CN",
     openGraphLocale: "zh_CN",
+    defaultCurrency: "CNY",
+  },
+  "zh-tw": {
+    path: "zh-tw",
+    htmlLang: "zh-TW",
+    direction: "ltr",
+    shortLabel: "TW",
+    label: "繁體中文",
+    englishLabel: "Traditional Chinese",
+    intlLocale: "zh-TW",
+    openGraphLocale: "zh_TW",
+    defaultCurrency: "TWD",
   },
   en: {
     path: "en",
@@ -18,6 +30,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "English",
     intlLocale: "en-US",
     openGraphLocale: "en_US",
+    defaultCurrency: "USD",
   },
   ja: {
     path: "ja",
@@ -28,6 +41,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Japanese",
     intlLocale: "ja-JP",
     openGraphLocale: "ja_JP",
+    defaultCurrency: "JPY",
   },
   ko: {
     path: "ko",
@@ -38,6 +52,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Korean",
     intlLocale: "ko-KR",
     openGraphLocale: "ko_KR",
+    defaultCurrency: "KRW",
   },
   es: {
     path: "es",
@@ -48,6 +63,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Spanish",
     intlLocale: "es-ES",
     openGraphLocale: "es_ES",
+    defaultCurrency: "EUR",
   },
   tr: {
     path: "tr",
@@ -58,6 +74,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Turkish",
     intlLocale: "tr-TR",
     openGraphLocale: "tr_TR",
+    defaultCurrency: "TRY",
   },
   ar: {
     path: "ar",
@@ -68,6 +85,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Arabic",
     intlLocale: "ar",
     openGraphLocale: "ar_AR",
+    defaultCurrency: "SAR",
   },
   fr: {
     path: "fr",
@@ -78,6 +96,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "French",
     intlLocale: "fr-FR",
     openGraphLocale: "fr_FR",
+    defaultCurrency: "EUR",
   },
   it: {
     path: "it",
@@ -88,6 +107,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Italian",
     intlLocale: "it-IT",
     openGraphLocale: "it_IT",
+    defaultCurrency: "EUR",
   },
   de: {
     path: "de",
@@ -98,6 +118,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "German",
     intlLocale: "de-DE",
     openGraphLocale: "de_DE",
+    defaultCurrency: "EUR",
   },
   pt: {
     path: "pt",
@@ -108,6 +129,7 @@ export const preparedSiteLocaleDefinitions = {
     englishLabel: "Portuguese",
     intlLocale: "pt-PT",
     openGraphLocale: "pt_PT",
+    defaultCurrency: "EUR",
   },
 } as const;
 
@@ -115,6 +137,7 @@ export type PreparedSiteLocale = keyof typeof preparedSiteLocaleDefinitions;
 
 export const launchedSiteLocales = [
   "zh",
+  "zh-tw",
   "en",
   "ja",
   "ko",
@@ -131,6 +154,7 @@ export type SiteLocale = (typeof launchedSiteLocales)[number];
 
 export const siteLocaleDefinitions = {
   zh: preparedSiteLocaleDefinitions.zh,
+  "zh-tw": preparedSiteLocaleDefinitions["zh-tw"],
   en: preparedSiteLocaleDefinitions.en,
   ja: preparedSiteLocaleDefinitions.ja,
   ko: preparedSiteLocaleDefinitions.ko,

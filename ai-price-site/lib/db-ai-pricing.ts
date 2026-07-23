@@ -9,6 +9,7 @@ import type {
 import type { SiteLocale } from "./site-locale";
 import { getLocalizedCountryName } from "./country-name";
 import { localizeTaxNote } from "./tax-note-localization";
+import { toTraditionalChinese } from "./traditional-chinese";
 
 type DbPricingLocale = SiteLocale;
 type TaxProfileRow = {
@@ -373,6 +374,9 @@ export async function getDbAiPricingProducts({
   locale?: DbPricingLocale;
   categories?: ProductCategory[];
 } = {}) {
+  const requestedLocale = locale;
+  locale = locale === "zh-tw" ? "zh" : locale;
+
   const [products, taxProfileRows] = await Promise.all([
     prisma.product.findMany({
       where: {
@@ -441,7 +445,7 @@ export async function getDbAiPricingProducts({
     taxProfileRows.map((row) => [row.country_code.toUpperCase(), row])
   );
 
-  return products
+  const localizedProducts = products
     .map<DbPricingProduct | null>((product) => {
       const category = mapCategory(product.category);
 
@@ -538,4 +542,8 @@ export async function getDbAiPricingProducts({
       };
     })
     .filter((product): product is DbPricingProduct => Boolean(product));
+
+  return requestedLocale === "zh-tw"
+    ? toTraditionalChinese(localizedProducts)
+    : localizedProducts;
 }

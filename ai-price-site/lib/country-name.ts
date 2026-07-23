@@ -2,6 +2,7 @@ import type { SiteLocale } from "./site-locale";
 
 const localeMap: Record<SiteLocale, string> = {
   zh: "zh-CN",
+  "zh-tw": "zh-TW",
   en: "en",
   ja: "ja-JP",
   ko: "ko-KR",
@@ -46,7 +47,7 @@ export function getLocalizedCountryName({
     }
   }
 
-  return locale === "zh"
+  return locale === "zh" || locale === "zh-tw"
     ? nameZh || nameEn || normalizedCode
     : nameEn || nameZh || normalizedCode;
 }

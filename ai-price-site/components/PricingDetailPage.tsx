@@ -29,7 +29,14 @@ import {
   stripGeoSubTitleSuffix,
 } from "../lib/pricing-routes";
 import { prisma } from "../lib/prisma";
-import type { SiteLocale } from "../lib/site-locale";
+import {
+  getSiteLocaleDefinition,
+  type SiteLocale,
+} from "../lib/site-locale";
+import {
+  supportedDisplayCurrencies,
+  type DisplayCurrency,
+} from "../lib/display-currency";
 
 export type PricingDetailPageProps = {
   params: Promise<{
@@ -474,10 +481,32 @@ export default async function PricingDetailPage({
   const sidebarProducts = await getProductNavItems(product.category);
   const detailBasePath = getPricingListPath(locale, product.category);
   const hasPublishedPrices = activePlan.regions.length > 0;
-  const [affordability, cnyExchangeRate] = await Promise.all([
+  const defaultCurrency =
+    getSiteLocaleDefinition(locale).defaultCurrency;
+  const [affordability, exchangeRateEntries] = await Promise.all([
     getPlanAffordability(product.slug, activePlan.slug),
-    getLatestExchangeRate("USD", "CNY"),
+    Promise.all(
+      supportedDisplayCurrencies.map(async (currency) => [
+        currency,
+        currency === "USD"
+          ? {
+              baseCurrency: "USD",
+              quoteCurrency: "USD",
+              rate: 1,
+              source: null,
+              rateDate: activePlan.freshness?.fxRateDate || null,
+              fetchedAt: null,
+              isFallback: false,
+              isStale: false,
+            }
+          : await getLatestExchangeRate("USD", currency),
+      ] as const),
+    ),
   ]);
+  const exchangeRates = Object.fromEntries(exchangeRateEntries) as Record<
+    DisplayCurrency,
+    (typeof exchangeRateEntries)[number][1]
+  >;
   const stats = hasPublishedPrices ? getPlanStats(activePlan) : null;
   const pageCopy = getPricingDetailPageCopy({
     locale,
@@ -587,9 +616,11 @@ export default async function PricingDetailPage({
         {stats ? (
           <>
             <PricingPlatformView
+              key={`${locale}-${activePlan.slug}`}
               productName={product.name}
               plan={activePlan}
-              cnyExchangeRate={cnyExchangeRate}
+              defaultCurrency={defaultCurrency}
+              exchangeRates={exchangeRates}
               locale={locale}
               shareAction={
                 <SharePriceModal

@@ -12,6 +12,7 @@ import {
   getLocalizedRegionName,
 } from "../lib/locale-format";
 import type { PreparedSiteLocale } from "../lib/site-locale";
+import { withTraditionalChinese } from "../lib/traditional-chinese";
 import ExpandableAffordabilityRows from "./ExpandableAffordabilityRows";
 import {
   DataNote,
@@ -73,7 +74,7 @@ type AffordabilityCopy = {
   collapse: string;
 };
 
-const affordabilityCopy = {
+const affordabilityCopy = withTraditionalChinese({
   zh: {
     times: "倍",
     sectionTitle: (productName: string) => `${productName} 本地购买力对比`,
@@ -458,7 +459,10 @@ const affordabilityCopy = {
     dataNote: (m,i,y,c) => `Indicador de rendimento: ${m}${i ? ` (${i})` : ""}. Ano dos dados: ${y}. Preço verificado em: ${c}. Os resultados descrevem pressão regional, não capacidade individual de pagamento.`,
     showMore: (c) => `Mostrar mais ${c} regiões`, collapse: "Mostrar menos regiões",
   },
-} satisfies Record<PreparedSiteLocale, AffordabilityCopy>;
+} satisfies Record<
+  Exclude<PreparedSiteLocale, "zh-tw">,
+  AffordabilityCopy
+>);
 
 function getAffordabilityCopy(locale: PreparedSiteLocale) {
   return affordabilityCopy[locale];
@@ -514,7 +518,7 @@ function getCountryName(
   const localizedName = getLocalizedRegionName(row.countryCode, locale);
   if (localizedName) return localizedName;
 
-  if (locale === "zh") {
+  if (locale === "zh" || locale === "zh-tw") {
     return row.countryNameZh || row.countryNameEn || row.countryCode;
   }
 

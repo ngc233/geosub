@@ -21,6 +21,7 @@ type PriceWorldMapProps = {
   plan: ProductPlan;
   locale?: DetailLocale;
   compact?: boolean;
+  formatPrice?: (value: number) => string;
 };
 
 type MapFeature = {
@@ -248,6 +249,7 @@ export default function PriceWorldMap({
   plan,
   locale = "zh",
   compact = false,
+  formatPrice = formatUsd,
 }: PriceWorldMapProps) {
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const [view, setView] = useState<ViewState>({
@@ -426,7 +428,7 @@ export default function PriceWorldMap({
 
             <div className="mt-0.5 font-black text-zinc-900 dark:text-white">
               {referenceRegion?.country || mapCopy.none}
-              {referencePrice ? ` · ${formatUsd(referencePrice)}${mapCopy.perMonth}` : ""}
+              {referencePrice ? ` · ${formatPrice(referencePrice)}${mapCopy.perMonth}` : ""}
             </div>
           </div>
 
@@ -705,7 +707,7 @@ export default function PriceWorldMap({
                       fontWeight="900"
                       letterSpacing="0"
                     >
-                      {formatUsd(marker.region.priceUsd)}
+                      {formatPrice(marker.region.priceUsd)}
                     </text>
 
                     {marker.kind !== "reference" ? (
@@ -778,7 +780,7 @@ export default function PriceWorldMap({
             {hoverInfo.region ? (
               <>
                 <div className="mt-3 text-2xl font-black text-zinc-900 dark:text-white">
-                  {formatUsd(hoverInfo.region.priceUsd)}
+                  {formatPrice(hoverInfo.region.priceUsd)}
                   <span className="ml-1 text-xs font-bold text-zinc-400">
                     {mapCopy.perMonth}
                   </span>

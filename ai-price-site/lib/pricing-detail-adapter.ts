@@ -6,6 +6,7 @@
 import { prisma } from "./prisma";
 import type { DetailLocale } from "./detail-page-copy";
 import { localizeTaxNote } from "./tax-note-localization";
+import { toTraditionalChinese } from "./traditional-chinese";
 
 type PricingDetailRow = {
   product_slug: string;
@@ -62,6 +63,7 @@ type PricingDetailRow = {
 
 const localeMap: Record<DetailLocale, string> = {
   zh: "zh-CN",
+  "zh-tw": "zh-TW",
   en: "en",
   ja: "ja-JP",
   ko: "ko-KR",
@@ -1298,5 +1300,11 @@ export async function getPricingDetailProduct(
     ORDER BY pl.sort_order ASC, rp.price_usd ASC, rp.billing_platform ASC
   `;
 
-  return buildProductFromRows(productSlug, rows, locale);
+  const product = buildProductFromRows(
+    productSlug,
+    rows,
+    locale === "zh-tw" ? "zh" : locale,
+  );
+
+  return locale === "zh-tw" ? toTraditionalChinese(product) : product;
 }

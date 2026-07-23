@@ -28,6 +28,13 @@ const planTabsCopy: Record<
     noPrice: "暂无价格",
     noPriceShort: "暂无",
   },
+  "zh-tw": {
+    ariaLabel: "方案切換",
+    pending: "待審核",
+    pendingShort: "待審",
+    noPrice: "暫無價格",
+    noPriceShort: "暫無",
+  },
   en: {
     ariaLabel: "Plan selector",
     pending: "pending",

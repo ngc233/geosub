@@ -2,6 +2,7 @@ import type {
   PreparedSiteLocale,
   SiteLocale,
 } from "./site-locale";
+import { withTraditionalChinese } from "./traditional-chinese";
 
 type PreparedDetailLocale = PreparedSiteLocale | "de" | "fr";
 
@@ -32,7 +33,7 @@ type DetailCopyTemplate = Record<
   }
 >;
 
-const detailCopyTemplates: Record<PreparedDetailLocale, DetailCopyTemplate> = {
+const detailCopyTemplates = withTraditionalChinese({
   zh: {
     priceOverview: {
       title: "{planName} 全球价格分布概览",
@@ -280,7 +281,10 @@ const detailCopyTemplates: Record<PreparedDetailLocale, DetailCopyTemplate> = {
       title: "الأسئلة الشائعة",
     },
   },
-};
+  } satisfies Record<
+    Exclude<PreparedDetailLocale, "zh-tw">,
+    DetailCopyTemplate
+  >);
 
 function fillTemplate(template: string, input: DetailCopyInput) {
   return template
@@ -294,7 +298,7 @@ export function getDetailModuleCopy(
   input: DetailCopyInput = {}
 ): DetailModuleCopy {
   const templates = detailCopyTemplates[locale];
-  const item = templates[key];
+  const item: { title: string; description?: string } = templates[key];
 
   return {
     title: fillTemplate(item.title, input).trim(),
@@ -341,7 +345,7 @@ export type DetailMapCopy = {
   perMonth: string;
 };
 
-const detailMapCopy: Record<PreparedDetailLocale, DetailMapCopy> = {
+const detailMapCopy = withTraditionalChinese({
   zh: {
     currentBenchmark: "当前基准",
     covered: "已覆盖",
@@ -626,7 +630,10 @@ const detailMapCopy: Record<PreparedDetailLocale, DetailMapCopy> = {
     closeDetail: "إغلاق تفاصيل الخريطة",
     perMonth: "/شهر",
   },
-};
+  } satisfies Record<
+    Exclude<PreparedDetailLocale, "zh-tw">,
+    DetailMapCopy
+  >);
 
 export function getDetailMapCopy(locale: DetailLocale): DetailMapCopy {
   return detailMapCopy[locale];
@@ -661,7 +668,7 @@ export type DetailTableCopy = {
   clearlyHigh: string;
 };
 
-const detailTableCopy: Record<PreparedDetailLocale, DetailTableCopy> = {
+const detailTableCopy = withTraditionalChinese({
   zh: {
     rank: "#",
     region: "地区",
@@ -970,7 +977,10 @@ const detailTableCopy: Record<PreparedDetailLocale, DetailTableCopy> = {
     slightlyHigh: "مرتفع قليلًا",
     clearlyHigh: "مرتفع بوضوح",
   },
-};
+  } satisfies Record<
+    Exclude<PreparedDetailLocale, "zh-tw">,
+    DetailTableCopy
+  >);
 
 export function getDetailTableCopy(locale: DetailLocale): DetailTableCopy {
   return detailTableCopy[locale];

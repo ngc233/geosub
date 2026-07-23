@@ -2,6 +2,7 @@ import { formatUsd, type PlanStats } from "./public-pricing-model";
 import { getPlanDisplayName } from "./pricing-labels";
 import type { PricingFaq } from "./pricing-seo";
 import type { PreparedSiteLocale } from "./site-locale";
+import { withTraditionalChinese } from "./traditional-chinese";
 
 type StaticDetailCopy = {
   metadataFallbackTitle: string;
@@ -21,7 +22,7 @@ type StaticDetailCopy = {
   };
 };
 
-const staticDetailCopy = {
+const staticDetailCopy = withTraditionalChinese({
   zh: {
     metadataFallbackTitle: "订阅价格详情",
     backToPricing: "← 返回订阅价格列表",
@@ -198,7 +199,10 @@ const staticDetailCopy = {
       condition: "Condição de publicação", conditionValue: "Publicado após verificação",
     },
   },
-} satisfies Record<PreparedSiteLocale, StaticDetailCopy>;
+} satisfies Record<
+  Exclude<PreparedSiteLocale, "zh-tw">,
+  StaticDetailCopy
+>);
 
 function getPageTitle(
   locale: PreparedSiteLocale,
@@ -206,7 +210,7 @@ function getPageTitle(
   planName: string,
 ) {
   const name = getPlanDisplayName(productName, planName);
-  const templates: Record<PreparedSiteLocale, string> = {
+  const templates: Record<PreparedSiteLocale, string> = withTraditionalChinese({
     zh: `${name} 全球价格对比`,
     en: `${name} Global Price Comparison`,
     ja: `${name} 世界の料金比較`,
@@ -218,24 +222,25 @@ function getPageTitle(
     it: `Confronto mondiale dei prezzi di ${name}`,
     de: `${name}: weltweiter Preisvergleich`,
     pt: `Comparação mundial dos preços de ${name}`,
-  };
+  });
   return templates[locale];
 }
 
 function getDescription(locale: PreparedSiteLocale, productName: string) {
-  const descriptions: Record<PreparedSiteLocale, string> = {
-    zh: `按套餐和地区比较 ${productName} 在 App Store 的公开订阅价格，并提供美元、人民币和购买力视角。`,
-    en: `Compare ${productName} public App Store subscription prices by plan and region, with USD, CNY and purchasing-power views.`,
-    ja: `${productName} のApp Store公開料金をプラン・地域別に比較し、USD換算、人民元の目安、現地購買力の視点で確認できます。`,
-    ko: `${productName}의 App Store 공개 구독 가격을 요금제와 지역별로 비교하고 USD 환산가, 위안화 예상가와 현지 구매력 정보를 확인하세요.`,
-    es: `Compara los precios públicos de ${productName} en App Store por plan y región, con equivalencia en USD, estimación en CNY y contexto de poder adquisitivo.`,
-    tr: `${productName} App Store abonelik fiyatlarını paket ve bölge bazında karşılaştırın; USD karşılığını, CNY tahminini ve yerel satın alma gücü görünümünü inceleyin.`,
-    ar: `قارن أسعار اشتراك ${productName} المعلنة في App Store حسب الباقة والمنطقة، مع ما يعادلها بالدولار وتقدير اليوان الصيني وسياق القدرة الشرائية المحلية.`,
-    fr: `Comparez les prix publics App Store de ${productName} par offre et par région, avec leur équivalent en dollars, une estimation en yuans et le pouvoir d’achat local.`,
-    it: `Confronta i prezzi pubblici App Store di ${productName} per piano e regione, con equivalente in dollari, stima in yuan e potere d’acquisto locale.`,
-    de: `Vergleichen Sie die öffentlichen App-Store-Preise von ${productName} nach Tarif und Region, einschließlich Dollarwert, Yuan-Schätzung und lokaler Kaufkraft.`,
-    pt: `Compare os preços públicos da App Store de ${productName} por plano e região, incluindo o equivalente em dólares, a estimativa em yuan e o poder de compra local.`,
-  };
+  const descriptions: Record<PreparedSiteLocale, string> =
+    withTraditionalChinese({
+    zh: `按套餐和地区比较 ${productName} 在 App Store 的公开订阅价格，并结合当前显示币种、税费和购买力理解真实成本。`,
+    en: `Compare ${productName} public App Store subscription prices by plan and region, with localized currency, tax and purchasing-power context.`,
+    ja: `${productName} のApp Store公開料金をプラン・地域別に比較し、表示通貨、税金、現地の購買力を含めて実質的な負担を確認できます。`,
+    ko: `${productName}의 App Store 공개 구독 가격을 요금제와 지역별로 비교하고 표시 통화, 세금, 현지 구매력을 함께 확인하세요.`,
+    es: `Compara los precios públicos de ${productName} en App Store por plan y región, con la moneda mostrada, los impuestos y el poder adquisitivo local.`,
+    tr: `${productName} App Store abonelik fiyatlarını paket ve bölge bazında; görüntülenen para birimi, vergiler ve yerel satın alma gücü bağlamında karşılaştırın.`,
+    ar: `قارن أسعار اشتراك ${productName} المعلنة في App Store حسب الباقة والمنطقة، مع عملة العرض والضرائب وسياق القدرة الشرائية المحلية.`,
+    fr: `Comparez les prix publics App Store de ${productName} par offre et par région, en tenant compte de la devise affichée, des taxes et du pouvoir d’achat local.`,
+    it: `Confronta i prezzi pubblici App Store di ${productName} per piano e regione, considerando la valuta visualizzata, le imposte e il potere d’acquisto locale.`,
+    de: `Vergleichen Sie die öffentlichen App-Store-Preise von ${productName} nach Tarif und Region unter Berücksichtigung der Anzeigewährung, Steuern und lokalen Kaufkraft.`,
+    pt: `Compare os preços públicos da App Store de ${productName} por plano e região, considerando a moeda apresentada, os impostos e o poder de compra local.`,
+    });
   return descriptions[locale];
 }
 
@@ -250,7 +255,8 @@ function getFaqs(
   const lowestCountry = stats?.minRegion.country;
   const lowestPrice = stats ? formatUsd(stats.minRegion.priceUsd) : null;
 
-  const faqByLocale: Record<PreparedSiteLocale, PricingFaq[]> = {
+  const faqByLocale: Record<PreparedSiteLocale, PricingFaq[]> =
+    withTraditionalChinese({
     zh: [
       {
         q: `截至 ${year} 年，${name} 哪个地区价格最低？`,
@@ -447,7 +453,7 @@ function getFaqs(
       { q: `Porque é que ${productName} custa mais em algumas regiões?`, a: "Estratégias locais de preço, impostos, câmbio, posicionamento e poder de compra influenciam o valor. O equivalente em dólares facilita a comparação, mas não significa que a plataforma use apenas o câmbio do dia." },
       { q: `Com que frequência são atualizados os preços regionais de ${name}?`, a: "O GeoSub volta a verificar regularmente os preços publicados e distingue a data de recolha, a data do câmbio, a revisão do plano e a atualização da página. As alterações só são publicadas após os controlos de coerência." },
     ],
-  };
+    });
 
   return faqByLocale[locale];
 }

@@ -16,6 +16,7 @@ import {
 } from '../lib/public-pricing-model';
 import { getPlanDisplayName } from '../lib/pricing-labels';
 import type { SiteLocale } from '../lib/site-locale';
+import { withTraditionalChinese } from '../lib/traditional-chinese';
 
 type SharePriceModalProps = {
   product: SubscriptionProduct;
@@ -54,7 +55,7 @@ type ShareCopy = {
   monthlySuffix: string;
 };
 
-const shareCopy = {
+const shareCopy = withTraditionalChinese({
   zh: {
     button: '分享价格图',
     dialogLabel: '分享价格图',
@@ -334,7 +335,7 @@ const shareCopy = {
     diffSame: 'Mesmo preço dos EUA', comparisonLead: (l,h) => `A diferença entre ${l} e ${h} é de cerca de `,
     comparisonTrail: '.', monthlySuffix: '/mês',
   },
-} satisfies Record<SiteLocale, ShareCopy>;
+} satisfies Record<Exclude<SiteLocale, "zh-tw">, ShareCopy>);
 
 type MapFeature = {
   id?: number | string;

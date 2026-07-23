@@ -1,12 +1,28 @@
 # GeoSub Project Handoff
 
-Updated: 2026-07-23
+Updated: 2026-07-24
 
 ## Current Stage
 
-The public v2.0.0 release is online. The local v2.1.0 multilingual release
-candidate has passed technical acceptance but has not been committed, pushed
-or deployed yet.
+The v2.1.0 multilingual platform is committed on `main`. The local v2.2.0
+release candidate adds Traditional Chinese plus the expanded display-currency
+and exchange-rate contract; it has passed local technical acceptance and is
+awaiting publication and production deployment.
+
+## V2.2 Local Roadmap
+
+1. Traditional Chinese is the twelfth active public locale and follows the
+   shared locale registry, translated public components and SEO route rules.
+2. Seventeen display currencies are available: USD, CNY, TWD, HKD, SGD, EUR,
+   JPY, KRW, AUD, CAD, MYR, IDR, THB, PHP, VND, TRY and SAR.
+3. The production exchange-rate contract requires 36 fresh USD quote
+   currencies. HKD is enforced by local checks, scheduled sync, Linux
+   deployment validation and Windows maintenance scripts.
+4. Both scheduled and HTTP sync paths merge the central-bank source with the
+   fallback provider when Asian quote currencies are omitted.
+5. Local acceptance passed source encoding, TypeScript, ESLint, all 209 tests,
+   the 115-route production build and browser interaction checks for HKD, SGD,
+   AUD, CAD, MYR, IDR, THB, PHP and VND.
 
 The operating pipeline is:
 

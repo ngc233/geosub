@@ -1,4 +1,5 @@
 import type { PreparedSiteLocale } from "./site-locale";
+import { withTraditionalChinese } from "./traditional-chinese.ts";
 
 type TaxNoteCopy = {
   include: (label: string, usually: boolean) => string;
@@ -18,7 +19,7 @@ type TaxNoteCopy = {
   terms: Record<string, string>;
 };
 
-const taxNoteCopy = {
+const taxNoteCopy = withTraditionalChinese({
   zh: {
     include: (label, usually) => (usually ? `通常含 ${label}` : `含 ${label}`),
     provinceVaries: (detail) =>
@@ -240,7 +241,10 @@ const taxNoteCopy = {
     unknown: "O tratamento fiscal varia por região; prevalece o valor da App Store no pagamento",
     terms: { "consumption tax": "imposto sobre o consumo", "service tax": "imposto sobre serviços", "sales tax": "imposto sobre vendas", "by region": "por região" },
   },
-} satisfies Record<Exclude<PreparedSiteLocale, "en">, TaxNoteCopy>;
+} satisfies Record<
+  Exclude<PreparedSiteLocale, "en" | "zh-tw">,
+  TaxNoteCopy
+>);
 
 function localizeIncludedLabel(label: string, copy: TaxNoteCopy) {
   return Object.entries(copy.terms).reduce(

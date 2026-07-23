@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   getPreparedSiteLocaleDefinition,
+  getSiteLocaleDefinition,
   getSiteLocaleFromPath,
   isPreparedSiteLocale,
   isSiteLocale,
@@ -14,10 +15,16 @@ import {
   formatLocalizedDate,
   getLocalizedRegionName,
 } from "./locale-format.ts";
+import { supportedDisplayCurrencies } from "./display-currency.ts";
+import {
+  toTraditionalChinese,
+  toTraditionalChineseText,
+} from "./traditional-chinese.ts";
 
-test("v2.1 registers eleven prepared locales and launches completed locales", () => {
+test("v2.1 registers twelve prepared locales and launches completed locales", () => {
   assert.deepEqual(preparedSiteLocales, [
     "zh",
+    "zh-tw",
     "en",
     "ja",
     "ko",
@@ -31,6 +38,7 @@ test("v2.1 registers eleven prepared locales and launches completed locales", ()
   ]);
   assert.deepEqual(supportedSiteLocales, [
     "zh",
+    "zh-tw",
     "en",
     "ja",
     "ko",
@@ -43,8 +51,10 @@ test("v2.1 registers eleven prepared locales and launches completed locales", ()
     "pt",
   ]);
   assert.equal(isPreparedSiteLocale("ja"), true);
+  assert.equal(isPreparedSiteLocale("zh-tw"), true);
   assert.equal(isPreparedSiteLocale("AR"), true);
   assert.equal(isSiteLocale("ja"), true);
+  assert.equal(isSiteLocale("zh-tw"), true);
   assert.equal(isSiteLocale("ko"), true);
   assert.equal(isSiteLocale("es"), true);
   assert.equal(isSiteLocale("tr"), true);
@@ -57,6 +67,8 @@ test("v2.1 registers eleven prepared locales and launches completed locales", ()
 });
 
 test("prepared locale definitions carry native labels and document direction", () => {
+  assert.equal(getPreparedSiteLocaleDefinition("zh-tw").label, "繁體中文");
+  assert.equal(getPreparedSiteLocaleDefinition("zh-tw").htmlLang, "zh-TW");
   assert.equal(getPreparedSiteLocaleDefinition("ja").label, "日本語");
   assert.equal(getPreparedSiteLocaleDefinition("ko").label, "한국어");
   assert.equal(getPreparedSiteLocaleDefinition("es").label, "Español");
@@ -70,7 +82,41 @@ test("prepared locale definitions carry native labels and document direction", (
   assert.equal(getPreparedSiteLocaleDefinition("es").direction, "ltr");
 });
 
+test("display currencies follow locale markets with a shared Eurozone rule", () => {
+  assert.deepEqual(supportedDisplayCurrencies, [
+    "USD",
+    "CNY",
+    "TWD",
+    "HKD",
+    "SGD",
+    "EUR",
+    "JPY",
+    "KRW",
+    "AUD",
+    "CAD",
+    "MYR",
+    "IDR",
+    "THB",
+    "PHP",
+    "VND",
+    "TRY",
+    "SAR",
+  ]);
+  assert.equal(getSiteLocaleDefinition("zh").defaultCurrency, "CNY");
+  assert.equal(getSiteLocaleDefinition("zh-tw").defaultCurrency, "TWD");
+  assert.equal(getSiteLocaleDefinition("en").defaultCurrency, "USD");
+  assert.equal(getSiteLocaleDefinition("ja").defaultCurrency, "JPY");
+  assert.equal(getSiteLocaleDefinition("ko").defaultCurrency, "KRW");
+  assert.equal(getSiteLocaleDefinition("tr").defaultCurrency, "TRY");
+  assert.equal(getSiteLocaleDefinition("ar").defaultCurrency, "SAR");
+
+  for (const locale of ["es", "fr", "it", "de", "pt"] as const) {
+    assert.equal(getSiteLocaleDefinition(locale).defaultCurrency, "EUR");
+  }
+});
+
 test("launched locales route publicly and switch consistently", () => {
+  assert.equal(getSiteLocaleFromPath("/zh-tw/ai-pricing"), "zh-tw");
   assert.equal(getSiteLocaleFromPath("/ja/ai-pricing"), "ja");
   assert.equal(getSiteLocaleFromPath("/ko/ai-pricing"), "ko");
   assert.equal(getSiteLocaleFromPath("/es/ai-pricing"), "es");
@@ -83,6 +129,10 @@ test("launched locales route publicly and switch consistently", () => {
   assert.equal(
     replaceSiteLocaleInPath("/zh/ai-pricing/chatgpt", "en"),
     "/en/ai-pricing/chatgpt",
+  );
+  assert.equal(
+    replaceSiteLocaleInPath("/zh/ai-pricing/chatgpt", "zh-tw"),
+    "/zh-tw/ai-pricing/chatgpt",
   );
   assert.equal(
     replaceSiteLocaleInPath("/en/ai-pricing/chatgpt", "ja"),
@@ -122,8 +172,43 @@ test("launched locales route publicly and switch consistently", () => {
   );
 });
 
+test("Traditional Chinese uses Taiwan terminology and preserves localized paths", () => {
+  assert.equal(
+    toTraditionalChineseText("软件 数据 购买力 汇率 全球价格 显示币种"),
+    "軟體 資料 購買力 匯率 全球價格 顯示幣種",
+  );
+  assert.equal(
+    toTraditionalChineseText("/zh/ai-pricing/chatgpt"),
+    "/zh-tw/ai-pricing/chatgpt",
+  );
+  assert.equal(
+    toTraditionalChineseText("账号地区、账单信息和平台风控"),
+    "帳號地區、帳單資訊和平台風控",
+  );
+  assert.deepEqual(
+    toTraditionalChinese({
+      label: "数据来源",
+      href: "/zh/guides/methodology",
+    }),
+    {
+      label: "資料來源",
+      href: "/zh-tw/guides/methodology",
+    },
+  );
+});
+
 test("shared Intl formatting supports every v2.1 locale", () => {
   assert.match(formatLocalizedCurrency(19.99, "USD", "en"), /\$19\.99/);
+  assert.equal(formatLocalizedCurrency(133.85, "TWD", "zh-tw"), "NT$133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "HKD", "zh-tw"), "HK$133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "SGD", "zh"), "S$133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "AUD", "en"), "A$133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "CAD", "en"), "C$133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "MYR", "en"), "RM133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "IDR", "en"), "Rp134");
+  assert.equal(formatLocalizedCurrency(133.85, "THB", "en"), "฿133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "PHP", "en"), "₱133.85");
+  assert.equal(formatLocalizedCurrency(133.85, "VND", "en"), "₫134");
   assert.match(
     formatLocalizedCurrency(19.99, "USD", "ja"),
     /\$19\.99|US\$19\.99/,

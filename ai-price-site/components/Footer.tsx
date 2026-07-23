@@ -12,11 +12,12 @@ import {
   type PreparedSiteLocale,
   type SiteLocale,
 } from "../lib/site-locale";
+import { withTraditionalChinese } from "../lib/traditional-chinese";
 
 const footerCopy: Record<
   PreparedSiteLocale,
   { description: string; rights: string; note: string; tagline: string }
-> = {
+> = withTraditionalChinese({
   zh: {
     description:
       "GeoSub 是全球数字订阅价格数据平台，当前优先整理 AI 订阅和流媒体订阅在不同国家与地区的价格差异。",
@@ -95,7 +96,7 @@ const footerCopy: Record<
     note: "Os preços e a disponibilidade podem variar conforme a região, o câmbio, os impostos e as regras da plataforma. Confirme sempre o valor final na página oficial de pagamento.",
     tagline: "Preços de assinaturas digitais no mundo",
   },
-};
+});
 
 function shouldHideHref(href: string) {
   return shouldHideFromPublicNavigation(stripSiteLocale(href));

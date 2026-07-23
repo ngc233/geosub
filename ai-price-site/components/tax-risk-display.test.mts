@@ -31,7 +31,7 @@ test("region table tax and risk labels cover every prepared locale", () => {
   assert.match(source, /copy\.riskPrefix\(getRiskLabel\(region\.riskLevel, locale\)\)/);
   assert.match(
     copySource,
-    /satisfies Record<[\s\S]*Exclude<PreparedSiteLocale, "zh" \| "en">/,
+    /satisfies Record<[\s\S]*Exclude<PreparedSiteLocale, "zh" \| "zh-tw" \| "en">/,
   );
   for (const locale of ["ja", "ko", "es", "tr", "ar"]) {
     assert.match(copySource, new RegExp(`\\n  ${locale}:`));

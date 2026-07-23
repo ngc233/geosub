@@ -3,6 +3,7 @@ import {
   isPreparedSiteLocale,
   type PreparedSiteLocale,
 } from "./site-locale";
+import { withTraditionalChinese } from "./traditional-chinese";
 
 export type DefaultNavigationChild = {
   label: string;
@@ -20,7 +21,8 @@ type DefaultNavigationMap = Record<
   Record<NavigationPositionValue, DefaultNavigationGroup[]>
 >;
 
-export const defaultNavigationItems: DefaultNavigationMap = {
+export const defaultNavigationItems: DefaultNavigationMap =
+  withTraditionalChinese({
   zh: {
     header: [
       { label: "首页", href: "/zh/" },
@@ -503,7 +505,7 @@ export const defaultNavigationItems: DefaultNavigationMap = {
       ] },
     ],
   },
-};
+  });
 
 export function getDefaultNavigationItems({
   locale,

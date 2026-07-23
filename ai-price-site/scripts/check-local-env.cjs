@@ -20,7 +20,7 @@ const databaseUrl = process.env.DATABASE_URL;
 const maxExchangeRateAgeHours = Number(process.env.GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS || 18);
 const maxRunningMinutes = Number(process.env.GEOSUB_MAX_COLLECTOR_RUNNING_MINUTES || 45);
 const requiredExchangeRateQuotes =
-  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR".split(",");
+  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,HKD,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR".split(",");
 
 function maskDatabaseTarget(url) {
   if (!url) return "not configured";

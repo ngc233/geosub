@@ -1,5 +1,6 @@
 import { getPublicPricingCopy } from "./public-pricing-copy";
 import type { SiteLocale } from "./site-locale";
+import { toTraditionalChinese } from "./traditional-chinese";
 
 type PricingPlatformCopy = ReturnType<
   typeof getPublicPricingCopy
@@ -351,6 +352,10 @@ const portuguesePricingPlatformCopy: PricingPlatformCopy = {
 export function getPricingPlatformCopy(
   locale: SiteLocale,
 ): PricingPlatformCopy {
+  if (locale === "zh-tw") {
+    return toTraditionalChinese(getPublicPricingCopy("zh").pricing);
+  }
+
   if (locale === "zh" || locale === "en") {
     return getPublicPricingCopy(locale).pricing;
   }

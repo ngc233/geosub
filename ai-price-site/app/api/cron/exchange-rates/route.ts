@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { supportedDisplayCurrencies } from "../../../../lib/display-currency";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,9 @@ type OpenErApiResponse = {
 };
 
 const DEFAULT_BASE = "USD";
-const DEFAULT_QUOTES = ["CNY"];
+const DEFAULT_QUOTES = supportedDisplayCurrencies.filter(
+  (currency) => currency !== DEFAULT_BASE,
+);
 
 function normalizeCurrency(value: string) {
   return value.trim().toUpperCase();
@@ -87,6 +90,34 @@ async function fetchOpenErApiRates(base: string) {
   };
 }
 
+async function getRates(base: string, quotes: string[]) {
+  let primary: Awaited<ReturnType<typeof fetchFrankfurterRates>>;
+
+  try {
+    primary = await fetchFrankfurterRates(base, quotes);
+  } catch {
+    return fetchOpenErApiRates(base);
+  }
+
+  const missingQuotes = quotes.filter((quote) => {
+    const rate = Number(primary.rates[quote]);
+    return !Number.isFinite(rate) || rate <= 0;
+  });
+
+  if (missingQuotes.length === 0) {
+    return primary;
+  }
+
+  const fallback = await fetchOpenErApiRates(base);
+
+  return {
+    source: "frankfurter+open-er-api",
+    requestedUrl: `${primary.requestedUrl} | ${fallback.requestedUrl}`,
+    rateDate: fallback.rateDate || primary.rateDate,
+    rates: { ...primary.rates, ...fallback.rates },
+  };
+}
+
 async function upsertRate({
   base,
   quote,
@@ -133,13 +164,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let result: Awaited<ReturnType<typeof fetchFrankfurterRates>>;
-
-  try {
-    result = await fetchFrankfurterRates(base, quotes);
-  } catch {
-    result = await fetchOpenErApiRates(base);
-  }
+  const result = await getRates(base, quotes);
 
   const synced: Array<{ quote: string; rate: number }> = [];
 

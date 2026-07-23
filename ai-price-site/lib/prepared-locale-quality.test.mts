@@ -15,12 +15,13 @@ function readSiteFile(...segments: string[]) {
 }
 
 function extractFirstLocaleBlock(source: string, locale: string) {
-  const marker = `\n  ${locale}:`;
+  const key = locale.includes("-") ? `"${locale}"` : locale;
+  const marker = `\n  ${key}:`;
   const start = source.indexOf(marker);
   assert.notEqual(start, -1, locale);
   const next = source
     .slice(start + marker.length)
-    .search(/\n  (?:zh|en|ja|ko|es|tr|ar|fr|it|de|pt):/);
+    .search(/\n  (?:"zh-tw"|zh|en|ja|ko|es|tr|ar|fr|it|de|pt):/);
   return next < 0
     ? source.slice(start)
     : source.slice(start, start + marker.length + next);

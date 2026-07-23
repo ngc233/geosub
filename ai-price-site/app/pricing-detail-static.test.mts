@@ -205,7 +205,11 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   assert.match(pricingCopy, /\$\{planName\} global price conclusion/);
   assert.match(shareModal, /const planDisplayName = getPlanDisplayName\(product\.name, plan\.name\)/);
   assert.match(shareModal, /import type \{ SiteLocale \} from '\.\.\/lib\/site-locale'/);
-  assert.match(shareModal, /satisfies Record<SiteLocale, ShareCopy>/);
+  assert.match(shareModal, /withTraditionalChinese\(\{/);
+  assert.match(
+    shareModal,
+    /satisfies Record<Exclude<SiteLocale, "zh-tw">, ShareCopy>/,
+  );
   assert.match(shareModal, /Share price card/);
   assert.match(detailPage, /<SharePriceModal[\s\S]*locale=\{locale\}/);
   assert.match(detailPage, /const pageCopy = getPricingDetailPageCopy/);
@@ -246,7 +250,11 @@ test("pricing detail forwards the current locale to affordability content", () =
 test("pricing detail page copy is complete for every v2.1 prepared locale", () => {
   const pageCopy = readAppFile("..", "lib", "pricing-detail-page-copy.ts");
 
-  assert.match(pageCopy, /satisfies Record<PreparedSiteLocale, StaticDetailCopy>/);
+  assert.match(pageCopy, /withTraditionalChinese\(\{/);
+  assert.match(
+    pageCopy,
+    /Exclude<PreparedSiteLocale, "zh-tw">,[\s\S]*StaticDetailCopy/,
+  );
   assert.match(pageCopy, /const templates: Record<PreparedSiteLocale, string>/);
   assert.match(pageCopy, /const descriptions: Record<PreparedSiteLocale, string>/);
   assert.match(pageCopy, /const faqByLocale: Record<PreparedSiteLocale, PricingFaq\[\]>/);
@@ -289,9 +297,19 @@ test("detail copy separates active locales from prepared translations", () => {
   assert.match(detailCopy, /PreparedSiteLocale/);
   assert.match(detailCopy, /type PreparedDetailLocale = PreparedSiteLocale/);
   assert.match(detailCopy, /export type DetailLocale = SiteLocale/);
-  assert.match(detailCopy, /Record<PreparedDetailLocale, DetailCopyTemplate>/);
-  assert.match(detailCopy, /Record<PreparedDetailLocale, DetailMapCopy>/);
-  assert.match(detailCopy, /Record<PreparedDetailLocale, DetailTableCopy>/);
+  assert.match(detailCopy, /withTraditionalChinese\(\{/);
+  assert.match(
+    detailCopy,
+    /Exclude<PreparedDetailLocale, "zh-tw">,[\s\S]*DetailCopyTemplate/,
+  );
+  assert.match(
+    detailCopy,
+    /Exclude<PreparedDetailLocale, "zh-tw">,[\s\S]*DetailMapCopy/,
+  );
+  assert.match(
+    detailCopy,
+    /Exclude<PreparedDetailLocale, "zh-tw">,[\s\S]*DetailTableCopy/,
+  );
   assert.doesNotMatch(detailCopy, /detailCopyTemplates\[locale\] \|\|/);
   assert.doesNotMatch(detailCopy, /detailMapCopy\[locale\] \|\|/);
   assert.doesNotMatch(detailCopy, /detailTableCopy\[locale\] \|\|/);

@@ -91,7 +91,9 @@ function getLocaleFromPath(pathname: string) {
     return "zh";
   }
 
-  if (["zh", "en", "es", "ja", "ko", "de"].includes(firstSegment)) {
+  if (
+    ["zh", "zh-tw", "en", "es", "ja", "ko", "de"].includes(firstSegment)
+  ) {
     return firstSegment;
   }
 

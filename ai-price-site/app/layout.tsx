@@ -15,6 +15,7 @@ import {
   withSiteLocale,
   type SiteLocale,
 } from "../lib/site-locale";
+import { withTraditionalChinese } from "../lib/traditional-chinese";
 
 const defaultSiteUrl = "https://geosub.org";
 
@@ -26,7 +27,7 @@ const siteMetadataCopy: Record<
     keywords: string[];
     openGraphLocale: string;
   }
-> = {
+> = withTraditionalChinese({
   zh: {
     title: "GeoSub - 全球数字订阅价格数据平台",
     description:
@@ -146,7 +147,7 @@ const siteMetadataCopy: Record<
     keywords: ["preços de assinaturas", "assinaturas de IA", "preços de streaming", "preços da App Store", "comparação por país"],
     openGraphLocale: "pt_PT",
   },
-};
+});
 
 function getSiteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL || defaultSiteUrl).replace(/\/$/, "");

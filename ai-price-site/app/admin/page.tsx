@@ -1021,7 +1021,7 @@ async function getDashboardData(period: DashboardPeriod) {
             direct_product.slug,
             NULLIF(SPLIT_PART(event.button_key, ':', 1), ''),
             CASE
-              WHEN event.page_path ~ '^/(zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/?]+'
+              WHEN event.page_path ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/?]+'
               THEN SPLIT_PART(SPLIT_PART(event.page_path, '?', 1), '/', 4)
               ELSE NULL
             END
@@ -1067,7 +1067,7 @@ async function getDashboardData(period: DashboardPeriod) {
             direct_product.slug,
             NULLIF(SPLIT_PART(event.button_key, ':', 1), ''),
             CASE
-              WHEN event.page_path ~ '^/(zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/?]+'
+              WHEN event.page_path ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/?]+'
               THEN SPLIT_PART(SPLIT_PART(event.page_path, '?', 1), '/', 4)
               ELSE NULL
             END
@@ -1230,7 +1230,7 @@ async function getDashboardData(period: DashboardPeriod) {
         FROM sessionized_events event
         WHERE event.event_key = 'page_view'
           AND SPLIT_PART(COALESCE(event.page_path, ''), '?', 1)
-            ~ '^/(zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/?$'
+            ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/?$'
         ORDER BY event.session_key, event.created_at, event.id
       ),
       detail_starts AS (
@@ -1239,7 +1239,7 @@ async function getDashboardData(period: DashboardPeriod) {
           event.created_at AS detail_at,
           CASE
             WHEN SPLIT_PART(COALESCE(event.page_path, ''), '?', 1)
-              ~ '^/(zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/]+/?$'
+              ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/]+/?$'
             THEN SPLIT_PART(SPLIT_PART(event.page_path, '?', 1), '/', 4)
             ELSE NULL
           END AS product_slug
@@ -1250,7 +1250,7 @@ async function getDashboardData(period: DashboardPeriod) {
         WHERE (
             event.event_key = 'page_view'
             AND SPLIT_PART(COALESCE(event.page_path, ''), '?', 1)
-              ~ '^/(zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/]+/?$'
+              ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/]+/?$'
           )
           OR event.event_key = 'view_digital_service'
         ORDER BY list.session_key, event.created_at, event.id

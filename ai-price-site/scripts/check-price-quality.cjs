@@ -29,7 +29,7 @@ const maxAppStoreProductRunAgeDays = Number(
 );
 const maxPendingAnomalyRatio = Number(process.env.GEOSUB_MAX_PENDING_ANOMALY_RATIO || 0.35);
 const requiredExchangeRateQuotes =
-  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR".split(",");
+  "AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,HKD,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR".split(",");
 
 const failures = [];
 const warnings = [];
