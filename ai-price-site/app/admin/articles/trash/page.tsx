@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FileText, RotateCcw, Trash2 } from "lucide-react";
+import { AdminLinkButton } from "../../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
 import {
   articleStatusLabels,
@@ -41,7 +42,7 @@ export default async function ArticleTrashPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
           <div className="min-w-[920px]">
             <div className="grid grid-cols-[minmax(260px,1.4fr)_110px_110px_150px_180px] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
               <div>标题</div>
@@ -114,12 +115,12 @@ export default async function ArticleTrashPage() {
                   <div className="mt-4 text-sm font-bold text-slate-500">
                     回收站是空的。
                   </div>
-                  <Link
+                  <AdminLinkButton
                     href="/admin/articles"
-                    className="mt-5 inline-flex rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800"
+                    className="mt-5"
                   >
                     返回文章列表
-                  </Link>
+                  </AdminLinkButton>
                 </div>
               ) : null}
             </div>

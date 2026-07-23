@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { AdminCard, AdminPageHeader, AdminStatCard } from "../../../components/admin/AdminCard";
+import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import AdminAlert from "../../../components/admin/AdminAlert";
 import {
   buildAdminEventWhere,
@@ -285,12 +286,12 @@ export default async function AdminEventsPage({
             </div>
           </label>
           <div className="flex items-end gap-2">
-            <button type="submit" className="h-11 rounded-lg bg-blue-700 px-4 text-sm font-bold text-white transition hover:bg-blue-800">
+            <AdminButton type="submit">
               筛选
-            </button>
-            <Link href="/admin/events" className="inline-flex h-11 items-center rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+            </AdminButton>
+            <AdminLinkButton href="/admin/events" variant="secondary">
               重置
-            </Link>
+            </AdminLinkButton>
           </div>
         </form>
       </AdminCard>

@@ -61,7 +61,7 @@ export default function ProductOnboardingSteps({
             <div
               key={step.key}
               className={[
-                "rounded-2xl border px-4 py-3",
+                "rounded-xl border px-4 py-3",
                 active
                   ? "border-blue-200 bg-blue-50"
                   : "border-slate-200 bg-slate-50/70",

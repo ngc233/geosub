@@ -6,10 +6,13 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  Clock3,
+  DatabaseZap,
   Eye,
   FileText,
   Globe2,
   MousePointerClick,
+  Plus,
   Search,
 } from "lucide-react";
 import { prisma } from "../../lib/prisma";
@@ -18,7 +21,7 @@ import {
   AdminPageHeader,
   AdminStatCard,
 } from "../../components/admin/AdminCard";
-import AdminAlert from "../../components/admin/AdminAlert";
+import { AdminButton, AdminLinkButton } from "../../components/admin/AdminButton";
 import SegmentedControl from "../../components/ui/SegmentedControl";
 
 type DashboardRange = 7 | 30 | 90 | 180 | 365 | 730;
@@ -585,7 +588,7 @@ function TrendChart({
   ];
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
+    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-950">访问与点击趋势</h2>
@@ -643,12 +646,9 @@ function TrendChart({
               className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400"
             />
           </label>
-          <button
-            type="submit"
-            className="h-9 rounded-lg bg-slate-950 px-3 text-xs font-bold text-white transition hover:bg-blue-700"
-          >
+          <AdminButton type="submit" size="sm">
             应用
-          </button>
+          </AdminButton>
           </form>
 
           {period.error ? (
@@ -658,14 +658,14 @@ function TrendChart({
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl bg-blue-50 px-4 py-3">
+        <div className="rounded-xl bg-blue-50 px-4 py-3">
           <p className="text-xs font-semibold text-blue-700">访问量</p>
           <p className="mt-1 text-2xl font-bold text-blue-950">
             {formatNumber(totalPageViews)}
           </p>
         </div>
 
-        <div className="rounded-2xl bg-indigo-50 px-4 py-3">
+        <div className="rounded-xl bg-indigo-50 px-4 py-3">
           <p className="text-xs font-semibold text-indigo-700">点击事件</p>
           <p className="mt-1 text-2xl font-bold text-indigo-950">
             {formatNumber(totalClicks)}
@@ -673,7 +673,7 @@ function TrendChart({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl bg-slate-50 px-3 py-4 sm:px-5">
+      <div className="overflow-hidden rounded-xl bg-slate-50 px-3 py-4 sm:px-5">
         {hasTrendData ? (
           <div className="overflow-x-auto">
             <svg
@@ -803,7 +803,7 @@ function RankingList({
 }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
         {emptyText}
       </div>
     );
@@ -813,7 +813,7 @@ function RankingList({
     <div className="space-y-3">
       {items.map((item, index) => {
         const content = (
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-blue-200 hover:bg-blue-50/40">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-blue-200 hover:bg-blue-50/40">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-500">
                 {index + 1}
@@ -1658,16 +1658,116 @@ export default async function AdminDashboardPage({
       href: "/admin/navigation",
     },
   ];
+  const contentWorkCount =
+    data.missingSeoServices + data.missingFaqServices + data.draftArticles;
+  const taskCards = [
+    {
+      label: "待审核数据",
+      value: data.pendingReviews,
+      helper: "采集已完成，等待规则处理或确认",
+      href: "/admin/review",
+      icon: DatabaseZap,
+      tone: "blue",
+    },
+    {
+      label: "价格异常",
+      value: data.priceAnomalies,
+      helper: "低置信度、缺来源或异常价格",
+      href: "/admin/data-quality",
+      icon: AlertTriangle,
+      tone: "red",
+    },
+    {
+      label: "过期价格",
+      value: data.stalePrices,
+      helper: "已超过更新周期，需要重新采集",
+      href: "/admin/data-quality",
+      icon: Clock3,
+      tone: "amber",
+    },
+    {
+      label: "内容待完善",
+      value: contentWorkCount,
+      helper: "SEO、FAQ 缺口与文章草稿",
+      href: "/admin/seo",
+      icon: FileText,
+      tone: "slate",
+    },
+  ] as const;
+  const taskTone = {
+    blue: "bg-blue-50 text-blue-700 ring-blue-100",
+    red: "bg-red-50 text-red-700 ring-red-100",
+    amber: "bg-amber-50 text-amber-700 ring-amber-100",
+    slate: "bg-slate-100 text-slate-700 ring-slate-200",
+  } as const;
 
   return (
     <div>
       <AdminPageHeader
-        eyebrow="Dashboard"
-        title="GeoSub 运营驾驶舱"
-        description="总览页用于观察访问趋势、点击趋势、数字服务热度、商业化表现、数据异常和内容 SEO 健康度。"
+        eyebrow="工作台"
+        title="今天需要处理什么"
+        description="先处理价格采集、数据异常和内容缺口；访问与转化数据放在下方作为运营参考。"
+        action={(
+          <div className="flex flex-wrap gap-2">
+            <AdminLinkButton
+              href="/admin/discovery"
+              variant="secondary"
+            >
+              <Plus size={16} strokeWidth={2} />
+              接入产品
+            </AdminLinkButton>
+            <AdminLinkButton
+              href="/admin/review"
+            >
+              <DatabaseZap size={16} strokeWidth={2} />
+              采集与审核
+            </AdminLinkButton>
+          </div>
+        )}
       />
 
-      <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-6">
+      <section className="mb-10" aria-labelledby="admin-tasks-title">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h2 id="admin-tasks-title" className="text-lg font-bold text-slate-950">今日待办</h2>
+            <p className="mt-1 text-sm text-slate-500">按影响范围从左到右处理。</p>
+          </div>
+          <Link href="/admin/pipeline" className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 hover:text-blue-800">
+            查看产品全流程
+            <ArrowRight size={15} strokeWidth={2} />
+          </Link>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {taskCards.map((task) => {
+            const Icon = task.icon;
+            return (
+              <Link
+                key={task.label}
+                href={task.href}
+                className="group min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-lg ring-1 ${taskTone[task.tone]}`}>
+                    <Icon size={18} strokeWidth={2} />
+                  </span>
+                  <ArrowRight size={17} className="mt-1 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-700" />
+                </div>
+                <p className="mt-5 text-3xl font-bold tracking-tight text-slate-950">{formatNumber(task.value)}</p>
+                <p className="mt-1 text-sm font-bold text-slate-800">{task.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{task.helper}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="mb-4">
+        <h2 className="text-lg font-bold text-slate-950">今日运营</h2>
+        <p className="mt-1 text-sm text-slate-500">访问与商业点击按 UTC 当日实时统计。</p>
+      </div>
+
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AdminStatCard
           label="今日访问量"
           value={data.todayPageViews}
@@ -1687,18 +1787,6 @@ export default async function AdminDashboardPage({
           label="官方入口点击"
           value={data.todayOfficialClicks}
           helper="今日官方跳转"
-        />
-        <AdminStatCard
-          label="待审核"
-          value={data.pendingReviews}
-          helper="等待处理的数据"
-          href="/admin/review"
-        />
-        <AdminStatCard
-          label="价格异常"
-          value={data.priceAnomalies}
-          helper="低置信度或缺来源"
-          href="/admin/review"
         />
       </div>
 
@@ -1866,7 +1954,7 @@ export default async function AdminDashboardPage({
           actionLabel="查看 SEO"
         >
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
               <div className="flex items-center gap-3">
                 <Search className="text-blue-700" size={18} strokeWidth={2} />
                 <span className="text-sm font-semibold text-slate-700">
@@ -1878,7 +1966,7 @@ export default async function AdminDashboardPage({
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="text-blue-700" size={18} strokeWidth={2} />
                 <span className="text-sm font-semibold text-slate-700">
@@ -1890,7 +1978,7 @@ export default async function AdminDashboardPage({
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
               <div className="flex items-center gap-3">
                 <FileText className="text-blue-700" size={18} strokeWidth={2} />
                 <span className="text-sm font-semibold text-slate-700">
@@ -1913,7 +2001,7 @@ export default async function AdminDashboardPage({
           actionLabel="进入审核"
         >
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="text-amber-700" size={18} strokeWidth={2} />
                 <span className="text-sm font-semibold text-amber-900">
@@ -1925,7 +2013,7 @@ export default async function AdminDashboardPage({
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-red-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-red-50 px-4 py-3">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="text-red-700" size={18} strokeWidth={2} />
                 <span className="text-sm font-semibold text-red-900">
@@ -1937,7 +2025,7 @@ export default async function AdminDashboardPage({
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
               <div className="flex items-center gap-3">
                 <Globe2 className="text-slate-600" size={18} strokeWidth={2} />
                 <span className="text-sm font-semibold text-slate-700">
@@ -1979,7 +2067,7 @@ export default async function AdminDashboardPage({
           {data.recentEvents.map((event, index) => (
             <div
               key={`${event.eventKey}-${event.createdAt.toISOString()}-${index}`}
-              className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-4"
+              className="flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-4"
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
                 {event.eventKey === "page_view" ? (
@@ -2006,20 +2094,13 @@ export default async function AdminDashboardPage({
           ))}
 
           {data.recentEvents.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
               暂无可展示的正式事件。
             </div>
           ) : null}
         </div>
       </DashboardPanel>
 
-      <div className="mt-8">
-        <AdminAlert title="下一步建议" variant="info">
-          <p>
-            先观察严格会话漏斗和流量质量，处理 404、身份缺失或异常高频访问；商业点击样本稳定后，再接入订单或收益数据计算单产品价值。
-          </p>
-        </AdminAlert>
-      </div>
     </div>
   );
 }

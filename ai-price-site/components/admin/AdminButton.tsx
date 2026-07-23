@@ -25,11 +25,11 @@ export function adminButtonClassName({
   className?: string;
 }) {
   const base =
-    "inline-flex items-center justify-center rounded-lg font-semibold transition shadow-sm focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-semibold transition shadow-sm focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60";
 
   const sizes = {
-    sm: "px-3.5 py-2 text-xs",
-    md: "px-5 py-3 text-sm",
+    sm: "h-9 px-3 text-xs",
+    md: "h-10 px-4 text-sm",
   };
 
   const variants = {
@@ -73,17 +73,23 @@ export function AdminLinkButton({
   variant = "primary",
   size = "md",
   className,
+  title,
+  ariaLabel,
 }: {
   href: string;
   children: ReactNode;
   variant?: AdminButtonVariant;
   size?: AdminButtonSize;
   className?: string;
+  title?: string;
+  ariaLabel?: string;
 }) {
   return (
     <Link
       href={href}
       className={adminButtonClassName({ variant, size, className })}
+      title={title}
+      aria-label={ariaLabel}
     >
       {children}
     </Link>

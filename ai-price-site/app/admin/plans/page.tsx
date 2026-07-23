@@ -153,7 +153,7 @@ export default async function AdminPlansPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200">
           <div className="grid grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
             <div>产品</div>
             <div>套餐</div>

@@ -137,7 +137,7 @@ export default async function AdminSeoPage() {
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
           <div className="min-w-[980px]">
             <div className="grid grid-cols-[90px_minmax(240px,1fr)_110px_250px_150px] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
               <div>分数</div>

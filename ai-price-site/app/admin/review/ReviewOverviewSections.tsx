@@ -97,7 +97,7 @@ export function ReviewOverviewSections({
       <AdminPipelineSteps currentStep="review" />
 
       {hasSelectedProduct ? (
-        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
+        <section className="rounded-xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100">

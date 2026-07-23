@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { PackagePlus, Radar } from "lucide-react";
+import { AdminButton } from "../../../components/admin/AdminButton";
 import {
   createDiscoverySource,
   createManualCandidate,
@@ -197,13 +198,9 @@ function ProductCandidateForm() {
       </label>
 
       <div className="md:col-span-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
+        <AdminButton type="submit" disabled={pending}>
           {pending ? "正在添加..." : "添加到候选池"}
-        </button>
+        </AdminButton>
       </div>
     </form>
   );
@@ -351,13 +348,9 @@ function DiscoverySourceForm() {
       </label>
 
       <div className="md:col-span-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
+        <AdminButton type="submit" disabled={pending}>
           {pending ? "正在保存..." : "保存来源配置"}
-        </button>
+        </AdminButton>
       </div>
     </form>
   );

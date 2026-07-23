@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Prisma, type ProductCategory } from "@prisma/client";
+import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import SegmentedControl from "../../../components/ui/SegmentedControl";
 import { prisma } from "../../../lib/prisma";
@@ -425,18 +427,18 @@ export default async function AdminProductsPage({
         description="管理 GeoSub 的数字服务资产。先录入产品，再补套餐、价格和来源，最终进入前台展示。"
         action={
           <div className="flex flex-wrap gap-2">
-            <Link
+            <AdminLinkButton
               href="/admin/discovery"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+              variant="secondary"
             >
               从发现线索导入
-            </Link>
-            <Link
+            </AdminLinkButton>
+            <AdminLinkButton
               href="/admin/products/new"
-              className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-800"
             >
+              <Plus size={16} strokeWidth={2} />
               新增产品
-            </Link>
+            </AdminLinkButton>
           </div>
         }
       />
@@ -502,7 +504,7 @@ export default async function AdminProductsPage({
                 key={category.value}
                 href={`/admin/products?category=${category.value}`}
                 className={[
-                  "rounded-3xl border p-5 transition",
+                  "rounded-xl border p-5 transition",
                   active
                     ? "border-blue-200 bg-blue-50 shadow-sm ring-1 ring-blue-100"
                     : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50",
@@ -530,7 +532,7 @@ export default async function AdminProductsPage({
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
+                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
                     <div className="text-lg font-black text-slate-950">
                       {category.productCount}
                     </div>
@@ -539,7 +541,7 @@ export default async function AdminProductsPage({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
+                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
                     <div className="text-lg font-black text-slate-950">
                       {category.planCount}
                     </div>
@@ -548,7 +550,7 @@ export default async function AdminProductsPage({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
+                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
                     <div className="text-lg font-black text-slate-950">
                       {category.priceCount}
                     </div>
@@ -576,13 +578,6 @@ export default async function AdminProductsPage({
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/admin/products/new"
-                className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-black text-white transition hover:bg-slate-800"
-              >
-                新增产品
-              </Link>
-
               <Link
                 href="/admin/plans"
                 className="text-sm font-black text-blue-700 hover:text-blue-900"
@@ -614,7 +609,7 @@ export default async function AdminProductsPage({
           />
         </div>
 
-        <div className="overflow-x-auto rounded-3xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
           <div className="min-w-[1120px]">
           <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
             <div>服务</div>
@@ -726,18 +721,18 @@ export default async function AdminProductsPage({
                   可以手动新增产品，也可以先去发现线索里把候选产品导入产品库。
                 </div>
                 <div className="mt-5 flex justify-center gap-3">
-                  <Link
+                  <AdminLinkButton
                     href="/admin/products/new"
-                    className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-800"
                   >
+                    <Plus size={16} strokeWidth={2} />
                     新增产品
-                  </Link>
-                  <Link
+                  </AdminLinkButton>
+                  <AdminLinkButton
                     href="/admin/discovery"
-                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                    variant="secondary"
                   >
                     去发现线索
-                  </Link>
+                  </AdminLinkButton>
                 </div>
               </div>
             ) : null}

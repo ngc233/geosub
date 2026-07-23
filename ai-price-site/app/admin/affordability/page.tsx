@@ -177,35 +177,35 @@ export default async function AffordabilityPreviewPage() {
           </p>
 
           <div className="mt-5 grid gap-3 md:grid-cols-5">
-            <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
               <div className="text-xs font-black text-zinc-400">收入指标</div>
               <div className="mt-1 text-sm font-black">
                 {metricLabel(latestSummary?.income_metric_type)}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
               <div className="text-xs font-black text-zinc-400">指标代码</div>
               <div className="mt-1 text-sm font-black">
                 {latestSummary?.income_indicator_code || "-"}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
               <div className="text-xs font-black text-zinc-400">收入数据年份</div>
               <div className="mt-1 text-sm font-black">
                 {latestSummary?.income_data_year || "-"}，最新可用值
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
               <div className="text-xs font-black text-zinc-400">收入同步时间</div>
               <div className="mt-1 text-sm font-black">
                 {formatDate(latestSummary?.income_synced_at)}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
               <div className="text-xs font-black text-zinc-400">价格检查时间</div>
               <div className="mt-1 text-sm font-black">
                 {formatDate(latestDetail?.price_last_checked_at)}
@@ -214,7 +214,7 @@ export default async function AffordabilityPreviewPage() {
           </div>
         </div>
 
-        <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-xl font-black">套餐汇总</h2>
@@ -224,7 +224,7 @@ export default async function AffordabilityPreviewPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-zinc-200">
+          <div className="overflow-hidden rounded-xl border border-zinc-200">
             <table className="w-full text-left text-sm">
               <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400">
                 <tr>
@@ -258,7 +258,7 @@ export default async function AffordabilityPreviewPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <div className="mb-5">
             <h2 className="text-xl font-black">ChatGPT 地区负担明细</h2>
             <p className="mt-1 text-sm text-zinc-500">
@@ -266,7 +266,7 @@ export default async function AffordabilityPreviewPage() {
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-zinc-200">
+          <div className="overflow-hidden rounded-xl border border-zinc-200">
             <table className="w-full text-left text-sm">
               <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400">
                 <tr>

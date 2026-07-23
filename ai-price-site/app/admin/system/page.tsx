@@ -317,14 +317,14 @@ export default async function AdminSystemPage() {
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <AdminCard className="!bg-slate-950 text-white">
+        <AdminCard>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-lime-300">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
               <Activity size={20} strokeWidth={2.4} />
             </span>
             <div>
-              <p className="text-sm font-bold text-slate-300">总体状态</p>
-              <p className="mt-1 text-2xl font-black">{health.summary.label}</p>
+              <p className="text-sm font-bold text-slate-500">总体状态</p>
+              <p className="mt-1 text-2xl font-black text-slate-950">{health.summary.label}</p>
             </div>
           </div>
         </AdminCard>

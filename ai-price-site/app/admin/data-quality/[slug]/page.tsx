@@ -758,7 +758,7 @@ function PlanCoverageCard({ row }: { row: PlanCoverageRow }) {
   const complete = commonMissing === 0 && row.pending_anomaly_count === 0;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-slate-950">{row.plan_name}</h3>
@@ -841,7 +841,7 @@ function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
       </div>
 
       <div className="grid gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+        <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
           <div className="text-xs font-bold text-blue-600">重新采集</div>
           <h3 className="mt-2 text-base font-bold text-slate-950">只采这个产品</h3>
           <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
@@ -860,7 +860,7 @@ function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
           ) : null}
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-bold text-amber-600">异常处理</div>
           <h3 className="mt-2 text-base font-bold text-slate-950">查看待审核异常</h3>
           <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
@@ -874,7 +874,7 @@ function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-bold text-emerald-600">采集排查</div>
           <h3 className="mt-2 text-base font-bold text-slate-950">查看采集任务</h3>
           <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
@@ -888,7 +888,7 @@ function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-bold text-slate-500">来源配置</div>
           <h3 className="mt-2 text-base font-bold text-slate-950">编辑产品来源</h3>
           <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
@@ -971,7 +971,7 @@ export default async function ProductDataQualityPage({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex gap-4">
             <span
-              className={`mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ring-1 ${conclusionClasses.badge}`}
+              className={`mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${conclusionClasses.badge}`}
             >
               <ConclusionIcon size={21} strokeWidth={2.2} />
             </span>
@@ -1056,7 +1056,7 @@ export default async function ProductDataQualityPage({
               <PlanCoverageCard key={plan.plan_id} row={plan} />
             ))}
             {plans.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+              <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
                 暂无套餐。需要先在产品资料里补套餐。
               </div>
             ) : null}
@@ -1074,7 +1074,7 @@ export default async function ProductDataQualityPage({
             {availabilityRows.map((row) => (
               <div
                 key={row.status}
-                className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3"
+                className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-3"
               >
                 <div>
                   <div className="text-sm font-bold text-slate-800">
@@ -1088,7 +1088,7 @@ export default async function ProductDataQualityPage({
               </div>
             ))}
             {availabilityRows.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 px-3 py-8 text-center text-sm text-slate-500">
+              <div className="rounded-xl bg-slate-50 px-3 py-8 text-center text-sm text-slate-500">
                 暂无地区可用性检查记录。
               </div>
             ) : null}
@@ -1107,7 +1107,7 @@ export default async function ProductDataQualityPage({
               </p>
             </div>
           </div>
-          <div className="max-h-[480px] overflow-auto rounded-2xl border border-slate-200">
+          <div className="max-h-[480px] overflow-auto rounded-xl border border-slate-200">
             <table className="min-w-full text-left text-sm">
               <thead className="sticky top-0 border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
                 <tr>
@@ -1163,7 +1163,7 @@ export default async function ProductDataQualityPage({
           </div>
           <div className="space-y-3">
             {reasonRows.map((row) => (
-              <div key={row.reason_code || "unknown"} className="rounded-2xl border border-slate-200 p-4">
+              <div key={row.reason_code || "unknown"} className="rounded-xl border border-slate-200 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-slate-950">
@@ -1186,7 +1186,7 @@ export default async function ProductDataQualityPage({
               </div>
             ))}
             {reasonRows.length === 0 ? (
-              <div className="rounded-2xl bg-emerald-50 px-4 py-8 text-center text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
+              <div className="rounded-xl bg-emerald-50 px-4 py-8 text-center text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
                 没有待审异常。这个产品当前不需要人工处理。
               </div>
             ) : null}
@@ -1208,7 +1208,7 @@ export default async function ProductDataQualityPage({
         </div>
         <div className="space-y-4">
           {collectorRuns.map((run) => (
-            <div key={run.id} className="rounded-2xl border border-slate-200 p-4">
+            <div key={run.id} className="rounded-xl border border-slate-200 p-4">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="text-sm font-bold text-slate-950">
@@ -1231,7 +1231,7 @@ export default async function ProductDataQualityPage({
             </div>
           ))}
           {collectorRuns.length === 0 ? (
-            <div className="rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+            <div className="rounded-xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
               暂无采集运行记录。点击“只采这个产品”后，这里会显示运行过程和结果。
             </div>
           ) : null}

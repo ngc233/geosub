@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
 import ObservationReviewActions from "./ObservationReviewActions";
 import {
@@ -113,19 +114,17 @@ export function PendingProductReviewSection({
             placeholder="搜索产品，如 Netflix"
             className="h-9 w-56 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
           />
-          <button
-            type="submit"
-            className="h-9 rounded-lg border border-slate-200 bg-slate-950 px-3 text-xs font-semibold text-white transition hover:bg-slate-800"
-          >
+          <AdminButton type="submit" size="sm">
             搜索
-          </button>
+          </AdminButton>
           {productQuery ? (
-            <Link
+            <AdminLinkButton
               href="/admin/review"
-              className="h-9 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+              variant="secondary"
+              size="sm"
             >
               清除
-            </Link>
+            </AdminLinkButton>
           ) : null}
         </form>
       </div>

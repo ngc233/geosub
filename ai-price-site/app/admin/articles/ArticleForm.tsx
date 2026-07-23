@@ -1,6 +1,6 @@
 import type { Article, ArticleCategory, ArticleTag, Locale, Product } from "@prisma/client";
-import Link from "next/link";
 import { Save } from "lucide-react";
+import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import { articleTypeLabels } from "../../../lib/articles";
 import { createArticleAction, updateArticleAction } from "./actions";
 
@@ -83,7 +83,7 @@ export default function ArticleForm({
     <form action={action} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       {article ? <input type="hidden" name="id" value={article.id} /> : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="grid gap-5">
           <Field label="文章标题">
             <input
@@ -143,7 +143,7 @@ export default function ArticleForm({
       </section>
 
       <aside className="space-y-6">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-black text-slate-950">发布</h2>
 
           <div className="mt-5 grid gap-4">
@@ -196,7 +196,7 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-black text-slate-950">分类与展示</h2>
 
           <div className="mt-5 grid gap-4">
@@ -256,7 +256,7 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-black text-slate-950">SEO</h2>
 
           <div className="mt-5 grid gap-4">
@@ -300,7 +300,7 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-black text-slate-950">内链推荐</h2>
           <p className="mt-2 text-xs leading-5 text-slate-500">
             勾选后会在文章底部生成相关阅读，也方便后续自动内链和权重流向分析。
@@ -384,20 +384,18 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <div className="sticky bottom-4 flex gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-200/80 backdrop-blur">
-          <Link
+        <div className="sticky bottom-4 flex gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-200/80 backdrop-blur">
+          <AdminLinkButton
             href="/admin/articles"
-            className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-center text-sm font-black text-slate-700 transition hover:bg-slate-50"
+            variant="secondary"
+            className="flex-1"
           >
             返回
-          </Link>
-          <button
-            type="submit"
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800"
-          >
+          </AdminLinkButton>
+          <AdminButton type="submit" className="flex-1">
             <Save size={16} />
             保存
-          </button>
+          </AdminButton>
         </div>
       </aside>
     </form>

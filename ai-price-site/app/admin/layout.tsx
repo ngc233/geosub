@@ -10,11 +10,11 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen flex-col lg:flex-row">
         <AdminSidebar email={admin.email} />
 
         <main className="min-w-0 flex-1 bg-slate-50">
-          <div className="mx-auto w-full max-w-[1440px] px-6 py-8 lg:px-10">
+          <div className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10">
             {children}
           </div>
         </main>

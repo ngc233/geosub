@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { ArrowDown, ArrowUp, Pencil } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
-import { AdminLinkButton } from "../../../components/admin/AdminButton";
+import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import SegmentedControl from "../../../components/ui/SegmentedControl";
 import { getDefaultNavigationItems } from "../../../lib/navigation-defaults";
 import { getNavigationLinkHealth } from "../../../lib/navigation-health";
@@ -129,17 +130,13 @@ function ToggleStatusButton({
 
   return (
     <form action={toggleNavigationItemStatus.bind(null, id)}>
-      <button
+      <AdminButton
         type="submit"
-        className={[
-          "rounded-full px-3 py-1.5 text-xs font-black transition",
-          published
-            ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100"
-            : "bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100",
-        ].join(" ")}
+        size="sm"
+        variant={published ? "warning" : "secondary"}
       >
         {published ? "停用" : "启用"}
-      </button>
+      </AdminButton>
     </form>
   );
 }
@@ -156,23 +153,29 @@ function SortButtons({ id, href }: { id: string; href: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <form action={moveNavigationItem.bind(null, id, "up")}>
-        <button
+        <AdminButton
           type="submit"
-          className="rounded-full bg-slate-100 px-2.5 py-1.5 text-xs font-black text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+          variant="secondary"
+          size="sm"
+          className="w-9 px-0"
           aria-label="上移"
+          title="上移"
         >
-          ↑
-        </button>
+          <ArrowUp className="h-4 w-4" aria-hidden="true" />
+        </AdminButton>
       </form>
 
       <form action={moveNavigationItem.bind(null, id, "down")}>
-        <button
+        <AdminButton
           type="submit"
-          className="rounded-full bg-slate-100 px-2.5 py-1.5 text-xs font-black text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+          variant="secondary"
+          size="sm"
+          className="w-9 px-0"
           aria-label="下移"
+          title="下移"
         >
-          ↓
-        </button>
+          <ArrowDown className="h-4 w-4" aria-hidden="true" />
+        </AdminButton>
       </form>
     </div>
   );
@@ -180,12 +183,16 @@ function SortButtons({ id, href }: { id: string; href: string }) {
 
 function EditButton({ id }: { id: string }) {
   return (
-    <Link
+    <AdminLinkButton
       href={`/admin/navigation/${id}/edit`}
-      className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+      variant="secondary"
+      size="sm"
+      className="w-9 px-0"
+      ariaLabel="编辑"
+      title="编辑"
     >
-      编辑
-    </Link>
+      <Pencil className="h-4 w-4" aria-hidden="true" />
+    </AdminLinkButton>
   );
 }
 
@@ -255,12 +262,9 @@ export default async function AdminNavigationPage({
             <form action={seedDefaultNavigation}>
               <input type="hidden" name="locale" value={selectedLocale.value} />
               <input type="hidden" name="position" value={selectedPosition.value} />
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-xl border border-emerald-700 bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-emerald-900/10 transition hover:bg-emerald-700"
-              >
+              <AdminButton type="submit" variant="success">
                 补齐推荐结构
-              </button>
+              </AdminButton>
             </form>
             <AdminLinkButton
               href={`/admin/navigation/new?locale=${selectedLocale.value}&position=${selectedPosition.value}`}
@@ -272,7 +276,7 @@ export default async function AdminNavigationPage({
       />
 
       {params?.seeded === "1" ? (
-        <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
           已补齐当前语言和位置的推荐导航结构。已有菜单不会被覆盖。
         </div>
       ) : null}
@@ -376,7 +380,7 @@ export default async function AdminNavigationPage({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200">
           <div className="grid grid-cols-[72px_minmax(130px,1.1fr)_minmax(160px,1.5fr)_92px_92px_90px_90px_90px_90px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
             <div>排序</div>
             <div>名称</div>
@@ -437,7 +441,7 @@ export default async function AdminNavigationPage({
 
                   {children.length > 0 ? (
                     <div className="bg-slate-50/70 px-5 pb-4">
-                      <div className="ml-[72px] rounded-2xl border border-slate-200 bg-white">
+                      <div className="ml-[72px] rounded-xl border border-slate-200 bg-white">
                         {children.map((child) => (
                           <div
                             key={child.id}
@@ -500,7 +504,7 @@ export default async function AdminNavigationPage({
         </div>
       </AdminCard>
 
-      <div className="mt-6 rounded-3xl border border-blue-100 bg-blue-50 p-5 text-sm leading-7 text-blue-900">
+      <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-7 text-blue-900">
         <div className="font-black">导航升级说明</div>
         <p className="mt-1">
           前台 Footer 现在即使数据库为空，也会显示推荐兜底结构；后台补齐后会优先使用数据库菜单。后续可以继续扩展为拖拽排序、批量复制语言和导航版本预览。

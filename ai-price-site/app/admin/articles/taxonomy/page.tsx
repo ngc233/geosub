@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Locale } from "@prisma/client";
+import { AdminButton } from "../../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { prisma } from "../../../../lib/prisma";
 import {
@@ -10,7 +11,7 @@ import {
 } from "../actions";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100";
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100";
 
 function StatusBadge({ status }: { status: string }) {
   const published = status === "PUBLISHED";
@@ -152,9 +153,9 @@ export default async function ArticleTaxonomyPage({
             <textarea className={`${inputClass} min-h-20 resize-y`} name="description" placeholder="分类说明" />
             <input className={inputClass} name="seoTitle" placeholder="SEO 标题" />
             <textarea className={`${inputClass} min-h-20 resize-y`} name="seoDescription" placeholder="SEO 描述" />
-            <button className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800">
+            <AdminButton type="submit">
               创建分类
-            </button>
+            </AdminButton>
           </form>
         </AdminCard>
 
@@ -171,9 +172,9 @@ export default async function ArticleTaxonomyPage({
             <input className={inputClass} name="name" placeholder="标签名称" required />
             <input className={inputClass} name="slug" placeholder="URL 标识，例如 app-store" />
             <textarea className={`${inputClass} min-h-20 resize-y`} name="description" placeholder="标签说明" />
-            <button className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white transition hover:bg-slate-800">
+            <AdminButton type="submit">
               创建标签
-            </button>
+            </AdminButton>
           </form>
         </AdminCard>
       </div>
@@ -181,7 +182,7 @@ export default async function ArticleTaxonomyPage({
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <AdminCard>
           <h2 className="text-lg font-black text-slate-950">分类列表</h2>
-          <div className="mt-5 divide-y divide-slate-100 rounded-2xl border border-slate-200">
+          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200">
             {categories.map((category) => (
               <div key={category.id} className="grid grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
                 <div>
@@ -201,7 +202,7 @@ export default async function ArticleTaxonomyPage({
 
         <AdminCard>
           <h2 className="text-lg font-black text-slate-950">标签列表</h2>
-          <div className="mt-5 divide-y divide-slate-100 rounded-2xl border border-slate-200">
+          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200">
             {tags.map((tag) => (
               <div key={tag.id} className="grid grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
                 <div>

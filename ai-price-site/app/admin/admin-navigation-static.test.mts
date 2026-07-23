@@ -22,7 +22,6 @@ test("admin sidebar exposes only operational modules", () => {
     "/admin/system",
     "/admin/settings",
     "/admin/events",
-    "/admin/pipeline",
     "/admin/discovery",
     "/admin/data-quality",
     "/admin/review",
@@ -40,6 +39,24 @@ test("admin sidebar exposes only operational modules", () => {
   assert.doesNotMatch(source, /\/admin\/commercial/);
   assert.doesNotMatch(source, /\/admin\/pricing-preview/);
   assert.doesNotMatch(source, /\/admin\/affordability-preview/);
+  assert.doesNotMatch(source, /href: "\/admin\/pipeline"/);
+  assert.match(source, /label: "今日工作"/);
+  assert.match(source, /label: "数据生产"/);
+  assert.match(source, /label: "数据资产"/);
+  assert.match(source, /label: "采集与审核"/);
+  assert.match(source, /label: "新产品接入"/);
+});
+
+test("admin navigation remains usable on mobile", () => {
+  const source = readProjectFile("components/admin/AdminSidebar.tsx");
+  const layout = readProjectFile("app/admin/layout.tsx");
+
+  assert.match(source, /aria-label="打开后台导航"/);
+  assert.match(source, /aria-label="关闭后台导航"/);
+  assert.match(source, /event\.key === "Escape"/);
+  assert.match(source, /className="fixed inset-0 z-50 lg:hidden"/);
+  assert.match(source, /aria-current=\{active \? "page" : undefined\}/);
+  assert.match(layout, /flex-col lg:flex-row/);
 });
 
 test("admin dashboard does not link to placeholder modules", () => {
@@ -51,6 +68,11 @@ test("admin dashboard does not link to placeholder modules", () => {
   assert.match(source, /\/admin\/review/);
   assert.match(source, /\/admin\/seo/);
   assert.match(source, /\/admin\/events/);
+  assert.match(source, /title="今天需要处理什么"/);
+  assert.match(source, /id="admin-tasks-title"/);
+  assert.match(source, /href="\/admin\/pipeline"/);
+  assert.match(source, /待审核数据/);
+  assert.match(source, /过期价格/);
 });
 
 test("admin dashboard keeps today live while historical analytics are aggregated", () => {

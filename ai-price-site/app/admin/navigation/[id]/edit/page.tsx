@@ -81,7 +81,7 @@ export default async function EditNavigationItemPage({
                   type="text"
                   value={selectedLocale.label}
                   readOnly
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
                 />
               </div>
 
@@ -97,7 +97,7 @@ export default async function EditNavigationItemPage({
                   type="text"
                   value={selectedPosition.label}
                   readOnly
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
                 />
               </div>
             </div>
@@ -115,7 +115,7 @@ export default async function EditNavigationItemPage({
                 type="text"
                 defaultValue={item.label}
                 required
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
               />
             </div>
 
@@ -134,7 +134,7 @@ export default async function EditNavigationItemPage({
                 readOnly={lockedHome}
                 required
                 className={[
-                  "w-full rounded-2xl border border-slate-200 px-4 py-3 font-mono text-sm font-bold outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100",
+                  "w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm font-bold outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100",
                   lockedHome
                     ? "bg-slate-50 text-slate-400"
                     : "bg-white text-slate-950",
@@ -146,7 +146,7 @@ export default async function EditNavigationItemPage({
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <input
                   name="external"
                   type="checkbox"
@@ -159,7 +159,7 @@ export default async function EditNavigationItemPage({
                 </span>
               </label>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
                 当前状态：{statusLabel(String(item.status))}
               </div>
             </div>
@@ -197,7 +197,7 @@ export default async function EditNavigationItemPage({
             </p>
           </div>
 
-          <div className="mt-6 rounded-2xl bg-blue-50 p-4 text-xs leading-6 text-blue-900">
+          <div className="mt-6 rounded-xl bg-blue-50 p-4 text-xs leading-6 text-blue-900">
             保存和取消都会返回当前菜单所属的语言与导航位置。
           </div>
         </AdminCard>

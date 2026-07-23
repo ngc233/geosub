@@ -185,7 +185,7 @@ export default async function AdminPricingPreviewPage() {
                 return (
                   <div
                     key={plan.id}
-                    className="overflow-hidden rounded-3xl border border-slate-200"
+                    className="overflow-hidden rounded-xl border border-slate-200"
                   >
                     <div className="flex flex-col gap-2 bg-slate-50 px-5 py-4 md:flex-row md:items-center md:justify-between">
                       <div>

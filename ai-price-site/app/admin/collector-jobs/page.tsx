@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import {
   AdminCard,
   AdminPageHeader,
@@ -768,7 +769,7 @@ export default async function CollectorJobsPage() {
 
       <AdminPipelineSteps currentStep="collector" />
 
-      <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-800">
+      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-800">
         主流程是：线索入库 → 生成产品采集任务 → 按产品触发采集 → 自动审核稳定价格 → 写入正式价格库。
         价格审核入口仍在{" "}
         <Link href="/admin/review" className="font-bold underline underline-offset-4">
@@ -813,7 +814,7 @@ export default async function CollectorJobsPage() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
               <tr>
@@ -898,23 +899,20 @@ export default async function CollectorJobsPage() {
                             <div className="mt-3 flex flex-wrap gap-2">
                               <form action={runCollectorJobNow}>
                                 <input type="hidden" name="id" value={job.id} />
-                                <button
+                                <AdminButton
                                   type="submit"
+                                  size="sm"
                                   disabled={isManuallyQueued(job) || job.latest_run_status === "running"}
-                                  className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                                 >
                                   {isManuallyQueued(job) ? "已排队" : "加入下一轮"}
-                                </button>
+                                </AdminButton>
                               </form>
                               {job.status !== "paused" ? (
                                 <form action={pauseCollectorJob}>
                                   <input type="hidden" name="id" value={job.id} />
-                                  <button
-                                    type="submit"
-                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-                                  >
+                                  <AdminButton type="submit" size="sm" variant="secondary">
                                     暂停
-                                  </button>
+                                  </AdminButton>
                                 </form>
                               ) : null}
                             </div>
@@ -1065,12 +1063,11 @@ export default async function CollectorJobsPage() {
                         先在线索入口把候选服务加入服务库，系统会自动生成对应采集任务。
                       </p>
                       <div className="mt-5 flex justify-center">
-                        <Link
+                        <AdminLinkButton
                           href="/admin/discovery"
-                          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
                         >
                           去线索入口生成任务
-                        </Link>
+                        </AdminLinkButton>
                       </div>
                     </div>
                   </td>
@@ -1097,7 +1094,7 @@ export default async function CollectorJobsPage() {
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
               <tr>
@@ -1196,7 +1193,7 @@ export default async function CollectorJobsPage() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
               <tr>

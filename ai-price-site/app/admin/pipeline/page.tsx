@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
+import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import { prisma } from "../../../lib/prisma";
@@ -535,7 +536,7 @@ function PipelineRecommendation({ stats }: { stats: PipelineStats }) {
   const recommendation = getPipelineRecommendation(stats);
 
   return (
-    <div className={`mb-6 rounded-3xl border p-5 ${recommendation.className}`}>
+    <div className={`mb-6 rounded-xl border p-5 ${recommendation.className}`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="text-sm font-black">系统建议</div>
@@ -581,7 +582,7 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
   const stalePublishedCount = toNumber(row.published_stale_price_count);
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -624,7 +625,7 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-4">
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-3">
           <div className="text-xs font-bold text-slate-400">采集任务</div>
           <div className="mt-1 text-lg font-black text-slate-950">
             {appStoreJobs} / {toNumber(row.total_job_count)}
@@ -633,7 +634,7 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
             启用 {toNumber(row.active_job_count)}，到期 {toNumber(row.due_job_count)}
           </div>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-3">
           <div className="text-xs font-bold text-slate-400">最近采集</div>
           <div className="mt-1 text-sm font-black text-slate-950">
             {runStatusLabel(row.latest_run_status)}
@@ -642,14 +643,14 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
             {formatDate(row.latest_run_started_at)}
           </div>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-3">
           <div className="text-xs font-bold text-slate-400">异常待决</div>
           <div className="mt-1 text-lg font-black text-slate-950">{pendingCount}</div>
           <div className="mt-1 text-xs text-slate-500">
             硬异常 {blockedCount}，补样本 {toNumber(row.waiting_observation_count)}
           </div>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-3">
           <div className="text-xs font-bold text-slate-400">正式价格</div>
           <div className="mt-1 text-lg font-black text-slate-950">
             {toNumber(row.published_price_count)}
@@ -747,12 +748,9 @@ export default async function AdminPipelinePage({
         title="价格采集流水线"
         description="后台主入口按产品聚合：先看产品有没有 App Store 采集任务，再看最近是否采集成功、是否有异常待决、是否已有正式价格。"
         action={
-          <Link
-            href="/admin/discovery"
-            className="inline-flex h-10 items-center rounded-xl bg-blue-700 px-4 text-sm font-black text-white shadow-sm transition hover:bg-blue-800"
-          >
+          <AdminLinkButton href="/admin/discovery">
             新增线索
-          </Link>
+          </AdminLinkButton>
         }
       />
 
@@ -770,12 +768,12 @@ export default async function AdminPipelinePage({
                 请先启动本地 PostgreSQL，再刷新本页。当前错误：{loadError.slice(0, 180)}
               </p>
             </div>
-            <Link
+            <AdminLinkButton
               href="/admin/system"
-              className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-white px-4 text-sm font-black text-amber-700 ring-1 ring-amber-200 transition hover:bg-amber-100"
+              variant="secondary"
             >
               查看系统状态
-            </Link>
+            </AdminLinkButton>
           </div>
         </AdminCard>
       ) : (
@@ -846,19 +844,16 @@ export default async function AdminPipelinePage({
                 </option>
               ))}
             </select>
-            <button
-              type="submit"
-              className="h-10 rounded-xl bg-slate-950 px-4 text-sm font-black text-white transition hover:bg-slate-800"
-            >
+            <AdminButton type="submit">
               筛选
-            </button>
+            </AdminButton>
             {q || category !== "all" ? (
-              <Link
+              <AdminLinkButton
                 href="/admin/pipeline"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50"
+                variant="secondary"
               >
                 清除
-              </Link>
+              </AdminLinkButton>
             ) : null}
           </div>
         </form>
@@ -876,12 +871,12 @@ export default async function AdminPipelinePage({
               <p className="mt-2 text-sm text-slate-500">
                 可以清除筛选，或者先从线索入口加入新产品。
               </p>
-              <Link
+              <AdminLinkButton
                 href="/admin/discovery"
-                className="mt-5 inline-flex h-10 items-center rounded-xl bg-blue-700 px-4 text-sm font-black text-white transition hover:bg-blue-800"
+                className="mt-5"
               >
                 去线索入口
-              </Link>
+              </AdminLinkButton>
             </div>
           </AdminCard>
         ) : null}

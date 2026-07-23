@@ -67,7 +67,7 @@ export default async function NewNavigationItemPage({
                   type="text"
                   value={selectedLocale.label}
                   readOnly
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
                 />
               </div>
 
@@ -83,7 +83,7 @@ export default async function NewNavigationItemPage({
                   type="text"
                   value={selectedPosition.label}
                   readOnly
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
                 />
               </div>
             </div>
@@ -118,7 +118,7 @@ export default async function NewNavigationItemPage({
                 type="text"
                 placeholder={`${selectedLocale.prefix}ai-pricing/`}
                 required
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
               />
               <p className="mt-2 text-xs leading-5 text-slate-500">
                 当前语言内部链接必须以 {selectedLocale.prefix} 开头。外部链接必须以 https:// 或 http:// 开头。
@@ -137,7 +137,7 @@ export default async function NewNavigationItemPage({
                 id="parentId"
                 name="parentId"
                 defaultValue=""
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
               >
                 <option value="">
                   {selectedPosition.value === "footer" ? "一级分组" : "一级菜单"}
@@ -155,7 +155,7 @@ export default async function NewNavigationItemPage({
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <input
                   name="external"
                   type="checkbox"
@@ -166,7 +166,7 @@ export default async function NewNavigationItemPage({
                 </span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <input
                   name="publishNow"
                   type="checkbox"
@@ -211,7 +211,7 @@ export default async function NewNavigationItemPage({
             </p>
           </div>
 
-          <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-xs leading-6 text-amber-900">
+          <div className="mt-6 rounded-xl bg-amber-50 p-4 text-xs leading-6 text-amber-900">
             删除功能暂不开放。站点主导航属于长期结构，先用停用代替删除更安全。
           </div>
         </AdminCard>

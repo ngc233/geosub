@@ -1,4 +1,4 @@
-﻿import { AdminButton, AdminLinkButton } from "../../../../components/admin/AdminButton";
+import { AdminButton, AdminLinkButton } from "../../../../components/admin/AdminButton";
 import {
   AdminCard,
   AdminPageHeader,
@@ -50,13 +50,13 @@ export default async function NewProductPage({
       />
 
       {error === "missing" ? (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
           数字服务名称和 slug 必填。
         </div>
       ) : null}
 
       {error === "slug" ? (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
           这个 slug 已经存在，请换一个。
         </div>
       ) : null}

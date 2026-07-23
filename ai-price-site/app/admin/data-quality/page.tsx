@@ -1064,7 +1064,7 @@ export default async function AdminDataQualityPage() {
       <AdminCard className="mb-6 border-blue-200 bg-blue-50/70">
         <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <div className="flex gap-3">
-            <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white">
+            <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
               <DatabaseZap size={20} strokeWidth={2.2} />
             </span>
             <div>
@@ -1117,7 +1117,7 @@ export default async function AdminDataQualityPage() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200">
           <div className="hidden grid-cols-[1.05fr_1.05fr_1fr_0.9fr_0.9fr_1.15fr_0.85fr] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500 lg:grid">
             <div>产品</div>
             <div>地区覆盖</div>
@@ -1277,7 +1277,7 @@ export default async function AdminDataQualityPage() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-start gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
+        <div className="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
           <Clock3 size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
           <p>
             这页只做产品级归因，不替代明细审核。若某个产品长期处于“已排队”或“正在采集”，优先进入采集任务页查看后台脚本是否卡住。

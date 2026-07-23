@@ -1,4 +1,4 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { AdminButton, AdminLinkButton } from "../../../../../components/admin/AdminButton";
 import {
   AdminCard,
@@ -129,61 +129,61 @@ export default async function EditProductPage({
       />
 
       {query?.error === "slug" ? (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
           这个 slug 已被其他数字服务使用，请换一个。
         </div>
       ) : null}
 
       {query?.created === "1" ? (
-        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
           产品已创建。系统会优先尝试按产品名自动匹配 App Store，并进入价格采集流程。
         </div>
       ) : null}
 
       {query?.appStoreAuto === "found" ? (
-        <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm font-medium text-blue-700">
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm font-medium text-blue-700">
           已自动找到 App Store 应用，并准备好采集入口。请到价格采集审核页按产品执行采集。
         </div>
       ) : null}
 
       {query?.appStoreAuto === "not-found" ? (
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
           暂未自动匹配到 App Store 应用。请在本页补充 App Store URL 或 App ID 后继续自动采集。
         </div>
       ) : null}
 
       {query?.sourceSaved === "1" ? (
-        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
           App Store 来源已保存，并已生成或更新采集任务。
         </div>
       ) : null}
 
       {query?.sourceError === "app-store" ? (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
           请填写 App Store URL，或填写可识别的 App Store App ID。
         </div>
       ) : null}
 
       {query?.seoSaved === "1" ? (
-        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
           SEO 信息已保存。
         </div>
       ) : null}
 
       {query?.logoSynced ? (
-        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
           官方 Logo 已同步并保存到 GeoSub 服务器，前台不再直接加载第三方图片。
         </div>
       ) : null}
 
       {query?.logoError === "official-not-found" || query?.logoError === "not-found" ? (
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
           暂未找到高可信官网图标或 Apple 官方应用图标。请补充官方网站或手动填写官方 SVG/PNG Logo URL。
         </div>
       ) : null}
 
       {query?.logoError === "download-failed" ? (
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
           已找到官网图标，但服务器下载或校验失败。当前继续使用内置品牌图标，请稍后重新同步。
         </div>
       ) : null}
@@ -303,7 +303,7 @@ export default async function EditProductPage({
           description="优先同步官方网站高可信图标，找不到时使用 Apple 官方应用图标；图片统一下载到 GeoSub 持久目录。"
         />
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 rounded-xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <BrandIcon product={product} size="md" />
             <div>
@@ -410,19 +410,19 @@ export default async function EditProductPage({
         />
 
         <div className="mb-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
             <div className="text-xs font-semibold text-slate-400">来源状态</div>
             <div className="mt-1 text-sm font-bold text-slate-900">
               {appStoreSource ? "已配置" : "未配置"}
             </div>
           </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
             <div className="text-xs font-semibold text-slate-400">采集任务</div>
             <div className="mt-1 text-sm font-bold text-slate-900">
               {latestAppStoreJob ? latestAppStoreJob.status : "未生成"}
             </div>
           </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
             <div className="text-xs font-semibold text-slate-400">App ID</div>
             <div className="mt-1 text-sm font-bold text-slate-900">
               {latestAppStoreJob?.app_store_id || "待填写"}

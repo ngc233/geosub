@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Archive, FileText, Plus, Trash2 } from "lucide-react";
+import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import {
   articleStatusLabels,
@@ -38,33 +39,32 @@ export default async function AdminArticlesPage() {
         description="统一管理中文和英文指南、价格分析、产品对比及方法论内容。发布后会进入对应语言的指南页和 sitemap。"
         action={
           <div className="flex flex-wrap gap-3">
-            <Link
+            <AdminLinkButton
               href="/admin/articles/taxonomy"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+              variant="secondary"
             >
               分类与标签
-            </Link>
-            <Link
+            </AdminLinkButton>
+            <AdminLinkButton
               href="/admin/articles/trash"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+              variant="secondary"
             >
               <Trash2 size={16} />
               回收站 {trashedArticles.length}
-            </Link>
-            <Link
+            </AdminLinkButton>
+            <AdminLinkButton
               href="/admin/articles/new?locale=ZH"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800"
             >
               <Plus size={16} />
               新建中文
-            </Link>
-            <Link
+            </AdminLinkButton>
+            <AdminLinkButton
               href="/admin/articles/new?locale=EN"
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700 transition hover:bg-blue-100"
+              variant="secondary"
             >
               <Plus size={16} />
               New English
-            </Link>
+            </AdminLinkButton>
           </div>
         }
       />
@@ -114,7 +114,7 @@ export default async function AdminArticlesPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
           <div className="min-w-[980px]">
             <div className="grid grid-cols-[minmax(220px,1.4fr)_110px_110px_110px_130px_120px_170px] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
               <div>标题</div>
@@ -230,12 +230,12 @@ export default async function AdminArticlesPage() {
                 <div className="px-5 py-16 text-center">
                   <FileText className="mx-auto text-slate-300" size={36} />
                   <div className="mt-4 text-sm font-bold text-slate-500">还没有文章。</div>
-                  <Link
+                  <AdminLinkButton
                     href="/admin/articles/new"
-                    className="mt-5 inline-flex rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800"
+                    className="mt-5"
                   >
                     新建第一篇
-                  </Link>
+                  </AdminLinkButton>
                 </div>
               ) : null}
             </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AdminButton, AdminLinkButton } from "../../../../../components/admin/AdminButton";
 import { AdminPageHeader } from "../../../../../components/admin/AdminCard";
 import { getArticleSeoDraft } from "../../../../../lib/article-seo-draft";
 import { getArticleCategories, getArticleTags } from "../../../../../lib/articles";
@@ -223,7 +224,7 @@ export default async function EditArticlePage({
         </div>
       ) : null}
 
-      <div className="mb-5 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+      <div className="mb-5 rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-sm font-black text-slate-950">SEO 草稿助手</div>
@@ -231,17 +232,16 @@ export default async function EditArticlePage({
               根据已保存的标题、摘要、正文、分类、标签和内链关系生成 SEO 建议。现在会先预览评分，不会直接覆盖。
             </p>
           </div>
-          <Link
+          <AdminLinkButton
             href={`/admin/articles/${article.id}/edit?seoPreview=1`}
-            className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800"
           >
             生成 SEO 草稿预览
-          </Link>
+          </AdminLinkButton>
         </div>
       </div>
 
       {seoDraft ? (
-        <div className="mb-5 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+        <div className="mb-5 rounded-xl border border-blue-100 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="flex items-center gap-3">
@@ -257,19 +257,16 @@ export default async function EditArticlePage({
             <div className="flex gap-2">
               <form action={generateArticleSeoDraftAction}>
                 <input type="hidden" name="id" value={article.id} />
-                <button
-                  type="submit"
-                  className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-700"
-                >
+                <AdminButton type="submit" variant="success">
                   应用草稿
-                </button>
+                </AdminButton>
               </form>
-              <Link
+              <AdminLinkButton
                 href={`/admin/articles/${article.id}/edit`}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+                variant="secondary"
               >
                 取消
-              </Link>
+              </AdminLinkButton>
             </div>
           </div>
 

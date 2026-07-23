@@ -1,4 +1,5 @@
-﻿import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
+import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
+import { AdminButton } from "../../../components/admin/AdminButton";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { prisma } from "../../../lib/prisma";
 import Link from "next/link";
@@ -230,32 +231,23 @@ function CandidateActions({ candidate }: { candidate: CandidateRow }) {
     <div className="flex flex-wrap gap-2">
       <form action={promoteCandidate}>
         <input type="hidden" name="id" value={candidate.id} />
-        <button
-          type="submit"
-          className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800"
-        >
+        <AdminButton type="submit" size="sm">
           加入并进入采集
-        </button>
+        </AdminButton>
       </form>
 
       <form action={watchCandidate}>
         <input type="hidden" name="id" value={candidate.id} />
-        <button
-          type="submit"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
-        >
+        <AdminButton type="submit" size="sm" variant="warning">
           标记观察
-        </button>
+        </AdminButton>
       </form>
 
       <form action={ignoreCandidate}>
         <input type="hidden" name="id" value={candidate.id} />
-        <button
-          type="submit"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-        >
+        <AdminButton type="submit" size="sm" variant="secondary">
           忽略
-        </button>
+        </AdminButton>
       </form>
     </div>
   );
@@ -414,7 +406,7 @@ export default async function DiscoveryPage({
       <AdminPipelineSteps currentStep="discovery" />
 
       {params.promotionError === "1" ? (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm leading-6 text-red-800">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm leading-6 text-red-800">
           加入服务库失败。请检查这条线索是否缺少名称、slug 或 App Store 链接，然后再试一次。
         </div>
       ) : null}
@@ -598,13 +590,13 @@ export default async function DiscoveryPage({
                   <td className="px-4 py-4">
                     <form action={queueDiscoverySourceScan}>
                       <input type="hidden" name="id" value={source.id} />
-                      <button
+                      <AdminButton
                         type="submit"
+                        size="sm"
                         disabled={Boolean(source.manual_scan_requested_at)}
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                       >
                         {source.manual_scan_requested_at ? "已在队列" : "加入下一轮检查"}
-                      </button>
+                      </AdminButton>
                     </form>
                     <div className="mt-2 max-w-[180px] text-xs leading-5 text-slate-400">
                       扫描器运行后会更新最近检查记录。

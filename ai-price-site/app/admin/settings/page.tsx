@@ -1,4 +1,5 @@
 import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
+import { AdminButton } from "../../../components/admin/AdminButton";
 import AdminAlert from "../../../components/admin/AdminAlert";
 import { prisma } from "../../../lib/prisma";
 import { updateAdminPassword, updateAnalyticsSettings } from "./actions";
@@ -118,7 +119,7 @@ export default async function AdminSettingsPage({
               name="ga4_id"
               defaultValue={settings.ga4Id}
               placeholder="G-XXXXXXXXXX"
-              className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
             />
             <span className="mt-2 block text-xs leading-5 text-slate-500">
               适用于 Google Analytics 4。若同时填写 GTM，前台优先加载 GTM，避免重复统计。
@@ -133,23 +134,20 @@ export default async function AdminSettingsPage({
               name="gtm_id"
               defaultValue={settings.gtmId}
               placeholder="GTM-XXXXXXX"
-              className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
             />
             <span className="mt-2 block text-xs leading-5 text-slate-500">
               如果你更习惯在 Google Tag Manager 里统一管理 GA4、Ads 和事件，填这里即可。
             </span>
           </label>
 
-          <div className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3">
             <p className="text-xs leading-5 text-slate-500">
               保存后新页面访问会自动加载。后台、登录页和 API 不会被本站内置事件统计记录。
             </p>
-            <button
-              type="submit"
-              className="h-11 rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700"
-            >
+            <AdminButton type="submit">
               保存设置
-            </button>
+            </AdminButton>
           </div>
         </form>
       </AdminCard>
@@ -205,12 +203,9 @@ export default async function AdminSettingsPage({
             <p className="max-w-3xl text-xs leading-5 text-slate-500">
               至少 14 个字符，并同时包含大小写字母、数字和符号。系统不会通过网页展示或发送现有密码。
             </p>
-            <button
-              type="submit"
-              className="h-11 shrink-0 rounded-lg bg-slate-950 px-5 text-sm font-bold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-200"
-            >
+            <AdminButton type="submit">
               更新密码
-            </button>
+            </AdminButton>
           </div>
         </form>
       </AdminCard>
