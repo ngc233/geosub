@@ -289,7 +289,7 @@ fi
 CURRENT_STEP="product_logos"
 write_attempt_state "running"
 log "Synchronizing persistent product logos"
-run_as_geosub "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && npm run sync:logos"
+run_as_geosub "set -a && source '$ENV_FILE' && set +a && export NODE_ENV=production GEOSUB_LOGO_STORAGE_DIR='$LOGO_STORAGE_DIR' && cd '$FRONTEND_DIR' && npm run sync:logos"
 
 CURRENT_STEP="systemd_units"
 write_attempt_state "running"

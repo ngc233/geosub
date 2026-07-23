@@ -13,6 +13,18 @@ const rollback = readFileSync(
   resolve(appDir, "..", "..", "geosub-backend", "deploy", "linux-arm64", "rollback.sh"),
   "utf8",
 );
+const postDeployCheck = readFileSync(
+  resolve(
+    appDir,
+    "..",
+    "..",
+    "geosub-backend",
+    "deploy",
+    "linux-arm64",
+    "post-deploy-check.sh",
+  ),
+  "utf8",
+);
 const localMigrationRunner = readFileSync(
   resolve(appDir, "..", "scripts", "apply-local-sql.cjs"),
   "utf8",
@@ -46,6 +58,14 @@ test("ARM64 upgrade failures restart runtime and retain the verified backup", ()
 test("successful ARM64 upgrades record health-gated completion", () => {
   assert.match(upgrade, /CURRENT_STEP="product_logos"/);
   assert.match(upgrade, /npm run sync:logos/);
+  assert.match(
+    upgrade,
+    /export NODE_ENV=production GEOSUB_LOGO_STORAGE_DIR='\$LOGO_STORAGE_DIR'/,
+  );
+  assert.match(
+    postDeployCheck,
+    /export NODE_ENV=production GEOSUB_LOGO_STORAGE_DIR='\$LOGO_STORAGE_DIR'/,
+  );
   assert.match(upgrade, /CURRENT_STEP="post_deploy_health"/);
   assert.match(upgrade, /post-deploy-check\.sh/);
   assert.match(upgrade, /write_attempt_state "succeeded"/);

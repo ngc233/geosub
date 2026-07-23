@@ -399,7 +399,7 @@ if (( failures == 0 )); then
   fi
 fi
 
-if sudo -u geosub bash -lc "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && npm run check:logos"; then
+if sudo -u geosub bash -lc "set -a && source '$ENV_FILE' && set +a && export NODE_ENV=production GEOSUB_LOGO_STORAGE_DIR='$LOGO_STORAGE_DIR' && cd '$FRONTEND_DIR' && npm run check:logos"; then
   pass "all published product logos are cached locally"
 else
   fail "published product logo cache is incomplete"
