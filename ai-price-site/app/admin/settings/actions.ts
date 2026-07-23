@@ -13,18 +13,30 @@ function normalizeOptionalText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
 }
 
-function validateGa4Id(value: string) {
-  if (!value) return;
-  if (!/^G-[A-Z0-9]{4,}$/.test(value)) {
-    throw new Error("GA4 Measurement ID 格式应类似 G-XXXXXXXXXX。");
+function extractTrackingId(
+  value: FormDataEntryValue | null,
+  pattern: RegExp,
+) {
+  const normalized = normalizeOptionalText(value).toUpperCase();
+
+  if (!normalized) {
+    return {
+      id: "",
+      invalid: false,
+    };
   }
+
+  return {
+    id: normalized.match(pattern)?.[0] || "",
+    invalid: !pattern.test(normalized),
+  };
 }
 
-function validateGtmId(value: string) {
-  if (!value) return;
-  if (!/^GTM-[A-Z0-9]{4,}$/.test(value)) {
-    throw new Error("GTM Container ID 格式应类似 GTM-XXXXXXX。");
-  }
+function analyticsErrorCode(ga4Invalid: boolean, gtmInvalid: boolean) {
+  if (ga4Invalid && gtmInvalid) return "both";
+  if (ga4Invalid) return "ga4";
+  if (gtmInvalid) return "gtm";
+  return "";
 }
 
 async function upsertSetting({
@@ -64,26 +76,28 @@ async function upsertSetting({
 
 export async function updateAnalyticsSettings(formData: FormData) {
   await requireAdmin();
-  const ga4Id = normalizeOptionalText(formData.get("ga4_id")).toUpperCase();
-  const gtmId = normalizeOptionalText(formData.get("gtm_id")).toUpperCase();
+  const ga4 = extractTrackingId(formData.get("ga4_id"), /\bG-[A-Z0-9]{4,}\b/);
+  const gtm = extractTrackingId(formData.get("gtm_id"), /\bGTM-[A-Z0-9]{4,}\b/);
+  const errorCode = analyticsErrorCode(ga4.invalid, gtm.invalid);
 
-  validateGa4Id(ga4Id);
-  validateGtmId(gtmId);
+  if (errorCode) {
+    redirect(`/admin/settings?analyticsError=${errorCode}`);
+  }
 
   await Promise.all([
     upsertSetting({
       settingKey: "ga4_id",
       groupName: "analytics",
       label: "Google Analytics 4 Measurement ID",
-      valueText: ga4Id,
-      note: "只填写 Measurement ID，例如 G-XXXXXXXXXX，不要粘贴整段脚本。",
+      valueText: ga4.id,
+      note: "填写 Measurement ID（例如 G-XXXXXXXXXX），或粘贴包含该 ID 的 Google 代码。",
     }),
     upsertSetting({
       settingKey: "gtm_id",
       groupName: "analytics",
       label: "Google Tag Manager Container ID",
-      valueText: gtmId,
-      note: "只填写 Container ID，例如 GTM-XXXXXXX。若填写 GTM，前台优先加载 GTM。",
+      valueText: gtm.id,
+      note: "填写 Container ID（例如 GTM-XXXXXXX），或粘贴包含该 ID 的 Google 代码。若填写 GTM，前台优先加载 GTM。",
     }),
   ]);
 

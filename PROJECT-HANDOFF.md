@@ -4,10 +4,12 @@ Updated: 2026-07-24
 
 ## Current Stage
 
-The v2.1.0 multilingual platform is committed on `main`. The local v2.2.0
-release candidate adds Traditional Chinese plus the expanded display-currency
-and exchange-rate contract; it has passed local technical acceptance and is
-awaiting publication and production deployment.
+The v2.2.0 multilingual and display-currency release is deployed in production.
+The v2.2.1 patch fixes the admin Google Analytics settings flow so invalid
+input produces a recoverable form message and pasted Google setup code can be
+reduced safely to its GA4 or GTM identifier. The subscription currency
+converter remains local work in progress and is intentionally excluded from
+this production patch.
 
 ## V2.2 Local Roadmap
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.1 - 2026-07-24
+
+- Fixed the admin Google Analytics settings flow so malformed input returns a
+  clear inline error instead of crashing the Next.js page.
+- Added automatic extraction of GA4 Measurement IDs and Google Tag Manager
+  Container IDs from pasted Google setup code while preserving strict ID
+  validation before settings are stored.
+
 ## 2.2.0 - 2026-07-24
 
 - Added Traditional Chinese as the twelfth public locale, including localized

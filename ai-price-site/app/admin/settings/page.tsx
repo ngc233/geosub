@@ -6,9 +6,16 @@ import { updateAdminPassword, updateAnalyticsSettings } from "./actions";
 
 type SettingsSearchParams = {
   saved?: string;
+  analyticsError?: string;
   passwordChanged?: string;
   passwordError?: string;
   revoked?: string;
+};
+
+const analyticsErrorCopy: Record<string, string> = {
+  ga4: "没有识别到有效的 GA4 Measurement ID。请在 Google Analytics 的网站数据流中查找以 G- 开头的 ID。",
+  gtm: "没有识别到有效的 GTM Container ID。请在 Google Tag Manager 中查找以 GTM- 开头的 ID。",
+  both: "GA4 与 GTM 输入都无法识别。请填写对应的 G- 或 GTM- ID，也可以直接粘贴包含这些 ID 的 Google 代码。",
 };
 
 const passwordErrorCopy: Record<string, string> = {
@@ -51,6 +58,9 @@ export default async function AdminSettingsPage({
     searchParams ?? Promise.resolve<SettingsSearchParams>({}),
   ]);
   const saved = query.saved === "1";
+  const analyticsError = query.analyticsError
+    ? analyticsErrorCopy[query.analyticsError] || "Google 统计设置未保存，请检查后重试。"
+    : "";
   const passwordChanged = query.passwordChanged === "1";
   const revokedSessions = Math.max(0, Number.parseInt(query.revoked || "0", 10) || 0);
   const passwordError = query.passwordError
@@ -71,6 +81,12 @@ export default async function AdminSettingsPage({
         </AdminAlert>
       ) : null}
 
+      {analyticsError ? (
+        <AdminAlert title="Google 统计设置未保存" variant="danger">
+          {analyticsError}
+        </AdminAlert>
+      ) : null}
+
       {passwordChanged ? (
         <AdminAlert title="管理员密码已更新" variant="success">
           当前设备保持登录，另外 {revokedSessions} 个登录会话已安全注销。
@@ -83,10 +99,10 @@ export default async function AdminSettingsPage({
         </AdminAlert>
       ) : null}
 
-      <AdminCard className={saved || passwordChanged || passwordError ? "mt-5" : undefined}>
+      <AdminCard className={saved || analyticsError || passwordChanged || passwordError ? "mt-5" : undefined}>
         <AdminSectionHeader
           title="Google 统计代码"
-          description="填写 Google 后台给出的 ID 即可，前台会自动注入统计代码。不要粘贴完整 script 代码。"
+          description="填写 Google 后台给出的 ID 即可；直接粘贴包含 ID 的 Google 代码也能自动识别。前台会安全注入统计脚本。"
         />
 
         <div className="mt-5 flex flex-wrap gap-2 border-y border-slate-100 py-4 text-xs font-bold">
@@ -122,7 +138,7 @@ export default async function AdminSettingsPage({
               className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
             />
             <span className="mt-2 block text-xs leading-5 text-slate-500">
-              适用于 Google Analytics 4。若同时填写 GTM，前台优先加载 GTM，避免重复统计。
+              在 Google Analytics 的网站数据流中可找到以 G- 开头的 Measurement ID。若同时填写 GTM，前台优先加载 GTM，避免重复统计。
             </span>
           </label>
 
@@ -137,7 +153,7 @@ export default async function AdminSettingsPage({
               className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
             />
             <span className="mt-2 block text-xs leading-5 text-slate-500">
-              如果你更习惯在 Google Tag Manager 里统一管理 GA4、Ads 和事件，填这里即可。
+              如果你使用 Google Tag Manager 统一管理 GA4、Ads 和事件，请填写以 GTM- 开头的 Container ID。
             </span>
           </label>
 

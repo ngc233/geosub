@@ -10,7 +10,7 @@ function readSettingsFile(fileName: string) {
   return readFileSync(resolve(currentDir, fileName), "utf8");
 }
 
-test("settings page exposes Google analytics entry without asking for script tags", () => {
+test("settings page exposes a resilient Google analytics entry", () => {
   const source = readSettingsFile("page.tsx");
 
   assert.match(source, /Google 统计代码/);
@@ -19,19 +19,23 @@ test("settings page exposes Google analytics entry without asking for script tag
   assert.match(source, /GA4 \{settings\.ga4Id \? "已配置" : "未配置"\}/);
   assert.match(source, /GTM \{settings\.gtmId \? "已配置" : "未配置"\}/);
   assert.match(source, /Google 统计设置已保存/);
-  assert.match(source, /不要粘贴完整 script 代码/);
+  assert.match(source, /直接粘贴包含 ID 的 Google 代码也能自动识别/);
+  assert.match(source, /Google 统计设置未保存/);
+  assert.match(source, /analyticsError/);
   assert.match(source, /保存设置/);
 });
 
-test("analytics settings validate ID-only GA4 and GTM inputs", () => {
+test("analytics settings extract IDs and redirect invalid input without throwing", () => {
   const source = readSettingsFile("actions.ts");
 
-  assert.match(source, /\^G-\[A-Z0-9\]\{4,\}\$/);
-  assert.match(source, /\^GTM-\[A-Z0-9\]\{4,\}\$/);
+  assert.match(source, /\\bG-\[A-Z0-9\]\{4,\}\\b/);
+  assert.match(source, /\\bGTM-\[A-Z0-9\]\{4,\}\\b/);
+  assert.match(source, /extractTrackingId/);
+  assert.match(source, /analyticsError=/);
   assert.match(source, /ga4_id/);
   assert.match(source, /gtm_id/);
   assert.match(source, /redirect\("\/admin\/settings\?saved=1"\)/);
-  assert.match(source, /不要粘贴整段脚本/);
+  assert.doesNotMatch(source, /throw new Error\("GA4/);
 });
 
 test("settings page exposes a single-admin password change flow", () => {
