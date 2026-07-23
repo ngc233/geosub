@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ProductCategory } from "@prisma/client";
 import BrandIcon from "./BrandIcon";
 import TrackedLink from "./analytics/TrackedLink";
@@ -21,11 +21,12 @@ import { getPricingDetailProduct } from "../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../lib/affordability";
 import { getLatestExchangeRate } from "../lib/exchange-rates";
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
+import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
 import { buildPricingStructuredData, type PricingFaq } from "../lib/pricing-seo";
 import {
-  getPricingDetailPath,
   getPricingLanguageAlternates,
   getPricingListPath,
+  getPricingPlanPath,
   stripGeoSubTitleSuffix,
 } from "../lib/pricing-routes";
 import { prisma } from "../lib/prisma";
@@ -41,6 +42,7 @@ import {
 export type PricingDetailPageProps = {
   params: Promise<{
     slug: string;
+    plan?: string;
   }>;
   searchParams?: Promise<{
     plan?: string;
@@ -81,6 +83,24 @@ async function getProductNavItems(category: string) {
       category: true,
       logoUrl: true,
       officialUrl: true,
+      plans: {
+        where: {
+          status: "PUBLISHED",
+          regionPrices: {
+            some: {
+              status: "PUBLISHED",
+            },
+          },
+        },
+        orderBy: [
+          { sortOrder: "asc" },
+          { createdAt: "asc" },
+        ],
+        select: {
+          slug: true,
+        },
+        take: 1,
+      },
     },
   });
 
@@ -88,6 +108,7 @@ async function getProductNavItems(category: string) {
     slug: product.slug,
     name: product.name,
     category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
+    defaultPlanSlug: product.plans[0]?.slug || null,
     logoUrl: product.logoUrl,
     officialUrl: product.officialUrl,
   }));
@@ -376,7 +397,7 @@ export async function getPricingDetailMetadata({
   searchParams,
   locale,
 }: PricingDetailPageProps & { locale: SiteLocale }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, plan: routePlanSlug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const [product, seoMeta] = await Promise.all([
     getProduct(slug, locale),
@@ -396,30 +417,61 @@ export async function getPricingDetailMetadata({
     };
   }
 
-  const activePlan = getProductPlan(product, resolvedSearchParams.plan);
+  const routePlan = routePlanSlug
+    ? product.plans.find(
+        (plan) => plan.slug === routePlanSlug && plan.regions.length > 0,
+      )
+    : null;
+
+  if (routePlanSlug && !routePlan) {
+    return {
+      title: product.name,
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const activePlan =
+    routePlan || getProductPlan(product, resolvedSearchParams.plan);
+  const stats =
+    activePlan.regions.length > 0 ? getPlanStats(activePlan) : null;
   const pageCopy = getPricingDetailPageCopy({
     locale,
     productName: product.name,
     planName: activePlan.name,
-    stats: null,
+    stats,
   });
-  const canonicalPath = getPricingDetailPath(
+  const seoCopy = getPricingDetailSeoCopy({
+    locale,
+    productName: product.name,
+    planName: activePlan.name,
+    stats,
+    regionCount: activePlan.regions.length,
+  });
+  const canonicalPath = getPricingPlanPath(
     locale,
     product.category,
     product.slug,
+    activePlan.slug,
   );
   const configuredTitle = hasChineseText(seoMeta?.title)
     ? stripGeoSubTitleSuffix(seoMeta?.title || "")
     : "";
+  const hasSinglePublishedPlan =
+    product.plans.filter((plan) => plan.regions.length > 0).length === 1;
 
   const title =
-    locale === "zh" && configuredTitle
+    locale === "zh" && configuredTitle && hasSinglePublishedPlan
       ? configuredTitle
-      : pageCopy.pageTitle;
+      : seoCopy.title;
   const description =
-    locale === "zh" && hasChineseText(seoMeta?.description)
+    locale === "zh" &&
+    hasChineseText(seoMeta?.description) &&
+    hasSinglePublishedPlan
       ? seoMeta?.description || pageCopy.description
-      : pageCopy.description;
+      : seoCopy.description;
 
   return {
     title,
@@ -429,6 +481,7 @@ export async function getPricingDetailMetadata({
       languages: getPricingLanguageAlternates(
         product.category,
         product.slug,
+        activePlan.slug,
       ),
     },
     openGraph: {
@@ -450,7 +503,7 @@ export default async function PricingDetailPage({
   searchParams,
   locale,
 }: PricingDetailPageProps & { locale: SiteLocale }) {
-  const { slug } = await params;
+  const { slug, plan: routePlanSlug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const [product, seoMeta] = await Promise.all([
     getProduct(slug, locale),
@@ -461,21 +514,33 @@ export default async function PricingDetailPage({
     notFound();
   }
 
-  const activePlan = getProductPlan(product, resolvedSearchParams.plan);
-  const canonicalDetailPath = getPricingDetailPath(
+  const routePlan = routePlanSlug
+    ? product.plans.find(
+        (plan) => plan.slug === routePlanSlug && plan.regions.length > 0,
+      )
+    : null;
+
+  if (routePlanSlug && !routePlan) {
+    notFound();
+  }
+
+  const activePlan =
+    routePlan || getProductPlan(product, resolvedSearchParams.plan);
+  const canonicalDetailPath = getPricingPlanPath(
     locale,
     product.category,
     product.slug,
+    activePlan.slug,
   );
   const currentPath = (await headers())
     .get("x-pathname")
     ?.replace(/\/+$/, "");
 
-  if (currentPath && currentPath !== canonicalDetailPath) {
-    const planQuery = resolvedSearchParams.plan
-      ? `?plan=${encodeURIComponent(resolvedSearchParams.plan)}`
-      : "";
-    redirect(`${canonicalDetailPath}${planQuery}`);
+  if (
+    (currentPath && currentPath !== canonicalDetailPath) ||
+    Boolean(resolvedSearchParams.plan)
+  ) {
+    permanentRedirect(canonicalDetailPath);
   }
 
   const sidebarProducts = await getProductNavItems(product.category);
@@ -514,12 +579,18 @@ export default async function PricingDetailPage({
     planName: activePlan.name,
     stats,
   });
+  const hasSinglePublishedPlan =
+    product.plans.filter((plan) => plan.regions.length > 0).length === 1;
   const pageTitle =
-    locale === "zh" && hasChineseText(seoMeta?.h1)
+    locale === "zh" &&
+    hasChineseText(seoMeta?.h1) &&
+    hasSinglePublishedPlan
       ? seoMeta?.h1 || pageCopy.pageTitle
       : pageCopy.pageTitle;
   const pageDescription =
-    locale === "zh" && hasChineseText(seoMeta?.description)
+    locale === "zh" &&
+    hasChineseText(seoMeta?.description) &&
+    hasSinglePublishedPlan
       ? seoMeta?.description || pageCopy.description
       : pageCopy.description;
   const structuredData = buildPricingStructuredData({

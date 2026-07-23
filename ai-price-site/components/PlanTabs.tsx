@@ -1,5 +1,6 @@
 ﻿import SegmentedControl from "./ui/SegmentedControl";
 import type { ProductPlan } from "../lib/public-pricing-model";
+import { getPricingPlanPath } from "../lib/pricing-routes";
 import type { SiteLocale } from "../lib/site-locale";
 
 type PlanTabsProps = {
@@ -162,7 +163,12 @@ export default function PlanTabs({
         },
         href:
           plan.regions.length > 0
-            ? `${basePath.replace(/\/$/, "")}/${productSlug}/?plan=${plan.slug}`
+            ? getPricingPlanPath(
+                locale,
+                basePath.includes("streaming-pricing") ? "streaming" : "ai",
+                productSlug,
+                plan.slug,
+              )
             : undefined,
         disabled: plan.regions.length === 0,
       }))}

@@ -9,6 +9,7 @@ export type ProductNavItem = {
   slug: string;
   name: string;
   category: ProductNavCategory;
+  defaultPlanSlug?: string | null;
   logoUrl?: string | null;
   officialUrl?: string | null;
 };
@@ -23,14 +24,18 @@ type ProductSidebarProps = {
 const categoryOrder: ProductNavCategory[] = ["ai", "streaming"];
 
 export function getProductHref(product: ProductNavItem, basePath?: string) {
+  const planSuffix = product.defaultPlanSlug
+    ? `/${product.defaultPlanSlug}`
+    : "";
+
   if (basePath) {
-    return `${basePath.replace(/\/$/, "")}/${product.slug}/`;
+    return `${basePath.replace(/\/$/, "")}/${product.slug}${planSuffix}`;
   }
 
   const path =
     product.category === "streaming" ? "/zh/streaming-pricing" : "/zh/ai-pricing";
 
-  return `${path}/${product.slug}/`;
+  return `${path}/${product.slug}${planSuffix}`;
 }
 
 export default function ProductSidebar({

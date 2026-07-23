@@ -11,7 +11,11 @@ import {
   getPricingListCopy,
   type PricingListCopy,
 } from "../lib/pricing-list-copy";
-import type { PreparedSiteLocale } from "../lib/site-locale";
+import { getPricingPlanPath } from "../lib/pricing-routes";
+import {
+  normalizeSiteLocale,
+  type PreparedSiteLocale,
+} from "../lib/site-locale";
 import { localizeTaxNote } from "../lib/tax-note-localization";
 
 type DbPricingCardProps = {
@@ -83,9 +87,12 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
 
   const copy = getPricingListCopy(locale).card;
 
-  const detailBase =
-    product.category === "streaming" ? "streaming-pricing" : "ai-pricing";
-  const detailHref = `/${locale}/${detailBase}/${product.slug}/`;
+  const detailHref = getPricingPlanPath(
+    normalizeSiteLocale(locale),
+    product.category,
+    product.slug,
+    defaultPlan.slug,
+  );
 
   return (
     <Link

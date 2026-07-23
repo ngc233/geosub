@@ -79,24 +79,52 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
       category: true,
       updatedAt: true,
       featured: true,
-      regionPrices: {
+      plans: {
         where: {
           status: PublishStatus.PUBLISHED,
+          regionPrices: {
+            some: {
+              status: PublishStatus.PUBLISHED,
+              priceUsd: {
+                gt: 0,
+              },
+            },
+          },
         },
         select: {
-          lastCheckedAt: true,
-          publishedAt: true,
+          slug: true,
           updatedAt: true,
+          regionPrices: {
+            where: {
+              status: PublishStatus.PUBLISHED,
+              priceUsd: {
+                gt: 0,
+              },
+            },
+            select: {
+              lastCheckedAt: true,
+              publishedAt: true,
+              updatedAt: true,
+            },
+            orderBy: [
+              {
+                lastCheckedAt: "desc",
+              },
+              {
+                updatedAt: "desc",
+              },
+            ],
+            take: 1,
+          },
         },
         orderBy: [
           {
-            lastCheckedAt: "desc",
+            sortOrder: "asc",
           },
           {
-            updatedAt: "desc",
+            createdAt: "asc",
           },
         ],
-        take: 1,
       },
     },
     orderBy: [
@@ -113,28 +141,39 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
   });
 
   return products.flatMap((product) => {
-    const newestPrice = product.regionPrices[0];
-    const lastModified = latestDate(
-      [newestPrice?.lastCheckedAt, newestPrice?.publishedAt, newestPrice?.updatedAt, product.updatedAt],
-      now,
-    );
     const isStreaming = product.category === ProductCategory.STREAMING;
     const section = isStreaming ? "streaming-pricing" : "ai-pricing";
     const priority = product.featured ? 0.9 : isStreaming ? 0.72 : 0.82;
 
-    return [
-      route(`/zh/${section}/${product.slug}`, "daily", priority, lastModified),
-      route(`/en/${section}/${product.slug}`, "daily", priority - 0.05, lastModified),
-      route(`/ja/${section}/${product.slug}`, "daily", priority - 0.06, lastModified),
-      route(`/ko/${section}/${product.slug}`, "daily", priority - 0.07, lastModified),
-      route(`/es/${section}/${product.slug}`, "daily", priority - 0.08, lastModified),
-      route(`/tr/${section}/${product.slug}`, "daily", priority - 0.09, lastModified),
-      route(`/ar/${section}/${product.slug}`, "daily", priority - 0.1, lastModified),
-      route(`/fr/${section}/${product.slug}`, "daily", priority - 0.11, lastModified),
-      route(`/it/${section}/${product.slug}`, "daily", priority - 0.12, lastModified),
-      route(`/de/${section}/${product.slug}`, "daily", priority - 0.13, lastModified),
-      route(`/pt/${section}/${product.slug}`, "daily", priority - 0.14, lastModified),
-    ];
+    return product.plans.flatMap((plan) => {
+      const newestPrice = plan.regionPrices[0];
+      const lastModified = latestDate(
+        [
+          newestPrice?.lastCheckedAt,
+          newestPrice?.publishedAt,
+          newestPrice?.updatedAt,
+          plan.updatedAt,
+          product.updatedAt,
+        ],
+        now,
+      );
+      const planPath = `${product.slug}/${plan.slug}`;
+
+      return [
+        route(`/zh/${section}/${planPath}`, "daily", priority, lastModified),
+        route(`/zh-tw/${section}/${planPath}`, "daily", priority - 0.04, lastModified),
+        route(`/en/${section}/${planPath}`, "daily", priority - 0.05, lastModified),
+        route(`/ja/${section}/${planPath}`, "daily", priority - 0.06, lastModified),
+        route(`/ko/${section}/${planPath}`, "daily", priority - 0.07, lastModified),
+        route(`/es/${section}/${planPath}`, "daily", priority - 0.08, lastModified),
+        route(`/tr/${section}/${planPath}`, "daily", priority - 0.09, lastModified),
+        route(`/ar/${section}/${planPath}`, "daily", priority - 0.1, lastModified),
+        route(`/fr/${section}/${planPath}`, "daily", priority - 0.11, lastModified),
+        route(`/it/${section}/${planPath}`, "daily", priority - 0.12, lastModified),
+        route(`/de/${section}/${planPath}`, "daily", priority - 0.13, lastModified),
+        route(`/pt/${section}/${planPath}`, "daily", priority - 0.14, lastModified),
+      ];
+    });
   });
 }
 
@@ -198,6 +237,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     route("/zh/contact", "monthly", 0.35),
     route("/zh/privacy", "yearly", 0.25),
     route("/zh/terms", "yearly", 0.25),
+    route("/zh-tw", "daily", 0.76),
+    route("/zh-tw/ai-pricing", "daily", 0.78),
+    route("/zh-tw/streaming-pricing", "daily", 0.66),
+    route("/zh-tw/guides", "weekly", 0.52),
+    route("/zh-tw/guides/price-guide", "monthly", 0.48),
+    route("/zh-tw/guides/payment-account", "monthly", 0.46),
+    route("/zh-tw/guides/methodology", "monthly", 0.46),
+    route("/zh-tw/data-sources", "monthly", 0.46),
+    route("/zh-tw/about", "monthly", 0.36),
+    route("/zh-tw/privacy", "yearly", 0.22),
+    route("/zh-tw/terms", "yearly", 0.22),
     route("/en", "daily", 0.72),
     route("/en/ai-pricing", "daily", 0.74),
     route("/en/streaming-pricing", "daily", 0.62),

@@ -21,6 +21,11 @@ function listPageFiles(directory: string): string[] {
 
 test("site metadata defaults to geosub.org and has language alternates", () => {
   const source = readAppFile("layout.tsx");
+  const home = readAppFile("page.tsx");
+  const nextConfig = readFileSync(
+    resolve(appDir, "..", "next.config.ts"),
+    "utf8",
+  );
   const proxy = readFileSync(resolve(appDir, "..", "proxy.ts"), "utf8");
 
   assert.match(source, /https:\/\/geosub\.org/);
@@ -32,6 +37,9 @@ test("site metadata defaults to geosub.org and has language alternates", () => {
   assert.match(source, /`\$\{siteUrl\}\$\{canonicalPath\}`/);
   assert.match(source, /Organization/);
   assert.match(source, /WebSite/);
+  assert.match(home, /permanentRedirect\("\/zh"\)/);
+  assert.doesNotMatch(home, /\bredirect\(/);
+  assert.match(nextConfig, /trailingSlash:\s*false/);
 });
 
 test("page titles rely on the root GeoSub title template exactly once", () => {
@@ -64,6 +72,7 @@ test("sitemap includes public subscription and article routes only", () => {
   assert.match(source, /getArticleRoutesForLocale\(now, Locale\.ZH, "zh"\)/);
   assert.match(source, /getArticleRoutesForLocale\(now, Locale\.EN, "en"\)/);
   assert.match(source, /\/zh\/ai-pricing/);
+  assert.match(source, /\/zh-tw\/ai-pricing/);
   assert.match(source, /\/en\/ai-pricing/);
   assert.match(source, /\/tr\/ai-pricing/);
   assert.match(source, /\/ar\/ai-pricing/);
@@ -72,6 +81,8 @@ test("sitemap includes public subscription and article routes only", () => {
   assert.match(source, /\/de\/ai-pricing/);
   assert.match(source, /\/pt\/ai-pricing/);
   assert.match(source, /\/zh\/streaming-pricing/);
+  assert.match(source, /\/zh-tw\/streaming-pricing/);
+  assert.match(source, /const planPath = `\$\{product\.slug\}\/\$\{plan\.slug\}`/);
   assert.match(source, /\/tr\/streaming-pricing/);
   assert.match(source, /\/ar\/streaming-pricing/);
   assert.match(source, /\/fr\/streaming-pricing/);

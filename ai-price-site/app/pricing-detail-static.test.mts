@@ -8,6 +8,7 @@ import {
   getPricingDetailPath,
   getPricingLanguageAlternates,
   getPricingListPath,
+  getPricingPlanPath,
   stripGeoSubTitleSuffix,
 } from "../lib/pricing-routes.ts";
 import {
@@ -108,9 +109,13 @@ test("pricing detail pages keep AI and streaming paths synchronized", () => {
     getPricingDetailPath("zh", "streaming", "netflix"),
     "/zh/streaming-pricing/netflix",
   );
+  assert.equal(
+    getPricingPlanPath("zh", "streaming", "netflix", "premium"),
+    "/zh/streaming-pricing/netflix/premium",
+  );
 });
 
-test("streaming detail routes render directly and preserve plan query links", () => {
+test("pricing plans use stable paths and preserve old links with permanent redirects", () => {
   const planTabs = readAppFile("..", "components", "PlanTabs.tsx");
 
   for (const locale of ["zh", "en"]) {
@@ -126,12 +131,34 @@ test("streaming detail routes render directly and preserve plan query links", ()
     assert.doesNotMatch(streamingPage, /redirect\(/);
   }
 
-  assert.match(planTabs, /\?plan=\$\{plan\.slug\}/);
+  for (const locale of supportedSiteLocales) {
+    const aiPlanPage = readAppFile(
+      locale,
+      "ai-pricing",
+      "[slug]",
+      "[plan]",
+      "page.tsx",
+    );
+    const streamingPlanPage = readAppFile(
+      locale,
+      "streaming-pricing",
+      "[slug]",
+      "[plan]",
+      "page.tsx",
+    );
+
+    assert.match(aiPlanPage, /generateMetadata, default/);
+    assert.match(streamingPlanPage, /generateMetadata, default/);
+  }
+
+  assert.match(planTabs, /getPricingPlanPath/);
+  assert.doesNotMatch(planTabs, /\?plan=/);
 
   const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
-  assert.match(detailPage, /currentPath && currentPath !== canonicalDetailPath/);
-  assert.match(detailPage, /encodeURIComponent\(resolvedSearchParams\.plan\)/);
-  assert.match(detailPage, /redirect\(`\$\{canonicalDetailPath\}\$\{planQuery\}`\)/);
+  assert.match(detailPage, /getPricingPlanPath/);
+  assert.match(detailPage, /permanentRedirect\(canonicalDetailPath\)/);
+  assert.match(detailPage, /Boolean\(resolvedSearchParams\.plan\)/);
+  assert.doesNotMatch(detailPage, /encodeURIComponent\(resolvedSearchParams\.plan\)/);
 });
 
 test("pricing detail metadata owns canonical paths without duplicating the site name", () => {
@@ -147,6 +174,11 @@ test("pricing detail metadata owns canonical paths without duplicating the site 
 test("pricing hreflang alternates follow the active locale registry", () => {
   const listAlternates = getPricingLanguageAlternates("ai");
   const detailAlternates = getPricingLanguageAlternates("streaming", "netflix");
+  const planAlternates = getPricingLanguageAlternates(
+    "streaming",
+    "netflix",
+    "premium",
+  );
 
   for (const locale of supportedSiteLocales) {
     const htmlLang = siteLocaleDefinitions[locale].htmlLang;
@@ -159,12 +191,20 @@ test("pricing hreflang alternates follow the active locale registry", () => {
       detailAlternates[htmlLang],
       getPricingDetailPath(locale, "streaming", "netflix"),
     );
+    assert.equal(
+      planAlternates[htmlLang],
+      getPricingPlanPath(locale, "streaming", "netflix", "premium"),
+    );
   }
 
   assert.equal(listAlternates["x-default"], "/en/ai-pricing");
   assert.equal(
     detailAlternates["x-default"],
     "/en/streaming-pricing/netflix",
+  );
+  assert.equal(
+    planAlternates["x-default"],
+    "/en/streaming-pricing/netflix/premium",
   );
   assert.equal(
     Object.keys(listAlternates).length,

@@ -25,7 +25,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
   withTraditionalChinese({
   zh: {
     header: [
-      { label: "首页", href: "/zh/" },
+      { label: "首页", href: "/zh" },
       {
         label: "数字订阅",
         href: "/zh/ai-pricing",

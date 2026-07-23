@@ -259,7 +259,7 @@ export function withSiteLocale(href: string, locale: SiteLocale) {
   const strippedPath = stripSiteLocale(pathname || "/");
   const localePath = siteLocaleDefinitions[locale].path;
   const localizedPath =
-    strippedPath === "/" ? `/${localePath}/` : `/${localePath}${strippedPath}`;
+    strippedPath === "/" ? `/${localePath}` : `/${localePath}${strippedPath}`;
 
   return `${localizedPath}${suffix}`;
 }

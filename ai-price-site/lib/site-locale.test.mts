@@ -9,6 +9,7 @@ import {
   preparedSiteLocales,
   replaceSiteLocaleInPath,
   supportedSiteLocales,
+  withSiteLocale,
 } from "./site-locale.ts";
 import {
   formatLocalizedCurrency,
@@ -170,6 +171,26 @@ test("launched locales route publicly and switch consistently", () => {
     replaceSiteLocaleInPath("/de/ai-pricing/chatgpt", "pt"),
     "/pt/ai-pricing/chatgpt",
   );
+});
+
+test("localized public paths use the canonical no-trailing-slash form", () => {
+  for (const locale of supportedSiteLocales) {
+    assert.equal(
+      withSiteLocale("/", locale),
+      `/${locale}`,
+      `localized home for ${locale}`,
+    );
+    assert.equal(
+      replaceSiteLocaleInPath("/zh/", locale),
+      `/${locale}`,
+      `switched home for ${locale}`,
+    );
+    assert.equal(
+      withSiteLocale("/ai-pricing?plan=plus", locale),
+      `/${locale}/ai-pricing?plan=plus`,
+      `query string for ${locale}`,
+    );
+  }
 });
 
 test("Traditional Chinese uses Taiwan terminology and preserves localized paths", () => {

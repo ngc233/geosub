@@ -24,14 +24,26 @@ export function getPricingDetailPath(
   return `${getPricingListPath(locale, category)}/${slug}`;
 }
 
+export function getPricingPlanPath(
+  locale: PricingLocale,
+  category: string,
+  slug: string,
+  planSlug: string,
+) {
+  return `${getPricingDetailPath(locale, category, slug)}/${planSlug}`;
+}
+
 export function getPricingLanguageAlternates(
   category: string,
   slug?: string,
+  planSlug?: string,
 ): Record<string, string> {
   const localizedPaths = Object.fromEntries(
     supportedSiteLocales.map((locale) => [
       siteLocaleDefinitions[locale].htmlLang,
-      slug
+      slug && planSlug
+        ? getPricingPlanPath(locale, category, slug, planSlug)
+        : slug
         ? getPricingDetailPath(locale, category, slug)
         : getPricingListPath(locale, category),
     ]),
@@ -39,7 +51,9 @@ export function getPricingLanguageAlternates(
 
   return {
     ...localizedPaths,
-    "x-default": slug
+    "x-default": slug && planSlug
+      ? getPricingPlanPath("en", category, slug, planSlug)
+      : slug
       ? getPricingDetailPath("en", category, slug)
       : getPricingListPath("en", category),
   };

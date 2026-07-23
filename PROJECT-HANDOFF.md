@@ -4,12 +4,14 @@ Updated: 2026-07-24
 
 ## Current Stage
 
-The v2.2.0 multilingual and display-currency release is deployed in production.
-The v2.2.1 patch fixes the admin Google Analytics settings flow so invalid
-input produces a recoverable form message and pasted Google setup code can be
-reduced safely to its GA4 or GTM identifier. The subscription currency
-converter remains local work in progress and is intentionally excluded from
-this production patch.
+The v2.2.1 analytics-settings patch is deployed in production. The local
+v2.3.0 release candidate adds stable plan URLs, permanent legacy redirects,
+plan-specific canonical and language alternates, a data-driven sitemap, and
+localized search titles and descriptions based on reviewed regional prices.
+The complete release gate passes 210 tests, TypeScript, ESLint, source encoding
+and the 115-route production build. GitHub publication and production
+deployment are the next release steps. The subscription currency converter
+remains local work in progress and is intentionally excluded from v2.3.0.
 
 ## V2.2 Local Roadmap
 

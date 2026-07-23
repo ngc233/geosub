@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.3.0 - 2026-07-24
+
+- Added stable, indexable plan URLs for every published AI and streaming
+  subscription across all twelve public locales.
+- Added permanent redirects from legacy product and `?plan=` URLs so existing
+  links consolidate into one canonical plan page without losing traffic.
+- Expanded canonical, `hreflang`, Open Graph, Twitter and structured-data URLs
+  to identify the selected subscription plan rather than only its parent
+  product.
+- Rebuilt the dynamic sitemap around published plans and their real data
+  modification dates, removing query-string and duplicate product URLs.
+- Added localized search-intent titles and descriptions that use each plan's
+  live region count, lowest reviewed price and lowest-price region.
+- Standardized public paths without trailing slashes and made the site root a
+  permanent redirect to the canonical Chinese homepage.
+- Added regression coverage for stable plan routing, locale alternates,
+  dynamic SEO copy and sitemap behavior.
+
 ## 2.2.1 - 2026-07-24
 
 - Fixed the admin Google Analytics settings flow so malformed input returns a
