@@ -37,6 +37,22 @@ if (process.env.NODE_ENV === "production") {
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   trailingSlash: false,
+  async redirects() {
+    return [
+      {
+        source: "/",
+        has: [{ type: "host", value: "www.geosub.org" }],
+        destination: "https://geosub.org/zh",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.geosub.org" }],
+        destination: "https://geosub.org/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.3.1 - 2026-07-24
+
+- Added a permanent host redirect from `www.geosub.org` to the canonical
+  `https://geosub.org` origin while preserving the requested path.
+- Submitted the production sitemap to Google Search Console; Google accepted
+  487 public URLs and confirmed the representative ChatGPT Plus plan page is
+  eligible for indexing with valid Dataset structured data.
+- Added regression coverage for the canonical host redirect so legacy `www`
+  URLs cannot return duplicate or soft-404 pages again.
+
 ## 2.3.0 - 2026-07-24
 
 - Added stable, indexable plan URLs for every published AI and streaming

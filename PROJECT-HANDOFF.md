@@ -4,14 +4,14 @@ Updated: 2026-07-24
 
 ## Current Stage
 
-The v2.2.1 analytics-settings patch is deployed in production. The local
-v2.3.0 release candidate adds stable plan URLs, permanent legacy redirects,
-plan-specific canonical and language alternates, a data-driven sitemap, and
-localized search titles and descriptions based on reviewed regional prices.
-The complete release gate passes 210 tests, TypeScript, ESLint, source encoding
-and the 115-route production build. GitHub publication and production
-deployment are the next release steps. The subscription currency converter
-remains local work in progress and is intentionally excluded from v2.3.0.
+The v2.3.0 stable plan URL and SEO release is deployed in production at commit
+`7a1afdd`. Google Search Console accepted the production sitemap with 487
+public URLs, and its live test confirmed that the representative ChatGPT Plus
+plan URL is indexable with valid Dataset structured data. The local v2.3.1
+patch permanently redirects the legacy `www.geosub.org` host to the canonical
+origin, closing the only actionable soft-404 item in the current index report.
+The subscription currency converter remains local work in progress and is
+intentionally excluded from v2.3.1.
 
 ## V2.2 Local Roadmap
 

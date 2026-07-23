@@ -40,6 +40,10 @@ test("site metadata defaults to geosub.org and has language alternates", () => {
   assert.match(home, /permanentRedirect\("\/zh"\)/);
   assert.doesNotMatch(home, /\bredirect\(/);
   assert.match(nextConfig, /trailingSlash:\s*false/);
+  assert.match(nextConfig, /type:\s*"host",\s*value:\s*"www\.geosub\.org"/);
+  assert.match(nextConfig, /destination:\s*"https:\/\/geosub\.org\/zh"/);
+  assert.match(nextConfig, /destination:\s*"https:\/\/geosub\.org\/:path\*"/);
+  assert.match(nextConfig, /permanent:\s*true/);
 });
 
 test("page titles rely on the root GeoSub title template exactly once", () => {
