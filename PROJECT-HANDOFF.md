@@ -4,16 +4,40 @@ Updated: 2026-07-24
 
 ## Current Stage
 
-The v2.3.1 SEO patch is running in production at commit `289cde0`, including
-the permanent redirect from the legacy `www.geosub.org` host to the canonical
-origin. Google Search Console accepted the production sitemap with 487 public
-URLs, and its live test confirmed that the representative ChatGPT Plus plan
-URL is indexable with valid Dataset structured data. The deployment itself
-exposed a false health-check failure: a verified-backup pipeline returned 141
-under Bash `pipefail` after `head` closed early. The local v2.3.2 patch replaces
-that pipeline in both deployment scripts and adds regression coverage. The
-subscription currency converter remains local work in progress and is
-intentionally excluded from v2.3.2.
+The v2.3.2 deployment automation patch is running in production at commit
+`8564b32`. The local v2.4.0 release candidate adds the public subscription
+currency converter, curated currency-pair pages and the public copy audit
+described below. The canonical host is enforced at the Cloudflare edge, Google
+Search Console accepted the production sitemap with 487 public URLs, and
+validation of the legacy `www` soft-404 issue is in progress.
+
+The subscription currency converter is now a complete local release candidate:
+
+1. All 12 active locales have a real route, native copy, locale-aware number
+   formatting and a market-appropriate default target currency.
+2. The shared tool reads the same fresh exchange-rate snapshots as public
+   pricing pages. Missing or older-than-18-hour rates cannot produce a result.
+3. Currency menus close on outside interaction and Escape, use compact public
+   UI tokens, and remain within desktop, mobile and RTL viewports.
+4. Every locale publishes indexable metadata, WebApplication and FAQPage
+   structured data, sitemap coverage and a stable footer entry.
+5. Local acceptance passed TypeScript, ESLint, all 221 tests, the 115-page
+   production build and browser checks across Chinese, Traditional Chinese,
+   English, Japanese and Arabic.
+6. The converter now covers 25 user-facing currencies while continuing to use
+   the existing 36-currency production synchronization contract. All display
+   rates are loaded in one database query instead of one query per currency.
+7. Every locale has a deliberately small set of four to six search-relevant
+   currency pairs. Pair pages include a localized title, current cross rate,
+   common amounts, calculation method, payment caveat, FAQ schema and internal
+   links; unlisted combinations return a noindex 404.
+8. Curated pair routes are present in the sitemap and linked from the converter
+   hub. Local browser acceptance covered Chinese USD/CNY, English USD/GBP,
+   Arabic USD/SAR, an unsupported pair and a 390 by 844 mobile viewport.
+9. The expanded local candidate passes TypeScript, ESLint, all 221 tests and
+   the 115-page production build.
+
+The converter changes are packaged as v2.4.0 and are ready for production.
 
 ## V2.2 Local Roadmap
 
@@ -413,6 +437,26 @@ database. The local migration registry contains their final checksums.
   hygiene, TypeScript, ESLint and all 173 tests. A fresh production build was
   intentionally not repeated for this shell-only increment so the local preview
   could remain available.
+
+## Public Copy Audit
+
+- Public home, footer, about, data-source, privacy and guide copy now describes
+  the actual published AI and streaming scope instead of launch-stage plans,
+  administrator notes or future source integrations.
+- Chinese and English guide placeholders were replaced with useful price,
+  payment, gift-card, tool-review and methodology content. The old Chinese
+  methodology route permanently redirects to the current guide.
+- Unreleased AI rankings, software, gaming, gift-card and VPN routes now return
+  404 in local development as well as production, so unfinished copy cannot
+  appear through a direct URL.
+- Static regressions now scan the active public copy surfaces for launch-stage
+  and administrator-facing language, require unreleased routes to call
+  `notFound()`, and protect the legacy methodology redirect.
+- Browser verification covered Chinese and English home pages, data sources,
+  methodology, price guide, privacy, the unreleased 404 and the permanent
+  redirect. A 390-pixel mobile pass found no horizontal overflow.
+- Source encoding, TypeScript, ESLint, all 221 tests and the 115-page production
+  build pass after the audit.
 
 ## Release Boundary
 

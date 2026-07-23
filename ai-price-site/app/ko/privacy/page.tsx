@@ -19,9 +19,10 @@ export default function KoreanPrivacyPage() {
         신원 확인 정보처럼 민감한 개인정보를 요구하지 않습니다.
       </p>
       <p className="mt-6 text-sm leading-8 text-zinc-500">
-        사이트 관리자가 설정한 경우 Google Analytics 또는 Google Tag Manager를
-        이용해 페이지 조회와 일반적인 이용 행동을 측정할 수 있습니다. 가격
-        비교에 필요하지 않은 민감한 정보는 수집하지 않습니다.
+        Google Analytics 또는 Google Tag Manager를 이용해 페이지 조회,
+        일반적인 이용 행동과 사이트 성능을 측정할 수 있습니다. 이 정보는
+        콘텐츠와 안정성을 개선하는 데 사용하며, 결제 정보나 가격 비교에
+        필요하지 않은 민감한 신원 정보를 요구하지 않습니다.
       </p>
     </KoreanInfoPage>
   );

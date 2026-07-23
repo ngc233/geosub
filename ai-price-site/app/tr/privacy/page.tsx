@@ -20,10 +20,10 @@ export default function TurkishPrivacyPage() {
         belgesi veya benzeri hassas kişisel bilgiler vermeniz gerekmez.
       </p>
       <p className="mt-6 text-sm leading-8 text-zinc-500">
-        Yönetici tarafından etkinleştirildiğinde ziyaretleri ve genel
-        etkileşimleri ölçmek için Google Analytics veya Google Tag Manager
-        kullanılabilir. Fiyat karşılaştırması için gerekli olmayan hassas
-        bilgileri toplamayız.
+        Ziyaretleri, genel etkileşimleri ve site performansını ölçmek için
+        Google Analytics veya Google Tag Manager kullanılabilir. Bu ölçümler
+        içeriği ve güvenilirliği geliştirmeye yardımcı olur; ödeme bilgileri
+        veya hassas kimlik bilgileri istemek için kullanılmaz.
       </p>
     </TurkishInfoPage>
   );

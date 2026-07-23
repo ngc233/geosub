@@ -81,7 +81,7 @@ const pageCopy: Record<InfoKey, PageText> = {
     heading: "有限且必要的資料收集",
     paragraphs: [
       "GeoSub 可能記錄維持網站運作、安全與改善體驗所需的技術及統計資料。",
-      "我們避免收集不必要的個人資料。網站啟用的分析服務會由管理後台統一設定與管理。",
+      "網站可能使用 Google Analytics 或 Google Tag Manager 衡量頁面瀏覽、一般互動與效能。這些資料用於改善內容與穩定性，不會要求付款資料或敏感身分資訊。",
     ],
   },
   terms: {

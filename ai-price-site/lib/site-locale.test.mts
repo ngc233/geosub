@@ -102,6 +102,14 @@ test("display currencies follow locale markets with a shared Eurozone rule", () 
     "VND",
     "TRY",
     "SAR",
+    "GBP",
+    "CHF",
+    "INR",
+    "BRL",
+    "MXN",
+    "AED",
+    "NZD",
+    "ZAR",
   ]);
   assert.equal(getSiteLocaleDefinition("zh").defaultCurrency, "CNY");
   assert.equal(getSiteLocaleDefinition("zh-tw").defaultCurrency, "TWD");

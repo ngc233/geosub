@@ -19,7 +19,7 @@ export default function JapanesePrivacyPage() {
         GeoSubは公開価格情報を扱うサイトであり、閲覧のために氏名や本人確認情報などの機微な個人情報を求めません。
       </p>
       <p className="mt-6 text-sm leading-8 text-zinc-500">
-        サイト管理者が設定した場合、Google AnalyticsまたはGoogle Tag Managerを利用して、ページ閲覧や一般的な操作情報を測定することがあります。価格比較に不要な機微情報の収集は行いません。
+        Google AnalyticsまたはGoogle Tag Managerを利用して、ページ閲覧、一般的な操作、サイトのパフォーマンスを測定することがあります。これらの情報はコンテンツと信頼性の改善に使用し、決済情報や価格比較に不要な機微情報を求めるものではありません。
       </p>
     </JapaneseInfoPage>
   );

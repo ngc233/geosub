@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "世界のデジタルサブスクリプション価格",
   description:
-    "AIやストリーミングのサブスクリプション料金を国・地域別に比較できます。現地価格、米ドル換算、税情報、購買力の目安を掲載しています。",
+    "AIやストリーミングのサブスクリプション料金を国・地域別に比較できます。現地価格、選択した表示通貨への換算、税情報、購買力の目安を掲載しています。",
 };
 
 const sections = [
@@ -50,7 +50,7 @@ export default function JapaneseHomePage() {
             世界のサブスクリプション料金を、わかりやすく
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
-            GeoSubは、AIやストリーミングの料金を国・地域別に比較できる価格データサイトです。現地価格、米ドル換算、税情報、購買力の目安をまとめて確認できます。
+            GeoSubは、AIやストリーミングの料金を国・地域別に比較できる価格データサイトです。現地価格、選択した表示通貨への換算、税情報、購買力の目安をまとめて確認できます。
           </p>
         </div>
 

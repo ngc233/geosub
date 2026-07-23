@@ -36,6 +36,8 @@ const trustPages = [
 
 const publicCopyFiles = [
   ...trustPages,
+  "zh/page.tsx",
+  "en/page.tsx",
   "zh/data-sources/page.tsx",
   "en/data-sources/page.tsx",
   "ja/data-sources/page.tsx",
@@ -77,7 +79,27 @@ const publicCopyFiles = [
   "zh/guides/payment-account/page.tsx",
   "zh/guides/price-guide/page.tsx",
   "zh/guides/tool-review/page.tsx",
+  "en/guides/gift-card-guide/page.tsx",
+  "en/guides/methodology/page.tsx",
+  "en/guides/payment-account/page.tsx",
+  "en/guides/price-guide/page.tsx",
+  "en/guides/tool-review/page.tsx",
+  "../components/Footer.tsx",
+  "../components/EuropeanLocalePages.tsx",
+  "../components/TraditionalChinesePages.tsx",
   "../lib/public-pricing-copy.ts",
+];
+
+const unreleasedPublicPages = [
+  "zh/ai-rankings/page.tsx",
+  "en/ai-rankings/page.tsx",
+  "zh/software-subscriptions/page.tsx",
+  "en/software-subscriptions/page.tsx",
+  "zh/gaming-steam/page.tsx",
+  "en/gaming-steam/page.tsx",
+  "zh/gift-cards/page.tsx",
+  "en/gift-cards/page.tsx",
+  "zh/vpn/page.tsx",
 ];
 
 test("trust pages do not expose launch-time placeholder copy", () => {
@@ -93,18 +115,33 @@ test("trust pages do not expose launch-time placeholder copy", () => {
 });
 
 test("trust pages explain current GeoSub data and policy boundaries", () => {
-  assert.match(readAppFile("zh/about/page.tsx"), /经过核验的 App Store 地区价格/);
-  assert.match(readAppFile("en/about/page.tsx"), /reviewed App Store regional prices/);
+  assert.match(readAppFile("zh/about/page.tsx"), /App Store 订阅价格/);
+  assert.match(readAppFile("en/about/page.tsx"), /App Store subscription prices/);
   assert.match(readAppFile("zh/privacy/page.tsx"), /Google Analytics 或 Tag Manager/);
-  assert.match(readAppFile("en/privacy/page.tsx"), /Google Analytics or Tag Manager/);
+  assert.match(readAppFile("en/privacy/page.tsx"), /Google Analytics or Google Tag Manager/);
   assert.match(readAppFile("zh/terms/page.tsx"), /最终请以官方结算页和平台规则为准/);
   assert.match(readAppFile("en/terms/page.tsx"), /official platform rules remain authoritative/);
 });
 
 test("public copy does not expose implementation-stage language", () => {
-  const forbidden = /\bV1\b|当前视图|后台采集|正式价格库|采集流程|承接导航入口|避免已发布菜单指向 404|internal diagnostics|future source planning|official price database|collection flow/i;
+  const forbidden = /\bV1\b|当前视图|后台采集|正式价格库|采集流程|承接导航入口|避免已发布菜单指向 404|internal diagnostics|future source planning|official price database|collection flow|content in progress|will be added later|prepared for the English navigation|current beta|site administrator|configured by the administrator|from the administration|管理后台统一|当前优先整理|数据覆盖完善后|逐步开放更多产品|Web 官网.*Google Play/i;
 
   for (const fileName of publicCopyFiles) {
     assert.doesNotMatch(readAppFile(fileName), forbidden, fileName);
   }
+});
+
+test("unreleased public sections stay hidden in every environment", () => {
+  for (const fileName of unreleasedPublicPages) {
+    const source = readAppFile(fileName);
+
+    assert.match(source, /guardUnreleasedPublicPage\(\)/, fileName);
+    assert.match(source, /notFound\(\)/, fileName);
+  }
+});
+
+test("legacy methodology route redirects to the current guide", () => {
+  const source = readAppFile("zh/methodology/page.tsx");
+
+  assert.match(source, /permanentRedirect\("\/zh\/guides\/methodology"\)/);
 });

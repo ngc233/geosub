@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About GeoSub",
-  description: "GeoSub is a global digital subscription pricing platform focused on AI subscriptions, software subscriptions, gaming services, gift cards, and digital tools.",
+  description: "GeoSub compares public AI and streaming subscription prices across countries, with exchange rates, tax notes, update dates and affordability context.",
 };
 
 export default function EnglishTrustPage() {
@@ -18,20 +18,20 @@ export default function EnglishTrustPage() {
         </h1>
 
         <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          GeoSub is a global digital subscription pricing platform focused on AI subscriptions, software subscriptions, gaming services, gift cards, and digital tools.
+          GeoSub compares public AI and streaming subscription prices across countries, with exchange rates, tax notes, update dates and affordability context.
         </p>
 
         <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
           <h2 className="text-xl font-black text-zinc-950">
-            Overview
+            The problem we solve
           </h2>
 
           <p className="mt-4 text-sm leading-8 text-zinc-600">
-            Our goal is to make regional subscription prices easier to compare, understand, and track across countries, currencies, and platforms.
+            We organize App Store subscription prices across countries and currencies so regional differences, plan changes and subscription choices are easier to compare and understand.
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            GeoSub presents reviewed App Store regional prices alongside exchange-rate dates, tax notes, price confidence and subscription risk. Data from different sources is labelled and compared separately rather than mixed into one ranking.
+            Each price keeps its local currency, collection date and exchange-rate basis. Pages use regional prices that pass consistency checks and remind readers to confirm account region, payment method, tax and the official checkout amount.
           </p>
         </div>
       </section>

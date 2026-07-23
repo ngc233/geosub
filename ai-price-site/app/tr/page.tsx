@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Dünya genelinde dijital abonelik fiyatları",
   description:
-    "Yapay zekâ ve dijital yayın aboneliklerini ülke ve bölgelere göre; yerel fiyat, USD karşılığı, vergi bilgisi ve satın alma gücü bağlamıyla karşılaştırın.",
+    "Yapay zekâ ve dijital yayın aboneliklerini ülke ve bölgelere göre; yerel fiyat, seçilen görüntüleme para birimi, vergi bilgisi ve satın alma gücü bağlamıyla karşılaştırın.",
 };
 
 const sections = [
@@ -51,7 +51,7 @@ export default function TurkishHomePage() {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
             GeoSub, yapay zekâ ve dijital yayın aboneliklerini ülke ve bölgelere
-            göre karşılaştırır. Yerel fiyatı, dolar karşılığını, vergi
+            göre karşılaştırır. Yerel fiyatı, seçilen para birimindeki karşılığını, vergi
             bilgisini ve satın alma gücü bağlamını birlikte inceleyin.
           </p>
         </div>

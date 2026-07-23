@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
+import PublicGuidePage from "../../../../components/PublicGuidePage";
 
 export const metadata: Metadata = {
   title: "Tool Reviews",
-  description: "Read practical reviews and comparisons of AI tools, software tools, productivity apps, and digital services.",
+  description:
+    "Evaluate digital tools by real use case, capability limits, total cost, regional availability and dated evidence.",
 };
 
-export default function EnglishGuidePage() {
+export default function EnglishToolReviewPage() {
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
-      <section className="mx-auto max-w-5xl">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
-          Tool Review
-        </p>
-
-        <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-          Tool Reviews
-        </h1>
-
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          Read practical reviews and comparisons of AI tools, software tools, productivity apps, and digital services.
-        </p>
-
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">
-            Content in progress
-          </h2>
-
-          <p className="mt-4 text-sm leading-8 text-zinc-600">
-            This page is prepared for the English navigation system. Detailed guide content, examples, and comparison data will be added later.
-          </p>
-        </div>
-      </section>
-    </main>
+    <PublicGuidePage
+      eyebrow="Tool Review"
+      title="How to decide whether a digital tool is worth subscribing to"
+      description="Do not rely on a feature list or one benchmark. Define the use case, then compare capability, limits and ongoing cost."
+      sections={[
+        {
+          title: "Start with your actual tasks",
+          body: "List frequent tasks, required capabilities and unacceptable limits. Chat, coding, image, search and collaboration tools need different evaluation criteria.",
+        },
+        {
+          title: "Compare total cost, not the lowest headline",
+          body: "Consider billing cycle, usage limits, included features, tax, currency conversion and regional availability. A cheaper plan may omit the capability you need.",
+        },
+        {
+          title: "Check the evidence date",
+          body: "Models, plan benefits and prices change. Look for the tested version, date, method and reproducible evidence before treating a review conclusion as current.",
+        },
+      ]}
+      note="The most reliable decision comes from testing your own tasks. Scores and price comparisons should narrow the options, not replace direct experience."
+    />
   );
 }

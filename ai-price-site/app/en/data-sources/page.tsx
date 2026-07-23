@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Data Sources and Pricing Methodology",
   description:
-    "GeoSub currently uses App Store regional subscription prices as the official ranking source, with exchange rates, tax notes, anomaly checks and review records used for quality control.",
+    "Learn how GeoSub compares reviewed App Store regional subscription prices and presents exchange-rate dates, tax notes and data confidence.",
 };
 
 const sourceLayers = [
   {
-    title: "Official price source",
-    badge: "Live now",
+    title: "Price data",
+    badge: "App Store",
     items: [
       "Public App Store subscription prices across supported regions",
       "Structured product, plan, country and currency records",
@@ -17,29 +17,29 @@ const sourceLayers = [
     ],
   },
   {
-    title: "Calculation layer",
-    badge: "Updated",
+    title: "Conversion and comparison",
+    badge: "Regularly updated",
     items: [
-      "USD conversion and optional CNY estimates",
-      "Regional tax notes, confidence levels and review status",
+      "Regional prices converted into the selected display currency",
+      "Regional tax notes and data-confidence status",
       "US baseline comparison, price spread and subscription risk notes",
     ],
   },
   {
-    title: "Reference sources",
-    badge: "Labelled separately",
+    title: "Reading the figures",
+    badge: "Checkout prevails",
     items: [
-      "Official web pricing, Google Play and other public prices",
-      "Used to cross-check plan names, billing cycles and price differences",
-      "Prices from different sources are not mixed into one ranking",
+      "Local list prices and converted prices are shown separately",
+      "Collection, exchange-rate and plan-review dates are labelled separately",
+      "Account region, payment method and tax may affect the final charge",
     ],
   },
 ];
 
 const qualityRules = [
   "Each plan is checked by original currency, billing cycle, region and USD equivalent.",
-  "Unusually low prices, suspected currency parsing issues, decimal errors or billing-cycle mismatches are sent to review.",
-  "Only published prices are shown on public pages; pending, ignored or rejected observations are excluded from rankings.",
+  "Prices far outside the usual range, with suspected currency errors or mismatched billing cycles, are withheld and checked again.",
+  "Regional rankings use only prices that pass checks and can be compared with the same plan.",
   "Tax notes are informational and are not added again to ranking prices. Final checkout prices remain the source of truth.",
 ];
 
@@ -56,7 +56,7 @@ export default function EnglishDataSourcesPage() {
         </h1>
 
         <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          GeoSub currently uses App Store regional subscription prices as the official ranking source. This keeps country-to-country comparisons stable and easier to explain.
+          GeoSub compares public App Store regional subscription prices for the same plan and billing cycle, while preserving the local currency, collection date and exchange-rate basis.
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -85,16 +85,16 @@ export default function EnglishDataSourcesPage() {
         </div>
 
         <section className="mt-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">Current rules</h2>
+          <h2 className="text-xl font-black text-zinc-950">How to read the data</h2>
 
           <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
             <div className="space-y-4 text-sm leading-8 text-zinc-600">
               <p>
-                Regional rankings compare prices from the same clearly labelled source. Official web prices, Google Play and other public prices are not mixed with App Store rankings; when shown, they are presented as separate sources.
+                Regional rankings compare the same App Store plan and billing cycle. Local list prices and converted prices are both retained so exchange-rate movement is not mistaken for a platform price change.
               </p>
 
               <p>
-                Exchange rates normalize regional prices into USD and optional CNY views for comparison. Rates are normally refreshed every 12 hours. If a fresh CNY rate is unavailable, the page pauses CNY estimates and shows the latest rate date.
+                Exchange rates convert local prices into the display currency selected by the reader. Reference rates normally synchronize every 12 hours. The applicable rate date is shown, and conversion pauses when a required rate is missing or stale.
               </p>
 
               <p>

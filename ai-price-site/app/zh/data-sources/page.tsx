@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 const sourceLayers = [
   {
-    title: "正式价格源",
-    badge: "当前上线",
+    title: "价格数据",
+    badge: "App Store",
     items: [
       "App Store 各地区公开订阅价格",
       "产品、套餐、国家和币种的结构化价格记录",
@@ -17,29 +17,29 @@ const sourceLayers = [
     ],
   },
   {
-    title: "辅助计算层",
-    badge: "持续更新",
+    title: "换算与比较",
+    badge: "定期更新",
     items: [
-      "USD 汇率折算和人民币估算",
-      "国家与地区税务说明、可信度和复核状态",
+      "按所选显示币种换算地区价格",
+      "国家与地区税务说明和数据可信状态",
       "相对美国基准价、价格差距和风险提示",
     ],
   },
   {
-    title: "辅助参考",
-    badge: "单独标注",
+    title: "阅读提示",
+    badge: "结算页为准",
     items: [
-      "Web 官网价格、Google Play 和其他公开价格",
-      "用于核对 App Store 套餐名称、周期和价格差异",
-      "不同来源不会混入同一价格排名",
+      "本地标价与换算价格分别展示",
+      "价格采集、汇率和套餐复核日期分别标注",
+      "账号地区、付款方式和税费可能影响最终金额",
     ],
   },
 ];
 
 const qualityRules = [
   "同一套餐会按原始币种价格、周期、地区和美元折算价做一致性检查。",
-  "明显低到不合理、币种疑似解析错误、小数点异常或周期不一致的价格会进入审核队列。",
-  "前台只展示已发布价格；待审核、忽略或拒绝的观测不会混入正式榜单。",
+  "明显偏离同套餐常见范围、币种疑似错误或周期不一致的价格会暂缓展示并重新检查。",
+  "地区排行只使用已通过检查、能够与同一套餐直接比较的价格。",
   "税费说明不额外加到排序价格中，最终仍以 App Store 或官方结算页为准。",
 ];
 
@@ -56,7 +56,7 @@ export default function DataSourcesPage() {
         </h1>
 
         <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          GeoSub 当前正式价格榜优先使用 App Store 各地区公开订阅价格。这样可以让国家和地区之间的比较更稳定，也更容易解释价格差异。
+          GeoSub 按相同套餐和计费周期比较 App Store 各地区公开订阅价格，并保留本地币种、采集日期和汇率基准。
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -85,16 +85,16 @@ export default function DataSourcesPage() {
         </div>
 
         <section className="mt-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">当前实际规则</h2>
+          <h2 className="text-xl font-black text-zinc-950">如何阅读这些数据</h2>
 
           <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
             <div className="space-y-4 text-sm leading-8 text-zinc-600">
               <p>
-                地区排名只比较页面明确标注的同一价格来源。Web 官网价、Google Play 和其他公开价格不会与 App Store 价格混合排序；如有展示，会作为独立来源清楚标注。
+                地区排行只比较同一 App Store 套餐和计费周期。页面同时保留本地标价与换算价格，避免把汇率变化误认为平台调价。
               </p>
 
               <p>
-                汇率用于把各地区本地价格折算为美元和人民币视角，方便横向比较。汇率通常每 12 小时更新一次；如果人民币汇率缺失或过期，页面会暂停人民币估算并显示最近的汇率日期。
+                汇率用于把各地区本地价格换算为用户所选的显示币种，方便横向比较。参考汇率通常每 12 小时同步一次；页面会标出使用的汇率日期，过期或缺失时暂停对应换算。
               </p>
 
               <p>

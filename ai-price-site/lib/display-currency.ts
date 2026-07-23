@@ -16,6 +16,14 @@ export const supportedDisplayCurrencies = [
   "VND",
   "TRY",
   "SAR",
+  "GBP",
+  "CHF",
+  "INR",
+  "BRL",
+  "MXN",
+  "AED",
+  "NZD",
+  "ZAR",
 ] as const;
 
 export type DisplayCurrency = (typeof supportedDisplayCurrencies)[number];
@@ -28,6 +36,7 @@ const displayCurrencySymbolOverrides: Partial<
   SGD: "S$",
   AUD: "A$",
   CAD: "C$",
+  NZD: "NZ$",
   MYR: "RM",
   IDR: "Rp",
   THB: "฿",

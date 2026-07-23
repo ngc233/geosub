@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Precios mundiales de suscripciones digitales",
   description:
-    "Compara suscripciones de IA y streaming entre países y regiones, con precios locales, equivalencias en USD, información fiscal y poder adquisitivo.",
+    "Compara suscripciones de IA y streaming entre países y regiones, con precios locales, conversión a la moneda elegida, información fiscal y poder adquisitivo.",
 };
 
 const sections = [
@@ -51,7 +51,7 @@ export default function SpanishHomePage() {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
             GeoSub compara suscripciones de IA y streaming entre países y
-            regiones. Consulta el precio local, su equivalencia en dólares, la
+            regiones. Consulta el precio local, su conversión a la moneda elegida, la
             información fiscal y el contexto de poder adquisitivo.
           </p>
         </div>

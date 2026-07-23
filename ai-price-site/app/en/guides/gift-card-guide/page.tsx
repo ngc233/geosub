@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
+import PublicGuidePage from "../../../../components/PublicGuidePage";
 
 export const metadata: Metadata = {
   title: "Gift Card Guide",
-  description: "Learn how digital gift cards work across regions, including redemption limits, supported currencies, and platform restrictions.",
+  description:
+    "Check the issuing region, account compatibility, currency, value, redemption conditions and refund policy before buying a digital gift card.",
 };
 
-export default function EnglishGuidePage() {
+export default function EnglishGiftCardGuidePage() {
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
-      <section className="mx-auto max-w-5xl">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
-          Gift Card Guide
-        </p>
-
-        <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-          Gift Card Guide
-        </h1>
-
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          Learn how digital gift cards work across regions, including redemption limits, supported currencies, and platform restrictions.
-        </p>
-
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">
-            Content in progress
-          </h2>
-
-          <p className="mt-4 text-sm leading-8 text-zinc-600">
-            This page is prepared for the English navigation system. Detailed guide content, examples, and comparison data will be added later.
-          </p>
-        </div>
-      </section>
-    </main>
+    <PublicGuidePage
+      eyebrow="Gift Card Guide"
+      title="Checks before buying a digital gift card"
+      description="Gift cards are usually tied to a region and account. Confirm compatibility before comparing face value and purchase cost."
+      sections={[
+        {
+          title: "Match the issuing region to the account",
+          body: "Apple, Google, Steam and similar gift cards from one country usually cannot be redeemed in another. Confirm that the card region matches the account region.",
+        },
+        {
+          title: "Check currency, value and expiry",
+          body: "The same number can represent different currencies. Also review expiry, redemption limits, balance restrictions and whether the credit can fund subscriptions.",
+        },
+        {
+          title: "Use a traceable seller",
+          body: "Check the merchant, delivery method, refund policy and support channel. Be cautious with prices far below face value or codes of unclear origin.",
+        },
+      ]}
+      note="Gift-card eligibility and refunds are controlled by the issuing platform and seller. Their official terms remain authoritative."
+    />
   );
 }

@@ -12,7 +12,7 @@ export default function TurkishDataSourcesPage() {
     <TurkishInfoPage
       eyebrow="Veri kaynakları"
       title="Veri kaynakları ve karşılaştırma yöntemi"
-      description="GeoSub'ın herkese açık sıralamaları, incelenmiş App Store bölgesel abonelik fiyatlarına dayanır."
+      description="Aynı App Store paketi ve faturalandırma dönemine ait bölgesel fiyatları; yerel para birimi, toplama tarihi ve kur tarihiyle karşılaştırırız."
     >
       <h2 className="text-xl font-black text-zinc-950">
         Fiyatları nasıl işliyoruz?
@@ -24,9 +24,10 @@ export default function TurkishDataSourcesPage() {
           basamak veya dönem hataları yayımlanmaz; otomatik incelemeye alınır.
         </p>
         <p>
-          USD ve CNY karşılıkları, sayfada belirtilen tarihe ait döviz kuru
-          kullanılarak hesaplanır. Vergi bilgileri açıklama amaçlıdır; GeoSub,
-          App Store&apos;da gösterilen fiyata ikinci kez vergi eklemez.
+          Seçilen görüntüleme para birimine dönüşüm, sayfada belirtilen tarihe
+          ait kurla hesaplanır. Gerekli kur eksik veya güncelliğini yitirmişse
+          dönüşüm durdurulur. Vergi bilgileri açıklama amaçlıdır; GeoSub, App
+          Store&apos;da gösterilen fiyata ikinci kez vergi eklemez.
         </p>
         <p className="text-zinc-500">
           Fiyatlar ve kullanılabilirlik değişebilir. Son tutar, vergiler ve

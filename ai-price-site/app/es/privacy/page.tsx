@@ -21,10 +21,10 @@ export default function SpanishPrivacyPage() {
         sitio.
       </p>
       <p className="mt-6 text-sm leading-8 text-zinc-500">
-        Si el administrador lo configura, podemos utilizar Google Analytics o
-        Google Tag Manager para medir visitas y acciones generales. No
-        recopilamos información sensible que no sea necesaria para comparar
-        precios.
+        Podemos utilizar Google Analytics o Google Tag Manager para medir
+        visitas, interacciones generales y el rendimiento del sitio. Estas
+        mediciones ayudan a mejorar el contenido y la fiabilidad; no se usan
+        para solicitar datos de pago ni información sensible de identidad.
       </p>
     </SpanishInfoPage>
   );

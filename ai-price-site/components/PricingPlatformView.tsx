@@ -121,29 +121,6 @@ function getCurrencyLabel(
   return `${getCurrencyName(currency, locale)} ${currency}`;
 }
 
-function getCurrencySymbol(
-  currency: DisplayCurrency,
-  locale: SiteLocale = "zh",
-) {
-  const symbolOverride = getDisplayCurrencySymbolOverride(currency);
-  if (symbolOverride) return symbolOverride;
-
-  try {
-    return (
-      new Intl.NumberFormat(getSiteLocaleDefinition(locale).intlLocale, {
-        style: "currency",
-        currency,
-        currencyDisplay: "narrowSymbol",
-        maximumFractionDigits: 0,
-      })
-        .formatToParts(0)
-        .find((part) => part.type === "currency")?.value || currency
-    );
-  } catch {
-    return currency;
-  }
-}
-
 function formatSyncDate(value: string | null | undefined, locale: SiteLocale) {
   if (!value) return null;
 
@@ -312,9 +289,6 @@ function CurrencySelect({
         aria-expanded={open}
       >
         <span className="flex min-w-0 items-center gap-2">
-          <span className="w-5 shrink-0 text-center text-zinc-400">
-            {getCurrencySymbol(activeItem, locale)}
-          </span>
           <span className="truncate">
             {getCurrencyName(activeItem, locale)}
           </span>
@@ -353,7 +327,7 @@ function CurrencySelect({
                     }
                   }}
                   className={[
-                    "grid h-10 w-full grid-cols-[34px_minmax(0,1fr)_36px_8px] items-center gap-2 rounded-lg px-2.5 text-left text-[13px] font-semibold transition-colors duration-200 ease-out",
+                    "grid h-10 w-full grid-cols-[42px_minmax(0,1fr)_8px] items-center gap-2 rounded-lg px-2.5 text-left text-[13px] font-semibold transition-colors duration-200 ease-out",
                     active
                       ? "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
@@ -362,14 +336,11 @@ function CurrencySelect({
                   role="menuitemradio"
                   aria-checked={active}
                 >
-                  <span className="text-center text-zinc-400">
-                    {getCurrencySymbol(item, locale)}
+                  <span className="text-[11px] font-medium tabular-nums text-zinc-400">
+                    {item}
                   </span>
                   <span className="truncate whitespace-nowrap">
                     {getCurrencyName(item, locale)}
-                  </span>
-                  <span className="text-right text-[11px] font-medium tabular-nums text-zinc-400">
-                    {item}
                   </span>
                   <span
                     className={[

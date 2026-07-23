@@ -31,7 +31,7 @@ export default function EnglishTrustPage() {
           </p>
 
           <p className="mt-6 text-sm leading-8 text-zinc-500">
-            GeoSub can load Google Analytics or Tag Manager when configured by the site administrator. If additional analytics, advertising or partner tracking is added later, this page should explain the purpose and avoid collecting sensitive identity data unrelated to price comparison.
+            GeoSub may use Google Analytics or Google Tag Manager to measure page views, general interactions and site performance. These measurements help improve content and reliability; they are not used to request payment details or sensitive identity information.
           </p>
         </div>
       </section>

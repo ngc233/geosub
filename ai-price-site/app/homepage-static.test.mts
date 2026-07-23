@@ -117,14 +117,16 @@ test("English home page is not the launch placeholder", () => {
 
   assert.doesNotMatch(enHome, /Page framework ready/);
   assert.doesNotMatch(enHome, /basic English page framework/i);
-  assert.match(enHome, /currently focuses on AI and streaming/);
+  assert.match(enHome, /Compare AI and streaming App Store prices by region/);
+  assert.match(enHome, /common display currencies/);
   assert.match(enHome, /Data Sources/);
 });
 
 test("Chinese home page describes the current official scope", () => {
   const zhHome = readAppFile("zh", "page.tsx");
 
-  assert.match(zhHome, /当前优先整理 AI 订阅和流媒体订阅/);
+  assert.match(zhHome, /比较 AI 与流媒体订阅的 App Store 地区价格/);
+  assert.match(zhHome, /切换常用显示币种/);
   assert.match(zhHome, /数据来源/);
   assert.match(zhHome, /订阅指南/);
 });

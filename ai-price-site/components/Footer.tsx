@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getDefaultNavigationItems } from "../lib/navigation-defaults";
@@ -16,21 +17,29 @@ import { withTraditionalChinese } from "../lib/traditional-chinese";
 
 const footerCopy: Record<
   PreparedSiteLocale,
-  { description: string; rights: string; note: string; tagline: string }
+  {
+    description: string;
+    rights: string;
+    note: string;
+    tagline: string;
+    converterLabel: string;
+  }
 > = withTraditionalChinese({
   zh: {
     description:
-      "GeoSub 是全球数字订阅价格数据平台，当前优先整理 AI 订阅和流媒体订阅在不同国家与地区的价格差异。",
+      "GeoSub 比较 AI 与流媒体订阅在不同国家和地区的公开价格，并提供汇率、税费与购买力信息。",
     rights: "保留所有权利。",
     note: "价格与可用性可能随地区、汇率、税费和平台政策变化，请以官方结算页为准。",
     tagline: "全球数字订阅价格数据",
+    converterLabel: "订阅汇率换算器",
   },
   en: {
     description:
-      "GeoSub is a global digital subscription pricing platform. The current beta focuses on AI and streaming subscription prices across countries and regions.",
+      "GeoSub compares public AI and streaming subscription prices across countries, with exchange-rate, tax and affordability context.",
     rights: "All rights reserved.",
     note: "Prices and availability may change by region, exchange rate, tax, and platform policy. Always verify final prices on the official checkout page.",
     tagline: "Global Digital Subscription Pricing",
+    converterLabel: "Subscription currency converter",
   },
   ja: {
     description:
@@ -39,6 +48,7 @@ const footerCopy: Record<
     note:
       "料金や提供状況は、地域、為替、税金、プラットフォームの方針によって変わる場合があります。最終的な料金は公式の決済画面でご確認ください。",
     tagline: "世界のデジタルサブスクリプション料金",
+    converterLabel: "サブスクリプション為替換算",
   },
   ko: {
     description:
@@ -47,6 +57,7 @@ const footerCopy: Record<
     note:
       "가격과 이용 가능 여부는 지역, 환율, 세금 및 플랫폼 정책에 따라 달라질 수 있습니다. 최종 결제 금액은 공식 결제 화면에서 확인하세요.",
     tagline: "글로벌 디지털 구독 가격 데이터",
+    converterLabel: "구독 환율 계산기",
   },
   es: {
     description:
@@ -55,6 +66,7 @@ const footerCopy: Record<
     note:
       "Los precios y la disponibilidad pueden variar según la región, el tipo de cambio, los impuestos y las políticas de la plataforma. Comprueba siempre el importe final en la página oficial de pago.",
     tagline: "Precios globales de suscripciones digitales",
+    converterLabel: "Conversor de divisas para suscripciones",
   },
   tr: {
     description:
@@ -63,6 +75,7 @@ const footerCopy: Record<
     note:
       "Fiyatlar ve kullanılabilirlik; bölgeye, döviz kuruna, vergilere ve platform politikalarına göre değişebilir. Son tutarı her zaman resmî ödeme sayfasından doğrulayın.",
     tagline: "Dünya genelinde dijital abonelik fiyatları",
+    converterLabel: "Abonelik döviz çevirici",
   },
   ar: {
     description:
@@ -71,30 +84,35 @@ const footerCopy: Record<
     note:
       "قد تختلف الأسعار والتوافر حسب المنطقة وسعر الصرف والضرائب وسياسات المنصة. تحقّق دائمًا من السعر النهائي في صفحة الدفع الرسمية.",
     tagline: "بيانات أسعار الاشتراكات الرقمية عالميًا",
+    converterLabel: "محول عملات للاشتراكات",
   },
   fr: {
     description: "GeoSub compare les prix des abonnements numériques, notamment les services d’IA et de streaming, entre les pays et les régions.",
     rights: "Tous droits réservés.",
     note: "Les prix et la disponibilité peuvent varier selon la région, le taux de change, les taxes et les règles de la plateforme. Vérifiez toujours le montant final sur la page de paiement officielle.",
     tagline: "Prix des abonnements numériques dans le monde",
+    converterLabel: "Convertisseur de devises pour abonnements",
   },
   it: {
     description: "GeoSub confronta i prezzi degli abbonamenti digitali, inclusi i servizi IA e streaming, tra paesi e regioni.",
     rights: "Tutti i diritti riservati.",
     note: "Prezzi e disponibilità possono variare in base a regione, cambio, imposte e regole della piattaforma. Verifica sempre l’importo finale nella pagina di pagamento ufficiale.",
     tagline: "Prezzi degli abbonamenti digitali nel mondo",
+    converterLabel: "Convertitore di valuta per abbonamenti",
   },
   de: {
     description: "GeoSub vergleicht die Preise digitaler Abonnements, darunter KI- und Streaming-Dienste, nach Ländern und Regionen.",
     rights: "Alle Rechte vorbehalten.",
     note: "Preise und Verfügbarkeit können je nach Region, Wechselkurs, Steuern und Plattformregeln variieren. Prüfen Sie den Endbetrag immer auf der offiziellen Zahlungsseite.",
     tagline: "Digitale Abonnementpreise weltweit",
+    converterLabel: "Währungsrechner für Abonnements",
   },
   pt: {
     description: "O GeoSub compara os preços de assinaturas digitais, incluindo serviços de IA e streaming, entre países e regiões.",
     rights: "Todos os direitos reservados.",
     note: "Os preços e a disponibilidade podem variar conforme a região, o câmbio, os impostos e as regras da plataforma. Confirme sempre o valor final na página oficial de pagamento.",
     tagline: "Preços de assinaturas digitais no mundo",
+    converterLabel: "Conversor de moedas para assinaturas",
   },
 });
 
@@ -162,6 +180,17 @@ export default function Footer({
             <p className="mt-4 max-w-sm text-sm leading-7 text-zinc-500 dark:text-zinc-400">
               {copy.description}
             </p>
+
+            <Link
+              href={withSiteLocale(
+                "/tools/currency-converter",
+                currentLocale,
+              )}
+              className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-zinc-700 transition hover:text-lime-700 dark:text-zinc-300 dark:hover:text-lime-300"
+            >
+              <ArrowLeftRight aria-hidden="true" className="size-4" />
+              {copy.converterLabel}
+            </Link>
 
             <p className="mt-6 text-xs font-medium text-zinc-400 dark:text-zinc-500">
               © {currentYear} GeoSub. {copy.rights}

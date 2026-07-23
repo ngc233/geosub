@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Global Digital Subscription Pricing",
   description:
-    "Compare AI and streaming subscription prices across App Store regions, with USD conversion, CNY estimates, tax notes, and purchasing-power context.",
+    "Compare AI and streaming subscription prices across App Store regions, with selectable display currencies, tax notes, update dates and affordability context.",
 };
 
 const sections = [
@@ -16,13 +16,13 @@ const sections = [
   },
   {
     title: "Streaming",
-    desc: "Compare Netflix, YouTube Premium, Spotify, Disney+ and other streaming subscription prices.",
+    desc: "Compare published streaming subscription prices across countries and regions.",
     href: "/en/streaming-pricing/",
     tag: "Streaming",
   },
   {
     title: "Data Sources",
-    desc: "Review GeoSub's official data policy, App Store source priority, exchange rates, tax notes and review rules.",
+    desc: "Understand the price source, exchange-rate dates, tax notes and how unusual prices are excluded.",
     href: "/en/data-sources/",
     tag: "Data",
   },
@@ -48,7 +48,7 @@ export default function EnglishPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
-            GeoSub currently focuses on AI and streaming App Store regional prices, with USD conversion, CNY estimates, tax notes and purchasing-power context.
+            Compare AI and streaming App Store prices by region, switch between common display currencies, and interpret real cost with tax, update and affordability context.
           </p>
         </div>
 

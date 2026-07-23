@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.4.0 - 2026-07-24
+
+- Added a public subscription currency converter across all 12 active locales,
+  backed by the same freshness-gated exchange-rate snapshots as pricing pages.
+- Added curated, indexable currency-pair pages with localized metadata,
+  structured data, common conversions, calculation notes and internal links.
+- Expanded public display support to 25 currencies and removed ambiguous,
+  repetitive symbol-name-code labels from the pricing currency selector.
+- Replaced launch-stage and administrator-facing public copy with current
+  product, data-source, privacy and guide content.
+- Removed unfinished public routes from navigation and indexing, and preserved
+  the legacy methodology URL with a permanent redirect.
+- Added regression coverage for currency conversion, locale defaults, menu
+  interaction, public copy quality, hidden routes and sitemap behavior.
+
 ## 2.3.2 - 2026-07-24
 
 - Fixed false production deployment failures caused by `head` closing the

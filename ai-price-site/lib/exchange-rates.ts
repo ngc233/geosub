@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 export type ExchangeRateSnapshot = {
@@ -143,4 +144,45 @@ export async function getLatestExchangeRate(
     isFallback: true,
     isStale: true,
   };
+}
+
+export async function getLatestUsdExchangeRates(
+  quoteCurrencies: readonly string[],
+): Promise<Record<string, ExchangeRateSnapshot>> {
+  const quotes = Array.from(
+    new Set(
+      quoteCurrencies
+        .map((currency) => currency.trim().toUpperCase())
+        .filter((currency) => currency && currency !== "USD"),
+    ),
+  );
+
+  if (quotes.length === 0) return {};
+
+  try {
+    const rows = await prisma.$queryRaw<RawExchangeRate[]>(Prisma.sql`
+      SELECT DISTINCT ON (quote_currency)
+        base_currency,
+        quote_currency,
+        rate,
+        source,
+        rate_date,
+        fetched_at
+      FROM exchange_rates
+      WHERE base_currency = 'USD'
+        AND quote_currency IN (${Prisma.join(quotes)})
+        AND status = 'active'
+      ORDER BY quote_currency, rate_date DESC, fetched_at DESC
+    `);
+
+    return Object.fromEntries(
+      rows.flatMap((row) => {
+        const rate = toNumber(row.rate);
+        return rate > 0 ? [[row.quote_currency, toSnapshot(row, rate)]] : [];
+      }),
+    );
+  } catch (error) {
+    console.error("Failed to load exchange rates in one batch", error);
+    return {};
+  }
 }

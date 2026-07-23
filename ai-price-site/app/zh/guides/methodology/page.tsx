@@ -1,56 +1,33 @@
 import type { Metadata } from "next";
+import PublicGuidePage from "../../../../components/PublicGuidePage";
 
 export const metadata: Metadata = {
-  title: "数据方法",
+  title: "价格数据方法",
   description:
-    "了解 GeoSub 如何整理全球数字订阅、AI 工具、软件订阅、游戏服务和礼品卡的价格数据。",
+    "了解 GeoSub 如何采集、检查并标注 App Store 地区订阅价格，以及页面上不同日期的含义。",
 };
 
 export default function MethodologyPage() {
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
-      <section className="mx-auto max-w-5xl">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
-          Methodology
-        </p>
-
-        <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-          数据方法
-        </h1>
-
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          GeoSub 会从公开价格页面、官方订阅页、应用商店展示价格、地区价格页和人工整理记录中提取价格信息，并按国家、地区、币种、套餐和服务类型进行结构化整理。
-        </p>
-
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {[
-            {
-              title: "公开来源优先",
-              text: "优先整理官方页面、公开价格页和可验证的价格信息，避免使用无法追溯的数据。",
-            },
-            {
-              title: "按地区归档",
-              text: "同一产品会尽量按国家、地区、币种和套餐维度归类，方便用户比较价格差异。",
-            },
-            {
-              title: "保留更新时间",
-              text: "价格数据会标注采集时间和更新时间，帮助用户识别数据新鲜度。",
-            },
-            {
-              title: "官方价格为准",
-              text: "由于价格、税费、汇率和平台政策可能变化，最终价格仍应以官方结算页面为准。",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm shadow-zinc-950/[0.03]"
-            >
-              <h2 className="text-lg font-black text-zinc-950">{item.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-zinc-600">{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </main>
+    <PublicGuidePage
+      eyebrow="Methodology"
+      title="GeoSub 如何检查订阅价格"
+      description="每条地区价格都会先匹配套餐，再检查币种、计费周期和样本一致性；只有可直接比较的数据才会展示。"
+      sections={[
+        {
+          title: "保留采集时的原始信息",
+          body: "每条记录保留产品、套餐、国家或地区、本地币种、计费周期和采集时间。换算价格不会覆盖平台原始标价。",
+        },
+        {
+          title: "检查套餐、稳定性和价格范围",
+          body: "系统结合套餐匹配、重复样本和同类地区价格范围识别币种、小数点及计费周期异常。不一致的价格会暂缓展示，而不是强行进入排行。",
+        },
+        {
+          title: "分别计算四种日期",
+          body: "价格采集日期、汇率基准日期、套餐复核日期和页面更新时间含义不同，会分别计算和展示，避免把汇率更新误认为平台调价。",
+        },
+      ]}
+      note="公开比较用于辅助理解地区价格。服务可用性、税费和最终结算金额仍可能在采集后发生变化。"
+    />
   );
 }

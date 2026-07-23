@@ -12,7 +12,7 @@ export default function KoreanDataSourcesPage() {
     <KoreanInfoPage
       eyebrow="Data Sources"
       title="데이터 출처와 가격 비교 방식"
-      description="GeoSub의 공개 순위는 검토된 App Store 지역별 구독 가격을 기준으로 합니다."
+      description="동일한 App Store 요금제와 결제 주기의 지역별 가격을 비교하고 현지 통화, 수집일과 환율 기준일을 표시합니다."
     >
       <h2 className="text-xl font-black text-zinc-950">가격 데이터 처리</h2>
       <div className="mt-4 space-y-5 text-sm leading-8 text-zinc-600">
@@ -22,9 +22,10 @@ export default function KoreanDataSourcesPage() {
           데이터는 공개하지 않고 자동 검토 대상으로 분리합니다.
         </p>
         <p>
-          미국 달러와 중국 위안 환산에는 화면에 표시된 기준일의 환율을 사용합니다.
-          세금 정보는 비교를 위한 안내이며 App Store 표시 가격에 세율을 임의로
-          더하지 않습니다.
+          선택한 표시 통화로 환산할 때는 화면에 표시된 기준일의 환율을
+          사용합니다. 필요한 환율이 오래되었거나 없으면 해당 환산을
+          중지합니다. 세금 정보는 비교를 위한 안내이며 App Store 표시 가격에
+          세율을 임의로 더하지 않습니다.
         </p>
         <p className="text-zinc-500">
           가격과 이용 가능 여부는 달라질 수 있습니다. 최종 금액, 세금과 구매

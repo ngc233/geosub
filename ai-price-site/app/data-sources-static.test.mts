@@ -14,20 +14,20 @@ test("Chinese data sources page matches current official source policy", () => {
   const source = readAppFile("zh/data-sources/page.tsx");
 
   assert.match(source, /App Store 各地区公开订阅价格/);
-  assert.match(source, /Web 官网价格、Google Play 和其他公开价格/);
-  assert.match(source, /不同来源不会混入同一价格排名/);
-  assert.match(source, /每 12 小时更新一次/);
+  assert.match(source, /按所选显示币种换算地区价格/);
+  assert.match(source, /价格采集、汇率和套餐复核日期分别标注/);
+  assert.match(source, /通常每 12 小时同步一次/);
   assert.match(source, /不会把税率额外加入采集价格里重新排序/);
-  assert.match(source, /待审核、忽略或拒绝的观测不会混入正式榜单/);
+  assert.match(source, /地区排行只使用已通过检查/);
 });
 
 test("English data sources page matches current official source policy", () => {
   const source = readAppFile("en/data-sources/page.tsx");
 
-  assert.match(source, /App Store regional subscription prices as the official ranking source/);
-  assert.match(source, /Official web pricing, Google Play and other public prices/);
-  assert.match(source, /Prices from different sources are not mixed into one ranking/);
-  assert.match(source, /Rates are normally refreshed every 12 hours/);
+  assert.match(source, /Public App Store subscription prices across supported regions/);
+  assert.match(source, /Regional prices converted into the selected display currency/);
+  assert.match(source, /Collection, exchange-rate and plan-review dates are labelled separately/);
+  assert.match(source, /Reference rates normally synchronize every 12 hours/);
   assert.match(source, /do not add tax again/);
-  assert.match(source, /pending, ignored or rejected observations are excluded from rankings/);
+  assert.match(source, /Regional rankings use only prices that pass checks/);
 });

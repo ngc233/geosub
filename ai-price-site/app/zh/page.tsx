@@ -9,13 +9,13 @@ const sections = [
   },
   {
     title: "流媒体",
-    desc: "比较 Netflix、YouTube Premium、Spotify、Disney+ 等流媒体服务的地区订阅价格。",
+    desc: "比较已收录流媒体服务在不同国家和地区的公开订阅价格。",
     href: "/zh/streaming-pricing/",
     tag: "Streaming",
   },
   {
     title: "数据来源",
-    desc: "查看 GeoSub 当前正式数据口径、App Store 来源、汇率、税费和审核说明。",
+    desc: "了解价格来源、汇率日期、税费说明，以及异常价格如何被排除。",
     href: "/zh/data-sources/",
     tag: "Data",
   },
@@ -41,7 +41,7 @@ export default function ZhHomePage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
-            当前优先整理 AI 订阅和流媒体订阅的 App Store 地区价格，并提供美元折算、人民币估算、税费说明和购买力视角。
+            比较 AI 与流媒体订阅的 App Store 地区价格，切换常用显示币种，并结合税费、更新时间和本地购买力理解真实成本。
           </p>
         </div>
 

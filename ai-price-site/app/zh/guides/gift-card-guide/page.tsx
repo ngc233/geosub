@@ -1,38 +1,32 @@
 import type { Metadata } from "next";
+import PublicGuidePage from "../../../../components/PublicGuidePage";
 
 export const metadata: Metadata = {
   title: "礼品卡教程",
-  description: "这里将整理 Apple、Google、Steam 等礼品卡的购买渠道、面值选择、地区限制、充值方式和常见问题。",
+  description: "购买数字礼品卡前应核对发行地区、账号归属、币种、面值、兑换条件和退款规则。",
 };
 
 export default function GuideCategoryPage() {
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
-      <section className="mx-auto max-w-6xl">
-        <div className="max-w-3xl">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
-            Gift Card Guide
-          </p>
-
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-            礼品卡教程
-          </h1>
-
-          <p className="mt-5 text-lg leading-8 text-zinc-600">
-            这里将整理 Apple、Google、Steam 等礼品卡的购买渠道、面值选择、地区限制、充值方式和常见问题。
-          </p>
-        </div>
-
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">
-            暂无已发布内容
-          </h2>
-
-          <p className="mt-3 text-sm leading-7 text-zinc-500">
-            该分类目前还没有已发布文章。购买礼品卡前，请先核对发行地区、适用账号、币种和退款规则。
-          </p>
-        </div>
-      </section>
-    </main>
+    <PublicGuidePage
+      eyebrow="Gift Card Guide"
+      title="数字礼品卡购买前检查"
+      description="礼品卡通常与地区和账号绑定。先核对兼容性，再比较面值和实际支付成本。"
+      sections={[
+        {
+          title: "发行地区必须匹配账号",
+          body: "不同国家或地区发行的 Apple、Google、Steam 等礼品卡通常不能跨区兑换。购买前确认账号地区与卡片发行地区一致。",
+        },
+        {
+          title: "核对币种、面值和有效期",
+          body: "相同数字面值可能代表不同币种。还应检查是否存在有效期、兑换上限、余额使用限制或订阅扣款限制。",
+        },
+        {
+          title: "选择可追溯的销售渠道",
+          body: "确认商家身份、交付方式、退款政策和客服渠道。对明显低于面值的报价保持谨慎，避免购买来源不明或已被使用的代码。",
+        },
+      ]}
+      note="礼品卡政策由发行平台和销售商决定；兑换资格与退款结果以双方官方条款为准。"
+    />
   );
 }

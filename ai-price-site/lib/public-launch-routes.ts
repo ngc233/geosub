@@ -21,6 +21,7 @@ export const launchedMirroredStaticPaths = new Set([
   "/guides/tool-review",
   "/privacy",
   "/streaming-pricing",
+  "/tools/currency-converter",
   "/terms",
 ]);
 

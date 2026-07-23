@@ -6,6 +6,11 @@ import {
   getPublishedArticles,
 } from "../lib/articles";
 import { prisma } from "../lib/prisma";
+import {
+  siteLocaleDefinitions,
+  supportedSiteLocales,
+} from "../lib/site-locale";
+import { getFeaturedCurrencyPairs } from "../lib/currency-pairs";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
@@ -228,6 +233,22 @@ async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
+    ...supportedSiteLocales.map((locale) =>
+      route(
+        `/${siteLocaleDefinitions[locale].path}/tools/currency-converter`,
+        "daily",
+        locale === "zh" ? 0.72 : locale === "en" ? 0.68 : 0.58,
+      ),
+    ),
+    ...supportedSiteLocales.flatMap((locale) =>
+      getFeaturedCurrencyPairs(locale).map((pair) =>
+        route(
+          `/${siteLocaleDefinitions[locale].path}/tools/currency-converter/${pair.slug}`,
+          "daily",
+          locale === "zh" ? 0.66 : locale === "en" ? 0.64 : 0.54,
+        ),
+      ),
+    ),
     route("/zh", "daily", 1),
     route("/zh/ai-pricing", "daily", 0.95),
     route("/zh/streaming-pricing", "daily", 0.82),

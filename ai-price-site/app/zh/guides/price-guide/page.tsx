@@ -1,38 +1,32 @@
 import type { Metadata } from "next";
+import PublicGuidePage from "../../../../components/PublicGuidePage";
 
 export const metadata: Metadata = {
   title: "价格指南",
-  description: "这里将整理 AI 订阅、软件订阅、游戏服务、流媒体和礼品卡在不同国家与地区的价格差异、省钱区域和价格变化。",
+  description: "学习如何结合本地标价、显示币种、汇率日期、税费和账号限制阅读地区订阅价格。",
 };
 
 export default function GuideCategoryPage() {
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
-      <section className="mx-auto max-w-6xl">
-        <div className="max-w-3xl">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
-            Price Guide
-          </p>
-
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-            价格指南
-          </h1>
-
-          <p className="mt-5 text-lg leading-8 text-zinc-600">
-            这里将整理 AI 订阅、软件订阅、游戏服务、流媒体和礼品卡在不同国家与地区的价格差异、省钱区域和价格变化。
-          </p>
-        </div>
-
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">
-            暂无已发布内容
-          </h2>
-
-          <p className="mt-3 text-sm leading-7 text-zinc-500">
-            该分类目前还没有已发布文章。现有地区价格、汇率日期和价格差异可在数字订阅页面查看。
-          </p>
-        </div>
-      </section>
-    </main>
+    <PublicGuidePage
+      eyebrow="Price Guide"
+      title="如何阅读地区价格"
+      description="低价排名只是起点。把本地标价、换算日期、税费和订阅资格放在一起，才能判断真实成本。"
+      sections={[
+        {
+          title: "先看本地标价和采集日期",
+          body: "本地标价是平台在该地区展示的原始价格。先确认套餐名称、月付或年付周期以及采集日期，避免比较不同套餐或不同时间的记录。",
+        },
+        {
+          title: "再看显示币种和汇率日期",
+          body: "换算价格用于横向比较，不等于信用卡最终扣款。汇率变化会改变换算结果，但不会改变平台的本地标价。",
+        },
+        {
+          title: "最后核对税费和购买条件",
+          body: "税费、账号地区、付款方式和账单地址都可能影响结算。价格较低不代表该地区一定可供你的账号购买。",
+        },
+      ]}
+      note="GeoSub 用美国价格作为常见比较基准，但购买前仍应以对应地区的官方结算页为准。"
+    />
   );
 }

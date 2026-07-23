@@ -23,6 +23,18 @@ test("language and currency dropdowns close on outside interaction and Escape", 
   assert.match(pricingPlatform, /setOpen\(false\)/);
 });
 
+test("currency selector avoids repeating symbol, name and code", () => {
+  const pricingPlatformView = readComponent("PricingPlatformView.tsx");
+  const currencySelectSource = pricingPlatformView.slice(
+    pricingPlatformView.indexOf("function CurrencySelect"),
+    pricingPlatformView.indexOf("function PricingLead"),
+  );
+
+  assert.doesNotMatch(currencySelectSource, /getCurrencySymbol\(/);
+  assert.match(currencySelectSource, /getCurrencyName\(activeItem, locale\)/);
+  assert.match(currencySelectSource, /\{activeItem\}/);
+});
+
 test("mobile product switcher closes outside and uses current dropdown radius", () => {
   const source = readComponent("MobileProductSwitcher.tsx");
 
@@ -126,7 +138,7 @@ test("site chrome derives language from the client route", () => {
   assert.match(footer, /navItemsByLocale\[currentLocale\]/);
   assert.match(
     footer,
-    /GeoSub is a global digital subscription pricing platform/,
+    /GeoSub compares public AI and streaming subscription prices/,
   );
   assert.match(headerShell, /getSiteNavigationByLocale\("HEADER"\)/);
   assert.match(footerShell, /getSiteNavigationByLocale\("FOOTER"\)/);

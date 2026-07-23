@@ -1,38 +1,32 @@
 import type { Metadata } from "next";
+import PublicGuidePage from "../../../../components/PublicGuidePage";
 
 export const metadata: Metadata = {
   title: "工具测评",
-  description: "这里将整理 AI 工具、软件工具、效率工具和数字服务的测评内容，帮助用户选择更适合自己的工具。",
+  description: "从实际用途、能力边界、总成本、地区可用性和更新证据判断数字工具是否适合自己。",
 };
 
 export default function GuideCategoryPage() {
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
-      <section className="mx-auto max-w-6xl">
-        <div className="max-w-3xl">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
-            Tool Review
-          </p>
-
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-            工具测评
-          </h1>
-
-          <p className="mt-5 text-lg leading-8 text-zinc-600">
-            这里将整理 AI 工具、软件工具、效率工具和数字服务的测评内容，帮助用户选择更适合自己的工具。
-          </p>
-        </div>
-
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">
-            暂无已发布内容
-          </h2>
-
-          <p className="mt-3 text-sm leading-7 text-zinc-500">
-            该分类目前还没有已发布文章。工具订阅价格可在数字订阅页面按产品和地区查看。
-          </p>
-        </div>
-      </section>
-    </main>
+    <PublicGuidePage
+      eyebrow="Tool Review"
+      title="怎样判断一个数字工具是否值得订阅"
+      description="不要只看功能清单或单次跑分。先明确使用场景，再比较能力、限制和持续成本。"
+      sections={[
+        {
+          title: "从自己的任务出发",
+          body: "先列出高频任务、必须具备的能力和不能接受的限制。对话、编程、图像、搜索和协作工具的评价维度并不相同。",
+        },
+        {
+          title: "比较完整成本而非最低标价",
+          body: "同时考虑订阅周期、额度、附加功能、税费、换汇成本和所在地区可用性。更便宜的套餐未必覆盖真正需要的功能。",
+        },
+        {
+          title: "检查证据日期与产品变化",
+          body: "模型能力、套餐权益和价格都会更新。阅读测评时确认测试版本、日期、方法和可复现依据，避免把旧结论当成现状。",
+        },
+      ]}
+      note="最可靠的选择来自真实任务试用。评分和价格比较用于缩小范围，不应替代你的实际体验。"
+    />
   );
 }

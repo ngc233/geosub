@@ -11,17 +11,17 @@ const publicPricingCopy = {
             "比较 ChatGPT、Claude、Gemini 等 AI 工具在不同地区的订阅价格，查看最低价地区、高价地区、税费说明和价格差距。",
           metaTitle: "AI 订阅价格对比 - ChatGPT、Claude、Gemini 全球价格",
           metaDescription:
-            "比较 ChatGPT、Claude、Gemini 等 AI 订阅在不同国家和地区的 App Store 价格、美元折算、人民币估算、税费说明和价格差异。",
+            "比较 ChatGPT、Claude、Gemini 等 AI 订阅在不同国家和地区的 App Store 价格、显示币种换算、税费说明和购买力差异。",
         },
         streaming: {
           eyebrow: "GeoSub 流媒体价格数据",
           title: "流媒体订阅价格对比",
           description:
-            "比较 Netflix、YouTube Premium、Spotify、Disney+ 等流媒体服务在不同地区的订阅价格。数据覆盖完善后会逐步开放更多产品。",
+            "比较 Netflix、Disney+ 等已收录流媒体服务在不同地区的订阅价格、税费、更新时间和购买力差异。",
           metaTitle:
-            "流媒体订阅价格对比 - Netflix、YouTube Premium、Spotify 全球价格",
+            "流媒体订阅价格对比 - Netflix、Disney+ 全球价格",
           metaDescription:
-            "比较 Netflix、YouTube Premium、Spotify、Disney+ 等流媒体订阅在不同国家和地区的价格、税费和区域价格差异。",
+            "比较 Netflix、Disney+ 等已收录流媒体订阅在不同国家和地区的价格、税费、更新时间和区域价格差异。",
         },
       },
       categoryAria: "数字服务分类",
@@ -30,7 +30,7 @@ const publicPricingCopy = {
         "比较 ChatGPT、Claude、Gemini、Grok 等 AI 产品在不同国家和地区的价格。",
       streamingLabel: "流媒体",
       streamingDescription:
-        "比较 Netflix、YouTube Premium、Spotify、Disney+ 等流媒体和数字娱乐订阅价格。",
+        "比较 Netflix、Disney+ 等已收录流媒体和数字娱乐订阅价格。",
       productCount: (count: number) => `当前收录 ${count} 个产品`,
       empty: "当前分类暂无已发布价格数据。",
       defaultPlanHint: "默认展示主流月付套餐",
@@ -195,11 +195,11 @@ const publicPricingCopy = {
           eyebrow: "GeoSub Streaming Pricing Data",
           title: "Streaming Subscription Pricing",
           description:
-            "Compare Netflix, YouTube Premium, Spotify, Disney+ and other streaming services across countries and regions. More products will be opened after data coverage improves.",
+            "Compare published Netflix, Disney+ and other streaming subscription prices across regions, with tax, update and affordability context.",
           metaTitle:
-            "Streaming Subscription Pricing - Netflix, YouTube Premium, Spotify",
+            "Streaming Subscription Pricing - Netflix and Disney+ Global Prices",
           metaDescription:
-            "Compare Netflix, YouTube Premium, Spotify, Disney+ and other streaming subscription prices across countries and regions.",
+            "Compare published Netflix, Disney+ and other streaming subscription prices across countries and regions, with tax and update context.",
         },
       },
       categoryAria: "Digital service category",
@@ -208,7 +208,7 @@ const publicPricingCopy = {
         "Compare ChatGPT, Claude, Gemini, Grok and other AI subscription prices across countries and regions.",
       streamingLabel: "Streaming",
       streamingDescription:
-        "Compare Netflix, YouTube Premium, Spotify, Disney+ and other digital entertainment subscription prices.",
+        "Compare published Netflix, Disney+ and other digital entertainment subscription prices.",
       productCount: (count: number) => `Currently tracking ${count} products`,
       empty: "No published pricing data is available for this category yet.",
       defaultPlanHint: "Popular monthly plan shown by default",

@@ -58,10 +58,28 @@ function Set-PackageVersion {
     return
   }
 
-  $package = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
-  $package.version = $NextVersion
-  $json = $package | ConvertTo-Json -Depth 50
-  Write-Utf8NoBom -Path $Path -Value ($json + "`n")
+  $script = @'
+const fs = require("fs");
+const path = process.argv[2];
+const version = process.argv[3];
+const packageJson = JSON.parse(fs.readFileSync(path, "utf8"));
+packageJson.version = version;
+fs.writeFileSync(path, `${JSON.stringify(packageJson, null, 4)}\n`);
+'@
+  $tempScript = New-TemporaryFile
+  $tempJsPath = [IO.Path]::ChangeExtension($tempScript.FullName, ".js")
+  Move-Item -LiteralPath $tempScript.FullName -Destination $tempJsPath -Force
+  try {
+    Write-Utf8NoBom -Path $tempJsPath -Value $script
+    node $tempJsPath $Path $NextVersion
+    if ($LASTEXITCODE -ne 0) {
+      throw "Failed to update package version: $Path"
+    }
+  } finally {
+    if (Test-Path -LiteralPath $tempJsPath) {
+      Remove-Item -LiteralPath $tempJsPath -Force
+    }
+  }
 }
 
 function Set-PackageLockVersion {

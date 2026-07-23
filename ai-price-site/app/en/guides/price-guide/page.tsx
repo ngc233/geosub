@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
+import PublicGuidePage from "../../../../components/PublicGuidePage";
 
 export const metadata: Metadata = {
   title: "Price Guide",
-  description: "Learn how to compare digital subscription prices across countries, regions, currencies, and platforms.",
+  description:
+    "Learn how to read local prices, display currencies, exchange-rate dates, taxes and account restrictions in regional subscription comparisons.",
 };
 
-export default function EnglishGuidePage() {
+export default function EnglishPriceGuidePage() {
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
-      <section className="mx-auto max-w-5xl">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
-          Price Guide
-        </p>
-
-        <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-          Price Guide
-        </h1>
-
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-zinc-600">
-          Learn how to compare digital subscription prices across countries, regions, currencies, and platforms.
-        </p>
-
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm shadow-zinc-950/[0.03]">
-          <h2 className="text-xl font-black text-zinc-950">
-            Content in progress
-          </h2>
-
-          <p className="mt-4 text-sm leading-8 text-zinc-600">
-            This page is prepared for the English navigation system. Detailed guide content, examples, and comparison data will be added later.
-          </p>
-        </div>
-      </section>
-    </main>
+    <PublicGuidePage
+      eyebrow="Price Guide"
+      title="How to read regional subscription prices"
+      description="A low-price ranking is only the starting point. Combine local price, exchange-rate date, tax and eligibility to understand the real cost."
+      sections={[
+        {
+          title: "Start with the local price and collection date",
+          body: "The local price is the amount displayed by the platform in that region. Check the plan name, monthly or annual billing cycle, and collection date before comparing records.",
+        },
+        {
+          title: "Then check the display currency and rate date",
+          body: "Converted prices support comparison; they are not a promise of the card charge. Exchange-rate movement can change the converted value without changing the local platform price.",
+        },
+        {
+          title: "Confirm tax and purchase conditions",
+          body: "Tax, account region, payment method and billing address may affect checkout. A lower regional price does not guarantee that your account can buy it.",
+        },
+      ]}
+      note="GeoSub commonly uses the US price as a comparison baseline. Always confirm the final amount on the official regional checkout page."
+    />
   );
 }

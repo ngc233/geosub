@@ -700,7 +700,7 @@ export default function Header({
 
             <div
               className={[
-                "absolute right-0 top-[46px] z-[70] grid w-48 overflow-hidden rounded-lg shadow-xl shadow-zinc-900/10 transition-[grid-template-rows,opacity,transform] duration-200 ease-out dark:shadow-black/30",
+                "absolute end-0 top-[46px] z-[70] grid w-48 overflow-hidden rounded-lg shadow-xl shadow-zinc-900/10 transition-[grid-template-rows,opacity,transform] duration-200 ease-out dark:shadow-black/30",
                 languageMenuOpen
                   ? "pointer-events-auto grid-rows-[1fr] translate-y-0 opacity-100"
                   : "pointer-events-none grid-rows-[0fr] translate-y-1 opacity-0",
@@ -717,7 +717,7 @@ export default function Header({
                       href={replaceSiteLocaleInPath(pathname, language.code)}
                       onClick={() => setLanguageMenuOpen(false)}
                       className={[
-                        "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors duration-200 ease-out",
+                              "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-start text-sm transition-colors duration-200 ease-out",
                         active
                           ? "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
                           : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",

@@ -12,7 +12,7 @@ export default function SpanishDataSourcesPage() {
     <SpanishInfoPage
       eyebrow="Fuentes de datos"
       title="Fuentes de datos y método de comparación"
-      description="Las clasificaciones públicas de GeoSub se basan en precios regionales de suscripciones de App Store que han sido revisados."
+      description="Comparamos precios regionales del mismo plan y ciclo de facturación de App Store, con moneda local, fecha de recopilación y fecha del tipo de cambio."
     >
       <h2 className="text-xl font-black text-zinc-950">
         Cómo tratamos los precios
@@ -25,9 +25,11 @@ export default function SpanishDataSourcesPage() {
           revisión automática.
         </p>
         <p>
-          Las conversiones a USD y CNY utilizan el tipo de cambio de la fecha
-          indicada. La información fiscal sirve de orientación: GeoSub no añade
-          de nuevo un porcentaje de impuestos al precio mostrado por App Store.
+          La conversión a la moneda de visualización elegida utiliza el tipo de
+          cambio de la fecha indicada. Si falta el tipo necesario o está
+          desactualizado, se pausa esa conversión. La información fiscal sirve
+          de orientación: GeoSub no añade de nuevo un porcentaje de impuestos
+          al precio mostrado por App Store.
         </p>
         <p className="text-zinc-500">
           Los precios y la disponibilidad pueden cambiar. El importe final, los
