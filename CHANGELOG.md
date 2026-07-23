@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.2 - 2026-07-24
+
+- Fixed false production deployment failures caused by `head` closing the
+  verified-backup pipeline early while Bash `pipefail` was enabled.
+- Applied the safe backup-selection pattern to both the upgrade and
+  post-deployment health scripts and added regression coverage.
+
 ## 2.3.1 - 2026-07-24
 
 - Added a permanent host redirect from `www.geosub.org` to the canonical

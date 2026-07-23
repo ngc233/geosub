@@ -233,7 +233,7 @@ CURRENT_STEP="database_backup"
 write_attempt_state "running"
 log "Creating database backup"
 bash "$BACKEND_DIR/deploy/linux-arm64/db-backup.sh"
-BACKUP_PATH="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name "${DB_NAME}_*.dump" -printf '%T@ %p\n' | sort -nr | head -n 1 | cut -d ' ' -f2-)"
+BACKUP_PATH="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name "${DB_NAME}_*.dump" -printf '%T@ %p\n' | sort -nr | sed -n '1p' | cut -d ' ' -f2-)"
 if [[ -z "$BACKUP_PATH" || ! -f "$BACKUP_PATH.sha256" ]]; then
   echo "Verified deployment backup was not found after backup completed."
   exit 1

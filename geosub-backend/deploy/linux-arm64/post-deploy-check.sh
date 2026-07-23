@@ -415,7 +415,7 @@ check_timer_enabled_active "geosub-analytics-aggregation.timer"
 check_timer_enabled_active "geosub-db-backup.timer"
 check_timer_enabled_active "geosub-event-retention.timer"
 
-latest_backup="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name "${DB_NAME}_*.dump" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d ' ' -f2-)"
+latest_backup="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name "${DB_NAME}_*.dump" -printf '%T@ %p\n' 2>/dev/null | sort -nr | sed -n '1p' | cut -d ' ' -f2-)"
 if [[ -z "$latest_backup" ]]; then
   fail "no database backup found in $BACKUP_DIR"
 else

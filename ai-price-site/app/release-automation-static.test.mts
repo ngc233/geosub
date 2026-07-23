@@ -70,6 +70,10 @@ test("successful ARM64 upgrades record health-gated completion", () => {
   assert.match(upgrade, /post-deploy-check\.sh/);
   assert.match(upgrade, /write_attempt_state "succeeded"/);
   assert.match(upgrade, /trap - ERR/);
+  assert.match(upgrade, /sort -nr \| sed -n '1p' \| cut/);
+  assert.match(postDeployCheck, /sort -nr \| sed -n '1p' \| cut/);
+  assert.doesNotMatch(upgrade, /sort -nr \| head -n 1 \| cut/);
+  assert.doesNotMatch(postDeployCheck, /sort -nr \| head -n 1 \| cut/);
 });
 
 test("rollback requires the exact deployment ID and trusted evidence", () => {

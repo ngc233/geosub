@@ -4,14 +4,16 @@ Updated: 2026-07-24
 
 ## Current Stage
 
-The v2.3.0 stable plan URL and SEO release is deployed in production at commit
-`7a1afdd`. Google Search Console accepted the production sitemap with 487
-public URLs, and its live test confirmed that the representative ChatGPT Plus
-plan URL is indexable with valid Dataset structured data. The local v2.3.1
-patch permanently redirects the legacy `www.geosub.org` host to the canonical
-origin, closing the only actionable soft-404 item in the current index report.
-The subscription currency converter remains local work in progress and is
-intentionally excluded from v2.3.1.
+The v2.3.1 SEO patch is running in production at commit `289cde0`, including
+the permanent redirect from the legacy `www.geosub.org` host to the canonical
+origin. Google Search Console accepted the production sitemap with 487 public
+URLs, and its live test confirmed that the representative ChatGPT Plus plan
+URL is indexable with valid Dataset structured data. The deployment itself
+exposed a false health-check failure: a verified-backup pipeline returned 141
+under Bash `pipefail` after `head` closed early. The local v2.3.2 patch replaces
+that pipeline in both deployment scripts and adds regression coverage. The
+subscription currency converter remains local work in progress and is
+intentionally excluded from v2.3.2.
 
 ## V2.2 Local Roadmap
 
