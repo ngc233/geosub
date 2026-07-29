@@ -1,15 +1,17 @@
 # GeoSub Project Handoff
 
-Updated: 2026-07-24
+Updated: 2026-07-30
 
 ## Current Stage
 
-The v2.3.2 deployment automation patch is running in production at commit
-`8564b32`. The local v2.4.0 release candidate adds the public subscription
-currency converter, curated currency-pair pages and the public copy audit
-described below. The canonical host is enforced at the Cloudflare edge, Google
-Search Console accepted the production sitemap with 487 public URLs, and
-validation of the legacy `www` soft-404 issue is in progress.
+The local v2.4.2 release candidate combines the unreleased v2.4.1 dependency
+hardening with a reversible indexing-quality response to current Search Console
+coverage. The public sitemap now contains 85 focused URLs instead of
+mechanically multiplying every published plan across all twelve locales.
+Chinese and English remain the promoted search locales; staged translations
+remain accessible but are excluded from sitemap and hreflang discovery until
+their content reaches the same standard. Legacy plans remain usable through
+stable URLs but use `noindex, follow` and cannot become default product links.
 
 The subscription currency converter is now a complete local release candidate:
 
@@ -37,7 +39,12 @@ The subscription currency converter is now a complete local release candidate:
 9. The expanded local candidate passes TypeScript, ESLint, all 221 tests and
    the 115-page production build.
 
-The converter changes are packaged as v2.4.0 and are ready for production.
+The converter, dependency hardening and indexing-quality changes are packaged
+as v2.4.2. Local release validation passed on 2026-07-30: database health,
+migrations, product plans, persistent logos, price and tax quality, sitemap
+budgets, source encoding, indexing policy, content uniqueness, TypeScript,
+ESLint, all 255 tests and the 115-page production build are green. Commit, push
+and production deployment remain pending explicit approval.
 
 ## V2.2 Local Roadmap
 

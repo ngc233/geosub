@@ -15,6 +15,10 @@ import {
   siteLocaleDefinitions,
   supportedSiteLocales,
 } from "../lib/site-locale.ts";
+import {
+  getLocaleRobotsPolicy,
+  seoIndexableLocales,
+} from "../lib/seo-indexing-policy.ts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
@@ -74,7 +78,8 @@ test("public pricing products require published product, plan and price state", 
   assert.match(listAdapter, /plans:\s*\{\s*some:/);
   assert.match(listAdapter, /regionPrices:\s*\{\s*some:/);
   assert.doesNotMatch(listAdapter, /productDisplayNameMap/);
-  assert.match(defaultPlan, /return product\.plans\[0\]/);
+  assert.match(defaultPlan, /plan\.indexingStatus === "current"/);
+  assert.match(defaultPlan, /\|\|\s*product\.plans\[0\]/);
   assert.doesNotMatch(defaultPlan, /featuredPlanByProduct/);
 });
 
@@ -89,6 +94,23 @@ test("public pricing runtime does not import the legacy static product catalog",
     assert.doesNotMatch(source, /data\/ai-pricing/);
     assert.match(source, /public-pricing-model/);
   }
+});
+
+test("priority product guidance is rendered on public detail pages", () => {
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const editorialSection = readAppFile(
+    "..",
+    "components",
+    "ProductEditorialSection.tsx",
+  );
+
+  assert.match(detailPage, /getProductEditorialContent/);
+  assert.match(detailPage, /getPlanEditorialIndexingStatus/);
+  assert.match(detailPage, /<ProductEditorialSection/);
+  assert.match(editorialSection, /content\.plan\.bestFor/);
+  assert.match(editorialSection, /content\.plan\.difference/);
+  assert.match(editorialSection, /content\.plan\.availabilityNote/);
+  assert.match(editorialSection, /TrackedLink/);
 });
 
 test("pricing detail pages keep AI and streaming paths synchronized", () => {
@@ -172,15 +194,24 @@ test("pricing detail metadata owns canonical paths without duplicating the site 
 });
 
 test("pricing hreflang alternates follow the active locale registry", () => {
-  const listAlternates = getPricingLanguageAlternates("ai");
-  const detailAlternates = getPricingLanguageAlternates("streaming", "netflix");
+  const listAlternates = getPricingLanguageAlternates("zh", "ai");
+  const detailAlternates = getPricingLanguageAlternates(
+    "en",
+    "streaming",
+    "netflix",
+  );
   const planAlternates = getPricingLanguageAlternates(
+    "zh",
     "streaming",
     "netflix",
     "premium",
   );
 
-  for (const locale of supportedSiteLocales) {
+  assert.ok(listAlternates);
+  assert.ok(detailAlternates);
+  assert.ok(planAlternates);
+
+  for (const locale of seoIndexableLocales) {
     const htmlLang = siteLocaleDefinitions[locale].htmlLang;
 
     assert.equal(
@@ -208,7 +239,67 @@ test("pricing hreflang alternates follow the active locale registry", () => {
   );
   assert.equal(
     Object.keys(listAlternates).length,
-    supportedSiteLocales.length + 1,
+    seoIndexableLocales.length + 1,
+  );
+  assert.equal(getPricingLanguageAlternates("ja", "ai"), undefined);
+  assert.ok(supportedSiteLocales.length > seoIndexableLocales.length);
+});
+
+test("staged pricing locales stay accessible but are temporarily noindex", () => {
+  assert.deepEqual(getLocaleRobotsPolicy("zh"), {
+    index: true,
+    follow: true,
+  });
+  assert.deepEqual(getLocaleRobotsPolicy("en"), {
+    index: true,
+    follow: true,
+  });
+  assert.deepEqual(getLocaleRobotsPolicy("ja"), {
+    index: false,
+    follow: true,
+  });
+
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const listSeo = readAppFile("..", "lib", "pricing-list-seo.ts");
+  const rootLayout = readAppFile("layout.tsx");
+  const converterPage = readAppFile(
+    "..",
+    "components",
+    "CurrencyConverterPage.tsx",
+  );
+  assert.match(detailPage, /const robots = getProductRobotsPolicy\(/);
+  assert.doesNotMatch(detailPage, /getLocaleRobotsPolicy/);
+  assert.match(listSeo, /robots: getLocaleRobotsPolicy\(locale\)/);
+  assert.match(rootLayout, /const robotsPolicy = getLocaleRobotsPolicy\(locale\)/);
+  assert.match(rootLayout, /\.\.\.robotsPolicy/);
+  assert.match(converterPage, /const robots = getLocaleRobotsPolicy\(locale\)/);
+});
+
+test("legacy renewal plans are noindex even while product quality is observed", () => {
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+
+  assert.match(detailPage, /const robots = getProductRobotsPolicy\(/);
+  assert.match(detailPage, /\.\.\.\(robots\.index[\s\S]*?languages:/);
+  assert.match(
+    detailPage,
+    /getPlanEditorialIndexingStatus\(product\.slug, activePlan\.slug\)/,
+  );
+  assert.doesNotMatch(
+    detailPage,
+    /: getLocaleRobotsPolicy\(locale\)/,
+  );
+});
+
+test("product navigation points to a current plan before a legacy renewal tier", () => {
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+
+  assert.match(
+    detailPage,
+    /product\.plans\.find\([\s\S]*?getPlanEditorialIndexingStatus\(product\.slug, plan\.slug\) === "current"/,
+  );
+  assert.doesNotMatch(
+    detailPage,
+    /defaultPlanSlug:\s*product\.plans\[0\]\?\.slug \|\| null/,
   );
 });
 
@@ -273,8 +364,10 @@ test("pricing FAQs answer customer questions instead of explaining internal sour
   assert.match(pageCopy, /Can I subscribe.*through the cheapest region/);
   assert.match(pageCopy, /How often are.*regional prices updated/);
   assert.doesNotMatch(pageCopy, /Does this page rank App Store/);
-  assert.match(detailPage, /faqs: pageCopy\.faqs/);
-  assert.match(detailPage, /faqs=\{pageCopy\.faqs\}/);
+  assert.match(detailPage, /getPlanSearchIntentCopy/);
+  assert.match(detailPage, /const effectiveFaqs = searchIntentCopy/);
+  assert.match(detailPage, /faqs: effectiveFaqs/);
+  assert.match(detailPage, /faqs=\{effectiveFaqs\}/);
 });
 
 test("pricing detail forwards the current locale to affordability content", () => {

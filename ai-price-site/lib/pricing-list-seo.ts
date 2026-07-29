@@ -6,6 +6,7 @@ import {
   getPricingListPath,
 } from "./pricing-routes";
 import type { SiteLocale } from "./site-locale";
+import { getLocaleRobotsPolicy } from "./seo-indexing-policy";
 
 export function getPricingListMetadata(
   locale: SiteLocale,
@@ -17,9 +18,10 @@ export function getPricingListMetadata(
   return {
     title: copy.metaTitle,
     description: copy.metaDescription,
+    robots: getLocaleRobotsPolicy(locale),
     alternates: {
       canonical: canonicalPath,
-      languages: getPricingLanguageAlternates(category),
+      languages: getPricingLanguageAlternates(locale, category),
     },
     openGraph: {
       type: "website",

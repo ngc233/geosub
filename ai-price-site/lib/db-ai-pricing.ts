@@ -10,6 +10,7 @@ import type { SiteLocale } from "./site-locale";
 import { getLocalizedCountryName } from "./country-name";
 import { localizeTaxNote } from "./tax-note-localization";
 import { toTraditionalChinese } from "./traditional-chinese";
+import { getPlanEditorialIndexingStatus } from "./product-editorial-content";
 
 type DbPricingLocale = SiteLocale;
 type TaxProfileRow = {
@@ -511,6 +512,10 @@ export async function getDbAiPricingProducts({
             slug: plan.slug,
             name: plan.name,
             billingCycle: String(plan.billingCycle),
+            indexingStatus: getPlanEditorialIndexingStatus(
+              product.slug,
+              plan.slug,
+            ),
             regions,
           };
         })

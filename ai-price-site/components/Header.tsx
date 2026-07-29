@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getLanguageSwitchHref } from "../lib/language-switch-route";
 import { shouldHideFromPublicNavigation } from "../lib/public-launch-routes";
 import {
   getSiteLocaleFromPath,
-  replaceSiteLocaleInPath,
   siteLocaleDefinitions,
   stripSiteLocale,
   supportedSiteLocales,
@@ -714,7 +714,7 @@ export default function Header({
                   return (
                     <Link
                       key={language.code}
-                      href={replaceSiteLocaleInPath(pathname, language.code)}
+                      href={getLanguageSwitchHref(pathname, language.code)}
                       onClick={() => setLanguageMenuOpen(false)}
                       className={[
                               "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-start text-sm transition-colors duration-200 ease-out",
@@ -816,7 +816,7 @@ export default function Header({
               return (
                 <Link
                   key={language.code}
-                  href={replaceSiteLocaleInPath(pathname, language.code)}
+                  href={getLanguageSwitchHref(pathname, language.code)}
                   className={[
                     "rounded-lg px-3 py-2 text-center text-sm font-bold transition-all duration-200 ease-out",
                     active

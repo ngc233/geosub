@@ -68,17 +68,18 @@ test("converter uses shared localized copy and locale currency defaults", () => 
   assert.doesNotMatch(copy, /\uFFFD/);
 });
 
-test("converter is indexable, mirrored, and present in the sitemap", () => {
+test("converter stays accessible everywhere while sitemap promotion follows SEO policy", () => {
   const page = readSiteFile("components", "CurrencyConverterPage.tsx");
   const footer = readSiteFile("components", "Footer.tsx");
   const routes = readSiteFile("lib", "public-launch-routes.ts");
   const sitemap = readSiteFile("app", "sitemap.ts");
 
-  assert.match(page, /index: true/);
-  assert.match(page, /follow: true/);
+  assert.match(page, /getLocaleRobotsPolicy\(locale\)/);
+  assert.match(page, /robots\.index/);
   assert.match(routes, /"\/tools\/currency-converter"/);
   assert.match(sitemap, /tools\/currency-converter/);
-  assert.match(sitemap, /supportedSiteLocales\.map/);
+  assert.match(sitemap, /seoIndexableLocales\.map/);
+  assert.doesNotMatch(sitemap, /supportedSiteLocales\.map/);
   assert.match(sitemap, /getFeaturedCurrencyPairs\(locale\)/);
   assert.match(
     footer,
@@ -123,6 +124,8 @@ test("pair metadata only links to locales where the same pair exists", () => {
   const page = readSiteFile("components", "CurrencyConverterPage.tsx");
 
   assert.match(page, /getCurrencyPairLocales\(pair\.slug\)/);
+  assert.match(page, /pairLocales\.filter\(isSeoIndexableLocale\)/);
+  assert.match(page, /pair && pairPath && robots\.index/);
   assert.match(page, /siteLocaleDefinitions\[pairLocale\]\.htmlLang/);
   assert.match(page, /"x-default"/);
   assert.match(page, /alternates:/);

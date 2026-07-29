@@ -7,6 +7,11 @@ import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScrip
 import SiteChrome from "../components/SiteChrome";
 import { launchedMirroredStaticPaths } from "../lib/public-launch-routes";
 import {
+  getLocaleRobotsPolicy,
+  isSeoIndexableLocale,
+  seoIndexableLocales,
+} from "../lib/seo-indexing-policy";
+import {
   getSiteLocaleDefinition,
   getSiteLocaleFromPath,
   normalizeSiteLocale,
@@ -163,6 +168,11 @@ function normalizePathname(pathname: string | null, locale: SiteLocale) {
 }
 
 function getLanguageAlternates(pathname: string) {
+  const activeLocale = getSiteLocaleFromPath(pathname);
+  if (!isSeoIndexableLocale(activeLocale)) {
+    return undefined;
+  }
+
   const localePathPattern = supportedSiteLocales
     .map((locale) => siteLocaleDefinitions[locale].path)
     .join("|");
@@ -179,7 +189,7 @@ function getLanguageAlternates(pathname: string) {
 
   return {
     ...Object.fromEntries(
-      supportedSiteLocales.map((locale) => [
+      seoIndexableLocales.map((locale) => [
         siteLocaleDefinitions[locale].htmlLang,
         withSiteLocale(relativePath, locale),
       ]),
@@ -209,6 +219,7 @@ export async function generateMetadata(): Promise<Metadata> {
     locale,
   );
   const languageAlternates = getLanguageAlternates(canonicalPath);
+  const robotsPolicy = getLocaleRobotsPolicy(locale);
 
   return {
     metadataBase: new URL(siteUrl),
@@ -224,11 +235,9 @@ export async function generateMetadata(): Promise<Metadata> {
       languages: languageAlternates,
     },
     robots: {
-      index: true,
-      follow: true,
+      ...robotsPolicy,
       googleBot: {
-        index: true,
-        follow: true,
+        ...robotsPolicy,
         "max-image-preview": "large",
         "max-snippet": -1,
         "max-video-preview": -1,

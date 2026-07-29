@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+  indexableStaticGuidePaths,
+  isUnreleasedPublicPath,
+} from "../lib/public-launch-routes.ts";
+import { getLanguageSwitchHref } from "../lib/language-switch-route.ts";
+import {
+  seoIndexableLocales,
+  seoSitemapBudgets,
+} from "../lib/seo-indexing-policy.ts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
@@ -46,6 +55,69 @@ test("site metadata defaults to geosub.org and has language alternates", () => {
   assert.match(nextConfig, /permanent:\s*true/);
 });
 
+test("language switching never links staged locales to unpublished guide details", () => {
+  assert.equal(
+    getLanguageSwitchHref("/zh/guides/gift-card-guide", "ja"),
+    "/ja/guides",
+  );
+  assert.equal(
+    getLanguageSwitchHref("/en/guides/payment-account", "zh-tw"),
+    "/zh-tw/guides",
+  );
+  assert.equal(
+    getLanguageSwitchHref("/zh/guides/gift-card-guide", "en"),
+    "/en/guides/gift-card-guide",
+  );
+  assert.equal(
+    getLanguageSwitchHref("/zh/ai-pricing/chatgpt/plus", "ja"),
+    "/ja/ai-pricing/chatgpt/plus",
+  );
+});
+
+test("known legacy Search Console URLs resolve without creating thin pages", () => {
+  const traditionalGiftCardGuide = readAppFile(
+    "zh-tw/guides/gift-card-guide/page.tsx",
+  );
+  const chineseGiftCardGuide = readAppFile(
+    "zh/guides/gift-card-guide/page.tsx",
+  );
+  const pricingDetail = readFileSync(
+    resolve(appDir, "..", "components", "PricingDetailPage.tsx"),
+    "utf8",
+  );
+  const rootLayout = readAppFile("layout.tsx");
+  const sitemap = readAppFile("sitemap.ts");
+  const nextConfig = readFileSync(
+    resolve(appDir, "..", "next.config.ts"),
+    "utf8",
+  );
+  const launchPolicy = readFileSync(
+    resolve(appDir, "..", "lib", "public-launch-routes.ts"),
+    "utf8",
+  );
+
+  assert.match(
+    traditionalGiftCardGuide,
+    /permanentRedirect\("\/zh\/guides\/gift-card-guide"\)/,
+  );
+  assert.match(launchPolicy, /"\/gaming-steam"/);
+  assert.match(launchPolicy, /"\/gift-cards"/);
+  assert.equal(isUnreleasedPublicPath("/zh/gaming-steam"), true);
+  assert.equal(isUnreleasedPublicPath("/en/gaming-steam"), true);
+  assert.equal(isUnreleasedPublicPath("/zh/gift-cards"), true);
+  assert.match(pricingDetail, /Boolean\(resolvedSearchParams\.plan\)/);
+  assert.match(pricingDetail, /permanentRedirect\(canonicalDetailPath\)/);
+  assert.doesNotMatch(pricingDetail, /maandabonnement/);
+  assert.match(rootLayout, /canonical: canonicalPath/);
+  assert.match(chineseGiftCardGuide, /title="数字礼品卡购买前检查"/);
+  assert.match(sitemap, /indexableStaticGuidePaths\.map/);
+  assert.ok(indexableStaticGuidePaths.includes("/guides/gift-card-guide"));
+  assert.match(nextConfig, /value:\s*"www\.geosub\.org"/);
+  assert.match(nextConfig, /destination:\s*"https:\/\/geosub\.org\/zh"/);
+  assert.doesNotMatch(sitemap, /route\("\/(?:zh|en)\/gaming-steam"/);
+  assert.doesNotMatch(sitemap, /route\("\/(?:zh|en)\/gift-cards"/);
+});
+
 test("page titles rely on the root GeoSub title template exactly once", () => {
   for (const pageFile of listPageFiles(appDir)) {
     const source = readFileSync(pageFile, "utf8");
@@ -73,26 +145,16 @@ test("sitemap includes public subscription and article routes only", () => {
   const source = readAppFile("sitemap.ts");
 
   assert.match(source, /https:\/\/geosub\.org/);
+  assert.deepEqual(seoIndexableLocales, ["zh", "en"]);
+  assert.match(source, /seoIndexableLocales\.map/);
+  assert.match(source, /seoIndexableLocales\.flatMap/);
   assert.match(source, /getArticleRoutesForLocale\(now, Locale\.ZH, "zh"\)/);
   assert.match(source, /getArticleRoutesForLocale\(now, Locale\.EN, "en"\)/);
   assert.match(source, /\/zh\/ai-pricing/);
-  assert.match(source, /\/zh-tw\/ai-pricing/);
   assert.match(source, /\/en\/ai-pricing/);
-  assert.match(source, /\/tr\/ai-pricing/);
-  assert.match(source, /\/ar\/ai-pricing/);
-  assert.match(source, /\/fr\/ai-pricing/);
-  assert.match(source, /\/it\/ai-pricing/);
-  assert.match(source, /\/de\/ai-pricing/);
-  assert.match(source, /\/pt\/ai-pricing/);
   assert.match(source, /\/zh\/streaming-pricing/);
-  assert.match(source, /\/zh-tw\/streaming-pricing/);
   assert.match(source, /const planPath = `\$\{product\.slug\}\/\$\{plan\.slug\}`/);
-  assert.match(source, /\/tr\/streaming-pricing/);
-  assert.match(source, /\/ar\/streaming-pricing/);
-  assert.match(source, /\/fr\/streaming-pricing/);
-  assert.match(source, /\/it\/streaming-pricing/);
-  assert.match(source, /\/de\/streaming-pricing/);
-  assert.match(source, /\/pt\/streaming-pricing/);
+  assert.doesNotMatch(source, /route\("\/(?:zh-tw|ja|ko|es|tr|ar|fr|it|de|pt)\//);
   assert.match(source, /`\/\$\{pathLocale\}\/guides\/\$\{article\.slug\}`/);
   assert.match(source, /`\/\$\{pathLocale\}\/guides\/category\/\$\{category\.slug\}`/);
   assert.match(source, /`\/\$\{pathLocale\}\/guides\/tag\/\$\{tag\.slug\}`/);
@@ -100,6 +162,40 @@ test("sitemap includes public subscription and article routes only", () => {
   assert.doesNotMatch(source, /\/api/);
   assert.doesNotMatch(source, /route\("\/zh", "daily", 1, now\)/);
   assert.match(source, /\.\.\.\(lastModified \? \{ lastModified \} : \{\}\)/);
+});
+
+test("SEO indexing policy keeps accessible locales separate from promoted locales", () => {
+  const source = readAppFile("sitemap.ts");
+  const literalPaths = [...source.matchAll(/route\("(\/[^"]+)"/g)].map(
+    (match) => match[1],
+  );
+
+  assert.deepEqual(seoIndexableLocales, ["zh", "en"]);
+  assert.deepEqual(seoSitemapBudgets, {
+    total: 120,
+    productPlanPages: 60,
+    guideDetailPages: 24,
+    currencyPairPages: 16,
+  });
+  assert.ok(literalPaths.length > 0);
+  assert.ok(literalPaths.length <= 20);
+
+  for (const path of literalPaths) {
+    const locale = path.split("/")[1];
+    assert.ok(
+      seoIndexableLocales.includes(locale as "zh" | "en"),
+      `Sitemap literal must use an indexable locale: ${path}`,
+    );
+    assert.equal(
+      existsSync(resolve(appDir, `.${path}`, "page.tsx")),
+      true,
+      `Sitemap literal must have a page route: ${path}`,
+    );
+  }
+
+  assert.doesNotMatch(source, /supportedSiteLocales\.(?:map|flatMap)/);
+  assert.match(source, /getPlanEditorialIndexingStatus/);
+  assert.match(source, /getPlanSitemapDecision/);
 });
 
 test("published guide routes and metadata are localized end to end", () => {
@@ -140,6 +236,9 @@ test("pricing details publish page-specific metadata and matching structured dat
   assert.match(chineseDetail, /getPricingDetailMetadata/);
   assert.match(chineseDetail, /locale: "zh"/);
   assert.match(sharedDetail, /buildPricingStructuredData/);
+  assert.match(sharedDetail, /getPlanSearchIntentCopy/);
+  assert.match(sharedDetail, /description: searchIntentCopy\?\.description/);
+  assert.match(sharedDetail, /faqs: effectiveFaqs/);
   assert.match(sharedDetail, /type="application\/ld\+json"/);
   assert.match(sharedDetail, /openGraph:/);
   assert.match(sharedDetail, /twitter:/);

@@ -112,3 +112,15 @@ test("pricing list query requires published products, plans and prices", () => {
   assert.match(source, /getLocalizedCountryName/);
   assert.doesNotMatch(source, /countryNameZhMap/);
 });
+
+test("public product cards prefer current plans over legacy renewal tiers", () => {
+  const pricingTypes = readSiteFile("lib", "db-pricing-types.ts");
+  const pricingAdapter = readSiteFile("lib", "db-ai-pricing.ts");
+
+  assert.match(
+    pricingTypes,
+    /product\.plans\.find\(\(plan\) => plan\.indexingStatus === "current"\)/,
+  );
+  assert.match(pricingAdapter, /getPlanEditorialIndexingStatus\(/);
+  assert.match(pricingAdapter, /indexingStatus:/);
+});

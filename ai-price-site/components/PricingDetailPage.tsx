@@ -22,6 +22,13 @@ import { getPlanAffordability } from "../lib/affordability";
 import { getLatestExchangeRate } from "../lib/exchange-rates";
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
+import { getPlanDisplayName } from "../lib/pricing-labels";
+import { getPlanSearchIntentCopy } from "../lib/plan-search-intent";
+import {
+  getPlanEditorialIndexingStatus,
+  getProductEditorialContent,
+} from "../lib/product-editorial-content";
+import { ProductEditorialSection } from "./ProductEditorialSection";
 import { buildPricingStructuredData, type PricingFaq } from "../lib/pricing-seo";
 import {
   getPricingLanguageAlternates,
@@ -29,6 +36,11 @@ import {
   getPricingPlanPath,
   stripGeoSubTitleSuffix,
 } from "../lib/pricing-routes";
+import {
+  getProductRobotsPolicy,
+  getProductSeoGateMode,
+} from "../lib/product-seo-indexing-policy";
+import { getProductSeoQualityAudit } from "../lib/product-seo-quality-data";
 import { prisma } from "../lib/prisma";
 import {
   getSiteLocaleDefinition,
@@ -99,7 +111,6 @@ async function getProductNavItems(category: string) {
         select: {
           slug: true,
         },
-        take: 1,
       },
     },
   });
@@ -108,7 +119,13 @@ async function getProductNavItems(category: string) {
     slug: product.slug,
     name: product.name,
     category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
-    defaultPlanSlug: product.plans[0]?.slug || null,
+    defaultPlanSlug:
+      product.plans.find(
+        (plan) =>
+          getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
+      )?.slug ||
+      product.plans[0]?.slug ||
+      null,
     logoUrl: product.logoUrl,
     officialUrl: product.officialUrl,
   }));
@@ -399,9 +416,13 @@ export async function getPricingDetailMetadata({
 }: PricingDetailPageProps & { locale: SiteLocale }): Promise<Metadata> {
   const { slug, plan: routePlanSlug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const [product, seoMeta] = await Promise.all([
+  const productSeoGateMode = getProductSeoGateMode();
+  const [product, seoMeta, qualityAudit] = await Promise.all([
     getProduct(slug, locale),
     getProductSeoMeta(slug, locale),
+    productSeoGateMode === "enforce"
+      ? getProductSeoQualityAudit(slug)
+      : Promise.resolve(null),
   ]);
 
   if (!product) {
@@ -450,6 +471,20 @@ export async function getPricingDetailMetadata({
     stats,
     regionCount: activePlan.regions.length,
   });
+  const editorialContent = getProductEditorialContent(
+    locale,
+    product.slug,
+    activePlan.slug,
+  );
+  const searchIntentCopy = getPlanSearchIntentCopy({
+    locale,
+    displayName: getPlanDisplayName(product.name, activePlan.name),
+    productName: product.name,
+    regionCount: activePlan.regions.length,
+    lowestCountry: stats?.minRegion.country,
+    lowestPrice: stats ? formatUsd(stats.minRegion.priceUsd) : null,
+    content: editorialContent,
+  });
   const canonicalPath = getPricingPlanPath(
     locale,
     product.category,
@@ -471,18 +506,31 @@ export async function getPricingDetailMetadata({
     hasChineseText(seoMeta?.description) &&
     hasSinglePublishedPlan
       ? seoMeta?.description || pageCopy.description
-      : seoCopy.description;
+      : searchIntentCopy?.description || seoCopy.description;
+  const robots = getProductRobotsPolicy(
+    locale,
+    qualityAudit?.status ||
+      (productSeoGateMode === "enforce" ? "hold" : "indexable"),
+    productSeoGateMode,
+    getPlanEditorialIndexingStatus(product.slug, activePlan.slug),
+  );
 
   return {
     title,
     description,
+    robots,
     alternates: {
       canonical: canonicalPath,
-      languages: getPricingLanguageAlternates(
-        product.category,
-        product.slug,
-        activePlan.slug,
-      ),
+      ...(robots.index
+        ? {
+            languages: getPricingLanguageAlternates(
+              locale,
+              product.category,
+              product.slug,
+              activePlan.slug,
+            ),
+          }
+        : {}),
     },
     openGraph: {
       type: "website",
@@ -593,14 +641,31 @@ export default async function PricingDetailPage({
     hasSinglePublishedPlan
       ? seoMeta?.description || pageCopy.description
       : pageCopy.description;
+  const editorialContent = getProductEditorialContent(
+    locale,
+    product.slug,
+    activePlan.slug,
+  );
+  const searchIntentCopy = getPlanSearchIntentCopy({
+    locale,
+    displayName: getPlanDisplayName(product.name, activePlan.name),
+    productName: product.name,
+    regionCount: activePlan.regions.length,
+    lowestCountry: stats?.minRegion.country,
+    lowestPrice: stats ? formatUsd(stats.minRegion.priceUsd) : null,
+    content: editorialContent,
+  });
+  const effectiveFaqs = searchIntentCopy
+    ? [...searchIntentCopy.faqs, ...pageCopy.faqs]
+    : pageCopy.faqs;
   const structuredData = buildPricingStructuredData({
     locale,
     path: canonicalDetailPath,
     title: pageTitle,
-    description: pageDescription,
+    description: searchIntentCopy?.description || pageDescription,
     product,
     plan: activePlan,
-    faqs: pageCopy.faqs,
+    faqs: effectiveFaqs,
   });
 
   return (
@@ -703,6 +768,13 @@ export default async function PricingDetailPage({
               }
             />
 
+            {editorialContent ? (
+              <ProductEditorialSection
+                productSlug={product.slug}
+                content={editorialContent}
+              />
+            ) : null}
+
             {affordability.rows.length > 0 ? (
               <AffordabilityComparison
                 productName={product.name}
@@ -721,7 +793,7 @@ export default async function PricingDetailPage({
 
         <FaqSection
           title={pageCopy.faqTitle}
-          faqs={pageCopy.faqs}
+          faqs={effectiveFaqs}
         />
       </div>
     </main>

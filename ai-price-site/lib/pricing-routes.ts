@@ -1,8 +1,11 @@
 import {
   siteLocaleDefinitions,
-  supportedSiteLocales,
   type SiteLocale,
 } from "./site-locale.ts";
+import {
+  isSeoIndexableLocale,
+  seoIndexableLocales,
+} from "./seo-indexing-policy.ts";
 
 export type PricingLocale = SiteLocale;
 
@@ -34,12 +37,17 @@ export function getPricingPlanPath(
 }
 
 export function getPricingLanguageAlternates(
+  activeLocale: PricingLocale,
   category: string,
   slug?: string,
   planSlug?: string,
-): Record<string, string> {
+): Record<string, string> | undefined {
+  if (!isSeoIndexableLocale(activeLocale)) {
+    return undefined;
+  }
+
   const localizedPaths = Object.fromEntries(
-    supportedSiteLocales.map((locale) => [
+    seoIndexableLocales.map((locale) => [
       siteLocaleDefinitions[locale].htmlLang,
       slug && planSlug
         ? getPricingPlanPath(locale, category, slug, planSlug)

@@ -8,17 +8,22 @@ export const unreleasedPublicPaths = [
 
 export const internalTestPaths = ["/cms-test", "/tracking-test"] as const;
 
+// Promote a small, reviewed guide set instead of multiplying every locale.
+export const indexableStaticGuidePaths = [
+  "/guides/gift-card-guide",
+  "/guides/methodology",
+  "/guides/payment-account",
+  "/guides/price-guide",
+  "/guides/tool-review",
+] as const;
+
 export const launchedMirroredStaticPaths = new Set([
   "/",
   "/about",
   "/ai-pricing",
   "/data-sources",
   "/guides",
-  "/guides/gift-card-guide",
-  "/guides/methodology",
-  "/guides/payment-account",
-  "/guides/price-guide",
-  "/guides/tool-review",
+  ...indexableStaticGuidePaths,
   "/privacy",
   "/streaming-pricing",
   "/tools/currency-converter",

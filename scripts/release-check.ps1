@@ -129,6 +129,15 @@ function Test-BashSyntax {
   }
 }
 
+function Get-RepositoryCandidateFiles {
+  $files = & $GitPath -C $Root ls-files --cached --others --exclude-standard
+  if ($LASTEXITCODE -ne 0) {
+    throw "Cannot enumerate tracked and untracked repository files."
+  }
+
+  return $files | Sort-Object -Unique
+}
+
 function Test-RepositoryHygiene {
   $blockedPatterns = @(
     @{ Label = "local Windows user path"; Pattern = ("C:" + "\\Users\\") },
@@ -136,11 +145,11 @@ function Test-RepositoryHygiene {
     @{ Label = "deployment server IP"; Pattern = ("89\.58" + "\.25\.190") }
   )
   $textExtensions = @(
-    ".cjs", ".css", ".env", ".example", ".js", ".json", ".jsx", ".md", ".mjs",
-    ".ps1", ".sh", ".sql", ".ts", ".tsx", ".txt", ".yaml", ".yml"
+    ".cjs", ".cts", ".css", ".env", ".example", ".js", ".json", ".jsx", ".md",
+    ".mjs", ".mts", ".ps1", ".sh", ".sql", ".ts", ".tsx", ".txt", ".yaml", ".yml"
   )
   $hygieneFindings = @()
-  $files = & $GitPath -C $Root ls-files
+  $files = Get-RepositoryCandidateFiles
 
   foreach ($file in $files) {
     $path = Join-Path $Root $file
@@ -170,12 +179,12 @@ function Test-RepositoryHygiene {
 }
 
 function Test-RepositorySecrets {
-  $trackedFiles = & $GitPath -C $Root ls-files
+  $candidateFiles = Get-RepositoryCandidateFiles
   $findings = @()
   $privateKeyPattern = ("BEGIN " + "(RSA |EC |OPENSSH )?PRIVATE KEY")
   $credentialUrlPattern = ("postgres(?:ql)?://" + "[^\s:]+:[^@\s]+@")
 
-  foreach ($file in $trackedFiles) {
+  foreach ($file in $candidateFiles) {
     $normalized = $file.Replace("\", "/")
     $name = [System.IO.Path]::GetFileName($normalized)
     $extension = [System.IO.Path]::GetExtension($normalized)
@@ -185,7 +194,7 @@ function Test-RepositorySecrets {
       $extension -in @(".pem", ".key", ".p12", ".pfx") -or
       $name -in @("id_rsa", "id_ed25519")
     ) {
-      $findings += "$file is a tracked secret-bearing filename"
+      $findings += "$file is a secret-bearing filename prepared for commit"
       continue
     }
 
@@ -212,13 +221,14 @@ function Test-RepositorySecrets {
     throw "Repository secret check failed."
   }
 
-  Write-Host "No tracked environment secrets, private keys, or credential URLs found."
+  Write-Host "No environment secrets, private keys, or credential URLs found in commit candidates."
 }
 
 $NpmPath = Resolve-ToolPath -PreferredPath $NpmPath -CommandName "npm"
 $GitPath = Resolve-ToolPath -PreferredPath $GitPath -CommandName "git"
 $BashPath = Resolve-BashPath -PreferredPath $BashPath
 $FrontendDir = Join-Path $Root "ai-price-site"
+$BackendDir = Join-Path $Root "geosub-backend"
 
 Invoke-Step -Name "Version sync" -Block { Assert-VersionSync }
 Invoke-Step -Name "PowerShell syntax" -Block { Test-PowerShellSyntax }
@@ -226,6 +236,22 @@ Invoke-Step -Name "Node script syntax" -Block { Test-NodeSyntax }
 Invoke-Step -Name "Bash deployment syntax" -Block { Test-BashSyntax -Executable $BashPath }
 Invoke-Step -Name "Repository hygiene" -Block { Test-RepositoryHygiene }
 Invoke-Step -Name "Repository secrets" -Block { Test-RepositorySecrets }
+
+Invoke-Step -Name "Frontend production dependency audit" -Block {
+  & $NpmPath --prefix $FrontendDir audit --omit=dev --audit-level=high
+}
+
+Invoke-Step -Name "Backend production dependency audit" -Block {
+  & $NpmPath --prefix $BackendDir audit --omit=dev --audit-level=high
+}
+
+Invoke-Step -Name "Frontend SEO indexing policy" -Block {
+  & $NpmPath --prefix $FrontendDir run check:seo
+}
+
+Invoke-Step -Name "Frontend plan content uniqueness" -Block {
+  & $NpmPath --prefix $FrontendDir run check:content-uniqueness
+}
 
 Invoke-Step -Name "Frontend typecheck" -Block {
   & $NpmPath --prefix $FrontendDir run typecheck

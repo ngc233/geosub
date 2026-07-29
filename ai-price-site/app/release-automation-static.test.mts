@@ -37,6 +37,15 @@ const releaseCheck = readFileSync(
   resolve(appDir, "..", "..", "scripts", "release-check.ps1"),
   "utf8",
 );
+const packageJson = JSON.parse(
+  readFileSync(resolve(appDir, "..", "package.json"), "utf8"),
+) as {
+  scripts: Record<string, string>;
+};
+const sitemapBudgetCheck = readFileSync(
+  resolve(appDir, "..", "scripts", "check-sitemap-budget.mts"),
+  "utf8",
+);
 
 test("ARM64 upgrades persist deployment evidence before changing runtime state", () => {
   assert.match(upgrade, /PREVIOUS_COMMIT="\$\(repo_commit\)"/);
@@ -93,6 +102,34 @@ test("rollback restores recorded code without silently restoring the database", 
   assert.doesNotMatch(rollback, /pg_restore/);
 });
 
+test("post-deploy gate verifies the public canonical host and sitemap budget", () => {
+  assert.match(postDeployCheck, /GEOSUB_PUBLIC_SITE_URL/);
+  assert.match(postDeployCheck, /GEOSUB_PUBLIC_WWW_URL/);
+  assert.match(postDeployCheck, /GEOSUB_MAX_SITEMAP_URLS/);
+  assert.match(postDeployCheck, /url_effective/);
+  assert.match(postDeployCheck, /public www URL resolves to canonical host/);
+  assert.match(postDeployCheck, /public sitemap URL budget/);
+  assert.match(postDeployCheck, /public sitemap excludes staged locale URLs/);
+  assert.match(postDeployCheck, /GEOSUB_MAX_SITEMAP_URLS:-120/);
+  assert.match(
+    postDeployCheck,
+    /zh-tw\|ja\|ko\|es\|tr\|ar\|fr\|it\|de\|pt/,
+  );
+});
+
+test("full release gate generates the database-backed sitemap and enforces page budgets", () => {
+  assert.match(packageJson.scripts["preflight:full"], /check:sitemap/);
+  assert.match(packageJson.scripts["check:sitemap"], /check-sitemap-budget\.mts/);
+  assert.match(sitemapBudgetCheck, /getProductPaths\(\)/);
+  assert.match(sitemapBudgetCheck, /getArticlePaths\(new Date\(\)\)/);
+  assert.match(sitemapBudgetCheck, /seoSitemapBudgets\.total/);
+  assert.match(sitemapBudgetCheck, /seoSitemapBudgets\.productPlanPages/);
+  assert.match(sitemapBudgetCheck, /seoSitemapBudgets\.guideDetailPages/);
+  assert.match(sitemapBudgetCheck, /seoSitemapBudgets\.currencyPairPages/);
+  assert.match(sitemapBudgetCheck, /stagedLocalePaths\.length/);
+  assert.match(sitemapBudgetCheck, /uniquePaths\.size/);
+});
+
 test("local migrations are immutable and the v2 registry is audited", () => {
   assert.match(localMigrationRunner, /Migration checksum changed after it was applied/);
   assert.doesNotMatch(localMigrationRunner, /ON CONFLICT[\s\S]*DO UPDATE/);
@@ -105,10 +142,30 @@ test("local migrations are immutable and the v2 registry is audited", () => {
   assert.match(migrationAudit, /not registered/);
 });
 
-test("release gate rejects tracked secrets and credential-bearing files", () => {
+test("release gate rejects secrets in tracked and untracked candidate files", () => {
   assert.match(releaseCheck, /Test-RepositorySecrets/);
-  assert.match(releaseCheck, /tracked secret-bearing filename/);
+  assert.match(
+    releaseCheck,
+    /ls-files --cached --others --exclude-standard/,
+  );
+  assert.match(releaseCheck, /secret-bearing filename prepared for commit/);
   assert.match(releaseCheck, /private-key header/);
   assert.match(releaseCheck, /database URL with embedded credentials/);
+  assert.match(releaseCheck, /found in commit candidates/);
   assert.match(releaseCheck, /Repository secrets/);
+});
+
+test("release gate blocks high-risk production dependency advisories", () => {
+  assert.match(releaseCheck, /Frontend production dependency audit/);
+  assert.match(releaseCheck, /Backend production dependency audit/);
+  assert.equal(
+    releaseCheck.match(/audit --omit=dev --audit-level=high/g)?.length,
+    2,
+  );
+});
+
+test("release gate audits multilingual indexing policy before build", () => {
+  assert.match(releaseCheck, /Frontend SEO indexing policy/);
+  assert.match(releaseCheck, /run check:seo/);
+  assert.match(releaseCheck, /run check:content-uniqueness/);
 });

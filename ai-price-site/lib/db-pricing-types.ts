@@ -22,6 +22,7 @@ export type DbPricingPlan = {
   slug: string;
   name: string;
   billingCycle: string;
+  indexingStatus: "current" | "legacy";
   regions: DbPricingRegion[];
 };
 
@@ -41,7 +42,10 @@ export function formatUsd(value: number) {
 }
 
 export function getDefaultPlan(product: DbPricingProduct) {
-  return product.plans[0];
+  return (
+    product.plans.find((plan) => plan.indexingStatus === "current") ||
+    product.plans[0]
+  );
 }
 
 export function getPlanSpread(plan: DbPricingPlan) {

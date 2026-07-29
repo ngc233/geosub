@@ -17,6 +17,10 @@ import {
 } from "../lib/display-currency";
 import { getLatestUsdExchangeRates } from "../lib/exchange-rates";
 import {
+  getLocaleRobotsPolicy,
+  isSeoIndexableLocale,
+} from "../lib/seo-indexing-policy";
+import {
   getSiteLocaleDefinition,
   siteLocaleDefinitions,
   type SiteLocale,
@@ -81,27 +85,26 @@ export function getCurrencyConverterMetadata(
     process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org"
   ).replace(/\/$/, "");
   const pairLocales = pair ? getCurrencyPairLocales(pair.slug) : [];
-  const defaultPairLocale = pairLocales.includes("en")
+  const indexablePairLocales = pairLocales.filter(isSeoIndexableLocale);
+  const defaultPairLocale = indexablePairLocales.includes("en")
     ? "en"
-    : pairLocales[0];
+    : indexablePairLocales[0];
   const pairPath = pair
     ? `/tools/currency-converter/${pair.slug}`
     : null;
+  const robots = getLocaleRobotsPolicy(locale);
 
   return {
     title: pairPresentation?.title || copy.metadataTitle,
     description: pairPresentation?.description || copy.metadataDescription,
-    robots: {
-      index: true,
-      follow: true,
-    },
-    ...(pair && pairPath
+    robots,
+    ...(pair && pairPath && robots.index
       ? {
           alternates: {
             canonical: `${siteUrl}/${siteLocaleDefinitions[locale].path}${pairPath}`,
             languages: {
               ...Object.fromEntries(
-                pairLocales.map((pairLocale) => [
+                indexablePairLocales.map((pairLocale) => [
                   siteLocaleDefinitions[pairLocale].htmlLang,
                   `${siteUrl}/${siteLocaleDefinitions[pairLocale].path}${pairPath}`,
                 ]),

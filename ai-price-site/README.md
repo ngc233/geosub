@@ -39,7 +39,21 @@ Optional integrations:
 DIRECTUS_URL=...
 DIRECTUS_TOKEN=...
 NEXT_PUBLIC_SITE_URL=https://geosub.org
+# Keep product-level SEO quality in preview mode until the admin audit is reviewed.
+SEO_PRODUCT_QUALITY_GATE=observe
 ```
+
+`SEO_PRODUCT_QUALITY_GATE=enforce` makes sitemap inclusion and page robots use
+the same product-quality decision. Do not enable it in production until the
+admin SEO preview has been reviewed.
+
+Plans classified as legacy renewal tiers remain accessible for existing
+subscribers, but are always excluded from sitemap promotion and use
+`noindex, follow` in every product-quality gate mode.
+
+The full release gate generates the database-backed sitemap and enforces a
+120 URL total budget, with separate limits for product plans, guide details,
+and currency pairs.
 
 Real `.env` files must stay out of Git.
 

@@ -15,6 +15,9 @@ DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 WEB_HEALTH_URL="${GEOSUB_WEB_HEALTH_URL:-http://127.0.0.1:3000/zh/ai-pricing}"
+PUBLIC_SITE_URL="${GEOSUB_PUBLIC_SITE_URL:-https://geosub.org}"
+PUBLIC_WWW_URL="${GEOSUB_PUBLIC_WWW_URL:-https://www.geosub.org/}"
+MAX_SITEMAP_URLS="${GEOSUB_MAX_SITEMAP_URLS:-120}"
 MAX_EXCHANGE_RATE_AGE_HOURS="${GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS:-18}"
 REQUIRED_EXCHANGE_RATE_QUOTES="AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,HKD,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR"
 MIN_PUBLISHED_SUBSCRIPTION_USD="${GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD:-1}"
@@ -441,8 +444,49 @@ if command -v curl >/dev/null 2>&1; then
   else
     fail "web health URL failed: $WEB_HEALTH_URL"
   fi
+
+  public_redirect_result="$(
+    curl -LsS \
+      --max-time 15 \
+      --max-redirs 5 \
+      -o /dev/null \
+      -w '%{http_code} %{url_effective}' \
+      "$PUBLIC_WWW_URL" || true
+  )"
+  public_redirect_status="${public_redirect_result%% *}"
+  public_redirect_target="${public_redirect_result#* }"
+  if [[ "$public_redirect_status" =~ ^2[0-9][0-9]$ ]] &&
+     [[ "$public_redirect_target" == "$PUBLIC_SITE_URL"* ]] &&
+     [[ "$public_redirect_target" != *"www.geosub.org"* ]]; then
+    pass "public www URL resolves to canonical host: $public_redirect_target"
+  else
+    fail "public www canonical redirect failed: ${public_redirect_result:-no response}"
+  fi
+
+  sitemap_content="$(curl -fsS --max-time 15 "$PUBLIC_SITE_URL/sitemap.xml" || true)"
+  if [[ -z "$sitemap_content" ]]; then
+    fail "public sitemap unavailable: $PUBLIC_SITE_URL/sitemap.xml"
+  else
+    sitemap_url_count="$(
+      printf '%s' "$sitemap_content" |
+        awk -F'<loc>' '{ count += NF - 1 } END { print count + 0 }'
+    )"
+    if (( sitemap_url_count > 0 && sitemap_url_count <= MAX_SITEMAP_URLS )); then
+      pass "public sitemap URL budget: ${sitemap_url_count}/${MAX_SITEMAP_URLS}"
+    else
+      fail "public sitemap URL budget exceeded or empty: ${sitemap_url_count}/${MAX_SITEMAP_URLS}"
+    fi
+
+    if printf '%s' "$sitemap_content" |
+      grep -Eq '<loc>https://geosub\.org/(zh-tw|ja|ko|es|tr|ar|fr|it|de|pt)(/|<)'; then
+      fail "public sitemap contains staged locale URLs"
+    else
+      pass "public sitemap excludes staged locale URLs"
+    fi
+  fi
 else
   warn "curl not available; skipped web health URL"
+  warn "curl not available; skipped public canonical and sitemap checks"
 fi
 
 printf '\nPost-deploy check finished: failures=%s warnings=%s\n' "$failures" "$warnings"

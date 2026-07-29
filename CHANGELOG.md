@@ -1,5 +1,39 @@
 # Changelog
 
+## 2.4.2 - 2026-07-30
+
+- Reduced the public sitemap from mechanically generated locale variants to a
+  focused set of 85 indexable URLs, prioritizing Chinese, English and complete
+  search-intent pages while keeping staged locales accessible outside search.
+- Added shared indexing rules for locale readiness and legacy subscription
+  plans, with matching canonical, robots, hreflang and sitemap behavior.
+- Added product-specific editorial sections and plan-aware SEO copy, then
+  enforced content-similarity limits so indexable plan pages provide distinct
+  value instead of repeating one template.
+- Added sitemap budgets, orphan-page checks, product SEO quality reporting and
+  database-backed release gates to prevent uncontrolled index expansion.
+- Expanded repository hygiene and secret scans to include untracked commit
+  candidates, covering newly added rules and tests before their first commit.
+- Fixed product navigation so AI and streaming links prefer current plans over
+  retired tiers, preserving legacy URLs for visitors without promoting them to
+  search engines.
+- Revalidated all 85 sitemap URLs, 255 behavior tests, TypeScript, ESLint,
+  source encoding, SEO policy checks and the 115-page production build.
+
+## 2.4.1 - 2026-07-24
+
+- Updated Next.js and its matching ESLint configuration to 16.2.11, closing
+  the framework's published middleware, Server Action, SSRF and denial-of-
+  service advisories without changing the application architecture.
+- Pinned patched transitive versions of PostCSS, Sharp, Hono, fast-uri,
+  js-yaml and brace-expansion after validating the complete installed
+  dependency tree.
+- Added production dependency security audits for both the frontend and
+  backend to the release gate, blocking future releases with high or critical
+  npm advisories.
+- Revalidated Prisma Client generation, source encoding, TypeScript, ESLint,
+  all 222 behavior tests and the 115-page production build.
+
 ## 2.4.0 - 2026-07-24
 
 - Added a public subscription currency converter across all 12 active locales,
