@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.4.3 - 2026-07-30
+
+- Completed Chinese and English decision content for Suno Basic, Pro and
+  Premier and for Perplexity Pro and Max, using current official plan guidance.
+- Marked Suno Basic as a legacy/free-plan reference so historical App Store
+  evidence remains accessible without promoting it as a current paid tier.
+- Replaced incomplete legacy SEO fields with the complete generated fallback
+  instead of allowing short titles and descriptions to lower public page
+  quality.
+- Added a tracked database migration that fills the product, plan and search
+  descriptions identified for ChatGPT, Suno and Perplexity, then creates a
+  complete Chinese and English SEO baseline for every published AI and
+  streaming product.
+- Bound product publication to automatic SEO creation, while preserving
+  complete editorial copy and refreshing canonical paths after product slug or
+  category changes.
+- Removed the 50-product SEO audit limit, surfaced per-product priority-locale
+  coverage and made complete Chinese and English metadata a collection gate.
+- Expanded release and post-deployment gates so duplicate metadata, missing
+  published-product SEO and the publishing automation trigger are verified on
+  every deployment.
+
 ## 2.4.2 - 2026-07-30
 
 - Reduced the public sitemap from mechanically generated locale variants to a

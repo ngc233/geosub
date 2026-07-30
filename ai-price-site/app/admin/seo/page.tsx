@@ -58,7 +58,7 @@ export default async function AdminSeoPage() {
       },
       take: 50,
     }),
-    getProductSeoQualityAudits({ take: 50 }),
+    getProductSeoQualityAudits(),
   ]);
 
   const articleAudits = articles
@@ -227,6 +227,10 @@ export default async function AdminSeoPage() {
                     </div>
                   </div>
                   <div className="text-xs leading-6 text-slate-600">
+                    <div>
+                      基础 SEO {item.completeSeoLocaleCount}/
+                      {item.requiredSeoLocaleCount}
+                    </div>
                     <div>
                       {item.planCount} 个套餐 · {item.countryCount} 个地区
                     </div>

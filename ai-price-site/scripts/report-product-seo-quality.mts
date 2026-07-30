@@ -23,6 +23,7 @@ const report = audits.map((audit) => {
     prices: audit.priceCount,
     stalePrices: audit.stalePriceCount,
     missingTaxProfiles: audit.taxGapCount,
+    seoLocales: `${audit.completeSeoLocaleCount}/${audit.requiredSeoLocaleCount}`,
     nextAction: audit.nextAction,
     remainingIssues: audit.issues.slice(1).join("；") || "无",
   };

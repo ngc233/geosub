@@ -15,6 +15,8 @@ const priorityPlans = {
   manus: ["basic", "pro", "plus"],
   disney: ["standard-with-ads", "standard", "premium"],
   "hbo-max": ["basic-with-ads", "standard", "premium"],
+  perplexity: ["pro", "max"],
+  suno: ["basic", "pro", "premier-plan"],
 };
 
 test("priority products have complete Chinese and English plan guidance", () => {
@@ -50,6 +52,9 @@ test("legacy renewal tiers are explicit and current plans remain eligible", () =
   assert.equal(getPlanEditorialIndexingStatus("manus", "plus"), "legacy");
   assert.equal(getPlanEditorialIndexingStatus("manus", "pro"), "current");
   assert.equal(getPlanEditorialIndexingStatus("gemini", "pro"), "current");
+  assert.equal(getPlanEditorialIndexingStatus("suno", "basic"), "legacy");
+  assert.equal(getPlanEditorialIndexingStatus("suno", "pro"), "current");
+  assert.equal(getPlanEditorialIndexingStatus("perplexity", "max"), "current");
 });
 
 test("staged locales do not receive an English editorial fallback", () => {

@@ -34,7 +34,31 @@ export type ProductSeoQualityAudit = ProductSeoQualityResult & {
   countryCount: number;
   stalePriceCount: number;
   taxGapCount: number;
+  completeSeoLocaleCount: number;
+  requiredSeoLocaleCount: number;
 };
+
+const requiredProductSeoLocales = ["ZH", "EN"] as const;
+
+function isCompleteProductSeoMeta(meta: {
+  title: string;
+  description: string | null;
+  h1: string | null;
+  canonicalUrl: string | null;
+}) {
+  const titleLength = meta.title.trim().length;
+  const descriptionLength = meta.description?.trim().length || 0;
+  const h1Length = meta.h1?.trim().length || 0;
+
+  return (
+    titleLength >= 10 &&
+    titleLength <= 65 &&
+    descriptionLength >= 70 &&
+    descriptionLength <= 180 &&
+    h1Length >= 10 &&
+    Boolean(meta.canonicalUrl?.trim())
+  );
+}
 
 function countDuplicatePlanGroups(plans: Array<{ name: string }>) {
   const counts = new Map<string, number>();
@@ -91,7 +115,9 @@ export async function getProductSeoQualityAudits({
       include: {
         seoMetas: {
           where: {
-            locale: "ZH",
+            locale: {
+              in: [...requiredProductSeoLocales],
+            },
             status: "PUBLISHED",
           },
         },
@@ -149,7 +175,12 @@ export async function getProductSeoQualityAudits({
 
   return products
     .map((product) => {
-      const meta = product.seoMetas[0];
+      const meta = product.seoMetas.find((item) => item.locale === "ZH");
+      const completeSeoLocaleCount = new Set(
+        product.seoMetas
+          .filter(isCompleteProductSeoMeta)
+          .map((item) => item.locale),
+      ).size;
       const prices = product.plans.flatMap((plan) => plan.regionPrices);
       const countryCount = new Set(prices.map((price) => price.countryId)).size;
       const stalePriceCount = prices.filter(
@@ -188,6 +219,8 @@ export async function getProductSeoQualityAudits({
         missingTaxProfileCount: taxGapCount,
         duplicatePlanGroupCount: countDuplicatePlanGroups(product.plans),
         publishedOutlierCount: countPublishedOutliers(product.plans),
+        requiredSeoLocaleCount: requiredProductSeoLocales.length,
+        completeSeoLocaleCount,
       });
 
       return {
@@ -204,6 +237,8 @@ export async function getProductSeoQualityAudits({
         countryCount,
         stalePriceCount,
         taxGapCount,
+        completeSeoLocaleCount,
+        requiredSeoLocaleCount: requiredProductSeoLocales.length,
         ...quality,
       };
     })

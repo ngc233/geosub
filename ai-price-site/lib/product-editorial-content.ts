@@ -241,6 +241,68 @@ const editorialContent: Record<
         },
       },
     },
+    perplexity: {
+      summary:
+        "Perplexity 是带来源引用的 AI 搜索与研究工具。个人付费层级主要按高级模型、Pro Search、Research、文件与应用创建、上传额度和支持级别区分：Pro 面向规律研究，Max 面向需要更高使用量和最新功能的专业用户。API 与企业套餐不纳入本页比较。",
+      sectionTitle: "这个套餐适合谁",
+      bestForLabel: "适合",
+      differenceLabel: "与其他套餐的主要区别",
+      availabilityLabel: "订阅前注意",
+      sourceLabel: "查看 Perplexity 官方套餐说明",
+      plans: {
+        pro: {
+          bestFor:
+            "经常进行资料检索、文件分析和深度研究，希望使用高级模型但不需要最高用量的个人用户。",
+          difference:
+            "Pro 提供更多带引用的搜索、Research、文件上传、图像生成及高级模型访问，是个人付费入门层。",
+          sourceUrl:
+            "https://www.perplexity.ai/help-center/en/articles/9385876-what-is-perplexity-pro",
+        },
+        max: {
+          bestFor:
+            "需要更高频研究、文件与应用创建、最新高级模型和优先支持的研究者、创作者及专业用户。",
+          difference:
+            "Max 包含 Pro 权益，并提高高级模型、Research 和创建功能的使用量，同时优先开放部分新功能。",
+          sourceUrl:
+            "https://www.perplexity.ai/help-center/en/articles/11680686-perplexity-max",
+        },
+      },
+    },
+    suno: {
+      summary:
+        "Suno 是面向音乐创作的生成式 AI 服务。个人方案主要按创作额度和商业使用权区分：Basic 适合非商业试用，Pro 每月提供 2,500 积分，Premier 每月提供 10,000 积分。付费期间创作的歌曲可获得商业使用权，但是否受版权保护仍取决于所在地区法律。",
+      sectionTitle: "这个套餐适合谁",
+      bestForLabel: "适合",
+      differenceLabel: "与其他套餐的主要区别",
+      availabilityLabel: "订阅前注意",
+      sourceLabel: "查看 Suno 官方套餐说明",
+      plans: {
+        basic: {
+          bestFor:
+            "希望先体验 AI 音乐生成，只用于个人和非商业场景，并且可以接受每日有限创作额度的用户。",
+          difference:
+            "Suno 当前把 Basic 定义为免费层，每日补充 50 积分；免费层作品不包含付费方案的商业使用权。",
+          availabilityNote:
+            "App Store 中出现的历史 Basic 付费记录不代表当前官网仍提供 Basic 订阅，新用户应以 Suno 当前账户页为准。",
+          indexingStatus: "legacy",
+          sourceUrl: "https://help.suno.com/en/articles/2410049",
+        },
+        pro: {
+          bestFor:
+            "持续创作音乐、需要每月稳定额度，并希望将订阅期间生成的歌曲用于商业发布的个人创作者。",
+          difference:
+            "Pro 是付费入门层，每月提供 2,500 积分，并为订阅期间创作的歌曲提供商业使用权。",
+          sourceUrl: "https://help.suno.com/en/articles/2410049",
+        },
+        "premier-plan": {
+          bestFor:
+            "创作频率较高、每月需要大量生成额度，并计划持续制作和发布音乐内容的专业或重度用户。",
+          difference:
+            "Premier 是最高月度积分层，每月提供 10,000 积分；商业使用权与 Pro 相同，主要差别是创作额度。",
+          sourceUrl: "https://help.suno.com/en/articles/2410049",
+        },
+      },
+    },
     disney: {
       summary:
         "Disney+ 套餐主要按是否插播广告、最高画质、同时观看设备数和离线下载区分。不同国家可能提供不同组合，直播、体育和宣传内容即使在无广告套餐中也可能包含广告，具体权益以当地结算页为准。",
@@ -523,6 +585,68 @@ const editorialContent: Record<
           indexingStatus: "legacy",
           sourceUrl:
             "https://help.manus.im/en/articles/11711111-what-is-the-current-membership-pricing-for-manus",
+        },
+      },
+    },
+    perplexity: {
+      summary:
+        "Perplexity is an AI search and research service that answers with cited sources. Consumer tiers mainly differ in advanced-model access, Pro Search, Research, file and app creation, upload limits and support. Pro suits regular research, while Max is built for professionals who need higher usage and earlier access to new features. API and enterprise plans are excluded here.",
+      sectionTitle: "Who this plan is for",
+      bestForLabel: "Best for",
+      differenceLabel: "Main difference",
+      availabilityLabel: "Before subscribing",
+      sourceLabel: "Perplexity plan guide",
+      plans: {
+        pro: {
+          bestFor:
+            "Individuals who regularly research, analyze files and need advanced AI models without requiring the highest usage tier.",
+          difference:
+            "Pro adds more cited searches, Research, file uploads, image generation and advanced-model access as the entry consumer tier.",
+          sourceUrl:
+            "https://www.perplexity.ai/help-center/en/articles/9385876-what-is-perplexity-pro",
+        },
+        max: {
+          bestFor:
+            "Researchers, creators and professionals needing higher-volume research, file and app creation, newer models and priority support.",
+          difference:
+            "Max includes Pro benefits with higher access to advanced models, Research and creation tools, plus earlier access to selected new features.",
+          sourceUrl:
+            "https://www.perplexity.ai/help-center/en/articles/11680686-perplexity-max",
+        },
+      },
+    },
+    suno: {
+      summary:
+        "Suno is a generative AI music creation service. Consumer tiers mainly differ in creation credits and commercial-use rights: Basic is intended for non-commercial trials, Pro includes 2,500 monthly credits, and Premier includes 10,000 monthly credits. Songs made while subscribed to a paid plan receive commercial-use rights, while copyright eligibility still depends on local law.",
+      sectionTitle: "Who this plan is for",
+      bestForLabel: "Best for",
+      differenceLabel: "Main difference",
+      availabilityLabel: "Before subscribing",
+      sourceLabel: "Suno plan guide",
+      plans: {
+        basic: {
+          bestFor:
+            "People trying AI music creation for personal, non-commercial use who can work within a limited daily credit allowance.",
+          difference:
+            "Suno currently describes Basic as a free tier with 50 daily credits; its songs do not receive the paid plans' commercial-use rights.",
+          availabilityNote:
+            "Historical paid Basic records in the App Store do not prove that a current Basic subscription is available to new customers.",
+          indexingStatus: "legacy",
+          sourceUrl: "https://help.suno.com/en/articles/2410049",
+        },
+        pro: {
+          bestFor:
+            "Individual creators making music regularly who need a monthly allowance and commercial-use rights for songs made while subscribed.",
+          difference:
+            "Pro is the entry paid tier with 2,500 monthly credits and commercial-use rights for songs created during the subscription.",
+          sourceUrl: "https://help.suno.com/en/articles/2410049",
+        },
+        "premier-plan": {
+          bestFor:
+            "High-volume creators and professionals who need substantially more generations each month for ongoing music production.",
+          difference:
+            "Premier is the highest monthly-credit tier with 10,000 credits; its main difference from Pro is creation capacity.",
+          sourceUrl: "https://help.suno.com/en/articles/2410049",
         },
       },
     },

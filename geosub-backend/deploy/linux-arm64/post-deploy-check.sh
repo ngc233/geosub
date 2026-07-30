@@ -250,7 +250,8 @@ if (( failures == 0 )); then
     "sql/069_required_catalog_products.sql" \
     "sql/070_disney_app_store_source.sql" \
     "sql/071_archive_superseded_app_store_ambiguities.sql" \
-    "sql/072_normalize_hbo_max_app_store_plans.sql"; do
+    "sql/072_normalize_hbo_max_app_store_plans.sql" \
+    "sql/073_product_seo_content_quality.sql"; do
     check_migration "$migration"
   done
 
@@ -269,6 +270,21 @@ if (( failures == 0 )); then
     "system_task_runs_running_started_idx"; do
     check_index "$index_name"
   done
+  check_index "uniq_seo_meta_product_plan_locale"
+
+  product_seo_gap_count="$(psql_scalar "WITH required_locales(locale) AS (VALUES ('zh'::locale), ('en'::locale)), published_products AS (SELECT id FROM products WHERE status = 'published'::publish_status AND category IN ('ai'::product_category, 'streaming'::product_category)), expected AS (SELECT product.id, locale.locale FROM published_products product CROSS JOIN required_locales locale) SELECT COUNT(*) FROM expected LEFT JOIN seo_meta seo ON seo.product_id = expected.id AND seo.plan_id IS NULL AND seo.article_id IS NULL AND seo.category_id IS NULL AND seo.locale = expected.locale AND seo.status = 'published'::publish_status AND LENGTH(BTRIM(seo.title)) BETWEEN 10 AND 65 AND LENGTH(BTRIM(COALESCE(seo.description, ''))) BETWEEN 70 AND 180 AND LENGTH(BTRIM(COALESCE(seo.h1, ''))) >= 10 AND NULLIF(BTRIM(COALESCE(seo.canonical_url, '')), '') IS NOT NULL WHERE seo.id IS NULL;")"
+  if [[ "$product_seo_gap_count" == "0" ]]; then
+    pass "all published pricing products have complete zh/en SEO metadata"
+  else
+    fail "published pricing product SEO gaps: $product_seo_gap_count"
+  fi
+
+  product_seo_trigger="$(psql_scalar "SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_products_ensure_published_seo' AND NOT tgisinternal) THEN 'ok' ELSE 'missing' END;")"
+  if [[ "$product_seo_trigger" == "ok" ]]; then
+    pass "published product SEO automation trigger"
+  else
+    fail "published product SEO automation trigger missing"
+  fi
 
   constraint_def="$(psql_scalar "SELECT COALESCE((SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'collector_job_runs_status_check' LIMIT 1), 'missing');")"
   if [[ "$constraint_def" == *"running"* ]]; then

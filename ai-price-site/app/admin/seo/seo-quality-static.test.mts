@@ -10,6 +10,13 @@ const qualityData = readFileSync(
   resolve(testDir, "../../../lib/product-seo-quality-data.ts"),
   "utf8",
 );
+const productSeoMigration = readFileSync(
+  resolve(
+    testDir,
+    "../../../../geosub-backend/sql/073_product_seo_content_quality.sql",
+  ),
+  "utf8",
+);
 
 test("admin SEO page scores real product data and visible decision content", () => {
   assert.match(page, /getProductSeoQualityAudits/);
@@ -24,6 +31,10 @@ test("admin SEO page scores real product data and visible decision content", () 
   assert.match(qualityData, /describedPlanCount/);
   assert.match(qualityData, /getPlanEditorialIndexingStatus/);
   assert.match(qualityData, /legacyPlanCount/);
+  assert.match(qualityData, /requiredProductSeoLocales/);
+  assert.match(qualityData, /completeSeoLocaleCount/);
+  assert.match(page, /getProductSeoQualityAudits\(\)/);
+  assert.match(page, /基础 SEO/);
 });
 
 test("admin SEO page explains index recommendations in operator language", () => {
@@ -40,4 +51,18 @@ test("admin SEO page explains index recommendations in operator language", () =>
   assert.match(page, /历史续订层/);
   assert.match(page, /currentPlanCount/);
   assert.doesNotMatch(page, /V1|MVP|内部规则代码/);
+});
+
+test("remaining published-product SEO gaps are filled and deduplicated", () => {
+  assert.match(productSeoMigration, /uniq_seo_meta_product_plan_locale/);
+  assert.match(productSeoMigration, /'chatgpt'/);
+  assert.match(productSeoMigration, /'perplexity'/);
+  assert.match(productSeoMigration, /'suno'/);
+  assert.match(productSeoMigration, /Perplexity Pro 与 Max/);
+  assert.match(productSeoMigration, /Suno Pro 与 Premier/);
+  assert.match(productSeoMigration, /published_product_defaults/);
+  assert.match(productSeoMigration, /CROSS JOIN \(VALUES \('zh'\), \('en'\)\)/);
+  assert.match(productSeoMigration, /ensure_published_product_seo_metadata/);
+  assert.match(productSeoMigration, /trg_products_ensure_published_seo/);
+  assert.match(productSeoMigration, /product\.status = 'published'/);
 });

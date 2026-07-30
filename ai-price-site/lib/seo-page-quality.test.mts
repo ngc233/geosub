@@ -21,12 +21,29 @@ const healthyInput = {
 };
 
 test("complete product pages are indexable", () => {
-  const result = scoreProductSeoQuality(healthyInput);
+  const result = scoreProductSeoQuality({
+    ...healthyInput,
+    requiredSeoLocaleCount: 2,
+    completeSeoLocaleCount: 2,
+  });
 
   assert.equal(result.status, "indexable");
   assert.equal(result.statusLabel, "可收录");
   assert.ok(result.score >= 85);
   assert.equal(result.sections.data, 45);
+});
+
+test("published products expose incomplete priority-locale SEO coverage", () => {
+  const result = scoreProductSeoQuality({
+    ...healthyInput,
+    requiredSeoLocaleCount: 2,
+    completeSeoLocaleCount: 1,
+  });
+
+  assert.equal(result.score, 85);
+  assert.equal(result.status, "needs_work");
+  assert.equal(result.nextAction, "补齐 2 种重点语言的基础 SEO");
+  assert.match(result.issues.join("、"), /基础 SEO 仅完成 1\/2/);
 });
 
 test("thin regional coverage stays out of the index recommendation", () => {

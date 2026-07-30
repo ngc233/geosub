@@ -12,6 +12,8 @@ export type ProductSeoQualityInput = {
   missingTaxProfileCount: number;
   duplicatePlanGroupCount: number;
   publishedOutlierCount: number;
+  requiredSeoLocaleCount?: number;
+  completeSeoLocaleCount?: number;
 };
 
 export type ProductSeoQualityStatus = "indexable" | "needs_work" | "hold";
@@ -64,6 +66,17 @@ export function scoreProductSeoQuality(
     search += 5;
   } else {
     issues.push("页面主标题过短或缺失");
+  }
+
+  if (
+    input.requiredSeoLocaleCount !== undefined &&
+    input.completeSeoLocaleCount !== undefined &&
+    input.completeSeoLocaleCount < input.requiredSeoLocaleCount
+  ) {
+    search = Math.max(0, search - 5);
+    issues.push(
+      `基础 SEO 仅完成 ${input.completeSeoLocaleCount}/${input.requiredSeoLocaleCount} 种重点语言`,
+    );
   }
 
   let data = 0;
@@ -158,6 +171,10 @@ export function scoreProductSeoQuality(
       : 0;
   const hasEditorialDepth =
     textLength(input.productDescription) >= 80 || describedPlanRatio >= 0.5;
+  const hasRequiredSeoCoverage =
+    input.requiredSeoLocaleCount === undefined ||
+    input.completeSeoLocaleCount === undefined ||
+    input.completeSeoLocaleCount >= input.requiredSeoLocaleCount;
   if (describedPlanRatio >= 0.5) {
     decision += 5;
   } else {
@@ -169,7 +186,7 @@ export function scoreProductSeoQuality(
   const status: ProductSeoQualityStatus =
     blockers.length > 0 || score < 60
       ? "hold"
-      : score < 85 || !hasEditorialDepth
+      : score < 85 || !hasEditorialDepth || !hasRequiredSeoCoverage
         ? "needs_work"
         : "indexable";
 
@@ -184,7 +201,9 @@ export function scoreProductSeoQuality(
           : "建议暂缓收录",
     issues: allIssues,
     nextAction:
-      !hasEditorialDepth && blockers.length === 0
+      !hasRequiredSeoCoverage && blockers.length === 0
+        ? `补齐 ${input.requiredSeoLocaleCount} 种重点语言的基础 SEO`
+        : !hasEditorialDepth && blockers.length === 0
         ? "补充产品介绍或至少一半套餐的适用人群与功能说明"
         : allIssues[0] ||
           "页面的数据、可信说明和用户决策信息已经达到当前收录标准。",
