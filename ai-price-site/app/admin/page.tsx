@@ -22,7 +22,21 @@ import {
   AdminStatCard,
 } from "../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../components/admin/AdminButton";
+import {
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTableShell,
+  AdminTd,
+  AdminTh,
+  AdminTr,
+} from "../../components/admin/AdminTable";
 import SegmentedControl from "../../components/ui/SegmentedControl";
+import {
+  getDailyOperationsSummary,
+  type DailyOperationState,
+} from "../../lib/admin-daily-operations";
+import { buildDailyOperationsBrief } from "../../lib/daily-operations-brief";
 
 type DashboardRange = 7 | 30 | 90 | 180 | 365 | 730;
 
@@ -123,6 +137,31 @@ function toCount(value: bigint | number | null | undefined) {
 function formatConversion(current: number, previous: number) {
   if (previous <= 0) return "0%";
   return `${Math.round((current / previous) * 100)}%`;
+}
+
+function dailyOperationPresentation(state: DailyOperationState) {
+  return {
+    failed: {
+      label: "运行失败",
+      className: "bg-red-50 text-red-700 ring-red-200",
+    },
+    action: {
+      label: "需要处理",
+      className: "bg-amber-50 text-amber-700 ring-amber-200",
+    },
+    running: {
+      label: "正在运行",
+      className: "bg-blue-50 text-blue-700 ring-blue-200",
+    },
+    queued: {
+      label: "已排队",
+      className: "bg-blue-50 text-blue-700 ring-blue-200",
+    },
+    healthy: {
+      label: "当前健康",
+      className: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    },
+  }[state];
 }
 
 function normalizeFunnelSegments(value: unknown): FunnelSegment[] {
@@ -1541,7 +1580,11 @@ export default async function AdminDashboardPage({
 }) {
   const params = searchParams ? await searchParams : {};
   const period = getDashboardPeriod(params);
-  const data = await getDashboardData(period);
+  const [data, dailyOperations] = await Promise.all([
+    getDashboardData(period),
+    getDailyOperationsSummary(),
+  ]);
+  const dailyBrief = buildDailyOperationsBrief(dailyOperations);
   const eventLogHref = `/admin/events?from=${period.from}&to=${period.to}`;
   const funnelStages = [
     {
@@ -1760,6 +1803,98 @@ export default async function AdminDashboardPage({
             );
           })}
         </div>
+      </section>
+
+      <section className="mb-10" aria-labelledby="daily-operations-title">
+        <div className={`mb-4 flex flex-col gap-4 rounded-lg border p-5 sm:flex-row sm:items-center sm:justify-between ${
+          dailyBrief.level === "critical"
+            ? "border-red-200 bg-red-50"
+            : dailyBrief.level === "attention"
+              ? "border-amber-200 bg-amber-50"
+              : dailyBrief.level === "progress"
+                ? "border-blue-200 bg-blue-50"
+                : "border-emerald-200 bg-emerald-50"
+        }`}>
+          <div>
+            <p className="text-base font-bold text-slate-950">{dailyBrief.title}</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">{dailyBrief.summary}</p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs font-bold tabular-nums">
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-red-700 ring-1 ring-inset ring-red-200">失败 {dailyBrief.counts.failed}</span>
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-amber-700 ring-1 ring-inset ring-amber-200">待处理 {dailyBrief.counts.action}</span>
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-blue-700 ring-1 ring-inset ring-blue-200">执行中 {dailyBrief.counts.running + dailyBrief.counts.queued}</span>
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-emerald-700 ring-1 ring-inset ring-emerald-200">健康 {dailyBrief.counts.healthy}</span>
+          </div>
+        </div>
+        <AdminTableShell
+          title="今日产品摘要"
+          description="按产品汇总今天该做什么、为什么要做，以及系统是否已经排队。运行中或已排队的产品无需重复操作。"
+          action={(
+            <AdminLinkButton href="/admin/search-demand" variant="secondary" size="sm">
+              查看完整优先级
+              <ArrowRight size={14} strokeWidth={2} />
+            </AdminLinkButton>
+          )}
+        >
+          <span id="daily-operations-title" className="sr-only">今日产品摘要</span>
+          <AdminTable className="min-w-[980px]">
+            <AdminTableHead>
+              <tr>
+                <AdminTh>状态</AdminTh>
+                <AdminTh>产品</AdminTh>
+                <AdminTh>今天为什么要关注</AdminTh>
+                <AdminTh>系统进度</AdminTh>
+                <AdminTh>任务后的效果</AdminTh>
+                <AdminTh align="right">下一步</AdminTh>
+              </tr>
+            </AdminTableHead>
+            <AdminTableBody>
+              {dailyOperations.slice(0, 8).map((item) => {
+                const state = dailyOperationPresentation(item.state);
+                return (
+                  <AdminTr key={item.productId}>
+                    <AdminTd>
+                      <span className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset ${state.className}`}>
+                        {state.label}
+                      </span>
+                    </AdminTd>
+                    <AdminTd>
+                      <span className="font-bold text-slate-950">{item.productName}</span>
+                      <span className="mt-1 block text-xs tabular-nums text-slate-400">
+                        页面质量 {item.qualityScore}/100
+                      </span>
+                    </AdminTd>
+                    <AdminTd>
+                      <span className="block max-w-sm text-sm leading-6 text-slate-700">
+                        {item.reason}
+                      </span>
+                    </AdminTd>
+                    <AdminTd>
+                      <span className="block max-w-xs text-xs leading-5 text-slate-600">
+                        {item.systemSummary}
+                      </span>
+                    </AdminTd>
+                    <AdminTd>
+                      {item.businessSummary ? (
+                        <span className="block max-w-xs text-xs leading-5 text-slate-600">
+                          {item.businessSummary}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">尚未开始可追踪的补强任务</span>
+                      )}
+                    </AdminTd>
+                    <AdminTd align="right">
+                      <AdminLinkButton href={item.actionHref} variant="secondary" size="sm">
+                        {item.actionLabel}
+                        <ArrowRight size={14} strokeWidth={2} />
+                      </AdminLinkButton>
+                    </AdminTd>
+                  </AdminTr>
+                );
+              })}
+            </AdminTableBody>
+          </AdminTable>
+        </AdminTableShell>
       </section>
 
       <div className="mb-4">

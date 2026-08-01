@@ -106,6 +106,7 @@ start_runtime_services() {
   systemctl start geosub-collector-jobs.timer 2>/dev/null || true
   systemctl start geosub-discovery-scan.timer 2>/dev/null || true
   systemctl start geosub-analytics-aggregation.timer 2>/dev/null || true
+  systemctl start geosub-operations-brief.timer 2>/dev/null || true
   systemctl start geosub-db-backup.timer 2>/dev/null || true
   systemctl start geosub-event-retention.timer 2>/dev/null || true
 }
@@ -225,6 +226,7 @@ systemctl stop geosub-collector-jobs.timer 2>/dev/null || true
 systemctl stop geosub-discovery-scan.timer 2>/dev/null || true
 systemctl stop geosub-exchange-rate-sync.timer 2>/dev/null || true
 systemctl stop geosub-analytics-aggregation.timer 2>/dev/null || true
+systemctl stop geosub-operations-brief.timer 2>/dev/null || true
 systemctl stop geosub-db-backup.timer 2>/dev/null || true
 systemctl stop geosub-event-retention.timer 2>/dev/null || true
 systemctl stop geosub-web.service 2>/dev/null || true
@@ -315,6 +317,8 @@ install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-discovery-scan.s
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-discovery-scan.timer" /etc/systemd/system/geosub-discovery-scan.timer
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-analytics-aggregation.service" /etc/systemd/system/geosub-analytics-aggregation.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-analytics-aggregation.timer" /etc/systemd/system/geosub-analytics-aggregation.timer
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-operations-brief.service" /etc/systemd/system/geosub-operations-brief.service
+install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-operations-brief.timer" /etc/systemd/system/geosub-operations-brief.timer
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-db-backup.service" /etc/systemd/system/geosub-db-backup.service
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-db-backup.timer" /etc/systemd/system/geosub-db-backup.timer
 install -m 0644 "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-event-retention.service" /etc/systemd/system/geosub-event-retention.service
@@ -326,6 +330,7 @@ systemctl enable geosub-price-pipeline.timer
 systemctl enable geosub-collector-jobs.timer
 systemctl enable geosub-discovery-scan.timer
 systemctl enable geosub-analytics-aggregation.timer
+systemctl enable geosub-operations-brief.timer
 systemctl enable geosub-db-backup.timer
 systemctl enable geosub-event-retention.timer
 

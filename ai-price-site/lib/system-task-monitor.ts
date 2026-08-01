@@ -169,6 +169,18 @@ const TASK_CONFIGS: TaskConfig[] = [
     actionLabel: "查看总览",
   },
   {
+    key: "operations_brief",
+    title: "每日异常简报",
+    description: "汇总真正需要介入的产品问题，并在启用安全渠道后发送通知。",
+    cadence: "每天",
+    cadenceHours: 24,
+    warningHours: 36,
+    criticalHours: 60,
+    maxRuntimeHours: 0.25,
+    actionHref: "/admin/settings",
+    actionLabel: "查看通知设置",
+  },
+  {
     key: "database_backup",
     title: "数据库备份",
     description: "创建经过校验并带校验和的 PostgreSQL 私有备份。",
@@ -285,6 +297,7 @@ function getBacklog(taskKey: string, row: AutomationBacklogRow | undefined) {
     return `长期监测来源 ${toNumber(row.monitored_sources)} 个`;
   }
   if (taskKey === "analytics_aggregation") return "聚合后台访问与点击趋势";
+  if (taskKey === "operations_brief") return "只通知采集失败和需要人工处理的产品";
   if (taskKey === "database_backup") return "备份文件由服务器私有目录保存";
   return "按保留策略自动维护";
 }

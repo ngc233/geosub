@@ -1,6 +1,6 @@
 {
     "name": "ai-price-site",
-    "version": "2.4.3",
+    "version": "2.5.0",
     "private": true,
     "scripts": {
         "dev": "next dev",
@@ -23,19 +23,21 @@
         "aggregate:daily-stats": "node scripts/aggregate-daily-stats.cjs --days=90",
         "aggregate:daily-stats:recent": "node scripts/aggregate-daily-stats.cjs --days=3",
         "events:retention": "node scripts/prune-event-logs.cjs",
+        "notify:daily-operations": "node --conditions=react-server --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/send-daily-operations-brief.mts",
         "admin:set-password": "node scripts/set-admin-password.cjs",
+        "test:daily-brief": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/daily-operations-brief.test.mts",
         "typecheck": "tsc --noEmit",
-        "preflight:code": "npm run check:encoding && npm run check:seo && npm run check:content-uniqueness && npm run typecheck && npm run lint && npm test && npm run build",
+        "preflight:code": "npm run check:encoding && npm run check:seo && npm run check:content-uniqueness && npm run typecheck && npm run lint && npm run test:daily-brief && npm test && npm run build",
         "preflight:full": "npm run check:local && npm run check:migrations && npm run check:plans && npm run check:logos && npm run check:prices && npm run check:sitemap && npm run preflight:code",
         "seed:local-demo": "powershell -ExecutionPolicy Bypass -File scripts/seed-local-demo.ps1",
         "sync:worldbank-income": "node scripts/sync-world-bank-income.mjs",
         "start": "next start",
-        "test": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test app/admin/admin-navigation-static.test.mts app/admin/admin-ui-consistency.test.mts app/admin/articles/article-admin-flow.test.mts app/admin/collector-jobs/job-state.test.mts app/admin/discovery/discovery-flow.test.mts app/admin/events/events-admin.test.mts app/admin/pipeline/stale-price-policy.test.mts app/admin/products/product-logo-policy.test.mts app/admin/review/collection-progress.test.mts app/admin/review/collection-runner-static.test.mts app/admin/review/collection-status.test.mts app/admin/review/manual-review-policy.test.mts app/admin/review/pending-product-diagnosis.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts app/admin/seo/seo-quality-static.test.mts app/admin/settings/settings-admin.test.mts app/admin/system/system-monitor.test.mts app/affordability-static.test.mts app/currency-converter-static.test.mts app/data-sources-static.test.mts app/exchange-rate-static.test.mts app/homepage-static.test.mts app/price-quality-gate-static.test.mts app/pricing-detail-static.test.mts app/pricing-list-static.test.mts app/public-product-lifecycle-static.test.mts app/release-automation-static.test.mts app/risk-model-static.test.mts app/security-static.test.mts app/seo-static.test.mts app/trust-pages-static.test.mts components/dropdown-interactions.test.mts components/public-ui-consistency.test.mts components/tax-risk-display.test.mts lib/country-name.test.mts lib/plan-search-intent.test.mts lib/prepared-locale-quality.test.mts lib/product-editorial-content.test.mts lib/product-seo-effective-copy.test.mts lib/product-seo-indexing-policy.test.mts lib/seo-page-quality.test.mts lib/site-locale.test.mts lib/tax-note-localization.test.mts",
+        "test": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test app/admin/admin-navigation-static.test.mts app/admin/admin-ui-consistency.test.mts app/admin/articles/article-admin-flow.test.mts app/admin/collector-jobs/job-state.test.mts app/admin/discovery/discovery-flow.test.mts app/admin/events/events-admin.test.mts app/admin/search-demand/search-opportunity-admin.test.mts app/admin/pipeline/stale-price-policy.test.mts app/admin/products/product-logo-policy.test.mts app/admin/review/collection-progress.test.mts app/admin/review/collection-runner-static.test.mts app/admin/review/collection-status.test.mts app/admin/review/manual-review-policy.test.mts app/admin/review/pending-product-diagnosis.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts app/admin/seo/seo-quality-static.test.mts app/admin/settings/settings-admin.test.mts app/admin/system/system-monitor.test.mts app/affordability-static.test.mts app/currency-converter-static.test.mts app/data-sources-static.test.mts app/exchange-rate-static.test.mts app/homepage-static.test.mts app/price-quality-gate-static.test.mts app/pricing-detail-static.test.mts app/pricing-list-static.test.mts app/public-product-lifecycle-static.test.mts app/release-automation-static.test.mts app/risk-model-static.test.mts app/security-static.test.mts app/seo-static.test.mts app/trust-pages-static.test.mts components/dropdown-interactions.test.mts components/global-search.test.mts components/public-ui-consistency.test.mts components/tax-risk-display.test.mts lib/country-name.test.mts lib/plan-search-intent.test.mts lib/prepared-locale-quality.test.mts lib/product-editorial-content.test.mts lib/product-seo-effective-copy.test.mts lib/product-seo-indexing-policy.test.mts lib/seo-page-quality.test.mts lib/site-locale.test.mts lib/tax-note-localization.test.mts",
         "lint": "eslint"
     },
     "dependencies": {
-        "@prisma/adapter-pg": "^7.8.0",
-        "@prisma/client": "^7.8.0",
+        "@prisma/adapter-pg": "^7.9.1",
+        "@prisma/client": "^7.9.1",
         "d3-geo": "^3.1.1",
         "dotenv": "^17.4.2",
         "html-to-image": "^1.11.13",
@@ -43,7 +45,7 @@
         "next": "16.2.11",
         "opencc-js": "^1.4.1",
         "pg": "^8.22.0",
-        "prisma": "^7.8.0",
+        "prisma": "^7.9.1",
         "react": "19.2.4",
         "react-dom": "19.2.4",
         "server-only": "^0.0.1",
@@ -68,7 +70,7 @@
         "fast-uri": "3.1.4",
         "js-yaml": "4.3.0",
         "minimatch@3.1.5": {
-            "brace-expansion": "1.1.16"
+            "brace-expansion": "1.1.17"
         },
         "minimatch@10.2.5": {
             "brace-expansion": "5.0.8"

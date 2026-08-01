@@ -28,6 +28,7 @@ test("system monitor exposes every scheduled production task", () => {
     "price_pipeline",
     "discovery_scan",
     "analytics_aggregation",
+    "operations_brief",
     "database_backup",
     "event_retention",
   ]) {
@@ -71,6 +72,7 @@ test("Linux scheduled services record start and completion heartbeats", () => {
     ["geosub-price-pipeline.service", "price_pipeline"],
     ["geosub-discovery-scan.service", "discovery_scan"],
     ["geosub-analytics-aggregation.service", "analytics_aggregation"],
+    ["geosub-operations-brief.service", "operations_brief"],
     ["geosub-db-backup.service", "database_backup"],
     ["geosub-event-retention.service", "event_retention"],
   ];

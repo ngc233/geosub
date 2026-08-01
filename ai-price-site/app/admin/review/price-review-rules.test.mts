@@ -62,6 +62,10 @@ const hboMaxNormalizationSql = readFileSync(
   resolve(repoRoot, "geosub-backend/sql/072_normalize_hbo_max_app_store_plans.sql"),
   "utf8",
 );
+const hboMaxSelectionRepairSql = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/074_repair_hbo_max_app_store_selection.sql"),
+  "utf8",
+);
 
 const legacyTierCleanupSql = readFileSync(
   resolve(
@@ -303,6 +307,14 @@ test("HBO Max App Store plans collapse localized tiers and exclude bundles", () 
   assert.ok(aliasesByPlan.premium.has("platino mensual"));
   assert.ok(hboMax.excluded_aliases?.includes("tnt sports"));
   assert.ok(hboMax.excluded_aliases?.includes("trimestral"));
+  assert.ok(hboMax.excluded_aliases?.includes("legacy standard"));
+  assert.ok(hboMax.excluded_aliases?.includes("premium & sports"));
+  assert.ok(hboMax.excluded_aliases?.includes("premium und sport"));
+  assert.ok(
+    hboMax.plans.every(
+      (plan) => plan.price_selection_strategy === "lowest_in_expected_range",
+    ),
+  );
 
   assert.match(appStoreCollector, /excluded_aliases/);
   assert.match(appStoreCollector, /quarterly\|quarter/);
@@ -311,6 +323,12 @@ test("HBO Max App Store plans collapse localized tiers and exclude bundles", () 
   assert.match(hboMaxNormalizationSql, /'premium', 'HBO Max Premium'/);
   assert.match(hboMaxNormalizationSql, /hbo_max_monthly_plan_normalization/);
   assert.match(hboMaxNormalizationSql, /tnt\|dazn\|sport/);
+  assert.match(hboMaxSelectionRepairSql, /ROW_NUMBER\(\) OVER/);
+  assert.match(hboMaxSelectionRepairSql, /evidence_rank > 3/);
+  assert.match(hboMaxSelectionRepairSql, /evidence_rank <= 3/);
+  assert.match(hboMaxSelectionRepairSql, /hbo_max_lowest_core_monthly_tier_v2/);
+  assert.match(hboMaxSelectionRepairSql, /hbo_max_non_core_tier_match/);
+  assert.doesNotMatch(hboMaxSelectionRepairSql, /DELETE FROM price_observations/);
 });
 
 test("Netflix plan aliases cover common localized screen-count labels", () => {

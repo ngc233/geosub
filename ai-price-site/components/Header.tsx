@@ -15,6 +15,7 @@ import {
   type SiteLocale,
 } from "../lib/site-locale";
 import { withTraditionalChinese } from "../lib/traditional-chinese";
+import GlobalSearch from "./GlobalSearch";
 
 export type NavChild = {
   name: string;
@@ -669,6 +670,8 @@ export default function Header({
         </nav>
 
         <div className="flex items-center gap-2">
+          <GlobalSearch locale={currentLocaleCode} />
+
           <div ref={languageMenuRef} className="relative hidden sm:block">
             <button
               type="button"

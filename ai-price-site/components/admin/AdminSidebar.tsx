@@ -16,6 +16,7 @@ import {
   MousePointerClick,
   Radar,
   Search,
+  SearchCheck,
   Settings,
   ShieldCheck,
   X,
@@ -57,6 +58,7 @@ const navGroups: Array<{
     label: "内容增长",
     items: [
       { label: "文章发布", href: "/admin/articles", icon: FileText },
+      { label: "搜索需求", href: "/admin/search-demand", icon: SearchCheck },
       { label: "SEO 体检", href: "/admin/seo", icon: Search },
       { label: "导航菜单", href: "/admin/navigation", icon: Menu },
     ],

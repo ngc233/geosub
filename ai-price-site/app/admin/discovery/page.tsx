@@ -257,7 +257,11 @@ export default async function DiscoveryPage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    evidence?: string;
+    opportunity?: string;
     promotionError?: string;
+    prefill?: string;
+    source?: string;
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
@@ -411,7 +415,16 @@ export default async function DiscoveryPage({
         </div>
       ) : null}
 
-      <DiscoveryIntakeForms />
+      <DiscoveryIntakeForms
+        initialCandidateName={params.prefill?.slice(0, 120) || ""}
+        searchOpportunityQuery={params.opportunity?.slice(0, 240) || ""}
+        initialCandidateReason={
+          params.source === "search-demand" && params.prefill
+            ? params.evidence?.slice(0, 500)
+              || `前台搜索“${params.prefill.slice(0, 120)}”没有结果，建议核验是否需要接入产品或套餐。`
+            : ""
+        }
+      />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>

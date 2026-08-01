@@ -225,6 +225,7 @@
       "antes standard",
       "estandar antiguo",
       "old standard",
+      "legacy standard",
       "trimestral",
       "quarterly",
       "mobile",
@@ -233,6 +234,15 @@
       "sport add-on",
       "sports add-on",
       "premium with sport",
+      "premium with sports",
+      "premium and sport",
+      "premium and sports",
+      "premium & sport",
+      "premium & sports",
+      "premium und sport",
+      "premium con deportes",
+      "premium avec sport",
+      "premium e sport",
       "premium med sport",
       "platino tnt sports",
       "extra member"
@@ -257,6 +267,7 @@
           "含廣告基本版"
         ],
         "sort_order": 10,
+        "price_selection_strategy": "lowest_in_expected_range",
         "expected_monthly_usd_min": 3.0,
         "expected_monthly_usd_max": 18.0
       },
@@ -275,6 +286,7 @@
           "標準"
         ],
         "sort_order": 20,
+        "price_selection_strategy": "lowest_in_expected_range",
         "expected_monthly_usd_min": 4.0,
         "expected_monthly_usd_max": 30.0
       },
@@ -296,6 +308,7 @@
           "高級"
         ],
         "sort_order": 30,
+        "price_selection_strategy": "lowest_in_expected_range",
         "expected_monthly_usd_min": 6.0,
         "expected_monthly_usd_max": 45.0
       }

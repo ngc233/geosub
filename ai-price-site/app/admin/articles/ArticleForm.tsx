@@ -64,6 +64,9 @@ export default function ArticleForm({
   recommendedProductIds = [],
   recommendedRelatedArticleIds = [],
   defaultLocale = "ZH",
+  defaultTitle = "",
+  defaultExcerpt = "",
+  searchOpportunityQuery = "",
 }: {
   article?: Article | null;
   categories: ArticleCategory[];
@@ -76,12 +79,22 @@ export default function ArticleForm({
   recommendedProductIds?: string[];
   recommendedRelatedArticleIds?: string[];
   defaultLocale?: Locale;
+  defaultTitle?: string;
+  defaultExcerpt?: string;
+  searchOpportunityQuery?: string;
 }) {
   const action = article ? updateArticleAction : createArticleAction;
 
   return (
     <form action={action} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       {article ? <input type="hidden" name="id" value={article.id} /> : null}
+      {!article && searchOpportunityQuery ? (
+        <input
+          type="hidden"
+          name="searchOpportunityQuery"
+          value={searchOpportunityQuery}
+        />
+      ) : null}
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="grid gap-5">
@@ -89,7 +102,7 @@ export default function ArticleForm({
             <input
               className={inputClass}
               name="title"
-              defaultValue={article?.title || ""}
+              defaultValue={article?.title || defaultTitle}
               placeholder="例如：为什么 AI 订阅在不同国家价格不一样"
               required
             />
@@ -127,7 +140,7 @@ export default function ArticleForm({
             <textarea
               className={`${inputClass} min-h-24 resize-y leading-6`}
               name="excerpt"
-              defaultValue={article?.excerpt || ""}
+              defaultValue={article?.excerpt || defaultExcerpt}
             />
           </Field>
 

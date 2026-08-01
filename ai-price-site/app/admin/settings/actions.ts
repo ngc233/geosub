@@ -8,6 +8,7 @@ import {
   requireAdmin,
 } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
+import { getOperationsNotificationConfig } from "../../../lib/operations-notification";
 
 function normalizeOptionalText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
@@ -106,6 +107,28 @@ export async function updateAnalyticsSettings(formData: FormData) {
   revalidatePath("/en");
   revalidatePath("/admin/settings");
   redirect("/admin/settings?saved=1");
+}
+
+export async function updateOperationsNotificationSettings(formData: FormData) {
+  await requireAdmin();
+  const enabled = formData.get("operations_brief_enabled") === "on";
+  const config = await getOperationsNotificationConfig();
+
+  if (enabled && !config.channelConfigured) {
+    redirect("/admin/settings?notificationError=channel");
+  }
+
+  await upsertSetting({
+    settingKey: "operations_brief_enabled",
+    groupName: "notifications",
+    label: "Daily operations brief",
+    valueText: enabled ? "true" : "false",
+    note: "仅在产品采集失败或需要人工处理时，通过服务器配置的安全 Webhook 发送。",
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/settings");
+  redirect("/admin/settings?notificationSaved=1");
 }
 
 export async function updateAdminPassword(formData: FormData) {

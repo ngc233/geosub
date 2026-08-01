@@ -1,0 +1,11 @@
+[Unit]
+Description=Generate GeoSub operations brief every morning
+
+[Timer]
+OnCalendar=*-*-* 00:30:00 UTC
+RandomizedDelaySec=10min
+Persistent=true
+Unit=geosub-operations-brief.service
+
+[Install]
+WantedBy=timers.target

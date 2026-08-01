@@ -251,7 +251,8 @@ if (( failures == 0 )); then
     "sql/070_disney_app_store_source.sql" \
     "sql/071_archive_superseded_app_store_ambiguities.sql" \
     "sql/072_normalize_hbo_max_app_store_plans.sql" \
-    "sql/073_product_seo_content_quality.sql"; do
+    "sql/073_product_seo_content_quality.sql" \
+    "sql/074_repair_hbo_max_app_store_selection.sql"; do
     check_migration "$migration"
   done
 
@@ -431,6 +432,7 @@ check_timer_enabled_active "geosub-collector-jobs.timer"
 check_unit_not_failed "geosub-collector-jobs.service"
 check_timer_enabled_active "geosub-discovery-scan.timer"
 check_timer_enabled_active "geosub-analytics-aggregation.timer"
+check_timer_enabled_active "geosub-operations-brief.timer"
 check_timer_enabled_active "geosub-db-backup.timer"
 check_timer_enabled_active "geosub-event-retention.timer"
 

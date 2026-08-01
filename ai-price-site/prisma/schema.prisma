@@ -319,6 +319,8 @@ model AdminUser {
   sessions      AdminSession[]
   auditLogs     AuditLog[]
   uploadedMedia MediaAsset[]
+  authorityCoverageTasksCreated AuthorityCoverageTask[] @relation("AuthorityCoverageTaskCreatedBy")
+  authorityCoverageTasksUpdated AuthorityCoverageTask[] @relation("AuthorityCoverageTaskUpdatedBy")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -431,6 +433,7 @@ model Product {
   collectorJobRuns  CollectorJobRun[]
   articleBlocks     ArticleBlock[]
   articleRelations  ArticleRelation[]
+  authorityCoverageTasks AuthorityCoverageTask[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -971,6 +974,26 @@ model SiteSetting {
   @@map("site_settings")
 }
 
+model OperationsNotificationDelivery {
+  id String @id @default(uuid()) @db.Uuid
+
+  briefFingerprint  String @map("brief_fingerprint")
+  briefLevel        String @map("brief_level")
+  deliveryStatus    String @map("delivery_status")
+  title             String
+  summary           String
+  interventionCount Int    @default(0) @map("intervention_count")
+  payload            Json   @default("{}")
+  responseStatus     Int?   @map("response_status")
+  errorMessage       String? @map("error_message")
+  sentAt             DateTime? @map("sent_at") @db.Timestamptz(6)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt(sort: Desc)], map: "operations_notification_deliveries_created_idx")
+  @@index([briefFingerprint, createdAt(sort: Desc)], map: "operations_notification_deliveries_fingerprint_idx")
+  @@map("operations_notification_deliveries")
+}
+
 model Redirect {
   id String @id @default(uuid()) @db.Uuid
 
@@ -1213,4 +1236,131 @@ model DailyStat {
   @@index([metricKey])
   @@index([dimensionType, dimensionKey])
   @@map("daily_stats")
+}
+
+model SearchOpportunity {
+  id String @id @default(uuid()) @db.Uuid
+
+  query           String
+  normalizedQuery String  @unique @map("normalized_query")
+  kind            String  @db.VarChar(20)
+  status          String  @default("open") @db.VarChar(20)
+  note            String?
+
+  linkedCandidateId String? @map("linked_candidate_id") @db.Uuid
+  linkedArticleId   String? @map("linked_article_id") @db.Uuid
+  createdById       String? @map("created_by_id") @db.Uuid
+  updatedById       String? @map("updated_by_id") @db.Uuid
+
+  firstSeenAt         DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt          DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  evaluationStartedAt DateTime? @map("evaluation_started_at") @db.Timestamptz(6)
+  resolvedAt          DateTime? @map("resolved_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, updatedAt(sort: Desc)])
+  @@index([evaluationStartedAt])
+  @@index([linkedCandidateId])
+  @@index([linkedArticleId])
+  @@map("search_opportunities")
+}
+
+model SearchConversionRepair {
+  id String @id @default(uuid()) @db.Uuid
+
+  query           String
+  normalizedQuery String @map("normalized_query")
+  locale          String @db.VarChar(10)
+  targetKey       String @map("target_key") @db.VarChar(120)
+  productId       String? @map("product_id") @db.Uuid
+  planId          String? @map("plan_id") @db.Uuid
+  blockerCode     String @map("blocker_code") @db.VarChar(40)
+  status          String @default("in_progress") @db.VarChar(20)
+  actionHref      String @map("action_href")
+  note            String?
+
+  baselineResultClicks          Int @default(0) @map("baseline_result_clicks")
+  baselinePlanEngagements       Int @default(0) @map("baseline_plan_engagements")
+  baselineCommercialConversions Int @default(0) @map("baseline_commercial_conversions")
+  baselineWindowDays            Int @default(30) @map("baseline_window_days")
+
+  createdById String? @map("created_by_id") @db.Uuid
+  updatedById String? @map("updated_by_id") @db.Uuid
+
+  evaluationStartedAt DateTime  @default(now()) @map("evaluation_started_at") @db.Timestamptz(6)
+  resolvedAt          DateTime? @map("resolved_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([normalizedQuery, locale, targetKey, blockerCode])
+  @@index([status, updatedAt(sort: Desc)])
+  @@index([productId])
+  @@index([planId])
+  @@map("search_conversion_repairs")
+}
+
+model AuthorityCoverageTask {
+  id String @id @default(uuid()) @db.Uuid
+
+  productId String  @map("product_id") @db.Uuid
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  gapCode    String @map("gap_code") @db.VarChar(40)
+  actionKind String @map("action_kind") @db.VarChar(30)
+  status     String @default("in_progress") @db.VarChar(20)
+  actionHref String @map("action_href")
+  note       String?
+
+  baselinePriceCount       Int @default(0) @map("baseline_price_count")
+  baselineStalePriceCount  Int @default(0) @map("baseline_stale_price_count")
+  baselineCountryCount     Int @default(0) @map("baseline_country_count")
+  baselineTaxGapCount      Int @default(0) @map("baseline_tax_gap_count")
+  baselineSeoLocaleCount   Int @default(0) @map("baseline_seo_locale_count")
+  baselineDecisionScore    Int @default(0) @map("baseline_decision_score")
+  baselineQualityScore     Int @default(0) @map("baseline_quality_score")
+
+  createdById String?    @map("created_by_id") @db.Uuid
+  createdBy   AdminUser? @relation("AuthorityCoverageTaskCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?    @map("updated_by_id") @db.Uuid
+  updatedBy   AdminUser? @relation("AuthorityCoverageTaskUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  evaluationStartedAt DateTime  @default(now()) @map("evaluation_started_at") @db.Timestamptz(6)
+  resolvedAt          DateTime? @map("resolved_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([productId, gapCode])
+  @@index([status, updatedAt(sort: Desc)])
+  @@index([productId])
+  @@map("authority_coverage_tasks")
+}
+
+model SearchAlias {
+  id String @id @default(uuid()) @db.Uuid
+
+  alias           String
+  normalizedAlias String @map("normalized_alias")
+  locale          String @db.VarChar(10)
+  targetKind      String @map("target_kind") @db.VarChar(20)
+  productId       String? @map("product_id") @db.Uuid
+  planId          String? @map("plan_id") @db.Uuid
+  targetTitle     String @map("target_title")
+  targetHref      String @map("target_href")
+  status          String @default("active") @db.VarChar(20)
+
+  evidenceClickCount   Int       @default(0) @map("evidence_click_count")
+  evidenceVisitorCount Int       @default(0) @map("evidence_visitor_count")
+  lastClickedAt        DateTime? @map("last_clicked_at") @db.Timestamptz(6)
+
+  createdById String? @map("created_by_id") @db.Uuid
+  updatedById String? @map("updated_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([normalizedAlias, locale])
+  @@index([status, locale])
+  @@index([productId])
+  @@index([planId])
+  @@map("search_aliases")
 }

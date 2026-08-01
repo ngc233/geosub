@@ -3,20 +3,25 @@
 export function AdminTableShell({
   title,
   description,
+  action,
   children,
 }: {
   title?: string;
   description?: string;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
       {title || description ? (
-        <div className="border-b border-slate-200 px-6 py-5">
-          {title ? <h2 className="font-bold text-slate-950">{title}</h2> : null}
-          {description ? (
-            <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
-          ) : null}
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+          <div>
+            {title ? <h2 className="font-bold text-slate-950">{title}</h2> : null}
+            {description ? (
+              <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+            ) : null}
+          </div>
+          {action}
         </div>
       ) : null}
 
@@ -27,11 +32,13 @@ export function AdminTableShell({
 
 export function AdminTable({
   children,
+  className = "",
 }: {
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <table className="min-w-full divide-y divide-slate-200 text-sm">
+    <table className={`min-w-full divide-y divide-slate-200 text-sm ${className}`}>
       {children}
     </table>
   );
@@ -67,7 +74,7 @@ export function AdminTh({
   const alignClass =
     align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
 
-  return <th className={`px-6 py-4 ${alignClass}`}>{children}</th>;
+  return <th className={`whitespace-nowrap px-6 py-4 ${alignClass}`}>{children}</th>;
 }
 
 export function AdminTd({

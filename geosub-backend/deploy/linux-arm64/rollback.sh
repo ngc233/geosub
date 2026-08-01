@@ -138,6 +138,7 @@ start_runtime_services() {
   systemctl start geosub-collector-jobs.timer 2>/dev/null || true
   systemctl start geosub-discovery-scan.timer 2>/dev/null || true
   systemctl start geosub-analytics-aggregation.timer 2>/dev/null || true
+  systemctl start geosub-operations-brief.timer 2>/dev/null || true
   systemctl start geosub-db-backup.timer 2>/dev/null || true
   systemctl start geosub-event-retention.timer 2>/dev/null || true
 }
@@ -148,6 +149,7 @@ stop_runtime_services() {
   systemctl stop geosub-discovery-scan.timer 2>/dev/null || true
   systemctl stop geosub-exchange-rate-sync.timer 2>/dev/null || true
   systemctl stop geosub-analytics-aggregation.timer 2>/dev/null || true
+  systemctl stop geosub-operations-brief.timer 2>/dev/null || true
   systemctl stop geosub-db-backup.timer 2>/dev/null || true
   systemctl stop geosub-event-retention.timer 2>/dev/null || true
   systemctl stop geosub-web.service 2>/dev/null || true

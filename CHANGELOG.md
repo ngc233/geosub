@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.5.0 - 2026-08-01
+
+- Added a multilingual global search entry for published products and plans,
+  with cautious aliases, typo tolerance and privacy-bounded demand analytics.
+- Added an operator-focused search demand workspace that turns repeated
+  zero-result and low-conversion searches into controlled product, article,
+  alias, conversion-repair and authority-coverage workflows.
+- Added lifecycle and effect tracking for search opportunities, conversion
+  repairs and authority tasks so growth work is measured against later user
+  behavior instead of being marked complete when an edit is saved.
+- Consolidated the admin home into a product-level daily operations brief with
+  explicit update reasons, queue state and actionable priorities.
+- Added optional external operations notifications with persisted delivery
+  history, duplicate suppression and Linux scheduling; delivery stays disabled
+  until an administrator configures it.
+- Connected discovery and article creation back to their originating search
+  opportunities and strengthened audit trails for every reversible action.
+- Upgraded the Prisma toolchain to 7.9.1 and refreshed the dependency lock,
+  leaving both production and development dependency audits at zero known
+  vulnerabilities.
+- Expanded release and deployment checks for the new search, authority,
+  notification and scheduled-operation surfaces.
+- Corrected HBO Max App Store tier selection so legacy Standard, sports bundles
+  and annual variants cannot be mistaken for core monthly plans; retained the
+  old evidence as audited ignored records and rebuilt affected prices from
+  three stable storefront samples.
+
 ## 2.4.3 - 2026-07-30
 
 - Completed Chinese and English decision content for Suno Basic, Pro and

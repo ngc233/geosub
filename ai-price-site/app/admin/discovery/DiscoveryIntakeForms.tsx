@@ -80,7 +80,15 @@ function ModeButton({
   );
 }
 
-function ProductCandidateForm() {
+function ProductCandidateForm({
+  initialName = "",
+  initialReason = "",
+  searchOpportunityQuery = "",
+}: {
+  initialName?: string;
+  initialReason?: string;
+  searchOpportunityQuery?: string;
+}) {
   const [state, formAction, pending] = useActionState(
     createManualCandidate,
     initialState
@@ -88,6 +96,13 @@ function ProductCandidateForm() {
 
   return (
     <form action={formAction} className="grid gap-4 md:grid-cols-2">
+      {searchOpportunityQuery ? (
+        <input
+          type="hidden"
+          name="searchOpportunityQuery"
+          value={searchOpportunityQuery}
+        />
+      ) : null}
       <div className="md:col-span-2">
         <ActionMessage state={state} />
       </div>
@@ -97,6 +112,7 @@ function ProductCandidateForm() {
         <input
           name="name"
           required
+          defaultValue={initialName}
           className={inputClassName}
           placeholder="DeepSeek"
         />
@@ -192,6 +208,7 @@ function ProductCandidateForm() {
         <textarea
           name="discoveryReason"
           rows={3}
+          defaultValue={initialReason}
           className={inputClassName}
           placeholder="为什么值得进入候选池？"
         />
@@ -356,7 +373,15 @@ function DiscoverySourceForm() {
   );
 }
 
-export default function DiscoveryIntakeForms() {
+export default function DiscoveryIntakeForms({
+  initialCandidateName = "",
+  initialCandidateReason = "",
+  searchOpportunityQuery = "",
+}: {
+  initialCandidateName?: string;
+  initialCandidateReason?: string;
+  searchOpportunityQuery?: string;
+}) {
   const [mode, setMode] = useState<IntakeMode>("candidate");
 
   return (
@@ -390,7 +415,15 @@ export default function DiscoveryIntakeForms() {
         />
       </div>
 
-      {mode === "candidate" ? <ProductCandidateForm /> : <DiscoverySourceForm />}
+      {mode === "candidate" ? (
+        <ProductCandidateForm
+          initialName={initialCandidateName}
+          initialReason={initialCandidateReason}
+          searchOpportunityQuery={searchOpportunityQuery}
+        />
+      ) : (
+        <DiscoverySourceForm />
+      )}
     </section>
   );
 }

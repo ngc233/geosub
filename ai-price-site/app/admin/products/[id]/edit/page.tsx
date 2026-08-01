@@ -51,6 +51,9 @@ export default async function EditProductPage({
     seoSaved?: string;
     logoSynced?: string;
     logoError?: string;
+    source?: string;
+    reason?: string;
+    evidence?: string;
   }>;
 }) {
   const { id } = await params;
@@ -127,6 +130,20 @@ export default async function EditProductPage({
           </AdminLinkButton>
         }
       />
+
+      {query?.source === "authority-coverage" ? (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+          <div className="font-bold">
+            权威覆盖任务：{query.reason?.slice(0, 120) || "完善产品资料"}
+          </div>
+          <p className="mt-1 leading-6 text-blue-700">
+            {query.evidence?.slice(0, 240) || "请根据产品质量检查结果完善当前页面。"}
+          </p>
+          <p className="mt-1 text-xs text-blue-500">
+            修改后仍需按现有审核流程保存和发布，系统不会自动改写公开内容。
+          </p>
+        </div>
+      ) : null}
 
       {query?.error === "slug" ? (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">

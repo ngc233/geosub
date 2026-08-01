@@ -58,3 +58,28 @@ test("settings page exposes a single-admin password change flow", () => {
   assert.match(auth, /await createAdminSession\(userId\)/);
   assert.match(auth, /otherSessionsRevoked: Math\.max\(0, revoked\.count - 1\)/);
 });
+
+test("settings page keeps external operations notifications explicit and disabled until configured", () => {
+  const page = readSettingsFile("page.tsx");
+  const actions = readSettingsFile("actions.ts");
+  const notification = readFileSync(
+    resolve(currentDir, "../../../lib/operations-notification.ts"),
+    "utf8",
+  );
+
+  assert.match(page, /每日异常通知/);
+  assert.match(page, /站内简报/);
+  assert.match(page, /安全通知渠道/);
+  assert.match(page, /disabled=\{!notification\.channelConfigured\}/);
+  assert.match(actions, /operations_brief_enabled/);
+  assert.match(actions, /notificationError=channel/);
+  assert.match(notification, /GEOSUB_OPERATIONS_WEBHOOK_URL/);
+  assert.match(notification, /GEOSUB_OPERATIONS_WEBHOOK_ALLOWED_HOSTS/);
+  assert.match(notification, /url\.protocol !== "https:"/);
+  assert.match(notification, /brief\.interventionItems\.length === 0/);
+  assert.match(page, /最近通知记录/);
+  assert.match(page, /重复已抑制/);
+  assert.match(page, /getOperationsNotificationHistory/);
+  assert.match(notification, /operations_notification_deliveries/);
+  assert.match(notification, /shouldSuppressDailyOperationsBrief/);
+});

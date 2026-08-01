@@ -4,6 +4,7 @@ import { ArticleStatus, ArticleType, Locale, StructuredDataType } from "@prisma/
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { linkSearchOpportunity } from "../../../lib/admin-search-opportunities";
 import { getArticleSeoDraft } from "../../../lib/article-seo-draft";
 import { estimateReadingTime, normalizeArticleSlug } from "../../../lib/articles";
 import { prisma } from "../../../lib/prisma";
@@ -267,7 +268,14 @@ export async function createArticleAction(formData: FormData) {
     },
   });
 
+  await linkSearchOpportunity({
+    query: cleanText(formData.get("searchOpportunityQuery")),
+    articleId: article.id,
+    adminId: admin.id,
+  });
+
   revalidateArticlePaths(article.slug);
+  revalidatePath("/admin/search-demand");
   redirect(`/admin/articles/${article.id}/edit?created=1`);
 }
 

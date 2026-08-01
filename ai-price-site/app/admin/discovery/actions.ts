@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { linkSearchOpportunity } from "../../../lib/admin-search-opportunities";
 import { prisma } from "../../../lib/prisma";
 import { buildDiscoveryReviewRedirectPath } from "./discovery-redirect";
 
@@ -343,7 +344,14 @@ export async function createManualCandidate(
     )
   `;
 
+    await linkSearchOpportunity({
+      query: cleanText(formData.get("searchOpportunityQuery")),
+      candidateId,
+      adminId: admin.id,
+    });
+
     revalidatePath("/admin/discovery");
+    revalidatePath("/admin/search-demand");
 
     return {
       ok: true,

@@ -18,6 +18,7 @@ const requiredMigrations = [
   "sql/070_disney_app_store_source.sql",
   "sql/071_archive_superseded_app_store_ambiguities.sql",
   "sql/072_normalize_hbo_max_app_store_plans.sql",
+  "sql/074_repair_hbo_max_app_store_selection.sql",
 ];
 
 dotenv.config({ path: path.join(appDir, ".env.local") });

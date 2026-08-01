@@ -8,7 +8,13 @@ import ArticleForm from "../ArticleForm";
 export default async function NewArticlePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; locale?: string }>;
+  searchParams?: Promise<{
+    brief?: string;
+    error?: string;
+    locale?: string;
+    opportunity?: string;
+    topic?: string;
+  }>;
 }) {
   const params = searchParams ? await searchParams : {};
   const locale: Locale = params.locale === "EN" ? "EN" : "ZH";
@@ -90,6 +96,9 @@ export default async function NewArticlePage({
 
       <ArticleForm
         defaultLocale={locale}
+        defaultTitle={params.topic?.slice(0, 160) || ""}
+        defaultExcerpt={params.brief?.slice(0, 300) || ""}
+        searchOpportunityQuery={params.opportunity?.slice(0, 240) || ""}
         categories={categories}
         tags={tags}
         products={products}

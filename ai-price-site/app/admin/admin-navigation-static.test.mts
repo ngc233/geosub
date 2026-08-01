@@ -80,6 +80,31 @@ test("admin dashboard does not link to placeholder modules", () => {
   assert.match(source, /过期价格/);
 });
 
+test("admin dashboard provides a product-level daily operations summary", () => {
+  const dashboard = readProjectFile("app/admin/page.tsx");
+  const operations = readProjectFile("lib/admin-daily-operations.ts");
+
+  assert.match(dashboard, /getDailyOperationsSummary/);
+  assert.match(dashboard, /今日产品摘要/);
+  assert.match(dashboard, /今天为什么要关注/);
+  assert.match(dashboard, /系统进度/);
+  assert.match(dashboard, /任务后的效果/);
+  assert.match(dashboard, /运行中或已排队的产品无需重复操作/);
+  assert.match(dashboard, /buildDailyOperationsBrief/);
+  assert.match(dashboard, /dailyBrief\.counts\.failed/);
+  assert.match(dashboard, /待处理 \{dailyBrief\.counts\.action\}/);
+
+  assert.match(operations, /latest_run_failed/);
+  assert.match(operations, /run_running/);
+  assert.match(operations, /queue_pending/);
+  assert.match(operations, /scheduled_due/);
+  assert.match(operations, /latest_product_run AS/);
+  assert.match(operations, /priority >= 100/);
+  assert.match(operations, /updated_at > latest_run_started_at/);
+  assert.match(operations, /buildAuthorityCoverageQueue\(audits, \[\]\)/);
+  assert.match(operations, /getAuthorityCoverageTaskRecords\(audits\)/);
+});
+
 test("admin dashboard keeps today live while historical analytics are aggregated", () => {
   const dashboard = readProjectFile("app/admin/page.tsx");
   const packageJson = readProjectFile("package.json");
@@ -159,15 +184,16 @@ test("admin dashboard sessionizes events and computes a chronological funnel", (
   const provider = readProjectFile(
     "components/analytics/AnalyticsProvider.tsx",
   );
+  const session = readProjectFile("lib/client-analytics-session.ts");
   const schema = readProjectFile("prisma/schema.prisma");
   const migration = readProjectFile(
     "prisma/migrations/20260717160000_event_session_analytics_indexes/migration.sql",
   );
 
-  assert.match(provider, /geosub_session_id/);
-  assert.match(provider, /SESSION_TIMEOUT_MS = 30 \* 60 \* 1000/);
-  assert.match(provider, /window\.sessionStorage\.setItem/);
-  assert.match(provider, /sessionId: payload\.sessionId \|\| getSessionId\(\)/);
+  assert.match(session, /geosub_session_id/);
+  assert.match(session, /SESSION_TIMEOUT_MS = 30 \* 60 \* 1000/);
+  assert.match(session, /window\.sessionStorage\.setItem/);
+  assert.match(provider, /sessionId: payload\.sessionId \|\| getAnalyticsSessionId\(\)/);
 
   assert.match(dashboard, /FunnelQualityRow/);
   assert.match(dashboard, /anonymous_event_gaps/);

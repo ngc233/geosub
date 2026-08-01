@@ -129,6 +129,7 @@ core_files=(
   "sql/071_archive_superseded_app_store_ambiguities.sql"
   "sql/072_normalize_hbo_max_app_store_plans.sql"
   "sql/073_product_seo_content_quality.sql"
+  "sql/074_repair_hbo_max_app_store_selection.sql"
 )
 
 content_files=(
