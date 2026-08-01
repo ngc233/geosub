@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { ChevronDown } from "lucide-react";
 import {
   formatUsd,
@@ -10,7 +11,6 @@ import {
   type RegionPrice,
 } from "../lib/public-pricing-model";
 import ExpandableRegionPriceTable from "./ExpandableRegionPriceTable";
-import PriceWorldMap from "./PriceWorldMap";
 import {
   MetricItem,
   MetricStrip,
@@ -29,6 +29,64 @@ import {
   supportedDisplayCurrencies,
   type DisplayCurrency,
 } from "../lib/display-currency";
+
+const PriceWorldMap = dynamic(() => import("./PriceWorldMap"), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="h-[420px] animate-pulse rounded-lg border border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-900/70"
+      aria-hidden="true"
+    />
+  ),
+});
+
+function DeferredPriceWorldMap({
+  plan,
+  locale,
+  formatPrice,
+}: {
+  plan: ProductPlan;
+  locale: SiteLocale;
+  formatPrice: (value: number) => string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || shouldRender) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setShouldRender(true);
+        observer.disconnect();
+      },
+      { rootMargin: "320px 0px" },
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [shouldRender]);
+
+  return (
+    <div ref={containerRef}>
+      {shouldRender ? (
+        <PriceWorldMap
+          plan={plan}
+          locale={locale}
+          compact
+          formatPrice={formatPrice}
+        />
+      ) : (
+        <div
+          className="h-[420px] rounded-lg border border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-900/70"
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
+}
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 
@@ -595,10 +653,9 @@ function PriceDistribution({
       />
 
       <div className="p-4 md:p-5">
-        <PriceWorldMap
+        <DeferredPriceWorldMap
           plan={plan}
           locale={locale}
-          compact
           formatPrice={formatPrice}
         />
       </div>

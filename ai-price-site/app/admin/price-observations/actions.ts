@@ -7,6 +7,8 @@ import {
   rejectPriceObservation,
 } from "../../../lib/admin-price-review";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { prisma } from "../../../lib/prisma";
+import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
 
 function getObservationId(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
@@ -18,15 +20,25 @@ function getObservationId(formData: FormData) {
   return id;
 }
 
+async function getObservationProductSlug(id: string) {
+  const observation = await prisma.priceObservation.findUnique({
+    where: { id },
+    select: { product: { select: { slug: true } } },
+  });
+
+  return observation?.product.slug ?? null;
+}
+
 export async function approveObservation(formData: FormData) {
   await requireAdmin();
   const id = getObservationId(formData);
+  const productSlug = await getObservationProductSlug(id);
 
   await approvePriceObservation(id);
+  invalidatePublicPricing(productSlug);
 
   revalidatePath("/admin/price-observations");
   revalidatePath("/admin/affordability");
-  revalidatePath("/zh/ai-pricing/chatgpt");
 }
 
 export async function ignoreObservation(formData: FormData) {

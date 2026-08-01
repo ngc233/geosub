@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { fetchOfficialSiteIcon } from "../../../lib/official-site-logo";
 import { prisma } from "../../../lib/prisma";
+import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
 import { cacheRemoteProductLogo } from "../../../lib/product-logo-storage";
 
 function cleanText(value: FormDataEntryValue | null) {
@@ -455,9 +456,11 @@ export async function createProductAction(formData: FormData) {
       },
     });
 
+    invalidatePublicPricing(product.slug);
     redirect(`/admin/products/${product.id}/edit?created=1&appStoreAuto=found`);
   }
 
+  invalidatePublicPricing(product.slug);
   redirect(`/admin/products/${product.id}/edit?created=1&appStoreAuto=not-found`);
 }
 
@@ -547,6 +550,10 @@ export async function updateProductAction(formData: FormData) {
     },
   });
 
+  invalidatePublicPricing(current.slug);
+  if (updated.slug !== current.slug) {
+    invalidatePublicPricing(updated.slug);
+  }
   redirect("/admin/products");
 }
 
@@ -703,6 +710,7 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
     },
   });
 
+  invalidatePublicPricing(product.slug);
   redirect(
     `/admin/products/${product.id}/edit?logoSynced=${officialSiteLogo ? "official-site" : "app-store"}`,
   );
@@ -778,5 +786,6 @@ export async function saveProductSeoAction(formData: FormData) {
     },
   });
 
+  invalidatePublicPricing(product.slug);
   redirect(`/admin/products/${product.id}/edit?seoSaved=1`);
 }

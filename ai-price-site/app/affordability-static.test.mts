@@ -39,7 +39,11 @@ test("public detail pages read affordability from the shared database view", () 
 
   assert.match(zhPage, /<PricingDetailPage \{\.\.\.props\} locale="zh"/);
   assert.match(enPage, /<PricingDetailPage \{\.\.\.props\} locale="en"/);
-  assert.match(sharedPage, /getPlanAffordability\(product\.slug, activePlan\.slug\)/);
+  assert.match(sharedPage, /getCachedPlanAffordability\(product\.slug, activePlan\.slug\)/);
+  assert.match(
+    sharedPage,
+    /\(\) => getPlanAffordability\(productSlug, planSlug\)/,
+  );
   assert.match(sharedPage, /<AffordabilityComparison/);
   assert.match(sharedPage, /locale=\{locale\}/);
   assert.match(affordabilityLib, /FROM plan_affordability_summary_view/);

@@ -98,6 +98,9 @@ test("AI and streaming listing routes delegate locale and category to one shared
   assert.match(sharedPage, /ai:\s*ProductCategory\.AI/);
   assert.match(sharedPage, /streaming:\s*ProductCategory\.STREAMING/);
   assert.match(sharedPage, /<DbAiPricingClient products=\{products\} locale=\{locale\}/);
+  assert.match(sharedPage, /unstable_cache/);
+  assert.match(sharedPage, /PUBLIC_PRICING_LIST_CACHE_TAG/);
+  assert.match(sharedPage, /PUBLIC_PRICING_REVALIDATE_SECONDS/);
 });
 
 test("pricing list query requires published products, plans and prices", () => {

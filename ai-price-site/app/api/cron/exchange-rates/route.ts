@@ -1,6 +1,8 @@
+import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { supportedDisplayCurrencies } from "../../../../lib/display-currency";
+import { PUBLIC_EXCHANGE_RATE_CACHE_TAG } from "../../../../lib/public-pricing-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -191,6 +193,10 @@ export async function POST(request: NextRequest) {
     });
 
     synced.push({ quote, rate });
+  }
+
+  if (synced.length > 0) {
+    revalidateTag(PUBLIC_EXCHANGE_RATE_CACHE_TAG, "max");
   }
 
   return NextResponse.json({

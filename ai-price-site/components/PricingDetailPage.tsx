@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ProductCategory } from "@prisma/client";
 import BrandIcon from "./BrandIcon";
@@ -19,7 +20,10 @@ import {
 } from "../lib/public-pricing-model";
 import { getPricingDetailProduct } from "../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../lib/affordability";
-import { getLatestExchangeRate } from "../lib/exchange-rates";
+import {
+  getLatestUsdExchangeRates,
+  type ExchangeRateSnapshot,
+} from "../lib/exchange-rates";
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
 import { getPlanDisplayName } from "../lib/pricing-labels";
@@ -50,6 +54,14 @@ import {
   supportedDisplayCurrencies,
   type DisplayCurrency,
 } from "../lib/display-currency";
+import {
+  getPublicPricingProductCacheTag,
+  PUBLIC_EXCHANGE_RATE_CACHE_TAG,
+  PUBLIC_EXCHANGE_RATE_REVALIDATE_SECONDS,
+  PUBLIC_PRICING_CACHE_TAG,
+  PUBLIC_PRICING_NAVIGATION_CACHE_TAG,
+  PUBLIC_PRICING_REVALIDATE_SECONDS,
+} from "../lib/public-pricing-cache";
 
 export type PricingDetailPageProps = {
   params: Promise<{
@@ -62,7 +74,14 @@ export type PricingDetailPageProps = {
 };
 
 async function getProduct(slug: string, locale: SiteLocale) {
-  return getPricingDetailProduct(slug, locale);
+  return unstable_cache(
+    () => getPricingDetailProduct(slug, locale),
+    ["public-pricing-product", slug, locale],
+    {
+      revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
+      tags: [PUBLIC_PRICING_CACHE_TAG, getPublicPricingProductCacheTag(slug)],
+    },
+  )();
 }
 
 function toDbProductCategory(category: string) {
@@ -70,7 +89,8 @@ function toDbProductCategory(category: string) {
 }
 
 async function getProductNavItems(category: string) {
-  const products = await prisma.product.findMany({
+  return unstable_cache(async () => {
+    const products = await prisma.product.findMany({
     where: {
       category: toDbProductCategory(category),
       status: "PUBLISHED",
@@ -115,37 +135,85 @@ async function getProductNavItems(category: string) {
     },
   });
 
-  return products.map((product) => ({
-    slug: product.slug,
-    name: product.name,
-    category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
-    defaultPlanSlug:
-      product.plans.find(
-        (plan) =>
-          getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
-      )?.slug ||
-      product.plans[0]?.slug ||
-      null,
-    logoUrl: product.logoUrl,
-    officialUrl: product.officialUrl,
-  }));
+    return products.map((product) => ({
+      slug: product.slug,
+      name: product.name,
+      category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
+      defaultPlanSlug:
+        product.plans.find(
+          (plan) =>
+            getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
+        )?.slug ||
+        product.plans[0]?.slug ||
+        null,
+      logoUrl: product.logoUrl,
+      officialUrl: product.officialUrl,
+    }));
+  }, ["public-pricing-navigation", category], {
+    revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
+    tags: [PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_NAVIGATION_CACHE_TAG],
+  })();
 }
 
 async function getProductSeoMeta(slug: string, locale: SiteLocale) {
   if (locale !== "zh") return null;
 
-  return prisma.seoMeta.findFirst({
-    where: {
-      locale: "ZH",
-      status: "PUBLISHED",
-      product: {
-        slug,
+  return unstable_cache(
+    () => prisma.seoMeta.findFirst({
+      where: {
+        locale: "ZH",
+        status: "PUBLISHED",
+        product: {
+          slug,
+        },
+        planId: null,
+        articleId: null,
+        categoryId: null,
       },
-      planId: null,
-      articleId: null,
-      categoryId: null,
+    }),
+    ["public-pricing-seo", slug, locale],
+    {
+      revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
+      tags: [PUBLIC_PRICING_CACHE_TAG, getPublicPricingProductCacheTag(slug)],
     },
-  });
+  )();
+}
+
+const getCachedPublicExchangeRates = unstable_cache(
+  () => getLatestUsdExchangeRates(supportedDisplayCurrencies),
+  ["public-pricing-exchange-rates"],
+  {
+    revalidate: PUBLIC_EXCHANGE_RATE_REVALIDATE_SECONDS,
+    tags: [PUBLIC_EXCHANGE_RATE_CACHE_TAG],
+  },
+);
+
+function getCachedPlanAffordability(productSlug: string, planSlug: string) {
+  return unstable_cache(
+    () => getPlanAffordability(productSlug, planSlug),
+    ["public-pricing-affordability", productSlug, planSlug],
+    {
+      revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
+      tags: [
+        PUBLIC_PRICING_CACHE_TAG,
+        getPublicPricingProductCacheTag(productSlug),
+      ],
+    },
+  )();
+}
+
+function getCachedProductSeoQualityAudit(productSlug: string) {
+  return unstable_cache(
+    () => getProductSeoQualityAudit(productSlug),
+    ["public-pricing-quality", productSlug],
+    {
+      revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
+      tags: [
+        PUBLIC_PRICING_CACHE_TAG,
+        getPublicPricingProductCacheTag(productSlug),
+      ],
+    },
+  )();
 }
 
 function hasChineseText(value?: string | null) {
@@ -421,7 +489,7 @@ export async function getPricingDetailMetadata({
     getProduct(slug, locale),
     getProductSeoMeta(slug, locale),
     productSeoGateMode === "enforce"
-      ? getProductSeoQualityAudit(slug)
+      ? getCachedProductSeoQualityAudit(slug)
       : Promise.resolve(null),
   ]);
 
@@ -596,30 +664,36 @@ export default async function PricingDetailPage({
   const hasPublishedPrices = activePlan.regions.length > 0;
   const defaultCurrency =
     getSiteLocaleDefinition(locale).defaultCurrency;
-  const [affordability, exchangeRateEntries] = await Promise.all([
-    getPlanAffordability(product.slug, activePlan.slug),
-    Promise.all(
-      supportedDisplayCurrencies.map(async (currency) => [
-        currency,
-        currency === "USD"
-          ? {
-              baseCurrency: "USD",
-              quoteCurrency: "USD",
-              rate: 1,
-              source: null,
-              rateDate: activePlan.freshness?.fxRateDate || null,
-              fetchedAt: null,
-              isFallback: false,
-              isStale: false,
-            }
-          : await getLatestExchangeRate("USD", currency),
-      ] as const),
-    ),
+  const [affordability, latestExchangeRates] = await Promise.all([
+    getCachedPlanAffordability(product.slug, activePlan.slug),
+    getCachedPublicExchangeRates(),
   ]);
-  const exchangeRates = Object.fromEntries(exchangeRateEntries) as Record<
-    DisplayCurrency,
-    (typeof exchangeRateEntries)[number][1]
-  >;
+  const exchangeRates = Object.fromEntries(
+    supportedDisplayCurrencies.map((currency) => [
+      currency,
+      currency === "USD"
+        ? {
+            baseCurrency: "USD",
+            quoteCurrency: "USD",
+            rate: 1,
+            source: null,
+            rateDate: activePlan.freshness?.fxRateDate || null,
+            fetchedAt: null,
+            isFallback: false,
+            isStale: false,
+          }
+        : latestExchangeRates[currency] || {
+            baseCurrency: "USD",
+            quoteCurrency: currency,
+            rate: 0,
+            source: null,
+            rateDate: null,
+            fetchedAt: null,
+            isFallback: true,
+            isStale: true,
+          },
+    ]),
+  ) as Record<DisplayCurrency, ExchangeRateSnapshot>;
   const stats = hasPublishedPrices ? getPlanStats(activePlan) : null;
   const pageCopy = getPricingDetailPageCopy({
     locale,

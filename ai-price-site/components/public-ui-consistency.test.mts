@@ -31,6 +31,16 @@ test("active public map and source filters avoid legacy oversized popovers", () 
   assert.doesNotMatch(table, /grid w-full grid-cols-4 rounded-xl/);
 });
 
+test("the world map is deferred until the visitor approaches it", () => {
+  const pricingView = readComponent("PricingPlatformView.tsx");
+
+  assert.match(pricingView, /dynamic\(\(\) => import\("\.\/PriceWorldMap"\)/);
+  assert.match(pricingView, /ssr: false/);
+  assert.match(pricingView, /new IntersectionObserver/);
+  assert.match(pricingView, /rootMargin: "320px 0px"/);
+  assert.match(pricingView, /<DeferredPriceWorldMap/);
+});
+
 test("public pricing interactions emit operational analytics events", () => {
   const dbPricingCard = readComponent("DbPricingCard.tsx");
   const sidebar = readComponent("ProductSidebar.tsx");

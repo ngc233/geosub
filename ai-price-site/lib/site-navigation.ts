@@ -1,5 +1,5 @@
-import { unstable_noStore as noStore } from "next/cache";
-import type { NavigationPosition, PublishStatus } from "@prisma/client";
+import { unstable_cache } from "next/cache";
+import { Locale, NavigationPosition, PublishStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 import {
   getNavigationLocaleByValue,
@@ -38,6 +38,68 @@ type NavigationRow = {
   sortOrder: number;
   createdAt: Date;
 };
+
+type LocalizedNavigationRow = NavigationRow & {
+  locale: string;
+};
+
+const SITE_NAVIGATION_REVALIDATE_SECONDS = 6 * 60 * 60;
+
+const getCachedNavigationRows = unstable_cache(
+  async (locale: Locale, position: NavigationPosition) => prisma.navigationItem.findMany({
+    where: {
+      locale,
+      position,
+      status: PublishStatus.PUBLISHED,
+    },
+    orderBy: [
+      { sortOrder: "asc" },
+      { createdAt: "asc" },
+    ],
+    select: {
+      id: true,
+      label: true,
+      href: true,
+      external: true,
+      parentId: true,
+      sortOrder: true,
+      createdAt: true,
+    },
+  }),
+  ["site-navigation-rows"],
+  {
+    revalidate: SITE_NAVIGATION_REVALIDATE_SECONDS,
+    tags: ["site-navigation"],
+  },
+);
+
+const getCachedNavigationRowsByLocale = unstable_cache(
+  async (position: NavigationPosition) => prisma.navigationItem.findMany({
+    where: {
+      locale: {
+        in: navigationLocales.map((locale) => locale.dbValue),
+      },
+      position,
+      status: PublishStatus.PUBLISHED,
+    },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      label: true,
+      href: true,
+      external: true,
+      parentId: true,
+      sortOrder: true,
+      createdAt: true,
+      locale: true,
+    },
+  }),
+  ["site-navigation-rows-by-locale"],
+  {
+    revalidate: SITE_NAVIGATION_REVALIDATE_SECONDS,
+    tags: ["site-navigation"],
+  },
+);
 
 type GetSiteNavigationOptions =
   | string
@@ -132,34 +194,11 @@ function buildSiteNavigationItems(items: NavigationRow[]) {
 export async function getSiteNavigation(
   options: GetSiteNavigationOptions = "zh"
 ) {
-  noStore();
-
   const normalizedOptions = normalizeOptions(options);
-
-  const items = await prisma.navigationItem.findMany({
-    where: {
-      locale: normalizedOptions.locale.dbValue,
-      position: normalizedOptions.position.dbValue,
-      status: "PUBLISHED" as PublishStatus,
-    },
-    orderBy: [
-      {
-        sortOrder: "asc",
-      },
-      {
-        createdAt: "asc",
-      },
-    ],
-    select: {
-      id: true,
-      label: true,
-      href: true,
-      external: true,
-      parentId: true,
-      sortOrder: true,
-      createdAt: true,
-    },
-  });
+  const items = await getCachedNavigationRows(
+    normalizedOptions.locale.dbValue,
+    normalizedOptions.position.dbValue,
+  );
 
   return buildSiteNavigationItems(items);
 }
@@ -167,29 +206,10 @@ export async function getSiteNavigation(
 export async function getSiteNavigationByLocale(
   position: NavigationPosition | NavigationPositionValue | string,
 ) {
-  noStore();
-
   const normalizedPosition = getNavigationPositionByValue(String(position));
-  const items = await prisma.navigationItem.findMany({
-    where: {
-      locale: {
-        in: navigationLocales.map((locale) => locale.dbValue),
-      },
-      position: normalizedPosition.dbValue,
-      status: "PUBLISHED" as PublishStatus,
-    },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    select: {
-      id: true,
-      label: true,
-      href: true,
-      external: true,
-      parentId: true,
-      sortOrder: true,
-      createdAt: true,
-      locale: true,
-    },
-  });
+  const items = await getCachedNavigationRowsByLocale(
+    normalizedPosition.dbValue,
+  ) as LocalizedNavigationRow[];
 
   return navigationLocales.reduce<SiteNavigationByLocale>((result, locale) => {
     result[locale.value] = buildSiteNavigationItems(

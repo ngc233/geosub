@@ -6,6 +6,7 @@ import path from "node:path";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../lib/prisma";
+import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
 import {
   type CollectionRunResult,
   type CollectionRunStatus,
@@ -449,6 +450,10 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
         runStatus = "failed";
       }
     }
+  }
+
+  if (queuedCount > 0) {
+    invalidatePublicPricing(productSlug || null);
   }
 
   revalidatePath("/admin/review");

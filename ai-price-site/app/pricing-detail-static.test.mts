@@ -57,6 +57,35 @@ test("pricing detail pages keep product navigation database-driven", () => {
   assert.match(sharedPage, /products=\{sidebarProducts\}/);
 });
 
+test("public pricing detail reads use bounded shared caches and batch exchange rates", () => {
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const cachePolicy = readAppFile("..", "lib", "public-pricing-cache.ts");
+  const navigation = readAppFile("..", "lib", "site-navigation.ts");
+
+  assert.match(detailPage, /unstable_cache/);
+  assert.match(detailPage, /getLatestUsdExchangeRates\(supportedDisplayCurrencies\)/);
+  assert.doesNotMatch(detailPage, /getLatestExchangeRate\("USD", currency\)/);
+  assert.match(detailPage, /getPublicPricingProductCacheTag\(slug\)/);
+  assert.match(cachePolicy, /PUBLIC_PRICING_REVALIDATE_SECONDS = 30 \* 60/);
+  assert.match(cachePolicy, /PUBLIC_EXCHANGE_RATE_REVALIDATE_SECONDS = 60 \* 60/);
+  assert.match(navigation, /unstable_cache/);
+  assert.doesNotMatch(navigation, /unstable_noStore|noStore\(/);
+});
+
+test("price publishing actions invalidate public pricing caches", () => {
+  const reviewActions = readAppFile("admin", "review", "actions.ts");
+  const collectionRunner = readAppFile("admin", "review", "collection-runner.ts");
+  const productActions = readAppFile("admin", "products", "actions.ts");
+  const exchangeRoute = readAppFile("api", "cron", "exchange-rates", "route.ts");
+
+  assert.match(reviewActions, /getObservationProductSlug/);
+  assert.match(reviewActions, /invalidatePublicPricing\(productSlug\)/);
+  assert.match(reviewActions, /invalidatePublicPricing\(\)/);
+  assert.match(collectionRunner, /invalidatePublicPricing\(productSlug \|\| null\)/);
+  assert.match(productActions, /invalidatePublicPricing\(product\.slug\)/);
+  assert.match(exchangeRoute, /revalidateTag\(PUBLIC_EXCHANGE_RATE_CACHE_TAG, "max"\)/);
+});
+
 test("database-only streaming products keep their real category on detail pages", () => {
   const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
 

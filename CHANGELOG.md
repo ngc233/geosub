@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.6.0 - 2026-08-02
+
+- Added bounded shared caches for public pricing products, lists, navigation,
+  SEO metadata, affordability data and exchange rates, reducing repeated
+  database work without changing the existing multilingual URL structure.
+- Added product-level cache invalidation after publication, SEO, logo and
+  manual price-review changes, with broad invalidation reserved for full
+  automatic review runs.
+- Replaced per-currency exchange-rate queries on pricing details with one batch
+  read and refreshes the public exchange-rate cache after scheduled syncs.
+- Deferred the interactive world map until visitors approach its section,
+  keeping the map bundle and geographic data out of the initial page workload.
+- Refined mobile dark-mode navigation and hero actions so active, disabled and
+  dropdown surfaces keep consistent contrast with the public design system.
+- Added regression gates for public read caching, cache invalidation, batch
+  exchange rates, deferred map loading and mobile dark-mode surfaces.
+
 ## 2.5.0 - 2026-08-01
 
 - Added a multilingual global search entry for published products and plans,

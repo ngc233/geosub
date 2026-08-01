@@ -1,7 +1,13 @@
 import { ProductCategory } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { getDbAiPricingProducts } from "../lib/db-ai-pricing";
 import { getPricingListCopy } from "../lib/pricing-list-copy";
 import type { ProductCategory as PublicProductCategory } from "../lib/public-pricing-model";
+import {
+  PUBLIC_PRICING_CACHE_TAG,
+  PUBLIC_PRICING_LIST_CACHE_TAG,
+  PUBLIC_PRICING_REVALIDATE_SECONDS,
+} from "../lib/public-pricing-cache";
 import type { SiteLocale } from "../lib/site-locale";
 import DbAiPricingClient from "./DbAiPricingClient";
 
@@ -13,6 +19,23 @@ const dbCategoryByPublicCategory: Record<
   streaming: ProductCategory.STREAMING,
 };
 
+function getCachedPricingListProducts(
+  locale: SiteLocale,
+  category: PublicProductCategory,
+) {
+  return unstable_cache(
+    () => getDbAiPricingProducts({
+      locale,
+      categories: [dbCategoryByPublicCategory[category]],
+    }),
+    ["public-pricing-list", locale, category],
+    {
+      revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
+      tags: [PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_LIST_CACHE_TAG],
+    },
+  )();
+}
+
 export default async function PricingListPage({
   locale,
   category,
@@ -20,10 +43,7 @@ export default async function PricingListPage({
   locale: SiteLocale;
   category: PublicProductCategory;
 }) {
-  const products = await getDbAiPricingProducts({
-    locale,
-    categories: [dbCategoryByPublicCategory[category]],
-  });
+  const products = await getCachedPricingListProducts(locale, category);
   const copy = getPricingListCopy(locale).pages[category];
 
   return (

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
@@ -13,6 +13,11 @@ import {
   getNavigationPositionByValue,
   isNavigationHomeHref,
 } from "../../../lib/navigation-config";
+
+function invalidatePublishedNavigation() {
+  updateTag("site-navigation");
+  invalidatePublishedNavigation();
+}
 
 function normalizeNavigationHref(href: string, localePath: string) {
   const normalizedHref = href.trim();
@@ -99,8 +104,7 @@ export async function toggleNavigationItemStatus(itemId: string) {
     },
   });
 
-  revalidatePath("/admin/navigation");
-  revalidatePath("/admin");
+  invalidatePublishedNavigation();
 }
 
 export async function moveNavigationItem(
@@ -253,8 +257,7 @@ export async function updateNavigationItem(
     },
   });
 
-  revalidatePath("/admin/navigation");
-  revalidatePath("/admin");
+  invalidatePublishedNavigation();
 
   const localeQuery = getNavigationLocaleByDbValue(currentItem.locale).value;
   const positionQuery = getNavigationPositionByDbValue(currentItem.position).value;
@@ -345,8 +348,7 @@ export async function createNavigationItem(formData: FormData) {
     },
   });
 
-  revalidatePath("/admin/navigation");
-  revalidatePath("/admin");
+  invalidatePublishedNavigation();
 
   redirect(
     `/admin/navigation?locale=${localeEntry.value}&position=${positionEntry.value}`
@@ -425,8 +427,7 @@ export async function seedDefaultNavigation(formData: FormData) {
     }
   }
 
-  revalidatePath("/admin/navigation");
-  revalidatePath("/admin");
+  invalidatePublishedNavigation();
   revalidatePath(`/${localeEntry.path}`);
   redirect(
     `/admin/navigation?locale=${localeEntry.value}&position=${positionEntry.value}&seeded=1`,
