@@ -89,7 +89,7 @@ export default function MobileProductSwitcher({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white/90 px-4 py-3 text-left shadow-sm shadow-zinc-950/[0.04] backdrop-blur transition-all duration-200 ease-out active:scale-[0.99] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15"
+        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white/90 px-4 py-3 text-left shadow-sm shadow-zinc-950/[0.04] backdrop-blur transition-all duration-200 ease-out active:scale-[0.99] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-900/90 dark:shadow-black/20"
         aria-expanded={open}
         aria-haspopup="menu"
       >
@@ -97,16 +97,16 @@ export default function MobileProductSwitcher({
           <BrandIcon product={currentProduct} size="sm" />
 
           <span className="min-w-0">
-            <span className="block text-xs font-black text-zinc-400">
+            <span className="block text-xs font-black text-zinc-400 dark:text-zinc-500">
               {copy.currentProduct}
             </span>
-            <span className="block truncate text-sm font-black text-zinc-950">
+            <span className="block truncate text-sm font-black text-zinc-950 dark:text-white">
               {currentProduct.name}
             </span>
           </span>
         </span>
 
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-500">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300">
           {open ? (
             <ChevronUp size={16} strokeWidth={2.4} />
           ) : (
@@ -122,10 +122,10 @@ export default function MobileProductSwitcher({
         ].join(" ")}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm shadow-zinc-950/[0.04]" role="menu">
+          <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm shadow-zinc-950/[0.04] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20" role="menu">
             {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
               <div key={category} className="py-2">
-                <div className="px-3 pb-2 text-xs font-black text-zinc-400">
+                <div className="px-3 pb-2 text-xs font-black text-zinc-400 dark:text-zinc-500">
                   {categoryLabel(category as ProductNavCategory, copy)}
                 </div>
 
@@ -146,8 +146,8 @@ export default function MobileProductSwitcher({
                         className={[
                           "flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-black transition",
                           active
-                            ? "bg-lime-50 text-zinc-950 ring-1 ring-lime-200"
-                            : "text-zinc-700 hover:bg-zinc-50",
+                            ? "bg-lime-50 text-zinc-950 ring-1 ring-lime-200 dark:bg-lime-500/10 dark:text-white dark:ring-lime-500/25"
+                            : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
                         ].join(" ")}
                       >
                         <BrandIcon product={product} size="sm" />

@@ -48,6 +48,18 @@ test("public pricing interactions emit operational analytics events", () => {
   assert.match(shareModal, /data-track-event="share_to_social"/);
 });
 
+test("mobile product navigation and hero actions remain coherent in dark mode", () => {
+  const mobileSwitcher = readComponent("MobileProductSwitcher.tsx");
+  const pricingDetail = readComponent("PricingDetailPage.tsx");
+
+  assert.match(mobileSwitcher, /dark:border-zinc-800 dark:bg-zinc-900\/90/);
+  assert.match(mobileSwitcher, /dark:bg-zinc-800 dark:text-zinc-300/);
+  assert.match(mobileSwitcher, /dark:bg-lime-500\/10 dark:text-white dark:ring-lime-500\/25/);
+  assert.match(mobileSwitcher, /dark:hover:bg-zinc-800 dark:hover:text-white/);
+  assert.match(pricingDetail, /dark:bg-zinc-900 dark:text-zinc-300/);
+  assert.match(pricingDetail, /dark:hover:bg-lime-500\/10 dark:hover:text-lime-200/);
+});
+
 test("English pricing details localize purchasing power and shared controls", () => {
   const affordability = readComponent("AffordabilityComparison.tsx");
   const affordabilityRows = readComponent("ExpandableAffordabilityRows.tsx");
