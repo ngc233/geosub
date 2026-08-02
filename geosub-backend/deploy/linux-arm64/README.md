@@ -201,6 +201,18 @@ docker ps
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/post-deploy-check.sh
 ```
 
+Generate a read-only release health baseline after deployment or during an
+incident review:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/production-health-report.sh
+```
+
+The report summarizes release identity, local/public response timings, service
+resources, automation failures, price and exchange-rate freshness, and the
+regular post-deploy gates. It does not restart services or change data. Set
+`GEOSUB_HEALTH_SAMPLE_COUNT` to use between 1 and 20 sequential HTTP samples.
+
 ## Database backup and restore
 
 Create a production backup before migrations, deployments, or manual data edits:

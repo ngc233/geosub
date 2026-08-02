@@ -252,9 +252,17 @@ if (( failures == 0 )); then
     "sql/071_archive_superseded_app_store_ambiguities.sql" \
     "sql/072_normalize_hbo_max_app_store_plans.sql" \
     "sql/073_product_seo_content_quality.sql" \
-    "sql/074_repair_hbo_max_app_store_selection.sql"; do
+    "sql/074_repair_hbo_max_app_store_selection.sql" \
+    "sql/075_serialize_app_store_auto_review.sql"; do
     check_migration "$migration"
   done
+
+  auto_review_lock="$(psql_scalar "SELECT CASE WHEN pg_get_functiondef('run_app_store_stability_auto_review(boolean,integer,integer,integer)'::regprocedure) LIKE '%pg_advisory_xact_lock%' THEN 'ok' ELSE 'missing' END;")"
+  if [[ "$auto_review_lock" == "ok" ]]; then
+    pass "App Store auto-review serialization lock"
+  else
+    fail "App Store auto-review serialization lock missing"
+  fi
 
   for index_name in \
     "collector_jobs_admin_queue_idx" \

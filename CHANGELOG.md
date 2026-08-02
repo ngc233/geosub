@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.6.1 - 2026-08-02
+
+- Serialized the shared App Store automatic-review phase so concurrent
+  collectors cannot approve the same pending observation twice or turn a
+  successful collection into a failed retry.
+- Added a reusable read-only production health report covering release
+  identity, endpoint latency, service resources, scheduled tasks, collector
+  failures, price freshness, exchange rates and deployment gates.
+- Added deployment verification and regression coverage for the automatic
+  review lock, plus the first v2.6.0 production health baseline.
+
 ## 2.6.0 - 2026-08-02
 
 - Added bounded shared caches for public pricing products, lists, navigation,

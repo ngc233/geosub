@@ -66,6 +66,10 @@ const hboMaxSelectionRepairSql = readFileSync(
   resolve(repoRoot, "geosub-backend/sql/074_repair_hbo_max_app_store_selection.sql"),
   "utf8",
 );
+const autoReviewSerializationSql = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/075_serialize_app_store_auto_review.sql"),
+  "utf8",
+);
 
 const legacyTierCleanupSql = readFileSync(
   resolve(
@@ -104,6 +108,18 @@ test("auto review keeps App Store hard anomalies out of automatic approval", () 
   );
   assert.match(autoReviewSql, /latest_has_anomaly,\s+FALSE\) = FALSE/);
   assert.match(autoReviewSql, /second_has_anomaly,\s+FALSE\) = FALSE/);
+});
+
+test("App Store auto review is serialized across concurrent collector workers", () => {
+  assert.match(autoReviewSerializationSql, /pg_advisory_xact_lock/);
+  assert.match(
+    autoReviewSerializationSql,
+    /run_app_store_stability_auto_review_unlocked\(/,
+  );
+  assert.match(
+    autoReviewSerializationSql,
+    /CREATE OR REPLACE FUNCTION run_app_store_stability_auto_review\(/,
+  );
 });
 
 test("sub-dollar converted App Store prices remain blocked as parsing suspects", () => {

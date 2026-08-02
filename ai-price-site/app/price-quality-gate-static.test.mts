@@ -148,6 +148,7 @@ test("current price data repairs remain required core migrations", () => {
     "sql/072_normalize_hbo_max_app_store_plans.sql",
     "sql/073_product_seo_content_quality.sql",
     "sql/074_repair_hbo_max_app_store_selection.sql",
+    "sql/075_serialize_app_store_auto_review.sql",
   ];
   const migrationRunner = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/db-apply-sql.sh"
