@@ -41,6 +41,9 @@ test("site metadata defaults to geosub.org and has language alternates", () => {
   assert.doesNotMatch(source, /geosub\.com/);
   assert.match(source, /metadataBase/);
   assert.match(proxy, /requestHeaders\.set\("x-pathname"/);
+  assert.match(proxy, /getLegacyPricingPlanRedirectPath/);
+  assert.match(proxy, /NextResponse\.redirect\(redirectUrl, 308\)/);
+  assert.match(proxy, /redirectUrl\.searchParams\.delete\("plan"\)/);
   assert.match(source, /canonical: canonicalPath/);
   assert.match(source, /getLanguageAlternates\(canonicalPath\)/);
   assert.match(source, /`\$\{siteUrl\}\$\{canonicalPath\}`/);

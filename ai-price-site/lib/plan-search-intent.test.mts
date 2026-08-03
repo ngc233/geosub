@@ -34,11 +34,20 @@ test("current Chinese and English plans publish distinct search-intent copy", ()
       assert.ok(copy, `${locale}/${entry.productSlug}/${entry.planSlug}`);
       assert.ok(copy.description.length >= 70);
       assert.ok(copy.description.length <= 180);
+      assert.match(
+        copy.description,
+        locale === "zh" ? /价格：/ : /price:/i,
+      );
       assert.ok(
         copy.description.includes(
-          entry.content.plan.difference.replace(/[。.!?！？]+$/u, ""),
+          entry.content.plan.difference
+            .replace(/[。.!?！？]+$/u, "")
+            .split(/[。.!?！？]/u, 1)[0]
+            .slice(0, 24),
         ),
       );
+      assert.match(copy.description, /\$19\.99/);
+      assert.ok(copy.description.includes(locale === "zh" ? "日本" : "Japan"));
       assert.equal(copy.faqs.length, 2);
       assert.ok(copy.faqs.every((faq) => faq.a.length >= 30));
       assert.ok(!descriptions.has(copy.description), displayName);

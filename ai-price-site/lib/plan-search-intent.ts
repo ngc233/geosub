@@ -10,6 +10,10 @@ function withoutTerminalPunctuation(value: string) {
   return value.trim().replace(/[。.!?！？]+$/u, "");
 }
 
+function firstSentence(value: string) {
+  return withoutTerminalPunctuation(value).split(/[。.!?！？]/u, 1)[0].trim();
+}
+
 function lowerFirst(value: string) {
   return value ? value[0].toLocaleLowerCase("en") + value.slice(1) : value;
 }
@@ -31,6 +35,39 @@ function clampDescription(value: string, maxLength = 180) {
       ? shortened.slice(0, lastBoundary)
       : shortened
   }…`;
+}
+
+function summarizeSegment(value: string, maxLength: number) {
+  const compact = value.replace(/\s+/g, " ").trim();
+  if (compact.length <= maxLength) return compact;
+
+  const shortened = compact.slice(0, Math.max(1, maxLength - 1)).trimEnd();
+  const wordBoundary = shortened.lastIndexOf(" ");
+  const body =
+    wordBoundary >= Math.floor(maxLength * 0.6)
+      ? shortened.slice(0, wordBoundary)
+      : shortened;
+
+  return `${body}…`;
+}
+
+function buildIntentDescription({
+  prefix,
+  difference,
+  separator,
+  context,
+}: {
+  prefix: string;
+  difference: string;
+  separator: string;
+  context: string;
+}) {
+  const available = 180 - prefix.length - separator.length - context.length;
+  if (available < 24) {
+    return clampDescription(`${prefix}${difference}${separator}${context}`);
+  }
+
+  return `${prefix}${summarizeSegment(difference, available)}${separator}${context}`;
 }
 
 export function getPlanSearchIntentCopy({
@@ -56,6 +93,7 @@ export function getPlanSearchIntentCopy({
   if (!content || (locale !== "zh" && locale !== "en")) return null;
 
   const difference = withoutTerminalPunctuation(content.plan.difference);
+  const primaryDifference = firstSentence(difference);
   const availability = content.plan.availabilityNote
     ? ` ${content.plan.availabilityNote.trim()}`
     : "";
@@ -63,13 +101,16 @@ export function getPlanSearchIntentCopy({
   if (locale === "zh") {
     const priceContext =
       lowestCountry && lowestPrice
-        ? `当前比较 ${regionCount} 个地区，最低约 ${lowestPrice}（${lowestCountry}）。`
-        : `当前按 ${regionCount} 个已核验地区比较订阅价格。`;
+        ? `已核验 ${regionCount} 个地区，当前最低约 ${lowestPrice}（${lowestCountry}），并可查看税费、汇率和购买力。`
+        : `比较 ${regionCount} 个已核验地区的月费、税费、汇率和购买力。`;
 
     return {
-      description: clampDescription(
-        `${displayName}：${difference}。${priceContext}可查看各地月费、税费、汇率和购买力差异。`,
-      ),
+      description: buildIntentDescription({
+        prefix: `${displayName} 套餐价格：`,
+        difference: primaryDifference,
+        separator: "。",
+        context: priceContext,
+      }),
       faqs: [
         {
           q: `${displayName} 适合哪些用户？`,
@@ -85,13 +126,16 @@ export function getPlanSearchIntentCopy({
 
   const priceContext =
     lowestCountry && lowestPrice
-      ? `Prices are compared across ${regionCount} regions, with the current lowest at about ${lowestPrice} in ${lowestCountry}.`
-      : `Prices are compared across ${regionCount} reviewed regions.`;
+      ? `Lowest reviewed: ${lowestPrice} in ${lowestCountry} across ${regionCount} regions.`
+      : `Compare prices across ${regionCount} reviewed regions.`;
 
   return {
-    description: clampDescription(
-      `${displayName}: ${difference}. ${priceContext} Compare taxes, exchange rates and affordability.`,
-    ),
+    description: buildIntentDescription({
+      prefix: `${displayName} price: `,
+      difference: primaryDifference,
+      separator: ". ",
+      context: priceContext,
+    }),
     faqs: [
       {
         q: `Who is ${displayName} best for?`,

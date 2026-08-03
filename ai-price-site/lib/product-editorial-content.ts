@@ -46,7 +46,7 @@ const editorialContent: Record<
             "经常用于写作、学习、研究、数据分析，或需要更深推理能力的个人用户。",
           difference:
             "比 Go 提供更高的消息、上传、记忆和上下文额度，并扩大高级模型与 Codex 的使用范围。",
-          sourceUrl: "https://openai.com/index/introducing-chatgpt-go/",
+          sourceUrl: "https://openai.com/chatgpt/pricing/",
         },
         "pro-5x": {
           bestFor:
@@ -393,7 +393,7 @@ const editorialContent: Record<
             "Individuals who regularly use ChatGPT for writing, study, research, data analysis or deeper reasoning.",
           difference:
             "Higher message, upload, memory and context limits than Go, with broader access to advanced models and Codex.",
-          sourceUrl: "https://openai.com/index/introducing-chatgpt-go/",
+          sourceUrl: "https://openai.com/chatgpt/pricing/",
         },
         "pro-5x": {
           bestFor:

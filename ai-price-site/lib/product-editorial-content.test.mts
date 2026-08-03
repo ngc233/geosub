@@ -5,6 +5,7 @@ import {
   getProductEditorialContent,
   getProductEditorialCoverage,
 } from "./product-editorial-content.ts";
+import { resolveLegacyPricingPlanSlug } from "./legacy-pricing-plan-routes.ts";
 
 const priorityPlans = {
   chatgpt: ["go", "plus", "pro-5x", "pro"],
@@ -17,6 +18,19 @@ const priorityPlans = {
   "hbo-max": ["basic-with-ads", "standard", "premium"],
   perplexity: ["pro", "max"],
   suno: ["basic", "pro", "premier-plan"],
+};
+
+const officialSourceHosts: Record<string, string[]> = {
+  chatgpt: ["openai.com", "help.openai.com"],
+  claude: ["support.anthropic.com"],
+  netflix: ["help.netflix.com"],
+  gemini: ["one.google.com"],
+  grok: ["x.ai"],
+  manus: ["help.manus.im"],
+  perplexity: ["www.perplexity.ai"],
+  suno: ["help.suno.com"],
+  disney: ["www.disneyplus.com"],
+  "hbo-max": ["help.max.com"],
 };
 
 test("priority products have complete Chinese and English plan guidance", () => {
@@ -34,8 +48,33 @@ test("priority products have complete Chinese and English plan guidance", () => 
         assert.ok(copy.plan.bestFor.length >= 30);
         assert.ok(copy.plan.difference.length >= 30);
         assert.match(copy.plan.sourceUrl, /^https:\/\//);
+        assert.ok(
+          officialSourceHosts[productSlug].includes(
+            new URL(copy.plan.sourceUrl).hostname,
+          ),
+          `${locale}/${productSlug}/${planSlug} must use an official source`,
+        );
       }
     }
+  }
+});
+
+test("priority product plan routes stay aligned with legacy query redirects", () => {
+  for (const [productSlug, planSlugs] of Object.entries(priorityPlans)) {
+    for (const planSlug of planSlugs) {
+      assert.equal(
+        resolveLegacyPricingPlanSlug(productSlug, planSlug),
+        planSlug,
+        `${productSlug}/${planSlug}`,
+      );
+    }
+  }
+});
+
+test("ChatGPT Plus links to the current plan comparison instead of the Go announcement", () => {
+  for (const locale of ["zh", "en"] as const) {
+    const copy = getProductEditorialContent(locale, "chatgpt", "plus");
+    assert.equal(copy?.plan.sourceUrl, "https://openai.com/chatgpt/pricing/");
   }
 });
 

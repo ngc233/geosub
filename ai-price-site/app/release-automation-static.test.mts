@@ -110,6 +110,10 @@ test("post-deploy gate verifies the public canonical host and sitemap budget", (
   assert.match(postDeployCheck, /public www URL resolves to canonical host/);
   assert.match(postDeployCheck, /public sitemap URL budget/);
   assert.match(postDeployCheck, /public sitemap excludes staged locale URLs/);
+  assert.match(postDeployCheck, /public sitemap contains canonical path URLs only/);
+  assert.match(postDeployCheck, /every public sitemap URL returns direct HTTP 200/);
+  assert.match(postDeployCheck, /xargs -r -n 1 -P 8/);
+  assert.match(postDeployCheck, /status.*!=.*200/);
   assert.match(postDeployCheck, /GEOSUB_MAX_SITEMAP_URLS:-120/);
   assert.match(
     postDeployCheck,

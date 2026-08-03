@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.2 - 2026-08-03
+
+- Replaced generic pricing-page search descriptions with plan-specific,
+  decision-oriented summaries that retain reviewed region, lowest-price and
+  affordability context within search snippet limits.
+- Canonicalized supported legacy `?plan=` pricing URLs with permanent redirects,
+  while routing unknown historic values through the database-backed default plan
+  instead of creating invalid paths.
+- Corrected the ChatGPT Plus official source and added regression coverage that
+  keeps priority plan routes and official guidance aligned.
+- Strengthened the deployment gate so sitemap entries cannot contain query
+  strings and every submitted URL must return a direct HTTP 200 response.
+
 ## 2.6.1 - 2026-08-02
 
 - Serialized the shared App Store automatic-review phase so concurrent

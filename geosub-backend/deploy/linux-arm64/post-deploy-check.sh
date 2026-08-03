@@ -509,6 +509,33 @@ if command -v curl >/dev/null 2>&1; then
     else
       pass "public sitemap excludes staged locale URLs"
     fi
+
+    if printf '%s' "$sitemap_content" | grep -Eq '<loc>[^<]*\?'; then
+      fail "public sitemap contains query-string URLs"
+    else
+      pass "public sitemap contains canonical path URLs only"
+    fi
+
+    sitemap_urls="$(
+      printf '%s' "$sitemap_content" |
+        grep -oE '<loc>[^<]+</loc>' |
+        sed -e 's#<loc>##' -e 's#</loc>##' || true
+    )"
+    sitemap_route_failures="$(
+      printf '%s\n' "$sitemap_urls" |
+        sed '/^[[:space:]]*$/d' |
+        xargs -r -n 1 -P 8 sh -c '
+          status="$(curl -sS --retry 2 --retry-all-errors --retry-delay 1 --max-time 15 -o /dev/null -w "%{http_code}" "$1" || true)"
+          if [ "$status" != "200" ]; then
+            printf "%s %s\n" "${status:-000}" "$1"
+          fi
+        ' sh
+    )"
+    if [[ -z "$sitemap_route_failures" ]]; then
+      pass "every public sitemap URL returns direct HTTP 200"
+    else
+      fail "public sitemap contains non-200 or redirecting URLs: $(printf '%s' "$sitemap_route_failures" | head -n 5 | tr '\n' ';')"
+    fi
   fi
 else
   warn "curl not available; skipped web health URL"

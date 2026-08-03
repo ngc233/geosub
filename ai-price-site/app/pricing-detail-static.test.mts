@@ -5,6 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { getPlanDisplayName } from "../lib/pricing-labels.ts";
 import {
+  getLegacyPricingPlanRedirectPath,
   getPricingDetailPath,
   getPricingLanguageAlternates,
   getPricingListPath,
@@ -25,6 +26,64 @@ const appDir = dirname(fileURLToPath(import.meta.url));
 function readAppFile(...segments: string[]) {
   return readFileSync(resolve(appDir, ...segments), "utf8");
 }
+
+test("legacy pricing plan queries resolve to canonical plan routes", () => {
+  assert.equal(
+    getLegacyPricingPlanRedirectPath("/en/ai-pricing/chatgpt", "pro-5x"),
+    "/en/ai-pricing/chatgpt/pro-5x",
+  );
+  assert.equal(
+    getLegacyPricingPlanRedirectPath(
+      "/zh/streaming-pricing/netflix/",
+      "premium",
+    ),
+    "/zh/streaming-pricing/netflix/premium",
+  );
+
+  for (const locale of supportedSiteLocales) {
+    assert.equal(
+      getLegacyPricingPlanRedirectPath(
+        `/${locale}/ai-pricing/chatgpt`,
+        "plus",
+      ),
+      `/${locale}/ai-pricing/chatgpt/plus`,
+    );
+  }
+
+  assert.equal(
+    getLegacyPricingPlanRedirectPath("/en/ai-pricing/chatgpt/plus", "plus"),
+    null,
+  );
+  assert.equal(
+    getLegacyPricingPlanRedirectPath("/en/guides/chatgpt", "plus"),
+    null,
+  );
+  assert.equal(
+    getLegacyPricingPlanRedirectPath("/en/ai-pricing/chatgpt", "../plus"),
+    null,
+  );
+  assert.equal(
+    getLegacyPricingPlanRedirectPath(
+      "/en/streaming-pricing/disney",
+      "maandabonnement",
+    ),
+    null,
+  );
+  assert.equal(
+    getLegacyPricingPlanRedirectPath(
+      "/en/streaming-pricing/disney",
+      "plus",
+    ),
+    null,
+  );
+  assert.equal(
+    getLegacyPricingPlanRedirectPath(
+      "/en/ai-pricing/chatgpt",
+      "pro-20x",
+    ),
+    "/en/ai-pricing/chatgpt/pro",
+  );
+});
 
 const badEncodingTokens = [
   "鈫",

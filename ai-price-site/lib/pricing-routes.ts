@@ -1,4 +1,5 @@
 import {
+  isSiteLocale,
   siteLocaleDefinitions,
   type SiteLocale,
 } from "./site-locale.ts";
@@ -6,6 +7,7 @@ import {
   isSeoIndexableLocale,
   seoIndexableLocales,
 } from "./seo-indexing-policy.ts";
+import { resolveLegacyPricingPlanSlug } from "./legacy-pricing-plan-routes.ts";
 
 export type PricingLocale = SiteLocale;
 
@@ -34,6 +36,37 @@ export function getPricingPlanPath(
   planSlug: string,
 ) {
   return `${getPricingDetailPath(locale, category, slug)}/${planSlug}`;
+}
+
+export function getLegacyPricingPlanRedirectPath(
+  pathname: string,
+  planSlug?: string | null,
+) {
+  const normalizedPlanSlug = String(planSlug || "").trim().toLowerCase();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedPlanSlug)) {
+    return null;
+  }
+
+  const normalizedPathname = String(pathname || "").replace(/\/+$/, "");
+  const segments = normalizedPathname.split("/").filter(Boolean);
+  if (segments.length !== 3) return null;
+
+  const [locale, section, productSlug] = segments;
+  if (
+    !isSiteLocale(locale) ||
+    !["ai-pricing", "streaming-pricing"].includes(section) ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(productSlug)
+  ) {
+    return null;
+  }
+
+  const canonicalPlanSlug = resolveLegacyPricingPlanSlug(
+    productSlug,
+    normalizedPlanSlug,
+  );
+  if (!canonicalPlanSlug) return null;
+
+  return `/${locale}/${section}/${productSlug}/${canonicalPlanSlug}`;
 }
 
 export function getPricingLanguageAlternates(
