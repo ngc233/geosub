@@ -86,13 +86,17 @@ test("analytics stays off until the visitor grants consent", () => {
   assert.match(banner, /clearAnalyticsCookie\(\)/);
   assert.match(banner, /clearAnalyticsSession\(\)/);
 
-  const consentGate = route.indexOf("consentRequired");
-  const rateLimitGate = route.indexOf("const rateLimitEnabled = isEventRateLimitEnabled()");
-  const eventWrite = route.indexOf("await prisma.eventLog.create");
+  const postHandler = route.slice(route.indexOf("export async function POST"));
+  const consentGate = postHandler.indexOf("isAnalyticsConsentRequired()");
+  const rateLimitGate = postHandler.indexOf(
+    "const rateLimitEnabled = isEventRateLimitEnabled()",
+  );
+  const eventWrite = postHandler.indexOf("await prisma.eventLog.create");
   assert.ok(consentGate > 0);
   assert.ok(rateLimitGate > 0);
   assert.ok(consentGate < rateLimitGate);
   assert.ok(consentGate < eventWrite);
+  assert.match(postHandler, /return new NextResponse\(null, \{ status: 204 \}\)/);
 });
 
 test("global responses carry baseline production security headers", () => {

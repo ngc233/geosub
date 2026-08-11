@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import {
   ANALYTICS_CONSENT_CHANGE_EVENT,
+  ANALYTICS_CONSENT_GRANTED,
+  isClientAnalyticsConsentRequired,
   readAnalyticsConsent,
   type AnalyticsConsent,
 } from "../../lib/analytics-consent";
@@ -13,7 +15,11 @@ export function useAnalyticsConsent() {
 
   useEffect(() => {
     const syncConsent = () => {
-      setConsent(readAnalyticsConsent());
+      setConsent(
+        isClientAnalyticsConsentRequired()
+          ? readAnalyticsConsent()
+          : ANALYTICS_CONSENT_GRANTED,
+      );
       setReady(true);
     };
 

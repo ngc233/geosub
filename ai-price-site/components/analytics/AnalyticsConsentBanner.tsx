@@ -24,7 +24,11 @@ function shouldHideOnPath(pathname: string) {
   return pathname.startsWith("/admin") || pathname.startsWith("/api");
 }
 
-export default function AnalyticsConsentBanner() {
+export default function AnalyticsConsentBanner({
+  consentRequired,
+}: {
+  consentRequired: boolean;
+}) {
   const pathname = usePathname();
   const { consent, ready } = useAnalyticsConsent();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -49,6 +53,7 @@ export default function AnalyticsConsentBanner() {
 
   if (
     !ready ||
+    !consentRequired ||
     shouldHideOnPath(pathname) ||
     (consent !== null && !preferencesOpen)
   ) {

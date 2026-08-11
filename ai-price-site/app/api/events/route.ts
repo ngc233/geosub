@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   ANALYTICS_CONSENT_COOKIE_NAME,
   ANALYTICS_CONSENT_GRANTED,
+  isAnalyticsConsentRequired,
+  parseAnalyticsConsent,
 } from "../../../lib/analytics-consent";
 import { ANALYTICS_EVENTS } from "../../../lib/analytics-events";
 import {
@@ -165,19 +167,12 @@ export async function POST(request: NextRequest) {
   }
 
   if (
-    request.cookies.get(ANALYTICS_CONSENT_COOKIE_NAME)?.value !==
-    ANALYTICS_CONSENT_GRANTED
+    isAnalyticsConsentRequired() &&
+    parseAnalyticsConsent(
+      request.cookies.get(ANALYTICS_CONSENT_COOKIE_NAME)?.value,
+    ) !== ANALYTICS_CONSENT_GRANTED
   ) {
-    return NextResponse.json(
-      {
-        ok: false,
-        skipped: true,
-        consentRequired: true,
-      },
-      {
-        status: 202,
-      },
-    );
+    return new NextResponse(null, { status: 204 });
   }
 
   const rateLimitEnabled = isEventRateLimitEnabled();

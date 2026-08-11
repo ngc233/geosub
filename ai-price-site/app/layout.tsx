@@ -6,6 +6,7 @@ import AnalyticsProvider from "../components/analytics/AnalyticsProvider";
 import DocumentLocaleSync from "../components/DocumentLocaleSync";
 import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScripts";
 import SiteChrome from "../components/SiteChrome";
+import { isAnalyticsConsentRequired } from "../lib/analytics-consent";
 import { launchedMirroredStaticPaths } from "../lib/public-launch-routes";
 import {
   getLocaleRobotsPolicy,
@@ -269,6 +270,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") || undefined;
   const localeDefinition = getSiteLocaleDefinition(locale);
   const siteUrl = getSiteUrl();
+  const analyticsConsentRequired = isAnalyticsConsentRequired();
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -296,6 +298,7 @@ export default async function RootLayout({
     <html
       lang={localeDefinition.htmlLang}
       dir={localeDefinition.direction}
+      data-analytics-consent-required={String(analyticsConsentRequired)}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-slate-50 text-slate-950 antialiased">
@@ -309,7 +312,7 @@ export default async function RootLayout({
         <GoogleAnalyticsScripts nonce={nonce} />
         <AnalyticsProvider />
         <SiteChrome>{children}</SiteChrome>
-        <AnalyticsConsentBanner />
+        <AnalyticsConsentBanner consentRequired={analyticsConsentRequired} />
       </body>
     </html>
   );
