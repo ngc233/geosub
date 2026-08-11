@@ -9,9 +9,13 @@ import {
 import { ANALYTICS_EVENTS } from "../../../lib/analytics-events";
 import {
   buildEventRateLimitDecision,
+  checkEventRateLimitSafely,
+  createInMemoryEventRateLimiter,
   EVENT_RATE_LIMIT_REQUESTS,
   EVENT_RATE_LIMIT_RETENTION_DAYS,
   EVENT_RATE_LIMIT_WINDOW_MS,
+  getTrustedEventClientIp,
+  isEventRateLimitEnabled,
 } from "../../../lib/event-rate-limit";
 import { prisma } from "../../../lib/prisma";
 
@@ -19,20 +23,12 @@ const MAX_REQUEST_BYTES = 32 * 1024;
 const MAX_METADATA_BYTES = 8 * 1024;
 const ALLOWED_EVENT_KEYS = new Set<string>(Object.values(ANALYTICS_EVENTS));
 const EVENT_RATE_LIMIT_CLEANUP_CHANCE = 0.01;
+const inMemoryEventRateLimiter = createInMemoryEventRateLimiter();
 
 type EventRateLimitRow = {
   request_count: number;
   window_started_at: Date;
 };
-
-function getClientIp(request: NextRequest) {
-  const forwarded = request.headers
-    .get("x-forwarded-for")
-    ?.split(",")[0]
-    ?.trim();
-
-  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
-}
 
 function hashEventRateLimitKey(ipAddress: string) {
   return createHash("sha256")
@@ -40,8 +36,7 @@ function hashEventRateLimitKey(ipAddress: string) {
     .digest("hex");
 }
 
-async function consumeEventRateLimit(request: NextRequest) {
-  const keyHash = hashEventRateLimitKey(getClientIp(request));
+async function consumePersistentEventRateLimit(keyHash: string) {
   const windowSeconds = Math.ceil(EVENT_RATE_LIMIT_WINDOW_MS / 1000);
   const rows = await prisma.$queryRaw<EventRateLimitRow[]>(Prisma.sql`
     INSERT INTO event_rate_limits (
@@ -185,24 +180,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let rateLimit;
+  const rateLimitEnabled = isEventRateLimitEnabled();
+  const keyHash = hashEventRateLimitKey(getTrustedEventClientIp(request.headers));
+  const memoryRateLimit = rateLimitEnabled
+    ? await checkEventRateLimitSafely(
+        () => inMemoryEventRateLimiter.consume(keyHash),
+        () => console.warn("In-memory event rate limiting unavailable; allowing request."),
+      )
+    : null;
 
-  try {
-    rateLimit = await consumeEventRateLimit(request);
-  } catch {
-    console.warn("Event rate limiting unavailable; skipping event write.");
-    return NextResponse.json(
-      {
-        ok: false,
-        skipped: true,
-      },
-      {
-        status: 202,
-      },
-    );
-  }
-
-  if (!rateLimit.allowed) {
+  if (memoryRateLimit && !memoryRateLimit.allowed) {
     return NextResponse.json(
       {
         ok: false,
@@ -211,7 +198,31 @@ export async function POST(request: NextRequest) {
       {
         status: 429,
         headers: {
-          "Retry-After": String(rateLimit.retryAfterSeconds),
+          "Retry-After": String(memoryRateLimit.retryAfterSeconds),
+          "X-RateLimit-Limit": String(EVENT_RATE_LIMIT_REQUESTS),
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
+  }
+
+  const persistentRateLimit = rateLimitEnabled
+    ? await checkEventRateLimitSafely(
+        () => consumePersistentEventRateLimit(keyHash),
+        () => console.warn("Persistent event rate limiting unavailable; allowing request."),
+      )
+    : null;
+
+  if (persistentRateLimit && !persistentRateLimit.allowed) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Too many event requests.",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(persistentRateLimit.retryAfterSeconds),
           "X-RateLimit-Limit": String(EVENT_RATE_LIMIT_REQUESTS),
           "X-RateLimit-Remaining": "0",
         },
@@ -339,15 +350,20 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
+  const responseHeaders: Record<string, string> = {};
+  const effectiveRateLimit = persistentRateLimit || memoryRateLimit;
+
+  if (rateLimitEnabled && effectiveRateLimit) {
+    responseHeaders["X-RateLimit-Limit"] = String(EVENT_RATE_LIMIT_REQUESTS);
+    responseHeaders["X-RateLimit-Remaining"] = String(effectiveRateLimit.remaining);
+  }
+
   const response = NextResponse.json(
     {
       ok: true,
     },
     {
-      headers: {
-        "X-RateLimit-Limit": String(EVENT_RATE_LIMIT_REQUESTS),
-        "X-RateLimit-Remaining": String(rateLimit.remaining),
-      },
+      headers: responseHeaders,
     },
   );
 

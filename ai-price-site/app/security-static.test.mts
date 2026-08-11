@@ -87,10 +87,11 @@ test("analytics stays off until the visitor grants consent", () => {
   assert.match(banner, /clearAnalyticsSession\(\)/);
 
   const consentGate = route.indexOf("consentRequired");
-  const rateLimitWrite = route.indexOf("rateLimit = await consumeEventRateLimit(request)");
+  const rateLimitGate = route.indexOf("const rateLimitEnabled = isEventRateLimitEnabled()");
   const eventWrite = route.indexOf("await prisma.eventLog.create");
   assert.ok(consentGate > 0);
-  assert.ok(consentGate < rateLimitWrite);
+  assert.ok(rateLimitGate > 0);
+  assert.ok(consentGate < rateLimitGate);
   assert.ok(consentGate < eventWrite);
 });
 
