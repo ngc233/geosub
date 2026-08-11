@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import AnalyticsConsentBanner from "../components/analytics/AnalyticsConsentBanner";
 import AnalyticsProvider from "../components/analytics/AnalyticsProvider";
 import DocumentLocaleSync from "../components/DocumentLocaleSync";
 import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScripts";
@@ -265,6 +266,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getCurrentLocale();
+  const nonce = (await headers()).get("x-nonce") || undefined;
   const localeDefinition = getSiteLocaleDefinition(locale);
   const siteUrl = getSiteUrl();
   const structuredData = {
@@ -299,13 +301,15 @@ export default async function RootLayout({
       <body className="min-h-screen bg-slate-50 text-slate-950 antialiased">
         <DocumentLocaleSync />
         <script
+          nonce={nonce}
           type="application/ld+json"
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
-        <GoogleAnalyticsScripts />
+        <GoogleAnalyticsScripts nonce={nonce} />
         <AnalyticsProvider />
         <SiteChrome>{children}</SiteChrome>
+        <AnalyticsConsentBanner />
       </body>
     </html>
   );

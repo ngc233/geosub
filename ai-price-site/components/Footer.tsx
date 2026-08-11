@@ -1,8 +1,12 @@
 "use client";
 
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  getAnalyticsConsentCopy,
+  openAnalyticsConsentPreferences,
+} from "../lib/analytics-consent";
 import { getDefaultNavigationItems } from "../lib/navigation-defaults";
 import { shouldHideFromPublicNavigation } from "../lib/public-launch-routes";
 import type { SiteNavigationItem } from "../lib/site-navigation";
@@ -159,6 +163,7 @@ export default function Footer({
   );
   const currentYear = new Date().getFullYear();
   const copy = footerCopy[currentLocale];
+  const consentCopy = getAnalyticsConsentCopy(currentLocale);
 
   return (
     <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">
@@ -191,6 +196,15 @@ export default function Footer({
               <ArrowLeftRight aria-hidden="true" className="size-4" />
               {copy.converterLabel}
             </Link>
+
+            <button
+              type="button"
+              onClick={openAnalyticsConsentPreferences}
+              className="mt-3 flex items-center gap-2 text-sm font-bold text-zinc-700 transition hover:text-lime-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/20 dark:text-zinc-300 dark:hover:text-lime-300"
+            >
+              <ShieldCheck aria-hidden="true" className="size-4" />
+              {consentCopy.settings}
+            </button>
 
             <p className="mt-6 text-xs font-medium text-zinc-400 dark:text-zinc-500">
               © {currentYear} GeoSub. {copy.rights}

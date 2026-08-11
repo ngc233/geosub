@@ -1,3 +1,5 @@
+import { hasAnalyticsConsent } from "./analytics-consent";
+
 const SESSION_STORAGE_KEY = "geosub_session_id";
 const SESSION_ACTIVITY_STORAGE_KEY = "geosub_session_activity";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
@@ -14,7 +16,7 @@ function createSessionId() {
 }
 
 export function getAnalyticsSessionId() {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || !hasAnalyticsConsent()) {
     return undefined;
   }
 
@@ -51,5 +53,21 @@ export function getAnalyticsSessionId() {
 
     memorySessionActivity = now;
     return memorySessionId;
+  }
+}
+
+export function clearAnalyticsSession() {
+  memorySessionId = "";
+  memorySessionActivity = 0;
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    window.sessionStorage.removeItem(SESSION_ACTIVITY_STORAGE_KEY);
+  } catch {
+    // Storage cleanup must never interrupt consent handling.
   }
 }

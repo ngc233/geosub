@@ -2,7 +2,12 @@
 
 import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import {
+  ANALYTICS_CONSENT_GRANTED,
+  hasAnalyticsConsent,
+} from "../../lib/analytics-consent";
 import { getAnalyticsSessionId } from "../../lib/client-analytics-session";
+import { useAnalyticsConsent } from "./useAnalyticsConsent";
 
 type TrackPayload = {
   eventKey: string;
@@ -60,6 +65,10 @@ function getLocaleFromPath(pathname: string) {
 }
 
 function sendEvent(payload: TrackPayload) {
+  if (!hasAnalyticsConsent()) {
+    return;
+  }
+
   try {
     const body = JSON.stringify({
       ...payload,
@@ -94,10 +103,15 @@ function sendEvent(payload: TrackPayload) {
 function AnalyticsInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { consent } = useAnalyticsConsent();
   const lastPathRef = useRef("");
 
   useEffect(() => {
-    if (!pathname || shouldSkipPath(pathname)) {
+    if (
+      consent !== ANALYTICS_CONSENT_GRANTED ||
+      !pathname ||
+      shouldSkipPath(pathname)
+    ) {
       return;
     }
 
@@ -123,9 +137,13 @@ function AnalyticsInner() {
         search: search || "",
       },
     });
-  }, [pathname, searchParams]);
+  }, [consent, pathname, searchParams]);
 
   useEffect(() => {
+    if (consent !== ANALYTICS_CONSENT_GRANTED) {
+      return;
+    }
+
     function handleClick(event: MouseEvent) {
       const target = event.target as HTMLElement | null;
 
@@ -174,7 +192,7 @@ function AnalyticsInner() {
     return () => {
       document.removeEventListener("click", handleClick, true);
     };
-  }, []);
+  }, [consent]);
 
   return null;
 }

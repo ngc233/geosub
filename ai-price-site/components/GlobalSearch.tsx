@@ -19,6 +19,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import { hasAnalyticsConsent } from "../lib/analytics-consent";
 import { getAnalyticsSessionId } from "../lib/client-analytics-session";
 import type { PublicSearchResult, PublicSearchResultKind } from "../lib/public-search";
 import type { PreparedSiteLocale } from "../lib/site-locale";
@@ -272,6 +273,10 @@ function ResultIcon({ result }: { result: PublicSearchResult }) {
 }
 
 function trackSearch(eventKey: "search_digital_service" | "search_no_result", query: string, count: number) {
+  if (!hasAnalyticsConsent()) {
+    return;
+  }
+
   try {
     const body = JSON.stringify({
       eventKey,
@@ -296,6 +301,10 @@ function trackSearch(eventKey: "search_digital_service" | "search_no_result", qu
 }
 
 function trackSearchResult(query: string, result: PublicSearchResult) {
+  if (!hasAnalyticsConsent()) {
+    return;
+  }
+
   try {
     const body = JSON.stringify({
       eventKey: "click_search_result",

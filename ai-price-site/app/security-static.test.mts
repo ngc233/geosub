@@ -59,14 +59,61 @@ test("public event ingestion is bounded and accepts known analytics keys only", 
   assert.match(route, /status: 413/);
 });
 
+test("analytics stays off until the visitor grants consent", () => {
+  const route = readProjectFile("app/api/events/route.ts");
+  const consent = readProjectFile("lib/analytics-consent.ts");
+  const provider = readProjectFile("components/analytics/AnalyticsProvider.tsx");
+  const search = readProjectFile("components/GlobalSearch.tsx");
+  const session = readProjectFile("lib/client-analytics-session.ts");
+  const googleServer = readProjectFile(
+    "components/analytics/GoogleAnalyticsScripts.tsx",
+  );
+  const googleClient = readProjectFile(
+    "components/analytics/ConsentAwareGoogleAnalytics.tsx",
+  );
+  const banner = readProjectFile(
+    "components/analytics/AnalyticsConsentBanner.tsx",
+  );
+
+  assert.match(consent, /geosub_analytics_consent/);
+  assert.match(consent, /ANALYTICS_CONSENT_GRANTED = "granted"/);
+  assert.match(consent, /ANALYTICS_CONSENT_DENIED = "denied"/);
+  assert.match(provider, /hasAnalyticsConsent\(\)/);
+  assert.match(search, /hasAnalyticsConsent\(\)/);
+  assert.match(session, /!hasAnalyticsConsent\(\)/);
+  assert.match(googleServer, /ConsentAwareGoogleAnalytics/);
+  assert.match(googleClient, /consent !== ANALYTICS_CONSENT_GRANTED/);
+  assert.match(banner, /clearAnalyticsCookie\(\)/);
+  assert.match(banner, /clearAnalyticsSession\(\)/);
+
+  const consentGate = route.indexOf("consentRequired");
+  const rateLimitWrite = route.indexOf("rateLimit = await consumeEventRateLimit(request)");
+  const eventWrite = route.indexOf("await prisma.eventLog.create");
+  assert.ok(consentGate > 0);
+  assert.ok(consentGate < rateLimitWrite);
+  assert.ok(consentGate < eventWrite);
+});
+
 test("global responses carry baseline production security headers", () => {
   const config = readProjectFile("next.config.ts");
+  const proxy = readProjectFile("proxy.ts");
+  const policy = readProjectFile("lib/content-security-policy.ts");
+  const layout = readProjectFile("app/layout.tsx");
 
   assert.match(config, /Content-Security-Policy/);
   assert.match(config, /frame-ancestors 'none'/);
   assert.match(config, /X-Content-Type-Options/);
   assert.match(config, /X-Frame-Options/);
   assert.match(config, /Strict-Transport-Security/);
+  assert.match(proxy, /Content-Security-Policy-Report-Only/);
+  assert.match(proxy, /requestHeaders\.set\("x-nonce", nonce\)/);
+  assert.match(proxy, /requestHeaders\.set\("Content-Security-Policy"/);
+  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /script-src 'self' 'nonce-\$\{nonce\}' 'strict-dynamic'/);
+  assert.match(policy, /style-src 'self' 'unsafe-inline'/);
+  assert.match(policy, /img-src 'self' data: blob: https:/);
+  assert.match(policy, /connect-src 'self'/);
+  assert.match(layout, /nonce=\{nonce\}/);
 });
 
 test("deployment installs verified backups and safe analytics retention", () => {

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { buildContentSecurityPolicy } from "./lib/content-security-policy";
 import { getLegacyPricingPlanRedirectPath } from "./lib/pricing-routes";
 import {
   PUBLIC_PRICING_SHARED_CACHE_CONTROL,
@@ -20,6 +21,13 @@ export function proxy(request: NextRequest) {
   }
 
   const requestHeaders = new Headers(request.headers);
+  const nonce = crypto.randomUUID().replaceAll("-", "");
+  const contentSecurityPolicy = buildContentSecurityPolicy(nonce, {
+    isDevelopment: process.env.NODE_ENV !== "production",
+  });
+
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
   requestHeaders.set(
     "x-geosub-locale",
     getSiteLocaleFromPath(request.nextUrl.pathname),
@@ -31,6 +39,11 @@ export function proxy(request: NextRequest) {
       headers: requestHeaders,
     },
   });
+
+  response.headers.set(
+    "Content-Security-Policy-Report-Only",
+    contentSecurityPolicy,
+  );
 
   if (shouldCachePublicPricingResponse(request)) {
     response.headers.set(

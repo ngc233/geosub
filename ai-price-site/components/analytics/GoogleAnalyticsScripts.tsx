@@ -1,10 +1,10 @@
-import Script from "next/script";
 import { unstable_cache } from "next/cache";
 import { prisma } from "../../lib/prisma";
 import {
   PUBLIC_SITE_SETTINGS_CACHE_TAG,
   PUBLIC_SITE_SETTINGS_REVALIDATE_SECONDS,
 } from "../../lib/public-site-settings-cache";
+import ConsentAwareGoogleAnalytics from "./ConsentAwareGoogleAnalytics";
 
 function isValidGa4Id(value: string) {
   return /^G-[A-Z0-9]{4,}$/.test(value);
@@ -52,7 +52,11 @@ const getAnalyticsSettings = unstable_cache(async () => {
   tags: [PUBLIC_SITE_SETTINGS_CACHE_TAG],
 });
 
-export default async function GoogleAnalyticsScripts() {
+export default async function GoogleAnalyticsScripts({
+  nonce,
+}: {
+  nonce?: string;
+}) {
   const { ga4Id, gtmId } = await getAnalyticsSettings();
 
   if (!ga4Id && !gtmId) {
@@ -60,46 +64,6 @@ export default async function GoogleAnalyticsScripts() {
   }
 
   return (
-    <>
-      {gtmId ? (
-        <>
-          <Script id="google-tag-manager" strategy="afterInteractive">
-            {`
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','${gtmId}');
-            `}
-          </Script>
-          <noscript>
-            <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
-              height="0"
-              width="0"
-              className="hidden invisible"
-              title="Google Tag Manager"
-            />
-          </noscript>
-        </>
-      ) : null}
-
-      {ga4Id && !gtmId ? (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
-            strategy="afterInteractive"
-          />
-          <Script id="google-analytics-4" strategy="afterInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${ga4Id}');
-            `}
-          </Script>
-        </>
-      ) : null}
-    </>
+    <ConsentAwareGoogleAnalytics ga4Id={ga4Id} gtmId={gtmId} nonce={nonce} />
   );
 }

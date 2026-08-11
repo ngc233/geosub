@@ -98,9 +98,12 @@ test("search analytics records useful demand without creating indexable result p
   assert.match(search, /search_digital_service/);
   assert.match(search, /search_no_result/);
   assert.match(search, /resultCount/);
+  assert.match(search, /hasAnalyticsConsent\(\)/);
   assert.match(search, /getAnalyticsSessionId\(\)/);
   assert.match(analyticsProvider, /getAnalyticsSessionId\(\)/);
+  assert.match(analyticsProvider, /consent !== ANALYTICS_CONSENT_GRANTED/);
   assert.match(analyticsSession, /SESSION_TIMEOUT_MS = 30 \* 60 \* 1000/);
+  assert.match(analyticsSession, /!hasAnalyticsConsent\(\)/);
   assert.match(analyticsEvents, /CLICK_SEARCH_RESULT:\s*"click_search_result"/);
   assert.doesNotMatch(search, /href:\s*[`"'][^`"']*\/search/);
   for (const localeCode of ["tr", "ar", "fr", "it", "pt"]) {
