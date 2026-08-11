@@ -355,6 +355,16 @@ model AdminLoginAttempt {
   @@map("admin_login_attempts")
 }
 
+model EventRateLimit {
+  keyHash         String   @id @map("key_hash") @db.Char(64)
+  requestCount    Int      @default(0) @map("request_count")
+  windowStartedAt DateTime @map("window_started_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([updatedAt])
+  @@map("event_rate_limits")
+}
+
 model MediaAsset {
   id           String  @id @default(uuid()) @db.Uuid
   fileName     String  @map("file_name")

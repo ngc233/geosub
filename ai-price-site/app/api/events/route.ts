@@ -1,12 +1,90 @@
 ﻿import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { ANALYTICS_EVENTS } from "../../../lib/analytics-events";
+import {
+  buildEventRateLimitDecision,
+  EVENT_RATE_LIMIT_REQUESTS,
+  EVENT_RATE_LIMIT_RETENTION_DAYS,
+  EVENT_RATE_LIMIT_WINDOW_MS,
+} from "../../../lib/event-rate-limit";
 import { prisma } from "../../../lib/prisma";
 
 const MAX_REQUEST_BYTES = 32 * 1024;
 const MAX_METADATA_BYTES = 8 * 1024;
 const ALLOWED_EVENT_KEYS = new Set<string>(Object.values(ANALYTICS_EVENTS));
+const EVENT_RATE_LIMIT_CLEANUP_CHANCE = 0.01;
+
+type EventRateLimitRow = {
+  request_count: number;
+  window_started_at: Date;
+};
+
+function getClientIp(request: NextRequest) {
+  const forwarded = request.headers
+    .get("x-forwarded-for")
+    ?.split(",")[0]
+    ?.trim();
+
+  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
+}
+
+function hashEventRateLimitKey(ipAddress: string) {
+  return createHash("sha256")
+    .update(`event:${ipAddress.trim().toLowerCase()}`)
+    .digest("hex");
+}
+
+async function consumeEventRateLimit(request: NextRequest) {
+  const keyHash = hashEventRateLimitKey(getClientIp(request));
+  const windowSeconds = Math.ceil(EVENT_RATE_LIMIT_WINDOW_MS / 1000);
+  const rows = await prisma.$queryRaw<EventRateLimitRow[]>(Prisma.sql`
+    INSERT INTO event_rate_limits (
+      key_hash,
+      request_count,
+      window_started_at,
+      updated_at
+    )
+    VALUES (${keyHash}, 1, NOW(), NOW())
+    ON CONFLICT (key_hash) DO UPDATE
+    SET
+      request_count = CASE
+        WHEN event_rate_limits.window_started_at <= NOW() - make_interval(secs => ${windowSeconds})
+          THEN 1
+        ELSE event_rate_limits.request_count + 1
+      END,
+      window_started_at = CASE
+        WHEN event_rate_limits.window_started_at <= NOW() - make_interval(secs => ${windowSeconds})
+          THEN NOW()
+        ELSE event_rate_limits.window_started_at
+      END,
+      updated_at = NOW()
+    RETURNING request_count, window_started_at
+  `);
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error("Event rate limit state was not returned.");
+  }
+
+  if (Math.random() < EVENT_RATE_LIMIT_CLEANUP_CHANCE) {
+    try {
+      await prisma.$executeRaw(Prisma.sql`
+        DELETE FROM event_rate_limits
+        WHERE updated_at < NOW() - make_interval(days => ${EVENT_RATE_LIMIT_RETENTION_DAYS})
+      `);
+    } catch {
+      console.warn("Event rate limit cleanup unavailable; continuing event processing.");
+    }
+  }
+
+  return buildEventRateLimitDecision({
+    requestCount: Number(row.request_count),
+    windowStartedAtMs: row.window_started_at.getTime(),
+    nowMs: Date.now(),
+  });
+}
 
 function cleanString(value: unknown, maxLength = 500) {
   if (typeof value !== "string") {
@@ -84,6 +162,40 @@ export async function POST(request: NextRequest) {
       {
         status: 413,
       }
+    );
+  }
+
+  let rateLimit;
+
+  try {
+    rateLimit = await consumeEventRateLimit(request);
+  } catch {
+    console.warn("Event rate limiting unavailable; skipping event write.");
+    return NextResponse.json(
+      {
+        ok: false,
+        skipped: true,
+      },
+      {
+        status: 202,
+      },
+    );
+  }
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Too many event requests.",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+          "X-RateLimit-Limit": String(EVENT_RATE_LIMIT_REQUESTS),
+          "X-RateLimit-Remaining": "0",
+        },
+      },
     );
   }
 
@@ -207,9 +319,17 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
-  const response = NextResponse.json({
-    ok: true,
-  });
+  const response = NextResponse.json(
+    {
+      ok: true,
+    },
+    {
+      headers: {
+        "X-RateLimit-Limit": String(EVENT_RATE_LIMIT_REQUESTS),
+        "X-RateLimit-Remaining": String(rateLimit.remaining),
+      },
+    },
+  );
 
   if (!existingAnonymousId) {
     response.cookies.set("geosub_anon_id", anonymousId, {
