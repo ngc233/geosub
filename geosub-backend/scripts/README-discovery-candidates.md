@@ -25,13 +25,13 @@ automatic discovery / manual tip
 Migration:
 
 ```text
-sql/014_product_discovery_candidates.sql
-sql/015_discovery_sources.sql
-sql/016_discovery_source_checks.sql
-sql/017_discovery_change_classification.sql
-sql/018_discovery_feed_trigger_fields.sql
-sql/019_discovery_source_strategy.sql
-sql/020_discovery_collection_handoff.sql
+sql/schema/011_product_discovery_candidates.sql
+sql/schema/012_discovery_sources.sql
+sql/schema/013_discovery_source_checks.sql
+sql/schema/014_discovery_change_classification.sql
+sql/schema/015_discovery_feed_trigger_fields.sql
+sql/schema/016_discovery_source_strategy.sql
+sql/schema/017_discovery_collection_handoff.sql
 ```
 
 Main tables:

@@ -65,20 +65,6 @@ function Invoke-Psql {
   }
 }
 
-function Invoke-PsqlFile {
-  param([string]$SqlPath)
-
-  Get-Content -LiteralPath $SqlPath | docker exec -i $ContainerName psql `
-    -U $DbUser `
-    -d $DbName `
-    -v ON_ERROR_STOP=1 `
-    -q | Out-Null
-
-  if ($LASTEXITCODE -ne 0) {
-    throw "psql file failed with exit code $LASTEXITCODE."
-  }
-}
-
 Write-Host "GeoSub price accuracy maintenance"
 Write-Host "Mode: layered collection, official evidence first, external probes as alerts only."
 
@@ -86,7 +72,7 @@ if ($SkipExchangeRates) {
   Write-Host "Exchange-rate sync skipped."
 } else {
   Invoke-Step `
-    -Name "1/6 Sync exchange rates" `
+    -Name "1/4 Sync exchange rates" `
     -Command $powerShellHost `
     -Arguments @(
       "-NoProfile",
@@ -100,11 +86,11 @@ if ($SkipExchangeRates) {
 
 if ($DryRun) {
   Write-Host ""
-  Write-Host "=== 2/6 Run product-level data-quality repair cycle ==="
+  Write-Host "=== 2/4 Run product-level data-quality repair cycle ==="
   Write-Host "[dry-run] Would debounce anomaly rechecks, queue stale and coverage refreshes, and close exhausted isolated evidence."
 } else {
   Write-Host ""
-  Write-Host "=== 2/6 Run product-level data-quality repair cycle ==="
+  Write-Host "=== 2/4 Run product-level data-quality repair cycle ==="
   Invoke-Psql @"
 SELECT *
 FROM run_data_quality_repair_cycle('price_accuracy_maintenance');
@@ -134,36 +120,16 @@ if ($SkipCollectors) {
   }
 
   Invoke-Step `
-    -Name "3/6 Run due collector jobs" `
+    -Name "3/4 Run due collector jobs" `
     -Command $powerShellHost `
     -Arguments $collectorArgs
-}
-
-if ($DryRun) {
-  Write-Host ""
-  Write-Host "=== 4/6 Repair or hide anomalous App Store promotions ==="
-  Write-Host "[dry-run] Would repair clean replacements and hide suspicious published prices."
-} else {
-  Write-Host ""
-  Write-Host "=== 4/6 Repair or hide anomalous App Store promotions ==="
-  Invoke-PsqlFile (Join-Path $scriptDir "..\sql\049_quarantine_app_store_anomaly_promotions.sql")
-}
-
-if ($DryRun) {
-  Write-Host ""
-  Write-Host "=== 5/6 Clean App Store plan-matching artifacts ==="
-  Write-Host "[dry-run] Would archive unused polluted plans and hide likely annual monthly-plan prices."
-} else {
-  Write-Host ""
-  Write-Host "=== 5/6 Clean App Store plan-matching artifacts ==="
-  Invoke-PsqlFile (Join-Path $scriptDir "..\sql\050_cleanup_app_store_plan_matching_artifacts.sql")
 }
 
 if ($SkipExternalProbe) {
   Write-Host "External probe skipped."
 } else {
   Invoke-Step `
-    -Name "6/6 Run OpenTheRank difference probe" `
+    -Name "4/4 Run OpenTheRank difference probe" `
     -Command "node" `
     -Arguments @(
       (Join-Path $scriptDir "probe-opentherank-price-diffs.mjs"),

@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+  migrationEntriesForLegacyFile,
+  readSqlMigration,
+} from "../test-utils/sql-migrations.mts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(appDir, "../..");
@@ -13,14 +16,20 @@ function readRepoFile(fileName: string) {
 }
 
 test("applied affordability migration remains immutable", () => {
-  const source = readRepoFile("geosub-backend/sql/010_refresh_affordability_function.sql");
-  const checksum = createHash("sha256").update(source.replace(/\r/g, "")).digest("hex");
-
-  assert.equal(checksum, "19c9113975d835e3c1a53a7945007e3c2afbfea37b3044417f57394e3a7ca3aa");
+  const entries = migrationEntriesForLegacyFile(
+    "sql/010_refresh_affordability_function.sql",
+  );
+  assert.ok(
+    entries.some((entry) =>
+      entry.legacyChecksums.includes(
+        "19c9113975d835e3c1a53a7945007e3c2afbfea37b3044417f57394e3a7ca3aa",
+      ),
+    ),
+  );
 });
 
 test("affordability refresh uses the same published App Store price scope as V1 rankings", () => {
-  const source = readRepoFile("geosub-backend/sql/054_refresh_affordability_app_store_scope.sql");
+  const source = readSqlMigration("sql/054_refresh_affordability_app_store_scope.sql");
 
   assert.match(source, /DELETE FROM plan_affordability_metrics pam/);
   assert.match(source, /NOT EXISTS \([\s\S]*rp\.billing_platform = 'ios'/);

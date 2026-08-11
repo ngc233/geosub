@@ -20,10 +20,14 @@ function run(label, command, args) {
 }
 
 function main() {
-  run("Applying canonical SQL migrations", process.execPath, [
+  run("Applying schema-only SQL migrations", process.execPath, [
     path.join(__dirname, "apply-local-sql.cjs"),
     "--mode",
-    "core",
+    "schema",
+  ]);
+
+  run("Preparing the Prisma baseline", process.execPath, [
+    path.join(__dirname, "prepare-prisma-baseline.cjs"),
   ]);
 
   const prismaCli = require.resolve("prisma/build/index.js", { paths: [appDir] });

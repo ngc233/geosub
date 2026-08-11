@@ -217,6 +217,7 @@ if (( failures == 0 )); then
 
   for table in \
     geosub_schema_migrations \
+    geosub_backfill_migrations \
     products \
     plans \
     countries \
@@ -238,10 +239,10 @@ if (( failures == 0 )); then
   migration_manifest="$BACKEND_DIR/scripts/migration-manifest.cjs"
   if manifest_summary="$(node "$migration_manifest" validate --frontend-dir="$FRONTEND_DIR" 2>&1)"; then
     pass "$manifest_summary"
-    mapfile -t core_migrations < <(
-      node "$migration_manifest" list core --frontend-dir="$FRONTEND_DIR"
+    mapfile -t schema_migrations < <(
+      node "$migration_manifest" list schema --frontend-dir="$FRONTEND_DIR"
     )
-    for migration in "${core_migrations[@]}"; do
+    for migration in "${schema_migrations[@]}"; do
       check_migration "$migration"
     done
 

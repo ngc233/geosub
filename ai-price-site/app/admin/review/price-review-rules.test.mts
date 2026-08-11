@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { readSqlMigration } from "../../../test-utils/sql-migrations.mts";
 
 type PlanSpec = {
   slug: string;
@@ -24,67 +25,44 @@ type ProductSpec = {
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(currentDir, "../../../..");
 
-const autoReviewSql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/033_app_store_stability_auto_review_v2.sql"),
-  "utf8",
+const autoReviewSql = readSqlMigration(
+  "sql/033_app_store_stability_auto_review_v2.sql",
 );
 
-const matchingPriceRefreshSql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/055_refresh_matching_app_store_prices.sql"),
-  "utf8",
+const matchingPriceRefreshSql = readSqlMigration(
+  "sql/055_refresh_matching_app_store_prices.sql",
 );
 
-const exactLocalPriceRefreshSql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/056_refresh_exact_local_app_store_prices.sql"),
-  "utf8",
+const exactLocalPriceRefreshSql = readSqlMigration(
+  "sql/056_refresh_exact_local_app_store_prices.sql",
 );
 
-const publishedOutlierQuarantineSql = readFileSync(
-  resolve(
-    repoRoot,
-    "geosub-backend/sql/057_quarantine_published_app_store_price_outliers.sql",
-  ),
-  "utf8",
+const publishedOutlierQuarantineSql = readSqlMigration(
+  "sql/057_quarantine_published_app_store_price_outliers.sql",
 );
 
-const selectionFalsePositiveReclassificationSql = readFileSync(
-  resolve(
-    repoRoot,
-    "geosub-backend/sql/060_reclassify_app_store_selection_false_positives.sql",
-  ),
-  "utf8",
+const selectionFalsePositiveReclassificationSql = readSqlMigration(
+  "sql/060_reclassify_app_store_selection_false_positives.sql",
 );
-const supersededAmbiguitySql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/071_archive_superseded_app_store_ambiguities.sql"),
-  "utf8",
+const supersededAmbiguitySql = readSqlMigration(
+  "sql/071_archive_superseded_app_store_ambiguities.sql",
 );
-const hboMaxNormalizationSql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/072_normalize_hbo_max_app_store_plans.sql"),
-  "utf8",
+const hboMaxNormalizationSql = readSqlMigration(
+  "sql/072_normalize_hbo_max_app_store_plans.sql",
 );
-const hboMaxSelectionRepairSql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/074_repair_hbo_max_app_store_selection.sql"),
-  "utf8",
+const hboMaxSelectionRepairSql = readSqlMigration(
+  "sql/074_repair_hbo_max_app_store_selection.sql",
 );
-const autoReviewSerializationSql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/075_serialize_app_store_auto_review.sql"),
-  "utf8",
+const autoReviewSerializationSql = readSqlMigration(
+  "sql/075_serialize_app_store_auto_review.sql",
 );
 
-const legacyTierCleanupSql = readFileSync(
-  resolve(
-    repoRoot,
-    "geosub-backend/sql/061_ignore_legacy_non_primary_app_store_tiers.sql",
-  ),
-  "utf8",
+const legacyTierCleanupSql = readSqlMigration(
+  "sql/061_ignore_legacy_non_primary_app_store_tiers.sql",
 );
 
-const availabilitySemanticsSql = readFileSync(
-  resolve(
-    repoRoot,
-    "geosub-backend/sql/067_app_store_availability_semantics.sql",
-  ),
-  "utf8",
+const availabilitySemanticsSql = readSqlMigration(
+  "sql/067_app_store_availability_semantics.sql",
 );
 
 const appStoreCollector = readFileSync(

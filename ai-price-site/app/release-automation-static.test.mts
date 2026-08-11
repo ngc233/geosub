@@ -145,11 +145,12 @@ test("full release gate generates the database-backed sitemap and enforces page 
 test("local migrations are immutable and both canonical registries are audited", () => {
   assert.match(localMigrationRunner, /Migration checksum changed after it was applied/);
   assert.doesNotMatch(localMigrationRunner, /ON CONFLICT[\s\S]*DO UPDATE/);
-  assert.match(localMigrationRunner, /legacyBaselineFiles/);
+  assert.match(localMigrationRunner, /legacyBaselineEntries/);
   assert.match(localMigrationRunner, /baselineCutoverFile/);
   assert.match(migrationAudit, /geosub_schema_migrations/);
+  assert.match(migrationAudit, /geosub_backfill_migrations/);
   assert.match(migrationAudit, /_prisma_migrations/);
-  assert.match(migrationAudit, /legacyBaselineFiles/);
+  assert.match(migrationAudit, /entry\.legacyFile/);
   assert.match(migrationAudit, /checksum mismatch/);
   assert.match(migrationAudit, /not registered/);
 });

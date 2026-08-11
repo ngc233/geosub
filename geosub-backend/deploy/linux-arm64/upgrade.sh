@@ -24,7 +24,7 @@ else
 fi
 BRANCH="${GEOSUB_GIT_BRANCH:-main}"
 SKIP_GIT_PULL="${GEOSUB_SKIP_GIT_PULL:-false}"
-RUN_CONTENT_MIGRATIONS="${GEOSUB_RUN_CONTENT_MIGRATIONS:-false}"
+RUN_BACKFILLS="${GEOSUB_RUN_BACKFILLS:-${GEOSUB_RUN_CONTENT_MIGRATIONS:-false}}"
 RELEASE_DIR="${GEOSUB_RELEASE_DIR:-/opt/geosub/releases}"
 LOGO_STORAGE_DIR="${GEOSUB_LOGO_STORAGE_DIR:-/var/lib/geosub/product-logos}"
 BACKUP_DIR="${GEOSUB_BACKUP_DIR:-/opt/geosub/backups}"
@@ -275,17 +275,20 @@ run_as_geosub "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && n
 
 CURRENT_STEP="database_migrations"
 write_attempt_state "running"
-log "Applying core database migrations"
-bash "$BACKEND_DIR/deploy/linux-arm64/db-apply-sql.sh" core
+log "Applying schema-only database migrations"
+bash "$BACKEND_DIR/deploy/linux-arm64/db-apply-sql.sh" schema
+
+log "Preparing Prisma baseline compatibility"
+run_as_geosub "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && node scripts/prepare-prisma-baseline.cjs"
 
 log "Applying Prisma database migrations"
 run_as_geosub "set -a && source '$ENV_FILE' && set +a && cd '$FRONTEND_DIR' && npx prisma migrate deploy"
 
-if [[ "$RUN_CONTENT_MIGRATIONS" == "true" ]]; then
-  log "Applying content database migrations"
-  bash "$BACKEND_DIR/deploy/linux-arm64/db-apply-sql.sh" content
+if [[ "$RUN_BACKFILLS" == "true" ]]; then
+  log "Applying explicit database backfills"
+  bash "$BACKEND_DIR/deploy/linux-arm64/db-apply-sql.sh" backfill
 else
-  echo "Content migrations skipped. Set GEOSUB_RUN_CONTENT_MIGRATIONS=true when intentionally updating content seed SQL."
+  echo "Backfills skipped. Set GEOSUB_RUN_BACKFILLS=true only for an intentional data/bootstrap pass."
 fi
 
 CURRENT_STEP="product_logos"

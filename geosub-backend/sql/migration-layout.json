@@ -1,0 +1,1131 @@
+{
+  "version": 1,
+  "generatedFrom": "B1 SQL classification approved 2026-08-11",
+  "schema": [
+    {
+      "id": "schema:001",
+      "file": "sql/schema/001_core_schema.sql",
+      "legacyFile": "schema.sql",
+      "legacyChecksums": [
+        "a8b12749c13610f51a363418d31635c09f8fb3f83800dde8510923c36e5c0e3c",
+        "f53d1af6d45562dacf480da3518419645bec58ac10446ea620d6f4f5c93305bb"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:002",
+      "file": "sql/schema/002_affordability_income_tables.sql",
+      "legacyFile": "sql/001_affordability_income_tables.sql",
+      "legacyChecksums": [
+        "a719e70937d83e2fac4f5950e256b0847da5f8f28a097d3cac0d6a63e467e951",
+        "228ff5f3420701f645871d61fc6effcb66e72968f4f1a3480d4153ee2dda71aa"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:003",
+      "file": "sql/schema/003_affordability_views.sql",
+      "legacyFile": "sql/003_affordability_views.sql",
+      "legacyChecksums": [
+        "ffb0baf88e85796115bcef59dd6d6f985c83a19c82298b5ddfe8b477f6193e60",
+        "ea4808bdbd36236641bad764bf4183dce476a8e04ef8d0930e9f072b24520c20"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:004",
+      "file": "sql/schema/004_affordability_source_metadata_fix.sql",
+      "legacyFile": "sql/004_affordability_source_metadata_fix.sql",
+      "legacyChecksums": [
+        "3a7e613657704fc3b59c6b75f6b884fded6a7498505fc42bb0229c4d11b2e9c9",
+        "dc94bb9869116be2566353c10bde719273049c68960222995350154a4aafedbf"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:005",
+      "file": "sql/schema/005_price_observations_view_v4.sql",
+      "legacyFile": "sql/008_price_observations_view_v4.sql",
+      "legacyChecksums": [
+        "b4bc37b100de8b8305c986b3b34ba151268e8ab29c73bb24641ed7db8c19cc62",
+        "67e8fc890ece56f3387181e9c83e0184a550faab8000f065d90308a68632e507"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:006",
+      "file": "sql/schema/006_price_observation_review_functions.sql",
+      "legacyFile": "sql/009_price_observation_review_functions.sql",
+      "legacyChecksums": [
+        "0e4b5903bdcff7f77f8bf8a0f6795e199526140580b2d72ca4e1ba67ba58f9a6",
+        "cea1185657c695a8cdf22fc86c749d9ec5d6e1f929d6b84504ef4036cc7d12c6"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:007",
+      "file": "sql/schema/007_refresh_affordability_function.sql",
+      "legacyFile": "sql/010_refresh_affordability_function.sql",
+      "legacyChecksums": [
+        "19c9113975d835e3c1a53a7945007e3c2afbfea37b3044417f57394e3a7ca3aa",
+        "c23cdcc168b5dae4c73e5e751357871aaf4b4326b28c56364a59860a6d3f78b3"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:008",
+      "file": "sql/schema/008_price_observations_history_view.sql",
+      "legacyFile": "sql/011_price_observations_history_view.sql",
+      "legacyChecksums": [
+        "ebdad77835f5bf48b446325f9c0fe6ae8377ddfb7e9192cd8204e548b72a5d38",
+        "f1b61d0f213090305f11d7ca53619ed023a6bfb917facaaff096fca1c141ba9a"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:009",
+      "file": "sql/schema/009_exchange_rate_sync_system.sql",
+      "legacyFile": "sql/012_exchange_rate_sync_system.sql",
+      "legacyChecksums": [
+        "dc2672c85a31870ccb501d31789358aa503d3f604f8bc4b51da547f3569943b8",
+        "9cdea32dbdbb7009dc72ade6c33d9e3bf3de6d6bb97c139e1c2a23701f12acec"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:010",
+      "file": "sql/schema/010_price_auto_review_rules.sql",
+      "legacyFile": "sql/013_price_auto_review_rules.sql",
+      "legacyChecksums": [
+        "a3b8197f29a7d7b0d39e16989c9d5865598c7c6fde34f5c72ae6431b4d3ea882",
+        "5eb52f698ef06366bc9bc9a1ee69b96ad1a107e3869a5b9c89dbd850cd94a501"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:011",
+      "file": "sql/schema/011_product_discovery_candidates.sql",
+      "legacyFile": "sql/014_product_discovery_candidates.sql",
+      "legacyChecksums": [
+        "0cff034456f78f4c2c00fab62e06de4510e61e495a9cf2f7463e759d87ac877a",
+        "a6b7e076cb0c41abd3bb1f6801a6c4749184b9bd74e8810b661c931f0f1f9f28"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:012",
+      "file": "sql/schema/012_discovery_sources.sql",
+      "legacyFile": "sql/015_discovery_sources.sql",
+      "legacyChecksums": [
+        "3bbeff51a1aff1e26b9a99272d20e49dd395875df37996cc3462a391e349967a",
+        "231c0b6ac6632651a0cc84b995a93492b1085bcf7f212499e5598abcc2bfe1f3"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:013",
+      "file": "sql/schema/013_discovery_source_checks.sql",
+      "legacyFile": "sql/016_discovery_source_checks.sql",
+      "legacyChecksums": [
+        "b2ee6d81b1fdf6d6e2f8c3ec2b692a4c389b50f947536b2929c8f79ca93968c1",
+        "a31525ff77f33076b29e9a03ff56be85bc5c651cbb7977f6e9522122fcb4f533"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:014",
+      "file": "sql/schema/014_discovery_change_classification.sql",
+      "legacyFile": "sql/017_discovery_change_classification.sql",
+      "legacyChecksums": [
+        "5edc2fbcc4750c775d0911eb38f195b779aaa324159ee419039723f1a22332f8",
+        "969683995fc3c2666fbf11452564f125b81210a66cc65ea3eb35ae48d93b99df"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:015",
+      "file": "sql/schema/015_discovery_feed_trigger_fields.sql",
+      "legacyFile": "sql/018_discovery_feed_trigger_fields.sql",
+      "legacyChecksums": [
+        "58b1f4f97e11317ce6d6bf2b3e7a5552f798cc6dfef94f979975b9c7d23b4659",
+        "8a25ceb86dde8bb81d50639263ce8dbdc0a3cc63af5b096a3c47638ae2b40e61"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:016",
+      "file": "sql/schema/016_discovery_source_strategy.sql",
+      "legacyFile": "sql/019_discovery_source_strategy.sql",
+      "legacyChecksums": [
+        "005e2b1a8efaec92dbc2a711f42bf28d28596d42673b5fcbb7db6c78e958ed7c",
+        "c064885fba03418bd008a5042e12e0f744564cd565f7925702901adcb4497ed5"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:017",
+      "file": "sql/schema/017_discovery_collection_handoff.sql",
+      "legacyFile": "sql/020_discovery_collection_handoff.sql",
+      "legacyChecksums": [
+        "61ef22435d3a0f2016438247cd685f9b8d911613926719e4d2cb53e645dc01a5",
+        "147ea8e80b480f584cdc0be6f4dddc8544c455f0d6df0d9c394943a0f5e36d14"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:018",
+      "file": "sql/schema/018_collector_job_runs.sql",
+      "legacyFile": "sql/021_collector_job_runs.sql",
+      "legacyChecksums": [
+        "aadebdd02bf17eb73c862adebf9095e28ec8c3013b231b5b5968c14d1d2b5637",
+        "ad464d89b3edc1f1da0c9d3fb8417f4895093d21f9ad3eba2a0baba21bfece1d"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:019",
+      "file": "sql/schema/019_discovery_manual_scan_queue.sql",
+      "legacyFile": "sql/022_discovery_manual_scan_queue.sql",
+      "legacyChecksums": [
+        "fe0335ddbd6cea495c0e61bfd6777682da0066feff48513ac402efda005d70f4",
+        "1216f24cd74de64dda093fa5e74ee6acb4da4c35664793181ed72a6007eda800"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:020",
+      "file": "sql/schema/020_app_store_stability_auto_review.sql",
+      "legacyFile": "sql/023_app_store_stability_auto_review.sql",
+      "legacyChecksums": [
+        "d1bb1d784b83dbd2a688799cfc36982927fd917dc761ac5759636bf56ae59eaa",
+        "10c2dcd434f192f1b260c47796201b95121e084c0f3b06825131e8ea7e8a7342"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:021",
+      "file": "sql/schema/021_app_store_availability_status.sql",
+      "legacyFile": "sql/024_app_store_availability_status.sql",
+      "legacyChecksums": [
+        "538682867bb710babaaba100dbd2c4e2f9e1f4f5e6c6340a3f56494c58682354",
+        "a679260353dff186cdd74c97280a2d34fdd4026d8a718167d3df0a3f00ce7e27"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:022",
+      "file": "sql/schema/022_country_tax_profiles.sql",
+      "legacyFile": "sql/028_country_tax_profiles.sql",
+      "legacyChecksums": [
+        "9aaeab8119ac52c2c1e1b2b5d646856fd629534eae66934eb16d79031848a91b",
+        "7d76eaa67d846eeddfff5ae18459317cbbb27170a3c9431f6ee3732eef9c0ae8"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:023",
+      "file": "sql/schema/023_country_app_store_risk_profiles.sql",
+      "legacyFile": "sql/029_country_app_store_risk_profiles.sql",
+      "legacyChecksums": [
+        "46e5ad4fb9c32a649516021d17048d9455e0beafaf5613c5ecf542a55b07c2ae",
+        "3d8f04717510cf26cd0cf5d1a8481df24bfbf3b024f1069400a901e0c799f7f9"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:024",
+      "file": "sql/schema/024_country_app_store_risk_model.sql",
+      "legacyFile": "sql/030_country_app_store_risk_model.sql",
+      "legacyChecksums": [
+        "9851d118d267bac24ced588c2923d44c664bbfcf6ad567d827b24501892d4634",
+        "d0f2a1b30de606d14852da22f523d6e141165dd22ac8aa3557b4af780a18f984"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:025",
+      "file": "sql/schema/025_country_tax_profile_v2.sql",
+      "legacyFile": "sql/032_country_tax_profile_v2.sql",
+      "legacyChecksums": [
+        "0c896ecfb3ab38eb4a966b4eacaa8b25a9d96c8804b48b6cda3fbe271fe5e2c5",
+        "c84fe74300768080b8da2af493ffea287edb247e01eea00bfce91243a8065760"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:026",
+      "file": "sql/schema/026_app_store_stability_auto_review_v2.sql",
+      "legacyFile": "sql/033_app_store_stability_auto_review_v2.sql",
+      "legacyChecksums": [
+        "d42ddb65d371355ce384dce951003db400e9834b5a9ca0da23c996d632bb3ff8",
+        "6b3c5e2d4a023186bf980bde7eee3374bce0133cfcb74de57879c4bf0b019311"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:027",
+      "file": "sql/schema/027_affordability_metric_precision.sql",
+      "legacyFile": "sql/034_affordability_metric_precision.sql",
+      "legacyChecksums": [
+        "75c8d006340d409a2c28ec6c13169ee6dcadf8dc7248017b63023ac12a7f0fc9",
+        "b5e71c8098f4550914e4f3b49a80c6822d873cc641a91ee834abdf70197fdb43"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:028",
+      "file": "sql/schema/028_country_tax_profile_sync_system.sql",
+      "legacyFile": "sql/035_country_tax_profile_sync_system.sql",
+      "legacyChecksums": [
+        "97c71a278b28790bf482945ad872b5017725565870af0a9d088e4c8ea3d9cd41",
+        "a15232ac5822cd6c3e2dd3240a73464c0ec37077709b596d08954cf277ac8f3b"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:029",
+      "file": "sql/schema/029_inferred_app_store_tax_profiles.sql",
+      "legacyFile": "sql/037_inferred_app_store_tax_profiles.sql",
+      "legacyChecksums": [
+        "685bc63f8b8ddd992ac255cfc00c08ea0b655eb71f3724b56a5e8623d90c8caa",
+        "384f8da69d32c64aba6e86c32086b2c34961c9a8d92aa5111b88cd4ca10e9170"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:030",
+      "file": "sql/schema/030_price_observation_evidence_view.sql",
+      "legacyFile": "sql/042_price_observation_evidence_view.sql",
+      "legacyChecksums": [
+        "daa5689ad12304c15086eef0861d475fd49276a9648c714919752c2add26e10a",
+        "308f50c6daf70b857123647204968601fc774e5ee47aea9b1ecc4dab2fe73aa8"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:031",
+      "file": "sql/schema/031_app_store_collection_schedule_policy.sql",
+      "legacyFile": "sql/043_app_store_collection_schedule_policy.sql",
+      "legacyChecksums": [
+        "a50488df159cf92268ce9951d77e39447a652489050168a6050b0ee0c8400085",
+        "30f4bb17dbe962a1cb54b2adf37b3229f727fb52e4f56742c9b95492ed57b4e3"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:032",
+      "file": "sql/schema/032_collector_job_runs_running_status.sql",
+      "legacyFile": "sql/052_collector_job_runs_running_status.sql",
+      "legacyChecksums": [
+        "940e59a42f5a0e5d068fb0049b57904aa5a9cb1501ed4b3440eba2dfa0d806e2",
+        "82945454aa40fa6de527ec691ef20f6cc2cd1f5ee2010fc049a96e6cab5a345a"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:033",
+      "file": "sql/schema/033_admin_collection_performance.sql",
+      "legacyFile": "sql/053_admin_collection_performance.sql",
+      "legacyChecksums": [
+        "215953cdb7bff37dda7d6131ca8d52758b2a9d6a02d864fed80ae1ee69dfb183",
+        "4608d157bdef7b0b3cb415293a5c870b82b3b168846ef84a2311bcbf2b933f14"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:034",
+      "file": "sql/schema/034_refresh_affordability_app_store_scope.sql",
+      "legacyFile": "sql/054_refresh_affordability_app_store_scope.sql",
+      "legacyChecksums": [
+        "f01488743faeb4db5427f19db2b0104720df53e7e801e9e8cfd842b908b34809",
+        "67dea95899a2022f4d477fa956e4bb99d595ef554cb2979ae1006fafa2e4454d"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:035",
+      "file": "sql/schema/035_refresh_matching_app_store_prices.sql",
+      "legacyFile": "sql/055_refresh_matching_app_store_prices.sql",
+      "legacyChecksums": [
+        "088a82e9ca121169c0d5149e1bcfddc618fbe6df60963250f54f67ed4c4eff3d",
+        "6154b6241affa592bfdebcac1f27c290153ecc1721c7f1c828928d53a11241a9"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:036",
+      "file": "sql/schema/036_refresh_exact_local_app_store_prices.sql",
+      "legacyFile": "sql/056_refresh_exact_local_app_store_prices.sql",
+      "legacyChecksums": [
+        "549f3e6a82b58113ff9024606d2cbaf9ab22c9c880f4b764a689dd0d6abac807",
+        "0439a74d06f8be66c365186baea5e97203276a562e579955d5570e9e4cc7ce06"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:037",
+      "file": "sql/schema/037_quarantine_published_app_store_price_outliers.sql",
+      "legacyFile": "sql/057_quarantine_published_app_store_price_outliers.sql",
+      "legacyChecksums": [
+        "7ee2e6577afbe23c28255cc8e6e750521b1279a7e232a985db7c98e1ef16bba3",
+        "1886d8a236fbef9424d7c4d60faca6ac94a998d34d3edc4048270336b921d530"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:038",
+      "file": "sql/schema/038_stale_app_store_price_lifecycle.sql",
+      "legacyFile": "sql/059_stale_app_store_price_lifecycle.sql",
+      "legacyChecksums": [
+        "deb6edf8a190d2e72638028c448eb41b4b82c5074b5580ee446522e211df190e",
+        "fe7fdc9a78b4cb426763b31407f84b7f8c04ca4124fe0780b2527eede5375cfe"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:039",
+      "file": "sql/schema/039_app_store_coverage_gap_rechecks.sql",
+      "legacyFile": "sql/062_app_store_coverage_gap_rechecks.sql",
+      "legacyChecksums": [
+        "603af4009002080caf199b7c337fb36aa2dd68a9fbd2a0422021a6c52f65fe91",
+        "6f6c7b63d801130d9326a02968e6c3231d4b5354c5447142834fb79ab8608621"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "schema:040",
+      "file": "sql/schema/040_system_task_runs.sql",
+      "legacyFile": "sql/063_system_task_runs.sql",
+      "legacyChecksums": [
+        "74fa722618241b02a312be174b4df2f8c5ee8caf4f7b092fae6e011ed868e6b4",
+        "6c1764ade58ec240cede4b60ec389160d144fbad4c0161d9ccdaff38febf066e"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:041",
+      "file": "sql/schema/041_data_quality_repair_cycles.sql",
+      "legacyFile": "sql/064_data_quality_repair_cycles.sql",
+      "legacyChecksums": [
+        "4125fbd0f8ce9fabf890d684af7da7deb5ee2a52557ef524b2b7db7a8c77e8e3",
+        "0ec59131ee55960ed2948f9cbb30ee57597d7725565bc3aba16b5eef4596199b"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:042",
+      "file": "sql/schema/042_operational_self_healing.sql",
+      "legacyFile": "sql/065_operational_self_healing.sql",
+      "legacyChecksums": [
+        "d0b19643f6610c861170499159babe9d36c620cb8e8ff26ab8c02945486276cd",
+        "515abcb94d7abda5c537294ae7e8e583910ae4b70f1919c35e75515aa70ff63b"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:043",
+      "file": "sql/schema/043_public_product_lifecycle.sql",
+      "legacyFile": "sql/066_public_product_lifecycle.sql",
+      "legacyChecksums": [
+        "5010ebab76e280d7950ee6fb4d86a220bb66d745b330ec6f31e93a4423ed099b",
+        "db129565542d67606f34b611a06293c744192f68565ab1c74735e05af6b9bc90"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:044",
+      "file": "sql/schema/044_app_store_availability_semantics.sql",
+      "legacyFile": "sql/067_app_store_availability_semantics.sql",
+      "legacyChecksums": [
+        "1f681b74e2de5b085fde7f800a9fdf74b4b87bf97d12a7743dbf1b522285c223",
+        "ebe3ea1bcbb2b0990dbaf6868ca69193f9b97db8c11e86f2e9f38d6b0e3d9b4b"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:045",
+      "file": "sql/schema/045_plan_region_availability.sql",
+      "legacyFile": "sql/068_plan_region_availability.sql",
+      "legacyChecksums": [
+        "48668b0d2abe4369ce5d2e11367a451f08bec1c4882e687c6085fb716b145774",
+        "5e8f642b1570760a67c0ca817299b229407202f3798893a28cfa7b2c37674416"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:046",
+      "file": "sql/schema/046_archive_superseded_app_store_ambiguities.sql",
+      "legacyFile": "sql/071_archive_superseded_app_store_ambiguities.sql",
+      "legacyChecksums": [
+        "d2dbee7d8d1fe06238d77f8f691af6b137c6dd9c3927e454d417ba48d131d346",
+        "3047e5e7e1b970f93f4f4b1f3a6cfb518a1be3df6e2f5b3a4d7c1b61d17a5959"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:047",
+      "file": "sql/schema/047_product_seo_content_quality.sql",
+      "legacyFile": "sql/073_product_seo_content_quality.sql",
+      "legacyChecksums": [
+        "ff2e66b5d85d9414a24011171f72e77532ae1b29bed9d39c59f8f8aad55c0559",
+        "cb65b026a737f70bbdbc33fc7d80a6468c974bca45e388ad51e2d4c6f1036714"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:048",
+      "file": "sql/schema/048_serialize_app_store_auto_review.sql",
+      "legacyFile": "sql/075_serialize_app_store_auto_review.sql",
+      "legacyChecksums": [
+        "b2717a4e2a487546d8b2ef9091bc5f07065772e871d87b995d942f21cd88bf5d",
+        "a6e4d768079008b408763b7db2d2a24554c72973a0521bdb11a83d7beeca94a3"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:049",
+      "file": "sql/schema/049_event_rate_limits.sql",
+      "legacyFile": "sql/076_event_rate_limits.sql",
+      "legacyChecksums": [
+        "195b2a3161c65339cf5b126071202c9a92b5ad5efa2d029d658f7d7e4d76167f",
+        "b95f5f720c0d241412fcca665128f1d7611330c000a9b90308d43d959f1aa5db"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:050",
+      "file": "sql/schema/050_content_system_tables.sql",
+      "legacyFile": "content-system-tables.sql",
+      "legacyChecksums": [
+        "604a225adc3bbb8bcff760ebb8151580d126f17fabd40400227ef6081aa1e8aa",
+        "ab661650f3d7c424cb11dc7115963781cfb42193ac7206f6ecf8d93aecb00237"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:051",
+      "file": "sql/schema/051_content_system_directus.sql",
+      "legacyFile": "content-system-directus.sql",
+      "legacyChecksums": [
+        "c0327c3f57369a53c225cf2f12aa08911d66e07a857b6f9d71c4feda95d88180",
+        "d5b7b88dcda03b36b7d668ba8f45dbfea01a6eca6dcf14382d946eac57dc4ec2"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:052",
+      "file": "sql/schema/052_directus_cn_v2.sql",
+      "legacyFile": "directus-cn-v2.sql",
+      "legacyChecksums": [
+        "001948deed87402c35b3a6cd0df86b645b7e359eb16df982d0bc5aa575ebf0f9",
+        "5bc951f4cf8b216c4e812d38a76d9edd36246e7fbcb24e14c62282a54c120fbd"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "schema:053",
+      "file": "sql/schema/053_article_soft_delete_trash.sql",
+      "legacyFile": "sql/045_article_soft_delete_trash.sql",
+      "legacyChecksums": [
+        "1d1399574dee465a3ac5a2b46414ef6ac398b52f459df34cc02c10e445aeb49c",
+        "ec4bcaa42f7f1a28adcf350fd8f8fc759b6ddaf82ecbcb328a6193a5a88f469b"
+      ],
+      "legacyBaseline": false
+    }
+  ],
+  "backfill": [
+    {
+      "id": "backfill:001",
+      "file": "sql/backfill/001_core_schema.sql",
+      "legacyFile": "schema.sql",
+      "legacyChecksums": [
+        "a8b12749c13610f51a363418d31635c09f8fb3f83800dde8510923c36e5c0e3c",
+        "f53d1af6d45562dacf480da3518419645bec58ac10446ea620d6f4f5c93305bb"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:002",
+      "file": "sql/backfill/002_seed_chatgpt.sql",
+      "legacyFile": "seed-chatgpt.sql",
+      "legacyChecksums": [
+        "15a8713452305507b3f69b7b8aa22539c8859aa9b0c2b52abd46e3495d108db0",
+        "52052773a3ead02dfacd54efde2e07100ffbd16c39d808f23d54b8e060acae79"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:003",
+      "file": "sql/backfill/003_affordability_income_tables.sql",
+      "legacyFile": "sql/001_affordability_income_tables.sql",
+      "legacyChecksums": [
+        "a719e70937d83e2fac4f5950e256b0847da5f8f28a097d3cac0d6a63e467e951",
+        "228ff5f3420701f645871d61fc6effcb66e72968f4f1a3480d4153ee2dda71aa"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:004",
+      "file": "sql/backfill/004_compute_plan_affordability.sql",
+      "legacyFile": "sql/002_compute_plan_affordability.sql",
+      "legacyChecksums": [
+        "2c85454aa48e100cf5b7b65e01dd7bf2526a17509a9855af977eafccd30c8047",
+        "6a0c247140bb3de2c7d66ea047467d8141bda552feed2e1eff25fee80f4939f2"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:005",
+      "file": "sql/backfill/005_product_discovery_candidates.sql",
+      "legacyFile": "sql/014_product_discovery_candidates.sql",
+      "legacyChecksums": [
+        "0cff034456f78f4c2c00fab62e06de4510e61e495a9cf2f7463e759d87ac877a",
+        "a6b7e076cb0c41abd3bb1f6801a6c4749184b9bd74e8810b661c931f0f1f9f28"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:006",
+      "file": "sql/backfill/006_discovery_sources.sql",
+      "legacyFile": "sql/015_discovery_sources.sql",
+      "legacyChecksums": [
+        "3bbeff51a1aff1e26b9a99272d20e49dd395875df37996cc3462a391e349967a",
+        "231c0b6ac6632651a0cc84b995a93492b1085bcf7f212499e5598abcc2bfe1f3"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:007",
+      "file": "sql/backfill/007_discovery_source_strategy.sql",
+      "legacyFile": "sql/019_discovery_source_strategy.sql",
+      "legacyChecksums": [
+        "005e2b1a8efaec92dbc2a711f42bf28d28596d42673b5fcbb7db6c78e958ed7c",
+        "c064885fba03418bd008a5042e12e0f744564cd565f7925702901adcb4497ed5"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:008",
+      "file": "sql/backfill/008_archive_non_subscription_plans.sql",
+      "legacyFile": "sql/025_archive_non_subscription_plans.sql",
+      "legacyChecksums": [
+        "1f7ba238a19a6aba4955aced45dbbc42d9f185f165b24d068907b64aa2e844d2",
+        "1c7bd1e0ec433e8d380d3425c051c544f6117a81130024bb83685f98d061ca94"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:009",
+      "file": "sql/backfill/009_clear_legacy_multisource_review_notes.sql",
+      "legacyFile": "sql/026_clear_legacy_multisource_review_notes.sql",
+      "legacyChecksums": [
+        "b7190f3124130574a2aabbfd6d72cb8b9d077ba4cd7c9f8d1feb908c95584ded",
+        "f396f20fa7a8953854d35bd1185985f3b35e9bc9f27bc046fc39f5bee1cb1dd6"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:010",
+      "file": "sql/backfill/010_archive_capacity_only_app_store_items.sql",
+      "legacyFile": "sql/027_archive_capacity_only_app_store_items.sql",
+      "legacyChecksums": [
+        "b4674ed5e792b2a6fa2f86f71b1f75e349604fd6f3592f6b65e87974dd9b32b8",
+        "dec6119ef5065359a5c076a102b25c13e39a5b309af4cbf352763433e8b784b4"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:011",
+      "file": "sql/backfill/011_country_tax_profiles.sql",
+      "legacyFile": "sql/028_country_tax_profiles.sql",
+      "legacyChecksums": [
+        "9aaeab8119ac52c2c1e1b2b5d646856fd629534eae66934eb16d79031848a91b",
+        "7d76eaa67d846eeddfff5ae18459317cbbb27170a3c9431f6ee3732eef9c0ae8"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:012",
+      "file": "sql/backfill/012_country_app_store_risk_profiles.sql",
+      "legacyFile": "sql/029_country_app_store_risk_profiles.sql",
+      "legacyChecksums": [
+        "46e5ad4fb9c32a649516021d17048d9455e0beafaf5613c5ecf542a55b07c2ae",
+        "3d8f04717510cf26cd0cf5d1a8481df24bfbf3b024f1069400a901e0c799f7f9"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:013",
+      "file": "sql/backfill/013_country_app_store_risk_model.sql",
+      "legacyFile": "sql/030_country_app_store_risk_model.sql",
+      "legacyChecksums": [
+        "9851d118d267bac24ced588c2923d44c664bbfcf6ad567d827b24501892d4634",
+        "d0f2a1b30de606d14852da22f523d6e141165dd22ac8aa3557b4af780a18f984"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:014",
+      "file": "sql/backfill/014_app_store_country_coverage.sql",
+      "legacyFile": "sql/031_app_store_country_coverage.sql",
+      "legacyChecksums": [
+        "dd3b3683d5274357fe6ce03fc8292d6f03c4b3c6619a4d4ff858124317007a13",
+        "ac248171a9b3887ceb6f34ef6ca1da874e1ed953c30fd6af05998098fbe74e67"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:015",
+      "file": "sql/backfill/015_country_tax_profile_v2.sql",
+      "legacyFile": "sql/032_country_tax_profile_v2.sql",
+      "legacyChecksums": [
+        "0c896ecfb3ab38eb4a966b4eacaa8b25a9d96c8804b48b6cda3fbe271fe5e2c5",
+        "c84fe74300768080b8da2af493ffea287edb247e01eea00bfce91243a8065760"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:016",
+      "file": "sql/backfill/016_product_plan_specs_seed.sql",
+      "legacyFile": "sql/036_product_plan_specs_seed.sql",
+      "legacyChecksums": [
+        "1aa392563c67a250822ae68f9b0d67bce41671b720bf26e1a6a8c0cb39c7f13b",
+        "f90ed6335d6e3e640dfaff94db9c8faf67f88829f9cca7ec30ae785af5bc61c4"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:017",
+      "file": "sql/backfill/017_common_app_store_tax_profiles.sql",
+      "legacyFile": "sql/038_common_app_store_tax_profiles.sql",
+      "legacyChecksums": [
+        "efc345b1774880717a4a76087219267a34ccf5fd147cc9a4a707b3d0ee07cb04",
+        "89715a59d8c58920d7c432206d10f155301095f98f084ac27b48f9ec00fe68a4"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:018",
+      "file": "sql/backfill/018_relax_claude_max_app_store_range.sql",
+      "legacyFile": "sql/039_relax_claude_max_app_store_range.sql",
+      "legacyChecksums": [
+        "10201cbb26ff5f1d4f3db65dfdc27ebf6a35b9c548cd4a773e9f33c4a8977d47",
+        "b403661f2c81538c0e341e6dcdb6c92533456852c31b9c753cf82b774510d48a"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:019",
+      "file": "sql/backfill/019_gemini_app_store_collector.sql",
+      "legacyFile": "sql/040_gemini_app_store_collector.sql",
+      "legacyChecksums": [
+        "11c228624a2b4d428369f2864b93244699bb36aedac7bce2daaef9fb2e3a0ab7",
+        "6d94a946f4067127d7ce460897f1e8b82fdac2ddd7baab466d157340b8253d9a"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:020",
+      "file": "sql/backfill/020_merge_gemini_advanced_into_pro.sql",
+      "legacyFile": "sql/041_merge_gemini_advanced_into_pro.sql",
+      "legacyChecksums": [
+        "90ab029aac67ab505b29e382efec9af6c6911ed34c4571d59060f0e13f8fd15f",
+        "9d80679f934c2ac3b3110f3ac67d7169fa3adb5723a57cc2474e498837638827"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:021",
+      "file": "sql/backfill/021_app_store_collection_schedule_policy.sql",
+      "legacyFile": "sql/043_app_store_collection_schedule_policy.sql",
+      "legacyChecksums": [
+        "a50488df159cf92268ce9951d77e39447a652489050168a6050b0ee0c8400085",
+        "30f4bb17dbe962a1cb54b2adf37b3229f727fb52e4f56742c9b95492ed57b4e3"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:022",
+      "file": "sql/backfill/022_refresh_matching_app_store_prices.sql",
+      "legacyFile": "sql/055_refresh_matching_app_store_prices.sql",
+      "legacyChecksums": [
+        "088a82e9ca121169c0d5149e1bcfddc618fbe6df60963250f54f67ed4c4eff3d",
+        "6154b6241affa592bfdebcac1f27c290153ecc1721c7f1c828928d53a11241a9"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:023",
+      "file": "sql/backfill/023_refresh_exact_local_app_store_prices.sql",
+      "legacyFile": "sql/056_refresh_exact_local_app_store_prices.sql",
+      "legacyChecksums": [
+        "549f3e6a82b58113ff9024606d2cbaf9ab22c9c880f4b764a689dd0d6abac807",
+        "0439a74d06f8be66c365186baea5e97203276a562e579955d5570e9e4cc7ce06"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:024",
+      "file": "sql/backfill/024_quarantine_published_app_store_price_outliers.sql",
+      "legacyFile": "sql/057_quarantine_published_app_store_price_outliers.sql",
+      "legacyChecksums": [
+        "7ee2e6577afbe23c28255cc8e6e750521b1279a7e232a985db7c98e1ef16bba3",
+        "1886d8a236fbef9424d7c4d60faca6ac94a998d34d3edc4048270336b921d530"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:025",
+      "file": "sql/backfill/025_normalize_disney_app_store_plans.sql",
+      "legacyFile": "sql/058_normalize_disney_app_store_plans.sql",
+      "legacyChecksums": [
+        "b56f0c66522e4e0695a4fa67fb829322b07be929e80e8f1910e09dbd6d34b966",
+        "f71399a245383414938aeee31b81d1d0d0e8514b6977f314a2aaca6425883001"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:026",
+      "file": "sql/backfill/026_reclassify_app_store_selection_false_positives.sql",
+      "legacyFile": "sql/060_reclassify_app_store_selection_false_positives.sql",
+      "legacyChecksums": [
+        "475c9b7e9a64a34f2723bc3c79166e265ae70ff0c770acc7d6a4fee5cd044a8a",
+        "0483f86470a46193a5fca5e141a26a8ad70bd6781250a79e72461f3af4ba4c1f"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:027",
+      "file": "sql/backfill/027_ignore_legacy_non_primary_app_store_tiers.sql",
+      "legacyFile": "sql/061_ignore_legacy_non_primary_app_store_tiers.sql",
+      "legacyChecksums": [
+        "2c52719038fe19fce8f56e73441cf323dd188b3c36aa9d0cc1dfd1a79a47f600",
+        "97cd42695e1a7bd5a6be7941be717c2016b70931fb5c9ea6c6ff782b686cf3ee"
+      ],
+      "legacyBaseline": true
+    },
+    {
+      "id": "backfill:028",
+      "file": "sql/backfill/028_data_quality_repair_cycles.sql",
+      "legacyFile": "sql/064_data_quality_repair_cycles.sql",
+      "legacyChecksums": [
+        "4125fbd0f8ce9fabf890d684af7da7deb5ee2a52557ef524b2b7db7a8c77e8e3",
+        "0ec59131ee55960ed2948f9cbb30ee57597d7725565bc3aba16b5eef4596199b"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:029",
+      "file": "sql/backfill/029_operational_self_healing.sql",
+      "legacyFile": "sql/065_operational_self_healing.sql",
+      "legacyChecksums": [
+        "d0b19643f6610c861170499159babe9d36c620cb8e8ff26ab8c02945486276cd",
+        "515abcb94d7abda5c537294ae7e8e583910ae4b70f1919c35e75515aa70ff63b"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:030",
+      "file": "sql/backfill/030_public_product_lifecycle.sql",
+      "legacyFile": "sql/066_public_product_lifecycle.sql",
+      "legacyChecksums": [
+        "5010ebab76e280d7950ee6fb4d86a220bb66d745b330ec6f31e93a4423ed099b",
+        "db129565542d67606f34b611a06293c744192f68565ab1c74735e05af6b9bc90"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:031",
+      "file": "sql/backfill/031_app_store_availability_semantics.sql",
+      "legacyFile": "sql/067_app_store_availability_semantics.sql",
+      "legacyChecksums": [
+        "1f681b74e2de5b085fde7f800a9fdf74b4b87bf97d12a7743dbf1b522285c223",
+        "ebe3ea1bcbb2b0990dbaf6868ca69193f9b97db8c11e86f2e9f38d6b0e3d9b4b"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:032",
+      "file": "sql/backfill/032_required_catalog_products.sql",
+      "legacyFile": "sql/069_required_catalog_products.sql",
+      "legacyChecksums": [
+        "fe53a5f3d01537b9aa014fe982b4586cb401d795581fa5a7d7c151d70576d0af",
+        "9647d566bfa03c6f5a631756fad07282b014b75d868007ea9776d1e7f547427f"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:033",
+      "file": "sql/backfill/033_disney_app_store_source.sql",
+      "legacyFile": "sql/070_disney_app_store_source.sql",
+      "legacyChecksums": [
+        "6ba1f1813b5f211b4d4777c392f2e1c2d3ff6fd55e6491801f693a5ee6c01f68",
+        "8b9081f20dc4d007500af684c0936a2c120ac27f621c7ad93e2517dce8ae51e5"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:034",
+      "file": "sql/backfill/034_archive_superseded_app_store_ambiguities.sql",
+      "legacyFile": "sql/071_archive_superseded_app_store_ambiguities.sql",
+      "legacyChecksums": [
+        "d2dbee7d8d1fe06238d77f8f691af6b137c6dd9c3927e454d417ba48d131d346",
+        "3047e5e7e1b970f93f4f4b1f3a6cfb518a1be3df6e2f5b3a4d7c1b61d17a5959"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:035",
+      "file": "sql/backfill/035_normalize_hbo_max_app_store_plans.sql",
+      "legacyFile": "sql/072_normalize_hbo_max_app_store_plans.sql",
+      "legacyChecksums": [
+        "84e5ecf84ac131ef57e9f1512a1977e1ab9c2a9fe2b1b25525e0ed5b1c80eff2",
+        "afd97260c0c6ab2a587b0fd4da1b0dcd0ecf04005cd5b052ae4c927f8157fa18"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:036",
+      "file": "sql/backfill/036_product_seo_content_quality.sql",
+      "legacyFile": "sql/073_product_seo_content_quality.sql",
+      "legacyChecksums": [
+        "ff2e66b5d85d9414a24011171f72e77532ae1b29bed9d39c59f8f8aad55c0559",
+        "cb65b026a737f70bbdbc33fc7d80a6468c974bca45e388ad51e2d4c6f1036714"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:037",
+      "file": "sql/backfill/037_repair_hbo_max_app_store_selection.sql",
+      "legacyFile": "sql/074_repair_hbo_max_app_store_selection.sql",
+      "legacyChecksums": [
+        "265b670c18b27dc7e2afe3f91685ac799c1d06cd214ed247167b56c65d058a04",
+        "0597202739223900952ed2e3759d3d9cc008e3c9150ffe8f42a488677ec8f560"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:038",
+      "file": "sql/backfill/038_content_system_directus.sql",
+      "legacyFile": "content-system-directus.sql",
+      "legacyChecksums": [
+        "c0327c3f57369a53c225cf2f12aa08911d66e07a857b6f9d71c4feda95d88180",
+        "d5b7b88dcda03b36b7d668ba8f45dbfea01a6eca6dcf14382d946eac57dc4ec2"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:039",
+      "file": "sql/backfill/039_register_directus.sql",
+      "legacyFile": "register-directus.sql",
+      "legacyChecksums": [
+        "2e476033ab41b1c46606649bf47f6899dd91ea31eac8701d730d7023231232c5",
+        "26811b0d22bbfee630092632f693df857a4e5550d0c4840829d08a8442711ada"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:040",
+      "file": "sql/backfill/040_directus_zh.sql",
+      "legacyFile": "directus-zh.sql",
+      "legacyChecksums": [
+        "3254e75ea479e6b85d20bc37baf8ba220db821ac4f17641e4bcb21e6f231febc",
+        "05f9893f61950aa1fbbd3fdcc1be46e8144f715ebe09ccf28e936093a031056e"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:041",
+      "file": "sql/backfill/041_directus_cn_v2.sql",
+      "legacyFile": "directus-cn-v2.sql",
+      "legacyChecksums": [
+        "001948deed87402c35b3a6cd0df86b645b7e359eb16df982d0bc5aa575ebf0f9",
+        "5bc951f4cf8b216c4e812d38a76d9edd36246e7fbcb24e14c62282a54c120fbd"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:042",
+      "file": "sql/backfill/042_directus_polish.sql",
+      "legacyFile": "directus-polish.sql",
+      "legacyChecksums": [
+        "559c0c746c93901af39f2ae3b3ca6a5d234d01f2e44e7f057f6222e52c4e8327",
+        "b447e2ac6c91187bf3224677617599eb0bc1811851adf4ff5b1ccba9a25c2ea5"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:043",
+      "file": "sql/backfill/043_fix_nav_categories_utf8.sql",
+      "legacyFile": "fix_nav_categories_utf8.sql",
+      "legacyChecksums": [
+        "45a5b3c717f1562d87b84c6f80c922efe0dfebb2c0f74d3c00b57553d59836c1",
+        "a8b07420ddebaf96b3adf4c169cdfe5a92d7b06211807d1e32adeef9eee0d269"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:044",
+      "file": "sql/backfill/044_seed_footer_navigation_zh.sql",
+      "legacyFile": "seed_footer_navigation_zh.sql",
+      "legacyChecksums": [
+        "55c55e5e4da4feef2f826558ce7f761bcf6e831918be6b2a22ba22a7c3384dfa",
+        "e74b698a98cab0d979ba5efa3b7d771552e57b26272cdc9c9dbaaa571e88d0b8"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:045",
+      "file": "sql/backfill/045_seed_en_navigation_draft.sql",
+      "legacyFile": "seed_en_navigation_draft.sql",
+      "legacyChecksums": [
+        "8789b567b3f802155f3b47d149d20bcc209773c80de4a90e933820818ece114d",
+        "68a60e90ae1d2786795cf9a02167c9db3c7f4f9dd7cc59d5c43d3aafc3b794de"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:046",
+      "file": "sql/backfill/046_publish_en_navigation.sql",
+      "legacyFile": "publish_en_navigation.sql",
+      "legacyChecksums": [
+        "a6e656f303df6225ef982db4f9bd5a2662534aa175caeb68299af4c7011d1acc",
+        "94c6591a567958a8a3324ea67f690f4e449427d94601aa99ecbefd52fa6f2385"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:047",
+      "file": "sql/backfill/047_publish_footer_trust_pages.sql",
+      "legacyFile": "publish_footer_trust_pages.sql",
+      "legacyChecksums": [
+        "88fa830c57edcc9869bd12b58ae4048cb952f9f123f32a77d1ac243fdf7b59cb",
+        "4cc0434a07e2d7bfa908b28ebda4e093081d4cb561a3795dacb73fc0770f22c0"
+      ],
+      "legacyBaseline": false
+    }
+  ],
+  "retired": [
+    {
+      "id": "retired:001",
+      "file": "sql/backfill/retired/001_cleanup_duplicates.sql",
+      "legacyFile": "cleanup-duplicates.sql",
+      "legacyChecksums": [
+        "edec92bc7bfd5f3740d1a0aa16b2b6766d64514fb90535ab60fddaf3084bdb90",
+        "bca3b3a830154b777746a72bf55fed6aad20b9d017bf1d808ce2a619404560cc"
+      ],
+      "automatic": false,
+      "reason": "Manual repair script; never part of automatic deployments."
+    },
+    {
+      "id": "retired:002",
+      "file": "sql/backfill/retired/002_affordability_source_metadata.sql",
+      "legacyFile": "sql/004_affordability_source_metadata.sql",
+      "legacyChecksums": [
+        "4a029ee8ca9c16069d975ae9399db9ada6fc4ce6e6f944a9e5e42fbb43cb5dcd",
+        "7f3f9371b6835733a367df4be7f54753900b45ae3ce7491a0d809fb745b499de"
+      ],
+      "automatic": false,
+      "reason": "Superseded by sql/004_affordability_source_metadata_fix.sql."
+    },
+    {
+      "id": "retired:003",
+      "file": "sql/backfill/retired/003_price_observation_tables.sql",
+      "legacyFile": "sql/006_price_observation_tables.sql",
+      "legacyChecksums": [
+        "9fe37a9730f2a85f82709f6dd8a39c4f948de756b87eb3f0af04e643f38ee56f",
+        "ba7819b9afcbbe3b054fcd5235d6baf35d375b8a1b6e6313bf98a7d0def67dc4"
+      ],
+      "automatic": false,
+      "reason": "Superseded by the current schema.sql observation model."
+    },
+    {
+      "id": "retired:004",
+      "file": "sql/backfill/retired/004_fix_pending_price_observations_view.sql",
+      "legacyFile": "sql/007_fix_pending_price_observations_view.sql",
+      "legacyChecksums": [
+        "f84029af2e3db555f52a213570536145a141d5f2fa457e11af3d2d854d5eed5b",
+        "fe219d366cf4b5becb47bd7d5674f73f1913abd531a50fb87ad53c6deac0c960"
+      ],
+      "automatic": false,
+      "reason": "Superseded by the current v4 observation view."
+    },
+    {
+      "id": "retired:005",
+      "file": "sql/backfill/retired/005_fix_pending_price_observations_view_v3.sql",
+      "legacyFile": "sql/007_fix_pending_price_observations_view_v3.sql",
+      "legacyChecksums": [
+        "56c3b1b8a89046d21872c590ecc3e79ebed4126babc50284f44037de1cd79518",
+        "d493aee4077b629d0b74cf755a1ce1b63b2c012481b76917176223ae88b3ac82"
+      ],
+      "automatic": false,
+      "reason": "Superseded by sql/008_price_observations_view_v4.sql."
+    },
+    {
+      "id": "retired:006",
+      "file": "sql/backfill/retired/006_public_navigation_launch_scope.sql",
+      "legacyFile": "sql/044_public_navigation_launch_scope.sql",
+      "legacyChecksums": [
+        "1c4f08eb3179cc7b4418bc7345cf1dc2e76875feacd3de3651866d63ba689701",
+        "27ce740eaa2317e09cb958f895b3393a97fe40d7cd1f747b3632924d482f9566"
+      ],
+      "automatic": false,
+      "reason": "Legacy launch content migration retained for history only."
+    },
+    {
+      "id": "retired:007",
+      "file": "sql/backfill/retired/007_update_chatgpt_logo_to_app_store_artwork.sql",
+      "legacyFile": "sql/046_update_chatgpt_logo_to_app_store_artwork.sql",
+      "legacyChecksums": [
+        "8fb4ff44ccee04965db4b88e92928e75f19f8c1a21c5d5490bec58cc8d366b3d",
+        "5945adbc92e711a4e1da9b94647d97cb1e47ae629e0e94d5544b3074f2935565"
+      ],
+      "automatic": false,
+      "reason": "Superseded by persistent official logo synchronization."
+    },
+    {
+      "id": "retired:008",
+      "file": "sql/backfill/retired/008_sync_official_app_store_logos.sql",
+      "legacyFile": "sql/047_sync_official_app_store_logos.sql",
+      "legacyChecksums": [
+        "a27335acade5bbb97728982a591c185279e35483c701ce648d99d47a83bd3bcb",
+        "48ac7db1c53d70ff461b941f02d9ef3388336417cb75e17334c7997c968b333e"
+      ],
+      "automatic": false,
+      "reason": "Superseded by persistent official logo synchronization."
+    },
+    {
+      "id": "retired:009",
+      "file": "sql/backfill/retired/009_fix_chatgpt_plus_korea_app_store_outlier.sql",
+      "legacyFile": "sql/048_fix_chatgpt_plus_korea_app_store_outlier.sql",
+      "legacyChecksums": [
+        "6420c1f0cf9f433b169f340760eaa0dc595e98ac0adfcb73b0c382752e46b065",
+        "4bf5c97117725c75b93375f15dde6db43fdb00d1a291f2a8dd772aea84e6cda5"
+      ],
+      "automatic": false,
+      "reason": "Superseded by generic anomaly quarantine and automatic review rules."
+    },
+    {
+      "id": "retired:010",
+      "file": "sql/backfill/retired/010_quarantine_app_store_anomaly_promotions.sql",
+      "legacyFile": "sql/049_quarantine_app_store_anomaly_promotions.sql",
+      "legacyChecksums": [
+        "dc50f54d77d97029576d81540911feb1160a1238be7b34ced992d8f080b585de",
+        "6a17f00f4645d8b4cefb26b3244e7528c19286f4b4c35a3404b4784f4e4de9f9"
+      ],
+      "automatic": false,
+      "reason": "Superseded by current published outlier quarantine rules."
+    },
+    {
+      "id": "retired:011",
+      "file": "sql/backfill/retired/011_cleanup_app_store_plan_matching_artifacts.sql",
+      "legacyFile": "sql/050_cleanup_app_store_plan_matching_artifacts.sql",
+      "legacyChecksums": [
+        "fcef2b30a619fedbda9868d56566e3f5d73812b57fd3dfbf02d72ef6577f6038",
+        "57d17232483063ec5559a60c360e0580a53d9efcfe8344c375ccc2cb8f691635"
+      ],
+      "automatic": false,
+      "reason": "Superseded by current plan matching and legacy-tier cleanup rules."
+    }
+  ]
+}

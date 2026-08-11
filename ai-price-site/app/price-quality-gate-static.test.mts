@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+  migrationEntriesForLegacyFile,
+  migrationLayout,
+} from "../test-utils/sql-migrations.mts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(appDir, "..");
@@ -130,7 +134,7 @@ test("price quality gate requires the database automation functions", () => {
   assert.match(source, /Missing required database function\(s\)/);
 });
 
-test("current price data repairs remain required core migrations", () => {
+test("current price migrations remain classified after schema and backfill separation", () => {
   const migrationNames = [
     "sql/058_normalize_disney_app_store_plans.sql",
     "sql/060_reclassify_app_store_selection_false_positives.sql",
@@ -150,17 +154,22 @@ test("current price data repairs remain required core migrations", () => {
     "sql/074_repair_hbo_max_app_store_selection.sql",
     "sql/075_serialize_app_store_auto_review.sql",
   ];
-  const migrationManifest = readProjectFile(
-    "../geosub-backend/scripts/migration-manifest.cjs"
-  );
   const postDeploy = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/post-deploy-check.sh"
   );
 
   for (const migrationName of migrationNames) {
-    assert.ok(migrationManifest.includes(migrationName));
+    assert.ok(
+      migrationEntriesForLegacyFile(migrationName).length > 0,
+      `${migrationName} should remain mapped by the canonical layout`,
+    );
   }
-  assert.match(postDeploy, /list core/);
+  assert.ok(
+    migrationLayout.backfill.some(
+      (entry) => entry.legacyFile === "sql/074_repair_hbo_max_app_store_selection.sql",
+    ),
+  );
+  assert.match(postDeploy, /list schema/);
 });
 
 test("canonical product checks reject missing catalog products and collectors", () => {

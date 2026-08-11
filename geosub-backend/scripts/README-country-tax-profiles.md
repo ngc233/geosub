@@ -40,7 +40,7 @@ The file is intentionally empty until a verified source set is added.
 
 ## Record keeping
 
-Migration `sql/035_country_tax_profile_sync_system.sql` adds:
+Migration `sql/schema/028_country_tax_profile_sync_system.sql` adds:
 
 - Source metadata on each country profile.
 - Next review timing.

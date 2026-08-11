@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+  migrationEntriesForLegacyFile,
+  readSqlMigration,
+} from "../../../test-utils/sql-migrations.mts";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDir, "../../..");
@@ -46,12 +50,7 @@ test("Linux scheduled services record start and completion heartbeats", () => {
   const wrapper = readRepoFile(
     "geosub-backend/deploy/linux-arm64/run-system-task.sh",
   );
-  const migration = readRepoFile(
-    "geosub-backend/sql/063_system_task_runs.sql",
-  );
-  const migrationManifest = readRepoFile(
-    "geosub-backend/scripts/migration-manifest.cjs",
-  );
+  const migration = readSqlMigration("sql/063_system_task_runs.sql");
   const postDeploy = readRepoFile(
     "geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
   );
@@ -62,8 +61,8 @@ test("Linux scheduled services record start and completion heartbeats", () => {
   assert.match(wrapper, /"\$@"/);
   assert.match(wrapper, /exit "\$EXIT_CODE"/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS system_task_runs/);
-  assert.match(migrationManifest, /sql\/063_system_task_runs\.sql/);
-  assert.match(postDeploy, /list core/);
+  assert.equal(migrationEntriesForLegacyFile("sql/063_system_task_runs.sql").length, 1);
+  assert.match(postDeploy, /list schema/);
   assert.match(postDeploy, /system_task_runs_running_started_idx/);
 
   const services: Array<[string, string]> = [

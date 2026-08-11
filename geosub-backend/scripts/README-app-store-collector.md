@@ -226,7 +226,7 @@ scrape. Each App Store observation now carries enough context for review:
 - auto-review decision and reason code
 - comparison against the current published price
 
-`sql/042_price_observation_evidence_view.sql` exposes this as
+`sql/schema/030_price_observation_evidence_view.sql` exposes this as
 `price_observation_evidence_view`. Admin pages should read this view instead of
 re-parsing `raw_payload` ad hoc.
 
@@ -260,7 +260,7 @@ Published prices are maintained with layered scheduling:
 This avoids treating noisy daily full-page scrapes as truth while still catching
 real price changes quickly.
 
-`sql/043_app_store_collection_schedule_policy.sql` configures existing App Store
+`sql/schema/031_app_store_collection_schedule_policy.sql` configures existing App Store
 jobs into this cadence and creates `queue_app_store_anomaly_rechecks(...)`.
 `run-collector-jobs.ps1` calls that function before selecting due jobs, then
 sets the next run time by schedule:

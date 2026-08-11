@@ -71,5 +71,5 @@ Run the old strict multi-source rule explicitly:
 The strict database function is `run_price_auto_review(...)`, created by:
 
 ```text
-sql/013_price_auto_review_rules.sql
+sql/schema/010_price_auto_review_rules.sql
 ```

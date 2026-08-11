@@ -24,6 +24,8 @@
         "db:status": "node scripts/local-db.cjs status",
         "db:doctor": "node scripts/local-db.cjs doctor",
         "db:migrate": "node scripts/migrate-database.cjs",
+        "db:backfill": "node scripts/apply-local-sql.cjs --mode backfill",
+        "db:backfill:status": "node scripts/check-migrations.cjs --include-backfills",
         "db:migrate:status": "node scripts/check-migrations.cjs",
         "sync:exchange-rates": "node scripts/sync-exchange-rates.cjs",
         "aggregate:daily-stats": "node scripts/aggregate-daily-stats.cjs --days=90",

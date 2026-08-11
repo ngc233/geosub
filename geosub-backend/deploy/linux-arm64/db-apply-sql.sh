@@ -14,8 +14,15 @@ FRONTEND_DIR="${GEOSUB_FRONTEND_DIR:-/opt/geosub/ai-price-site}"
 DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
-MODE="${1:-core}"
+MODE="${1:-schema}"
 MANIFEST_SCRIPT="$BACKEND_DIR/scripts/migration-manifest.cjs"
+
+case "$MODE" in
+  core) MODE="schema" ;;
+  content) MODE="backfill" ;;
+  schema|backfill|all) ;;
+  *) echo "Mode must be schema, backfill or all."; exit 1 ;;
+esac
 
 cd "$BACKEND_DIR"
 
@@ -25,15 +32,15 @@ if [[ ! -f "$MANIFEST_SCRIPT" ]]; then
 fi
 
 node "$MANIFEST_SCRIPT" validate --frontend-dir="$FRONTEND_DIR"
-mapfile -t files < <(
-  node "$MANIFEST_SCRIPT" list "$MODE" --frontend-dir="$FRONTEND_DIR"
+mapfile -t entries < <(
+  node "$MANIFEST_SCRIPT" entries "$MODE" --frontend-dir="$FRONTEND_DIR"
 )
-mapfile -t baseline_files < <(
-  node "$MANIFEST_SCRIPT" list baseline --frontend-dir="$FRONTEND_DIR"
+mapfile -t baseline_entries < <(
+  node "$MANIFEST_SCRIPT" entries all --frontend-dir="$FRONTEND_DIR"
 )
 
-if (( ${#files[@]} == 0 )); then
-  echo "Migration manifest returned no files for mode: $MODE"
+if (( ${#entries[@]} == 0 )); then
+  echo "Migration manifest returned no entries for mode: $MODE"
   exit 1
 fi
 
@@ -53,6 +60,12 @@ CREATE TABLE IF NOT EXISTS geosub_schema_migrations (
   checksum TEXT NOT NULL,
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS geosub_backfill_migrations (
+  id BIGSERIAL PRIMARY KEY,
+  filename TEXT NOT NULL UNIQUE,
+  checksum TEXT NOT NULL,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 SQL
 
 normalized_sql_checksum() {
@@ -67,26 +80,40 @@ crlf_sql_checksum() {
   awk '{ sub(/\r$/, ""); printf "%s\r\n", $0 }' "$1" | sha256sum | awk '{print $1}'
 }
 
-is_known_line_ending_checksum() {
-  local filename="$1"
-  local existing_checksum="$2"
+registry_for_file() {
+  if [[ "$1" == sql/backfill/* ]]; then
+    printf '%s\n' "geosub_backfill_migrations"
+  else
+    printf '%s\n' "geosub_schema_migrations"
+  fi
+}
 
-  case "${filename}:${existing_checksum}" in
-    "sql/002_compute_plan_affordability.sql:b6a4e9ab30620ccf05f4895f0f55d119565e96a39d8ef8ef9cf2722df10c5913")
-      return 0
-      ;;
-  esac
+registered_checksum() {
+  local registry="$1"
+  local filename="$2"
+  docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
+    "SELECT checksum FROM $registry WHERE filename = '$filename';"
+}
 
-  return 1
+checksum_is_listed() {
+  local checksum="$1"
+  local csv="$2"
+  [[ ",$csv," == *",$checksum,"* ]]
+}
+
+register_canonical() {
+  local registry="$1"
+  local filename="$2"
+  local checksum="$3"
+  docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
+    "INSERT INTO $registry (filename, checksum) VALUES ('$filename', '$checksum') ON CONFLICT (filename) DO NOTHING;" >/dev/null
 }
 
 baseline_legacy_migrations() {
   local cutover_file="sql/063_system_task_runs.sql"
   local cutover_registered
-  cutover_registered="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
-    "SELECT EXISTS (SELECT 1 FROM geosub_schema_migrations WHERE filename = '$cutover_file');")"
-
-  if [[ "$cutover_registered" != "t" ]]; then
+  cutover_registered="$(registered_checksum geosub_schema_migrations "$cutover_file")"
+  if [[ -z "$cutover_registered" ]]; then
     return 0
   fi
 
@@ -101,43 +128,36 @@ baseline_legacy_migrations() {
   fi
 
   local baselined=0
-  local file checksum existing
-  for file in "${baseline_files[@]}"; do
-    existing="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
-      "SELECT checksum FROM geosub_schema_migrations WHERE filename = '$file';")"
-    if [[ -n "$existing" ]]; then
+  local entry file legacy legacy_checksums is_baseline registry existing legacy_existing checksum
+  for entry in "${baseline_entries[@]}"; do
+    IFS=$'\t' read -r file legacy legacy_checksums is_baseline <<<"$entry"
+    [[ "$is_baseline" == "1" ]] || continue
+    registry="$(registry_for_file "$file")"
+    existing="$(registered_checksum "$registry" "$file")"
+    legacy_existing="$(registered_checksum geosub_schema_migrations "$legacy")"
+    if [[ -n "$existing" || -n "$legacy_existing" ]]; then
       continue
     fi
     checksum="$(normalized_sql_checksum "$file")"
-    docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
-      "INSERT INTO geosub_schema_migrations (filename, checksum) VALUES ('$file', '$checksum');" >/dev/null
+    register_canonical "$registry" "$file" "$checksum"
     echo "Baselined legacy migration: $file"
     baselined=$((baselined + 1))
   done
   echo "Legacy migration baseline complete: $baselined registered."
 }
 
-if [[ "$MODE" != "content" ]]; then
-  baseline_legacy_migrations
-fi
+baseline_legacy_migrations
 
-for file in "${files[@]}"; do
+for entry in "${entries[@]}"; do
+  IFS=$'\t' read -r file legacy legacy_checksums is_baseline <<<"$entry"
+  registry="$(registry_for_file "$file")"
   checksum="$(normalized_sql_checksum "$file")"
-  existing="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c "SELECT checksum FROM geosub_schema_migrations WHERE filename = '$file';")"
+  existing="$(registered_checksum "$registry" "$file")"
 
   if [[ -n "$existing" ]]; then
-    if [[ "$existing" != "$checksum" ]]; then
-      raw_checksum="$(raw_sql_checksum "$file")"
-      crlf_checksum="$(crlf_sql_checksum "$file")"
-
-      if [[ "$existing" == "$raw_checksum" || "$existing" == "$crlf_checksum" ]] ||
-        is_known_line_ending_checksum "$file" "$existing"; then
-        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
-          "UPDATE geosub_schema_migrations SET checksum = '$checksum' WHERE filename = '$file';" >/dev/null
-        echo "Already applied: $file (normalized stored checksum)"
-        continue
-      fi
-
+    raw_checksum="$(raw_sql_checksum "$file")"
+    crlf_checksum="$(crlf_sql_checksum "$file")"
+    if [[ "$existing" != "$checksum" && "$existing" != "$raw_checksum" && "$existing" != "$crlf_checksum" ]]; then
       echo "Migration checksum changed after it was applied: $file"
       echo "Applied: $existing"
       echo "Current: $checksum"
@@ -147,10 +167,21 @@ for file in "${files[@]}"; do
     continue
   fi
 
+  legacy_existing="$(registered_checksum geosub_schema_migrations "$legacy")"
+  if [[ -n "$legacy_existing" ]]; then
+    if ! checksum_is_listed "$legacy_existing" "$legacy_checksums"; then
+      echo "Legacy migration checksum drift: $legacy"
+      echo "Applied: $legacy_existing"
+      exit 1
+    fi
+    register_canonical "$registry" "$file" "$checksum"
+    echo "Registered compatibility alias: $legacy -> $file"
+    continue
+  fi
+
   echo "Applying: $file"
   docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < "$file"
-  docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
-    "INSERT INTO geosub_schema_migrations (filename, checksum) VALUES ('$file', '$checksum');" >/dev/null
+  register_canonical "$registry" "$file" "$checksum"
 done
 
-echo "SQL migration complete for mode: $MODE (${#files[@]} files from the canonical manifest)"
+echo "SQL migration complete for mode: $MODE (${#entries[@]} entries from the canonical layout)"

@@ -85,16 +85,22 @@ sudo docker compose up -d
 5. Initialize or migrate the application database:
 
 ```bash
-sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-apply-sql.sh core
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-apply-sql.sh schema
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-smoke-check.sh
 ```
 
-Run content SQL only when you intentionally want to initialize Directus/content
-data from repository SQL files:
+Run backfill SQL only when you intentionally want to initialize reference,
+Directus or product data from repository SQL files:
 
 ```bash
-sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-apply-sql.sh content
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-apply-sql.sh backfill
 ```
+
+Backfills that configure Directus metadata require Directus to have completed
+its own bootstrap first, including creation of the `directus_*` system tables.
+They are intentionally excluded from normal schema migration and production
+upgrade paths. Run them only after verifying that prerequisite and reviewing
+the pending backfill list.
 
 6. Install and start the Next.js service:
 
@@ -297,7 +303,7 @@ Environment controls in `/etc/geosub/geosub.env`:
 GEOSUB_REPO_DIR=/opt/geosub/geosub
 GEOSUB_GIT_BRANCH=main
 GEOSUB_SKIP_GIT_PULL=false
-GEOSUB_RUN_CONTENT_MIGRATIONS=false
+GEOSUB_RUN_BACKFILLS=false
 GEOSUB_WEB_HEALTH_URL=http://127.0.0.1:3000/zh/ai-pricing
 GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS=18
 GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD=1
@@ -319,8 +325,8 @@ Use `GEOSUB_SKIP_GIT_PULL=true` only when you have already copied the newest
 files to the server and want the script to rebuild, migrate, and restart from
 the local filesystem state.
 
-Keep `GEOSUB_RUN_CONTENT_MIGRATIONS=false` for normal app upgrades. Set it to
-`true` only when you intentionally want to apply repository content seed SQL.
+Keep `GEOSUB_RUN_BACKFILLS=false` for normal app upgrades. Set it to
+`true` only when you intentionally want to apply reference, product, and Directus backfills.
 
 Each successful upgrade writes the deployed version and commit to:
 

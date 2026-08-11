@@ -1,19 +1,14 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { readSqlMigration } from "../../../test-utils/sql-migrations.mts";
 import {
   REQUIRED_REVIEW_REASON_CODES,
   reviewReasonAction,
   reviewReasonLabel,
 } from "./review-reason-copy.ts";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(currentDir, "../../../..");
-const autoReviewSql = readFileSync(
-  resolve(repoRoot, "geosub-backend/sql/033_app_store_stability_auto_review_v2.sql"),
-  "utf8",
+const autoReviewSql = readSqlMigration(
+  "sql/033_app_store_stability_auto_review_v2.sql",
 );
 
 function getSqlReasonCodes() {

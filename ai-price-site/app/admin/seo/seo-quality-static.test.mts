@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { readSqlMigration } from "../../../test-utils/sql-migrations.mts";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(resolve(testDir, "page.tsx"), "utf8");
@@ -10,13 +11,7 @@ const qualityData = readFileSync(
   resolve(testDir, "../../../lib/product-seo-quality-data.ts"),
   "utf8",
 );
-const productSeoMigration = readFileSync(
-  resolve(
-    testDir,
-    "../../../../geosub-backend/sql/073_product_seo_content_quality.sql",
-  ),
-  "utf8",
-);
+const productSeoMigration = readSqlMigration("sql/073_product_seo_content_quality.sql");
 
 test("admin SEO page scores real product data and visible decision content", () => {
   assert.match(page, /getProductSeoQualityAudits/);
