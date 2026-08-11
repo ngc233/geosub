@@ -1,7 +1,7 @@
 import AdminLink from "@/components/admin/AdminLink";
-import { Archive, CheckCircle2, Clock3, XCircle } from "lucide-react";
+import { Archive, CheckCircle2, ChevronDown, Clock3, Search, XCircle } from "lucide-react";
+import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import AdminMetricCard from "../../../components/admin/AdminMetricCard";
-import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import AdminStatusNotice, {
   type AdminStatusNoticeVariant,
 } from "../../../components/admin/AdminStatusNotice";
@@ -34,6 +34,7 @@ function collectionStatusVariant(status: string | null | undefined): AdminStatus
 }
 
 type ReviewOverviewSectionsProps = {
+  productQuery: string;
   discoveryPromoted: boolean;
   selectedProductCollector: SelectedProductCollectorRow | null;
   selectedProductName: string;
@@ -57,6 +58,7 @@ type ReviewOverviewSectionsProps = {
 };
 
 export function ReviewOverviewSections({
+  productQuery,
   discoveryPromoted,
   selectedProductCollector,
   selectedProductName,
@@ -84,38 +86,68 @@ export function ReviewOverviewSections({
     <>
       <header className="border-b border-slate-200 pb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-          价格采集 · 第 2 步
+          价格采集
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          价格采集审核
+          采集产品价格
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          这里是主工作台：按产品启动 App Store 采集，系统随后自动审核稳定价格；异常、缺样本或冲突数据只在这里集中解释。
+          搜索一个产品并开始采集。系统会自动检查价格并更新正式库，只有无法确认的数据才会留在异常区。
         </p>
       </header>
 
-      <AdminPipelineSteps currentStep="review" />
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-bold text-blue-700">第 1 步</p>
+            <h2 className="mt-1 text-base font-semibold text-slate-950">选择要采集的产品</h2>
+            <p className="mt-1 text-sm text-slate-500">输入产品名称，找到后直接点击采集。</p>
+          </div>
+          <form action="/admin/review" className="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
+            <label className="relative min-w-0 flex-1">
+              <Search
+                size={16}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <span className="sr-only">搜索产品</span>
+              <input
+                type="search"
+                name="q"
+                defaultValue={productQuery}
+                placeholder="例如 Netflix、ChatGPT"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
+              />
+            </label>
+            <AdminButton type="submit">查找产品</AdminButton>
+            {productQuery ? (
+              <AdminLinkButton href="/admin/review" variant="secondary">
+                清除
+              </AdminLinkButton>
+            ) : null}
+          </form>
+        </div>
+      </section>
 
       {hasSelectedProduct ? (
         <section className="rounded-xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100">
-                {discoveryPromoted ? "刚从线索入口加入" : "产品采集入口"}
+                第 2 步 · 开始采集
               </div>
               <h2 className="mt-3 text-lg font-semibold text-slate-950">
-                {selectedProductName || "这个产品"} 已进入服务库
+                {selectedProductName || "这个产品"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
                 {selectedAppStoreJobCount > 0
-                  ? `已准备 ${selectedAppStoreJobCount} 个 App Store 采集任务。现在可以直接跑一次采集，完成后系统会自动审核并把稳定价格写入正式库。`
+                  ? `已准备好 ${selectedAppStoreJobCount} 个采集任务。点击后，系统会自动采集、检查并更新可确认的价格。`
                   : "还没有识别到 App Store 采集任务。请先回产品库补充 App Store 链接或应用 ID，再回来采集。"}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <ManualCollectionProgressForm
                 productSlug={selectedProductSlug}
-                buttonLabel={`立即采集 ${selectedProductName || "该产品"}`}
+                buttonLabel={`开始采集 ${selectedProductName || "该产品"}`}
                 pendingLabel="正在采集并审核"
                 disabled={!selectedProductSlug || selectedAppStoreJobCount <= 0}
               />
@@ -130,6 +162,26 @@ export function ReviewOverviewSections({
         </section>
       ) : null}
 
+      {queuedCount !== null ? (
+        <AdminStatusNotice title="本轮采集状态" variant={collectionStatusVariant(collectionRun)}>
+          {getCollectionStatusMessage({
+            queuedCount,
+            collectionRun,
+            collectionScope,
+          })}
+        </AdminStatusNotice>
+      ) : null}
+
+      <details className="group rounded-xl border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 [&::-webkit-details-marker]:hidden">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-950">统计与审核说明</h2>
+            <p className="mt-1 text-xs text-slate-500">只有需要排查数据时才需要展开。</p>
+          </div>
+          <ChevronDown size={17} className="text-slate-500 transition-transform group-open:rotate-180" />
+        </summary>
+
+        <div className="space-y-4 border-t border-slate-200 p-4">
       <section className="grid gap-3 md:grid-cols-4">
         <AdminMetricCard
           label="待处理观测"
@@ -164,16 +216,6 @@ export function ReviewOverviewSections({
         补采不再默认扫描全部产品。请在下方按产品点击“只补采这个产品”；系统会跳过 12 小时内已经成功采集过的 App Store
         任务，避免重复请求。
       </AdminStatusNotice>
-
-      {queuedCount !== null ? (
-        <AdminStatusNotice title="采集状态" variant={collectionStatusVariant(collectionRun)}>
-          {getCollectionStatusMessage({
-            queuedCount,
-            collectionRun,
-            collectionScope,
-          })}
-        </AdminStatusNotice>
-      ) : null}
 
       {latestAutoReview ? (
         <section
@@ -430,6 +472,8 @@ export function ReviewOverviewSections({
           </div>
         )}
       </section>
+        </div>
+      </details>
     </>
   );
 }

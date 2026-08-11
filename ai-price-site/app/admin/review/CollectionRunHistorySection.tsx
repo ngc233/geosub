@@ -117,6 +117,26 @@ function runOutput(row: CollectorRunHistoryRow) {
   };
 }
 
+function runSummary(row: CollectorRunHistoryRow) {
+  if (row.status === "running") {
+    return runnerStateLabel(row) ?? "正在采集价格";
+  }
+
+  if (row.status === "succeeded") {
+    return "采集完成，系统正在自动检查并更新价格。";
+  }
+
+  if (row.status === "failed") {
+    return "采集没有完成，可以展开详情查看原因后重试。";
+  }
+
+  if (row.status === "skipped") {
+    return "本轮没有重复采集。";
+  }
+
+  return "等待系统处理。";
+}
+
 function progressToneClassName(tone: CollectionProgressState["tone"]) {
   if (tone === "success") {
     return {
@@ -223,6 +243,7 @@ export default function CollectionRunHistorySection({
       }),
     [visibleRows, collectionRun, collectionScope],
   );
+  const recentRows = visibleRows.slice(0, 6);
 
   useEffect(() => {
     if (!autoRefreshActive) {
@@ -289,16 +310,17 @@ export default function CollectionRunHistorySection({
     <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-950">最近采集运行</h2>
+          <p className="text-xs font-bold text-blue-700">第 2 步结果</p>
+          <h2 className="mt-1 text-base font-semibold text-slate-950">本轮采集状态</h2>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            这里显示采集脚本是否真的被唤起、是否仍在运行，以及完成后的输出摘要。下面的“最近审核历史”只显示价格观察被通过、忽略或拒绝后的结果。
+            点击采集后在这里看进度和结果。页面会自动更新，不需要重复点击。
           </p>
         </div>
         <AdminLink
           href="/admin/collector-jobs"
           className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
         >
-          查看采集任务
+          全部采集记录
         </AdminLink>
       </div>
 
@@ -306,76 +328,68 @@ export default function CollectionRunHistorySection({
 
       {visibleRows.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-slate-500">
-          暂无采集运行记录。点击补采或产品采集按钮后，运行状态会显示在这里。
+          还没有采集记录。先在上方选择产品并开始采集。
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">产品</th>
-                <th className="px-4 py-3 font-medium">来源</th>
-                <th className="px-4 py-3 font-medium">状态</th>
-                <th className="px-4 py-3 font-medium">开始时间</th>
-                <th className="px-4 py-3 font-medium">耗时</th>
-                <th className="px-4 py-3 font-medium">输出</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {visibleRows.map((row) => {
-                const output = runOutput(row);
-                const runnerState = runnerStateLabel(row);
+        <div className="divide-y divide-slate-100">
+          {recentRows.map((row) => {
+            const output = runOutput(row);
 
-                return (
-                  <tr key={row.id} className="align-top hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-slate-950">
+            return (
+              <details key={row.id} className="group px-4 py-3 open:bg-slate-50/70">
+                <summary className="flex cursor-pointer list-none flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-slate-950">
                         {row.product_name || row.product_slug || "未知产品"}
-                      </div>
-                      <div className="text-xs text-slate-500">{row.product_slug || "unknown"}</div>
-                      {row.product_slug ? (
-                        <AdminLink
-                          href={`/admin/data-quality/${encodeURIComponent(row.product_slug)}`}
-                          className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                        >
-                          数据诊断
-                        </AdminLink>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                        {sourceLabel(row.source_type)}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClassName(row.status)}`}
                       >
                         {statusLabel(row.status)}
                       </span>
-                      {runnerState ? (
-                        <div className="mt-1 text-xs font-medium text-blue-700">{runnerState}</div>
-                      ) : null}
-                      {row.diagnosis ? (
-                        <div className="mt-1 text-xs text-slate-500">{row.diagnosis}</div>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">{formatDate(row.started_at)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-500">{formatDuration(row)}</td>
-                    <td className={`min-w-[420px] max-w-xl px-4 py-3 text-xs leading-5 ${output.className}`}>
-                      <div>{output.text}</div>
-                      <div className="mt-3">
-                        <CollectorRunTimeline run={row} />
-                      </div>
-                      <div className="mt-3">
-                        <CollectorRunOutcomeSummary run={row} />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{runSummary(row)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-4 text-xs text-slate-500">
+                    <span>{formatDate(row.started_at)}</span>
+                    <span>{formatDuration(row)}</span>
+                    <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 group-open:bg-slate-100">
+                      技术详情
+                    </span>
+                  </div>
+                </summary>
+
+                <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-500">
+                    <span>来源：{sourceLabel(row.source_type)}</span>
+                    <span>产品标识：{row.product_slug || "未知"}</span>
+                    {row.diagnosis ? <span>系统诊断：{row.diagnosis}</span> : null}
+                  </div>
+                  <div className={`mt-2 ${output.className}`}>{output.text}</div>
+                  <div className="mt-3">
+                    <CollectorRunTimeline run={row} />
+                  </div>
+                  <div className="mt-3">
+                    <CollectorRunOutcomeSummary run={row} />
+                  </div>
+                  {row.product_slug ? (
+                    <AdminLink
+                      href={`/admin/data-quality/${encodeURIComponent(row.product_slug)}`}
+                      className="mt-3 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      打开数据诊断
+                    </AdminLink>
+                  ) : null}
+                </div>
+              </details>
+            );
+          })}
+          {visibleRows.length > recentRows.length ? (
+            <div className="px-4 py-3 text-center text-xs text-slate-500">
+              这里只显示最近 {recentRows.length} 次，更多记录请打开“全部采集记录”。
+            </div>
+          ) : null}
         </div>
       )}
     </section>
