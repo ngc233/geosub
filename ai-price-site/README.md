@@ -13,6 +13,26 @@ npm install
 On Windows PowerShell, if `npm` is blocked by the execution policy, use
 `npm.cmd` for the same commands.
 
+Create the local environment file:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Open `.env` and fill in `DATABASE_URL`. Optional integrations and tuning
+variables are documented inline in `.env.example`; keep real secrets out of
+Git. Validate the configuration before starting Next.js:
+
+```bash
+npm run check:local
+```
+
 Start the website:
 
 ```bash
@@ -27,21 +47,10 @@ http://localhost:3000
 
 ## Environment
 
-Required for database-backed pages:
-
-```text
-DATABASE_URL=postgresql://...
-```
-
-Optional integrations:
-
-```text
-DIRECTUS_URL=...
-DIRECTUS_TOKEN=...
-NEXT_PUBLIC_SITE_URL=https://geosub.org
-# Keep product-level SEO quality in preview mode until the admin audit is reviewed.
-SEO_PRODUCT_QUALITY_GATE=observe
-```
+The committed `.env.example` is the source of truth for frontend environment
+variables. `DATABASE_URL` is required. Directus, operational notifications,
+cron authorization and runtime tuning are optional and remain disabled or use
+documented defaults when left blank.
 
 `SEO_PRODUCT_QUALITY_GATE=enforce` makes sitemap inclusion and page robots use
 the same product-quality decision. Do not enable it in production until the

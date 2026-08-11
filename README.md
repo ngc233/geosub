@@ -31,11 +31,31 @@ cd ai-price-site
 npm install
 ```
 
-Create a local environment file:
+Create a local environment file, then fill in at least `DATABASE_URL`:
 
 ```bash
 cp .env.example .env
 ```
+
+On Windows PowerShell, use:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+If you use the repository PostgreSQL container, also copy
+`../geosub-backend/.env.example` to `../geosub-backend/.env`, choose matching database
+credentials in both files, then run:
+
+```bash
+npm run db:doctor
+npm run db:up
+npm run db:migrate
+npm run check:local
+```
+
+`check:local` reports missing configuration and database connectivity problems
+before the website is started.
 
 Start the web app:
 
