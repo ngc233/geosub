@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { secretsMatch } from "../lib/secure-secret.ts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(appDir, "..");
@@ -10,6 +11,30 @@ const rootDir = resolve(appDir, "..");
 function readProjectFile(fileName: string) {
   return readFileSync(resolve(rootDir, fileName), "utf8");
 }
+
+test("cron secrets use fixed-length timing-safe comparison", () => {
+  assert.equal(secretsMatch("cron-secret", "cron-secret"), true);
+  assert.equal(secretsMatch("cron-secret-a", "cron-secret-b"), false);
+  assert.equal(secretsMatch(null, "cron-secret"), false);
+  assert.equal(secretsMatch("short", "a-much-longer-secret"), false);
+});
+
+test("exchange-rate HTTP cron accepts POST only", () => {
+  const cronRoute = readProjectFile("app/api/cron/exchange-rates/route.ts");
+  const linuxRunner = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/run-exchange-rate-sync.sh",
+  );
+  const syncScript = readProjectFile("scripts/sync-exchange-rates.cjs");
+
+  assert.match(cronRoute, /export async function POST/);
+  assert.doesNotMatch(cronRoute, /export async function GET/);
+  assert.match(cronRoute, /secretsMatch\(headerSecret, secret\)/);
+  assert.match(cronRoute, /allowing this request outside production/);
+  assert.match(linuxRunner, /sync-exchange-rates\.ps1/);
+  assert.doesNotMatch(linuxRunner, /api\/cron\/exchange-rates/);
+  assert.match(syncScript, /upsert_exchange_rate/);
+  assert.doesNotMatch(syncScript, /api\/cron\/exchange-rates/);
+});
 
 test("localized exchange-rate fallback never shows a hardcoded estimate", () => {
   const exchangeRates = readProjectFile("lib/exchange-rates.ts");

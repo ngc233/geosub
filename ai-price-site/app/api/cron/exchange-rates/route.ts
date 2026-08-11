@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { supportedDisplayCurrencies } from "../../../../lib/display-currency";
 import { PUBLIC_EXCHANGE_RATE_CACHE_TAG } from "../../../../lib/public-pricing-cache";
+import { secretsMatch } from "../../../../lib/secure-secret";
 
 export const dynamic = "force-dynamic";
 
@@ -30,14 +31,22 @@ function getAuthorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET || process.env.EXCHANGE_RATE_CRON_SECRET;
 
   if (!secret) {
-    return process.env.NODE_ENV !== "production";
+    const allowed = process.env.NODE_ENV !== "production";
+
+    if (allowed) {
+      console.warn(
+        "Exchange-rate cron secret is not configured; allowing this request outside production.",
+      );
+    }
+
+    return allowed;
   }
 
   const headerSecret =
     request.headers.get("x-cron-secret") ||
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
-  return headerSecret === secret;
+  return secretsMatch(headerSecret, secret);
 }
 
 function parseQuotes(request: NextRequest) {
@@ -209,8 +218,4 @@ export async function POST(request: NextRequest) {
     requestedUrl: result.requestedUrl,
     recommendedSchedule: "Every 12 hours",
   });
-}
-
-export async function GET(request: NextRequest) {
-  return POST(request);
 }
