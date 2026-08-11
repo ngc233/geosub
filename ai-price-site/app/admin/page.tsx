@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import type { ReactNode } from "react";
 import { Prisma } from "@prisma/client";
 import {
@@ -37,6 +37,8 @@ import {
   type DailyOperationState,
 } from "../../lib/admin-daily-operations";
 import { buildDailyOperationsBrief } from "../../lib/daily-operations-brief";
+import { measureAdminWorkload } from "../../lib/admin-performance";
+import { readAdminReadModel } from "../../lib/admin-read-model-cache";
 
 type DashboardRange = 7 | 30 | 90 | 180 | 365 | 730;
 
@@ -477,13 +479,13 @@ function DashboardPanel({
         </div>
 
         {actionHref && actionLabel ? (
-          <Link
+          <AdminLink
             href={actionHref}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
           >
             {actionLabel}
             <ArrowRight size={14} strokeWidth={2} />
-          </Link>
+          </AdminLink>
         ) : null}
       </div>
 
@@ -642,6 +644,7 @@ function TrendChart({
             value={period.isCustom ? "custom" : String(period.range)}
             tone="blue"
             size="sm"
+            prefetch={false}
             items={[
               ...ranges.map((item) => ({
                 label: item.label,
@@ -877,9 +880,9 @@ function RankingList({
         if (!item.href) return <div key={item.label}>{content}</div>;
 
         return (
-          <Link key={item.label} href={item.href} className="block">
+          <AdminLink key={item.label} href={item.href} className="block">
             {content}
-          </Link>
+          </AdminLink>
         );
       })}
     </div>
@@ -1581,8 +1584,20 @@ export default async function AdminDashboardPage({
   const params = searchParams ? await searchParams : {};
   const period = getDashboardPeriod(params);
   const [data, dailyOperations] = await Promise.all([
-    getDashboardData(period),
-    getDailyOperationsSummary(),
+    measureAdminWorkload("dashboard.analytics", () =>
+      readAdminReadModel(
+        `dashboard:analytics:${period.start.toISOString()}:${period.endExclusive.toISOString()}`,
+        () => getDashboardData(period),
+        10_000,
+      ),
+    ),
+    measureAdminWorkload("dashboard.daily-operations", () =>
+      readAdminReadModel(
+        "dashboard:daily-operations",
+        () => getDailyOperationsSummary(),
+        5_000,
+      ),
+    ),
   ]);
   const dailyBrief = buildDailyOperationsBrief(dailyOperations);
   const eventLogHref = `/admin/events?from=${period.from}&to=${period.to}`;
@@ -1775,17 +1790,17 @@ export default async function AdminDashboardPage({
             <h2 id="admin-tasks-title" className="text-lg font-bold text-slate-950">今日待办</h2>
             <p className="mt-1 text-sm text-slate-500">按影响范围从左到右处理。</p>
           </div>
-          <Link href="/admin/pipeline" className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 hover:text-blue-800">
+          <AdminLink href="/admin/pipeline" className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 hover:text-blue-800">
             查看产品全流程
             <ArrowRight size={15} strokeWidth={2} />
-          </Link>
+          </AdminLink>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {taskCards.map((task) => {
             const Icon = task.icon;
             return (
-              <Link
+              <AdminLink
                 key={task.label}
                 href={task.href}
                 className="group min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
@@ -1799,7 +1814,7 @@ export default async function AdminDashboardPage({
                 <p className="mt-5 text-3xl font-bold tracking-tight text-slate-950">{formatNumber(task.value)}</p>
                 <p className="mt-1 text-sm font-bold text-slate-800">{task.label}</p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">{task.helper}</p>
-              </Link>
+              </AdminLink>
             );
           })}
         </div>
@@ -1981,7 +1996,7 @@ export default async function AdminDashboardPage({
         >
           <div className="divide-y divide-slate-100 border-y border-slate-100">
             {trafficChecks.map((item) => (
-              <Link
+              <AdminLink
                 key={item.label}
                 href={item.href}
                 className="flex items-center justify-between gap-4 py-3 transition hover:bg-blue-50/60"
@@ -1999,7 +2014,7 @@ export default async function AdminDashboardPage({
                 >
                   {formatNumber(item.value)}
                 </span>
-              </Link>
+              </AdminLink>
             ))}
           </div>
         </DashboardPanel>

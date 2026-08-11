@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.7.0 - 2026-08-11
+
+- Reduced repeated admin database work with short-lived read-model caches,
+  bounded PostgreSQL pooling and page-level loading states for operational
+  screens.
+- Reworked the price-review and data-quality queries to read evidence directly,
+  cap overview detail volume and avoid repeated aggregation across the same
+  observations.
+- Added structured slow-workload instrumentation, log summaries, read-only
+  query explainers and database-index audit tools so regressions can be traced
+  without exposing internal diagnostics to public pages.
+- Added a manifest-backed database migration workflow with drift checks,
+  immutable checksums and release gates shared by local and Linux deployments.
+- Extended production deployment checks with performance profiling guidance,
+  bounded runtime configuration and a reversible duplicate-index cleanup plan.
+- Added shared-cache response policy for public pricing pages while preserving
+  private admin, authenticated and mutation traffic outside CDN caching.
+- Unified admin navigation components and disabled automatic route prefetching
+  on heavy operational pages to reduce surprise database work during menu use.
+- Expanded regression coverage for admin performance, cache isolation,
+  migration integrity, public response caching and deployment automation.
+- Updated Next.js and vulnerable transitive URI, identifier and CSS-processing
+  dependencies to compatible security patch releases without force-upgrading
+  the framework line.
+
 ## 2.6.2 - 2026-08-03
 
 - Replaced generic pricing-page search descriptions with plan-specific,

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import {
   Activity,
   AlertTriangle,
@@ -22,6 +22,7 @@ import {
 import type { AutomationTask } from "../../../lib/system-task-monitor";
 import type { OperationalRecoveryOverview } from "../../../lib/system-task-monitor";
 import SystemHealthAutoRefresh from "./SystemHealthAutoRefresh";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 
 export const dynamic = "force-dynamic";
 
@@ -198,13 +199,13 @@ function AutomationTaskRow({ task }: { task: AutomationTask }) {
         </p>
       </div>
 
-      <Link
+      <AdminLink
         href={task.actionHref}
         className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
       >
         {task.actionLabel}
         <ArrowRight size={14} strokeWidth={2.3} />
-      </Link>
+      </AdminLink>
     </div>
   );
 }
@@ -279,13 +280,13 @@ function OperationalRecoveryPanel({
               <p className="line-clamp-2 break-words text-xs leading-5 text-slate-600">
                 {incident.detail}
               </p>
-              <Link
+              <AdminLink
                 href={incident.actionHref}
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
               >
                 查看任务
                 <ArrowRight size={14} strokeWidth={2.3} />
-              </Link>
+              </AdminLink>
             </div>
           ))}
         </div>
@@ -300,7 +301,7 @@ function OperationalRecoveryPanel({
 }
 
 export default async function AdminSystemPage() {
-  const health = await getSystemHealth();
+  const health = await measureAdminWorkload("system.health", () => getSystemHealth());
 
   return (
     <div>

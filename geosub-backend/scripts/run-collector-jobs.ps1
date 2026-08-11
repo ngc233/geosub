@@ -1055,6 +1055,13 @@ function Add-AppStoreReviewOutcome {
   return $Result
 }
 
+if (!$DryRun) {
+  Invoke-Psql @"
+SELECT *
+FROM reconcile_stale_collector_runs(3, 20, 3);
+"@
+}
+
 Repair-ResolvedSharedSpecFailures
 Invoke-OperationalRecovery
 Queue-AppStoreRechecks

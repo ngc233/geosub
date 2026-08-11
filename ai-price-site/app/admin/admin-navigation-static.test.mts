@@ -167,6 +167,143 @@ test("admin dashboard supports bounded custom date ranges", () => {
   assert.match(dashboard, /所选时段暂无可归属到产品的正式访问或互动/);
 });
 
+test("admin runtime reports slow dashboard workloads without logging payloads", () => {
+  const dashboard = readProjectFile("app/admin/page.tsx");
+  const layout = readProjectFile("app/admin/layout.tsx");
+  const review = readProjectFile("app/admin/review/queries.ts");
+  const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");
+  const dataQualityDetail = readProjectFile("app/admin/data-quality/[slug]/page.tsx");
+  const collectorJobs = readProjectFile("app/admin/collector-jobs/page.tsx");
+  const searchDemand = readProjectFile("app/admin/search-demand/page.tsx");
+  const system = readProjectFile("app/admin/system/page.tsx");
+  const performance = readProjectFile("lib/admin-performance.ts");
+
+  assert.match(layout, /measureAdminWorkload\("admin\.auth"/);
+  assert.match(dashboard, /measureAdminWorkload\("dashboard\.analytics"/);
+  assert.match(
+    dashboard,
+    /measureAdminWorkload\("dashboard\.daily-operations"/,
+  );
+  assert.match(review, /measureAdminWorkload\("review\.page-data"/);
+  assert.match(review, /measureAdminWorkload\("review\.pending-data"/);
+  assert.match(review, /measureAdminWorkload\("review\.history-data"/);
+  assert.match(review, /const detailRowsPerProduct = productQuery \? 120 : 6/);
+  assert.match(review, /FROM price_observation_evidence_view evidence/);
+  assert.match(review, /evidence\.published_comparison NOT IN/);
+  assert.doesNotMatch(
+    review,
+    /FROM pending_price_observations_view pending[\s\S]{0,1600}LEFT JOIN price_observation_evidence_view evidence/,
+  );
+  assert.match(dataQuality, /measureAdminWorkload\(\s*"data-quality\.page-data"/);
+  assert.match(dataQuality, /observation_reason_state AS/);
+  assert.match(dataQualityDetail, /measureAdminWorkload\(\s*"data-quality-detail\.page-data"/);
+  assert.match(collectorJobs, /measureAdminWorkload\(\s*"collector-jobs\.page-data"/);
+  assert.match(searchDemand, /measureAdminWorkload\("search-demand\.summary"/);
+  assert.match(searchDemand, /measureAdminWorkload\(\s*"search-demand\.supporting-data"/);
+  assert.match(system, /measureAdminWorkload\("system\.health"/);
+  assert.match(performance, /GEOSUB_ADMIN_SLOW_WORKLOAD_MS/);
+  assert.match(performance, /GEOSUB_ADMIN_PERFORMANCE_LOG/);
+  assert.match(performance, /durationMs/);
+  assert.doesNotMatch(performance, /DATABASE_URL|queryText|queryParams|sqlText/);
+});
+
+test("admin read pages do not reconcile collector runs during navigation", () => {
+  const readPages = [
+    "app/admin/review/queries.ts",
+    "app/admin/data-quality/page.tsx",
+    "app/admin/data-quality/[slug]/page.tsx",
+    "app/admin/collector-jobs/page.tsx",
+  ];
+
+  for (const fileName of readPages) {
+    assert.doesNotMatch(
+      readProjectFile(fileName),
+      /reconcileStaleCollectorRuns/,
+      `${fileName} should stay read-only during page navigation`,
+    );
+  }
+
+  const runner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
+  assert.match(runner, /if \(!\$DryRun\) \{[\s\S]*?reconcile_stale_collector_runs\(3, 20, 3\)/);
+  assert.ok(
+    runner.indexOf("reconcile_stale_collector_runs(3, 20, 3)") <
+      runner.indexOf("$jobs = @(Get-DueJobs)"),
+  );
+});
+
+test("heavy admin query waves leave database capacity for navigation", () => {
+  const review = readProjectFile("app/admin/review/queries.ts");
+  const searchDemand = readProjectFile("app/admin/search-demand/page.tsx");
+  const searchReadModel = readProjectFile("lib/admin-search-demand.ts");
+  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");
+  const seoQuality = readProjectFile("lib/product-seo-quality-data.ts");
+
+  assert.match(review, /"review\.pending-data"[\s\S]*?Promise\.all\(\[/);
+  assert.match(review, /"review\.history-data"[\s\S]*?Promise\.all\(\[/);
+  assert.match(review, /const getHistoryStatsRows = \(\) =>/);
+  assert.match(review, /const getAutoReviewReasonRows = \(\) =>/);
+  assert.match(searchDemand, /const summaryPromise = measureAdminWorkload/);
+  assert.match(searchDemand, /const workflowRecordsPromise = getSearchOpportunityRecords\(\)/);
+  assert.match(searchDemand, /const aliasRecordsPromise = getSearchAliasRecords\(\)/);
+  assert.match(searchDemand, /const summary = await summaryPromise/);
+  assert.match(searchReadModel, /WITH search_events AS MATERIALIZED/);
+  assert.equal(
+    (searchReadModel.match(/prisma\.\$queryRaw</g) || []).length,
+    2,
+    "search demand should use one shared aggregate query and one conversion query",
+  );
+  assert.match(searchReadModel, /search-demand:summary:/);
+  assert.match(dashboard, /dashboard:analytics:/);
+  assert.match(dashboard, /dashboard:daily-operations/);
+  assert.match(dataQuality, /data-quality:product-summary/);
+  assert.match(seoQuality, /product-seo-quality:/);
+});
+
+test("database runtime keeps the web pool bounded and audits indexes read-only", () => {
+  const prisma = readProjectFile("lib/prisma.ts");
+  const audit = readProjectFile("scripts/audit-database-indexes.cjs");
+  const explain = readProjectFile("scripts/explain-read-only-query.cjs");
+  const performanceSummary = readProjectFile(
+    "scripts/summarize-admin-performance.cjs",
+  );
+  const packageJson = readProjectFile("package.json");
+  const deploymentEnvironment = readRepoFile(
+    "geosub-backend/deploy/linux-arm64/env.example",
+  );
+  const cleanupPlan = readRepoFile(
+    "geosub-backend/deploy/linux-arm64/duplicate-index-cleanup-plan.md",
+  );
+
+  assert.match(prisma, /GEOSUB_DB_POOL_MAX/);
+  assert.match(prisma, /GEOSUB_DB_CONNECTION_TIMEOUT_MS/);
+  assert.match(prisma, /GEOSUB_DB_IDLE_TIMEOUT_MS/);
+  assert.match(prisma, /maximum: 30/);
+  assert.match(prisma, /globalForPrisma\.prisma \?\? createPrismaClient\(\)/);
+  assert.match(deploymentEnvironment, /GEOSUB_DB_POOL_MAX=10/);
+  assert.match(deploymentEnvironment, /GEOSUB_ADMIN_SLOW_WORKLOAD_MS=750/);
+  assert.match(deploymentEnvironment, /GEOSUB_ADMIN_READ_MODEL_TTL_MS=10000/);
+
+  assert.match(packageJson, /"audit:indexes"/);
+  assert.match(packageJson, /"profile:admin-logs"/);
+  assert.match(packageJson, /"explain:query"/);
+  assert.match(packageJson, /"test:performance-tools"/);
+  assert.match(audit, /GeoSub database index audit \(read-only\)/);
+  assert.match(audit, /FROM pg_index/);
+  assert.match(audit, /structure_signature/);
+  assert.doesNotMatch(audit, /DROP\s+INDEX|CREATE\s+INDEX|ALTER\s+TABLE/i);
+  assert.match(cleanupPlan, /DROP INDEX CONCURRENTLY IF EXISTS/);
+  assert.match(cleanupPlan, /Do not add the drop statements/);
+  assert.match(explain, /BEGIN TRANSACTION READ ONLY/);
+  assert.match(explain, /statement_timeout/);
+  assert.match(explain, /Only SELECT or WITH queries can be explained/);
+  assert.match(explain, /ROLLBACK/);
+  assert.doesNotMatch(explain, /client\.query\(["'`]\s*(INSERT|UPDATE|DELETE|DROP)/i);
+  assert.match(performanceSummary, /\[admin-performance\]/);
+  assert.match(performanceSummary, /p95Ms/);
+  assert.doesNotMatch(performanceSummary, /DATABASE_URL|queryText|queryParams|sqlText/);
+});
+
 test("admin dashboard attributes commercial clicks and links to event logs", () => {
   const dashboard = readProjectFile("app/admin/page.tsx");
 

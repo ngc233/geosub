@@ -87,7 +87,7 @@ test("search demand dashboard aggregates search and result-click events", () => 
   assert.match(analytics, /buildSearchGapQueue/);
   assert.match(analytics, /classifySearchGap/);
   assert.match(analytics, /SearchAliasSuggestion/);
-  assert.match(analytics, /resultKind', ''\) IN \('product', 'plan'\)/);
+  assert.match(analytics, /"result_kind" IN \('product', 'plan'\)/);
   assert.match(analytics, /visitor_count/);
   assert.match(page, /可以处理/);
   assert.match(page, /继续观察/);

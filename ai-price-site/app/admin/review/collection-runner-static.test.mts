@@ -37,3 +37,14 @@ test("collector runner records startup when it adopts an admin-created run", () 
     /if \(!\[string\]::IsNullOrWhiteSpace\(\$ExistingRunId\)\) \{[\s\S]*?UPDATE collector_job_runs[\s\S]*?'state', 'started'[\s\S]*?'runner_started_at', NOW\(\)[\s\S]*?return \$ExistingRunId/,
   );
 });
+
+test("scheduled collector maintenance reconciles stale runs without mutating dry runs", () => {
+  assert.match(
+    collectorRunnerSource,
+    /if \(!\$DryRun\) \{[\s\S]*?reconcile_stale_collector_runs\(3, 20, 3\)[\s\S]*?\}/,
+  );
+  assert.ok(
+    collectorRunnerSource.indexOf("reconcile_stale_collector_runs(3, 20, 3)") <
+      collectorRunnerSource.indexOf("$jobs = @(Get-DueJobs)"),
+  );
+});

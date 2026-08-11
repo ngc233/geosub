@@ -49,8 +49,8 @@ test("Linux scheduled services record start and completion heartbeats", () => {
   const migration = readRepoFile(
     "geosub-backend/sql/063_system_task_runs.sql",
   );
-  const migrationRunner = readRepoFile(
-    "geosub-backend/deploy/linux-arm64/db-apply-sql.sh",
+  const migrationManifest = readRepoFile(
+    "geosub-backend/scripts/migration-manifest.cjs",
   );
   const postDeploy = readRepoFile(
     "geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
@@ -62,8 +62,8 @@ test("Linux scheduled services record start and completion heartbeats", () => {
   assert.match(wrapper, /"\$@"/);
   assert.match(wrapper, /exit "\$EXIT_CODE"/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS system_task_runs/);
-  assert.match(migrationRunner, /sql\/063_system_task_runs\.sql/);
-  assert.match(postDeploy, /sql\/063_system_task_runs\.sql/);
+  assert.match(migrationManifest, /sql\/063_system_task_runs\.sql/);
+  assert.match(postDeploy, /list core/);
   assert.match(postDeploy, /system_task_runs_running_started_idx/);
 
   const services: Array<[string, string]> = [

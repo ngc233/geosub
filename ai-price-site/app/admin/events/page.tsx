@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import {
   Activity,
   Download,
@@ -338,7 +338,7 @@ export default async function AdminEventsPage({
                     </div>
                     <div className="min-w-0">
                       {product ? (
-                        <Link href={`/admin/products/${product.id}/edit`} className="font-bold text-slate-800 hover:text-blue-700">{product.name}</Link>
+                        <AdminLink href={`/admin/products/${product.id}/edit`} className="font-bold text-slate-800 hover:text-blue-700">{product.name}</AdminLink>
                       ) : <span className="text-slate-400">未归属</span>}
                       {productSlug ? <div className="mt-1 font-mono text-[11px] text-slate-400">{productSlug}</div> : null}
                     </div>
@@ -375,11 +375,11 @@ export default async function AdminEventsPage({
           <p className="text-xs text-slate-400">每页 {PAGE_SIZE} 条，导出最多包含 10,000 条。</p>
           <div className="flex items-center gap-2">
             {page > 1 ? (
-              <Link href={`/admin/events?${buildQuery(filters, { page: page - 1 })}`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">上一页</Link>
+              <AdminLink href={`/admin/events?${buildQuery(filters, { page: page - 1 })}`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">上一页</AdminLink>
             ) : <span className="rounded-lg border border-slate-100 px-3 py-2 text-sm font-bold text-slate-300">上一页</span>}
             <span className="px-2 text-sm font-semibold text-slate-500">{page} / {totalPages}</span>
             {page < totalPages ? (
-              <Link href={`/admin/events?${buildQuery(filters, { page: page + 1 })}`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">下一页</Link>
+              <AdminLink href={`/admin/events?${buildQuery(filters, { page: page + 1 })}`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">下一页</AdminLink>
             ) : <span className="rounded-lg border border-slate-100 px-3 py-2 text-sm font-bold text-slate-300">下一页</span>}
           </div>
         </div>

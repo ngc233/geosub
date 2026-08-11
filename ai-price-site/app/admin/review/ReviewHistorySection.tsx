@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import type { HistoryRow } from "./types";
 import {
   formatDate,
@@ -134,7 +134,7 @@ export function ReviewHistorySection({
           <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm">
             <div className="text-slate-500">共 {historyTotal} 条审核历史</div>
             <div className="flex items-center gap-2">
-              <Link
+              <AdminLink
                 href={buildHistoryPageHref(Math.max(1, historyPage - 1))}
                 aria-disabled={historyPage <= 1}
                 className={`rounded-lg border px-3 py-1.5 font-medium ${
@@ -144,11 +144,11 @@ export function ReviewHistorySection({
                 }`}
               >
                 上一页
-              </Link>
+              </AdminLink>
               <span className="text-slate-500">
                 {historyPage} / {historyTotalPages}
               </span>
-              <Link
+              <AdminLink
                 href={buildHistoryPageHref(Math.min(historyTotalPages, historyPage + 1))}
                 aria-disabled={historyPage >= historyTotalPages}
                 className={`rounded-lg border px-3 py-1.5 font-medium ${
@@ -158,7 +158,7 @@ export function ReviewHistorySection({
                 }`}
               >
                 下一页
-              </Link>
+              </AdminLink>
             </div>
           </div>
         ) : null}

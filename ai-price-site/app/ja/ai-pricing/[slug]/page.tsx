@@ -3,7 +3,7 @@ import PricingDetailPage, {
   type PricingDetailPageProps,
 } from "../../../../components/PricingDetailPage";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 1800;
 
 export function generateMetadata(props: PricingDetailPageProps) {
   return getPricingDetailMetadata({ ...props, locale: "ja" });
@@ -12,5 +12,5 @@ export function generateMetadata(props: PricingDetailPageProps) {
 export default function JapaneseProductPricingPage(
   props: PricingDetailPageProps,
 ) {
-  return <PricingDetailPage {...props} locale="ja" />;
+  return <PricingDetailPage {...props} locale="ja" routeCategory="ai" />;
 }

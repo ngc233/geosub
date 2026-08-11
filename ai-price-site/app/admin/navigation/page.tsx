@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { ArrowDown, ArrowUp, Pencil } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
@@ -512,12 +512,12 @@ export default async function AdminNavigationPage({
       </div>
 
       <div className="mt-6">
-        <Link
+        <AdminLink
           href="/admin"
           className="text-sm font-black text-blue-700 hover:text-blue-900"
         >
           ← 返回运营驾驶舱
-        </Link>
+        </AdminLink>
       </div>
     </div>
   );

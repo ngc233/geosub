@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { useEffect, useMemo, useState } from "react";
 import { buildCollectionProgressState, type CollectionProgressState } from "./collection-progress";
 import CollectorRunTimeline, { CollectorRunOutcomeSummary } from "./CollectorRunTimeline";
@@ -294,12 +294,12 @@ export default function CollectionRunHistorySection({
             这里显示采集脚本是否真的被唤起、是否仍在运行，以及完成后的输出摘要。下面的“最近审核历史”只显示价格观察被通过、忽略或拒绝后的结果。
           </p>
         </div>
-        <Link
+        <AdminLink
           href="/admin/collector-jobs"
           className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
         >
           查看采集任务
-        </Link>
+        </AdminLink>
       </div>
 
       <CollectionProgressPanel progress={progressState} />
@@ -334,12 +334,12 @@ export default function CollectionRunHistorySection({
                       </div>
                       <div className="text-xs text-slate-500">{row.product_slug || "unknown"}</div>
                       {row.product_slug ? (
-                        <Link
+                        <AdminLink
                           href={`/admin/data-quality/${encodeURIComponent(row.product_slug)}`}
                           className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                         >
                           数据诊断
-                        </Link>
+                        </AdminLink>
                       ) : null}
                     </td>
                     <td className="px-4 py-3">

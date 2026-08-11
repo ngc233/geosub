@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { prisma } from "../../../lib/prisma";
 import {
@@ -255,19 +255,19 @@ export default async function AdminSeoPage() {
                     ) : null}
                   </div>
                   <div className="flex gap-3">
-                    <Link
+                    <AdminLink
                       href={item.editPath}
                       className="text-xs font-black text-blue-700 hover:text-blue-900"
                     >
                       编辑
-                    </Link>
-                    <Link
+                    </AdminLink>
+                    <AdminLink
                       href={item.path}
                       target="_blank"
                       className="text-xs font-black text-slate-600 hover:text-slate-950"
                     >
                       查看
-                    </Link>
+                    </AdminLink>
                   </div>
                 </div>
               ))}
@@ -323,19 +323,19 @@ export default async function AdminSeoPage() {
                       : "基础项完整"}
                   </div>
                   <div className="flex gap-3">
-                    <Link
+                    <AdminLink
                       href={item.editPath}
                       className="text-xs font-black text-blue-700 hover:text-blue-900"
                     >
                       编辑
-                    </Link>
-                    <Link
+                    </AdminLink>
+                    <AdminLink
                       href={item.path}
                       target="_blank"
                       className="text-xs font-black text-slate-600 hover:text-slate-950"
                     >
                       查看
-                    </Link>
+                    </AdminLink>
                   </div>
                 </div>
               ))}

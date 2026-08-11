@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { Archive, FileText, Plus, Trash2 } from "lucide-react";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
@@ -105,13 +105,13 @@ export default async function AdminArticlesPage() {
               当前有 {indexableCount} 篇已发布且允许收录的文章会进入搜索入口。
             </p>
           </div>
-          <Link
+          <AdminLink
             href="/zh/guides"
             target="_blank"
             className="text-sm font-black text-blue-700 hover:text-blue-900"
           >
             查看前台指南页
-          </Link>
+          </AdminLink>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -133,12 +133,12 @@ export default async function AdminArticlesPage() {
                   className="grid grid-cols-[minmax(220px,1.4fr)_110px_110px_110px_130px_120px_170px] items-center px-5 py-4 text-sm"
                 >
                   <div>
-                    <Link
+                    <AdminLink
                       href={`/admin/articles/${article.id}/edit`}
                       className="font-black text-slate-950 transition hover:text-blue-700"
                     >
                       {article.title}
-                    </Link>
+                    </AdminLink>
                     <div className="mt-1 font-mono text-xs text-slate-400">
                       /{article.locale === "EN" ? "en" : "zh"}/guides/{article.slug}
                     </div>
@@ -185,20 +185,20 @@ export default async function AdminArticlesPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-3">
-                    <Link
+                    <AdminLink
                       href={`/admin/articles/${article.id}/edit`}
                       className="text-xs font-black text-blue-700 hover:text-blue-900"
                     >
                       编辑
-                    </Link>
+                    </AdminLink>
                     {article.status === "PUBLISHED" && !article.noindex ? (
-                      <Link
+                      <AdminLink
                         href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                         target="_blank"
                         className="text-xs font-black text-slate-600 hover:text-slate-950"
                       >
                         查看
-                      </Link>
+                      </AdminLink>
                     ) : null}
                     {article.status !== "ARCHIVED" ? (
                       <form action={archiveArticleAction}>

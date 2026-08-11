@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { Prisma } from "@prisma/client";
 import {
   AlertTriangle,
@@ -545,12 +545,12 @@ function PipelineRecommendation({ stats }: { stats: PipelineStats }) {
             {recommendation.body}
           </p>
         </div>
-        <Link
+        <AdminLink
           href={recommendation.href}
           className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-white/80 px-4 text-sm font-black text-slate-950 ring-1 ring-current/10 transition hover:bg-white"
         >
           {recommendation.action}
-        </Link>
+        </AdminLink>
       </div>
     </div>
   );
@@ -608,19 +608,19 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
               pendingLabel="正在采集"
             />
           ) : (
-            <Link
+            <AdminLink
               href={`/admin/products/${row.product_id}/edit`}
               className="inline-flex h-9 items-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-black text-amber-700 transition hover:bg-amber-100"
             >
               补 App Store
-            </Link>
+            </AdminLink>
           )}
-          <Link
+          <AdminLink
             href={`/admin/review?q=${encodeURIComponent(row.product_slug)}`}
             className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50"
           >
             查看异常
-          </Link>
+          </AdminLink>
         </div>
       </div>
 
@@ -700,15 +700,15 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
           ) : null}
         </div>
         <div className="flex gap-3 text-xs font-black">
-          <Link href={`/admin/products/${row.product_id}/edit`} className="text-blue-700 hover:text-blue-900">
+          <AdminLink href={`/admin/products/${row.product_id}/edit`} className="text-blue-700 hover:text-blue-900">
             产品资料
-          </Link>
-          <Link href="/admin/collector-jobs" className="text-blue-700 hover:text-blue-900">
+          </AdminLink>
+          <AdminLink href="/admin/collector-jobs" className="text-blue-700 hover:text-blue-900">
             采集任务
-          </Link>
-          <Link href="/admin/prices" className="text-blue-700 hover:text-blue-900">
+          </AdminLink>
+          <AdminLink href="/admin/prices" className="text-blue-700 hover:text-blue-900">
             正式价格
-          </Link>
+          </AdminLink>
         </div>
       </div>
     </div>

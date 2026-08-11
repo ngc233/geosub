@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+﻿import AdminLink from "@/components/admin/AdminLink";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 
@@ -74,9 +74,9 @@ export function AdminStatCard({
   }
 
   return (
-    <Link href={href} className="group block h-full min-w-0">
+    <AdminLink href={href} className="group block h-full min-w-0">
       {card}
-    </Link>
+    </AdminLink>
   );
 }
 

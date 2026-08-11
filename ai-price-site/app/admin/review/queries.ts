@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import type {
   AutoReviewReasonRow,
   AutoReviewRunRow,
@@ -15,7 +16,6 @@ import type {
   ProductCollectorFreshnessRow,
   SelectedProductCollectorRow,
 } from "./types";
-import { reconcileStaleCollectorRuns } from "./collection-runner";
 import { getCollectorRunHistoryRows } from "./collector-run-history-query";
 
 export type ReviewPageQueryInput = {
@@ -26,21 +26,19 @@ export type ReviewPageQueryInput = {
   historyPage: number;
 };
 
-export async function getReviewPageData({
+async function getReviewPageDataUnmeasured({
   productQuery,
   discoveryProduct,
   discoveryJobs,
   pendingPage,
   historyPage,
 }: ReviewPageQueryInput) {
-  await reconcileStaleCollectorRuns();
-
   const productQueryLike = `%${productQuery}%`;
   const pendingPageSize = 25;
   const pendingOffset = (pendingPage - 1) * pendingPageSize;
   const historyPageSize = 25;
   const historyOffset = (historyPage - 1) * historyPageSize;
-  const detailRowsPerProduct = productQuery ? 500 : 24;
+  const detailRowsPerProduct = productQuery ? 120 : 6;
 
   const pendingProductSummaryPromise = prisma.$queryRaw<PendingProductSummaryRow[]>`
     WITH scoped_pending AS (
@@ -161,7 +159,10 @@ export async function getReviewPageData({
     ORDER BY page.latest_observed_at DESC, page.pending_count DESC, page.product_slug
   `;
 
-  const pendingProductSummaryRows = await pendingProductSummaryPromise;
+  const pendingProductSummaryRows = await measureAdminWorkload(
+    "review.pending-summary",
+    () => pendingProductSummaryPromise,
+  );
   const pendingProductTotal = Number(pendingProductSummaryRows[0]?.total_product_count ?? 0);
   const pendingTotal = Number(pendingProductSummaryRows[0]?.total_observation_count ?? 0);
   const pendingTotalPages = Math.max(1, Math.ceil(pendingProductTotal / pendingPageSize));
@@ -171,34 +172,34 @@ export async function getReviewPageData({
     ? prisma.$queryRaw<PendingRow[]>`
     WITH detail_rows AS (
     SELECT
-      pending.id,
-      pending.product_slug,
-      pending.product_name,
-      pending.plan_slug,
-      pending.plan_name,
-      pending.country_code,
-      pending.country_name_zh,
-      pending.country_name_en,
-      pending.platform,
-      pending.source_type,
-      pending.observed_local_price,
-      pending.observed_currency,
-      pending.observed_price_text,
-      pending.observed_price_usd,
-      pending.confidence_score,
-      pending.review_status,
-      pending.review_note,
+      evidence.id,
+      evidence.product_slug,
+      evidence.product_name,
+      evidence.plan_slug,
+      evidence.plan_name,
+      evidence.country_code,
+      evidence.country_name_zh,
+      evidence.country_name_en,
+      evidence.billing_platform::text AS platform,
+      evidence.source_type,
+      evidence.raw_price AS observed_local_price,
+      evidence.currency AS observed_currency,
+      NULLIF(evidence.observed_price_text, '') AS observed_price_text,
+      evidence.converted_usd AS observed_price_usd,
+      evidence.confidence_score,
+      evidence.status::text AS review_status,
+      evidence.raw_payload ->> 'review_note' AS review_note,
       COALESCE(
-        observation.raw_payload ->> 'auto_review_reason_code',
+        NULLIF(evidence.auto_review_reason_code, ''),
         CASE
-          WHEN pending.review_note ILIKE 'Converted App Store price is above%' THEN 'app_store_observation_anomaly'
-          WHEN pending.review_note ILIKE 'Only % App Store observations are available%' THEN 'waiting_for_more_app_store_samples'
-          WHEN pending.review_note IS NULL THEN 'not_reviewed_yet'
+          WHEN evidence.raw_payload ->> 'review_note' ILIKE 'Converted App Store price is above%' THEN 'app_store_observation_anomaly'
+          WHEN evidence.raw_payload ->> 'review_note' ILIKE 'Only % App Store observations are available%' THEN 'waiting_for_more_app_store_samples'
+          WHEN evidence.raw_payload ->> 'review_note' IS NULL THEN 'not_reviewed_yet'
           ELSE 'other'
         END
       ) AS review_reason_code,
-      pending.source_url,
-      pending.observed_at,
+      evidence.source_url,
+      evidence.observed_at,
       evidence.evidence_tier,
       evidence.evidence_status,
       evidence.evidence_score,
@@ -215,50 +216,23 @@ export async function getReviewPageData({
       evidence.published_last_checked_at,
       evidence.evidence_note,
       ROW_NUMBER() OVER (
-        PARTITION BY pending.product_slug
-        ORDER BY pending.observed_at DESC, pending.id
+        PARTITION BY evidence.product_slug
+        ORDER BY evidence.observed_at DESC, evidence.id
       ) AS detail_rank
-    FROM pending_price_observations_view pending
-    JOIN price_observations observation ON observation.id = pending.id
-    LEFT JOIN price_observation_evidence_view evidence ON evidence.id = pending.id
-    LEFT JOIN region_prices published
-      ON published.product_id = observation.product_id
-      AND published.plan_id = observation.plan_id
-      AND published.country_id = observation.country_id
-      AND published.billing_platform = observation.billing_platform
-      AND published.price_type = observation.price_type
-      AND published.status = 'published'::publish_status
-    WHERE pending.platform = 'ios'
-      AND pending.product_slug IN (${Prisma.join(pendingProductSlugs)})
-      AND NOT (
-        published.id IS NOT NULL
-        AND (
-          published.last_checked_at >= observation.observed_at
-          OR (
-            published.currency IS NOT DISTINCT FROM observation.currency
-            AND published.local_price IS NOT DISTINCT FROM observation.raw_price
-            AND (
-              published.price_usd IS NULL
-              OR observation.converted_usd IS NULL
-              OR published.price_usd = 0
-              OR ABS((observation.converted_usd - published.price_usd) / published.price_usd) <= 0.02
-            )
-          )
-        )
+    FROM price_observation_evidence_view evidence
+    WHERE evidence.status = 'pending'::observation_status
+      AND evidence.billing_platform = 'ios'::billing_platform
+      AND evidence.product_slug IN (${Prisma.join(pendingProductSlugs)})
+      AND evidence.published_comparison NOT IN (
+        'superseded_by_newer_published_price',
+        'matches_published_price'
       )
       AND (
-        COALESCE(observation.anomaly_flag, FALSE)
-        OR published.id IS NULL
-        OR pending.review_note IS NOT NULL
-          AND pending.review_note NOT ILIKE 'Only % App Store observations are available%'
-        OR published.currency IS DISTINCT FROM observation.currency
-        OR published.local_price IS DISTINCT FROM observation.raw_price
-        OR (
-          published.price_usd IS NOT NULL
-          AND observation.converted_usd IS NOT NULL
-          AND published.price_usd > 0
-          AND ABS((observation.converted_usd - published.price_usd) / published.price_usd) > 0.02
-        )
+        COALESCE(evidence.anomaly_flag, FALSE)
+        OR evidence.published_region_price_id IS NULL
+        OR evidence.raw_payload ->> 'review_note' IS NOT NULL
+          AND evidence.raw_payload ->> 'review_note' NOT ILIKE 'Only % App Store observations are available%'
+        OR evidence.published_comparison = 'conflicts_with_published_price'
       )
     )
     SELECT *
@@ -449,7 +423,7 @@ export async function getReviewPageData({
     WHERE observed_at >= NOW() - INTERVAL '14 days'
   `;
 
-  const historyStatsPromise = prisma.$queryRaw<HistoryStatsRow[]>`
+  const getHistoryStatsRows = () => prisma.$queryRaw<HistoryStatsRow[]>`
     SELECT
       COUNT(*)::int AS history_count,
       COUNT(*) FILTER (WHERE review_status = 'approved')::int AS approved_count,
@@ -458,7 +432,7 @@ export async function getReviewPageData({
     FROM price_observations_review_history_view
   `;
 
-  const historyRowsPromise = prisma.$queryRaw<HistoryRow[]>`
+  const getHistoryRows = () => prisma.$queryRaw<HistoryRow[]>`
     SELECT
       id,
       product_slug,
@@ -488,7 +462,7 @@ export async function getReviewPageData({
     OFFSET ${historyOffset}
   `;
 
-  const collectorStatusPromise = prisma.$queryRaw<CollectorStatusRow[]>`
+  const getCollectorStatusRows = () => prisma.$queryRaw<CollectorStatusRow[]>`
     SELECT
       job.status,
       job.next_run_at,
@@ -514,9 +488,9 @@ export async function getReviewPageData({
     LIMIT 1
   `;
 
-  const collectorRunHistoryPromise = getCollectorRunHistoryRows(productQuery);
+  const getCollectorRunRows = () => getCollectorRunHistoryRows(productQuery);
 
-  const latestAutoReviewPromise = prisma.$queryRaw<AutoReviewRunRow[]>`
+  const getLatestAutoReviewRows = () => prisma.$queryRaw<AutoReviewRunRow[]>`
     SELECT
       id::text,
       status,
@@ -532,7 +506,7 @@ export async function getReviewPageData({
     LIMIT 1
   `;
 
-  const autoReviewReasonPromise = prisma.$queryRaw<AutoReviewReasonRow[]>`
+  const getAutoReviewReasonRows = () => prisma.$queryRaw<AutoReviewReasonRow[]>`
     WITH latest AS (
       SELECT id
       FROM price_auto_review_runs
@@ -562,26 +536,34 @@ export async function getReviewPageData({
     pendingDiagnosisRows,
     evidenceSummaryRows,
     evidenceHealthRows,
+  ] = await measureAdminWorkload("review.pending-data", () =>
+    Promise.all([
+      measureAdminWorkload("review.pending-rows", () => pendingRowsPromise),
+      measureAdminWorkload("review.product-freshness", () => productFreshnessPromise),
+      measureAdminWorkload("review.selected-product", () => selectedProductCollectorPromise),
+      measureAdminWorkload("review.pending-diagnosis", () => pendingDiagnosisPromise),
+      measureAdminWorkload("review.evidence-summary", () => evidenceSummaryPromise),
+      measureAdminWorkload("review.evidence-health", () => evidenceHealthPromise),
+    ]),
+  );
+
+  const [
     historyStatsRows,
     historyRows,
     collectorStatusRows,
     collectorRunHistoryRows,
     latestAutoReviewRows,
     autoReviewReasonRows,
-  ] = await Promise.all([
-    pendingRowsPromise,
-    productFreshnessPromise,
-    selectedProductCollectorPromise,
-    pendingDiagnosisPromise,
-    evidenceSummaryPromise,
-    evidenceHealthPromise,
-    historyStatsPromise,
-    historyRowsPromise,
-    collectorStatusPromise,
-    collectorRunHistoryPromise,
-    latestAutoReviewPromise,
-    autoReviewReasonPromise,
-  ]);
+  ] = await measureAdminWorkload("review.history-data", () =>
+    Promise.all([
+      getHistoryStatsRows(),
+      getHistoryRows(),
+      getCollectorStatusRows(),
+      getCollectorRunRows(),
+      getLatestAutoReviewRows(),
+      getAutoReviewReasonRows(),
+    ]),
+  );
 
   const historyTotal = Number(historyStatsRows[0]?.history_count ?? 0);
   const historyTotalPages = Math.max(1, Math.ceil(historyTotal / historyPageSize));
@@ -714,4 +696,10 @@ export async function getReviewPageData({
     autoReviewReasonRows,
     pendingProductGroups,
   };
+}
+
+export async function getReviewPageData(input: ReviewPageQueryInput) {
+  return measureAdminWorkload("review.page-data", () =>
+    getReviewPageDataUnmeasured(input),
+  );
 }

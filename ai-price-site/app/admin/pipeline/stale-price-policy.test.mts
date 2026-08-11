@@ -60,7 +60,7 @@ test("stale published prices get a focused retry lifecycle", () => {
   const lifecycle = readRepoFile("geosub-backend/sql/059_stale_app_store_price_lifecycle.sql");
   const runner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
   const maintenance = readRepoFile("geosub-backend/scripts/run-price-accuracy-maintenance.ps1");
-  const migrations = readRepoFile("geosub-backend/deploy/linux-arm64/db-apply-sql.sh");
+  const migrations = readRepoFile("geosub-backend/scripts/migration-manifest.cjs");
   const deployCheck = readRepoFile("geosub-backend/deploy/linux-arm64/post-deploy-check.sh");
 
   assert.match(lifecycle, /queue_stale_app_store_price_rechecks/);
@@ -82,7 +82,7 @@ test("stale published prices get a focused retry lifecycle", () => {
   );
   assert.match(maintenance, /run_data_quality_repair_cycle\('price_accuracy_maintenance'\)/);
   assert.match(migrations, /sql\/059_stale_app_store_price_lifecycle\.sql/);
-  assert.match(deployCheck, /sql\/059_stale_app_store_price_lifecycle\.sql/);
+  assert.match(deployCheck, /list core/);
 });
 
 test("admin data quality pages use the same fourteen day freshness policy", () => {
@@ -142,9 +142,7 @@ test("anomaly evidence follows a bounded automatic repair lifecycle", () => {
   );
   const runner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
   const overview = readAppFile("app/admin/data-quality/page.tsx");
-  const migrations = readRepoFile(
-    "geosub-backend/deploy/linux-arm64/db-apply-sql.sh",
-  );
+  const migrations = readRepoFile("geosub-backend/scripts/migration-manifest.cjs");
   const deployCheck = readRepoFile(
     "geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
   );
@@ -164,7 +162,7 @@ test("anomaly evidence follows a bounded automatic repair lifecycle", () => {
   assert.match(overview, /anomaly_refresh_success_count/);
   assert.match(overview, /auto_closed_observation_count/);
   assert.match(migrations, /sql\/064_data_quality_repair_cycles\.sql/);
-  assert.match(deployCheck, /sql\/064_data_quality_repair_cycles\.sql/);
+  assert.match(deployCheck, /list core/);
 });
 
 test("collector failures use bounded retries and database-level self-healing", () => {
@@ -174,9 +172,7 @@ test("collector failures use bounded retries and database-level self-healing", (
   const runner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
   const monitor = readAppFile("lib/system-task-monitor.ts");
   const systemPage = readAppFile("app/admin/system/page.tsx");
-  const migrations = readRepoFile(
-    "geosub-backend/deploy/linux-arm64/db-apply-sql.sh",
-  );
+  const migrations = readRepoFile("geosub-backend/scripts/migration-manifest.cjs");
   const productPlanSpecs = readRepoFile(
     "geosub-backend/data/product-plan-specs.json",
   );
@@ -221,9 +217,7 @@ test("coverage gaps queue bounded product-level App Store rechecks", () => {
   const maintenance = readRepoFile(
     "geosub-backend/scripts/run-price-accuracy-maintenance.ps1",
   );
-  const migrations = readRepoFile(
-    "geosub-backend/deploy/linux-arm64/db-apply-sql.sh",
-  );
+  const migrations = readRepoFile("geosub-backend/scripts/migration-manifest.cjs");
   const deployCheck = readRepoFile(
     "geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
   );
@@ -262,7 +256,7 @@ test("coverage gaps queue bounded product-level App Store rechecks", () => {
   assert.match(runner, /\$Job\.schedule -eq "coverage_refresh"/);
   assert.match(maintenance, /product-level data-quality repair cycle/);
   assert.match(migrations, /sql\/062_app_store_coverage_gap_rechecks\.sql/);
-  assert.match(deployCheck, /sql\/062_app_store_coverage_gap_rechecks\.sql/);
+  assert.match(deployCheck, /list core/);
   assert.match(overview, /coverage_refresh_success_count/);
   assert.match(overview, /label: "地区差异已复核"/);
   assert.match(overview, /无需手工处理/);

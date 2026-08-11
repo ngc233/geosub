@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
 import ObservationReviewActions from "./ObservationReviewActions";
@@ -200,12 +200,12 @@ export function PendingProductReviewSection({
                       buttonLabel={buttonLabel}
                       pendingLabel="正在补采这个产品"
                     />
-                    <Link
+                    <AdminLink
                       href={`/admin/data-quality/${encodeURIComponent(productGroup.productSlug)}`}
                       className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                     >
                       数据诊断
-                    </Link>
+                    </AdminLink>
                     <span className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 group-open:bg-slate-50">
                       查看异常明细
                     </span>
@@ -307,7 +307,7 @@ export function PendingProductReviewSection({
             共 {pendingProductTotal} 个产品，{pendingTotal} 条待处理观测
           </div>
           <div className="flex items-center gap-2">
-            <Link
+            <AdminLink
               href={buildPendingPageHref(Math.max(1, pendingPage - 1))}
               aria-disabled={pendingPage <= 1}
               className={`rounded-lg border px-3 py-1.5 font-medium ${
@@ -317,11 +317,11 @@ export function PendingProductReviewSection({
               }`}
             >
               上一页
-            </Link>
+            </AdminLink>
             <span className="text-slate-500">
               {pendingPage} / {pendingTotalPages}
             </span>
-            <Link
+            <AdminLink
               href={buildPendingPageHref(Math.min(pendingTotalPages, pendingPage + 1))}
               aria-disabled={pendingPage >= pendingTotalPages}
               className={`rounded-lg border px-3 py-1.5 font-medium ${
@@ -331,7 +331,7 @@ export function PendingProductReviewSection({
               }`}
             >
               下一页
-            </Link>
+            </AdminLink>
           </div>
         </div>
       ) : null}

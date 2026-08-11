@@ -1,3 +1,20 @@
-export const dynamic = "force-dynamic";
+import PricingDetailPage, {
+  getPricingDetailMetadata,
+  type PricingDetailPageProps,
+} from "../../../../components/PricingDetailPage";
 
-export { generateMetadata, default } from "../../ai-pricing/[slug]/page";
+export const revalidate = 1800;
+
+export function generateMetadata(props: PricingDetailPageProps) {
+  return getPricingDetailMetadata({ ...props, locale: "en" });
+}
+
+export default function StreamingPricingPage(props: PricingDetailPageProps) {
+  return (
+    <PricingDetailPage
+      {...props}
+      locale="en"
+      routeCategory="streaming"
+    />
+  );
+}

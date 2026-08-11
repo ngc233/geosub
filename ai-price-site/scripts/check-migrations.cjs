@@ -3,23 +3,19 @@ const fs = require("node:fs");
 const path = require("node:path");
 const dotenv = require("dotenv");
 const { Client } = require("pg");
+const {
+  baselineCutoverFile,
+  contentFiles,
+  coreFiles,
+  legacyBaselineFiles,
+  prismaMigrations,
+  retiredFiles,
+  validateManifest,
+} = require("../../geosub-backend/scripts/migration-manifest.cjs");
 
 const appDir = path.resolve(__dirname, "..");
 const repoDir = path.resolve(appDir, "..");
 const backendDir = path.join(repoDir, "geosub-backend");
-const requiredMigrations = [
-  "sql/063_system_task_runs.sql",
-  "sql/064_data_quality_repair_cycles.sql",
-  "sql/065_operational_self_healing.sql",
-  "sql/066_public_product_lifecycle.sql",
-  "sql/067_app_store_availability_semantics.sql",
-  "sql/068_plan_region_availability.sql",
-  "sql/069_required_catalog_products.sql",
-  "sql/070_disney_app_store_source.sql",
-  "sql/071_archive_superseded_app_store_ambiguities.sql",
-  "sql/072_normalize_hbo_max_app_store_plans.sql",
-  "sql/074_repair_hbo_max_app_store_selection.sql",
-];
 
 dotenv.config({ path: path.join(appDir, ".env.local") });
 dotenv.config({ path: path.join(appDir, ".env") });
@@ -33,55 +29,114 @@ if (!new Set(["localhost", "127.0.0.1", "::1"]).has(databaseUrl.hostname)) {
   throw new Error(`Refusing to audit a non-local database host: ${databaseUrl.hostname}`);
 }
 
-function checksumFor(filename) {
+function checksumCandidates(filename) {
   const sqlPath = path.join(backendDir, ...filename.split("/"));
-  if (!fs.existsSync(sqlPath)) {
-    throw new Error(`Required migration file is missing: ${filename}`);
+  const sql = fs.readFileSync(sqlPath, "utf8");
+  const normalized = sql.replace(/\r/g, "");
+  return new Set([
+    crypto.createHash("sha256").update(normalized).digest("hex"),
+    crypto.createHash("sha256").update(sql).digest("hex"),
+    crypto
+      .createHash("sha256")
+      .update(normalized.replace(/\n/g, "\r\n"))
+      .digest("hex"),
+  ]);
+}
+
+async function auditSqlMigrations(client) {
+  const result = await client.query(
+    "SELECT filename, checksum, applied_at FROM geosub_schema_migrations ORDER BY filename",
+  );
+  const applied = new Map(result.rows.map((row) => [row.filename, row]));
+  const failures = [];
+  const canBaselineLegacy = applied.has(baselineCutoverFile);
+
+  for (const filename of coreFiles) {
+    const row = applied.get(filename);
+    if (!row) {
+      failures.push(`${filename}: not registered`);
+      if (canBaselineLegacy && legacyBaselineFiles.includes(filename)) {
+        console.log(`BASELINE SQL   ${filename}`);
+      } else {
+        console.log(`MISSING SQL    ${filename}`);
+      }
+      continue;
+    }
+    if (!checksumCandidates(filename).has(row.checksum)) {
+      failures.push(`${filename}: checksum mismatch`);
+      console.log(`DRIFT   SQL    ${filename}`);
+      continue;
+    }
+    console.log(`OK      SQL    ${filename}`);
   }
 
-  return crypto
-    .createHash("sha256")
-    .update(fs.readFileSync(sqlPath, "utf8").replace(/\r/g, ""))
-    .digest("hex");
+  const knownFiles = new Set([...coreFiles, ...contentFiles, ...retiredFiles.keys()]);
+  const unknownApplied = [...applied.keys()].filter((filename) => !knownFiles.has(filename));
+  if (unknownApplied.length > 0) {
+    failures.push(`unclassified registered SQL: ${unknownApplied.join(", ")}`);
+  }
+
+  return failures;
+}
+
+async function auditPrismaMigrations(client) {
+  const result = await client.query(`
+    SELECT migration_name, finished_at, rolled_back_at
+    FROM _prisma_migrations
+    ORDER BY migration_name
+  `);
+  const applied = new Map(result.rows.map((row) => [row.migration_name, row]));
+  const failures = [];
+
+  for (const migration of prismaMigrations) {
+    const row = applied.get(migration);
+    if (!row) {
+      failures.push(`Prisma ${migration}: not registered`);
+      console.log(`MISSING PRISMA ${migration}`);
+      continue;
+    }
+    if (!row.finished_at || row.rolled_back_at) {
+      failures.push(`Prisma ${migration}: incomplete or rolled back`);
+      console.log(`FAILED  PRISMA ${migration}`);
+      continue;
+    }
+    console.log(`OK      PRISMA ${migration}`);
+  }
+
+  const unknownApplied = [...applied.keys()].filter(
+    (migration) => !prismaMigrations.includes(migration),
+  );
+  if (unknownApplied.length > 0) {
+    failures.push(`unclassified registered Prisma migrations: ${unknownApplied.join(", ")}`);
+  }
+
+  return failures;
 }
 
 async function main() {
+  const manifest = validateManifest({ frontendDir: appDir });
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
 
   try {
-    const result = await client.query(
-      "SELECT filename, checksum, applied_at FROM geosub_schema_migrations WHERE filename = ANY($1::text[]) ORDER BY filename",
-      [requiredMigrations],
+    console.log(
+      `GeoSub migration audit: core=${manifest.core} content=${manifest.content} retired=${manifest.retired} prisma=${manifest.prisma}`,
     );
-    const applied = new Map(result.rows.map((row) => [row.filename, row]));
-    const failures = [];
-
-    console.log("GeoSub v2 migration registry audit");
-    for (const filename of requiredMigrations) {
-      const expected = checksumFor(filename);
-      const row = applied.get(filename);
-
-      if (!row) {
-        failures.push(`${filename}: not registered`);
-        console.log(`MISSING ${filename}`);
-        continue;
-      }
-
-      if (row.checksum !== expected) {
-        failures.push(`${filename}: checksum mismatch`);
-        console.log(`DRIFT ${filename}`);
-        continue;
-      }
-
-      console.log(`OK    ${filename} (${new Date(row.applied_at).toISOString()})`);
-    }
+    const failures = [
+      ...(await auditSqlMigrations(client)),
+      ...(await auditPrismaMigrations(client)),
+    ];
 
     if (failures.length > 0) {
-      throw new Error(`Migration audit failed:\n- ${failures.join("\n- ")}`);
+      throw new Error(
+        `Migration audit failed:\n- ${failures.join("\n- ")}\n` +
+          "Run npm run db:migrate on the local database to apply or register the missing migrations.",
+      );
     }
 
-    console.log(`Migration audit passed: ${requiredMigrations.length}/${requiredMigrations.length}.`);
+    console.log(
+      `Migration audit passed: ${coreFiles.length} SQL and ${prismaMigrations.length} Prisma migrations.`,
+    );
   } finally {
     await client.end();
   }

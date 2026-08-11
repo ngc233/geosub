@@ -237,6 +237,10 @@ Invoke-Step -Name "Bash deployment syntax" -Block { Test-BashSyntax -Executable 
 Invoke-Step -Name "Repository hygiene" -Block { Test-RepositoryHygiene }
 Invoke-Step -Name "Repository secrets" -Block { Test-RepositorySecrets }
 
+Invoke-Step -Name "Database migration manifest" -Block {
+  & node (Join-Path $BackendDir "scripts\migration-manifest.cjs") validate "--frontend-dir=$FrontendDir"
+}
+
 Invoke-Step -Name "Frontend production dependency audit" -Block {
   & $NpmPath --prefix $FrontendDir audit --omit=dev --audit-level=high
 }

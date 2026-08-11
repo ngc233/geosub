@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { ArrowUpRight, SearchCheck } from "lucide-react";
 import { AdminBadge } from "../../../components/admin/AdminBadge";
 import {
@@ -42,7 +42,8 @@ import {
 } from "../../../lib/admin-search-opportunities";
 import { getSearchAliasRecords } from "../../../lib/admin-search-aliases";
 import { getSearchConversionDiagnostics } from "../../../lib/admin-search-conversion-diagnostics";
-import { getProductSeoQualityAudits } from "../../../lib/product-seo-quality-data";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
+import { getCachedProductSeoQualityAudits } from "../../../lib/product-seo-quality-data";
 import {
   buildAuthorityCoverageQueue,
   type AuthorityCoveragePriority,
@@ -484,8 +485,13 @@ export default async function AdminSearchDemandPage({
   const params = searchParams ? await searchParams : {};
   const days = parseSearchDemandRange(params.days);
   const growthFocus = parseGrowthFocus(params.focus);
-  const summary = await getSearchDemandSummary(days);
-  const productAuditsPromise = getProductSeoQualityAudits();
+  const summaryPromise = measureAdminWorkload("search-demand.summary", () =>
+    getSearchDemandSummary(days),
+  );
+  const productAuditsPromise = getCachedProductSeoQualityAudits();
+  const workflowRecordsPromise = getSearchOpportunityRecords();
+  const aliasRecordsPromise = getSearchAliasRecords();
+  const summary = await summaryPromise;
   const [
     workflowRecords,
     aliasRecords,
@@ -493,17 +499,19 @@ export default async function AdminSearchDemandPage({
     repairRecords,
     productAudits,
     authorityTaskRecords,
-  ] =
-    await Promise.all([
-    getSearchOpportunityRecords(),
-    getSearchAliasRecords(),
-    productAuditsPromise.then((audits) =>
-      getSearchConversionDiagnostics(summary.conversionTerms, audits)
-    ),
-    getSearchConversionRepairRecords(summary.conversionTerms),
-    productAuditsPromise,
-    productAuditsPromise.then((audits) => getAuthorityCoverageTaskRecords(audits)),
-  ]);
+  ] = await measureAdminWorkload(
+    "search-demand.supporting-data",
+    () => Promise.all([
+      workflowRecordsPromise,
+      aliasRecordsPromise,
+      productAuditsPromise.then((audits) =>
+        getSearchConversionDiagnostics(summary.conversionTerms, audits)
+      ),
+      getSearchConversionRepairRecords(summary.conversionTerms),
+      productAuditsPromise,
+      productAuditsPromise.then((audits) => getAuthorityCoverageTaskRecords(audits)),
+    ]),
+  );
   const authorityCoverageQueue = buildAuthorityCoverageQueue(
     productAudits,
     summary.conversionTerms,
@@ -633,7 +641,7 @@ export default async function AdminSearchDemandPage({
         action={(
           <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
             {SEARCH_DEMAND_RANGES.map((range) => (
-              <Link
+              <AdminLink
                 key={range}
                 href={growthFocusHref(range, growthFocus)}
                 aria-current={days === range ? "page" : undefined}
@@ -645,7 +653,7 @@ export default async function AdminSearchDemandPage({
                 ].join(" ")}
               >
                 {range} 天
-              </Link>
+              </AdminLink>
             ))}
           </div>
         )}
@@ -1139,7 +1147,7 @@ export default async function AdminSearchDemandPage({
               ["intent", "套餐意向"],
               ["commercial", "商业点击"],
             ].map(([focus, label]) => (
-              <Link
+              <AdminLink
                 key={focus}
                 href={growthFocusHref(days, focus as SearchGrowthFocus)}
                 aria-current={growthFocus === focus ? "page" : undefined}
@@ -1151,7 +1159,7 @@ export default async function AdminSearchDemandPage({
                 ].join(" ")}
               >
                 {label}
-              </Link>
+              </AdminLink>
             ))}
           </div>
         </div>
@@ -1870,7 +1878,7 @@ export default async function AdminSearchDemandPage({
                           </AdminButton>
                         </form>
                       ) : null}
-                      <Link
+                      <AdminLink
                         href={suggestion.resultHref}
                         target="_blank"
                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -1878,7 +1886,7 @@ export default async function AdminSearchDemandPage({
                         title={`查看 ${suggestion.resultTitle}`}
                       >
                         <ArrowUpRight size={16} />
-                      </Link>
+                      </AdminLink>
                     </div>
                   </AdminTd>
                 </AdminTr>
@@ -1936,7 +1944,7 @@ export default async function AdminSearchDemandPage({
                     </span>
                   </AdminTd>
                   <AdminTd align="right">
-                    <Link
+                    <AdminLink
                       href={result.href}
                       target="_blank"
                       className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -1944,7 +1952,7 @@ export default async function AdminSearchDemandPage({
                       title={`打开 ${result.title}`}
                     >
                       <ArrowUpRight size={16} />
-                    </Link>
+                    </AdminLink>
                   </AdminTd>
                 </AdminTr>
               ))

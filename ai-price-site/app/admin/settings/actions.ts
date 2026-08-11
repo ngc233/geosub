@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   changeCurrentAdminPassword,
@@ -9,6 +9,7 @@ import {
 } from "../../../lib/admin-auth";
 import { prisma } from "../../../lib/prisma";
 import { getOperationsNotificationConfig } from "../../../lib/operations-notification";
+import { PUBLIC_SITE_SETTINGS_CACHE_TAG } from "../../../lib/public-site-settings-cache";
 
 function normalizeOptionalText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
@@ -101,6 +102,8 @@ export async function updateAnalyticsSettings(formData: FormData) {
       note: "填写 Container ID（例如 GTM-XXXXXXX），或粘贴包含该 ID 的 Google 代码。若填写 GTM，前台优先加载 GTM。",
     }),
   ]);
+
+  updateTag(PUBLIC_SITE_SETTINGS_CACHE_TAG);
 
   revalidatePath("/");
   revalidatePath("/zh");

@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+﻿import AdminLink from "@/components/admin/AdminLink";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 type AdminButtonVariant =
@@ -85,13 +85,13 @@ export function AdminLinkButton({
   ariaLabel?: string;
 }) {
   return (
-    <Link
+    <AdminLink
       href={href}
       className={adminButtonClassName({ variant, size, className })}
       title={title}
       aria-label={ariaLabel}
     >
       {children}
-    </Link>
+    </AdminLink>
   );
 }

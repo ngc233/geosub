@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.ts";
 import type { SearchDemandTerm } from "./search-opportunity.ts";
+import { readAdminReadModel } from "./admin-read-model-cache.ts";
 
 export {
   buildSearchGapQueue,
@@ -22,44 +23,6 @@ export type {
 export const SEARCH_DEMAND_RANGES = [7, 30, 90] as const;
 export type SearchDemandRange = (typeof SEARCH_DEMAND_RANGES)[number];
 
-type SearchTermRow = {
-  query: string;
-  locales: string | null;
-  search_count: bigint;
-  no_result_count: bigint;
-  click_count: bigint;
-  visitor_count: bigint;
-  last_seen_at: Date;
-};
-
-type SearchResultRow = {
-  title: string;
-  href: string;
-  kind: string;
-  click_count: bigint;
-  last_clicked_at: Date;
-};
-
-type SearchTotalsRow = {
-  search_count: bigint;
-  no_result_count: bigint;
-  click_count: bigint;
-  unique_term_count: bigint;
-};
-
-type SearchAliasRow = {
-  query: string;
-  locale: string;
-  result_title: string;
-  result_href: string;
-  result_kind: string;
-  product_id: string | null;
-  plan_id: string | null;
-  click_count: bigint;
-  visitor_count: bigint;
-  last_clicked_at: Date;
-};
-
 type SearchConversionRow = {
   query: string;
   locale: string;
@@ -76,6 +39,45 @@ type SearchConversionRow = {
   total_result_click_count: bigint;
   total_plan_engagement_count: bigint;
   total_commercial_conversion_count: bigint;
+};
+
+type JsonCount = number | string;
+
+type SearchDemandAggregateRow = {
+  term_rows: Array<{
+    query: string;
+    locales: string | null;
+    search_count: JsonCount;
+    no_result_count: JsonCount;
+    click_count: JsonCount;
+    visitor_count: JsonCount;
+    last_seen_at: string | Date;
+  }> | null;
+  result_rows: Array<{
+    title: string;
+    href: string;
+    kind: string;
+    click_count: JsonCount;
+    last_clicked_at: string | Date;
+  }> | null;
+  totals_row: {
+    search_count: JsonCount;
+    no_result_count: JsonCount;
+    click_count: JsonCount;
+    unique_term_count: JsonCount;
+  } | null;
+  alias_rows: Array<{
+    query: string;
+    locale: string;
+    result_title: string;
+    result_href: string;
+    result_kind: string;
+    product_id: string | null;
+    plan_id: string | null;
+    click_count: JsonCount;
+    visitor_count: JsonCount;
+    last_clicked_at: string | Date;
+  }> | null;
 };
 
 export type SearchDemandResult = {
@@ -122,7 +124,7 @@ export function parseSearchDemandRange(value?: string): SearchDemandRange {
     : 30;
 }
 
-export async function getSearchDemandSummary(days: SearchDemandRange) {
+async function loadSearchDemandSummary(days: SearchDemandRange) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   const productionFilter = Prisma.sql`
     "created_at" >= ${since}
@@ -130,133 +132,136 @@ export async function getSearchDemandSummary(days: SearchDemandRange) {
     AND COALESCE("page_path", '') NOT LIKE '%tracking-test%'
   `;
 
-  const [
-    termRows,
-    resultRows,
-    totalsRows,
-    aliasRows,
-    conversionRows,
-  ] = await Promise.all([
-    prisma.$queryRaw<SearchTermRow[]>(Prisma.sql`
+  const [aggregateRows, conversionRows] = await Promise.all([
+    prisma.$queryRaw<SearchDemandAggregateRow[]>(Prisma.sql`
+      WITH search_events AS MATERIALIZED (
+        SELECT
+          "event_key",
+          LOWER(TRIM("metadata"->>'query')) AS "query",
+          COALESCE("locale", 'unknown') AS "locale",
+          COALESCE(NULLIF(TRIM("metadata"->>'resultTitle'), ''), '未命名结果')
+            AS "result_title",
+          COALESCE("metadata"->>'resultHref', '') AS "result_href",
+          COALESCE("metadata"->>'resultKind', 'unknown') AS "result_kind",
+          "product_id"::text,
+          "plan_id"::text,
+          COALESCE("session_id", "anonymous_id") AS "visitor_key",
+          "created_at"
+        FROM "event_logs"
+        WHERE ${productionFilter}
+          AND "event_key" IN (
+            'search_digital_service',
+            'search_no_result',
+            'click_search_result'
+          )
+      ),
+      term_rows AS (
+        SELECT
+          "query",
+          STRING_AGG(DISTINCT "locale", ', ' ORDER BY "locale") AS "locales",
+          COUNT(*) FILTER (
+            WHERE "event_key" IN ('search_digital_service', 'search_no_result')
+          ) AS "search_count",
+          COUNT(*) FILTER (WHERE "event_key" = 'search_no_result')
+            AS "no_result_count",
+          COUNT(*) FILTER (WHERE "event_key" = 'click_search_result')
+            AS "click_count",
+          COUNT(DISTINCT "visitor_key") AS "visitor_count",
+          MAX("created_at") AS "last_seen_at"
+        FROM search_events
+        WHERE "query" <> ''
+        GROUP BY "query"
+        ORDER BY "no_result_count" DESC, "search_count" DESC, "last_seen_at" DESC
+        LIMIT 100
+      ),
+      result_rows AS (
+        SELECT
+          "result_title" AS "title",
+          "result_href" AS "href",
+          "result_kind" AS "kind",
+          COUNT(*) AS "click_count",
+          MAX("created_at") AS "last_clicked_at"
+        FROM search_events
+        WHERE "event_key" = 'click_search_result'
+          AND "result_href" <> ''
+        GROUP BY "result_title", "result_href", "result_kind"
+        ORDER BY "click_count" DESC, "last_clicked_at" DESC
+        LIMIT 20
+      ),
+      totals_row AS (
+        SELECT
+          COUNT(*) FILTER (
+            WHERE "event_key" IN ('search_digital_service', 'search_no_result')
+          ) AS "search_count",
+          COUNT(*) FILTER (WHERE "event_key" = 'search_no_result')
+            AS "no_result_count",
+          COUNT(*) FILTER (WHERE "event_key" = 'click_search_result')
+            AS "click_count",
+          COUNT(DISTINCT "query") FILTER (
+            WHERE "event_key" IN ('search_digital_service', 'search_no_result')
+          ) AS "unique_term_count"
+        FROM search_events
+        WHERE "query" <> ''
+      ),
+      alias_rows AS (
+        SELECT
+          "query",
+          CASE WHEN "locale" = 'unknown' THEN 'zh' ELSE "locale" END AS "locale",
+          "result_title",
+          "result_href",
+          "result_kind",
+          "product_id",
+          "plan_id",
+          COUNT(*) AS "click_count",
+          COUNT(DISTINCT "visitor_key") AS "visitor_count",
+          MAX("created_at") AS "last_clicked_at"
+        FROM search_events
+        WHERE "event_key" = 'click_search_result'
+          AND "query" <> ''
+          AND "result_href" <> ''
+          AND "result_kind" IN ('product', 'plan')
+          AND (
+            ("result_kind" = 'product' AND "product_id" IS NOT NULL)
+            OR ("result_kind" = 'plan' AND "plan_id" IS NOT NULL)
+          )
+          AND "query" <> LOWER(TRIM("result_title"))
+        GROUP BY
+          "query",
+          "locale",
+          "result_title",
+          "result_href",
+          "result_kind",
+          "product_id",
+          "plan_id"
+        ORDER BY "click_count" DESC, "visitor_count" DESC, "last_clicked_at" DESC
+        LIMIT 30
+      )
       SELECT
-        LOWER(TRIM("metadata"->>'query')) AS "query",
-        STRING_AGG(
-          DISTINCT COALESCE("locale", 'unknown'),
-          ', ' ORDER BY COALESCE("locale", 'unknown')
-        ) AS "locales",
-        COUNT(*) FILTER (
-          WHERE "event_key" IN ('search_digital_service', 'search_no_result')
-        ) AS "search_count",
-        COUNT(*) FILTER (
-          WHERE "event_key" = 'search_no_result'
-        ) AS "no_result_count",
-        COUNT(*) FILTER (
-          WHERE "event_key" = 'click_search_result'
-        ) AS "click_count",
-        COUNT(DISTINCT COALESCE("session_id", "anonymous_id"))
-          AS "visitor_count",
-        MAX("created_at") AS "last_seen_at"
-      FROM "event_logs"
-      WHERE ${productionFilter}
-        AND "event_key" IN (
-          'search_digital_service',
-          'search_no_result',
-          'click_search_result'
-        )
-        AND COALESCE("metadata"->>'query', '') <> ''
-      GROUP BY LOWER(TRIM("metadata"->>'query'))
-      ORDER BY
-        COUNT(*) FILTER (WHERE "event_key" = 'search_no_result') DESC,
-        COUNT(*) FILTER (
-          WHERE "event_key" IN ('search_digital_service', 'search_no_result')
-        ) DESC,
-        MAX("created_at") DESC
-      LIMIT 100
-    `),
-    prisma.$queryRaw<SearchResultRow[]>(Prisma.sql`
-      SELECT
-        COALESCE(
-          NULLIF(TRIM("metadata"->>'resultTitle'), ''),
-          '未命名结果'
-        ) AS "title",
-        COALESCE("metadata"->>'resultHref', '') AS "href",
-        COALESCE("metadata"->>'resultKind', 'unknown') AS "kind",
-        COUNT(*) AS "click_count",
-        MAX("created_at") AS "last_clicked_at"
-      FROM "event_logs"
-      WHERE ${productionFilter}
-        AND "event_key" = 'click_search_result'
-        AND COALESCE("metadata"->>'resultHref', '') <> ''
-      GROUP BY
-        COALESCE(NULLIF(TRIM("metadata"->>'resultTitle'), ''), '未命名结果'),
-        COALESCE("metadata"->>'resultHref', ''),
-        COALESCE("metadata"->>'resultKind', 'unknown')
-      ORDER BY COUNT(*) DESC, MAX("created_at") DESC
-      LIMIT 20
-    `),
-    prisma.$queryRaw<SearchTotalsRow[]>(Prisma.sql`
-      SELECT
-        COUNT(*) FILTER (
-          WHERE "event_key" IN ('search_digital_service', 'search_no_result')
-        ) AS "search_count",
-        COUNT(*) FILTER (
-          WHERE "event_key" = 'search_no_result'
-        ) AS "no_result_count",
-        COUNT(*) FILTER (
-          WHERE "event_key" = 'click_search_result'
-        ) AS "click_count",
-        COUNT(DISTINCT LOWER(TRIM("metadata"->>'query'))) FILTER (
-          WHERE "event_key" IN ('search_digital_service', 'search_no_result')
-        ) AS "unique_term_count"
-      FROM "event_logs"
-      WHERE ${productionFilter}
-        AND "event_key" IN (
-          'search_digital_service',
-          'search_no_result',
-          'click_search_result'
-        )
-        AND COALESCE("metadata"->>'query', '') <> ''
-    `),
-    prisma.$queryRaw<SearchAliasRow[]>(Prisma.sql`
-      SELECT
-        LOWER(TRIM("metadata"->>'query')) AS "query",
-        COALESCE("locale", 'zh') AS "locale",
-        COALESCE(NULLIF(TRIM("metadata"->>'resultTitle'), ''), '未命名结果')
-          AS "result_title",
-        COALESCE("metadata"->>'resultHref', '') AS "result_href",
-        COALESCE("metadata"->>'resultKind', 'unknown') AS "result_kind",
-        "product_id"::text,
-        "plan_id"::text,
-        COUNT(*) AS "click_count",
-        COUNT(DISTINCT COALESCE("session_id", "anonymous_id"))
-          AS "visitor_count",
-        MAX("created_at") AS "last_clicked_at"
-      FROM "event_logs"
-      WHERE ${productionFilter}
-        AND "event_key" = 'click_search_result'
-        AND COALESCE("metadata"->>'query', '') <> ''
-        AND COALESCE("metadata"->>'resultHref', '') <> ''
-        AND COALESCE("metadata"->>'resultKind', '') IN ('product', 'plan')
-        AND (
-          ("metadata"->>'resultKind' = 'product' AND "product_id" IS NOT NULL)
-          OR
-          ("metadata"->>'resultKind' = 'plan' AND "plan_id" IS NOT NULL)
-        )
-        AND LOWER(TRIM("metadata"->>'query'))
-          <> LOWER(TRIM(COALESCE("metadata"->>'resultTitle', '')))
-      GROUP BY
-        LOWER(TRIM("metadata"->>'query')),
-        COALESCE("locale", 'zh'),
-        COALESCE(NULLIF(TRIM("metadata"->>'resultTitle'), ''), '未命名结果'),
-        COALESCE("metadata"->>'resultHref', ''),
-        COALESCE("metadata"->>'resultKind', 'unknown'),
-        "product_id",
-        "plan_id"
-      ORDER BY
-        COUNT(*) DESC,
-        COUNT(DISTINCT COALESCE("session_id", "anonymous_id")) DESC,
-        MAX("created_at") DESC
-      LIMIT 30
+        COALESCE((
+          SELECT JSONB_AGG(
+            TO_JSONB(row)
+            ORDER BY row.no_result_count DESC, row.search_count DESC, row.last_seen_at DESC
+          )
+          FROM term_rows row
+        ), '[]'::jsonb)
+          AS "term_rows",
+        COALESCE((
+          SELECT JSONB_AGG(
+            TO_JSONB(row)
+            ORDER BY row.click_count DESC, row.last_clicked_at DESC
+          )
+          FROM result_rows row
+        ), '[]'::jsonb)
+          AS "result_rows",
+        (SELECT TO_JSONB(row) FROM totals_row row) AS "totals_row",
+        COALESCE((
+          SELECT JSONB_AGG(
+            TO_JSONB(row)
+            ORDER BY row.click_count DESC, row.visitor_count DESC, row.last_clicked_at DESC
+          )
+          FROM alias_rows row
+        ), '[]'::jsonb)
+          AS "alias_rows"
     `),
     prisma.$queryRaw<SearchConversionRow[]>(Prisma.sql`
       WITH search_journeys AS (
@@ -421,6 +426,11 @@ export async function getSearchDemandSummary(days: SearchDemandRange) {
     `),
   ]);
 
+  const aggregate = aggregateRows[0];
+  const termRows = aggregate?.term_rows || [];
+  const resultRows = aggregate?.result_rows || [];
+  const aliasRows = aggregate?.alias_rows || [];
+  const totals = aggregate?.totals_row;
   const terms: SearchDemandTerm[] = termRows.map((row) => {
     const searchCount = Number(row.search_count);
     const clickCount = Number(row.click_count);
@@ -435,7 +445,7 @@ export async function getSearchDemandSummary(days: SearchDemandRange) {
         ? Math.round((clickCount / searchCount) * 100)
         : 0,
       visitorCount: Number(row.visitor_count),
-      lastSeenAt: row.last_seen_at,
+      lastSeenAt: new Date(row.last_seen_at),
     };
   });
   const results: SearchDemandResult[] = resultRows.map((row) => ({
@@ -443,9 +453,8 @@ export async function getSearchDemandSummary(days: SearchDemandRange) {
     href: row.href,
     kind: row.kind,
     clickCount: Number(row.click_count),
-    lastClickedAt: row.last_clicked_at,
+    lastClickedAt: new Date(row.last_clicked_at),
   }));
-  const totals = totalsRows[0];
   const aliasSuggestions: SearchAliasSuggestion[] = aliasRows.map((row) => ({
     query: row.query,
     locale: row.locale,
@@ -456,7 +465,7 @@ export async function getSearchDemandSummary(days: SearchDemandRange) {
     planId: row.plan_id,
     clickCount: Number(row.click_count),
     visitorCount: Number(row.visitor_count),
-    lastClickedAt: row.last_clicked_at,
+    lastClickedAt: new Date(row.last_clicked_at),
   }));
   const conversionTerms: SearchConversionTerm[] = conversionRows.map((row) => {
     const resultClickCount = Number(row.result_click_count);
@@ -517,4 +526,12 @@ export async function getSearchDemandSummary(days: SearchDemandRange) {
         : 0,
     },
   };
+}
+
+export async function getSearchDemandSummary(days: SearchDemandRange) {
+  return readAdminReadModel(
+    `search-demand:summary:${days}`,
+    () => loadSearchDemandSummary(days),
+    15_000,
+  );
 }

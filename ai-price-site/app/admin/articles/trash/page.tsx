@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { FileText, RotateCcw, Trash2 } from "lucide-react";
 import { AdminLinkButton } from "../../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
@@ -23,12 +23,12 @@ export default async function ArticleTrashPage() {
         title="文章回收站"
         description="已删除的文章会先进入回收站，不再出现在前台、列表页和 sitemap。确认不需要后再永久删除。"
         action={
-          <Link
+          <AdminLink
             href="/admin/articles"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-slate-50"
           >
             返回文章列表
-          </Link>
+          </AdminLink>
         }
       />
 

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { notFound } from "next/navigation";
 import { AdminButton, AdminLinkButton } from "../../../../../components/admin/AdminButton";
 import { AdminPageHeader } from "../../../../../components/admin/AdminCard";
@@ -191,17 +191,17 @@ export default async function EditArticlePage({
         action={
           <div className="flex gap-3">
             {article.status === "PUBLISHED" && !article.noindex ? (
-              <Link
+              <AdminLink
                 href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                 target="_blank"
                 className="text-sm font-black text-slate-700 hover:text-slate-950"
               >
                 查看前台
-              </Link>
+              </AdminLink>
             ) : null}
-            <Link href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
+            <AdminLink href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
               返回列表
-            </Link>
+            </AdminLink>
           </div>
         }
       />

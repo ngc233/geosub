@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import {
   AdminCard,
@@ -6,9 +6,9 @@ import {
   AdminStatCard,
 } from "../../../components/admin/AdminCard";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 import CollectorRunTimeline, { CollectorRunOutcomeSummary } from "../review/CollectorRunTimeline";
-import { reconcileStaleCollectorRuns } from "../review/collection-runner";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import {
   pauseCollectorJob,
@@ -463,9 +463,9 @@ function autoReviewSummary(group: ProductJobGroup) {
 }
 
 export default async function CollectorJobsPage() {
-  await reconcileStaleCollectorRuns();
-
-  const [jobs, runs, availabilityChecks] = await Promise.all([
+  const [jobs, runs, availabilityChecks] = await measureAdminWorkload(
+    "collector-jobs.page-data",
+    () => Promise.all([
     prisma.$queryRaw<JobRow[]>`
       WITH job_scope AS (
         SELECT
@@ -751,7 +751,8 @@ export default async function CollectorJobsPage() {
       ORDER BY availability.checked_at DESC, availability.product_name, availability.country_code
       LIMIT 80
     `,
-  ]);
+    ]),
+  );
 
   const productGroups = groupCollectorJobs(jobs);
   const activeCount = jobs.filter((job) => job.status === "active").length;
@@ -772,9 +773,9 @@ export default async function CollectorJobsPage() {
       <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-800">
         主流程是：线索入库 → 生成产品采集任务 → 按产品触发采集 → 自动审核稳定价格 → 写入正式价格库。
         价格审核入口仍在{" "}
-        <Link href="/admin/review" className="font-bold underline underline-offset-4">
+        <AdminLink href="/admin/review" className="font-bold underline underline-offset-4">
           审核中心
-        </Link>
+        </AdminLink>
         ，这里负责看后台到底有没有排队、运行和产出。
       </div>
 
@@ -1035,18 +1036,18 @@ export default async function CollectorJobsPage() {
                         pendingLabel="正在采集"
                         disabled={group.hasQueuedJob || group.hasAppStoreRunningJob}
                       />
-                      <Link
+                      <AdminLink
                         href={`/admin/data-quality/${encodeURIComponent(group.productSlug)}`}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                       >
                         数据诊断
-                      </Link>
-                      <Link
+                      </AdminLink>
+                      <AdminLink
                         href={`/admin/products/${group.productId}/edit`}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                       >
                         编辑
-                      </Link>
+                      </AdminLink>
                     </div>
                   </td>
                 </tr>
@@ -1086,12 +1087,12 @@ export default async function CollectorJobsPage() {
               这里显示脚本是否真的跑过。运行中的任务会先出现，完成后会补上耗时和输出摘要。
             </p>
           </div>
-          <Link
+          <AdminLink
             href="/admin/review"
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             去审核中心
-          </Link>
+          </AdminLink>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -1115,12 +1116,12 @@ export default async function CollectorJobsPage() {
                     </div>
                     <div className="mt-1 text-xs text-slate-400">{run.product_slug || run.job_id}</div>
                     {run.product_slug ? (
-                      <Link
+                      <AdminLink
                         href={`/admin/data-quality/${encodeURIComponent(run.product_slug)}`}
                         className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                       >
                         数据诊断
-                      </Link>
+                      </AdminLink>
                     ) : null}
                   </td>
                   <td className="px-4 py-4">
@@ -1214,12 +1215,12 @@ export default async function CollectorJobsPage() {
                   <td className="px-4 py-4">
                     <div className="font-semibold text-slate-950">{check.product_name}</div>
                     <div className="mt-1 text-xs text-slate-400">{check.product_slug}</div>
-                    <Link
+                    <AdminLink
                       href={`/admin/data-quality/${encodeURIComponent(check.product_slug)}`}
                       className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                     >
                       数据诊断
-                    </Link>
+                    </AdminLink>
                   </td>
                   <td className="px-4 py-4">
                     <div className="font-semibold text-slate-700">
@@ -1262,9 +1263,9 @@ export default async function CollectorJobsPage() {
       </AdminCard>
 
       <div className="mt-6">
-        <Link href="/admin" className="text-sm font-semibold text-slate-900 hover:text-blue-700">
+        <AdminLink href="/admin" className="text-sm font-semibold text-slate-900 hover:text-blue-700">
           ← 返回运营驾驶舱
-        </Link>
+        </AdminLink>
       </div>
     </div>
   );

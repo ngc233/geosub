@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { Prisma } from "@prisma/client";
 import {
   AlertTriangle,
@@ -15,8 +15,9 @@ import {
   AdminStatCard,
 } from "../../../components/admin/AdminCard";
 import { DEFAULT_APP_STORE_COUNTRY_CODES } from "../../../lib/app-store-country-policy";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
+import { readAdminReadModel } from "../../../lib/admin-read-model-cache";
 import { prisma } from "../../../lib/prisma";
-import { reconcileStaleCollectorRuns } from "../review/collection-runner";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import { reviewReasonLabel } from "../review/review-reason-copy";
 
@@ -723,27 +724,41 @@ async function getProductQualityRows() {
             AND COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '')
               = 'automated_anomaly_rechecks_exhausted'
         )::int AS auto_closed_observation_count,
-        string_agg(
-          DISTINCT NULLIF(COALESCE(
-            observation.raw_payload ->> 'auto_review_reason_code',
-            observation.anomaly_reason
-          ), ''),
-          ','
-        ) FILTER (
-          WHERE observation.status::text = 'ignored'
-            AND observation.billing_platform::text = 'ios'
-            AND observation.updated_at > NOW() - INTERVAL '30 days'
-        ) AS ignored_reason_codes,
-        MAX(observation.observed_at) AS latest_observed_at,
-        string_agg(
-          DISTINCT NULLIF(COALESCE(
-            observation.raw_payload ->> 'auto_review_reason_code',
-            observation.anomaly_reason
-          ), ''),
-          ', '
-        ) FILTER (WHERE observation.status::text = 'pending') AS review_reason_codes
+        MAX(observation.observed_at) AS latest_observed_at
       FROM price_observations observation
       GROUP BY observation.product_id
+    ),
+    observation_reason AS (
+      SELECT DISTINCT
+        observation.product_id,
+        CASE
+          WHEN observation.status::text = 'pending' THEN 'pending'
+          ELSE 'ignored'
+        END AS reason_kind,
+        NULLIF(COALESCE(
+          observation.raw_payload ->> 'auto_review_reason_code',
+          observation.anomaly_reason
+        ), '') AS reason_code
+      FROM price_observations observation
+      WHERE observation.status::text = 'pending'
+        OR (
+          observation.status::text = 'ignored'
+          AND observation.billing_platform::text = 'ios'
+          AND observation.updated_at > NOW() - INTERVAL '30 days'
+        )
+    ),
+    observation_reason_state AS (
+      SELECT
+        reason.product_id,
+        string_agg(reason.reason_code, ',') FILTER (
+          WHERE reason.reason_kind = 'ignored'
+        ) AS ignored_reason_codes,
+        string_agg(reason.reason_code, ', ') FILTER (
+          WHERE reason.reason_kind = 'pending'
+        ) AS review_reason_codes
+      FROM observation_reason reason
+      WHERE reason.reason_code IS NOT NULL
+      GROUP BY reason.product_id
     ),
     job_state AS (
       SELECT
@@ -937,9 +952,9 @@ async function getProductQualityRows() {
       COALESCE(observation_state.hard_anomaly_count, 0)::int AS hard_anomaly_count,
       COALESCE(observation_state.ignored_observation_count, 0)::int AS ignored_observation_count,
       COALESCE(observation_state.auto_closed_observation_count, 0)::int AS auto_closed_observation_count,
-      observation_state.ignored_reason_codes,
+      observation_reason_state.ignored_reason_codes,
       observation_state.latest_observed_at,
-      observation_state.review_reason_codes
+      observation_reason_state.review_reason_codes
     FROM product_base product
     LEFT JOIN plan_state ON plan_state.product_id = product.id
     LEFT JOIN coverage_state ON coverage_state.product_id = product.id
@@ -948,6 +963,7 @@ async function getProductQualityRows() {
     LEFT JOIN duplicate_plan_state ON duplicate_plan_state.product_id = product.id
     LEFT JOIN tax_state ON tax_state.product_id = product.id
     LEFT JOIN observation_state ON observation_state.product_id = product.id
+    LEFT JOIN observation_reason_state ON observation_reason_state.product_id = product.id
     LEFT JOIN job_state ON job_state.product_id = product.id
     LEFT JOIN running_state ON running_state.product_id = product.id
     LEFT JOIN latest_run ON latest_run.product_id = product.id
@@ -991,12 +1007,17 @@ async function getLatestRepairCycle() {
 }
 
 export default async function AdminDataQualityPage() {
-  await reconcileStaleCollectorRuns();
-
-  const [qualityRows, latestRepairCycle] = await Promise.all([
-    getProductQualityRows(),
-    getLatestRepairCycle(),
-  ]);
+  const [qualityRows, latestRepairCycle] = await measureAdminWorkload(
+    "data-quality.page-data",
+    () => Promise.all([
+      readAdminReadModel(
+        "data-quality:product-summary",
+        getProductQualityRows,
+        8_000,
+      ),
+      getLatestRepairCycle(),
+    ]),
+  );
   const rows = qualityRows.sort((a, b) => {
     const healthA = getProductHealth(a);
     const healthB = getProductHealth(b);
@@ -1042,13 +1063,13 @@ export default async function AdminDataQualityPage() {
         title="产品数据健康总览"
         description="把采集、自动审核、地区覆盖和正式价格按产品归因。日常先处理红色产品，蓝色状态由系统继续采集和判断。"
         action={
-          <Link
+          <AdminLink
             href="/admin/collector-jobs"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
           >
             查看采集任务
             <ArrowRight size={16} strokeWidth={2} />
-          </Link>
+          </AdminLink>
         }
       />
 
@@ -1246,24 +1267,24 @@ export default async function AdminDataQualityPage() {
                         row.latest_run_status === "running"
                       }
                     />
-                    <Link
+                    <AdminLink
                       href={`/admin/review?q=${encodeURIComponent(row.slug)}`}
                       className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                     >
                       审核
-                    </Link>
-                    <Link
+                    </AdminLink>
+                    <AdminLink
                       href={`/admin/data-quality/${encodeURIComponent(row.slug)}`}
                       className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                     >
                       诊断
-                    </Link>
-                    <Link
+                    </AdminLink>
+                    <AdminLink
                       href={`/admin/collector-jobs?q=${encodeURIComponent(row.slug)}`}
                       className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                     >
                       任务
-                    </Link>
+                    </AdminLink>
                   </div>
                 </div>
               );

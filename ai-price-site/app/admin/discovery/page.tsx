@@ -2,7 +2,7 @@ import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard"
 import { AdminButton } from "../../../components/admin/AdminButton";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { prisma } from "../../../lib/prisma";
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import {
   ignoreCandidate,
   promoteCandidate,
@@ -211,9 +211,9 @@ function CandidateActions({ candidate }: { candidate: CandidateRow }) {
         {candidate.collector_job_count > 0 ? (
           <div className="rounded-lg bg-emerald-50 px-2 py-2 font-medium leading-5 text-emerald-800 ring-1 ring-emerald-100">
             已生成 {candidate.collector_job_count} 个采集任务。
-            <Link href={reviewHref} className="mt-1 inline-flex font-semibold text-blue-700 underline underline-offset-4">
+            <AdminLink href={reviewHref} className="mt-1 inline-flex font-semibold text-blue-700 underline underline-offset-4">
               去这个产品的采集工作台
-            </Link>
+            </AdminLink>
           </div>
         ) : ["promoted", "merged"].includes(candidate.status) ? (
           <div className="rounded-lg bg-amber-50 px-2 py-2 font-medium leading-5 text-amber-800 ring-1 ring-amber-100">

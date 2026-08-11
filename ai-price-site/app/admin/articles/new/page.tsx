@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import type { Locale } from "@prisma/client";
 import { AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { getArticleCategories, getArticleTags } from "../../../../lib/articles";
@@ -62,22 +62,22 @@ export default async function NewArticlePage({
         action={
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-              <Link
+              <AdminLink
                 href="/admin/articles/new?locale=ZH"
                 className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "ZH" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
               >
                 中文
-              </Link>
-              <Link
+              </AdminLink>
+              <AdminLink
                 href="/admin/articles/new?locale=EN"
                 className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "EN" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
               >
                 English
-              </Link>
+              </AdminLink>
             </div>
-            <Link href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
+            <AdminLink href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
               返回文章列表
-            </Link>
+            </AdminLink>
           </div>
         }
       />

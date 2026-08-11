@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { prisma } from "../../../lib/prisma";
 
@@ -168,12 +168,12 @@ export default async function AdminPricingPreviewPage() {
                 </p>
               </div>
 
-              <Link
+              <AdminLink
                 href="/admin/products"
                 className="text-sm font-black text-blue-700 hover:text-blue-900"
               >
                 返回服务库 →
-              </Link>
+              </AdminLink>
             </div>
 
             <div className="space-y-5">

@@ -64,6 +64,38 @@ test("all admin surfaces reject legacy oversized radius tokens", () => {
   }
 });
 
+test("admin destinations do not prefetch database-heavy pages", () => {
+  const files = [
+    ...listTsxFiles("app/admin"),
+    ...listTsxFiles("components/admin"),
+  ];
+  const adminLink = readProjectFile("components/admin/AdminLink.tsx");
+  const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
+  const dashboard = readProjectFile("app/admin/page.tsx");
+  const loading = readProjectFile("app/admin/loading.tsx");
+
+  assert.match(adminLink, /prefetch=\{false\}/);
+  assert.match(adminLink, /prefetchOnIntent/);
+  assert.match(adminLink, /router\.prefetch/);
+  assert.match(adminLink, /data-admin-navigation-progress/);
+  assert.match(adminLink, /aria-busy=\{isNavigating \|\| undefined\}/);
+  assert.match(sidebar, /"\/admin\/settings"/);
+  assert.match(sidebar, /prefetchOnIntent=/);
+  assert.match(dashboard, /<SegmentedControl[\s\S]*?prefetch=\{false\}/);
+  assert.match(loading, /aria-busy="true"/);
+
+  for (const fileName of files) {
+    if (fileName.endsWith("components/admin/AdminLink.tsx")) continue;
+
+    const source = readProjectFile(fileName);
+    assert.doesNotMatch(
+      source,
+      /from ["']next\/link["']/,
+      `${fileName} should use the no-prefetch admin link`,
+    );
+  }
+});
+
 test("primary admin actions use the shared button system", () => {
   const button = readProjectFile("components/admin/AdminButton.tsx");
   const products = readProjectFile("app/admin/products/page.tsx");

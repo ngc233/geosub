@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { prisma } from "../../../lib/prisma";
 
@@ -496,9 +496,9 @@ export default async function AdminPricesPage({
               先从分类看价格库健康度：哪些业务线已有价格，哪些还只是产品占位。
             </p>
           </div>
-          <Link href="/admin/products" className="text-sm font-black text-blue-700 hover:text-blue-900">
+          <AdminLink href="/admin/products" className="text-sm font-black text-blue-700 hover:text-blue-900">
             去产品库 →
-          </Link>
+          </AdminLink>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -563,9 +563,9 @@ export default async function AdminPricesPage({
               每个产品独立展示分类、状态、套餐数、地区覆盖和价格范围，适合判断下一步补采对象。
             </p>
           </div>
-          <Link href="/admin/review" className="text-sm font-black text-blue-700 hover:text-blue-900">
+          <AdminLink href="/admin/review" className="text-sm font-black text-blue-700 hover:text-blue-900">
             去审核中心 →
-          </Link>
+          </AdminLink>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
@@ -628,12 +628,12 @@ export default async function AdminPricesPage({
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Link
+                  <AdminLink
                     href={`/admin/products/${summary.product.id}/edit`}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-50"
                   >
                     管理产品
-                  </Link>
+                  </AdminLink>
                 </div>
               </div>
             </div>
@@ -759,7 +759,7 @@ export default async function AdminPricesPage({
               每页 {detailPageSize} 条，当前显示第 {safeDetailPage} 页。
             </div>
             <div className="flex items-center gap-2">
-              <Link
+              <AdminLink
                 href={buildDetailPageHref(Math.max(1, safeDetailPage - 1))}
                 aria-disabled={safeDetailPage <= 1}
                 className={`rounded-lg border px-3 py-1.5 font-bold ${
@@ -769,11 +769,11 @@ export default async function AdminPricesPage({
                 }`}
               >
                 上一页
-              </Link>
+              </AdminLink>
               <span className="text-slate-500">
                 {safeDetailPage} / {detailTotalPages}
               </span>
-              <Link
+              <AdminLink
                 href={buildDetailPageHref(Math.min(detailTotalPages, safeDetailPage + 1))}
                 aria-disabled={safeDetailPage >= detailTotalPages}
                 className={`rounded-lg border px-3 py-1.5 font-bold ${
@@ -783,7 +783,7 @@ export default async function AdminPricesPage({
                 }`}
               >
                 下一页
-              </Link>
+              </AdminLink>
             </div>
           </div>
         ) : null}

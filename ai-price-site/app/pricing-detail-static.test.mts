@@ -99,9 +99,11 @@ test("pricing detail pages keep product navigation database-driven", () => {
   for (const locale of ["zh", "en"]) {
     const page = readAppFile(locale, "ai-pricing", "[slug]", "page.tsx");
 
-    assert.match(page, /export const dynamic = "force-dynamic"/);
+    assert.match(page, /export const revalidate = 1800/);
+    assert.doesNotMatch(page, /force-dynamic/);
     assert.match(page, /import PricingDetailPage/);
     assert.match(page, new RegExp(`locale="${locale}"`));
+    assert.match(page, /routeCategory="ai"/);
   }
 
   const sharedPage = readAppFile("..", "components", "PricingDetailPage.tsx");
@@ -114,6 +116,18 @@ test("pricing detail pages keep product navigation database-driven", () => {
   assert.match(sharedPage, /logoUrl: true/);
   assert.match(sharedPage, /officialUrl: true/);
   assert.match(sharedPage, /products=\{sidebarProducts\}/);
+  assert.doesNotMatch(sharedPage, /from "next\/headers"/);
+  assert.match(sharedPage, /product\.category !== routeCategory/);
+  assert.match(sharedPage, /!routePlanSlug/);
+
+  const streamingPage = readAppFile(
+    "en",
+    "streaming-pricing",
+    "[slug]",
+    "page.tsx",
+  );
+  assert.match(streamingPage, /routeCategory="streaming"/);
+  assert.doesNotMatch(streamingPage, /ai-pricing\/\[slug\]\/page/);
 });
 
 test("public pricing detail reads use bounded shared caches and batch exchange rates", () => {
@@ -236,8 +250,9 @@ test("pricing plans use stable paths and preserve old links with permanent redir
       "page.tsx",
     );
 
-    assert.match(streamingPage, /generateMetadata, default/);
-    assert.match(streamingPage, /ai-pricing\/\[slug\]\/page/);
+    assert.match(streamingPage, /getPricingDetailMetadata/);
+    assert.match(streamingPage, /routeCategory="streaming"/);
+    assert.doesNotMatch(streamingPage, /ai-pricing\/\[slug\]\/page/);
     assert.doesNotMatch(streamingPage, /redirect\(/);
   }
 

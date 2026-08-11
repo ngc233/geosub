@@ -10,12 +10,32 @@ if [[ -f "$ENV_FILE" ]]; then
 fi
 
 BACKEND_DIR="${GEOSUB_BACKEND_DIR:-/opt/geosub/geosub-backend}"
+FRONTEND_DIR="${GEOSUB_FRONTEND_DIR:-/opt/geosub/ai-price-site}"
 DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 MODE="${1:-core}"
+MANIFEST_SCRIPT="$BACKEND_DIR/scripts/migration-manifest.cjs"
 
 cd "$BACKEND_DIR"
+
+if [[ ! -f "$MANIFEST_SCRIPT" ]]; then
+  echo "Migration manifest is missing: $MANIFEST_SCRIPT"
+  exit 1
+fi
+
+node "$MANIFEST_SCRIPT" validate --frontend-dir="$FRONTEND_DIR"
+mapfile -t files < <(
+  node "$MANIFEST_SCRIPT" list "$MODE" --frontend-dir="$FRONTEND_DIR"
+)
+mapfile -t baseline_files < <(
+  node "$MANIFEST_SCRIPT" list baseline --frontend-dir="$FRONTEND_DIR"
+)
+
+if (( ${#files[@]} == 0 )); then
+  echo "Migration manifest returned no files for mode: $MODE"
+  exit 1
+fi
 
 if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
   echo "Database container '$DB_CONTAINER' is not running."
@@ -60,116 +80,48 @@ is_known_line_ending_checksum() {
   return 1
 }
 
-core_files=(
-  "schema.sql"
-  "seed-chatgpt.sql"
-  "sql/001_affordability_income_tables.sql"
-  "sql/002_compute_plan_affordability.sql"
-  "sql/003_affordability_views.sql"
-  # 004_affordability_source_metadata.sql used CREATE OR REPLACE for a view
-  # with incompatible columns; the fix file below drops and recreates it safely.
-  "sql/004_affordability_source_metadata_fix.sql"
-  # schema.sql owns the current price_observations table. Earlier 006/007
-  # migrations targeted a superseded slug-based observation model.
-  "sql/008_price_observations_view_v4.sql"
-  "sql/009_price_observation_review_functions.sql"
-  "sql/010_refresh_affordability_function.sql"
-  "sql/011_price_observations_history_view.sql"
-  "sql/012_exchange_rate_sync_system.sql"
-  "sql/013_price_auto_review_rules.sql"
-  "sql/014_product_discovery_candidates.sql"
-  "sql/015_discovery_sources.sql"
-  "sql/016_discovery_source_checks.sql"
-  "sql/017_discovery_change_classification.sql"
-  "sql/018_discovery_feed_trigger_fields.sql"
-  "sql/019_discovery_source_strategy.sql"
-  "sql/020_discovery_collection_handoff.sql"
-  "sql/021_collector_job_runs.sql"
-  "sql/022_discovery_manual_scan_queue.sql"
-  "sql/023_app_store_stability_auto_review.sql"
-  "sql/024_app_store_availability_status.sql"
-  "sql/025_archive_non_subscription_plans.sql"
-  "sql/026_clear_legacy_multisource_review_notes.sql"
-  "sql/027_archive_capacity_only_app_store_items.sql"
-  "sql/028_country_tax_profiles.sql"
-  "sql/029_country_app_store_risk_profiles.sql"
-  "sql/030_country_app_store_risk_model.sql"
-  "sql/031_app_store_country_coverage.sql"
-  "sql/032_country_tax_profile_v2.sql"
-  "sql/033_app_store_stability_auto_review_v2.sql"
-  "sql/034_affordability_metric_precision.sql"
-  "sql/035_country_tax_profile_sync_system.sql"
-  "sql/036_product_plan_specs_seed.sql"
-  "sql/037_inferred_app_store_tax_profiles.sql"
-  "sql/038_common_app_store_tax_profiles.sql"
-  "sql/039_relax_claude_max_app_store_range.sql"
-  "sql/040_gemini_app_store_collector.sql"
-  "sql/041_merge_gemini_advanced_into_pro.sql"
-  "sql/042_price_observation_evidence_view.sql"
-  "sql/043_app_store_collection_schedule_policy.sql"
-  "sql/052_collector_job_runs_running_status.sql"
-  "sql/053_admin_collection_performance.sql"
-  "sql/054_refresh_affordability_app_store_scope.sql"
-  "sql/055_refresh_matching_app_store_prices.sql"
-  "sql/056_refresh_exact_local_app_store_prices.sql"
-  "sql/057_quarantine_published_app_store_price_outliers.sql"
-  "sql/058_normalize_disney_app_store_plans.sql"
-  "sql/059_stale_app_store_price_lifecycle.sql"
-  "sql/060_reclassify_app_store_selection_false_positives.sql"
-  "sql/061_ignore_legacy_non_primary_app_store_tiers.sql"
-  "sql/062_app_store_coverage_gap_rechecks.sql"
-  "sql/063_system_task_runs.sql"
-  "sql/064_data_quality_repair_cycles.sql"
-  "sql/065_operational_self_healing.sql"
-  "sql/066_public_product_lifecycle.sql"
-  "sql/067_app_store_availability_semantics.sql"
-  "sql/068_plan_region_availability.sql"
-  "sql/069_required_catalog_products.sql"
-  "sql/070_disney_app_store_source.sql"
-  "sql/071_archive_superseded_app_store_ambiguities.sql"
-  "sql/072_normalize_hbo_max_app_store_plans.sql"
-  "sql/073_product_seo_content_quality.sql"
-  "sql/074_repair_hbo_max_app_store_selection.sql"
-  "sql/075_serialize_app_store_auto_review.sql"
-)
+baseline_legacy_migrations() {
+  local cutover_file="sql/063_system_task_runs.sql"
+  local cutover_registered
+  cutover_registered="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
+    "SELECT EXISTS (SELECT 1 FROM geosub_schema_migrations WHERE filename = '$cutover_file');")"
 
-content_files=(
-  "content-system-tables.sql"
-  "content-system-directus.sql"
-  "register-directus.sql"
-  "directus-zh.sql"
-  "directus-cn-v2.sql"
-  "directus-polish.sql"
-  "fix_nav_categories_utf8.sql"
-  "seed_footer_navigation_zh.sql"
-  "seed_en_navigation_draft.sql"
-  "publish_en_navigation.sql"
-  "publish_footer_trust_pages.sql"
-  "sql/045_article_soft_delete_trash.sql"
-)
+  if [[ "$cutover_registered" != "t" ]]; then
+    return 0
+  fi
 
-case "$MODE" in
-  core)
-    files=("${core_files[@]}")
-    ;;
-  content)
-    files=("${content_files[@]}")
-    ;;
-  all)
-    files=("${core_files[@]}" "${content_files[@]}")
-    ;;
-  *)
-    echo "Usage: $0 [core|content|all]"
-    exit 1
-    ;;
-esac
-
-for file in "${files[@]}"; do
-  if [[ ! -f "$file" ]]; then
-    echo "Missing SQL file: $file"
+  local schema_ready
+  schema_ready="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
+    "SELECT to_regclass('public.products') IS NOT NULL
+       AND to_regclass('public.collector_jobs') IS NOT NULL
+       AND to_regprocedure('queue_app_store_coverage_gap_rechecks(integer,integer,integer)') IS NOT NULL;")"
+  if [[ "$schema_ready" != "t" ]]; then
+    echo "Refusing to baseline legacy migrations: pre-cutover schema guards are incomplete."
     exit 1
   fi
 
+  local baselined=0
+  local file checksum existing
+  for file in "${baseline_files[@]}"; do
+    existing="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
+      "SELECT checksum FROM geosub_schema_migrations WHERE filename = '$file';")"
+    if [[ -n "$existing" ]]; then
+      continue
+    fi
+    checksum="$(normalized_sql_checksum "$file")"
+    docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
+      "INSERT INTO geosub_schema_migrations (filename, checksum) VALUES ('$file', '$checksum');" >/dev/null
+    echo "Baselined legacy migration: $file"
+    baselined=$((baselined + 1))
+  done
+  echo "Legacy migration baseline complete: $baselined registered."
+}
+
+if [[ "$MODE" != "content" ]]; then
+  baseline_legacy_migrations
+fi
+
+for file in "${files[@]}"; do
   checksum="$(normalized_sql_checksum "$file")"
   existing="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c "SELECT checksum FROM geosub_schema_migrations WHERE filename = '$file';")"
 
@@ -201,4 +153,4 @@ for file in "${files[@]}"; do
     "INSERT INTO geosub_schema_migrations (filename, checksum) VALUES ('$file', '$checksum');" >/dev/null
 done
 
-echo "SQL migration complete for mode: $MODE"
+echo "SQL migration complete for mode: $MODE (${#files[@]} files from the canonical manifest)"

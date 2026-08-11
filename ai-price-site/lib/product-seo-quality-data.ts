@@ -9,6 +9,7 @@ import {
   getPlanEditorialIndexingStatus,
   getProductEditorialCoverage,
 } from "./product-editorial-content.ts";
+import { readAdminReadModel } from "./admin-read-model-cache.ts";
 
 type TaxGapRow = {
   product_id: string;
@@ -243,6 +244,19 @@ export async function getProductSeoQualityAudits({
       };
     })
     .sort((a, b) => a.score - b.score);
+}
+
+export async function getCachedProductSeoQualityAudits(
+  query: ProductSeoQualityQuery = {},
+): Promise<ProductSeoQualityAudit[]> {
+  const slug = query.slug?.trim().toLowerCase() || "all";
+  const take = query.take && query.take > 0 ? Math.trunc(query.take) : "all";
+
+  return readAdminReadModel(
+    `product-seo-quality:${slug}:${take}`,
+    () => getProductSeoQualityAudits(query),
+    15_000,
+  );
 }
 
 export async function getProductSeoQualityAudit(slug: string) {

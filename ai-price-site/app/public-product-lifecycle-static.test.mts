@@ -12,8 +12,8 @@ test("published prices align public product and plan lifecycle state", () => {
     resolve(repoDir, "geosub-backend", "sql", "066_public_product_lifecycle.sql"),
     "utf8",
   );
-  const deploy = readFileSync(
-    resolve(repoDir, "geosub-backend", "deploy", "linux-arm64", "db-apply-sql.sh"),
+  const manifest = readFileSync(
+    resolve(repoDir, "geosub-backend", "scripts", "migration-manifest.cjs"),
     "utf8",
   );
   const postDeploy = readFileSync(
@@ -27,8 +27,8 @@ test("published prices align public product and plan lifecycle state", () => {
   assert.match(migration, /product\.category IN \('ai', 'streaming'\)/);
   assert.match(migration, /plan\.status = 'published'/);
   assert.doesNotMatch(migration, /status IN \('draft', 'review', 'archived'\)/);
-  assert.match(deploy, /sql\/066_public_product_lifecycle\.sql/);
-  assert.match(postDeploy, /sql\/066_public_product_lifecycle\.sql/);
+  assert.match(manifest, /sql\/066_public_product_lifecycle\.sql/);
+  assert.match(postDeploy, /list core/);
   assert.match(postDeploy, /products\.status = 'published'/);
   assert.match(postDeploy, /all published App Store products have published coverage/);
 });

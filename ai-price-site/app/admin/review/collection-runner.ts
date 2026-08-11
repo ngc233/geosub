@@ -93,7 +93,7 @@ async function markCollectorRunProcessExit(
         AND status = 'running'
     `;
   } catch {
-    // The page can still reconcile stale rows on the next load.
+    // The scheduled runner and collection-status endpoint provide reconciliation fallbacks.
   }
 }
 

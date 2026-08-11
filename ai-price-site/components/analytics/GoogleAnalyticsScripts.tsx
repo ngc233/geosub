@@ -1,6 +1,10 @@
 import Script from "next/script";
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache } from "next/cache";
 import { prisma } from "../../lib/prisma";
+import {
+  PUBLIC_SITE_SETTINGS_CACHE_TAG,
+  PUBLIC_SITE_SETTINGS_REVALIDATE_SECONDS,
+} from "../../lib/public-site-settings-cache";
 
 function isValidGa4Id(value: string) {
   return /^G-[A-Z0-9]{4,}$/.test(value);
@@ -10,9 +14,7 @@ function isValidGtmId(value: string) {
   return /^GTM-[A-Z0-9]{4,}$/.test(value);
 }
 
-async function getAnalyticsSettings() {
-  noStore();
-
+const getAnalyticsSettings = unstable_cache(async () => {
   try {
     const rows = await prisma.siteSetting.findMany({
       where: {
@@ -45,7 +47,10 @@ async function getAnalyticsSettings() {
       gtmId: "",
     };
   }
-}
+}, ["public-analytics-settings"], {
+  revalidate: PUBLIC_SITE_SETTINGS_REVALIDATE_SECONDS,
+  tags: [PUBLIC_SITE_SETTINGS_CACHE_TAG],
+});
 
 export default async function GoogleAnalyticsScripts() {
   const { ga4Id, gtmId } = await getAnalyticsSettings();

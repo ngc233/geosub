@@ -27,6 +27,10 @@ test("settings page exposes a resilient Google analytics entry", () => {
 
 test("analytics settings extract IDs and redirect invalid input without throwing", () => {
   const source = readSettingsFile("actions.ts");
+  const scripts = readFileSync(
+    resolve(currentDir, "../../../components/analytics/GoogleAnalyticsScripts.tsx"),
+    "utf8",
+  );
 
   assert.match(source, /\\bG-\[A-Z0-9\]\{4,\}\\b/);
   assert.match(source, /\\bGTM-\[A-Z0-9\]\{4,\}\\b/);
@@ -34,8 +38,12 @@ test("analytics settings extract IDs and redirect invalid input without throwing
   assert.match(source, /analyticsError=/);
   assert.match(source, /ga4_id/);
   assert.match(source, /gtm_id/);
+  assert.match(source, /updateTag\(PUBLIC_SITE_SETTINGS_CACHE_TAG\)/);
   assert.match(source, /redirect\("\/admin\/settings\?saved=1"\)/);
   assert.doesNotMatch(source, /throw new Error\("GA4/);
+  assert.match(scripts, /unstable_cache/);
+  assert.match(scripts, /PUBLIC_SITE_SETTINGS_CACHE_TAG/);
+  assert.doesNotMatch(scripts, /unstable_noStore|noStore\(/);
 });
 
 test("settings page exposes a single-admin password change flow", () => {

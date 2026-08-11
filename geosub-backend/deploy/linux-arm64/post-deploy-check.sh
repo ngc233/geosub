@@ -113,6 +113,18 @@ check_migration() {
   fi
 }
 
+check_prisma_migration() {
+  local migration_name="$1"
+  local result
+
+  result="$(psql_scalar "SELECT CASE WHEN EXISTS (SELECT 1 FROM _prisma_migrations WHERE migration_name = '${migration_name}' AND finished_at IS NOT NULL AND rolled_back_at IS NULL) THEN 'ok' ELSE 'missing' END;")"
+  if [[ "$result" == "ok" ]]; then
+    pass "Prisma migration applied: $migration_name"
+  else
+    fail "Prisma migration missing or incomplete: $migration_name"
+  fi
+}
+
 check_unit_active() {
   local unit="$1"
 
@@ -223,39 +235,25 @@ if (( failures == 0 )); then
   check_table "admin_login_attempts"
   check_relation "latest_exchange_rates"
 
-  for migration in \
-    "schema.sql" \
-    "sql/012_exchange_rate_sync_system.sql" \
-    "sql/021_collector_job_runs.sql" \
-    "sql/023_app_store_stability_auto_review.sql" \
-    "sql/033_app_store_stability_auto_review_v2.sql" \
-    "sql/043_app_store_collection_schedule_policy.sql" \
-    "sql/052_collector_job_runs_running_status.sql" \
-    "sql/053_admin_collection_performance.sql" \
-    "sql/054_refresh_affordability_app_store_scope.sql" \
-    "sql/055_refresh_matching_app_store_prices.sql" \
-    "sql/056_refresh_exact_local_app_store_prices.sql" \
-    "sql/057_quarantine_published_app_store_price_outliers.sql" \
-    "sql/058_normalize_disney_app_store_plans.sql" \
-    "sql/059_stale_app_store_price_lifecycle.sql" \
-    "sql/060_reclassify_app_store_selection_false_positives.sql" \
-    "sql/061_ignore_legacy_non_primary_app_store_tiers.sql" \
-    "sql/062_app_store_coverage_gap_rechecks.sql" \
-    "sql/063_system_task_runs.sql" \
-    "sql/064_data_quality_repair_cycles.sql" \
-    "sql/065_operational_self_healing.sql" \
-    "sql/066_public_product_lifecycle.sql" \
-    "sql/067_app_store_availability_semantics.sql" \
-    "sql/068_plan_region_availability.sql" \
-    "sql/069_required_catalog_products.sql" \
-    "sql/070_disney_app_store_source.sql" \
-    "sql/071_archive_superseded_app_store_ambiguities.sql" \
-    "sql/072_normalize_hbo_max_app_store_plans.sql" \
-    "sql/073_product_seo_content_quality.sql" \
-    "sql/074_repair_hbo_max_app_store_selection.sql" \
-    "sql/075_serialize_app_store_auto_review.sql"; do
-    check_migration "$migration"
-  done
+  migration_manifest="$BACKEND_DIR/scripts/migration-manifest.cjs"
+  if manifest_summary="$(node "$migration_manifest" validate --frontend-dir="$FRONTEND_DIR" 2>&1)"; then
+    pass "$manifest_summary"
+    mapfile -t core_migrations < <(
+      node "$migration_manifest" list core --frontend-dir="$FRONTEND_DIR"
+    )
+    for migration in "${core_migrations[@]}"; do
+      check_migration "$migration"
+    done
+
+    mapfile -t prisma_migrations < <(
+      node "$migration_manifest" list prisma --frontend-dir="$FRONTEND_DIR"
+    )
+    for migration in "${prisma_migrations[@]}"; do
+      check_prisma_migration "$migration"
+    done
+  else
+    fail "migration manifest invalid: $manifest_summary"
+  fi
 
   auto_review_lock="$(psql_scalar "SELECT CASE WHEN pg_get_functiondef('run_app_store_stability_auto_review(boolean,integer,integer,integer)'::regprocedure) LIKE '%pg_advisory_xact_lock%' THEN 'ok' ELSE 'missing' END;")"
   if [[ "$auto_review_lock" == "ok" ]]; then
@@ -488,6 +486,41 @@ if command -v curl >/dev/null 2>&1; then
   else
     fail "public www canonical redirect failed: ${public_redirect_result:-no response}"
   fi
+
+  public_pricing_headers="$(
+    curl -fsSIL \
+      --max-time 15 \
+      --max-redirs 5 \
+      "$PUBLIC_SITE_URL/zh/ai-pricing" || true
+  )"
+  public_pricing_cdn_cache_control="$(
+    printf '%s\n' "$public_pricing_headers" |
+      tr -d '\r' |
+      grep -i '^cdn-cache-control:' |
+      tail -n 1 || true
+  )"
+  if [[ "$public_pricing_cdn_cache_control" == *"s-maxage=300"* ]]; then
+    pass "public pricing CDN cache policy: $public_pricing_cdn_cache_control"
+  else
+    fail "public pricing CDN cache policy missing or invalid: ${public_pricing_cdn_cache_control:-no header}"
+  fi
+
+  public_pricing_cf_cache_status="$(
+    printf '%s\n' "$public_pricing_headers" |
+      tr -d '\r' |
+      grep -i '^cf-cache-status:' |
+      tail -n 1 |
+      cut -d ':' -f 2- |
+      xargs || true
+  )"
+  case "${public_pricing_cf_cache_status^^}" in
+    HIT|MISS|EXPIRED|STALE|UPDATING|REVALIDATED)
+      pass "Cloudflare public pricing cache is eligible: $public_pricing_cf_cache_status"
+      ;;
+    *)
+      warn "Cloudflare public pricing cache is not confirmed; status=${public_pricing_cf_cache_status:-missing}. Check deploy/cloudflare/public-pricing-cache-rule.md"
+      ;;
+  esac
 
   sitemap_content="$(curl -fsS --max-time 15 "$PUBLIC_SITE_URL/sitemap.xml" || true)"
   if [[ -z "$sitemap_content" ]]; then

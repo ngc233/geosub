@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ProductCategory } from "@prisma/client";
@@ -618,7 +617,11 @@ export default async function PricingDetailPage({
   params,
   searchParams,
   locale,
-}: PricingDetailPageProps & { locale: SiteLocale }) {
+  routeCategory,
+}: PricingDetailPageProps & {
+  locale: SiteLocale;
+  routeCategory: "ai" | "streaming";
+}) {
   const { slug, plan: routePlanSlug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const [product, seoMeta] = await Promise.all([
@@ -648,12 +651,9 @@ export default async function PricingDetailPage({
     product.slug,
     activePlan.slug,
   );
-  const currentPath = (await headers())
-    .get("x-pathname")
-    ?.replace(/\/+$/, "");
-
   if (
-    (currentPath && currentPath !== canonicalDetailPath) ||
+    product.category !== routeCategory ||
+    !routePlanSlug ||
     Boolean(resolvedSearchParams.plan)
   ) {
     permanentRedirect(canonicalDetailPath);

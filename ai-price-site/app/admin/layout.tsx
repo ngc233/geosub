@@ -1,5 +1,6 @@
 ﻿import { requireAdmin } from "../../lib/admin-auth";
 import AdminSidebar from "../../components/admin/AdminSidebar";
+import { measureAdminWorkload } from "../../lib/admin-performance";
 import packageJson from "../../package.json";
 
 export default async function AdminLayout({
@@ -7,7 +8,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const admin = await requireAdmin();
+  const admin = await measureAdminWorkload("admin.auth", () => requireAdmin());
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">

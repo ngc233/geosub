@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { prisma } from "../../../lib/prisma";
 
@@ -137,19 +137,19 @@ export default async function AdminPlansPage() {
           </div>
 
           <div className="flex gap-4">
-            <Link
+            <AdminLink
               href="/admin/products"
               className="text-sm font-black text-blue-700 hover:text-blue-900"
             >
               产品库 →
-            </Link>
+            </AdminLink>
 
-            <Link
+            <AdminLink
               href="/admin/prices"
               className="text-sm font-black text-blue-700 hover:text-blue-900"
             >
               价格库 →
-            </Link>
+            </AdminLink>
           </div>
         </div>
 

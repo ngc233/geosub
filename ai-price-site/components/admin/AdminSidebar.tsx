@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -140,9 +140,14 @@ export default function AdminSidebar({
                   const Icon = item.icon;
 
                   return (
-                    <Link
+                    <AdminLink
                       key={item.href}
                       href={item.href}
+                      prefetchOnIntent={[
+                        "/admin/articles",
+                        "/admin/navigation",
+                        "/admin/settings",
+                      ].includes(item.href)}
                       onClick={() => setMobileOpen(false)}
                       aria-current={active ? "page" : undefined}
                       className={[
@@ -162,7 +167,7 @@ export default function AdminSidebar({
                         <Icon size={16} strokeWidth={2} />
                       </span>
                       <span className="truncate">{item.label}</span>
-                    </Link>
+                    </AdminLink>
                   );
                 })}
               </div>

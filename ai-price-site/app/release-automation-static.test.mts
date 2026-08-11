@@ -121,6 +121,14 @@ test("post-deploy gate verifies the public canonical host and sitemap budget", (
   );
 });
 
+test("post-deploy gate verifies the public pricing CDN cache contract", () => {
+  assert.match(postDeployCheck, /cdn-cache-control:/i);
+  assert.match(postDeployCheck, /s-maxage=300/);
+  assert.match(postDeployCheck, /cf-cache-status:/i);
+  assert.match(postDeployCheck, /public-pricing-cache-rule\.md/);
+  assert.match(postDeployCheck, /HIT\|MISS\|EXPIRED\|STALE\|UPDATING\|REVALIDATED/);
+});
+
 test("full release gate generates the database-backed sitemap and enforces page budgets", () => {
   assert.match(packageJson.scripts["preflight:full"], /check:sitemap/);
   assert.match(packageJson.scripts["check:sitemap"], /check-sitemap-budget\.mts/);
@@ -134,14 +142,14 @@ test("full release gate generates the database-backed sitemap and enforces page 
   assert.match(sitemapBudgetCheck, /uniquePaths\.size/);
 });
 
-test("local migrations are immutable and the v2 registry is audited", () => {
+test("local migrations are immutable and both canonical registries are audited", () => {
   assert.match(localMigrationRunner, /Migration checksum changed after it was applied/);
   assert.doesNotMatch(localMigrationRunner, /ON CONFLICT[\s\S]*DO UPDATE/);
-  assert.match(migrationAudit, /063_system_task_runs\.sql/);
-  assert.match(migrationAudit, /068_plan_region_availability\.sql/);
-  assert.match(migrationAudit, /069_required_catalog_products\.sql/);
-  assert.match(migrationAudit, /070_disney_app_store_source\.sql/);
-  assert.match(migrationAudit, /071_archive_superseded_app_store_ambiguities\.sql/);
+  assert.match(localMigrationRunner, /legacyBaselineFiles/);
+  assert.match(localMigrationRunner, /baselineCutoverFile/);
+  assert.match(migrationAudit, /geosub_schema_migrations/);
+  assert.match(migrationAudit, /_prisma_migrations/);
+  assert.match(migrationAudit, /legacyBaselineFiles/);
   assert.match(migrationAudit, /checksum mismatch/);
   assert.match(migrationAudit, /not registered/);
 });

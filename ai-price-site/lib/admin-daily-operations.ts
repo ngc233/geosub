@@ -3,7 +3,7 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import { getAuthorityCoverageTaskRecords } from "./admin-authority-coverage-tasks.ts";
 import { prisma } from "./prisma.ts";
-import { getProductSeoQualityAudits } from "./product-seo-quality-data.ts";
+import { getCachedProductSeoQualityAudits } from "./product-seo-quality-data.ts";
 import {
   buildAuthorityCoverageQueue,
   type AuthorityCoverageItem,
@@ -244,7 +244,7 @@ async function getCollectorProductStates() {
 }
 
 export async function getDailyOperationsSummary() {
-  const audits = await getProductSeoQualityAudits();
+  const audits = await getCachedProductSeoQualityAudits();
   const [collectorStates, tasks] = await Promise.all([
     getCollectorProductStates(),
     getAuthorityCoverageTaskRecords(audits),

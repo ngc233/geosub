@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getLegacyPricingPlanRedirectPath } from "./lib/pricing-routes";
+import {
+  PUBLIC_PRICING_SHARED_CACHE_CONTROL,
+  shouldCachePublicPricingResponse,
+} from "./lib/public-response-cache";
 import { getSiteLocaleFromPath } from "./lib/site-locale";
 
 export function proxy(request: NextRequest) {
@@ -22,11 +26,24 @@ export function proxy(request: NextRequest) {
   );
   requestHeaders.set("x-pathname", request.nextUrl.pathname);
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+
+  if (shouldCachePublicPricingResponse(request)) {
+    response.headers.set(
+      "Cache-Control",
+      PUBLIC_PRICING_SHARED_CACHE_CONTROL,
+    );
+    response.headers.set(
+      "CDN-Cache-Control",
+      PUBLIC_PRICING_SHARED_CACHE_CONTROL,
+    );
+  }
+
+  return response;
 }
 
 export const config = {

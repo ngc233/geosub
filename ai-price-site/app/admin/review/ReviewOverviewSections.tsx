@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { Archive, CheckCircle2, Clock3, XCircle } from "lucide-react";
 import AdminMetricCard from "../../../components/admin/AdminMetricCard";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
@@ -119,12 +119,12 @@ export function ReviewOverviewSections({
                 pendingLabel="正在采集并审核"
                 disabled={!selectedProductSlug || selectedAppStoreJobCount <= 0}
               />
-              <Link
+              <AdminLink
                 href="/admin/products"
                 className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 查看服务库
-              </Link>
+              </AdminLink>
             </div>
           </div>
         </section>

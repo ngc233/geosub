@@ -1,12 +1,16 @@
 {
     "name": "ai-price-site",
-    "version": "2.6.2",
+    "version": "2.7.0",
     "private": true,
     "scripts": {
         "dev": "next dev",
         "build": "next build",
         "check:local": "node scripts/check-local-env.cjs",
+        "check:migration-manifest": "node ../geosub-backend/scripts/migration-manifest.cjs validate --frontend-dir=.",
         "check:migrations": "node scripts/check-migrations.cjs",
+        "audit:indexes": "node scripts/audit-database-indexes.cjs",
+        "profile:admin-logs": "node scripts/summarize-admin-performance.cjs",
+        "explain:query": "node scripts/explain-read-only-query.cjs",
         "check:prices": "node scripts/check-price-quality.cjs",
         "check:plans": "node scripts/check-product-plan-specs.cjs",
         "check:logos": "node --conditions=react-server --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-product-logos.mts --check",
@@ -19,6 +23,8 @@
         "db:up": "node scripts/local-db.cjs up",
         "db:status": "node scripts/local-db.cjs status",
         "db:doctor": "node scripts/local-db.cjs doctor",
+        "db:migrate": "node scripts/migrate-database.cjs",
+        "db:migrate:status": "node scripts/check-migrations.cjs",
         "sync:exchange-rates": "node scripts/sync-exchange-rates.cjs",
         "aggregate:daily-stats": "node scripts/aggregate-daily-stats.cjs --days=90",
         "aggregate:daily-stats:recent": "node scripts/aggregate-daily-stats.cjs --days=3",
@@ -26,13 +32,14 @@
         "notify:daily-operations": "node --conditions=react-server --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/send-daily-operations-brief.mts",
         "admin:set-password": "node scripts/set-admin-password.cjs",
         "test:daily-brief": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/daily-operations-brief.test.mts",
+        "test:performance-tools": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/admin-performance-tools.test.mts",
         "typecheck": "tsc --noEmit",
-        "preflight:code": "npm run check:encoding && npm run check:seo && npm run check:content-uniqueness && npm run typecheck && npm run lint && npm run test:daily-brief && npm test && npm run build",
-        "preflight:full": "npm run check:local && npm run check:migrations && npm run check:plans && npm run check:logos && npm run check:prices && npm run check:sitemap && npm run preflight:code",
+        "preflight:code": "npm run check:encoding && npm run check:seo && npm run check:content-uniqueness && npm run typecheck && npm run lint && npm run test:daily-brief && npm run test:performance-tools && npm test && npm run build",
+        "preflight:full": "npm run check:local && npm run check:migration-manifest && npm run check:migrations && npm run check:plans && npm run check:logos && npm run check:prices && npm run check:sitemap && npm run preflight:code",
         "seed:local-demo": "powershell -ExecutionPolicy Bypass -File scripts/seed-local-demo.ps1",
         "sync:worldbank-income": "node scripts/sync-world-bank-income.mjs",
         "start": "next start",
-        "test": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test app/admin/admin-navigation-static.test.mts app/admin/admin-ui-consistency.test.mts app/admin/articles/article-admin-flow.test.mts app/admin/collector-jobs/job-state.test.mts app/admin/discovery/discovery-flow.test.mts app/admin/events/events-admin.test.mts app/admin/search-demand/search-opportunity-admin.test.mts app/admin/pipeline/stale-price-policy.test.mts app/admin/products/product-logo-policy.test.mts app/admin/review/collection-progress.test.mts app/admin/review/collection-runner-static.test.mts app/admin/review/collection-status.test.mts app/admin/review/manual-review-policy.test.mts app/admin/review/pending-product-diagnosis.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts app/admin/seo/seo-quality-static.test.mts app/admin/settings/settings-admin.test.mts app/admin/system/system-monitor.test.mts app/affordability-static.test.mts app/currency-converter-static.test.mts app/data-sources-static.test.mts app/exchange-rate-static.test.mts app/homepage-static.test.mts app/price-quality-gate-static.test.mts app/pricing-detail-static.test.mts app/pricing-list-static.test.mts app/public-product-lifecycle-static.test.mts app/release-automation-static.test.mts app/risk-model-static.test.mts app/security-static.test.mts app/seo-static.test.mts app/trust-pages-static.test.mts components/dropdown-interactions.test.mts components/global-search.test.mts components/public-ui-consistency.test.mts components/tax-risk-display.test.mts lib/country-name.test.mts lib/plan-search-intent.test.mts lib/prepared-locale-quality.test.mts lib/product-editorial-content.test.mts lib/product-seo-effective-copy.test.mts lib/product-seo-indexing-policy.test.mts lib/seo-page-quality.test.mts lib/site-locale.test.mts lib/tax-note-localization.test.mts",
+        "test": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/admin-read-model-cache.test.mts app/admin/admin-navigation-static.test.mts app/admin/admin-ui-consistency.test.mts app/admin/articles/article-admin-flow.test.mts app/admin/collector-jobs/job-state.test.mts app/admin/discovery/discovery-flow.test.mts app/admin/events/events-admin.test.mts app/admin/search-demand/search-opportunity-admin.test.mts app/admin/pipeline/stale-price-policy.test.mts app/admin/products/product-logo-policy.test.mts app/admin/review/collection-progress.test.mts app/admin/review/collection-runner-static.test.mts app/admin/review/collection-status.test.mts app/admin/review/manual-review-policy.test.mts app/admin/review/pending-product-diagnosis.test.mts app/admin/review/price-review-rules.test.mts app/admin/review/review-reason-copy.test.mts app/admin/seo/seo-quality-static.test.mts app/admin/settings/settings-admin.test.mts app/admin/system/system-monitor.test.mts app/affordability-static.test.mts app/currency-converter-static.test.mts app/data-sources-static.test.mts app/database-migrations-static.test.mts app/exchange-rate-static.test.mts app/homepage-static.test.mts app/price-quality-gate-static.test.mts app/pricing-detail-static.test.mts app/pricing-list-static.test.mts app/public-product-lifecycle-static.test.mts app/release-automation-static.test.mts app/risk-model-static.test.mts app/security-static.test.mts app/seo-static.test.mts app/trust-pages-static.test.mts components/dropdown-interactions.test.mts components/global-search.test.mts components/public-ui-consistency.test.mts components/tax-risk-display.test.mts lib/country-name.test.mts lib/plan-search-intent.test.mts lib/prepared-locale-quality.test.mts lib/product-editorial-content.test.mts lib/product-seo-effective-copy.test.mts lib/product-seo-indexing-policy.test.mts lib/public-response-cache.test.mts lib/seo-page-quality.test.mts lib/site-locale.test.mts lib/tax-note-localization.test.mts",
         "lint": "eslint"
     },
     "dependencies": {
@@ -42,7 +49,7 @@
         "dotenv": "^17.4.2",
         "html-to-image": "^1.11.13",
         "lucide-react": "^1.21.0",
-        "next": "16.2.11",
+        "next": "16.2.12",
         "opencc-js": "^1.4.1",
         "pg": "^8.22.0",
         "prisma": "^7.9.1",
@@ -67,7 +74,7 @@
     },
     "overrides": {
         "@hono/node-server": "2.0.11",
-        "fast-uri": "3.1.4",
+        "fast-uri": "3.1.5",
         "js-yaml": "4.3.0",
         "minimatch@3.1.5": {
             "brace-expansion": "1.1.17"
@@ -75,7 +82,7 @@
         "minimatch@10.2.5": {
             "brace-expansion": "5.0.8"
         },
-        "postcss": "8.5.22",
+        "postcss": "8.5.26",
         "sharp": "0.35.3"
     }
 }

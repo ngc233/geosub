@@ -150,17 +150,17 @@ test("current price data repairs remain required core migrations", () => {
     "sql/074_repair_hbo_max_app_store_selection.sql",
     "sql/075_serialize_app_store_auto_review.sql",
   ];
-  const migrationRunner = readProjectFile(
-    "../geosub-backend/deploy/linux-arm64/db-apply-sql.sh"
+  const migrationManifest = readProjectFile(
+    "../geosub-backend/scripts/migration-manifest.cjs"
   );
   const postDeploy = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/post-deploy-check.sh"
   );
 
   for (const migrationName of migrationNames) {
-    assert.ok(migrationRunner.includes(migrationName));
-    assert.ok(postDeploy.includes(migrationName));
+    assert.ok(migrationManifest.includes(migrationName));
   }
+  assert.match(postDeploy, /list core/);
 });
 
 test("canonical product checks reject missing catalog products and collectors", () => {

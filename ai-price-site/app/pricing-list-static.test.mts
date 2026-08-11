@@ -86,7 +86,8 @@ test("AI and streaming listing routes delegate locale and category to one shared
   ];
 
   for (const { source, locale, category } of pages) {
-    assert.match(source, /export const dynamic = "force-dynamic"/);
+    assert.match(source, /export const revalidate = 1800/);
+    assert.doesNotMatch(source, /force-dynamic/);
     assert.match(source, /import PricingListPage/);
     assert.match(
       source,
@@ -101,6 +102,19 @@ test("AI and streaming listing routes delegate locale and category to one shared
   assert.match(sharedPage, /unstable_cache/);
   assert.match(sharedPage, /PUBLIC_PRICING_LIST_CACHE_TAG/);
   assert.match(sharedPage, /PUBLIC_PRICING_REVALIDATE_SECONDS/);
+});
+
+test("public pricing responses use a short shared cache without caching query variants", () => {
+  const proxy = readSiteFile("proxy.ts");
+  const policy = readSiteFile("lib", "public-response-cache.ts");
+
+  assert.match(proxy, /shouldCachePublicPricingResponse\(request\)/);
+  assert.match(proxy, /CDN-Cache-Control/);
+  assert.match(policy, /s-maxage=\$\{PUBLIC_PRICING_SHARED_CACHE_SECONDS\}/);
+  assert.match(policy, /PUBLIC_PRICING_SHARED_CACHE_SECONDS = 5 \* 60/);
+  assert.match(policy, /request\.nextUrl\.search/);
+  assert.match(policy, /request\.method !== "GET"/);
+  assert.doesNotMatch(policy, /admin|api\/events/);
 });
 
 test("pricing list query requires published products, plans and prices", () => {

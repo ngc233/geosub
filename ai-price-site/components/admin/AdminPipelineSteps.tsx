@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { CheckCircle2, Radar, ShieldCheck, Workflow } from "lucide-react";
 
 type PipelineStep = "pipeline" | "discovery" | "collector" | "review";
@@ -65,7 +65,7 @@ export default function AdminPipelineSteps({
           const Icon = step.icon;
 
           return (
-            <Link
+            <AdminLink
               key={step.id}
               href={step.href}
               className={[
@@ -98,7 +98,7 @@ export default function AdminPipelineSteps({
                   <p className="mt-1 text-xs leading-5 text-slate-500">{step.description}</p>
                 </div>
               </div>
-            </Link>
+            </AdminLink>
           );
         })}
       </div>

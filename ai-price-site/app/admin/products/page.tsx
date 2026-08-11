@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { Plus } from "lucide-react";
 import { Prisma, type ProductCategory } from "@prisma/client";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
@@ -500,7 +500,7 @@ export default async function AdminProductsPage({
             const active = selectedCategory.value === category.value;
 
             return (
-              <Link
+              <AdminLink
                 key={category.value}
                 href={`/admin/products?category=${category.value}`}
                 className={[
@@ -559,7 +559,7 @@ export default async function AdminProductsPage({
                     </div>
                   </div>
                 </div>
-              </Link>
+              </AdminLink>
             );
           })}
         </div>
@@ -578,19 +578,19 @@ export default async function AdminProductsPage({
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Link
+              <AdminLink
                 href="/admin/plans"
                 className="text-sm font-black text-blue-700 hover:text-blue-900"
               >
                 套餐库 →
-              </Link>
+              </AdminLink>
 
-              <Link
+              <AdminLink
                 href="/admin/prices"
                 className="text-sm font-black text-blue-700 hover:text-blue-900"
               >
                 价格库 →
-              </Link>
+              </AdminLink>
             </div>
           </div>
 
@@ -637,12 +637,12 @@ export default async function AdminProductsPage({
                   className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] items-center gap-0 px-5 py-4 text-sm"
                 >
                   <div>
-                    <Link
+                    <AdminLink
                       href={`/admin/products/${product.id}/edit`}
                       className="font-black text-slate-950 transition hover:text-blue-700"
                     >
                       {product.name}
-                    </Link>
+                    </AdminLink>
                     <div className="mt-1 font-mono text-xs text-slate-400">
                       {product.slug}
                     </div>
@@ -701,12 +701,12 @@ export default async function AdminProductsPage({
                   </div>
 
                   <div>
-                    <Link
+                    <AdminLink
                       href={`/admin/products/${product.id}/edit`}
                       className="text-xs font-black text-blue-700 transition hover:text-blue-900"
                     >
                       编辑
-                    </Link>
+                    </AdminLink>
                   </div>
                 </div>
               );

@@ -26,6 +26,7 @@ type SegmentedControlProps = {
   size?: "sm" | "md";
   tone?: "green" | "blue";
   className?: string;
+  prefetch?: boolean;
   onChange?: (value: string) => void;
 };
 
@@ -60,6 +61,7 @@ export default function SegmentedControl({
   size = "md",
   tone = "green",
   className = "",
+  prefetch,
   onChange,
 }: SegmentedControlProps) {
   const toneClasses = getToneClasses(tone);
@@ -149,6 +151,7 @@ export default function SegmentedControl({
             <Link
               key={item.value}
               href={item.href}
+              prefetch={prefetch}
               {...trackingProps}
               className={className}
               role="tab"

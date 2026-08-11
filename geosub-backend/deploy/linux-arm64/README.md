@@ -389,6 +389,42 @@ made with a new SQL file, not by editing an old migration.
   The first version stores page title, summary, content hash, and change status
   in `discovery_source_checks`.
 
+## Admin performance profiling
+
+The web process logs failed admin workloads and workloads slower than
+`GEOSUB_ADMIN_SLOW_WORKLOAD_MS` by default. Summarize the last 24 hours without
+changing the application or database:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/profile-admin-performance.sh \
+  --since="-24 hours"
+```
+
+The report groups samples by operation and orders them by p95 latency. It only
+contains operation names, status and duration; it does not include SQL,
+parameters, credentials or page payloads.
+
+For a bounded all-request sample, temporarily set
+`GEOSUB_ADMIN_PERFORMANCE_LOG=true` in `/etc/geosub/geosub.env`, restart
+`geosub-web.service`, exercise the relevant admin pages for 10 to 15 minutes,
+run the report, then restore the value to `false` and restart the service again.
+Do not leave all-request logging enabled indefinitely.
+
+Database plans can be inspected from a single SQL file without executing the
+query:
+
+```bash
+cd /opt/geosub/ai-price-site
+sudo -u geosub bash -lc \
+  'set -a; source /etc/geosub/geosub.env; set +a; npm run explain:query -- --file=/tmp/geosub-query.sql'
+```
+
+The command accepts only one `SELECT` or `WITH` statement, opens a read-only
+transaction, applies statement and lock timeouts, and rolls back. The optional
+`--analyze` flag executes that read-only query to collect actual timing and
+buffer data, so use it only after reviewing the SQL and during a quiet window.
+Neither command creates, removes or changes indexes.
+
 ## Nginx note
 
 Put Nginx or a managed reverse proxy in front of `127.0.0.1:3000`.

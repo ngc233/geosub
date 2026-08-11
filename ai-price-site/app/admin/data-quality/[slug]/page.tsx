@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { notFound } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import {
@@ -15,11 +15,11 @@ import {
   AdminStatCard,
 } from "../../../../components/admin/AdminCard";
 import { DEFAULT_APP_STORE_COUNTRY_CODES } from "../../../../lib/app-store-country-policy";
+import { measureAdminWorkload } from "../../../../lib/admin-performance";
 import { prisma } from "../../../../lib/prisma";
 import CollectorRunTimeline, {
   CollectorRunOutcomeSummary,
 } from "../../review/CollectorRunTimeline";
-import { reconcileStaleCollectorRuns } from "../../review/collection-runner";
 import { getCollectorRunHistoryRows } from "../../review/collector-run-history-query";
 import ManualCollectionProgressForm from "../../review/ManualCollectionProgressForm";
 import { reviewReasonAction, reviewReasonLabel } from "../../review/review-reason-copy";
@@ -866,12 +866,12 @@ function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
           <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
             当前待审 {product.pending_observation_count} 条，其中硬异常 {product.hard_anomaly_count} 条。
           </p>
-          <Link
+          <AdminLink
             href={`/admin/review?q=${productQuery}`}
             className="mt-4 inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
           >
             打开审核中心
-          </Link>
+          </AdminLink>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -880,12 +880,12 @@ function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
           <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
             已配置 {product.app_store_job_count} 个 App Store 任务，到期 {product.due_job_count} 个。
           </p>
-          <Link
+          <AdminLink
             href={`/admin/collector-jobs?q=${productQuery}`}
             className="mt-4 inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
           >
             打开采集中心
-          </Link>
+          </AdminLink>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -895,12 +895,12 @@ function ProductActionPanel({ product }: { product: ProductSummaryRow }) {
             维护 App Store、官网、Logo 和 SEO 等基础资料，缺采集任务时先从这里补。
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link
+            <AdminLink
               href={`/admin/products/${product.id}/edit`}
               className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             >
               编辑产品
-            </Link>
+            </AdminLink>
             {product.official_url ? (
               <a
                 href={product.official_url}
@@ -924,21 +924,24 @@ export default async function ProductDataQualityPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  await reconcileStaleCollectorRuns();
-
-  const product = await getProductSummary(slug);
+  const product = await measureAdminWorkload("data-quality-detail.product", () =>
+    getProductSummary(slug),
+  );
 
   if (!product) {
     notFound();
   }
 
-  const [plans, missingRows, reasonRows, availabilityRows, collectorRuns] = await Promise.all([
-    getPlanCoverageRows(product.id),
-    getMissingCountryRows(product.id),
-    getPendingReasonRows(product.id),
-    getAvailabilitySummaryRows(product.id),
-    getCollectorRunHistoryRows(product.slug, 8),
-  ]);
+  const [plans, missingRows, reasonRows, availabilityRows, collectorRuns] =
+    await measureAdminWorkload("data-quality-detail.page-data", () =>
+      Promise.all([
+        getPlanCoverageRows(product.id),
+        getMissingCountryRows(product.id),
+        getPendingReasonRows(product.id),
+        getAvailabilitySummaryRows(product.id),
+        getCollectorRunHistoryRows(product.slug, 8),
+      ]),
+    );
   const commonMissingCount = plans.reduce(
     (sum, plan) =>
       sum + Math.max(0, plan.common_country_count - plan.common_published_country_count),
@@ -957,13 +960,13 @@ export default async function ProductDataQualityPage({
         title={`${product.name} 数据准确性诊断`}
         description="把采集、审核、缺口和正式价格按产品串起来看。这里不是逐条人工审核，而是判断这个产品当前卡在哪一步。"
         action={
-          <Link
+          <AdminLink
             href="/admin/data-quality"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
           >
             <ArrowLeft size={16} strokeWidth={2} />
             返回总览
-          </Link>
+          </AdminLink>
         }
       />
 
@@ -1001,24 +1004,24 @@ export default async function ProductDataQualityPage({
                 product.latest_run_status === "running"
               }
             />
-            <Link
+            <AdminLink
               href={`/admin/review?q=${encodeURIComponent(product.slug)}`}
               className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
             >
               查看审核
-            </Link>
-            <Link
+            </AdminLink>
+            <AdminLink
               href={`/admin/collector-jobs?q=${encodeURIComponent(product.slug)}`}
               className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
             >
               采集任务
-            </Link>
-            <Link
+            </AdminLink>
+            <AdminLink
               href={`/admin/products/${product.id}/edit`}
               className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
             >
               编辑来源
-            </Link>
+            </AdminLink>
           </div>
         </div>
       </AdminCard>
