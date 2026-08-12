@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { spawn, spawnSync } = require("node:child_process");
+const fs = require("node:fs");
 const path = require("node:path");
 const { Client } = require("pg");
 const { loadSafeE2eEnvironment } = require("./e2e-environment.cjs");
@@ -104,6 +105,16 @@ async function main() {
     [path.join(__dirname, "migrate-database.cjs")],
     environment,
   );
+  run(
+    "Seeding isolated E2E fixtures",
+    process.execPath,
+    [path.join(__dirname, "seed-e2e.cjs")],
+    environment,
+  );
+  fs.rmSync(path.join(appDir, environment.GEOSUB_NEXT_DIST_DIR), {
+    force: true,
+    recursive: true,
+  });
   run("Building isolated E2E application", process.execPath, [nextCli, "build"], environment);
   const server = startServer(environment);
   try {
