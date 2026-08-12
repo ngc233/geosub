@@ -11,8 +11,18 @@ function readProjectFile(fileName: string) {
   return readFileSync(resolve(rootDir, fileName), "utf8");
 }
 
+function readPricingDetailAdapterSource() {
+  return [
+    "lib/pricing-detail-adapter.ts",
+    "lib/pricing-detail-tax.ts",
+    "lib/pricing-detail-risk.ts",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+}
+
 test("detail risk model combines platform, price gap and tax signals", () => {
-  const source = readProjectFile("lib/pricing-detail-adapter.ts");
+  const source = readPricingDetailAdapterSource();
 
   assert.match(source, /function assessAppStoreRisk/);
   assert.match(source, /platform !== "ios"[\s\S]*score \+= 5/);
@@ -32,7 +42,7 @@ test("detail risk model combines platform, price gap and tax signals", () => {
 });
 
 test("detail query loads country tax and App Store risk profiles together", () => {
-  const source = readProjectFile("lib/pricing-detail-adapter.ts");
+  const source = readPricingDetailAdapterSource();
 
   assert.match(source, /LEFT JOIN country_tax_profiles tax_profile/);
   assert.match(source, /LEFT JOIN country_app_store_risk_profiles risk_profile/);
