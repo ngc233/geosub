@@ -22,6 +22,22 @@ function readAdminDashboardSource() {
     .join("\n");
 }
 
+function readSearchDemandSource() {
+  return [
+    "app/admin/search-demand/page.tsx",
+    "app/admin/search-demand/queries.ts",
+    "app/admin/search-demand/presenters.ts",
+    "app/admin/search-demand/AuthorityCoverageSection.tsx",
+    "app/admin/search-demand/ConversionRepairSections.tsx",
+    "app/admin/search-demand/SearchConversionSections.tsx",
+    "app/admin/search-demand/SearchEvidenceSections.tsx",
+    "app/admin/search-demand/SearchGrowthPrioritySection.tsx",
+    "app/admin/search-demand/SearchOpportunityWorkflowSections.tsx",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+}
+
 function readRepoFile(fileName: string) {
   return readFileSync(resolve(projectRoot, "..", fileName), "utf8");
 }
@@ -184,7 +200,7 @@ test("admin runtime reports slow dashboard workloads without logging payloads", 
   const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");
   const dataQualityDetail = readProjectFile("app/admin/data-quality/[slug]/page.tsx");
   const collectorJobs = readProjectFile("app/admin/collector-jobs/page.tsx");
-  const searchDemand = readProjectFile("app/admin/search-demand/page.tsx");
+  const searchDemand = readSearchDemandSource();
   const system = readProjectFile("app/admin/system/page.tsx");
   const performance = readProjectFile("lib/admin-performance.ts");
 
@@ -243,7 +259,7 @@ test("admin read pages do not reconcile collector runs during navigation", () =>
 
 test("heavy admin query waves leave database capacity for navigation", () => {
   const review = readProjectFile("app/admin/review/queries.ts");
-  const searchDemand = readProjectFile("app/admin/search-demand/page.tsx");
+  const searchDemand = readSearchDemandSource();
   const searchReadModel = readProjectFile("lib/admin-search-demand.ts");
   const dashboard = readAdminDashboardSource();
   const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");

@@ -15,6 +15,21 @@ function readProjectFile(fileName: string) {
   return readFileSync(resolve(projectRoot, fileName), "utf8");
 }
 
+function readSearchDemandSource() {
+  return [
+    "app/admin/search-demand/page.tsx",
+    "app/admin/search-demand/presenters.ts",
+    "app/admin/search-demand/AuthorityCoverageSection.tsx",
+    "app/admin/search-demand/ConversionRepairSections.tsx",
+    "app/admin/search-demand/SearchConversionSections.tsx",
+    "app/admin/search-demand/SearchEvidenceSections.tsx",
+    "app/admin/search-demand/SearchGrowthPrioritySection.tsx",
+    "app/admin/search-demand/SearchOpportunityWorkflowSections.tsx",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+}
+
 test("event analytics filters production traffic with bounded dates", () => {
   const analytics = readProjectFile("lib/admin-event-analytics.ts");
 
@@ -66,7 +81,7 @@ test("event CSV export is authenticated bounded and privacy conscious", () => {
 
 test("search demand dashboard aggregates search and result-click events", () => {
   const analytics = readProjectFile("lib/admin-search-demand.ts");
-  const page = readProjectFile("app/admin/search-demand/page.tsx");
+  const page = readSearchDemandSource();
 
   assert.match(analytics, /search_digital_service/);
   assert.match(analytics, /search_no_result/);

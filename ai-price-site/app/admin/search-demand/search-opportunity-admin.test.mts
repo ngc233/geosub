@@ -26,6 +26,28 @@ import {
   type AuthorityCoverageSnapshot,
 } from "../../../lib/search-authority-task.ts";
 
+const searchDemandSourceFiles = [
+  "./page.tsx",
+  "./queries.ts",
+  "./presenters.ts",
+  "./AuthorityCoverageSection.tsx",
+  "./ConversionRepairSections.tsx",
+  "./SearchConversionSections.tsx",
+  "./SearchEvidenceSections.tsx",
+  "./SearchGrowthPrioritySection.tsx",
+  "./SearchOpportunityWorkflowSections.tsx",
+];
+
+async function readSearchDemandSource() {
+  return (
+    await Promise.all(
+      searchDemandSourceFiles.map((fileName) =>
+        readFile(new URL(fileName, import.meta.url), "utf8"),
+      ),
+    )
+  ).join("\n");
+}
+
 const conversionTerm = {
   query: "chatgpt plus",
   locale: "zh",
@@ -150,7 +172,7 @@ test("conversion repair effect requires a new commercial click for conversion", 
 test("conversion repair workflow is authenticated audited and reversible", async () => {
   const [actions, page, migration] = await Promise.all([
     readFile(new URL("./actions.ts", import.meta.url), "utf8"),
-    readFile(new URL("./page.tsx", import.meta.url), "utf8"),
+    readSearchDemandSource(),
     readFile(new URL(
       "../../../prisma/migrations/20260801093000_search_conversion_repairs/migration.sql",
       import.meta.url,
@@ -290,7 +312,7 @@ test("authority coverage routes each gap to a controlled action", () => {
 test("authority collection is authenticated scoped and audited", async () => {
   const [route, page, editor, actions, migration] = await Promise.all([
     readFile(new URL("./authority-collect/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("./page.tsx", import.meta.url), "utf8"),
+    readSearchDemandSource(),
     readFile(new URL("../products/[id]/edit/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("./actions.ts", import.meta.url), "utf8"),
     readFile(new URL(
@@ -391,7 +413,7 @@ test("authority task business evidence is product scoped and starts with the tas
       new URL("../../../lib/admin-authority-coverage-tasks.ts", import.meta.url),
       "utf8",
     ),
-    readFile(new URL("./page.tsx", import.meta.url), "utf8"),
+    readSearchDemandSource(),
   ]);
 
   assert.match(source, /event\.product_id = task\.product_id/);
@@ -405,7 +427,7 @@ test("authority task business evidence is product scoped and starts with the tas
 });
 
 test("search demand page explains authority coverage in operator language", async () => {
-  const page = await readFile(new URL("./page.tsx", import.meta.url), "utf8");
+  const page = await readSearchDemandSource();
   assert.match(page, /权威覆盖优先级/);
   assert.match(page, /覆盖全部已上线产品/);
   assert.match(page, /真实需求/);
@@ -644,7 +666,7 @@ test("search conversion attribution follows the latest search for thirty minutes
       new URL("../../../lib/admin-search-demand.ts", import.meta.url),
       "utf8",
     ),
-    readFile(new URL("./page.tsx", import.meta.url), "utf8"),
+    readSearchDemandSource(),
   ]);
 
   assert.match(source, /WITH search_journeys AS/);
