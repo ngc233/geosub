@@ -39,6 +39,8 @@
         "admin:set-password": "node scripts/set-admin-password.cjs",
         "test:daily-brief": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/daily-operations-brief.test.mts",
         "test:performance-tools": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/admin-performance-tools.test.mts",
+        "test:e2e": "node scripts/run-e2e.cjs",
+        "test:e2e:install": "playwright install chromium",
         "typecheck": "tsc --noEmit",
         "preflight:code": "npm run check:encoding && npm run check:seo && npm run check:content-uniqueness && npm run typecheck && npm run lint && npm run test:daily-brief && npm run test:performance-tools && npm test && npm run build",
         "preflight:full": "npm run check:local && npm run check:migration-manifest && npm run check:migrations && npm run check:plans && npm run check:logos && npm run check:prices && npm run check:sitemap && npm run preflight:code",
@@ -67,6 +69,7 @@
         "world-atlas": "^2.0.2"
     },
     "devDependencies": {
+        "@playwright/test": "^1.62.1",
         "@tailwindcss/postcss": "^4",
         "@types/d3-geo": "^3.1.0",
         "@types/node": "^20",

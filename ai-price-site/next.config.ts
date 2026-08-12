@@ -35,6 +35,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const nextConfig: NextConfig = {
+  distDir: process.env.GEOSUB_NEXT_DIST_DIR || ".next",
   allowedDevOrigins: ["127.0.0.1"],
   trailingSlash: false,
   async redirects() {

@@ -149,3 +149,43 @@ jobs:
         run: npm run check:prices
       - name: Check canonical plans
         run: npm run check:plans
+
+  e2e:
+    name: Browser E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ai-price-site
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: geosub_e2e
+          POSTGRES_USER: geosub
+          POSTGRES_PASSWORD: geosub_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geosub -d geosub_e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://geosub:geosub_ci_password@127.0.0.1:5432/geosub_e2e
+      GEOSUB_ANALYTICS_CONSENT_REQUIRED: "true"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use production Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ai-price-site/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run isolated browser tests
+        run: npm run test:e2e
