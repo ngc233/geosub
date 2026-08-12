@@ -95,6 +95,10 @@ jobs:
         run: npm run db:migrate
       - name: Check source encoding
         run: npm run check:encoding
+      - name: Check runtime script migration manifest
+        run: npm run check:runtime-scripts
+      - name: Test runtime script migration guard
+        run: npm run test:runtime-scripts
       - name: Check SEO indexing policy
         run: npm run check:seo
       - name: Check content uniqueness

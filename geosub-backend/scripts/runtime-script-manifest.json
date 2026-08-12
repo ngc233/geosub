@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "policy": {
+    "replacementRuntime": "node",
+    "replacementExtension": ".mjs",
+    "retainLegacyForOneRelease": true,
+    "productionSwitchRequiresShadowEvidence": true
+  },
+  "scripts": [
+    {
+      "path": "scripts/audit-price-integrity.ps1",
+      "kind": "report",
+      "migrationPhase": 6,
+      "replacement": "scripts/audit-price-integrity.mjs",
+      "databaseEffect": "read-only",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/collect-app-store-prices.ps1",
+      "kind": "collector",
+      "migrationPhase": 3,
+      "replacement": "scripts/collect-app-store-prices.mjs",
+      "databaseEffect": "writes-observations",
+      "networkEffect": "app-store-and-fx",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/collect-google-play-prices.ps1",
+      "kind": "diagnostic-collector",
+      "migrationPhase": 5,
+      "replacement": "scripts/collect-google-play-prices.mjs",
+      "databaseEffect": "writes-evidence",
+      "networkEffect": "google-play",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/collect-web-prices.ps1",
+      "kind": "diagnostic-collector",
+      "migrationPhase": 5,
+      "replacement": "scripts/collect-web-prices.mjs",
+      "databaseEffect": "writes-evidence",
+      "networkEffect": "public-web",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/install-collector-jobs-task.ps1",
+      "kind": "windows-task-installer",
+      "migrationPhase": 0,
+      "replacement": null,
+      "databaseEffect": "none",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/install-country-tax-profile-sync-task.ps1",
+      "kind": "windows-task-installer",
+      "migrationPhase": 0,
+      "replacement": null,
+      "databaseEffect": "none",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/install-exchange-rate-sync-task.ps1",
+      "kind": "windows-task-installer",
+      "migrationPhase": 0,
+      "replacement": null,
+      "databaseEffect": "none",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/install-price-accuracy-maintenance-task.ps1",
+      "kind": "windows-task-installer",
+      "migrationPhase": 0,
+      "replacement": null,
+      "databaseEffect": "none",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/report-app-store-price-quality.ps1",
+      "kind": "report",
+      "migrationPhase": 6,
+      "replacement": "scripts/report-app-store-price-quality.mjs",
+      "databaseEffect": "read-only",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/run-collector-jobs.ps1",
+      "kind": "orchestrator",
+      "migrationPhase": 4,
+      "replacement": "scripts/run-collector-jobs.mjs",
+      "databaseEffect": "writes-jobs-runs-and-review",
+      "networkEffect": "delegated-collectors",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/run-collector-jobs-task.ps1",
+      "kind": "windows-task-runner",
+      "migrationPhase": 4,
+      "replacement": "scripts/run-collector-jobs-task.mjs",
+      "databaseEffect": "writes-runs",
+      "networkEffect": "delegated-collectors",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/run-country-tax-profile-sync.ps1",
+      "kind": "windows-task-runner",
+      "migrationPhase": 6,
+      "replacement": "scripts/run-country-tax-profile-sync.mjs",
+      "databaseEffect": "delegated-tax-sync",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/run-exchange-rate-sync.ps1",
+      "kind": "windows-task-runner",
+      "migrationPhase": 1,
+      "replacement": "scripts/run-exchange-rate-sync.mjs",
+      "databaseEffect": "delegated-fx-sync",
+      "networkEffect": "fx-providers",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/run-price-accuracy-maintenance.ps1",
+      "kind": "maintenance-orchestrator",
+      "migrationPhase": 6,
+      "replacement": "scripts/run-price-accuracy-maintenance.mjs",
+      "databaseEffect": "delegated-maintenance",
+      "networkEffect": "delegated-collectors",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/run-price-auto-review.ps1",
+      "kind": "review-runner",
+      "migrationPhase": 3,
+      "replacement": "scripts/run-price-auto-review.mjs",
+      "databaseEffect": "writes-review-and-published-prices",
+      "networkEffect": "none",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/run-price-pipeline.ps1",
+      "kind": "orchestrator",
+      "migrationPhase": 4,
+      "replacement": "scripts/run-price-pipeline.mjs",
+      "databaseEffect": "delegated-collection-and-review",
+      "networkEffect": "delegated-collectors",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/scan-discovery-sources.ps1",
+      "kind": "discovery-scanner",
+      "migrationPhase": 2,
+      "replacement": "scripts/scan-discovery-sources.mjs",
+      "databaseEffect": "writes-discovery-checks-and-candidates",
+      "networkEffect": "configured-discovery-sources",
+      "dryRun": true
+    },
+    {
+      "path": "scripts/sync-country-tax-profiles.ps1",
+      "kind": "data-sync",
+      "migrationPhase": 6,
+      "replacement": "scripts/sync-country-tax-profiles.mjs",
+      "databaseEffect": "writes-tax-profiles",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/sync-exchange-rates.ps1",
+      "kind": "data-sync",
+      "migrationPhase": 1,
+      "replacement": "scripts/sync-exchange-rates.mjs",
+      "databaseEffect": "writes-fx-rates-and-runs",
+      "networkEffect": "fx-providers",
+      "dryRun": false
+    },
+    {
+      "path": "scripts/verify-discovery-pipeline.ps1",
+      "kind": "report",
+      "migrationPhase": 2,
+      "replacement": "scripts/verify-discovery-pipeline.mjs",
+      "databaseEffect": "read-only",
+      "networkEffect": "none",
+      "dryRun": false
+    }
+  ],
+  "productionEntrypoints": [
+    {
+      "task": "exchange-rate-sync",
+      "wrapper": "deploy/linux-arm64/run-exchange-rate-sync.sh",
+      "legacyScript": "scripts/sync-exchange-rates.ps1",
+      "replacement": "scripts/sync-exchange-rates.mjs",
+      "status": "legacy-active"
+    },
+    {
+      "task": "discovery-scan",
+      "wrapper": "deploy/linux-arm64/run-discovery-scan.sh",
+      "legacyScript": "scripts/scan-discovery-sources.ps1",
+      "replacement": "scripts/scan-discovery-sources.mjs",
+      "status": "legacy-active"
+    },
+    {
+      "task": "collector-jobs",
+      "wrapper": "deploy/linux-arm64/run-collector-jobs.sh",
+      "legacyScript": "scripts/run-collector-jobs.ps1",
+      "replacement": "scripts/run-collector-jobs.mjs",
+      "status": "legacy-active"
+    },
+    {
+      "task": "price-pipeline",
+      "wrapper": "deploy/linux-arm64/run-price-pipeline.sh",
+      "legacyScript": "scripts/run-price-pipeline.ps1",
+      "replacement": "scripts/run-price-pipeline.mjs",
+      "status": "legacy-active"
+    }
+  ]
+}
