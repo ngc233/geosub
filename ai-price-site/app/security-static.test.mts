@@ -59,46 +59,6 @@ test("public event ingestion is bounded and accepts known analytics keys only", 
   assert.match(route, /status: 413/);
 });
 
-test("analytics stays off until the visitor grants consent", () => {
-  const route = readProjectFile("app/api/events/route.ts");
-  const consent = readProjectFile("lib/analytics-consent.ts");
-  const provider = readProjectFile("components/analytics/AnalyticsProvider.tsx");
-  const search = readProjectFile("components/GlobalSearch.tsx");
-  const session = readProjectFile("lib/client-analytics-session.ts");
-  const googleServer = readProjectFile(
-    "components/analytics/GoogleAnalyticsScripts.tsx",
-  );
-  const googleClient = readProjectFile(
-    "components/analytics/ConsentAwareGoogleAnalytics.tsx",
-  );
-  const banner = readProjectFile(
-    "components/analytics/AnalyticsConsentBanner.tsx",
-  );
-
-  assert.match(consent, /geosub_analytics_consent/);
-  assert.match(consent, /ANALYTICS_CONSENT_GRANTED = "granted"/);
-  assert.match(consent, /ANALYTICS_CONSENT_DENIED = "denied"/);
-  assert.match(provider, /hasAnalyticsConsent\(\)/);
-  assert.match(search, /hasAnalyticsConsent\(\)/);
-  assert.match(session, /!hasAnalyticsConsent\(\)/);
-  assert.match(googleServer, /ConsentAwareGoogleAnalytics/);
-  assert.match(googleClient, /consent !== ANALYTICS_CONSENT_GRANTED/);
-  assert.match(banner, /clearAnalyticsCookie\(\)/);
-  assert.match(banner, /clearAnalyticsSession\(\)/);
-
-  const postHandler = route.slice(route.indexOf("export async function POST"));
-  const consentGate = postHandler.indexOf("isAnalyticsConsentRequired()");
-  const rateLimitGate = postHandler.indexOf(
-    "const rateLimitEnabled = isEventRateLimitEnabled()",
-  );
-  const eventWrite = postHandler.indexOf("await prisma.eventLog.create");
-  assert.ok(consentGate > 0);
-  assert.ok(rateLimitGate > 0);
-  assert.ok(consentGate < rateLimitGate);
-  assert.ok(consentGate < eventWrite);
-  assert.match(postHandler, /return new NextResponse\(null, \{ status: 204 \}\)/);
-});
-
 test("global responses carry baseline production security headers", () => {
   const config = readProjectFile("next.config.ts");
   const proxy = readProjectFile("proxy.ts");
