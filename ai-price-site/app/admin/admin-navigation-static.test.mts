@@ -11,6 +11,17 @@ function readProjectFile(fileName: string) {
   return readFileSync(resolve(projectRoot, fileName), "utf8");
 }
 
+function readAdminDashboardSource() {
+  return [
+    "app/admin/page.tsx",
+    "app/admin/queries.ts",
+    "app/admin/DashboardComponents.tsx",
+    "app/admin/dashboard-formatters.ts",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+}
+
 function readRepoFile(fileName: string) {
   return readFileSync(resolve(projectRoot, "..", fileName), "utf8");
 }
@@ -46,7 +57,6 @@ test("admin sidebar exposes only operational modules", () => {
   assert.match(source, /label: "采集与审核"/);
   assert.match(source, /label: "新产品接入"/);
 });
-
 test("admin navigation remains usable on mobile", () => {
   const source = readProjectFile("components/admin/AdminSidebar.tsx");
   const layout = readProjectFile("app/admin/layout.tsx");
@@ -65,7 +75,7 @@ test("admin navigation remains usable on mobile", () => {
 });
 
 test("admin dashboard does not link to placeholder modules", () => {
-  const source = readProjectFile("app/admin/page.tsx");
+  const source = readAdminDashboardSource();
 
   assert.doesNotMatch(source, /\/admin\/commercial/);
   assert.doesNotMatch(source, /商业设置/);
@@ -81,7 +91,7 @@ test("admin dashboard does not link to placeholder modules", () => {
 });
 
 test("admin dashboard provides a product-level daily operations summary", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
   const operations = readProjectFile("lib/admin-daily-operations.ts");
 
   assert.match(dashboard, /getDailyOperationsSummary/);
@@ -106,7 +116,7 @@ test("admin dashboard provides a product-level daily operations summary", () => 
 });
 
 test("admin dashboard keeps today live while historical analytics are aggregated", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
   const packageJson = readProjectFile("package.json");
   const upgrade = readRepoFile("geosub-backend/deploy/linux-arm64/upgrade.sh");
   const postDeploy = readRepoFile(
@@ -132,7 +142,7 @@ test("admin dashboard keeps today live while historical analytics are aggregated
 });
 
 test("admin dashboard renders non-zero trend totals as visible svg lines", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
 
   assert.match(dashboard, /const hasTrendData = totalPageViews > 0 \|\| totalClicks > 0/);
   assert.match(dashboard, /const pageViewPoints = trend/);
@@ -144,7 +154,7 @@ test("admin dashboard renders non-zero trend totals as visible svg lines", () =>
 });
 
 test("admin dashboard uses consolidated summaries and real service heat", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
 
   assert.match(dashboard, /DashboardSummaryRow/);
   assert.match(dashboard, /ServiceHeatRow/);
@@ -157,7 +167,7 @@ test("admin dashboard uses consolidated summaries and real service heat", () => 
 });
 
 test("admin dashboard supports bounded custom date ranges", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
 
   assert.match(dashboard, /function getDashboardPeriod/);
   assert.match(dashboard, /days < 1 \|\| days > 730 \|\| to > today/);
@@ -168,7 +178,7 @@ test("admin dashboard supports bounded custom date ranges", () => {
 });
 
 test("admin runtime reports slow dashboard workloads without logging payloads", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
   const layout = readProjectFile("app/admin/layout.tsx");
   const review = readProjectFile("app/admin/review/queries.ts");
   const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");
@@ -235,7 +245,7 @@ test("heavy admin query waves leave database capacity for navigation", () => {
   const review = readProjectFile("app/admin/review/queries.ts");
   const searchDemand = readProjectFile("app/admin/search-demand/page.tsx");
   const searchReadModel = readProjectFile("lib/admin-search-demand.ts");
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
   const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");
   const seoQuality = readProjectFile("lib/product-seo-quality-data.ts");
 
@@ -305,7 +315,7 @@ test("database runtime keeps the web pool bounded and audits indexes read-only",
 });
 
 test("admin dashboard attributes commercial clicks and links to event logs", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
 
   assert.match(dashboard, /CommercialAttributionRow/);
   assert.match(dashboard, /商业化归因/);
@@ -317,7 +327,7 @@ test("admin dashboard attributes commercial clicks and links to event logs", () 
 });
 
 test("admin dashboard sessionizes events and computes a chronological funnel", () => {
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
   const provider = readProjectFile(
     "components/analytics/AnalyticsProvider.tsx",
   );

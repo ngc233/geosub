@@ -11,6 +11,17 @@ function readProjectFile(fileName: string) {
   return readFileSync(resolve(projectRoot, fileName), "utf8");
 }
 
+function readAdminDashboardSource() {
+  return [
+    "app/admin/page.tsx",
+    "app/admin/queries.ts",
+    "app/admin/DashboardComponents.tsx",
+    "app/admin/dashboard-formatters.ts",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+}
+
 function listTsxFiles(directory: string): string[] {
   return readdirSync(resolve(projectRoot, directory), { withFileTypes: true })
     .flatMap((entry) => {
@@ -49,7 +60,6 @@ test("shared admin primitives use current compact radius tokens", () => {
   assert.match(readProjectFile("components/admin/AdminCard.tsx"), /rounded-xl/);
   assert.match(readProjectFile("components/admin/AdminTable.tsx"), /rounded-xl/);
 });
-
 test("all admin surfaces reject legacy oversized radius tokens", () => {
   const files = [
     ...listTsxFiles("app/admin"),
@@ -71,7 +81,7 @@ test("admin destinations do not prefetch database-heavy pages", () => {
   ];
   const adminLink = readProjectFile("components/admin/AdminLink.tsx");
   const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readAdminDashboardSource();
   const loading = readProjectFile("app/admin/loading.tsx");
 
   assert.match(adminLink, /prefetch=\{false\}/);
