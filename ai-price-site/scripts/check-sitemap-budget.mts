@@ -159,6 +159,7 @@ async function getArticlePaths(now: Date) {
   return paths.flat();
 }
 
+try {
 const staticGuidePaths = seoIndexableLocales.flatMap((locale) =>
   indexableStaticGuidePaths.map(
     (path) => `/${localePath(locale)}${path}`,
@@ -239,3 +240,6 @@ console.log(
   ),
 );
 console.log("Sitemap budget check passed.");
+} finally {
+  await prisma.$disconnect();
+}

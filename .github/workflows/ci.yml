@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code:
+    name: Code quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ai-price-site
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: geosub_code_ci
+          POSTGRES_USER: geosub
+          POSTGRES_PASSWORD: geosub_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geosub -d geosub_code_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://geosub:geosub_ci_password@localhost:5432/geosub_code_ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use production Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ai-price-site/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+      - name: Prepare build database
+        run: npm run db:migrate
+      - name: Build
+        run: npm run build
+
+  content:
+    name: Content quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ai-price-site
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: geosub_content_ci
+          POSTGRES_USER: geosub
+          POSTGRES_PASSWORD: geosub_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geosub -d geosub_content_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://geosub:geosub_ci_password@localhost:5432/geosub_content_ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use production Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ai-price-site/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Prepare schema for sitemap inspection
+        run: npm run db:migrate
+      - name: Check source encoding
+        run: npm run check:encoding
+      - name: Check SEO indexing policy
+        run: npm run check:seo
+      - name: Check content uniqueness
+        run: npm run check:content-uniqueness
+      - name: Check sitemap budget
+        run: npm run check:sitemap
+
+  database:
+    name: Database quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ai-price-site
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: geosub_database_ci
+          POSTGRES_USER: geosub
+          POSTGRES_PASSWORD: geosub_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geosub -d geosub_database_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://geosub:geosub_ci_password@localhost:5432/geosub_database_ci
+      GEOSUB_ALLOW_CI_FIXTURE: "true"
+      GEOSUB_PRICE_CHECK_PRODUCTS: chatgpt
+      GEOSUB_PLAN_CHECK_PRODUCTS: chatgpt
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use production Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ai-price-site/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Apply migrations
+        run: npm run db:migrate
+      - name: Seed deterministic quality fixture
+        run: npm run seed:ci-quality
+      - name: Audit migrations
+        run: npm run check:migrations
+      - name: Check price quality
+        run: npm run check:prices
+      - name: Check canonical plans
+        run: npm run check:plans

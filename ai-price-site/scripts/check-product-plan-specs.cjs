@@ -6,6 +6,10 @@ const { Client } = require("pg");
 const appDir = path.resolve(__dirname, "..");
 const repoDir = path.resolve(appDir, "..");
 const specPath = path.join(repoDir, "geosub-backend", "data", "product-plan-specs.json");
+const configuredProducts = (process.env.GEOSUB_PLAN_CHECK_PRODUCTS || "")
+  .split(",")
+  .map((value) => value.trim().toLowerCase())
+  .filter(Boolean);
 
 dotenv.config({ path: path.join(appDir, ".env.local") });
 dotenv.config({ path: path.join(appDir, ".env") });
@@ -190,7 +194,25 @@ async function validateDatabase(specs) {
 }
 
 async function main() {
-  const specs = JSON.parse(fs.readFileSync(specPath, "utf8"));
+  const allSpecs = JSON.parse(fs.readFileSync(specPath, "utf8"));
+  const missingConfiguredProducts = configuredProducts.filter(
+    (productSlug) => !allSpecs[productSlug],
+  );
+  if (missingConfiguredProducts.length > 0) {
+    throw new Error(
+      `Unknown configured plan product(s): ${missingConfiguredProducts.join(", ")}.`,
+    );
+  }
+
+  const specs =
+    configuredProducts.length > 0
+      ? Object.fromEntries(
+          configuredProducts.map((productSlug) => [
+            productSlug,
+            allSpecs[productSlug],
+          ]),
+        )
+      : allSpecs;
   const failures = [...validateSpecs(specs), ...(await validateDatabase(specs))];
 
   console.log(`Canonical plan products: ${Object.keys(specs).join(", ")}`);

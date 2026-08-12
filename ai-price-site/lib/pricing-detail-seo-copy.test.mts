@@ -52,5 +52,8 @@ test("pricing detail metadata uses the dedicated SEO copy", () => {
   assert.match(detailPage, /getPricingDetailSeoCopy/);
   assert.match(detailPage, /const seoCopy = getPricingDetailSeoCopy/);
   assert.match(detailPage, /: seoCopy\.title/);
-  assert.match(detailPage, /: seoCopy\.description/);
+  assert.match(
+    detailPage,
+    /searchIntentCopy\?\.description \|\| seoCopy\.description/,
+  );
 });
