@@ -48,6 +48,22 @@ test("visitor can move from home to an AI detail and switch language", async ({
   await expect(page.locator("h1").first()).toContainText(fixture.productName);
 });
 
+test("visitor can preview and dismiss a price share card", async ({ page }) => {
+  const detailPath = `/zh/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`;
+  await page.goto(detailPath);
+
+  await page.locator('[data-track-event="open_share_modal"]').click();
+
+  const dialog = page.getByRole("dialog", { name: "分享价格图" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("svg").first()).toBeVisible();
+  await expect(dialog.getByText(fixture.productName, { exact: false }).first()).toBeVisible();
+  await expect(dialog.locator('[data-track-event="download_share_image"]')).toBeEnabled();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+});
+
 test("admin can log in and approve a pending observation", async ({ page }) => {
   await page.goto("/admin-login");
   await page.locator('input[name="email"]').fill(fixture.adminEmail);

@@ -10,6 +10,16 @@ function readComponent(fileName: string) {
   return readFileSync(resolve(componentsDir, fileName), "utf8");
 }
 
+function readSharePriceModalSource() {
+  return [
+    "SharePriceModal.tsx",
+    "SharePriceCopy.ts",
+    "SharePriceMap.tsx",
+  ]
+    .map(readComponent)
+    .join("\n");
+}
+
 test("language and currency dropdowns close on outside interaction and Escape", () => {
   const header = readComponent("Header.tsx");
   const pricingPlatform = readComponent("PricingPlatformView.tsx");
@@ -100,7 +110,7 @@ test("price world map filters Antarctica from the rendered geometry", () => {
 });
 
 test("share modal keeps the generated card as the primary preview", () => {
-  const source = readComponent("SharePriceModal.tsx");
+  const source = readSharePriceModalSource();
 
   assert.match(source, /role="dialog"/);
   assert.match(source, /aria-modal="true"/);

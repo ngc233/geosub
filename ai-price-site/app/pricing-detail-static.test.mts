@@ -27,6 +27,16 @@ function readAppFile(...segments: string[]) {
   return readFileSync(resolve(appDir, ...segments), "utf8");
 }
 
+function readSharePriceModalSource() {
+  return [
+    "SharePriceModal.tsx",
+    "SharePriceCopy.ts",
+    "SharePriceMap.tsx",
+  ]
+    .map((fileName) => readAppFile("..", "components", fileName))
+    .join("\n");
+}
+
 test("legacy pricing plan queries resolve to canonical plan routes", () => {
   assert.equal(
     getLegacyPricingPlanRedirectPath("/en/ai-pricing/chatgpt", "pro-5x"),
@@ -427,7 +437,7 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
 
   const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
   const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
-  const shareModal = readAppFile("..", "components", "SharePriceModal.tsx");
+  const shareModal = readSharePriceModalSource();
   const pricingCopy = readAppFile("..", "lib", "public-pricing-copy.ts");
   const pageCopy = readAppFile("..", "lib", "pricing-detail-page-copy.ts");
 
@@ -503,7 +513,7 @@ test("pricing detail page copy is complete for every v2.1 prepared locale", () =
 test("pricing detail freshness follows the active plan and trusted matching observations", () => {
   const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
   const adapter = readAppFile("..", "lib", "pricing-detail-adapter.ts");
-  const shareModal = readAppFile("..", "components", "SharePriceModal.tsx");
+  const shareModal = readSharePriceModalSource();
   const pricingCopy = readAppFile("..", "lib", "public-pricing-copy.ts");
 
   assert.match(platformView, /plan\.freshness\?\.pageUpdatedAt/);

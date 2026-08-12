@@ -10,6 +10,16 @@ function readComponent(fileName: string) {
   return readFileSync(resolve(componentsDir, fileName), "utf8");
 }
 
+function readSharePriceModalSource() {
+  return [
+    "SharePriceModal.tsx",
+    "SharePriceCopy.ts",
+    "SharePriceMap.tsx",
+  ]
+    .map(readComponent)
+    .join("\n");
+}
+
 test("active public listing cards use the current compact radius system", () => {
   const dbPricingCard = readComponent("DbPricingCard.tsx");
   const brandIcon = readComponent("BrandIcon.tsx");
@@ -46,7 +56,7 @@ test("public pricing interactions emit operational analytics events", () => {
   const sidebar = readComponent("ProductSidebar.tsx");
   const mobileSwitcher = readComponent("MobileProductSwitcher.tsx");
   const planTabs = readComponent("PlanTabs.tsx");
-  const shareModal = readComponent("SharePriceModal.tsx");
+  const shareModal = readSharePriceModalSource();
 
   assert.match(dbPricingCard, /data-track-event="click_digital_service_card"/);
   assert.match(sidebar, /data-track-event="click_digital_service_sidebar"/);
@@ -151,7 +161,7 @@ test("public pricing lists prepare every v2.1 locale and keep exact update dates
 test("purchasing power prepares every v2.1 locale while share cards cover active locales", () => {
   const affordability = readComponent("AffordabilityComparison.tsx");
   const affordabilityRows = readComponent("ExpandableAffordabilityRows.tsx");
-  const shareModal = readComponent("SharePriceModal.tsx");
+  const shareModal = readSharePriceModalSource();
 
   assert.match(affordability, /withTraditionalChinese\(\{/);
   assert.match(
@@ -181,7 +191,7 @@ test("purchasing power prepares every v2.1 locale while share cards cover active
 test("missing US prices use the actual fallback region instead of a false US label", () => {
   const pricingView = readComponent("PricingPlatformView.tsx");
   const regionTable = readComponent("ExpandableRegionPriceTable.tsx");
-  const shareModal = readComponent("SharePriceModal.tsx");
+  const shareModal = readSharePriceModalSource();
 
   assert.match(pricingView, /hasUsReference \? copy\.usBase : referenceRegion\.country/);
   assert.match(regionTable, /hasUsReference \? copy\.vsUs : referenceCountry/);
