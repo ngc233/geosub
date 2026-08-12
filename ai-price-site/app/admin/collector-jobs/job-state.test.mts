@@ -14,6 +14,12 @@ import {
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 
+function readCollectorDashboardSource() {
+  return ["page.tsx", "queries.ts", "model.ts", "CollectorJobsView.tsx"]
+    .map((fileName) => readFileSync(resolve(testDir, fileName), "utf8"))
+    .join("\n");
+}
+
 function job(overrides: Partial<CollectorJobStateInput> = {}): CollectorJobStateInput {
   return {
     source_type: "app_store",
@@ -195,7 +201,7 @@ test("App Store runs persist a product-scoped outcome only after automatic revie
 });
 
 test("collector dashboard prefers persisted outcomes and shows a product summary", () => {
-  const page = readFileSync(resolve(testDir, "page.tsx"), "utf8");
+  const page = readCollectorDashboardSource();
   const timelineComponent = readFileSync(
     resolve(testDir, "../review/CollectorRunTimeline.tsx"),
     "utf8",

@@ -49,6 +49,17 @@ function readDataQualitySource() {
     .join("\n");
 }
 
+function readCollectorJobsSource() {
+  return [
+    "app/admin/collector-jobs/page.tsx",
+    "app/admin/collector-jobs/queries.ts",
+    "app/admin/collector-jobs/model.ts",
+    "app/admin/collector-jobs/CollectorJobsView.tsx",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+}
+
 function readRepoFile(fileName: string) {
   return readFileSync(resolve(projectRoot, "..", fileName), "utf8");
 }
@@ -210,7 +221,7 @@ test("admin runtime reports slow dashboard workloads without logging payloads", 
   const review = readProjectFile("app/admin/review/queries.ts");
   const dataQuality = readDataQualitySource();
   const dataQualityDetail = readProjectFile("app/admin/data-quality/[slug]/page.tsx");
-  const collectorJobs = readProjectFile("app/admin/collector-jobs/page.tsx");
+  const collectorJobs = readCollectorJobsSource();
   const searchDemand = readSearchDemandSource();
   const system = readProjectFile("app/admin/system/page.tsx");
   const performance = readProjectFile("lib/admin-performance.ts");
@@ -249,7 +260,7 @@ test("admin read pages do not reconcile collector runs during navigation", () =>
     "app/admin/review/queries.ts",
     "app/admin/data-quality/queries.ts",
     "app/admin/data-quality/[slug]/page.tsx",
-    "app/admin/collector-jobs/page.tsx",
+    "app/admin/collector-jobs/queries.ts",
   ];
 
   for (const fileName of readPages) {
