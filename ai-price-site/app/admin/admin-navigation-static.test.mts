@@ -38,6 +38,17 @@ function readSearchDemandSource() {
     .join("\n");
 }
 
+function readDataQualitySource() {
+  return [
+    "app/admin/data-quality/page.tsx",
+    "app/admin/data-quality/queries.ts",
+    "app/admin/data-quality/model.ts",
+    "app/admin/data-quality/DataQualityOverview.tsx",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+}
+
 function readRepoFile(fileName: string) {
   return readFileSync(resolve(projectRoot, "..", fileName), "utf8");
 }
@@ -197,7 +208,7 @@ test("admin runtime reports slow dashboard workloads without logging payloads", 
   const dashboard = readAdminDashboardSource();
   const layout = readProjectFile("app/admin/layout.tsx");
   const review = readProjectFile("app/admin/review/queries.ts");
-  const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");
+  const dataQuality = readDataQualitySource();
   const dataQualityDetail = readProjectFile("app/admin/data-quality/[slug]/page.tsx");
   const collectorJobs = readProjectFile("app/admin/collector-jobs/page.tsx");
   const searchDemand = readSearchDemandSource();
@@ -236,7 +247,7 @@ test("admin runtime reports slow dashboard workloads without logging payloads", 
 test("admin read pages do not reconcile collector runs during navigation", () => {
   const readPages = [
     "app/admin/review/queries.ts",
-    "app/admin/data-quality/page.tsx",
+    "app/admin/data-quality/queries.ts",
     "app/admin/data-quality/[slug]/page.tsx",
     "app/admin/collector-jobs/page.tsx",
   ];
@@ -262,7 +273,7 @@ test("heavy admin query waves leave database capacity for navigation", () => {
   const searchDemand = readSearchDemandSource();
   const searchReadModel = readProjectFile("lib/admin-search-demand.ts");
   const dashboard = readAdminDashboardSource();
-  const dataQuality = readProjectFile("app/admin/data-quality/page.tsx");
+  const dataQuality = readDataQualitySource();
   const seoQuality = readProjectFile("lib/product-seo-quality-data.ts");
 
   assert.match(review, /"review\.pending-data"[\s\S]*?Promise\.all\(\[/);

@@ -17,6 +17,17 @@ function readAppFile(fileName: string) {
   return readFileSync(resolve(appRoot, fileName), "utf8");
 }
 
+function readDataQualitySource() {
+  return [
+    "app/admin/data-quality/page.tsx",
+    "app/admin/data-quality/queries.ts",
+    "app/admin/data-quality/model.ts",
+    "app/admin/data-quality/DataQualityOverview.tsx",
+  ]
+    .map(readAppFile)
+    .join("\n");
+}
+
 function readRepoFile(fileName: string) {
   return readFileSync(resolve(repoRoot, fileName), "utf8");
 }
@@ -92,7 +103,7 @@ test("stale published prices get a focused retry lifecycle", () => {
 });
 
 test("admin data quality pages use the same fourteen day freshness policy", () => {
-  const overview = readAppFile("app/admin/data-quality/page.tsx");
+  const overview = readDataQualitySource();
   const detail = readAppFile("app/admin/data-quality/[slug]/page.tsx");
 
   assert.match(overview, /INTERVAL '14 days'/);
@@ -107,7 +118,7 @@ test("admin data quality pages use the same fourteen day freshness policy", () =
 
 test("admin coverage audit follows the collector's exact default country policy", () => {
   const collector = readRepoFile("geosub-backend/scripts/collect-app-store-prices.ps1");
-  const overview = readAppFile("app/admin/data-quality/page.tsx");
+  const overview = readDataQualitySource();
   const detail = readAppFile("app/admin/data-quality/[slug]/page.tsx");
   const policyBlock = collector.match(
     /\$DefaultAppStoreCountryCodes\s*=\s*@\(([\s\S]*?)\r?\n\)/,
@@ -145,7 +156,7 @@ test("admin coverage audit follows the collector's exact default country policy"
 test("anomaly evidence follows a bounded automatic repair lifecycle", () => {
   const lifecycle = readSqlMigration("sql/064_data_quality_repair_cycles.sql");
   const runner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
-  const overview = readAppFile("app/admin/data-quality/page.tsx");
+  const overview = readDataQualitySource();
   const deployCheck = readRepoFile(
     "geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
   );
@@ -224,7 +235,7 @@ test("coverage gaps queue bounded product-level App Store rechecks", () => {
   const deployCheck = readRepoFile(
     "geosub-backend/deploy/linux-arm64/post-deploy-check.sh",
   );
-  const overview = readAppFile("app/admin/data-quality/page.tsx");
+  const overview = readDataQualitySource();
   const availabilitySemantics = readSqlMigration(
     "sql/067_app_store_availability_semantics.sql",
   );
@@ -273,7 +284,7 @@ test("regional plan differences require three successful storefront checks", () 
   const collector = readRepoFile(
     "geosub-backend/scripts/collect-app-store-prices.ps1",
   );
-  const overview = readAppFile("app/admin/data-quality/page.tsx");
+  const overview = readDataQualitySource();
   const detail = readAppFile("app/admin/data-quality/[slug]/page.tsx");
 
   assert.match(planAvailability, /app_store_plan_availability_checks/);
