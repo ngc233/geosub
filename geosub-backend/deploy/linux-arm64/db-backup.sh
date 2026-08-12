@@ -17,15 +17,31 @@ BACKUP_DIR="${GEOSUB_BACKUP_DIR:-/opt/geosub/backups}"
 KEEP_DAYS="${GEOSUB_BACKUP_KEEP_DAYS:-14}"
 MIRROR_DIR="${GEOSUB_BACKUP_MIRROR_DIR:-}"
 
+if [[ ! "$KEEP_DAYS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "GEOSUB_BACKUP_KEEP_DAYS must be a positive integer, got: $KEEP_DAYS"
+  exit 1
+fi
+
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 install -d -m 0700 "$BACKUP_DIR"
 
 backup_file="$BACKUP_DIR/${DB_NAME}_${timestamp}.dump"
 meta_file="$BACKUP_DIR/${DB_NAME}_${timestamp}.txt"
+counts_file="$BACKUP_DIR/${DB_NAME}_${timestamp}.counts.tsv"
+checksum_file="$backup_file.sha256"
 partial_file="${backup_file}.partial"
+counts_partial_file="${counts_file}.partial"
+catalog_file="${backup_file}.catalog.partial"
+checksum_partial_file="${checksum_file}.partial"
+meta_partial_file="${meta_file}.partial"
 
 cleanup() {
-  rm -f "$partial_file"
+  rm -f \
+    "$partial_file" \
+    "$counts_partial_file" \
+    "$catalog_file" \
+    "$checksum_partial_file" \
+    "$meta_partial_file"
 }
 trap cleanup EXIT
 
@@ -43,10 +59,36 @@ if [[ ! -s "$partial_file" ]]; then
 fi
 
 echo "Verifying backup catalog"
-docker exec -i "$DB_CONTAINER" pg_restore --list < "$partial_file" >/dev/null
-mv "$partial_file" "$backup_file"
+docker exec -i "$DB_CONTAINER" pg_restore --list < "$partial_file" > "$catalog_file"
 
-sha256sum "$backup_file" > "$backup_file.sha256"
+for required_entry in \
+  'TABLE public products' \
+  'TABLE DATA public products' \
+  'TABLE public plans' \
+  'TABLE DATA public plans' \
+  'TABLE public region_prices' \
+  'TABLE DATA public region_prices'; do
+  if ! grep -Fq "$required_entry" "$catalog_file"; then
+    echo "Backup catalog is missing required entry: $required_entry"
+    exit 1
+  fi
+done
+
+echo "Recording key table row counts"
+docker exec -i "$DB_CONTAINER" psql \
+  -U "$DB_USER" \
+  -d "$DB_NAME" \
+  -X \
+  -v ON_ERROR_STOP=1 \
+  -At \
+  -F $'\t' \
+  -f - \
+  < "$(dirname "$0")/db-restore-counts.sql" \
+  > "$counts_partial_file"
+
+backup_hash="$(sha256sum "$partial_file" | cut -d ' ' -f1)"
+counts_hash="$(sha256sum "$counts_partial_file" | cut -d ' ' -f1)"
+printf '%s  %s\n' "$backup_hash" "$backup_file" > "$checksum_partial_file"
 
 {
   echo "database=$DB_NAME"
@@ -54,23 +96,43 @@ sha256sum "$backup_file" > "$backup_file.sha256"
   echo "created_at_utc=$timestamp"
   echo "format=pg_dump custom"
   echo "file=$backup_file"
-  echo "sha256=$(cut -d ' ' -f1 "$backup_file.sha256")"
-} > "$meta_file"
+  echo "sha256=$backup_hash"
+  echo "counts_file=$counts_file"
+  echo "counts_sha256=$counts_hash"
+  echo "keep_days=$KEEP_DAYS"
+  echo "mirror_dir=${MIRROR_DIR:-NOT_CONFIGURED}"
+} > "$meta_partial_file"
+
+mv "$partial_file" "$backup_file"
+mv "$counts_partial_file" "$counts_file"
+mv "$checksum_partial_file" "$checksum_file"
+mv "$meta_partial_file" "$meta_file"
 
 if [[ -n "$MIRROR_DIR" ]]; then
   install -d -m 0700 "$MIRROR_DIR"
-  cp -p "$backup_file" "$backup_file.sha256" "$meta_file" "$MIRROR_DIR/"
+  cp -p "$backup_file" "$checksum_file" "$meta_file" "$counts_file" "$MIRROR_DIR/"
+  mirror_backup="$MIRROR_DIR/$(basename "$backup_file")"
+  source_hash="$(sha256sum "$backup_file" | cut -d ' ' -f1)"
+  mirror_hash="$(sha256sum "$mirror_backup" | cut -d ' ' -f1)"
+  if [[ "$source_hash" != "$mirror_hash" ]]; then
+    echo "Mirrored backup checksum mismatch: $mirror_backup"
+    rm -f "$mirror_backup" "$MIRROR_DIR/$(basename "$checksum_file")" "$MIRROR_DIR/$(basename "$meta_file")" "$MIRROR_DIR/$(basename "$counts_file")"
+    exit 1
+  fi
   echo "Backup mirrored to: $MIRROR_DIR"
 fi
 
-find "$BACKUP_DIR" -type f -name "${DB_NAME}_*.dump" -mtime +"$KEEP_DAYS" -print -delete
-find "$BACKUP_DIR" -type f -name "${DB_NAME}_*.dump.sha256" -mtime +"$KEEP_DAYS" -print -delete
-find "$BACKUP_DIR" -type f -name "${DB_NAME}_*.txt" -mtime +"$KEEP_DAYS" -print -delete
+retention_minutes="$((KEEP_DAYS * 24 * 60))"
+find "$BACKUP_DIR" -type f -name "${DB_NAME}_*.dump" -mmin +"$retention_minutes" -print -delete
+find "$BACKUP_DIR" -type f -name "${DB_NAME}_*.dump.sha256" -mmin +"$retention_minutes" -print -delete
+find "$BACKUP_DIR" -type f -name "${DB_NAME}_*.counts.tsv" -mmin +"$retention_minutes" -print -delete
+find "$BACKUP_DIR" -type f -name "${DB_NAME}_*.txt" -mmin +"$retention_minutes" -print -delete
 
 if [[ -n "$MIRROR_DIR" ]]; then
-  find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.dump" -mtime +"$KEEP_DAYS" -print -delete
-  find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.dump.sha256" -mtime +"$KEEP_DAYS" -print -delete
-  find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.txt" -mtime +"$KEEP_DAYS" -print -delete
+  find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.dump" -mmin +"$retention_minutes" -print -delete
+  find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.dump.sha256" -mmin +"$retention_minutes" -print -delete
+  find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.counts.tsv" -mmin +"$retention_minutes" -print -delete
+  find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.txt" -mmin +"$retention_minutes" -print -delete
 fi
 
 echo "Backup complete:"

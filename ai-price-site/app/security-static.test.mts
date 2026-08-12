@@ -124,6 +124,12 @@ test("global responses carry baseline production security headers", () => {
 test("deployment installs verified backups and safe analytics retention", () => {
   const backup = readProjectFile("../geosub-backend/deploy/linux-arm64/db-backup.sh");
   const restore = readProjectFile("../geosub-backend/deploy/linux-arm64/db-restore.sh");
+  const restoreDrill = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/db-restore-drill.sh"
+  );
+  const restoreValidation = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/db-restore-validate.sql"
+  );
   const upgrade = readProjectFile("../geosub-backend/deploy/linux-arm64/upgrade.sh");
   const backupTimer = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/systemd/geosub-db-backup.timer"
@@ -136,7 +142,21 @@ test("deployment installs verified backups and safe analytics retention", () => 
   assert.match(backup, /pg_restore --list/);
   assert.match(backup, /\.partial/);
   assert.match(backup, /GEOSUB_BACKUP_MIRROR_DIR/);
+  assert.match(backup, /db-restore-counts\.sql/);
+  assert.match(backup, /mirror_hash/);
+  assert.match(backup, /-mmin \+"\$retention_minutes"/);
   assert.match(restore, /Checking backup catalog before destructive restore/);
+  assert.match(restore, /actual_hash="\$\(sha256sum "\$BACKUP_FILE"/);
+  assert.match(restoreDrill, /CREATE_RESTORE_DRILL_DATABASE/);
+  assert.match(restoreDrill, /Refusing to use the production database/);
+  assert.match(restoreDrill, /--exit-on-error/);
+  assert.match(restoreDrill, /db-restore-validate\.sql/);
+  assert.match(restoreDrill, /Backup-time count snapshot is missing or empty/);
+  assert.match(restoreDrill, /expected_counts_hash/);
+  assert.match(restoreDrill, /diff -u/);
+  assert.match(restoreValidation, /BEGIN READ ONLY/);
+  assert.match(restoreValidation, /Unvalidated foreign keys/);
+  assert.match(restoreValidation, /pg_views/);
   assert.match(backupTimer, /OnCalendar=\*-\*-\* 02:40:00/);
   assert.match(retention, /Dry run only/);
   assert.match(retention, /generatedBy/);

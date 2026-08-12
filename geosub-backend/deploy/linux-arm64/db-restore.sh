@@ -34,7 +34,13 @@ if [[ ! -s "$BACKUP_FILE" ]]; then
 fi
 
 if [[ -f "$BACKUP_FILE.sha256" ]]; then
-  sha256sum -c "$BACKUP_FILE.sha256"
+  expected_hash="$(awk 'NR == 1 { print $1 }' "$BACKUP_FILE.sha256")"
+  actual_hash="$(sha256sum "$BACKUP_FILE" | cut -d ' ' -f1)"
+  if [[ -z "$expected_hash" || "$expected_hash" != "$actual_hash" ]]; then
+    echo "Backup checksum mismatch: $BACKUP_FILE"
+    exit 1
+  fi
+  echo "Backup checksum verified."
 fi
 
 if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then

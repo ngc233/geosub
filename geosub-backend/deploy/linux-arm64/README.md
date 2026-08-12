@@ -228,10 +228,46 @@ sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-backup.sh
 ```
 
 Backups are written to `/opt/geosub/backups` by default. A temporary dump is
-first checked with `pg_restore --list`; only a non-empty valid dump is promoted
-to the final filename. Each dump has matching `.sha256` and metadata files.
+first checked with `pg_restore --list`; required schema and table-data entries
+must be present before the dump is promoted to the final filename. Each dump
+has matching `.sha256`, metadata, and key-table row-count files. Files older
+than `GEOSUB_BACKUP_KEEP_DAYS` are removed from both configured locations.
 Set `GEOSUB_BACKUP_MIRROR_DIR` to a mounted second disk or remote filesystem to
-keep a second copy outside the main application directory.
+keep a checksum-verified second copy outside the main application directory.
+
+Before any production migration work, verify the latest backup by restoring it
+to an independent temporary database. This does not stop the website and never
+overwrites the production database:
+
+```bash
+set -a
+source /etc/geosub/geosub.env
+set +a
+
+printf 'keep_days=%s\nmirror_dir=%s\n' \
+  "${GEOSUB_BACKUP_KEEP_DAYS:-14}" \
+  "${GEOSUB_BACKUP_MIRROR_DIR:-NOT_CONFIGURED}"
+
+latest_backup="$(find "${GEOSUB_BACKUP_DIR:-/opt/geosub/backups}" \
+  -maxdepth 1 -type f -name "${GEOSUB_DB_NAME:-geosub_app}_*.dump" \
+  -printf '%T@ %p\n' | sort -nr | head -n 1 | cut -d ' ' -f2-)"
+test -n "$latest_backup"
+
+bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-restore-drill.sh \
+  "$latest_backup" \
+  "geosub_restore_drill_$(date -u +%Y%m%d)" \
+  CREATE_RESTORE_DRILL_DATABASE
+```
+
+The drill verifies the checksum, restores with `--exit-on-error`, checks
+required tables, all public views, required functions, validated foreign keys,
+non-empty core data, and key-table row counts. It retains the temporary database
+after success so the operator can inspect it. Record the backup filename, its
+SHA-256, the displayed retention and mirror settings, the validation output,
+and the drill database name. After human approval, remove only the named drill
+database using the exact command printed by the script.
+
+Do not begin migration batch B1 until this production-backup drill has passed.
 
 Restore is intentionally explicit and destructive:
 
