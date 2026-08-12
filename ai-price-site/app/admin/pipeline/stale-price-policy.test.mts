@@ -28,6 +28,17 @@ function readDataQualitySource() {
     .join("\n");
 }
 
+function readDataQualityDetailSource() {
+  return [
+    "app/admin/data-quality/[slug]/page.tsx",
+    "app/admin/data-quality/[slug]/queries.ts",
+    "app/admin/data-quality/[slug]/model.ts",
+    "app/admin/data-quality/[slug]/ProductDataQualityView.tsx",
+  ]
+    .map(readAppFile)
+    .join("\n");
+}
+
 function readRepoFile(fileName: string) {
   return readFileSync(resolve(repoRoot, fileName), "utf8");
 }
@@ -104,7 +115,7 @@ test("stale published prices get a focused retry lifecycle", () => {
 
 test("admin data quality pages use the same fourteen day freshness policy", () => {
   const overview = readDataQualitySource();
-  const detail = readAppFile("app/admin/data-quality/[slug]/page.tsx");
+  const detail = readDataQualityDetailSource();
 
   assert.match(overview, /INTERVAL '14 days'/);
   assert.doesNotMatch(overview, /INTERVAL '7 days'/);
@@ -119,7 +130,7 @@ test("admin data quality pages use the same fourteen day freshness policy", () =
 test("admin coverage audit follows the collector's exact default country policy", () => {
   const collector = readRepoFile("geosub-backend/scripts/collect-app-store-prices.ps1");
   const overview = readDataQualitySource();
-  const detail = readAppFile("app/admin/data-quality/[slug]/page.tsx");
+  const detail = readDataQualityDetailSource();
   const policyBlock = collector.match(
     /\$DefaultAppStoreCountryCodes\s*=\s*@\(([\s\S]*?)\r?\n\)/,
   );
@@ -285,7 +296,7 @@ test("regional plan differences require three successful storefront checks", () 
     "geosub-backend/scripts/collect-app-store-prices.ps1",
   );
   const overview = readDataQualitySource();
-  const detail = readAppFile("app/admin/data-quality/[slug]/page.tsx");
+  const detail = readDataQualityDetailSource();
 
   assert.match(planAvailability, /app_store_plan_availability_checks/);
   assert.match(planAvailability, /'pending_absence'/);
