@@ -1,0 +1,17 @@
+{
+  "providers": {
+    "frankfurter": {
+      "error": "recorded provider timeout"
+    },
+    "open-er-api": {
+      "payload": {
+        "time_last_update_utc": "Tue, 11 Aug 2026 00:00:01 +0000",
+        "rates": {
+          "CNY": 7.16,
+          "EUR": 0.87,
+          "JPY": 148
+        }
+      }
+    }
+  }
+}

@@ -194,7 +194,7 @@
       "wrapper": "deploy/linux-arm64/run-exchange-rate-sync.sh",
       "legacyScript": "scripts/sync-exchange-rates.ps1",
       "replacement": "scripts/sync-exchange-rates.mjs",
-      "status": "legacy-active"
+      "status": "shadow-ready"
     },
     {
       "task": "discovery-scan",

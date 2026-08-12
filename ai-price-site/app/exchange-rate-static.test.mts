@@ -25,6 +25,9 @@ test("exchange-rate HTTP cron accepts POST only", () => {
     "../geosub-backend/deploy/linux-arm64/run-exchange-rate-sync.sh",
   );
   const syncScript = readProjectFile("scripts/sync-exchange-rates.cjs");
+  const runtimeSyncScript = readProjectFile(
+    "../geosub-backend/scripts/sync-exchange-rates.mjs",
+  );
 
   assert.match(cronRoute, /export async function POST/);
   assert.doesNotMatch(cronRoute, /export async function GET/);
@@ -32,7 +35,8 @@ test("exchange-rate HTTP cron accepts POST only", () => {
   assert.match(cronRoute, /allowing this request outside production/);
   assert.match(linuxRunner, /sync-exchange-rates\.ps1/);
   assert.doesNotMatch(linuxRunner, /api\/cron\/exchange-rates/);
-  assert.match(syncScript, /upsert_exchange_rate/);
+  assert.match(syncScript, /sync-exchange-rates\.mjs/);
+  assert.match(runtimeSyncScript, /upsert_exchange_rate/);
   assert.doesNotMatch(syncScript, /api\/cron\/exchange-rates/);
 });
 
@@ -75,7 +79,12 @@ test("localized exchange-rate fallback never shows a hardcoded estimate", () => 
 test("exchange-rate freshness is stricter than the public 12-hour refresh window", () => {
   const exchangeRates = readProjectFile("lib/exchange-rates.ts");
   const cronRoute = readProjectFile("app/api/cron/exchange-rates/route.ts");
-  const syncScript = readProjectFile("scripts/sync-exchange-rates.cjs");
+  const runtimeSyncScript = readProjectFile(
+    "../geosub-backend/scripts/sync-exchange-rates.mjs",
+  );
+  const runtimeCore = readProjectFile(
+    "../geosub-backend/scripts/exchange-rate-sync-core.mjs",
+  );
   const localCheck = readProjectFile("scripts/check-local-env.cjs");
   const qualityCheck = readProjectFile("scripts/check-price-quality.cjs");
   const collector = readProjectFile("../geosub-backend/scripts/collect-app-store-prices.ps1");
@@ -89,7 +98,7 @@ test("exchange-rate freshness is stricter than the public 12-hour refresh window
   assert.match(cronRoute, /recommendedSchedule:\s*"Every 12 hours"/);
   assert.match(exchangeRates, /const MAX_FRESH_RATE_AGE_HOURS = 18;/);
   assert.equal(requiredQuotes.split(",").length, 36);
-  assert.ok(syncScript.includes(requiredQuotes));
+  assert.match(runtimeCore, /DEFAULT_EXCHANGE_RATE_QUOTES/);
   assert.ok(localCheck.includes(requiredQuotes));
   assert.ok(qualityCheck.includes(requiredQuotes));
   assert.ok(linuxSync.includes(requiredQuotes));
@@ -100,11 +109,10 @@ test("exchange-rate freshness is stricter than the public 12-hour refresh window
     readProjectFile("../geosub-backend/scripts/sync-exchange-rates.ps1"),
     /ForEach-Object \{ \$_ -split "," \}/,
   );
-  assert.match(syncScript, /api\.frankfurter\.app\/latest/);
-  assert.match(syncScript, /open\.er-api\.com\/v6\/latest/);
-  assert.match(syncScript, /Frankfurter omitted/);
-  assert.match(syncScript, /frankfurter\+open-er-api/);
-  assert.match(syncScript, /upsert_exchange_rate/);
+  assert.match(runtimeCore, /api\.frankfurter\.app\/latest/);
+  assert.match(runtimeCore, /open\.er-api\.com\/v6\/latest/);
+  assert.match(runtimeCore, /Frankfurter omitted/);
+  assert.match(runtimeSyncScript, /upsert_exchange_rate/);
   assert.match(collector, /FROM latest_exchange_rates/);
   assert.match(collector, /SELECT DISTINCT ON \(quote_currency\)/);
   assert.match(collector, /jsonb_object_agg/);

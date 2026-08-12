@@ -1,0 +1,10 @@
+{
+  "providers": {
+    "frankfurter": {
+      "error": "recorded primary timeout"
+    },
+    "open-er-api": {
+      "error": "recorded fallback timeout"
+    }
+  }
+}

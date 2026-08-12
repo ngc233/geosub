@@ -1,6 +1,6 @@
 # Exchange Rate Sync
 
-This sync is designed for daily scheduled updates. The frontend should read
+This sync is designed for scheduled updates every 12 hours. The frontend should read
 `latest_exchange_rates` or `get_latest_exchange_rate(...)` from the database,
 not call the exchange-rate provider directly.
 
@@ -13,10 +13,20 @@ powershell -ExecutionPolicy Bypass -File .\scripts\sync-exchange-rates.ps1
 Default behavior:
 
 - Base currency: `USD`
-- Quote currencies: all 35 currencies used by the default App Store country policy
+- Quote currencies: all 36 currencies required by the current price and display-currency policy
 - Provider: `frankfurter`
 - Database target: Docker container `geosub-postgres`
 - Database name: `geosub_app`
+
+The PowerShell command above remains the active production implementation during D2-2.
+The cross-platform Node.js replacement is available for deterministic shadow checks:
+
+```powershell
+node .\scripts\sync-exchange-rates.mjs --dry-run --json --quotes CNY,JPY,SGD,EUR --fixture .\scripts\fixtures\exchange-rates-full.json
+```
+
+Fixture-based dry runs do not access a provider or write the database. Production cutover
+requires three successful scheduled shadow comparisons before the Linux wrapper changes.
 
 ## Override the currency set
 

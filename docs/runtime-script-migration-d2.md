@@ -9,7 +9,8 @@ This phase does not switch production. The source of truth is `geosub-backend/sc
 - 20 project-owned PowerShell scripts are classified.
 - 4 `install-*-task.ps1` files remain Windows-specific by design.
 - 16 runtime, collector, report, and orchestration scripts receive `.mjs` targets.
-- 4 Linux production entrypoints are still `legacy-active`: exchange rates, discovery scanning, collector jobs, and the price pipeline.
+- Exchange-rate sync is `shadow-ready`; its Linux production wrapper still runs PowerShell.
+- 3 other Linux production entrypoints remain `legacy-active`: discovery scanning, collector jobs, and the price pipeline.
 - Existing `.ps1` files remain available for one full release after each production cutover.
 
 ## Migration order
@@ -56,3 +57,22 @@ Before changing a task to `active-mjs`:
 - Do not change timer frequency during D2.
 - Do not delete a PowerShell runtime until its manifest entry has completed the retention period.
 - Windows task installers remain PowerShell even after their runner targets move to Node.js.
+
+## D2-2 exchange-rate evidence
+
+The exchange-rate replacement is split into a pure provider-selection core and thin runtime adapters:
+
+- `exchange-rate-sync-core.mjs` normalizes currencies, selects primary and fallback rows, preserves each row's real provider and rate date, and produces a deterministic plan.
+- `sync-exchange-rates.mjs` owns provider I/O, audited sync-run records, database writes, dry-run mode, and fixture replay.
+- `run-exchange-rate-sync.mjs` provides cross-platform scheduled logging without shell-specific argument quoting.
+- fixed fixtures cover a complete primary response, partial primary response, primary-provider failure, and total provider failure.
+
+The offline command below performs no network request and no database write:
+
+```bash
+node geosub-backend/scripts/sync-exchange-rates.mjs \
+  --dry-run --json --quotes CNY,EUR,JPY \
+  --fixture geosub-backend/scripts/fixtures/exchange-rates-full.json
+```
+
+Production remains on `sync-exchange-rates.ps1`. Moving from `shadow-ready` to `active-mjs` still requires three successful scheduled shadow comparisons on the server.

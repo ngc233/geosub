@@ -1,0 +1,25 @@
+{
+  "providers": {
+    "frankfurter": {
+      "payload": {
+        "date": "2026-08-11",
+        "base": "USD",
+        "rates": {
+          "CNY": 7.15,
+          "EUR": 0.86,
+          "JPY": 147.5
+        }
+      }
+    },
+    "open-er-api": {
+      "payload": {
+        "time_last_update_utc": "Tue, 11 Aug 2026 00:00:01 +0000",
+        "rates": {
+          "CNY": 7.16,
+          "EUR": 0.87,
+          "JPY": 148
+        }
+      }
+    }
+  }
+}
