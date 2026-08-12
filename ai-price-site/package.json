@@ -40,7 +40,7 @@
         "admin:set-password": "node scripts/set-admin-password.cjs",
         "test:daily-brief": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/daily-operations-brief.test.mts",
         "test:performance-tools": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/admin-performance-tools.test.mts",
-        "test:runtime-scripts": "node --test ../geosub-backend/scripts/check-runtime-script-manifest.test.mjs ../geosub-backend/scripts/exchange-rate-sync-core.test.mjs",
+        "test:runtime-scripts": "node --test ../geosub-backend/scripts/check-runtime-script-manifest.test.mjs ../geosub-backend/scripts/exchange-rate-sync-core.test.mjs ../geosub-backend/scripts/exchange-rate-shadow-core.test.mjs",
         "test:e2e": "node scripts/run-e2e.cjs",
         "test:e2e:install": "playwright install chromium",
         "typecheck": "tsc --noEmit",

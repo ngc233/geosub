@@ -76,3 +76,25 @@ node geosub-backend/scripts/sync-exchange-rates.mjs \
 ```
 
 Production remains on `sync-exchange-rates.ps1`. Moving from `shadow-ready` to `active-mjs` still requires three successful scheduled shadow comparisons on the server.
+
+### D2-3 server shadow observation
+
+`run-exchange-rate-sync.sh` keeps PowerShell as the only writer. A default-off bridge runs
+`verify-exchange-rate-shadow.mjs` only when `GEOSUB_EXCHANGE_RATE_SHADOW_VERIFY=1`.
+The verifier reads the completed legacy run and its stored provider payloads, replays the
+Node.js parser without network access or database writes, and compares:
+
+- run status and row count;
+- every quote currency and rate;
+- provider source and rate date;
+- missing or unexpected currencies.
+
+Each attempt appends one versioned JSON object to
+`logs/exchange-rate-shadow/YYYY-MM-DD.jsonl`. Shadow failure emits a warning but leaves the
+successful legacy task authoritative. Three separate scheduled cycles must pass before a
+production wrapper cutover is considered.
+
+`check-exchange-rate-shadow-evidence.mjs` enforces that observation rule. It deduplicates
+repeated checks by legacy sync-run ID, counts only consecutive passing runs, and resets the
+count when the newest distinct run fails. The checker never changes the wrapper or database;
+even a ready result still requires a separate reviewed cutover commit.

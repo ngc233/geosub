@@ -34,6 +34,14 @@ test("exchange-rate HTTP cron accepts POST only", () => {
   assert.match(cronRoute, /secretsMatch\(headerSecret, secret\)/);
   assert.match(cronRoute, /allowing this request outside production/);
   assert.match(linuxRunner, /sync-exchange-rates\.ps1/);
+  assert.match(
+    linuxRunner,
+    /GEOSUB_EXCHANGE_RATE_SHADOW_VERIFY:-0/,
+  );
+  assert.match(linuxRunner, /verify-exchange-rate-shadow\.mjs/);
+  assert.match(linuxRunner, /check-exchange-rate-shadow-evidence\.mjs/);
+  assert.match(linuxRunner, /no production cutover is allowed/);
+  assert.match(linuxRunner, /the legacy sync remains authoritative/);
   assert.doesNotMatch(linuxRunner, /api\/cron\/exchange-rates/);
   assert.match(syncScript, /sync-exchange-rates\.mjs/);
   assert.match(runtimeSyncScript, /upsert_exchange_rate/);

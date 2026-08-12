@@ -16,6 +16,7 @@ QUOTE_CURRENCIES="${REQUIRED_QUOTE_CURRENCIES},${GEOSUB_EXCHANGE_RATE_QUOTES:-}"
 DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
+SHADOW_VERIFY="${GEOSUB_EXCHANGE_RATE_SHADOW_VERIFY:-0}"
 
 if [[ -z "${QUOTE_CURRENCIES//[[:space:],]/}" ]]; then
   echo "No quote currencies configured. Set GEOSUB_EXCHANGE_RATE_QUOTES in $ENV_FILE."
@@ -31,3 +32,12 @@ pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass \
   -ContainerName "$DB_CONTAINER" \
   -DbName "$DB_NAME" \
   -DbUser "$DB_USER"
+
+if [[ "$SHADOW_VERIFY" == "1" ]]; then
+  if ! node "$BACKEND_DIR/scripts/verify-exchange-rate-shadow.mjs"; then
+    echo "Warning: exchange-rate shadow comparison failed; the legacy sync remains authoritative." >&2
+  fi
+  if ! node "$BACKEND_DIR/scripts/check-exchange-rate-shadow-evidence.mjs"; then
+    echo "Exchange-rate shadow gate is not ready; no production cutover is allowed." >&2
+  fi
+fi

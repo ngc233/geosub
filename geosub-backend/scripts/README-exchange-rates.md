@@ -28,6 +28,28 @@ node .\scripts\sync-exchange-rates.mjs --dry-run --json --quotes CNY,JPY,SGD,EUR
 Fixture-based dry runs do not access a provider or write the database. Production cutover
 requires three successful scheduled shadow comparisons before the Linux wrapper changes.
 
+On Linux, the read-only comparison is disabled by default. Enable it explicitly in
+`/etc/geosub/geosub.env` only during the observation window:
+
+```text
+GEOSUB_EXCHANGE_RATE_SHADOW_VERIFY=1
+```
+
+The legacy PowerShell sync remains the only writer. The verifier replays provider payloads
+stored by that completed run, writes JSONL evidence under `logs/exchange-rate-shadow`, and
+cannot turn a successful legacy sync into a failed scheduled task.
+
+The wrapper also prints the independent-cycle gate after every shadow attempt. You can
+inspect it without running a sync:
+
+```bash
+node geosub-backend/scripts/check-exchange-rate-shadow-evidence.mjs --required-cycles 3
+```
+
+Repeated checks of one legacy run count once. A failed latest cycle resets the consecutive
+pass count. The command returning ready is evidence for review, not permission to switch
+the production writer automatically.
+
 ## Override the currency set
 
 ```powershell

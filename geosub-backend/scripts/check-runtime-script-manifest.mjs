@@ -112,8 +112,13 @@ export async function validateRuntimeScriptManifest({
         errors.push(`Legacy-active wrapper no longer invokes PowerShell: ${entry.wrapper}`);
       }
     }
-    if (entry.status === 'shadow-ready' && !replacementExists) {
-      errors.push(`Shadow-ready replacement does not exist: ${entry.replacement}`);
+    if (entry.status === 'shadow-ready') {
+      if (!replacementExists) {
+        errors.push(`Shadow-ready replacement does not exist: ${entry.replacement}`);
+      }
+      if (!wrapperSource.includes(legacyName) || !wrapperSource.includes('pwsh')) {
+        errors.push(`Shadow-ready wrapper must keep PowerShell active: ${entry.wrapper}`);
+      }
     }
     if (entry.status === 'active-mjs') {
       if (!replacementExists || !wrapperSource.includes(replacementName)) {
