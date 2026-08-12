@@ -6,8 +6,8 @@ const { Client } = require("pg");
 const {
   backfillEntries,
   baselineCutoverFile,
+  compatibilitySqlForEntry,
   entriesForMode,
-  legacyBaselineEntries,
   schemaEntries,
   validateManifest,
 } = require("../../geosub-backend/scripts/migration-manifest.cjs");
@@ -88,6 +88,11 @@ async function ensureRegistries(client) {
       checksum TEXT NOT NULL,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `);
+}
+
+async function ensureBackfillRegistry(client) {
+  await client.query(`
     CREATE TABLE IF NOT EXISTS geosub_backfill_migrations (
       id BIGSERIAL PRIMARY KEY,
       filename TEXT NOT NULL UNIQUE,
@@ -113,7 +118,14 @@ async function registerCanonical(client, entry, checksum) {
   );
 }
 
-async function applyMigration(client, entry) {
+async function hasStructuralCompatibility(client, entry) {
+  const sql = compatibilitySqlForEntry(entry);
+  if (!sql) return false;
+  const result = await client.query(sql);
+  return result.rows[0]?.compatible === true;
+}
+
+async function applyMigration(client, entry, { legacyBaselineReady }) {
   const sqlPath = migrationPath(entry);
   const sql = fs.readFileSync(sqlPath, "utf8");
   const checksum = normalizedChecksum(sql);
@@ -142,9 +154,18 @@ async function applyMigration(client, entry) {
         `Legacy migration checksum drift: ${entry.legacyFile}\nApplied: ${legacyChecksum}`,
       );
     }
-    await registerCanonical(client, entry, checksum);
-    console.log(`Registered compatibility alias: ${entry.legacyFile} -> ${entry.file}`);
-    return "aliased";
+    console.log(`Legacy-compatible: ${entry.legacyFile} -> ${entry.file}`);
+    return "compatible";
+  }
+
+  if (legacyBaselineReady && entry.legacyBaseline) {
+    console.log(`Legacy baseline-compatible: ${entry.file}`);
+    return "compatible";
+  }
+
+  if (await hasStructuralCompatibility(client, entry)) {
+    console.log(`Structure-compatible: ${entry.file}`);
+    return "compatible";
   }
 
   const ownsTransaction = /(^|\n)\s*BEGIN\s*;/i.test(sql);
@@ -162,13 +183,13 @@ async function applyMigration(client, entry) {
   }
 }
 
-async function baselineLegacyMigrations(client) {
+async function hasLegacyBaseline(client) {
   const cutover = await registeredChecksum(
     client,
     "geosub_schema_migrations",
     baselineCutoverFile,
   );
-  if (!cutover) return 0;
+  if (!cutover) return false;
 
   const schemaGuard = await client.query(`
     SELECT
@@ -185,18 +206,7 @@ async function baselineLegacyMigrations(client) {
     );
   }
 
-  let baselined = 0;
-  for (const entry of legacyBaselineEntries) {
-    const registry = registryForEntry(entry);
-    if (await registeredChecksum(client, registry, entry.file)) continue;
-    if (await registeredChecksum(client, "geosub_schema_migrations", entry.legacyFile)) continue;
-
-    const sql = fs.readFileSync(migrationPath(entry), "utf8");
-    await registerCanonical(client, entry, normalizedChecksum(sql));
-    console.log(`Baselined legacy migration: ${entry.file}`);
-    baselined += 1;
-  }
-  return baselined;
+  return true;
 }
 
 async function main() {
@@ -208,17 +218,20 @@ async function main() {
 
   try {
     await ensureRegistries(client);
-    const baselined = await baselineLegacyMigrations(client);
+    if (entries.some((entry) => entry.id.startsWith("backfill:"))) {
+      await ensureBackfillRegistry(client);
+    }
+    const legacyBaselineReady = await hasLegacyBaseline(client);
 
     let applied = 0;
-    let aliased = 0;
+    let compatible = 0;
     for (const entry of entries) {
-      const result = await applyMigration(client, entry);
+      const result = await applyMigration(client, entry, { legacyBaselineReady });
       if (result === "applied") applied += 1;
-      if (result === "aliased") aliased += 1;
+      if (result === "compatible") compatible += 1;
     }
     console.log(
-      `SQL migration pass complete: ${entries.length} checked, ${applied} applied, ${aliased} aliased, ${baselined} baselined.`,
+      `SQL migration pass complete: ${entries.length} checked, ${applied} applied, ${compatible} compatible.`,
     );
   } finally {
     await client.end();

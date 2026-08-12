@@ -1,4 +1,4 @@
--- GeoSub schema migration. Split from sql/045_article_soft_delete_trash.sql; see migration-layout.json.
+-- GeoSub schema migration. Split from sql/045_article_soft_delete_trash.sql.
 
 ALTER TABLE articles
   ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;

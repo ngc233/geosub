@@ -74,6 +74,75 @@ function entryForLegacyFile(legacyFile, mode = "schema") {
   return entriesForMode(mode).find((entry) => entry.legacyFile === legacyFile) || null;
 }
 
+function assertSimpleIdentifier(value, context) {
+  if (!/^[a-z][a-z0-9_]*$/.test(value)) {
+    throw new Error(`Invalid ${context} compatibility identifier: ${value}`);
+  }
+}
+
+function splitQualifiedIdentifier(value, context) {
+  const parts = value.split(".");
+  if (parts.length !== 2) {
+    throw new Error(`Invalid ${context} compatibility identifier: ${value}`);
+  }
+  parts.forEach((part) => assertSimpleIdentifier(part, context));
+  return parts;
+}
+
+function validateCompatibility(entry) {
+  if (!entry.compatibility) return;
+  const allowedKinds = new Set(["relations", "columns", "indexes", "constraints", "triggers"]);
+  for (const [kind, values] of Object.entries(entry.compatibility)) {
+    if (!allowedKinds.has(kind) || !Array.isArray(values) || values.length === 0) {
+      throw new Error(`Invalid compatibility guard on ${entry.file}: ${kind}`);
+    }
+    for (const value of values) {
+      if (kind === "relations" || kind === "indexes") {
+        assertSimpleIdentifier(value, kind);
+      } else {
+        splitQualifiedIdentifier(value, kind);
+      }
+    }
+  }
+}
+
+function sqlText(value) {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
+function compatibilitySqlForEntry(entry) {
+  if (!entry.compatibility) return null;
+  validateCompatibility(entry);
+  const checks = [];
+
+  for (const relation of entry.compatibility.relations || []) {
+    checks.push(`to_regclass(${sqlText(`public.${relation}`)}) IS NOT NULL`);
+  }
+  for (const index of entry.compatibility.indexes || []) {
+    checks.push(`to_regclass(${sqlText(`public.${index}`)}) IS NOT NULL`);
+  }
+  for (const value of entry.compatibility.columns || []) {
+    const [table, column] = value.split(".");
+    checks.push(
+      `EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ${sqlText(table)} AND column_name = ${sqlText(column)})`,
+    );
+  }
+  for (const value of entry.compatibility.constraints || []) {
+    const [table, constraint] = value.split(".");
+    checks.push(
+      `EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_class r ON r.oid = c.conrelid JOIN pg_namespace n ON n.oid = r.relnamespace WHERE n.nspname = 'public' AND r.relname = ${sqlText(table)} AND c.conname = ${sqlText(constraint)})`,
+    );
+  }
+  for (const value of entry.compatibility.triggers || []) {
+    const [table, trigger] = value.split(".");
+    checks.push(
+      `EXISTS (SELECT 1 FROM pg_trigger t JOIN pg_class r ON r.oid = t.tgrelid JOIN pg_namespace n ON n.oid = r.relnamespace WHERE n.nspname = 'public' AND r.relname = ${sqlText(table)} AND t.tgname = ${sqlText(trigger)} AND NOT t.tgisinternal)`,
+    );
+  }
+
+  return `SELECT (${checks.join(" AND ")}) AS compatible;`;
+}
+
 function sqlInventory() {
   const roots = [
     path.join(backendDir, "sql", "schema"),
@@ -132,6 +201,7 @@ function validateEntryGroup(entries, { kind, directory, automatic }) {
     if (automatic === false && entry.automatic !== false) {
       throw new Error(`Retired migration must declare automatic=false: ${entry.file}`);
     }
+    validateCompatibility(entry);
   });
 }
 
@@ -295,6 +365,16 @@ function runCli() {
     return;
   }
 
+  if (command === "compatibility-sql") {
+    validateManifest({ frontendDir });
+    const entry = [...schemaEntries, ...backfillEntries].find(
+      (candidate) => candidate.file === value,
+    );
+    if (!entry) throw new Error(`No active migration maps canonical file: ${value}`);
+    process.stdout.write(compatibilitySqlForEntry(entry) || "");
+    return;
+  }
+
   if (command === "validate") {
     const summary = validateManifest({ frontendDir });
     console.log(
@@ -304,7 +384,7 @@ function runCli() {
   }
 
   throw new Error(
-    "Usage: migration-manifest.cjs [validate|list MODE|entries MODE|resolve LEGACY_FILE MODE] [--frontend-dir=PATH]",
+    "Usage: migration-manifest.cjs [validate|list MODE|entries MODE|resolve LEGACY_FILE MODE|compatibility-sql FILE] [--frontend-dir=PATH]",
   );
 }
 
@@ -323,6 +403,7 @@ module.exports = {
   backfillFiles,
   baselineCutoverFile,
   contentFiles,
+  compatibilitySqlForEntry,
   coreFiles,
   entriesForMode,
   entryForLegacyFile,

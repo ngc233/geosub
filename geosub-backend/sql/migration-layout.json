@@ -500,37 +500,126 @@
         "604a225adc3bbb8bcff760ebb8151580d126f17fabd40400227ef6081aa1e8aa",
         "ab661650f3d7c424cb11dc7115963781cfb42193ac7206f6ecf8d93aecb00237"
       ],
-      "legacyBaseline": false
+      "legacyBaseline": false,
+      "compatibility": {
+        "relations": [
+          "article_categories",
+          "articles",
+          "article_blocks",
+          "article_tags",
+          "article_tag_links",
+          "article_relations",
+          "site_settings",
+          "redirects",
+          "navigation_items",
+          "internal_links"
+        ],
+        "indexes": [
+          "idx_article_categories_locale_status",
+          "idx_articles_locale_status",
+          "idx_articles_type_status",
+          "idx_articles_category_status",
+          "idx_articles_published_at",
+          "idx_article_blocks_article_sort",
+          "idx_article_tags_locale_status",
+          "idx_article_relations_article_type",
+          "idx_article_relations_product",
+          "idx_redirects_source_path",
+          "idx_redirects_active",
+          "idx_navigation_items_locale_position",
+          "idx_internal_links_source",
+          "idx_internal_links_target"
+        ],
+        "triggers": [
+          "article_categories.trg_article_categories_updated_at",
+          "articles.trg_articles_updated_at",
+          "article_blocks.trg_article_blocks_updated_at",
+          "article_tags.trg_article_tags_updated_at",
+          "article_relations.trg_article_relations_updated_at",
+          "site_settings.trg_site_settings_updated_at",
+          "redirects.trg_redirects_updated_at",
+          "navigation_items.trg_navigation_items_updated_at",
+          "internal_links.trg_internal_links_updated_at"
+        ]
+      }
     },
     {
       "id": "schema:051",
-      "file": "sql/schema/051_content_system_directus.sql",
+      "file": "sql/schema/051_content_system_navigation_index.sql",
       "legacyFile": "content-system-directus.sql",
       "legacyChecksums": [
         "c0327c3f57369a53c225cf2f12aa08911d66e07a857b6f9d71c4feda95d88180",
         "d5b7b88dcda03b36b7d668ba8f45dbfea01a6eca6dcf14382d946eac57dc4ec2"
       ],
-      "legacyBaseline": false
+      "legacyBaseline": false,
+      "compatibility": {
+        "indexes": [
+          "uniq_navigation_locale_position_href_label"
+        ]
+      }
     },
     {
       "id": "schema:052",
-      "file": "sql/schema/052_directus_cn_v2.sql",
-      "legacyFile": "directus-cn-v2.sql",
-      "legacyChecksums": [
-        "001948deed87402c35b3a6cd0df86b645b7e359eb16df982d0bc5aa575ebf0f9",
-        "5bc951f4cf8b216c4e812d38a76d9edd36246e7fbcb24e14c62282a54c120fbd"
-      ],
-      "legacyBaseline": false
-    },
-    {
-      "id": "schema:053",
-      "file": "sql/schema/053_article_soft_delete_trash.sql",
+      "file": "sql/schema/052_article_soft_delete_trash.sql",
       "legacyFile": "sql/045_article_soft_delete_trash.sql",
       "legacyChecksums": [
         "1d1399574dee465a3ac5a2b46414ef6ac398b52f459df34cc02c10e445aeb49c",
         "ec4bcaa42f7f1a28adcf350fd8f8fc759b6ddaf82ecbcb328a6193a5a88f469b"
       ],
-      "legacyBaseline": false
+      "legacyBaseline": false,
+      "compatibility": {
+        "columns": [
+          "articles.deleted_at"
+        ],
+        "indexes": [
+          "idx_articles_deleted_at",
+          "idx_articles_active_status"
+        ]
+      }
+    },
+    {
+      "id": "schema:053",
+      "file": "sql/schema/053_product_source_profiles.sql",
+      "legacyFile": "sql/006_price_observation_tables.sql",
+      "legacyChecksums": [
+        "9fe37a9730f2a85f82709f6dd8a39c4f948de756b87eb3f0af04e643f38ee56f",
+        "ba7819b9afcbbe3b054fcd5235d6baf35d375b8a1b6e6313bf98a7d0def67dc4"
+      ],
+      "legacyBaseline": false,
+      "compatibility": {
+        "relations": [
+          "product_source_profiles"
+        ],
+        "columns": [
+          "product_source_profiles.id",
+          "product_source_profiles.product_id",
+          "product_source_profiles.product_slug",
+          "product_source_profiles.platform",
+          "product_source_profiles.source_type",
+          "product_source_profiles.source_name",
+          "product_source_profiles.external_app_id",
+          "product_source_profiles.bundle_id",
+          "product_source_profiles.source_url",
+          "product_source_profiles.storefront_country_code",
+          "product_source_profiles.config",
+          "product_source_profiles.is_active",
+          "product_source_profiles.last_checked_at",
+          "product_source_profiles.created_at",
+          "product_source_profiles.updated_at"
+        ],
+        "indexes": [
+          "idx_product_source_profiles_unique_source",
+          "idx_product_source_profiles_product_slug",
+          "idx_product_source_profiles_platform"
+        ],
+        "constraints": [
+          "product_source_profiles.product_source_profiles_platform_check",
+          "product_source_profiles.product_source_profiles_source_type_check"
+        ],
+        "triggers": [
+          "product_source_profiles.trg_product_source_profiles_updated_at"
+        ]
+      }
     }
   ],
   "backfill": [
@@ -1037,7 +1126,7 @@
         "ba7819b9afcbbe3b054fcd5235d6baf35d375b8a1b6e6313bf98a7d0def67dc4"
       ],
       "automatic": false,
-      "reason": "Superseded by the current schema.sql observation model."
+      "reason": "The data-changing and superseded observation objects remain retired; product_source_profiles is split into schema:053."
     },
     {
       "id": "retired:004",

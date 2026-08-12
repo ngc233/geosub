@@ -5,6 +5,8 @@ const dotenv = require("dotenv");
 const { Client } = require("pg");
 const {
   backfillEntries,
+  baselineCutoverFile,
+  compatibilitySqlForEntry,
   prismaMigrations,
   retiredEntries,
   schemaEntries,
@@ -48,7 +50,15 @@ async function readRegistry(client, table) {
   return new Map(result.rows.map((row) => [row.filename, row]));
 }
 
-function auditEntries({ entries, applied, legacyApplied, label, required }) {
+async function auditEntries({
+  client,
+  entries,
+  applied,
+  legacyApplied,
+  label,
+  required,
+  legacyBaselineReady,
+}) {
   const failures = [];
   let complete = 0;
   let compatible = 0;
@@ -74,6 +84,22 @@ function auditEntries({ entries, applied, legacyApplied, label, required }) {
       continue;
     }
 
+    if (legacyBaselineReady && entry.legacyBaseline) {
+      compatible += 1;
+      console.log(`COMPAT  ${label} legacy baseline -> ${entry.file}`);
+      continue;
+    }
+
+    const compatibilitySql = compatibilitySqlForEntry(entry);
+    if (compatibilitySql) {
+      const result = await client.query(compatibilitySql);
+      if (result.rows[0]?.compatible === true) {
+        compatible += 1;
+        console.log(`COMPAT  ${label} existing structure -> ${entry.file}`);
+        continue;
+      }
+    }
+
     missing += 1;
     console.log(`MISSING ${label} ${entry.file}`);
     if (required) failures.push(`${entry.file}: not registered`);
@@ -85,20 +111,43 @@ function auditEntries({ entries, applied, legacyApplied, label, required }) {
 async function auditSqlMigrations(client) {
   const schemaApplied = await readRegistry(client, "geosub_schema_migrations");
   const backfillApplied = await readRegistry(client, "geosub_backfill_migrations");
+  const cutover = schemaApplied.get(baselineCutoverFile);
+  const cutoverEntry = [...schemaEntries, ...backfillEntries].find(
+    (entry) => entry.legacyFile === baselineCutoverFile,
+  );
+  let legacyBaselineReady = false;
+  if (cutover && cutoverEntry?.legacyChecksums.includes(cutover.checksum)) {
+    const guards = await client.query(`
+      SELECT
+        to_regclass('public.products') IS NOT NULL AS has_products,
+        to_regclass('public.collector_jobs') IS NOT NULL AS has_collector_jobs,
+        to_regprocedure(
+          'queue_app_store_coverage_gap_rechecks(integer,integer,integer)'
+        ) IS NOT NULL AS has_pre_cutover_function
+    `);
+    const row = guards.rows[0];
+    legacyBaselineReady = Boolean(
+      row.has_products && row.has_collector_jobs && row.has_pre_cutover_function,
+    );
+  }
 
-  const schema = auditEntries({
+  const schema = await auditEntries({
+    client,
     entries: schemaEntries,
     applied: schemaApplied,
     legacyApplied: schemaApplied,
     label: "SCHEMA  ",
     required: true,
+    legacyBaselineReady,
   });
-  const backfill = auditEntries({
+  const backfill = await auditEntries({
+    client,
     entries: backfillEntries,
     applied: backfillApplied,
     legacyApplied: schemaApplied,
     label: "BACKFILL",
     required: includeBackfills,
+    legacyBaselineReady,
   });
 
   const knownLegacy = new Set(

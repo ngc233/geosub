@@ -35,10 +35,6 @@ node "$MANIFEST_SCRIPT" validate --frontend-dir="$FRONTEND_DIR"
 mapfile -t entries < <(
   node "$MANIFEST_SCRIPT" entries "$MODE" --frontend-dir="$FRONTEND_DIR"
 )
-mapfile -t baseline_entries < <(
-  node "$MANIFEST_SCRIPT" entries all --frontend-dir="$FRONTEND_DIR"
-)
-
 if (( ${#entries[@]} == 0 )); then
   echo "Migration manifest returned no entries for mode: $MODE"
   exit 1
@@ -60,6 +56,10 @@ CREATE TABLE IF NOT EXISTS geosub_schema_migrations (
   checksum TEXT NOT NULL,
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+SQL
+
+if [[ "$MODE" == "backfill" || "$MODE" == "all" ]]; then
+  docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE IF NOT EXISTS geosub_backfill_migrations (
   id BIGSERIAL PRIMARY KEY,
   filename TEXT NOT NULL UNIQUE,
@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS geosub_backfill_migrations (
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 SQL
+fi
 
 normalized_sql_checksum() {
   tr -d '\r' < "$1" | sha256sum | awk '{print $1}'
@@ -109,7 +110,8 @@ register_canonical() {
     "INSERT INTO $registry (filename, checksum) VALUES ('$filename', '$checksum') ON CONFLICT (filename) DO NOTHING;" >/dev/null
 }
 
-baseline_legacy_migrations() {
+legacy_baseline_ready=0
+check_legacy_baseline() {
   local cutover_file="sql/063_system_task_runs.sql"
   local cutover_registered
   cutover_registered="$(registered_checksum geosub_schema_migrations "$cutover_file")"
@@ -127,26 +129,10 @@ baseline_legacy_migrations() {
     exit 1
   fi
 
-  local baselined=0
-  local entry file legacy legacy_checksums is_baseline registry existing legacy_existing checksum
-  for entry in "${baseline_entries[@]}"; do
-    IFS=$'\t' read -r file legacy legacy_checksums is_baseline <<<"$entry"
-    [[ "$is_baseline" == "1" ]] || continue
-    registry="$(registry_for_file "$file")"
-    existing="$(registered_checksum "$registry" "$file")"
-    legacy_existing="$(registered_checksum geosub_schema_migrations "$legacy")"
-    if [[ -n "$existing" || -n "$legacy_existing" ]]; then
-      continue
-    fi
-    checksum="$(normalized_sql_checksum "$file")"
-    register_canonical "$registry" "$file" "$checksum"
-    echo "Baselined legacy migration: $file"
-    baselined=$((baselined + 1))
-  done
-  echo "Legacy migration baseline complete: $baselined registered."
+  legacy_baseline_ready=1
 }
 
-baseline_legacy_migrations
+check_legacy_baseline
 
 for entry in "${entries[@]}"; do
   IFS=$'\t' read -r file legacy legacy_checksums is_baseline <<<"$entry"
@@ -174,9 +160,22 @@ for entry in "${entries[@]}"; do
       echo "Applied: $legacy_existing"
       exit 1
     fi
-    register_canonical "$registry" "$file" "$checksum"
-    echo "Registered compatibility alias: $legacy -> $file"
+    echo "Legacy-compatible: $legacy -> $file"
     continue
+  fi
+
+  if [[ "$legacy_baseline_ready" == "1" && "$is_baseline" == "1" ]]; then
+    echo "Legacy baseline-compatible: $file"
+    continue
+  fi
+
+  compatibility_sql="$(node "$MANIFEST_SCRIPT" compatibility-sql "$file" --frontend-dir="$FRONTEND_DIR")"
+  if [[ -n "$compatibility_sql" ]]; then
+    structure_compatible="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c "$compatibility_sql")"
+    if [[ "$structure_compatible" == "t" ]]; then
+      echo "Structure-compatible: $file"
+      continue
+    fi
   fi
 
   echo "Applying: $file"

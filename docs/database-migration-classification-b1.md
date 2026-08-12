@@ -106,8 +106,8 @@
 | 当前文件 | Schema 部分 | Backfill 部分 |
 | --- | --- | --- |
 | `schema.sql` | 类型、表、索引、函数、视图、触发器。 | 国家、统计事件和广告位初始数据。 |
-| `content-system-directus.sql` | Directus 辅助函数和索引。 | Directus 元数据、分类、设置、导航数据。 |
-| `directus-cn-v2.sql` | Directus 标签辅助函数。 | Directus collection/field 中文配置。 |
+| `content-system-directus.sql` | 导航唯一索引；Directus 辅助函数仅服务本文件的数据操作，因此随 backfill 显式执行。 | Directus 元数据、分类、设置、导航数据。 |
+| `directus-cn-v2.sql` | 无永久 schema 对象；辅助函数仅服务本文件的数据操作。 | Directus collection/field 中文配置。 |
 | `sql/001_affordability_income_tables.sql` | 购买力字段、表、索引、视图、函数、触发器。 | 根据现有国家代码回填 `iso3_code`。 |
 | `sql/014_product_discovery_candidates.sql` | 发现候选类型、表、索引和触发器。 | DeepSeek 初始候选数据。 |
 | `sql/015_discovery_sources.sql` | 发现源类型、表、索引和触发器。 | DeepSeek 与 Product Hunt 初始来源。 |
@@ -133,7 +133,7 @@
 | --- | --- |
 | `cleanup-duplicates.sql` | 人工修复脚本；保留在 `backfill/retired/`，禁止自动执行。 |
 | `sql/004_affordability_source_metadata.sql` | 已由 `004_affordability_source_metadata_fix.sql` 替代。 |
-| `sql/006_price_observation_tables.sql` | 已由当前 `schema.sql` 观测模型替代。 |
+| `sql/006_price_observation_tables.sql` | 观测模型及数据操作已被替代；生产仍保留的 `product_source_profiles` 已拆入 schema 基线。 |
 | `sql/007_fix_pending_price_observations_view.sql` | 已由当前 V4 视图替代。 |
 | `sql/007_fix_pending_price_observations_view_v3.sql` | 已由 `008_price_observations_view_v4.sql` 替代。 |
 | `sql/044_public_navigation_launch_scope.sql` | 旧上线阶段内容迁移，只保留历史。 |
