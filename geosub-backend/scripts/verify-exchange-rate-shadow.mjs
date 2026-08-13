@@ -95,7 +95,7 @@ async function loadRecordedRun(client, runId) {
 
   const rowResult = await client.query(
     `
-      SELECT quote_currency, rate, rate_date, source, provider_payload
+      SELECT quote_currency, rate, rate_date::text AS rate_date, source, provider_payload
       FROM exchange_rates
       WHERE sync_run_id = $1::uuid
       ORDER BY quote_currency

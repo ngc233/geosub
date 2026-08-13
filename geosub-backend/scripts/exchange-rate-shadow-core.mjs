@@ -1,8 +1,15 @@
+function normalizeRateDate(value) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "" : value.toISOString().slice(0, 10);
+  }
+  return String(value ?? "").trim().slice(0, 10);
+}
+
 function normalizeExpectedRow(row) {
   return {
     quote: String(row.quote ?? row.quote_currency ?? "").trim().toUpperCase(),
     rate: Number(row.rate),
-    rateDate: String(row.rateDate ?? row.rate_date ?? "").slice(0, 10),
+    rateDate: normalizeRateDate(row.rateDate ?? row.rate_date),
     source: String(row.source || "").trim(),
   };
 }

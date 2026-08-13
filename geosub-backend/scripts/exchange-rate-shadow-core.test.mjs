@@ -106,6 +106,19 @@ test("source and rate-date changes cannot silently pass", () => {
   );
 });
 
+test("PostgreSQL DATE objects compare as canonical calendar dates", () => {
+  const rows = expectedRows();
+  rows[0].rate_date = new Date("2026-08-11T00:00:00.000Z");
+  const result = compareExchangeRateShadow({
+    expectedRun: expectedRun(),
+    expectedRows: rows,
+    shadowPlan: shadowPlan(),
+  });
+
+  assert.equal(result.passed, true);
+  assert.deepEqual(result.mismatches, []);
+});
+
 test("missing and unexpected quotes are both reported", () => {
   const result = compareExchangeRateShadow({
     expectedRun: expectedRun(),
@@ -186,6 +199,7 @@ test("server shadow verification is database read-only", async () => {
   assert.equal(queries.length, 2);
   assert.ok(queries.every((sql) => /^\s*SELECT\b/i.test(sql)));
   assert.ok(queries.every((sql) => !/\b(?:INSERT|UPDATE|DELETE)\b/i.test(sql)));
+  assert.match(queries[1], /rate_date::text AS rate_date/);
 });
 
 function evidence(runId, checkedAt, passed = true) {
