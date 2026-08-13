@@ -140,7 +140,12 @@ test("migration audits cover both registries and run during release checks", () 
   assert.match(migrationAudit, /geosub_backfill_migrations/);
   assert.match(migrationAudit, /_prisma_migrations/);
   assert.match(migrationAudit, /legacyChecksums/);
-  assert.match(postDeployCheck, /list schema/);
+  assert.match(postDeployCheck, /entries schema/);
+  assert.match(postDeployCheck, /migration legacy-compatible/);
+  assert.match(postDeployCheck, /migration baseline-compatible/);
+  assert.match(postDeployCheck, /compatibility-sql/);
+  assert.match(postDeployCheck, /migration structure-compatible/);
+  assert.match(postDeployCheck, /backfills remain operator-controlled/);
   assert.match(postDeployCheck, /list prisma/);
   assert.match(postDeployCheck, /check_prisma_migration/);
   assert.match(packageJson.scripts["preflight:full"], /check:migration-manifest/);

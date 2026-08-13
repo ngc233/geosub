@@ -169,7 +169,7 @@ test("current price migrations remain classified after schema and backfill separ
       (entry) => entry.legacyFile === "sql/074_repair_hbo_max_app_store_selection.sql",
     ),
   );
-  assert.match(postDeploy, /list schema/);
+  assert.match(postDeploy, /entries schema/);
 });
 
 test("canonical product checks reject missing catalog products and collectors", () => {

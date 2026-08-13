@@ -28,7 +28,7 @@ test("published prices align public product and plan lifecycle state", () => {
     migrationEntriesForLegacyFile("sql/066_public_product_lifecycle.sql").length,
     2,
   );
-  assert.match(postDeploy, /list schema/);
+  assert.match(postDeploy, /entries schema/);
   assert.match(postDeploy, /products\.status = 'published'/);
   assert.match(postDeploy, /all published App Store products have published coverage/);
 });

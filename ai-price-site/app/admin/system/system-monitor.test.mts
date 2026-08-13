@@ -62,7 +62,7 @@ test("Linux scheduled services record start and completion heartbeats", () => {
   assert.match(wrapper, /exit "\$EXIT_CODE"/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS system_task_runs/);
   assert.equal(migrationEntriesForLegacyFile("sql/063_system_task_runs.sql").length, 1);
-  assert.match(postDeploy, /list schema/);
+  assert.match(postDeploy, /entries schema/);
   assert.match(postDeploy, /system_task_runs_running_started_idx/);
 
   const services: Array<[string, string]> = [

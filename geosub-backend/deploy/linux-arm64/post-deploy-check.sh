@@ -101,16 +101,55 @@ check_index() {
   fi
 }
 
-check_migration() {
+registered_migration_checksum() {
   local filename="$1"
-  local result
+  psql_scalar "SELECT COALESCE((SELECT checksum FROM geosub_schema_migrations WHERE filename = '${filename}'), '');"
+}
 
-  result="$(psql_scalar "SELECT CASE WHEN EXISTS (SELECT 1 FROM geosub_schema_migrations WHERE filename = '${filename}') THEN 'ok' ELSE 'missing' END;")"
-  if [[ "$result" == "ok" ]]; then
+checksum_is_listed() {
+  local checksum="$1"
+  local csv="$2"
+  [[ ",$csv," == *",$checksum,"* ]]
+}
+
+check_schema_migration_entry() {
+  local filename="$1"
+  local legacy_filename="$2"
+  local legacy_checksums="$3"
+  local is_baseline="$4"
+  local canonical_checksum legacy_checksum compatibility_sql structure_compatible
+
+  canonical_checksum="$(registered_migration_checksum "$filename")"
+  if [[ -n "$canonical_checksum" ]]; then
     pass "migration applied: $filename"
-  else
-    fail "migration missing: $filename"
+    return
   fi
+
+  legacy_checksum="$(registered_migration_checksum "$legacy_filename")"
+  if [[ -n "$legacy_checksum" ]]; then
+    if checksum_is_listed "$legacy_checksum" "$legacy_checksums"; then
+      pass "migration legacy-compatible: $legacy_filename -> $filename"
+    else
+      fail "legacy migration checksum drift: $legacy_filename"
+    fi
+    return
+  fi
+
+  if [[ "$legacy_baseline_ready" == "1" && "$is_baseline" == "1" ]]; then
+    pass "migration baseline-compatible: $filename"
+    return
+  fi
+
+  compatibility_sql="$(node "$migration_manifest" compatibility-sql "$filename" --frontend-dir="$FRONTEND_DIR")"
+  if [[ -n "$compatibility_sql" ]]; then
+    structure_compatible="$(psql_scalar "$compatibility_sql")"
+    if [[ "$structure_compatible" == "t" ]]; then
+      pass "migration structure-compatible: $filename"
+      return
+    fi
+  fi
+
+  fail "migration missing or incompatible: $filename"
 }
 
 check_prisma_migration() {
@@ -217,7 +256,6 @@ if (( failures == 0 )); then
 
   for table in \
     geosub_schema_migrations \
-    geosub_backfill_migrations \
     products \
     plans \
     countries \
@@ -236,14 +274,33 @@ if (( failures == 0 )); then
   check_table "admin_login_attempts"
   check_relation "latest_exchange_rates"
 
+  backfill_registry="$(psql_scalar "SELECT CASE WHEN to_regclass('public.geosub_backfill_migrations') IS NULL THEN 'pending' ELSE 'present' END;")"
+  if [[ "$backfill_registry" == "present" ]]; then
+    pass "optional backfill registry present"
+  else
+    pass "optional backfill registry not initialized; backfills remain operator-controlled"
+  fi
+
   migration_manifest="$BACKEND_DIR/scripts/migration-manifest.cjs"
   if manifest_summary="$(node "$migration_manifest" validate --frontend-dir="$FRONTEND_DIR" 2>&1)"; then
     pass "$manifest_summary"
-    mapfile -t schema_migrations < <(
-      node "$migration_manifest" list schema --frontend-dir="$FRONTEND_DIR"
+    legacy_baseline_ready=0
+    baseline_cutover_checksum="$(registered_migration_checksum "sql/063_system_task_runs.sql")"
+    if [[ -n "$baseline_cutover_checksum" ]]; then
+      baseline_guards="$(psql_scalar "SELECT to_regclass('public.products') IS NOT NULL AND to_regclass('public.collector_jobs') IS NOT NULL AND to_regprocedure('queue_app_store_coverage_gap_rechecks(integer,integer,integer)') IS NOT NULL;")"
+      if [[ "$baseline_guards" == "t" ]]; then
+        legacy_baseline_ready=1
+      else
+        fail "legacy migration baseline guards are incomplete"
+      fi
+    fi
+
+    mapfile -t schema_entries < <(
+      node "$migration_manifest" entries schema --frontend-dir="$FRONTEND_DIR"
     )
-    for migration in "${schema_migrations[@]}"; do
-      check_migration "$migration"
+    for entry in "${schema_entries[@]}"; do
+      IFS=$'\t' read -r migration legacy_migration legacy_checksums is_baseline <<<"$entry"
+      check_schema_migration_entry "$migration" "$legacy_migration" "$legacy_checksums" "$is_baseline"
     done
 
     mapfile -t prisma_migrations < <(

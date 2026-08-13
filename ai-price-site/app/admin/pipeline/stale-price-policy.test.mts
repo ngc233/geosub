@@ -110,7 +110,7 @@ test("stale published prices get a focused retry lifecycle", () => {
     migrationEntriesForLegacyFile("sql/059_stale_app_store_price_lifecycle.sql").length,
     1,
   );
-  assert.match(deployCheck, /list schema/);
+  assert.match(deployCheck, /entries schema/);
 });
 
 test("admin data quality pages use the same fourteen day freshness policy", () => {
@@ -190,7 +190,7 @@ test("anomaly evidence follows a bounded automatic repair lifecycle", () => {
     migrationEntriesForLegacyFile("sql/064_data_quality_repair_cycles.sql").length,
     2,
   );
-  assert.match(deployCheck, /list schema/);
+  assert.match(deployCheck, /entries schema/);
 });
 
 test("collector failures use bounded retries and database-level self-healing", () => {
@@ -284,7 +284,7 @@ test("coverage gaps queue bounded product-level App Store rechecks", () => {
     migrationEntriesForLegacyFile("sql/062_app_store_coverage_gap_rechecks.sql").length,
     1,
   );
-  assert.match(deployCheck, /list schema/);
+  assert.match(deployCheck, /entries schema/);
   assert.match(overview, /coverage_refresh_success_count/);
   assert.match(overview, /label: "地区差异已复核"/);
   assert.match(overview, /无需手工处理/);
