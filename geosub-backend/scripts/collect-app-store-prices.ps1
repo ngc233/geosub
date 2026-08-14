@@ -86,12 +86,70 @@ function Normalize-Slug {
 
 function Load-ProductPlanSpecs {
   $specPath = Join-Path $PSScriptRoot "..\data\product-plan-specs.json"
-  if (!(Test-Path -LiteralPath $specPath)) {
+  $expansionPath = Join-Path $PSScriptRoot "..\data\catalog-expansion-2026-08.json"
+  $merged = [ordered]@{}
+
+  if (Test-Path -LiteralPath $specPath) {
+    $specJson = [IO.File]::ReadAllText($specPath, [Text.Encoding]::UTF8)
+    $baseSpecs = $specJson | ConvertFrom-Json
+    foreach ($property in @($baseSpecs.PSObject.Properties)) {
+      $merged[$property.Name] = $property.Value
+    }
+  }
+
+  if (Test-Path -LiteralPath $expansionPath) {
+    $expansionJson = [IO.File]::ReadAllText($expansionPath, [Text.Encoding]::UTF8)
+    $expansion = $expansionJson | ConvertFrom-Json
+    $expandedProducts = @($expansion.products) + @($expansion.existing_plan_specs)
+
+    foreach ($product in $expandedProducts) {
+      if ($null -eq $product.app_store -or ![bool]$product.app_store.collector_enabled) {
+        continue
+      }
+
+      $spec = [ordered]@{
+        name = [string]$product.name
+        app_store_id = [string]$product.app_store.id
+        plans = @($product.plans | ForEach-Object {
+          $plan = [ordered]@{
+            slug = [string]$_.slug
+            name = [string]$_.name
+            billing_cycle = [string]$_.billing_cycle
+            aliases = @($_.aliases)
+            sort_order = [int]$_.sort_order
+            expected_monthly_usd_min = [decimal]$_.expected_usd_min
+            expected_monthly_usd_max = [decimal]$_.expected_usd_max
+          }
+          if ($_.PSObject.Properties.Name -contains "price_selection_strategy") {
+            $plan.price_selection_strategy = [string]$_.price_selection_strategy
+          }
+          if ($_.PSObject.Properties.Name -contains "allow_recurring_consumable_terms") {
+            $plan.allow_recurring_consumable_terms = [bool]$_.allow_recurring_consumable_terms
+          }
+          [pscustomobject]$plan
+        })
+      }
+
+      if ($product.PSObject.Properties.Name -contains "match_product_name") {
+        $spec.match_product_name = [string]$product.match_product_name
+      }
+
+      if ($product.PSObject.Properties.Name -contains "excluded_aliases") {
+        $spec.excluded_aliases = @($product.excluded_aliases)
+      }
+      if ($product.PSObject.Properties.Name -contains "country_scoped_aliases") {
+        $spec.country_scoped_aliases = @($product.country_scoped_aliases)
+      }
+
+      $merged[[string]$product.slug] = [pscustomobject]$spec
+    }
+  }
+
+  if ($merged.Count -eq 0) {
     return $null
   }
 
-  $specJson = [IO.File]::ReadAllText($specPath, [Text.Encoding]::UTF8)
-  return $specJson | ConvertFrom-Json
+  return [pscustomobject]$merged
 }
 
 function Get-ProductPlanSpec {
@@ -120,6 +178,7 @@ function Normalize-PlanMatchText {
   }
 
   $text = [System.Net.WebUtility]::HtmlDecode($Value).ToLowerInvariant()
+  $text = $text.Replace("+", " plus ")
   $decomposed = $text.Normalize([Text.NormalizationForm]::FormD)
   $builder = [Text.StringBuilder]::new()
   foreach ($character in $decomposed.ToCharArray()) {
@@ -204,7 +263,15 @@ function Resolve-PlanSpec {
   }
 
   $itemText = Normalize-PlanMatchText -Value $ItemName
-  $productText = Normalize-PlanMatchText -Value $ProductName
+  $matchProductName = if (
+    $ProductSpec.PSObject.Properties.Name -contains "match_product_name" -and
+    ![string]::IsNullOrWhiteSpace([string]$ProductSpec.match_product_name)
+  ) {
+    [string]$ProductSpec.match_product_name
+  } else {
+    $ProductName
+  }
+  $productText = Normalize-PlanMatchText -Value $matchProductName
 
   if ($ProductSpec.PSObject.Properties.Name -contains "excluded_aliases") {
     foreach ($excludedAlias in @($ProductSpec.excluded_aliases)) {
@@ -248,6 +315,38 @@ function Resolve-PlanSpec {
   }
 
   return $null
+}
+
+function Test-ProductSpecCountryScope {
+  param(
+    [AllowNull()][object]$ProductSpec,
+    [string]$ItemName,
+    [string]$CountryCode
+  )
+
+  if (
+    $null -eq $ProductSpec -or
+    !($ProductSpec.PSObject.Properties.Name -contains "country_scoped_aliases")
+  ) {
+    return $true
+  }
+
+  $itemText = Normalize-PlanMatchText -Value $ItemName
+  $country = $CountryCode.ToUpperInvariant()
+
+  foreach ($scope in @($ProductSpec.country_scoped_aliases)) {
+    $token = Normalize-PlanMatchText -Value ([string]$scope.token)
+    if ([string]::IsNullOrWhiteSpace($token) -or $itemText -notmatch "\b$([regex]::Escape($token))\b") {
+      continue
+    }
+
+    $allowedCountries = @($scope.country_codes | ForEach-Object { ([string]$_).ToUpperInvariant() })
+    if ($country -notin $allowedCountries) {
+      return $false
+    }
+  }
+
+  return $true
 }
 
 function Get-PlanSlugFromItemName {
@@ -300,6 +399,17 @@ function Should-IgnoreInAppPurchase {
     return $true
   }
 
+  # Tip jars and novelty gifts are standalone purchases, even when the App
+  # Store lists them beside recurring subscriptions.
+  if (
+    $normalized -match "(?i)\b(tip|tips|donation|donate|snack|snacks)\b" -or
+    $normalized -match "(?i)\b(?:buy|grab)\b.+\bcoffee\b" -or
+    $normalized -match "(?i)\bsend\b.+\bflower\b" -or
+    $normalized -match "(?i)\btreat\b.+\bmeal\b"
+  ) {
+    return $true
+  }
+
   if ($normalized -match "(?i)\bpremier\s+access\b") {
     return $true
   }
@@ -327,6 +437,36 @@ function Should-IgnoreInAppPurchase {
   # such as "30 GB" or "100 GB". Keep real plan names like "Google AI Pro (5 TB)".
   if ($normalized -match "(?i)^\d+(?:\.\d+)?\s?(?:mb|gb|tb|mo|go|to|gib|tib|t)$") {
     return $true
+  }
+
+  return $false
+}
+
+function Test-PlanAllowsIgnoredRecurringItem {
+  param(
+    [AllowNull()][object]$PlanSpec,
+    [string]$ItemName
+  )
+
+  if (
+    $null -eq $PlanSpec -or
+    !($PlanSpec.PSObject.Properties.Name -contains "allow_recurring_consumable_terms") -or
+    ![bool]$PlanSpec.allow_recurring_consumable_terms
+  ) {
+    return $false
+  }
+
+  $normalized = Normalize-PlanMatchText -Value $ItemName
+  if ($normalized -match "\b(annual|annually|yearly|year|quarterly|quarter|one time)\b") {
+    return $false
+  }
+
+  $billingCycle = ([string]$PlanSpec.billing_cycle).ToLowerInvariant()
+  if ($billingCycle -eq "monthly") {
+    return $normalized -match "\b(month|monthly)\b"
+  }
+  if ($billingCycle -eq "weekly") {
+    return $normalized -match "\b(week|weekly)\b"
   }
 
   return $false
@@ -905,6 +1045,15 @@ function Ensure-Plan {
   } else {
     $SortOrder
   }
+  $billingCycle = if (
+    $null -ne $planSpec -and
+    $planSpec.PSObject.Properties.Name -contains "billing_cycle" -and
+    ![string]::IsNullOrWhiteSpace([string]$planSpec.billing_cycle)
+  ) {
+    ([string]$planSpec.billing_cycle).Trim().ToLowerInvariant()
+  } else {
+    "monthly"
+  }
 
   if ($planSlug -eq "pro-20x" -and $PlansBySlug.ContainsKey("pro")) {
     $planSlug = "pro"
@@ -917,6 +1066,7 @@ function Ensure-Plan {
 UPDATE plans
 SET
   name = $(Quote-SqlString $planName),
+  billing_cycle = $(Quote-SqlString $billingCycle)::billing_cycle,
   status = 'published'::publish_status,
   sort_order = $effectiveSortOrder,
   updated_at = NOW()
@@ -930,7 +1080,7 @@ WHERE id = $(Quote-SqlString $plan.id)::uuid;
 
   $plan = Invoke-PsqlJson @"
 WITH existing AS (
-  SELECT id, slug, name, sort_order
+  SELECT id, slug, name, billing_cycle, sort_order
   FROM plans
   WHERE product_id = $(Quote-SqlString $ProductId)::uuid
     AND LOWER(name) = LOWER($(Quote-SqlString $ItemName))
@@ -953,7 +1103,7 @@ upserted AS (
     $(Quote-SqlString $ProductId)::uuid,
     $(Quote-SqlString $planSlug),
     $(Quote-SqlString $planName),
-    'monthly'::billing_cycle,
+    $(Quote-SqlString $billingCycle)::billing_cycle,
     'published'::publish_status,
     $effectiveSortOrder,
     NOW(),
@@ -962,10 +1112,11 @@ upserted AS (
   ON CONFLICT (product_id, slug)
   DO UPDATE SET
     name = EXCLUDED.name,
+    billing_cycle = EXCLUDED.billing_cycle,
     status = 'published'::publish_status,
     sort_order = EXCLUDED.sort_order,
     updated_at = NOW()
-  RETURNING id, slug, name, sort_order
+  RETURNING id, slug, name, billing_cycle, sort_order
 ),
 selected AS (
   SELECT * FROM existing
@@ -1008,7 +1159,7 @@ SELECT json_build_object(
   'plans', COALESCE((
     SELECT json_agg(row_to_json(plans))
     FROM (
-      SELECT id, slug, name, sort_order
+      SELECT id, slug, name, billing_cycle, sort_order
       FROM plans
       WHERE product_id = (SELECT id FROM products WHERE slug = $(Quote-SqlString $Slug) LIMIT 1)
     ) plans
@@ -1641,7 +1792,9 @@ foreach ($countryCode in $CountryCodes) {
   $candidateItemsBySlug = @{}
   $ignoredItemCount = 0
   foreach ($item in $items) {
-    if (Should-IgnoreInAppPurchase -ItemName $item.Name -CountryCode $code) {
+    $planSpec = Resolve-PlanSpec -ProductSpec $productPlanSpec -ItemName $item.Name -ProductName $context.product.name
+    $allowIgnoredRecurringItem = Test-PlanAllowsIgnoredRecurringItem -PlanSpec $planSpec -ItemName $item.Name
+    if ((Should-IgnoreInAppPurchase -ItemName $item.Name -CountryCode $code) -and !$allowIgnoredRecurringItem) {
       Write-Host "Ignoring non-subscription App Store item: $code $($item.Name)"
       $ignoredItemCount += 1
       continue
@@ -1649,6 +1802,12 @@ foreach ($countryCode in $CountryCodes) {
 
     if (!(Test-AppStoreItemMatchesProduct -ItemName $item.Name -ProductName $context.product.name -ProductSpec $productPlanSpec)) {
       Write-Host "Ignoring App Store item that appears to belong to another product: $code $($item.Name)"
+      $ignoredItemCount += 1
+      continue
+    }
+
+    if (!(Test-ProductSpecCountryScope -ProductSpec $productPlanSpec -ItemName $item.Name -CountryCode $code)) {
+      Write-Host "Ignoring country-scoped App Store item outside its storefront: $code $($item.Name)"
       $ignoredItemCount += 1
       continue
     }
@@ -1661,7 +1820,6 @@ foreach ($countryCode in $CountryCodes) {
       continue
     }
 
-    $planSpec = Resolve-PlanSpec -ProductSpec $productPlanSpec -ItemName $item.Name -ProductName $context.product.name
     if ($null -ne $productPlanSpec -and $null -eq $planSpec) {
       Write-Host "Ignoring unmatched App Store item for known product spec: $code $($item.Name)"
       $ignoredItemCount += 1

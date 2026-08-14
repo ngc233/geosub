@@ -1,0 +1,493 @@
+{
+  "version": 1,
+  "scope": "OpenTheRank AI and streaming catalog gap reviewed on 2026-08-14",
+  "products": [
+    {
+      "slug": "glm",
+      "name": "GLM",
+      "category": "ai",
+      "provider": "Zhipu AI",
+      "description": "Compare GLM subscription tiers after official regional pricing becomes verifiable.",
+      "official_url": "https://z.ai/subscribe",
+      "sort_order": 310,
+      "integration_status": "official_page_only",
+      "integration_note": "The maintained evidence is official web pricing, not a regional App Store subscription list.",
+      "plans": [
+        { "slug": "lite", "name": "GLM Lite", "billing_cycle": "monthly", "aliases": ["glm lite", "lite"], "sort_order": 10 },
+        { "slug": "pro", "name": "GLM Pro", "billing_cycle": "monthly", "aliases": ["glm pro", "pro"], "sort_order": 20 },
+        { "slug": "max", "name": "GLM Max", "billing_cycle": "monthly", "aliases": ["glm max", "max"], "sort_order": 30 }
+      ]
+    },
+    {
+      "slug": "leonardo-ai",
+      "name": "Leonardo AI",
+      "category": "ai",
+      "provider": "Leonardo Interactive",
+      "description": "Compare Leonardo AI creator subscriptions across supported App Store regions.",
+      "official_url": "https://leonardo.ai/",
+      "sort_order": 320,
+      "app_store": { "id": "1662773014", "bundle_id": "ai.leonardo.Leonardo", "collector_enabled": true },
+      "plans": [
+        { "slug": "essential", "name": "Leonardo AI Essential", "billing_cycle": "monthly", "aliases": ["essential", "essential monthly"], "sort_order": 10, "expected_usd_min": 7, "expected_usd_max": 30 },
+        { "slug": "premium", "name": "Leonardo AI Premium", "billing_cycle": "monthly", "aliases": ["premium", "premium monthly"], "sort_order": 20, "expected_usd_min": 20, "expected_usd_max": 65 },
+        { "slug": "ultimate", "name": "Leonardo AI Ultimate", "billing_cycle": "monthly", "aliases": ["ultimate", "ultimate monthly"], "sort_order": 30, "expected_usd_min": 45, "expected_usd_max": 120 }
+      ]
+    },
+    {
+      "slug": "character-ai",
+      "name": "Character.AI",
+      "category": "ai",
+      "provider": "Character Technologies",
+      "description": "Compare Character.AI+ subscription prices across supported App Store regions.",
+      "official_url": "https://character.ai/",
+      "sort_order": 330,
+      "app_store": { "id": "1671705818", "bundle_id": "ai.character.app", "collector_enabled": true },
+      "plans": [
+        { "slug": "plus", "name": "Character.AI+", "billing_cycle": "monthly", "aliases": ["character ai+", "character ai plus", "c ai+"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 3, "expected_usd_max": 25 }
+      ]
+    },
+    {
+      "slug": "microsoft-copilot",
+      "name": "Microsoft Copilot",
+      "category": "ai",
+      "provider": "Microsoft",
+      "description": "Compare the Microsoft 365 subscriptions currently offered through the Copilot app.",
+      "official_url": "https://copilot.microsoft.com/",
+      "sort_order": 340,
+      "app_store": { "id": "6472538445", "bundle_id": "com.microsoft.copilot", "collector_enabled": true },
+      "plans": [
+        { "slug": "personal", "name": "Microsoft 365 Personal", "billing_cycle": "monthly", "aliases": ["microsoft 365 personal", "365 personal"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 4, "expected_usd_max": 22 },
+        { "slug": "premium", "name": "Microsoft 365 Premium", "billing_cycle": "monthly", "aliases": ["microsoft 365 premium", "365 premium"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 10, "expected_usd_max": 40 }
+      ]
+    },
+    {
+      "slug": "poe",
+      "name": "Poe",
+      "category": "ai",
+      "provider": "Quora",
+      "description": "Compare Poe Basic and Plus subscriptions across supported App Store regions.",
+      "official_url": "https://poe.com/",
+      "sort_order": 350,
+      "app_store": { "id": "1640745955", "bundle_id": "com.quora.app.Experts", "collector_enabled": true },
+      "plans": [
+        { "slug": "basic", "name": "Poe Basic", "billing_cycle": "monthly", "aliases": ["monthly basic", "poe monthly basic"], "sort_order": 10, "expected_usd_min": 2, "expected_usd_max": 15 },
+        { "slug": "plus", "name": "Poe Plus", "billing_cycle": "monthly", "aliases": ["monthly plus", "poe monthly plus", "poe monthly subscription"], "sort_order": 20, "expected_usd_min": 8, "expected_usd_max": 40 }
+      ]
+    },
+    {
+      "slug": "sora",
+      "name": "Sora",
+      "category": "ai",
+      "provider": "OpenAI",
+      "description": "Track Sora purchase options separately from recurring subscription rankings.",
+      "official_url": "https://openai.com/sora/",
+      "sort_order": 360,
+      "integration_status": "one_time_only",
+      "integration_note": "The compared App Store item is a one-time video pack, not a recurring subscription.",
+      "plans": [
+        { "slug": "10-videos", "name": "Sora 10 Videos", "billing_cycle": "one_time", "aliases": ["10 videos", "sora 10 videos"], "sort_order": 10 }
+      ]
+    },
+    {
+      "slug": "kling-ai",
+      "name": "Kling AI",
+      "category": "ai",
+      "provider": "Kling AI",
+      "description": "Compare Kling AI video generation subscriptions across supported App Store regions.",
+      "official_url": "https://klingai.com/",
+      "sort_order": 370,
+      "app_store": { "id": "6738049229", "bundle_id": "kling.ai.video.chat", "collector_enabled": true },
+      "plans": [
+        { "slug": "standard", "name": "Kling AI Standard", "billing_cycle": "monthly", "aliases": ["standard plan monthly", "standard monthly"], "sort_order": 10, "expected_usd_min": 4, "expected_usd_max": 25 },
+        { "slug": "pro", "name": "Kling AI Pro", "billing_cycle": "monthly", "aliases": ["pro plan monthly", "pro monthly"], "sort_order": 20, "expected_usd_min": 15, "expected_usd_max": 65 },
+        { "slug": "premier", "name": "Kling AI Premier", "billing_cycle": "monthly", "aliases": ["premier plan monthly", "premier monthly"], "sort_order": 30, "expected_usd_min": 45, "expected_usd_max": 140 }
+      ]
+    },
+    {
+      "slug": "runwayml",
+      "name": "RunwayML",
+      "category": "ai",
+      "provider": "Runway AI",
+      "description": "Compare Runway creative AI subscriptions across supported App Store regions.",
+      "official_url": "https://runwayml.com/",
+      "sort_order": 380,
+      "app_store": { "id": "1665024375", "bundle_id": "com.runwayml.mobiletest", "collector_enabled": true },
+      "plans": [
+        { "slug": "standard", "name": "Runway Standard", "billing_cycle": "monthly", "aliases": ["standard monthly"], "sort_order": 10, "expected_usd_min": 6, "expected_usd_max": 30 },
+        { "slug": "pro", "name": "Runway Pro", "billing_cycle": "monthly", "aliases": ["pro monthly"], "sort_order": 20, "expected_usd_min": 15, "expected_usd_max": 60 },
+        { "slug": "unlimited", "name": "Runway Unlimited", "billing_cycle": "monthly", "aliases": ["unlimited monthly"], "sort_order": 30, "expected_usd_min": 45, "expected_usd_max": 140 }
+      ]
+    },
+    {
+      "slug": "captions",
+      "name": "Captions",
+      "category": "ai",
+      "provider": "Captions",
+      "description": "Compare Captions AI video subscriptions across supported App Store regions.",
+      "official_url": "https://www.captions.ai/",
+      "sort_order": 390,
+      "app_store": { "id": "1541407007", "bundle_id": "boomer.Smart-Video", "collector_enabled": true },
+      "plans": [
+        { "slug": "basic", "name": "Captions Basic", "billing_cycle": "monthly", "aliases": ["basic monthly"], "sort_order": 10, "expected_usd_min": 3, "expected_usd_max": 22 },
+        { "slug": "max", "name": "Captions Max", "billing_cycle": "monthly", "aliases": ["captions max", "max"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 12, "expected_usd_max": 45 }
+      ]
+    },
+    {
+      "slug": "pollo-ai",
+      "name": "Pollo AI",
+      "category": "ai",
+      "provider": "COCOSOFT",
+      "description": "Compare Pollo AI video generation plans using their actual billing periods.",
+      "official_url": "https://pollo.ai/",
+      "sort_order": 400,
+      "app_store": { "id": "6740024098", "bundle_id": "com.polllo.aivideo", "collector_enabled": true },
+      "plans": [
+        { "slug": "weekly-premium", "name": "Pollo AI Weekly Premium", "billing_cycle": "weekly", "aliases": ["weekly premium"], "sort_order": 10, "expected_usd_min": 2, "expected_usd_max": 15 },
+        { "slug": "lite", "name": "Pollo AI Lite", "billing_cycle": "monthly", "aliases": ["lite monthly"], "sort_order": 20, "expected_usd_min": 6, "expected_usd_max": 30 },
+        { "slug": "pro", "name": "Pollo AI Pro", "billing_cycle": "monthly", "aliases": ["pro monthly"], "sort_order": 30, "expected_usd_min": 12, "expected_usd_max": 55 }
+      ]
+    },
+    {
+      "slug": "heygen",
+      "name": "HeyGen",
+      "category": "ai",
+      "provider": "HeyGen",
+      "description": "Compare HeyGen avatar video subscriptions across supported App Store regions.",
+      "official_url": "https://www.heygen.com/",
+      "sort_order": 410,
+      "app_store": { "id": "6711356409", "bundle_id": "com.heygen.mobile", "collector_enabled": true },
+      "plans": [
+        { "slug": "starter", "name": "HeyGen Starter", "billing_cycle": "monthly", "aliases": ["starter monthly"], "sort_order": 10, "expected_usd_min": 4, "expected_usd_max": 22 },
+        { "slug": "creator", "name": "HeyGen Creator", "billing_cycle": "monthly", "aliases": ["creator monthly"], "sort_order": 20, "expected_usd_min": 12, "expected_usd_max": 50 },
+        { "slug": "pro-1000", "name": "HeyGen Pro 1000", "billing_cycle": "monthly", "aliases": ["pro 1000 credit monthly"], "allow_recurring_consumable_terms": true, "sort_order": 30, "expected_usd_min": 25, "expected_usd_max": 80 },
+        { "slug": "pro-1500", "name": "HeyGen Pro 1500", "billing_cycle": "monthly", "aliases": ["pro 1500 credit monthly"], "allow_recurring_consumable_terms": true, "sort_order": 40, "expected_usd_min": 40, "expected_usd_max": 110 }
+      ]
+    },
+    {
+      "slug": "invideo-ai",
+      "name": "invideo AI",
+      "category": "ai",
+      "provider": "invideo",
+      "description": "Compare invideo AI creation subscriptions across supported App Store regions.",
+      "official_url": "https://invideo.io/",
+      "sort_order": 420,
+      "excluded_aliases": ["mini pack", "add-on", "addon"],
+      "app_store": { "id": "6471394316", "bundle_id": "io.invideo.ai", "collector_enabled": true },
+      "plans": [
+        { "slug": "plus", "name": "invideo AI Plus", "billing_cycle": "monthly", "aliases": ["plus monthly 1x", "plus monthly", "plus"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 12, "expected_usd_max": 50 },
+        { "slug": "max", "name": "invideo AI Max", "billing_cycle": "monthly", "aliases": ["max monthly", "max"], "sort_order": 20, "expected_usd_min": 35, "expected_usd_max": 110 },
+        { "slug": "generative", "name": "invideo AI Generative", "billing_cycle": "monthly", "aliases": ["generative monthly", "generative"], "sort_order": 30, "expected_usd_min": 75, "expected_usd_max": 220 }
+      ]
+    },
+    {
+      "slug": "catcosplay",
+      "name": "CatCosplay",
+      "category": "ai",
+      "provider": "CatCosplay",
+      "description": "Track CatCosplay official subscription pricing without presenting a false regional ranking.",
+      "official_url": "https://catcosplay.ai/",
+      "sort_order": 430,
+      "integration_status": "official_page_only",
+      "integration_note": "The available evidence is a uniform website price rather than regional App Store subscriptions.",
+      "plans": [
+        { "slug": "pro", "name": "CatCosplay Pro", "billing_cycle": "monthly", "aliases": ["pro monthly", "catcosplay pro"], "sort_order": 10 }
+      ]
+    },
+    {
+      "slug": "x-premium",
+      "name": "X Premium",
+      "category": "ai",
+      "provider": "X Corp.",
+      "match_product_name": "X",
+      "description": "Compare X Basic, Premium and Premium+ subscriptions across supported App Store regions.",
+      "official_url": "https://x.com/i/premium_sign_up",
+      "sort_order": 440,
+      "app_store": { "id": "333903271", "bundle_id": "com.atebits.Tweetie2", "collector_enabled": true },
+      "plans": [
+        { "slug": "basic", "name": "X Basic", "billing_cycle": "monthly", "aliases": ["basic monthly"], "sort_order": 10, "expected_usd_min": 1, "expected_usd_max": 12 },
+        { "slug": "premium", "name": "X Premium", "billing_cycle": "monthly", "aliases": ["premium monthly"], "sort_order": 20, "expected_usd_min": 4, "expected_usd_max": 25 },
+        { "slug": "premium-plus", "name": "X Premium+", "billing_cycle": "monthly", "aliases": ["premium plus monthly", "premium+ monthly"], "sort_order": 30, "expected_usd_min": 18, "expected_usd_max": 80 }
+      ]
+    },
+    {
+      "slug": "le-chat",
+      "name": "Mistral Vibe (Le Chat)",
+      "category": "ai",
+      "provider": "Mistral AI",
+      "description": "Compare the current Vibe Pro subscription from Mistral's former Le Chat app.",
+      "official_url": "https://mistral.ai/products/le-chat",
+      "sort_order": 450,
+      "app_store": { "id": "6740410176", "bundle_id": "ai.mistral.chat", "collector_enabled": true },
+      "plans": [
+        { "slug": "pro", "name": "Vibe Pro", "billing_cycle": "monthly", "aliases": ["vibe pro", "le chat pro"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 7, "expected_usd_max": 35 }
+      ]
+    },
+    {
+      "slug": "spotify",
+      "name": "Spotify Premium",
+      "category": "streaming",
+      "provider": "Spotify",
+      "description": "Compare Spotify Premium prices after an official regional source is connected.",
+      "official_url": "https://www.spotify.com/premium/",
+      "sort_order": 410,
+      "integration_status": "official_page_only",
+      "integration_note": "The US App Store page currently exposes no usable recurring in-app purchase list.",
+      "app_store": { "id": "324684580", "bundle_id": "com.spotify.client", "collector_enabled": false },
+      "plans": [
+        { "slug": "individual", "name": "Spotify Premium Individual", "billing_cycle": "monthly", "aliases": ["premium individual", "individual"], "sort_order": 10 },
+        { "slug": "family", "name": "Spotify Premium Family", "billing_cycle": "monthly", "aliases": ["premium family", "family"], "sort_order": 20 }
+      ]
+    },
+    {
+      "slug": "youtube-premium",
+      "name": "YouTube Premium",
+      "category": "streaming",
+      "provider": "Google",
+      "match_product_name": "YouTube",
+      "description": "Compare YouTube Premium subscriptions across supported App Store regions.",
+      "official_url": "https://www.youtube.com/premium",
+      "sort_order": 420,
+      "app_store": { "id": "544007664", "bundle_id": "com.google.ios.youtube", "collector_enabled": true },
+      "plans": [
+        { "slug": "lite", "name": "YouTube Premium Lite", "billing_cycle": "monthly", "aliases": ["premium lite"], "sort_order": 10, "expected_usd_min": 3, "expected_usd_max": 25 },
+        { "slug": "individual", "name": "YouTube Premium", "billing_cycle": "monthly", "aliases": ["youtube premium", "premium", "premium individual"], "sort_order": 20, "expected_usd_min": 6, "expected_usd_max": 40 },
+        { "slug": "family", "name": "YouTube Premium Family", "billing_cycle": "monthly", "aliases": ["youtube premium family", "premium family", "family"], "sort_order": 30, "expected_usd_min": 12, "expected_usd_max": 60 }
+      ]
+    },
+    {
+      "slug": "crunchyroll",
+      "name": "Crunchyroll",
+      "category": "streaming",
+      "provider": "Crunchyroll",
+      "description": "Compare Crunchyroll streaming memberships across supported App Store regions.",
+      "official_url": "https://www.crunchyroll.com/premium",
+      "sort_order": 430,
+      "excluded_aliases": ["manga", "bundle"],
+      "app_store": { "id": "329913454", "bundle_id": "com.crunchyroll.iphone", "collector_enabled": true },
+      "plans": [
+        { "slug": "fan", "name": "Crunchyroll Fan", "billing_cycle": "monthly", "aliases": ["fan membership", "fan"], "sort_order": 10, "expected_usd_min": 3, "expected_usd_max": 20 },
+        { "slug": "mega-fan", "name": "Crunchyroll Mega Fan", "billing_cycle": "monthly", "aliases": ["mega fan monthly", "mega fan"], "sort_order": 20, "expected_usd_min": 5, "expected_usd_max": 28 },
+        { "slug": "ultimate-fan", "name": "Crunchyroll Ultimate Fan", "billing_cycle": "monthly", "aliases": ["ultimate fan monthly", "ultimate fan"], "sort_order": 30, "expected_usd_min": 8, "expected_usd_max": 35 }
+      ]
+    },
+    {
+      "slug": "deezer",
+      "name": "Deezer",
+      "category": "streaming",
+      "provider": "Deezer",
+      "description": "Compare Deezer music subscriptions across supported App Store regions.",
+      "official_url": "https://www.deezer.com/offers",
+      "sort_order": 440,
+      "country_scoped_aliases": [
+        { "token": "brazil", "country_codes": ["BR"] },
+        { "token": "turkey", "country_codes": ["TR"] },
+        { "token": "mexico", "country_codes": ["MX"] },
+        { "token": "south africa", "country_codes": ["ZA"] }
+      ],
+      "app_store": { "id": "292738169", "bundle_id": "com.deezer.Deezer", "collector_enabled": true },
+      "plans": [
+        { "slug": "premium", "name": "Deezer Premium", "billing_cycle": "monthly", "aliases": ["premium", "deezer premium"], "sort_order": 10, "expected_usd_min": 2, "expected_usd_max": 28 },
+        { "slug": "family", "name": "Deezer Family", "billing_cycle": "monthly", "aliases": ["family", "deezer family"], "sort_order": 20, "expected_usd_min": 4, "expected_usd_max": 40 }
+      ]
+    },
+    {
+      "slug": "f1-tv",
+      "name": "F1 TV",
+      "category": "streaming",
+      "provider": "Formula 1",
+      "description": "Compare F1 TV Access and Pro subscriptions across supported App Store regions.",
+      "official_url": "https://www.formula1.com/en/subscribe-to-f1-tv",
+      "sort_order": 450,
+      "app_store": { "id": "1315007279", "bundle_id": "com.formula1.f1tv", "collector_enabled": true },
+      "plans": [
+        { "slug": "access", "name": "F1 TV Access", "billing_cycle": "monthly", "aliases": ["access monthly", "f1 tv access monthly"], "sort_order": 10, "expected_usd_min": 1, "expected_usd_max": 12 },
+        { "slug": "pro", "name": "F1 TV Pro", "billing_cycle": "monthly", "aliases": ["pro monthly", "f1 tv pro monthly"], "sort_order": 20, "expected_usd_min": 2, "expected_usd_max": 35 }
+      ]
+    },
+    {
+      "slug": "soundcloud",
+      "name": "SoundCloud",
+      "category": "streaming",
+      "provider": "SoundCloud",
+      "description": "Compare the SoundCloud Go+ listener subscription across supported App Store regions.",
+      "official_url": "https://soundcloud.com/go",
+      "sort_order": 460,
+      "excluded_aliases": ["artist", "next pro", "artist pro"],
+      "app_store": { "id": "336353151", "bundle_id": "com.soundcloud.TouchApp", "collector_enabled": true },
+      "plans": [
+        { "slug": "go-plus", "name": "SoundCloud Go+", "billing_cycle": "monthly", "aliases": ["go+", "soundcloud go+", "go plus"], "sort_order": 10, "expected_usd_min": 4, "expected_usd_max": 28 }
+      ]
+    },
+    {
+      "slug": "dramabox",
+      "name": "DramaBox",
+      "category": "streaming",
+      "provider": "STORYMATRIX",
+      "description": "Compare DramaBox membership prices across supported App Store regions.",
+      "official_url": "https://www.dramaboxapp.com/",
+      "sort_order": 470,
+      "app_store": { "id": "6445905219", "bundle_id": "com.storymatrix.drama", "collector_enabled": true },
+      "plans": [
+        { "slug": "membership", "name": "DramaBox Membership", "billing_cycle": "monthly", "aliases": ["membership", "monthly membership"], "sort_order": 10, "expected_usd_min": 3, "expected_usd_max": 35 }
+      ]
+    },
+    {
+      "slug": "reelshort",
+      "name": "ReelShort",
+      "category": "streaming",
+      "provider": "NewLeaf",
+      "description": "Compare ReelShort subscriptions across supported App Store regions.",
+      "official_url": "https://www.reelshort.com/",
+      "sort_order": 480,
+      "app_store": { "id": "1636235979", "bundle_id": "com.newleaf.app.android.victor", "collector_enabled": true },
+      "plans": [
+        { "slug": "subscription", "name": "ReelShort Subscription", "billing_cycle": "monthly", "aliases": ["subscription", "monthly subscription"], "sort_order": 10, "expected_usd_min": 5, "expected_usd_max": 40 }
+      ]
+    },
+    {
+      "slug": "viki",
+      "name": "Rakuten Viki",
+      "category": "streaming",
+      "provider": "Rakuten Viki",
+      "description": "Compare Viki Pass subscriptions across supported App Store regions.",
+      "official_url": "https://www.viki.com/pass",
+      "sort_order": 490,
+      "country_scoped_aliases": [
+        { "token": "americas only", "country_codes": ["US", "CA", "MX", "BR", "AR", "CL", "CO", "PE"] }
+      ],
+      "app_store": { "id": "445553058", "bundle_id": "com.viki.viki-ios", "collector_enabled": true },
+      "plans": [
+        { "slug": "standard", "name": "Viki Pass Standard", "billing_cycle": "monthly", "aliases": ["standard", "viki pass standard"], "sort_order": 10, "expected_usd_min": 2, "expected_usd_max": 18 },
+        { "slug": "plus", "name": "Viki Pass Plus", "billing_cycle": "monthly", "aliases": ["plus", "viki pass plus"], "sort_order": 20, "expected_usd_min": 4, "expected_usd_max": 25 }
+      ]
+    },
+    {
+      "slug": "mubi",
+      "name": "MUBI",
+      "category": "streaming",
+      "provider": "MUBI",
+      "description": "Compare the standard MUBI monthly subscription across supported App Store regions.",
+      "official_url": "https://mubi.com/subscriptions",
+      "sort_order": 500,
+      "app_store": { "id": "626148774", "bundle_id": "com.mubi.mubi", "collector_enabled": true },
+      "plans": [
+        { "slug": "monthly", "name": "MUBI Monthly", "billing_cycle": "monthly", "aliases": ["mubi monthly", "monthly"], "sort_order": 10, "expected_usd_min": 3, "expected_usd_max": 30 }
+      ]
+    },
+    {
+      "slug": "anghami",
+      "name": "Anghami",
+      "category": "streaming",
+      "provider": "Anghami",
+      "description": "Compare Anghami Plus subscriptions across supported App Store regions.",
+      "official_url": "https://www.anghami.com/plus",
+      "sort_order": 510,
+      "country_scoped_aliases": [
+        { "token": "egypt", "country_codes": ["EG"] },
+        { "token": "lebanon", "country_codes": ["LB"] }
+      ],
+      "excluded_aliases": ["international pricing", "special offer"],
+      "app_store": { "id": "545395155", "bundle_id": "com.anghami.anghami", "collector_enabled": true },
+      "plans": [
+        { "slug": "plus", "name": "Anghami Plus", "billing_cycle": "monthly", "aliases": ["plus", "anghami plus"], "sort_order": 10, "expected_usd_min": 1, "expected_usd_max": 18 },
+        { "slug": "family", "name": "Anghami Family", "billing_cycle": "monthly", "aliases": ["family", "anghami family"], "sort_order": 20, "expected_usd_min": 2, "expected_usd_max": 25 }
+      ]
+    },
+    {
+      "slug": "boomplay",
+      "name": "Boomplay",
+      "category": "streaming",
+      "provider": "Boomplay",
+      "description": "Compare Boomplay monthly music subscriptions across supported App Store regions.",
+      "official_url": "https://www.boomplay.com/",
+      "sort_order": 520,
+      "excluded_aliases": ["discounted monthly plan"],
+      "app_store": { "id": "1437251983", "bundle_id": "com.afmobi.boomplayer", "collector_enabled": true },
+      "plans": [
+        { "slug": "premium", "name": "Boomplay Premium", "billing_cycle": "monthly", "aliases": ["monthly subscription"], "sort_order": 10, "expected_usd_min": 1, "expected_usd_max": 20 }
+      ]
+    },
+    {
+      "slug": "podimo",
+      "name": "Podimo",
+      "category": "streaming",
+      "provider": "Podimo",
+      "description": "Compare Podimo podcast and audiobook subscriptions across supported App Store regions.",
+      "official_url": "https://podimo.com/",
+      "sort_order": 530,
+      "app_store": { "id": "1476538730", "bundle_id": "com.podimo.app", "collector_enabled": true },
+      "plans": [
+        { "slug": "premium", "name": "Podimo Premium", "billing_cycle": "monthly", "aliases": ["premium", "podimo premium"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 2, "expected_usd_max": 18 },
+        { "slug": "premium-plus", "name": "Podimo Premium Plus", "billing_cycle": "monthly", "aliases": ["premium plus", "premium+", "podimo premium plus"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 4, "expected_usd_max": 28 }
+      ]
+    },
+    {
+      "slug": "goodshort",
+      "name": "GoodShort",
+      "category": "streaming",
+      "provider": "GoodShort",
+      "description": "Compare GoodShort VIP subscriptions using the actual weekly billing period.",
+      "official_url": "https://www.goodshort.com/",
+      "sort_order": 540,
+      "app_store": { "id": "6448176203", "bundle_id": "com.newreading.goodreels", "collector_enabled": true },
+      "plans": [
+        { "slug": "weekly-vip", "name": "GoodShort Weekly VIP", "billing_cycle": "weekly", "aliases": ["weekly vip", "weekly subscription"], "sort_order": 10, "expected_usd_min": 2, "expected_usd_max": 30 }
+      ]
+    }
+  ],
+  "required_products": [
+    {
+      "slug": "kimi",
+      "name": "Kimi",
+      "category": "ai",
+      "provider": "Moonshot AI",
+      "description": "Compare Kimi recurring membership tiers across supported App Store regions.",
+      "official_url": "https://www.kimi.com/",
+      "sort_order": 280,
+      "excluded_aliases": [
+        "send kimi a flower",
+        "give kimi some snacks",
+        "get kimi charged",
+        "grab a coffee with kimi",
+        "treat kimi to a meal",
+        "land on the moon with kimi"
+      ],
+      "app_store": { "id": "6474233312", "collector_enabled": true },
+      "plans": [
+        { "slug": "moderato", "name": "Kimi Moderato", "billing_cycle": "monthly", "aliases": ["moderato", "kimi moderato"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 12, "expected_usd_max": 35 },
+        { "slug": "allegretto", "name": "Kimi Allegretto", "billing_cycle": "monthly", "aliases": ["allegretto", "kimi allegretto"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 25, "expected_usd_max": 75 },
+        { "slug": "allegro", "name": "Kimi Allegro", "billing_cycle": "monthly", "aliases": ["allegro", "kimi allegro"], "sort_order": 30, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 65, "expected_usd_max": 180 },
+        { "slug": "vivace", "name": "Kimi Vivace", "billing_cycle": "monthly", "aliases": ["vivace", "kimi vivace"], "sort_order": 40, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 130, "expected_usd_max": 360 }
+      ]
+    },
+    {
+      "slug": "perplexity",
+      "name": "Perplexity",
+      "category": "ai",
+      "provider": "Perplexity AI",
+      "description": "Compare Perplexity Pro and Max subscription prices across supported App Store regions.",
+      "official_url": "https://www.perplexity.ai/",
+      "sort_order": 290,
+      "app_store": { "id": "1668000334", "collector_enabled": true },
+      "plans": [
+        { "slug": "pro", "name": "Perplexity Pro", "billing_cycle": "monthly", "aliases": ["perplexity pro", "pro"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 8, "expected_usd_max": 45 },
+        { "slug": "max", "name": "Perplexity Max", "billing_cycle": "monthly", "aliases": ["perplexity max", "max"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 80, "expected_usd_max": 330 }
+      ]
+    },
+    {
+      "slug": "suno",
+      "name": "Suno",
+      "category": "ai",
+      "provider": "Suno",
+      "description": "Compare Suno Pro and Premier creator subscriptions across supported App Store regions.",
+      "official_url": "https://suno.com/",
+      "sort_order": 300,
+      "app_store": { "id": "6480136315", "collector_enabled": true },
+      "plans": [
+        { "slug": "pro", "name": "Suno Pro", "billing_cycle": "monthly", "aliases": ["suno pro", "pro"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 5, "expected_usd_max": 25 },
+        { "slug": "premier", "name": "Suno Premier", "billing_cycle": "monthly", "aliases": ["suno premier", "premier"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 20, "expected_usd_max": 60 }
+      ]
+    }
+  ],
+  "existing_plan_specs": []
+}

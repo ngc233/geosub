@@ -157,6 +157,68 @@
       }
     ]
   },
+  "kimi": {
+    "name": "Kimi",
+    "app_store_id": "6474233312",
+    "excluded_aliases": [
+      "send kimi a flower",
+      "give kimi some snacks",
+      "get kimi charged",
+      "grab a coffee with kimi",
+      "treat kimi to a meal",
+      "land on the moon with kimi"
+    ],
+    "plans": [
+      {
+        "slug": "moderato",
+        "name": "Kimi Moderato",
+        "aliases": [
+          "moderato",
+          "kimi moderato"
+        ],
+        "sort_order": 10,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 12.0,
+        "expected_monthly_usd_max": 35.0
+      },
+      {
+        "slug": "allegretto",
+        "name": "Kimi Allegretto",
+        "aliases": [
+          "allegretto",
+          "kimi allegretto"
+        ],
+        "sort_order": 20,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 25.0,
+        "expected_monthly_usd_max": 75.0
+      },
+      {
+        "slug": "allegro",
+        "name": "Kimi Allegro",
+        "aliases": [
+          "allegro",
+          "kimi allegro"
+        ],
+        "sort_order": 30,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 65.0,
+        "expected_monthly_usd_max": 180.0
+      },
+      {
+        "slug": "vivace",
+        "name": "Kimi Vivace",
+        "aliases": [
+          "vivace",
+          "kimi vivace"
+        ],
+        "sort_order": 40,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 130.0,
+        "expected_monthly_usd_max": 360.0
+      }
+    ]
+  },
   "disney": {
     "name": "Disney+",
     "app_store_id": "1446075923",

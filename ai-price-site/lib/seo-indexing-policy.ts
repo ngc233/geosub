@@ -6,8 +6,8 @@ export const seoIndexableLocales = ["zh", "en"] as const satisfies readonly Site
 export const seoIndexableLocaleBudget = 2;
 
 export const seoSitemapBudgets = {
-  total: 120,
-  productPlanPages: 60,
+  total: 140,
+  productPlanPages: 96,
   guideDetailPages: 24,
   currencyPairPages: 16,
 } as const;

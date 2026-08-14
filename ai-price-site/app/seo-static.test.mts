@@ -108,8 +108,10 @@ test("known legacy Search Console URLs resolve without creating thin pages", () 
   assert.equal(isUnreleasedPublicPath("/zh/gaming-steam"), true);
   assert.equal(isUnreleasedPublicPath("/en/gaming-steam"), true);
   assert.equal(isUnreleasedPublicPath("/zh/gift-cards"), true);
-  assert.match(pricingDetail, /Boolean\(resolvedSearchParams\.plan\)/);
-  assert.match(pricingDetail, /permanentRedirect\(canonicalDetailPath\)/);
+  assert.match(pricingDetail, /if \(resolvedSearchParams\.plan\)/);
+  assert.match(pricingDetail, /permanentRedirect\(productCanonicalPath\)/);
+  assert.match(pricingDetail, /buildProductOverviewStructuredData/);
+  assert.match(sitemap, /productRoutes/);
   assert.doesNotMatch(pricingDetail, /maandabonnement/);
   assert.match(rootLayout, /canonical: canonicalPath/);
   assert.match(chineseGiftCardGuide, /title="数字礼品卡购买前检查"/);
@@ -175,8 +177,8 @@ test("SEO indexing policy keeps accessible locales separate from promoted locale
 
   assert.deepEqual(seoIndexableLocales, ["zh", "en"]);
   assert.deepEqual(seoSitemapBudgets, {
-    total: 120,
-    productPlanPages: 60,
+    total: 140,
+    productPlanPages: 96,
     guideDetailPages: 24,
     currencyPairPages: 16,
   });

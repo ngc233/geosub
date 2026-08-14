@@ -97,7 +97,11 @@ async function getProductPaths() {
           ? "streaming-pricing"
           : "ai-pricing";
 
-      return product.plans.flatMap((plan) => {
+      const productPaths = seoIndexableLocales.map(
+        (locale) =>
+          `/${localePath(locale)}/${section}/${product.slug}`,
+      );
+      const planPaths = product.plans.flatMap((plan) => {
         const decision = getPlanSitemapDecision(
           getPlanEditorialIndexingStatus(product.slug, plan.slug),
           gateMode,
@@ -109,6 +113,8 @@ async function getProductPaths() {
             `/${localePath(locale)}/${section}/${product.slug}/${plan.slug}`,
         );
       });
+
+      return [...productPaths, ...planPaths];
     });
 }
 

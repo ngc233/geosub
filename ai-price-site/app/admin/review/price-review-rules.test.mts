@@ -65,6 +65,10 @@ const availabilitySemanticsSql = readSqlMigration(
   "sql/067_app_store_availability_semantics.sql",
 );
 
+const kimiNonSubscriptionCleanupSql = readSqlMigration(
+  "archive_kimi_non_subscription_iaps.sql",
+);
+
 const appStoreCollector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
@@ -238,7 +242,7 @@ test("legacy non-primary App Store tiers are retained as ignored evidence", () =
 });
 
 test("tracked products and plans keep explicit sanity ranges", () => {
-  for (const productSlug of ["chatgpt", "claude", "disney", "gemini", "grok", "hbo-max", "manus", "netflix"]) {
+  for (const productSlug of ["chatgpt", "claude", "disney", "gemini", "grok", "hbo-max", "kimi", "manus", "netflix"]) {
     assert.ok(productPlanSpecs[productSlug], `${productSlug} should stay in the plan specs`);
   }
 
@@ -262,6 +266,34 @@ test("tracked products and plans keep explicit sanity ranges", () => {
       );
     }
   }
+});
+
+test("Kimi keeps only the four official recurring membership tiers", () => {
+  const kimi = productPlanSpecs.kimi;
+  assert.ok(kimi, "Kimi should have a product-specific plan spec");
+  assert.deepEqual(
+    kimi.plans.map((plan) => plan.slug),
+    ["moderato", "allegretto", "allegro", "vivace"],
+  );
+  assert.ok(
+    kimi.plans.every(
+      (plan) => plan.price_selection_strategy === "lowest_in_expected_range",
+    ),
+  );
+
+  for (const giftSlug of [
+    "send-a-flower",
+    "give-some-snacks",
+    "get-charged",
+    "grab-a-coffee-with",
+    "treat-to-a-meal",
+    "land-on-the-moon-with",
+  ]) {
+    assert.match(kimiNonSubscriptionCleanupSql, new RegExp(`'${giftSlug}'`));
+  }
+  assert.match(kimiNonSubscriptionCleanupSql, /status = 'ignored'/);
+  assert.match(kimiNonSubscriptionCleanupSql, /status = 'archived'/);
+  assert.doesNotMatch(kimiNonSubscriptionCleanupSql, /DELETE FROM/);
 });
 
 test("Disney App Store plans collapse to three canonical monthly tiers", () => {
@@ -365,6 +397,11 @@ test("App Store plan matching preserves non-Latin names and excludes non-monthly
     "plan matching should preserve Unicode letters and numbers",
   );
   assert.match(appStoreCollector, /premier\\s\+access/);
+  assert.ok(
+    appStoreCollector.includes("tip|tips|donation|donate|snack|snacks"),
+  );
+  assert.ok(appStoreCollector.includes("send\\b.+\\bflower"));
+  assert.ok(appStoreCollector.includes("treat\\b.+\\bmeal"));
   assert.match(appStoreCollector, /jaarabonnement/);
   assert.match(appStoreCollector, /CountryCode\.ToUpperInvariant\(\) -ne "US"/);
   assert.match(

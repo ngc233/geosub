@@ -11,6 +11,7 @@ import { getLocalizedRegionName } from "../lib/locale-format";
 import { getRegionPriceTableCopy } from "../lib/region-price-table-copy";
 import type { PreparedSiteLocale } from "../lib/site-locale";
 import { localizeTaxNote } from "../lib/tax-note-localization";
+import { getBillingCycleSuffix } from "../lib/billing-cycle-label";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 
@@ -457,6 +458,7 @@ function RegionPriceRow({
   displayCurrencyLabel,
   formatDisplayPrice,
   showSourceColumn,
+  billingCycle,
   locale,
 }: {
   region: RegionPrice;
@@ -468,6 +470,7 @@ function RegionPriceRow({
   displayCurrencyLabel: string;
   formatDisplayPrice: (value: number) => string;
   showSourceColumn: boolean;
+  billingCycle: ProductPlan["billing"];
   locale: PreparedSiteLocale;
 }) {
   const diffPercent = getDiffPercent(region, referencePrice);
@@ -521,7 +524,7 @@ function RegionPriceRow({
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
           {formatDisplayPrice(region.priceUsd)}
           <span className="ml-0.5 text-xs font-normal text-zinc-400">
-            {copy.perMonth}
+            {getBillingCycleSuffix(billingCycle, locale)}
           </span>
         </div>
         {displayCurrency !== "USD" ? (
@@ -742,6 +745,7 @@ export default function ExpandableRegionPriceTable({
                   displayCurrencyLabel={effectiveDisplayCurrencyLabel}
                   formatDisplayPrice={formatDisplayPrice}
                   showSourceColumn={shouldShowSourceColumn}
+                  billingCycle={plan.billing}
                   locale={locale}
                 />
               ))}
@@ -764,6 +768,7 @@ export default function ExpandableRegionPriceTable({
                   displayCurrencyLabel={effectiveDisplayCurrencyLabel}
                   formatDisplayPrice={formatDisplayPrice}
                   showSourceColumn={shouldShowSourceColumn}
+                  billingCycle={plan.billing}
                   locale={locale}
                 />
               ))}

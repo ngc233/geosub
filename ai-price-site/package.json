@@ -1,6 +1,6 @@
 {
     "name": "ai-price-site",
-    "version": "2.7.0",
+    "version": "2.8.0",
     "private": true,
     "engines": {
         "node": ">=22 <23"
@@ -11,6 +11,8 @@
         "check:local": "node scripts/check-local-env.cjs",
         "check:migration-manifest": "node ../geosub-backend/scripts/migration-manifest.cjs validate --frontend-dir=.",
         "check:migrations": "node scripts/check-migrations.cjs",
+        "check:catalog": "node ../geosub-backend/scripts/generate-catalog-expansion-sql.cjs --check",
+        "check:catalog-db": "node scripts/check-catalog-expansion-database.cjs",
         "audit:indexes": "node scripts/audit-database-indexes.cjs",
         "profile:admin-logs": "node scripts/summarize-admin-performance.cjs",
         "explain:query": "node scripts/explain-read-only-query.cjs",
@@ -44,7 +46,7 @@
         "test:e2e": "node scripts/run-e2e.cjs",
         "test:e2e:install": "playwright install chromium",
         "typecheck": "tsc --noEmit",
-        "preflight:code": "npm run check:encoding && npm run check:runtime-scripts && npm run check:seo && npm run check:content-uniqueness && npm run typecheck && npm run lint && npm run test:daily-brief && npm run test:performance-tools && npm run test:runtime-scripts && npm test && npm run build",
+        "preflight:code": "npm run check:encoding && npm run check:runtime-scripts && npm run check:catalog && npm run check:seo && npm run check:content-uniqueness && npm run typecheck && npm run lint && npm run test:daily-brief && npm run test:performance-tools && npm run test:runtime-scripts && npm test && npm run build",
         "preflight:full": "npm run check:local && npm run check:migration-manifest && npm run check:migrations && npm run check:plans && npm run check:logos && npm run check:prices && npm run check:sitemap && npm run preflight:code",
         "seed:local-demo": "powershell -ExecutionPolicy Bypass -File scripts/seed-local-demo.ps1",
         "sync:worldbank-income": "node scripts/sync-world-bank-income.mjs",

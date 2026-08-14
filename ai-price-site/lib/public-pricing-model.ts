@@ -43,7 +43,7 @@ export type PlanDataFreshness = {
 export type ProductPlan = {
   slug: string;
   name: string;
-  billing: "monthly" | "yearly";
+  billing: "monthly" | "yearly" | "weekly" | "quarterly" | "one_time" | "lifetime" | "unknown";
   description?: string;
   priceStatus?: "published" | "pending" | "empty";
   pendingObservationCount?: number;
@@ -113,4 +113,3 @@ export function getPlanStats(plan: ProductPlan): PlanStats {
     savingPercent: Math.round(savingPercent),
   };
 }
-

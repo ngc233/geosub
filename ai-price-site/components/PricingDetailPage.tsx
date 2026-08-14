@@ -6,6 +6,7 @@ import { ProductCategory } from "@prisma/client";
 import BrandIcon from "./BrandIcon";
 import TrackedLink from "./analytics/TrackedLink";
 import ProductSidebar from "./ProductSidebar";
+import ProductPlanOverview from "./ProductPlanOverview";
 import PlanTabs from "./PlanTabs";
 import SharePriceModal from "./SharePriceModal";
 import MobileProductSwitcher from "./MobileProductSwitcher";
@@ -25,6 +26,7 @@ import {
 } from "../lib/exchange-rates";
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
+import { getPricingProductOverviewCopy } from "../lib/pricing-product-overview-copy";
 import { getPlanDisplayName } from "../lib/pricing-labels";
 import { getPlanSearchIntentCopy } from "../lib/plan-search-intent";
 import {
@@ -32,8 +34,13 @@ import {
   getProductEditorialContent,
 } from "../lib/product-editorial-content";
 import { ProductEditorialSection } from "./ProductEditorialSection";
-import { buildPricingStructuredData, type PricingFaq } from "../lib/pricing-seo";
 import {
+  buildPricingStructuredData,
+  buildProductOverviewStructuredData,
+  type PricingFaq,
+} from "../lib/pricing-seo";
+import {
+  getPricingDetailPath,
   getPricingLanguageAlternates,
   getPricingListPath,
   getPricingPlanPath,
@@ -114,23 +121,6 @@ async function getProductNavItems(category: string) {
       category: true,
       logoUrl: true,
       officialUrl: true,
-      plans: {
-        where: {
-          status: "PUBLISHED",
-          regionPrices: {
-            some: {
-              status: "PUBLISHED",
-            },
-          },
-        },
-        orderBy: [
-          { sortOrder: "asc" },
-          { createdAt: "asc" },
-        ],
-        select: {
-          slug: true,
-        },
-      },
     },
   });
 
@@ -138,13 +128,6 @@ async function getProductNavItems(category: string) {
       slug: product.slug,
       name: product.name,
       category: product.category === ProductCategory.STREAMING ? "streaming" as const : "ai" as const,
-      defaultPlanSlug:
-        product.plans.find(
-          (plan) =>
-            getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
-        )?.slug ||
-        product.plans[0]?.slug ||
-        null,
       logoUrl: product.logoUrl,
       officialUrl: product.officialUrl,
     }));
@@ -521,6 +504,77 @@ export async function getPricingDetailMetadata({
     };
   }
 
+  const productCanonicalPath = getPricingDetailPath(
+    locale,
+    product.category,
+    product.slug,
+  );
+  const isProductOverview = !routePlanSlug;
+
+  if (isProductOverview) {
+    const publishedPlans = product.plans.filter(
+      (plan) => plan.regions.length > 0,
+    );
+    const regionCount = new Set(
+      publishedPlans.flatMap((plan) =>
+        plan.regions.map((region) => region.code),
+      ),
+    ).size;
+    const overviewCopy = getPricingProductOverviewCopy({
+      locale,
+      productName: product.name,
+      planCount: publishedPlans.length,
+      regionCount,
+    });
+    const configuredTitle = hasChineseText(seoMeta?.title)
+      ? stripGeoSubTitleSuffix(seoMeta?.title || "")
+      : "";
+    const title =
+      locale === "zh" && configuredTitle
+        ? configuredTitle
+        : overviewCopy.metadataTitle;
+    const description =
+      locale === "zh" && hasChineseText(seoMeta?.description)
+        ? seoMeta?.description || overviewCopy.description
+        : overviewCopy.description;
+    const robots = getProductRobotsPolicy(
+      locale,
+      qualityAudit?.status ||
+        (productSeoGateMode === "enforce" ? "hold" : "indexable"),
+      productSeoGateMode,
+      "current",
+    );
+
+    return {
+      title,
+      description,
+      robots,
+      alternates: {
+        canonical: productCanonicalPath,
+        ...(robots.index
+          ? {
+              languages: getPricingLanguageAlternates(
+                locale,
+                product.category,
+                product.slug,
+              ),
+            }
+          : {}),
+      },
+      openGraph: {
+        type: "website",
+        title,
+        description,
+        url: productCanonicalPath,
+      },
+      twitter: {
+        card: "summary",
+        title,
+        description,
+      },
+    };
+  }
+
   const activePlan =
     routePlan || getProductPlan(product, resolvedSearchParams.plan);
   const stats =
@@ -643,6 +697,136 @@ export default async function PricingDetailPage({
     notFound();
   }
 
+  const detailBasePath = getPricingListPath(locale, product.category);
+  const productCanonicalPath = getPricingDetailPath(
+    locale,
+    product.category,
+    product.slug,
+  );
+
+  if (product.category !== routeCategory) {
+    permanentRedirect(
+      routePlan
+        ? getPricingPlanPath(
+            locale,
+            product.category,
+            product.slug,
+            routePlan.slug,
+          )
+        : productCanonicalPath,
+    );
+  }
+
+  if (resolvedSearchParams.plan) {
+    permanentRedirect(productCanonicalPath);
+  }
+
+  const sidebarProducts = await getProductNavItems(product.category);
+
+  if (!routePlanSlug) {
+    const publishedPlans = product.plans.filter(
+      (plan) => plan.regions.length > 0,
+    );
+    const regionCount = new Set(
+      publishedPlans.flatMap((plan) =>
+        plan.regions.map((region) => region.code),
+      ),
+    ).size;
+    const overviewCopy = getPricingProductOverviewCopy({
+      locale,
+      productName: product.name,
+      planCount: publishedPlans.length,
+      regionCount,
+    });
+    const pageTitle =
+      locale === "zh" && hasChineseText(seoMeta?.h1)
+        ? seoMeta?.h1 || overviewCopy.pageTitle
+        : overviewCopy.pageTitle;
+    const pageDescription =
+      locale === "zh" && hasChineseText(seoMeta?.description)
+        ? seoMeta?.description || overviewCopy.description
+        : overviewCopy.description;
+    const structuredData = buildProductOverviewStructuredData({
+      locale,
+      path: productCanonicalPath,
+      title: pageTitle,
+      description: pageDescription,
+      product,
+    });
+    const pageCopy = getPricingDetailPageCopy({
+      locale,
+      productName: product.name,
+      planName: "",
+      stats: null,
+    });
+
+    return (
+      <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        <ProductSidebar
+          products={sidebarProducts}
+          currentSlug={product.slug}
+          basePath={detailBasePath}
+          locale={locale}
+        />
+
+        <div className="min-w-0 flex-1 space-y-4">
+          <div className="space-y-3">
+            <Link
+              href={detailBasePath}
+              className="inline-flex text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
+            >
+              {pageCopy.backToPricing}
+            </Link>
+
+            <MobileProductSwitcher
+              products={sidebarProducts}
+              currentSlug={product.slug}
+              basePath={detailBasePath}
+              locale={locale}
+            />
+          </div>
+
+          <section className="border-b border-zinc-200 pb-4 dark:border-zinc-800">
+            <div className="flex items-start gap-3">
+              <BrandIcon product={product} size="md" />
+              <div>
+                <div className="text-sm font-medium text-zinc-400">
+                  {product.brand}
+                </div>
+                <h1 className="mt-0.5 text-[26px] font-semibold leading-tight text-zinc-950 md:text-[32px] dark:text-white">
+                  {pageTitle}
+                </h1>
+                <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
+                  {pageDescription}
+                </p>
+                {product.officialUrl ? (
+                  <TrackedLink
+                    href={product.officialUrl}
+                    eventKey="click_official"
+                    eventName="Open official website"
+                    buttonKey={product.slug}
+                    placement="product_overview_hero"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-lime-500/40 dark:hover:bg-lime-500/10 dark:hover:text-lime-200"
+                  >
+                    {pageCopy.visitOfficial}
+                  </TrackedLink>
+                ) : null}
+              </div>
+            </div>
+          </section>
+
+          <ProductPlanOverview product={product} locale={locale} />
+        </div>
+      </main>
+    );
+  }
+
   const activePlan =
     routePlan || getProductPlan(product, resolvedSearchParams.plan);
   const canonicalDetailPath = getPricingPlanPath(
@@ -651,21 +835,13 @@ export default async function PricingDetailPage({
     product.slug,
     activePlan.slug,
   );
-  if (
-    product.category !== routeCategory ||
-    !routePlanSlug ||
-    Boolean(resolvedSearchParams.plan)
-  ) {
-    permanentRedirect(canonicalDetailPath);
-  }
-
-  const sidebarProducts = await getProductNavItems(product.category);
-  const detailBasePath = getPricingListPath(locale, product.category);
   const hasPublishedPrices = activePlan.regions.length > 0;
   const defaultCurrency =
     getSiteLocaleDefinition(locale).defaultCurrency;
   const [affordability, latestExchangeRates] = await Promise.all([
-    getCachedPlanAffordability(product.slug, activePlan.slug),
+    activePlan.billing === "monthly"
+      ? getCachedPlanAffordability(product.slug, activePlan.slug)
+      : Promise.resolve({ summary: null, rows: [] }),
     getCachedPublicExchangeRates(),
   ]);
   const exchangeRates = Object.fromEntries(

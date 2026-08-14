@@ -1092,6 +1092,33 @@
         "4cc0434a07e2d7bfa908b28ebda4e093081d4cb561a3795dacb73fc0770f22c0"
       ],
       "legacyBaseline": false
+    },
+    {
+      "id": "backfill:048",
+      "file": "sql/backfill/048_archive_kimi_non_subscription_iaps.sql",
+      "legacyFile": "archive_kimi_non_subscription_iaps.sql",
+      "legacyChecksums": [
+        "b758d752bfb51f81ca7c663b93b75d134de0aee410e9ad4635ab3d99281b2a99"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:049",
+      "file": "sql/backfill/049_expand_competitor_catalog.sql",
+      "legacyFile": "expand_competitor_catalog.sql",
+      "legacyChecksums": [
+        "26f2c73c3a6195ccbeeb99ac0041dfc72aa265e36a475b9ab11807051270a668"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:050",
+      "file": "sql/backfill/050_ensure_required_catalog_products.sql",
+      "legacyFile": "ensure_required_catalog_products.sql",
+      "legacyChecksums": [
+        "a5f74f7be07c71de46b7c57ca0822f682e499d07d09e81d63936b2a343fef504"
+      ],
+      "legacyBaseline": false
     }
   ],
   "retired": [

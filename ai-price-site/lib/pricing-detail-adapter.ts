@@ -216,7 +216,17 @@ function formatLocalPrice(value: unknown, currency: string | null, locale: Detai
 }
 
 function getPlanBilling(value: string | null): ProductPlan["billing"] {
-  return value === "yearly" ? "yearly" : "monthly";
+  if (
+    value === "monthly" ||
+    value === "yearly" ||
+    value === "weekly" ||
+    value === "quarterly" ||
+    value === "one_time" ||
+    value === "lifetime"
+  ) {
+    return value;
+  }
+  return "unknown";
 }
 
 function getBillingPlatformLabel(value: string | null) {

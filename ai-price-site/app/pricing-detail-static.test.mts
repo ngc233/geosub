@@ -291,8 +291,13 @@ test("pricing plans use stable paths and preserve old links with permanent redir
 
   const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
   assert.match(detailPage, /getPricingPlanPath/);
-  assert.match(detailPage, /permanentRedirect\(canonicalDetailPath\)/);
-  assert.match(detailPage, /Boolean\(resolvedSearchParams\.plan\)/);
+  assert.match(detailPage, /getPricingDetailPath/);
+  assert.match(detailPage, /permanentRedirect\(productCanonicalPath\)/);
+  assert.match(detailPage, /if \(resolvedSearchParams\.plan\)/);
+  assert.doesNotMatch(
+    detailPage,
+    /!routePlanSlug[\s\S]{0,120}permanentRedirect\(canonicalDetailPath\)/,
+  );
   assert.doesNotMatch(detailPage, /encodeURIComponent\(resolvedSearchParams\.plan\)/);
 });
 
@@ -403,17 +408,14 @@ test("legacy renewal plans are noindex even while product quality is observed", 
   );
 });
 
-test("product navigation points to a current plan before a legacy renewal tier", () => {
+test("product navigation points to the self-canonical product overview", () => {
   const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const sidebar = readAppFile("..", "components", "ProductSidebar.tsx");
 
-  assert.match(
-    detailPage,
-    /product\.plans\.find\([\s\S]*?getPlanEditorialIndexingStatus\(product\.slug, plan\.slug\) === "current"/,
-  );
-  assert.doesNotMatch(
-    detailPage,
-    /defaultPlanSlug:\s*product\.plans\[0\]\?\.slug \|\| null/,
-  );
+  assert.match(detailPage, /<ProductPlanOverview product=\{product\} locale=\{locale\} \/>/);
+  assert.doesNotMatch(detailPage, /defaultPlanSlug:/);
+  assert.doesNotMatch(sidebar, /defaultPlanSlug/);
+  assert.match(sidebar, /`\$\{path\}\/\$\{product\.slug\}`/);
 });
 
 test("pricing detail pages do not contain mojibake text tokens", () => {

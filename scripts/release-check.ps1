@@ -182,15 +182,18 @@ function Test-RepositorySecrets {
   $candidateFiles = Get-RepositoryCandidateFiles
   $findings = @()
   $privateKeyPattern = ("BEGIN " + "(RSA |EC |OPENSSH )?PRIVATE KEY")
-  $credentialUrlPattern = ("postgres(?:ql)?://" + "[^\s:]+:[^@\s]+@")
+  $credentialUrlPattern = ("postgres(?:ql)?://" + "[^\s:]+:[^@\s]+@[^\s`"']+")
 
   foreach ($file in $candidateFiles) {
     $normalized = $file.Replace("\", "/")
     $name = [System.IO.Path]::GetFileName($normalized)
     $extension = [System.IO.Path]::GetExtension($normalized)
+    $isEnvironmentTemplate =
+      $name -like ".env*.example" -or
+      $name -like ".env*.sample"
 
     if (
-      ($name -like ".env*" -and $name -notin @(".env.example", ".env.sample")) -or
+      ($name -like ".env*" -and !$isEnvironmentTemplate) -or
       $extension -in @(".pem", ".key", ".p12", ".pfx") -or
       $name -in @("id_rsa", "id_ed25519")
     ) {
@@ -211,8 +214,25 @@ function Test-RepositorySecrets {
     if ($content -match $privateKeyPattern) {
       $findings += "$file contains a private-key header"
     }
-    if ($content -match $credentialUrlPattern) {
-      $findings += "$file contains a database URL with embedded credentials"
+    foreach ($match in [regex]::Matches($content, $credentialUrlPattern)) {
+      $databaseUrl = $match.Value
+      try {
+        $hostName = ([uri]$databaseUrl).Host.ToLowerInvariant()
+      } catch {
+        $hostName = ""
+      }
+
+      $isDocumentedPlaceholder =
+        $hostName -in @("localhost", "127.0.0.1", "::1") -or
+        $hostName -eq "example.com" -or
+        $hostName.EndsWith(".example.com") -or
+        $hostName.EndsWith(".example") -or
+        $hostName.EndsWith(".invalid") -or
+        $hostName.EndsWith(".test")
+
+      if (!$isDocumentedPlaceholder) {
+        $findings += "$file contains a database URL with embedded credentials"
+      }
     }
   }
 

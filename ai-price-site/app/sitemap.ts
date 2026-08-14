@@ -171,39 +171,61 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
         gateMode === "observe" || sitemapEligibleProducts.has(product.id),
     )
     .flatMap((product) => {
-    const isStreaming = product.category === ProductCategory.STREAMING;
-    const section = isStreaming ? "streaming-pricing" : "ai-pricing";
-    const priority = product.featured ? 0.9 : isStreaming ? 0.72 : 0.82;
-
-    return product.plans.flatMap((plan) => {
-      const planDecision = getPlanSitemapDecision(
-        getPlanEditorialIndexingStatus(product.slug, plan.slug),
-        gateMode,
-      );
-      if (!planDecision.included) return [];
-
-      const newestPrice = plan.regionPrices[0];
-      const lastModified = latestDate(
+      const isStreaming = product.category === ProductCategory.STREAMING;
+      const section = isStreaming ? "streaming-pricing" : "ai-pricing";
+      const productPriority = product.featured ? 0.9 : isStreaming ? 0.76 : 0.86;
+      const productLastModified = latestDate(
         [
-          newestPrice?.lastCheckedAt,
-          newestPrice?.publishedAt,
-          newestPrice?.updatedAt,
-          plan.updatedAt,
           product.updatedAt,
+          ...product.plans.flatMap((plan) => [
+            plan.updatedAt,
+            plan.regionPrices[0]?.lastCheckedAt,
+            plan.regionPrices[0]?.publishedAt,
+            plan.regionPrices[0]?.updatedAt,
+          ]),
         ],
         now,
       );
-      const planPath = `${product.slug}/${plan.slug}`;
-
-      return seoIndexableLocales.map((locale, index) =>
+      const productRoutes = seoIndexableLocales.map((locale, index) =>
         route(
-          `/${siteLocaleDefinitions[locale].path}/${section}/${planPath}`,
+          `/${siteLocaleDefinitions[locale].path}/${section}/${product.slug}`,
           "daily",
-          priority - index * 0.05,
-          lastModified,
+          productPriority - index * 0.05,
+          productLastModified,
         ),
       );
-    });
+
+      const planRoutes = product.plans.flatMap((plan) => {
+        const planDecision = getPlanSitemapDecision(
+          getPlanEditorialIndexingStatus(product.slug, plan.slug),
+          gateMode,
+        );
+        if (!planDecision.included) return [];
+
+        const newestPrice = plan.regionPrices[0];
+        const lastModified = latestDate(
+          [
+            newestPrice?.lastCheckedAt,
+            newestPrice?.publishedAt,
+            newestPrice?.updatedAt,
+            plan.updatedAt,
+            product.updatedAt,
+          ],
+          now,
+        );
+        const planPath = `${product.slug}/${plan.slug}`;
+
+        return seoIndexableLocales.map((locale, index) =>
+          route(
+            `/${siteLocaleDefinitions[locale].path}/${section}/${planPath}`,
+            "daily",
+            productPriority - 0.08 - index * 0.05,
+            lastModified,
+          ),
+        );
+      });
+
+      return [...productRoutes, ...planRoutes];
     });
 }
 

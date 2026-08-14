@@ -6,6 +6,12 @@ const { Client } = require("pg");
 const appDir = path.resolve(__dirname, "..");
 const repoDir = path.resolve(appDir, "..");
 const specPath = path.join(repoDir, "geosub-backend", "data", "product-plan-specs.json");
+const expansionPath = path.join(
+  repoDir,
+  "geosub-backend",
+  "data",
+  "catalog-expansion-2026-08.json",
+);
 const configuredProducts = (process.env.GEOSUB_PLAN_CHECK_PRODUCTS || "")
   .split(",")
   .map((value) => value.trim().toLowerCase())
@@ -16,14 +22,57 @@ dotenv.config({ path: path.join(appDir, ".env") });
 
 const mojibakePattern = /\uFFFD|Ã.|Â.|â€|ðŸ|锟/;
 
+const allowedBillingCycles = new Set([
+  "monthly",
+  "yearly",
+  "weekly",
+  "quarterly",
+  "one_time",
+  "lifetime",
+  "unknown",
+]);
+
 function normalizeAlias(value) {
   return String(value || "")
     .normalize("NFD")
     .replace(/\p{M}+/gu, "")
     .toLowerCase()
+    .replaceAll("+", " plus ")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .replace(/\s+/g, " ");
+}
+
+function loadAllSpecs() {
+  const specs = JSON.parse(fs.readFileSync(specPath, "utf8"));
+  const expansion = JSON.parse(fs.readFileSync(expansionPath, "utf8"));
+
+  for (const product of [
+    ...(expansion.products || []),
+    ...(expansion.required_products || []),
+    ...(expansion.existing_plan_specs || []),
+  ]) {
+    if (!product.app_store?.collector_enabled) continue;
+
+    specs[product.slug] = {
+      name: product.name,
+      app_store_id: product.app_store.id,
+      excluded_aliases: product.excluded_aliases || [],
+      country_scoped_aliases: product.country_scoped_aliases || [],
+      plans: product.plans.map((plan) => ({
+        slug: plan.slug,
+        name: plan.name,
+        billing_cycle: plan.billing_cycle,
+        aliases: plan.aliases,
+        sort_order: plan.sort_order,
+        price_selection_strategy: plan.price_selection_strategy,
+        expected_monthly_usd_min: plan.expected_usd_min,
+        expected_monthly_usd_max: plan.expected_usd_max,
+      })),
+    };
+  }
+
+  return specs;
 }
 
 function validateSpecs(specs) {
@@ -46,6 +95,10 @@ function validateSpecs(specs) {
 
       if (!Number.isFinite(plan.sort_order)) {
         failures.push(`${productSlug}/${plan.slug} has no numeric sort_order.`);
+      }
+      const billingCycle = plan.billing_cycle || "monthly";
+      if (!allowedBillingCycles.has(billingCycle)) {
+        failures.push(`${productSlug}/${plan.slug} has invalid billing cycle ${billingCycle}.`);
       }
       if (
         !Number.isFinite(plan.expected_monthly_usd_min) ||
@@ -112,6 +165,7 @@ async function validateDatabase(specs) {
             product.slug AS product_slug,
             plan.slug AS plan_slug,
             plan.name AS plan_name,
+            plan.billing_cycle::text AS billing_cycle,
             plan.sort_order,
             plan.status::text AS plan_status
           FROM products product
@@ -167,6 +221,11 @@ async function validateDatabase(specs) {
             `${productSlug}/${plan.slug} name differs: database "${actual.plan_name}", spec "${plan.name}".`,
           );
         }
+        if (actual.billing_cycle !== (plan.billing_cycle || "monthly")) {
+          failures.push(
+            `${productSlug}/${plan.slug} billing cycle differs: database ${actual.billing_cycle}, spec ${plan.billing_cycle || "monthly"}.`,
+          );
+        }
         if (Number(actual.sort_order) !== Number(plan.sort_order)) {
           failures.push(
             `${productSlug}/${plan.slug} sort order differs: database ${actual.sort_order}, spec ${plan.sort_order}.`,
@@ -181,9 +240,11 @@ async function validateDatabase(specs) {
       }
     }
 
-    for (const row of collectorResult.rows) {
-      if (!specs[row.slug]) {
-        failures.push(`${row.slug} has an active App Store collector but no canonical product plan spec.`);
+    if (configuredProducts.length === 0) {
+      for (const row of collectorResult.rows) {
+        if (!specs[row.slug]) {
+          failures.push(`${row.slug} has an active App Store collector but no canonical product plan spec.`);
+        }
       }
     }
 
@@ -194,7 +255,7 @@ async function validateDatabase(specs) {
 }
 
 async function main() {
-  const allSpecs = JSON.parse(fs.readFileSync(specPath, "utf8"));
+  const allSpecs = loadAllSpecs();
   const missingConfiguredProducts = configuredProducts.filter(
     (productSlug) => !allSpecs[productSlug],
   );

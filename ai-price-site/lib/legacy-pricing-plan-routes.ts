@@ -26,6 +26,12 @@ const legacyPricingPlanAliases: Record<string, Record<string, string>> = {
     pro: "pro",
     plus: "plus",
   },
+  kimi: {
+    moderato: "moderato",
+    allegretto: "allegretto",
+    allegro: "allegro",
+    vivace: "vivace",
+  },
   perplexity: {
     pro: "pro",
     max: "max",

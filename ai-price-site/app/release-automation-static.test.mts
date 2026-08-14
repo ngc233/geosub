@@ -166,6 +166,9 @@ test("release gate rejects secrets in tracked and untracked candidate files", ()
   assert.match(releaseCheck, /secret-bearing filename prepared for commit/);
   assert.match(releaseCheck, /private-key header/);
   assert.match(releaseCheck, /database URL with embedded credentials/);
+  assert.match(releaseCheck, /isDocumentedPlaceholder/);
+  assert.match(releaseCheck, /127\.0\.0\.1/);
+  assert.match(releaseCheck, /\.example\.com/);
   assert.match(releaseCheck, /found in commit candidates/);
   assert.match(releaseCheck, /Repository secrets/);
 });
