@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Map } from "lucide-react";
 import {
   formatUsd,
   getPlanStats,
@@ -30,14 +30,24 @@ import {
   type DisplayCurrency,
 } from "../lib/display-currency";
 
+function MapLoadingPlaceholder() {
+  return (
+    <div
+      className="relative flex h-[420px] items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/70"
+      aria-hidden="true"
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(161,161,170,0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgba(161,161,170,0.12)_1px,transparent_1px)] bg-[size:48px_48px]" />
+      <div className="absolute left-[14%] top-[30%] h-20 w-32 animate-pulse rounded-[48%] bg-zinc-200/80 dark:bg-zinc-800" />
+      <div className="absolute left-[43%] top-[23%] h-28 w-44 animate-pulse rounded-[45%] bg-zinc-200/80 dark:bg-zinc-800" />
+      <div className="absolute right-[13%] top-[45%] h-20 w-36 animate-pulse rounded-[48%] bg-zinc-200/80 dark:bg-zinc-800" />
+      <Map className="relative text-zinc-400 dark:text-zinc-500" size={28} />
+    </div>
+  );
+}
+
 const PriceWorldMap = dynamic(() => import("./PriceWorldMap"), {
   ssr: false,
-  loading: () => (
-    <div
-      className="h-[420px] animate-pulse rounded-lg border border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-900/70"
-      aria-hidden="true"
-    />
-  ),
+  loading: MapLoadingPlaceholder,
 });
 
 function DeferredPriceWorldMap({
@@ -56,9 +66,20 @@ function DeferredPriceWorldMap({
     const container = containerRef.current;
     if (!container || shouldRender) return;
 
+    if (typeof window.IntersectionObserver !== "function") {
+      const unsupportedBrowserTimer = window.setTimeout(
+        () => setShouldRender(true),
+        0,
+      );
+      return () => window.clearTimeout(unsupportedBrowserTimer);
+    }
+
+    const fallbackTimer = window.setTimeout(() => setShouldRender(true), 1_500);
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return;
+        window.clearTimeout(fallbackTimer);
         setShouldRender(true);
         observer.disconnect();
       },
@@ -66,7 +87,10 @@ function DeferredPriceWorldMap({
     );
 
     observer.observe(container);
-    return () => observer.disconnect();
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      observer.disconnect();
+    };
   }, [shouldRender]);
 
   return (
@@ -79,10 +103,7 @@ function DeferredPriceWorldMap({
           formatPrice={formatPrice}
         />
       ) : (
-        <div
-          className="h-[420px] rounded-lg border border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-900/70"
-          aria-hidden="true"
-        />
+        <MapLoadingPlaceholder />
       )}
     </div>
   );

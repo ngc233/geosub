@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
@@ -17,6 +18,7 @@ export default function ArticleCollectionView({
   showBack = true,
   categories = [],
   tags = [],
+  beforeArticles,
 }: {
   eyebrow: string;
   title: string;
@@ -27,6 +29,7 @@ export default function ArticleCollectionView({
   showBack?: boolean;
   categories?: Array<{ id: string; slug: string; name: string }>;
   tags?: Array<{ id: string; slug: string; name: string }>;
+  beforeArticles?: ReactNode;
 }) {
   const featured = articles[0] || null;
   const rest = featured ? articles.slice(1) : articles;
@@ -68,6 +71,8 @@ export default function ArticleCollectionView({
             <p className="mt-5 text-lg leading-8 text-zinc-600">{description}</p>
           ) : null}
         </div>
+
+        {beforeArticles}
 
         {categories.length > 0 || tags.length > 0 ? (
           <section className="mt-10 grid gap-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm shadow-zinc-950/[0.03] md:grid-cols-2">
@@ -132,7 +137,7 @@ export default function ArticleCollectionView({
               {copy.read} <ArrowRight size={16} />
             </div>
           </Link>
-        ) : (
+        ) : beforeArticles ? null : (
           <div className="mt-10 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm font-bold text-zinc-500">
             {emptyText}
           </div>

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import ArticleCollectionView from "../../../components/ArticleCollectionView";
+import CoreGuideHub, {
+  guideHubExcludedArticleSlugs,
+} from "../../../components/CoreGuideHub";
 import {
   getPublishedArticleCategories,
   getPublishedArticleTags,
@@ -18,18 +21,22 @@ export default async function EnglishGuidesPage() {
     getPublishedArticleCategories("EN"),
     getPublishedArticleTags("EN"),
   ]);
+  const editorialArticles = articles.filter(
+    (article) => !guideHubExcludedArticleSlugs.has(article.slug),
+  );
 
   return (
     <ArticleCollectionView
       eyebrow="Guides"
       title="Subscription and Pricing Guides"
       description="Practical explanations of regional subscription pricing, payment restrictions, account setup and digital service availability."
-      articles={articles}
+      articles={editorialArticles}
       categories={categories}
       tags={tags}
       emptyText="No English guides have been published yet."
       locale="en"
       showBack={false}
+      beforeArticles={<CoreGuideHub locale="en" />}
     />
   );
 }

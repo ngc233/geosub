@@ -322,7 +322,7 @@ function CountryFlag({ code }: { code: string }) {
     return (
       <Image
         src={`/flags/${countryCode.toLowerCase()}.svg`}
-        alt={countryCode}
+        alt=""
         width={28}
         height={20}
         unoptimized
@@ -422,7 +422,7 @@ function RiskStatus({
         <span className="shrink-0">{statusLabel}</span>
         <span
           className={[
-            "hidden h-5 shrink-0 items-center rounded-md px-1.5 text-[11px] font-medium ring-1 ring-inset xl:inline-flex",
+            "hidden h-5 shrink-0 items-center rounded-md px-1.5 text-[11px] font-semibold ring-1 ring-inset xl:inline-flex",
             getRiskClass(region.riskLevel),
           ].join(" ")}
         >
@@ -494,7 +494,7 @@ function RegionPriceRow({
       <div className="flex min-w-0 items-center gap-3">
         <div
           className="flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-800"
-          aria-label={region.code}
+          aria-hidden="true"
         >
           <CountryFlag code={region.code} />
         </div>
