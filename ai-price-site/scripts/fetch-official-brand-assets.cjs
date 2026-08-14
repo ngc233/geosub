@@ -5,6 +5,7 @@ const { mkdir, writeFile } = require("node:fs/promises");
 const { resolve } = require("node:path");
 
 const products = [
+  { slug: "anghami", appStoreId: "545395155", expectedName: /Anghami/i },
   { slug: "captions", appStoreId: "1541407007", expectedName: /Captions/i },
   { slug: "chatgpt", appStoreId: "6448311069", expectedName: /^ChatGPT$/i },
   { slug: "claude", appStoreId: "6473753684", expectedName: /Claude/i },

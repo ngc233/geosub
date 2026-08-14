@@ -1,8 +1,23 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-14T16:48:06.585Z",
+  "generatedAt": "2026-08-14T17:32:55.130Z",
   "usagePurpose": "nominative-product-identification",
   "products": {
+    "anghami": {
+      "path": "/brand-assets/anghami.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id545395155",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/0f/12/94/0f1294d4-90e6-84ff-c18b-cacb771a89ce/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "appStoreId": "545395155",
+      "trackName": "Anghami: Play Music & Podcasts",
+      "sellerName": "Anghami",
+      "mimeType": "image/jpeg",
+      "byteLength": 54436,
+      "sha256": "0d00fc78f7cd229fc41e684617096e3c56c5c979d4f7f6a4ceedd313e68174a3",
+      "reviewedAt": "2026-08-15",
+      "displayMode": "app-icon"
+    },
     "captions": {
       "path": "/brand-assets/captions.jpg",
       "sourceClass": "official-app-store-artwork",
@@ -344,7 +359,7 @@
       "sellerName": "Netflix, Inc.",
       "mimeType": "image/jpeg",
       "byteLength": 23192,
-      "sha256": "e545afe6ad3ce704f4e39cfda36e41ceacd1c6b5230153609effb0120f542fc8",
+      "sha256": "45b0c215ac13f8bd31c3351f11aeb9bfbbb4ecaceb0d9b2b179cc17ef09de8bd",
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },

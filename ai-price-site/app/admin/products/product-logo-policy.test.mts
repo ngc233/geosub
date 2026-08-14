@@ -41,6 +41,7 @@ test("the published baseline has checksum-verified local app icons", () => {
     products: Record<string, { path: string; sha256: string; displayMode: string }>;
   };
   const publishedBaseline = [
+    "anghami",
     "captions",
     "chatgpt",
     "claude",
