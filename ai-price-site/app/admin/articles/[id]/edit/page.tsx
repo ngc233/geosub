@@ -189,8 +189,14 @@ export default async function EditArticlePage({
         title="编辑文章"
         description="修改正文、发布状态和 SEO 信息。发布后会自动刷新前台文章页和 sitemap。"
         action={
-          <div className="flex gap-3">
-            {article.status === "PUBLISHED" && !article.noindex ? (
+          <div className="flex flex-wrap gap-3">
+            <AdminLinkButton
+              href={`/admin/articles/${article.id}/preview`}
+              variant="secondary"
+            >
+              预览当前内容
+            </AdminLinkButton>
+            {article.status === "PUBLISHED" ? (
               <AdminLink
                 href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                 target="_blank"

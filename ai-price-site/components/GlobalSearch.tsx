@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { startRouteProgress } from "../lib/route-progress";
 import {
   ArrowRight,
   BookOpen,
@@ -490,6 +491,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
       const result = visibleResults[activeIndex];
       trackSearchResult(query, result);
       closeSearch();
+      startRouteProgress();
       router.push(result.href);
     }
   }

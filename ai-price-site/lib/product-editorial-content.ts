@@ -1,4 +1,5 @@
 import type { SiteLocale } from "./site-locale";
+import { expandedEditorialContent } from "./product-editorial-expansion.ts";
 
 export type ProductPlanEditorialContent = {
   bestFor: string;
@@ -25,6 +26,7 @@ const editorialContent: Record<
   Record<string, ProductEditorialContent>
 > = {
   zh: {
+    ...expandedEditorialContent.zh,
     chatgpt: {
       summary:
         "ChatGPT 是 OpenAI 面向个人用户的 AI 助手。各付费层级主要差在使用额度、可用模型、记忆与上下文，以及 Codex 等高级工具的访问范围。本页只比较可核验的个人月度订阅价格，不混入团队版或 API 计费。",
@@ -372,6 +374,7 @@ const editorialContent: Record<
     },
   },
   en: {
+    ...expandedEditorialContent.en,
     chatgpt: {
       summary:
         "ChatGPT is OpenAI's AI assistant for individuals. Paid tiers mainly differ in usage limits, model access, memory and context capacity, and access to advanced tools such as Codex. This page compares verified monthly consumer subscriptions, excluding team plans and API usage.",

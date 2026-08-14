@@ -1,4 +1,6 @@
 import AdminLink from "@/components/admin/AdminLink";
+import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
+import type { AdminOperationalStatus } from "@/lib/admin-operational-status";
 import {
   ArrowRight,
   Clock3,
@@ -19,9 +21,9 @@ import {
   formatRelative,
   getCoverage,
   getProductHealth,
+  getProductOperationalAssessment,
   hasUnconsumedQueue,
   healthClasses,
-  healthIcon,
   type ProductQualityRow,
   type RepairCycleRow,
 } from "./model";
@@ -29,24 +31,12 @@ import {
 export function DataQualityOverview({
   rows,
   latestRepairCycle,
-  goodCount,
-  infoCount,
-  warningCount,
-  dangerCount,
-  autoClosedTotal,
-  autoRepairProductCount,
-  needsConfigurationCount,
+  operationalCounts,
   coverageGapProductCount,
 }: {
   rows: ProductQualityRow[];
   latestRepairCycle: RepairCycleRow | null;
-  goodCount: number;
-  infoCount: number;
-  warningCount: number;
-  dangerCount: number;
-  autoClosedTotal: number;
-  autoRepairProductCount: number;
-  needsConfigurationCount: number;
+  operationalCounts: Record<AdminOperationalStatus, number>;
   coverageGapProductCount: number;
 }) {
   return (
@@ -66,13 +56,12 @@ export function DataQualityOverview({
         }
       />
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <AdminStatCard label="产品总数" value={rows.length} helper="服务库内未归档产品" />
-        <AdminStatCard label="健康" value={goodCount} helper="无需手工处理" />
-        <AdminStatCard label="自动处理中" value={autoRepairProductCount} helper={`${infoCount} 个产品处于系统处理状态`} />
-        <AdminStatCard label="自动收口" value={autoClosedTotal} helper="近 30 天隔离的无效证据" />
-        <AdminStatCard label="需关注" value={warningCount} helper="建议复采或看原因" />
-        <AdminStatCard label="需配置" value={needsConfigurationCount} helper={`${dangerCount} 个产品影响上线或采集`} />
+        <AdminStatCard label="未开始" value={operationalCounts.not_started} helper="缺少可运行的采集任务" />
+        <AdminStatCard label="待处理" value={operationalCounts.pending} helper="系统正在采集、复核或补资料" />
+        <AdminStatCard label="异常" value={operationalCounts.exception} helper="需要查看阻塞原因" />
+        <AdminStatCard label="已发布" value={operationalCounts.published} helper="当前无需手工介入" />
       </div>
 
       <AdminCard className="mb-6 border-blue-200 bg-blue-50/70">
@@ -145,8 +134,9 @@ export function DataQualityOverview({
           <div className="divide-y divide-slate-100">
             {rows.map((row) => {
               const health = getProductHealth(row);
+              const operationalAssessment = getProductOperationalAssessment(row);
+              const operationalStatus = operationalAssessment?.status ?? "not_started";
               const classes = healthClasses(health.level);
-              const Icon = healthIcon(health.level);
               const unconsumedQueue = hasUnconsumedQueue(row);
               const coverage = getCoverage(row);
 
@@ -202,15 +192,11 @@ export function DataQualityOverview({
 
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 lg:hidden">采集状态</p>
-                    <span
-                      className={[
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ring-1",
-                        classes.badge,
-                      ].join(" ")}
-                    >
-                      <Icon size={13} strokeWidth={2.2} />
-                      {health.label}
-                    </span>
+                    <AdminStatusBadge
+                      status={operationalStatus}
+                      title={operationalAssessment?.reason}
+                    />
+                    <p className="mt-1 text-xs font-semibold text-slate-600">{health.label}</p>
                     <p className="mt-1 text-xs text-slate-500">
                       App Store 任务 {row.active_app_store_job_count}
                       {row.stale_queue_count > 0 && unconsumedQueue

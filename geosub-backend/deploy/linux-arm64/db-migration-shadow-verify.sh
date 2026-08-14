@@ -62,9 +62,20 @@ normalize_dump() {
     -e '/^\\(un)?restrict /d'
 }
 
-schema_hash() {
+geosub_schema_hash() {
   docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" -d "$SHADOW_DB" \
-    --schema-only --no-owner --no-privileges |
+    --schema-only --no-owner --no-privileges \
+    --exclude-table='public.directus_*' |
+    normalize_dump |
+    tee "$1" |
+    sha256sum |
+    awk '{print $1}'
+}
+
+directus_schema_hash() {
+  docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" -d "$SHADOW_DB" \
+    --schema-only --no-owner --no-privileges \
+    --table='public.directus_*' |
     normalize_dump |
     tee "$1" |
     sha256sum |
@@ -88,12 +99,15 @@ process.stdout.write(url.toString());
 NODE
 }
 
-before_schema="$EVIDENCE_DIR/shadow-before.sql"
-after_schema="$EVIDENCE_DIR/shadow-after.sql"
+before_schema="$EVIDENCE_DIR/geosub-before.sql"
+after_schema="$EVIDENCE_DIR/geosub-after.sql"
+before_directus_schema="$EVIDENCE_DIR/directus-before.sql"
+after_directus_schema="$EVIDENCE_DIR/directus-after.sql"
 log_file="$EVIDENCE_DIR/migration.log"
 
 echo "Hashing the shadow database before migration"
-before_schema_hash="$(schema_hash "$before_schema")"
+before_schema_hash="$(geosub_schema_hash "$before_schema")"
+before_directus_schema_hash="$(directus_schema_hash "$before_directus_schema")"
 before_data_hash="$(data_hash)"
 
 export DATABASE_URL="$(database_url_for "$SHADOW_DB")"
@@ -115,12 +129,18 @@ if ! grep -Fq 'No pending migrations to apply.' "$log_file"; then
 fi
 
 echo "Hashing the shadow database after migration"
-after_schema_hash="$(schema_hash "$after_schema")"
+after_schema_hash="$(geosub_schema_hash "$after_schema")"
+after_directus_schema_hash="$(directus_schema_hash "$after_directus_schema")"
 after_data_hash="$(data_hash)"
 
 if [[ "$before_schema_hash" != "$after_schema_hash" ]]; then
-  diff -u "$before_schema" "$after_schema" > "$EVIDENCE_DIR/shadow-schema.diff" || true
-  echo "Shadow schema changed during migration."
+  diff -u "$before_schema" "$after_schema" > "$EVIDENCE_DIR/geosub-schema.diff" || true
+  echo "GeoSub-owned shadow schema changed during migration."
+  exit 1
+fi
+if [[ "$before_directus_schema_hash" != "$after_directus_schema_hash" ]]; then
+  diff -u "$before_directus_schema" "$after_directus_schema" > "$EVIDENCE_DIR/directus-schema.diff" || true
+  echo "Externally owned Directus schema changed during migration."
   exit 1
 fi
 if [[ "$before_data_hash" != "$after_data_hash" ]]; then
@@ -131,10 +151,12 @@ fi
 cat > "$EVIDENCE_DIR/result.txt" <<EOF
 shadow_database=$SHADOW_DB
 schema_sha256=$after_schema_hash
+directus_schema_sha256=$after_directus_schema_hash
 data_sha256=$after_data_hash
 sql_applied=0
 prisma_pending=0
+ownership_policy=geosub_strict_directus_external
 result=passed
 EOF
 
-echo "B1 shadow verification passed with identical schema and data hashes."
+echo "B1 shadow verification passed with unchanged GeoSub, Directus and data hashes."

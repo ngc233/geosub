@@ -7,6 +7,7 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 BACKEND_DIR="${GEOSUB_BACKEND_DIR:-/opt/geosub/geosub-backend}"
+APP_STORE_CACHE_DIR="${GEOSUB_APP_STORE_CACHE_DIR:-/var/lib/geosub/app-store-cache}"
 
 install -d -m 0755 /etc/geosub
 if [[ ! -f /etc/geosub/geosub.env ]]; then
@@ -23,6 +24,7 @@ if getent group docker >/dev/null 2>&1; then
 fi
 
 chown -R geosub:geosub /opt/geosub
+install -d -m 0750 -o geosub -g geosub "$APP_STORE_CACHE_DIR"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-system-task.sh"
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-collector-jobs.sh"
 

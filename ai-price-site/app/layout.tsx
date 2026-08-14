@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { Suspense } from "react";
 import "./globals.css";
 import AnalyticsConsentBanner from "../components/analytics/AnalyticsConsentBanner";
 import AnalyticsProvider from "../components/analytics/AnalyticsProvider";
 import DocumentLocaleSync from "../components/DocumentLocaleSync";
 import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScripts";
+import RouteProgressBar from "../components/RouteProgressBar";
 import SiteChrome from "../components/SiteChrome";
 import { isAnalyticsConsentRequired } from "../lib/analytics-consent";
 import { launchedMirroredStaticPaths } from "../lib/public-launch-routes";
@@ -302,6 +304,9 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-slate-50 text-slate-950 antialiased">
+        <Suspense fallback={null}>
+          <RouteProgressBar />
+        </Suspense>
         <DocumentLocaleSync />
         <script
           nonce={nonce}

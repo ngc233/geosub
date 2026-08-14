@@ -1,7 +1,9 @@
 # GeoSub B1 database migration implementation
 
-Status: stages 1-3 implemented; stage 4 blocked by verified production schema
-drift on 2026-08-12. B1 is not approved for release.
+Status: stages 1-3 implemented. The B1.2 control plane now separates the
+production baseline from post-cutover schema and treats Directus as an external
+schema owner. A new production-backup shadow rehearsal is still required, so
+B1 is not approved for release.
 
 ## Result
 
@@ -16,6 +18,13 @@ The former handwritten SQL collection is now split by execution intent:
 Normal local and production migration paths apply schema migrations and Prisma
 migrations only. Backfills require an explicit command. Retired files cannot be
 selected by an automatic migration mode.
+
+The 49 production-baseline schema migrations are the safe default. Four genuine
+schema additions found during the 2026-08-12 rehearsal are retained in an
+explicit `post-cutover` phase: schemas 049, 050, 051 and 053. They are not
+applied by a normal B1 deployment. A fresh empty database uses
+`complete-schema`; a later production rollout must invoke `post-cutover`
+explicitly after its own backup and change approval.
 
 ## Compatibility
 
@@ -45,6 +54,8 @@ The Linux deployment helper mirrors the same contract:
 db-apply-sql.sh schema          normal deployment path
 db-apply-sql.sh backfill        explicit operator action
 db-apply-sql.sh all             explicit combined action
+db-apply-sql.sh complete-schema fresh-database schema, including deferred additions
+db-apply-sql.sh post-cutover     explicit deferred schema rollout
 ```
 
 ## Verification evidence
@@ -75,7 +86,10 @@ backfills remain outside the default migration and upgrade path. Their pending
 state is visible in the backfill audit rather than being silently skipped or
 automatically executed.
 
-The production container currently reports Directus `12.1.1`, while the
-Compose definition still uses `directus/directus:latest`. B1 remains blocked
-until Directus ownership and version pinning are explicitly approved; the
-verification tool must not synthesize or ignore third-party system tables.
+Directus is now explicitly treated as the external owner of `directus_*`
+objects and Compose is pinned to the observed `directus/directus:12.1.1` image.
+The shadow verifier excludes Directus from the GeoSub-owned hash, then computes
+a separate Directus hash and fails if either side changes. It does not synthesize
+or ignore third-party system tables. The remaining release gate is a fresh
+production-backup rehearsal with zero SQL applications, no pending Prisma
+migrations and identical before/after hashes.

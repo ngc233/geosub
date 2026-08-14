@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   getLocaleRobotsPolicy,
+  isPlanSitemapPromotedProduct,
   isSeoIndexableLocale,
   seoIndexableLocaleBudget,
   seoIndexableLocales,
@@ -9,6 +10,12 @@ import {
   seoSitemapBudgets,
 } from "./seo-indexing-policy.ts";
 import { supportedSiteLocales } from "./site-locale.ts";
+
+test("plan sitemap promotion is explicit and independent from page access", () => {
+  assert.equal(isPlanSitemapPromotedProduct("chatgpt"), true);
+  assert.equal(isPlanSitemapPromotedProduct("youtube-premium"), true);
+  assert.equal(isPlanSitemapPromotedProduct("captions"), false);
+});
 
 test("only deliberately promoted locales are indexable", () => {
   assert.deepEqual(seoIndexableLocales, ["zh", "en"]);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SpanishInfoPage from "../../../components/SpanishInfoPage";
+import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
@@ -26,6 +27,7 @@ export default function SpanishPrivacyPage() {
         mediciones ayudan a mejorar el contenido y la fiabilidad; no se usan
         para solicitar datos de pago ni información sensible de identidad.
       </p>
+      <PrivacyDisclosure locale="es" />
     </SpanishInfoPage>
   );
 }

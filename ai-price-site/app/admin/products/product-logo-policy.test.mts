@@ -10,88 +10,74 @@ function readProductFile(...segments: string[]) {
   return readFileSync(resolve(productsDir, ...segments), "utf8");
 }
 
-test("official logo sync prefers websites and persists App Store artwork as fallback", () => {
-  const actions = readProductFile("actions.ts");
-  const officialLogo = readProductFile("..", "..", "..", "lib", "official-site-logo.ts");
+test("public brand icons use rights-reviewed local sources and deterministic fallbacks", () => {
+  const brandIcon = readProductFile("..", "..", "..", "components", "BrandIcon.tsx");
+  const policy = readProductFile("..", "..", "..", "lib", "product-brand-assets.ts");
 
-  assert.match(officialLogo, /const MIN_OFFICIAL_ICON_SCORE = 600/);
-  assert.match(actions, /logoError=official-not-found/);
-  assert.match(actions, /officialSiteLogo \|\| appStoreLogo\?\.logoUrl/);
-  assert.match(actions, /app-store-cached/);
-  assert.match(actions, /high-confidence official website icon/);
-  assert.match(actions, /official App Store artwork/);
-  assert.match(actions, /cacheRemoteProductLogo/);
-  assert.match(actions, /logoError=download-failed/);
-  assert.doesNotMatch(officialLogo, /return `\$\{siteUrl\.origin\}\/favicon\.ico`/);
-  assert.match(actions, /officialLogoUrl \|\| \(!product\.logoUrl \? appStoreApp\.artworkUrl : null\)/);
+  assert.match(brandIcon, /getApprovedLocalBrandAsset/);
+  assert.match(brandIcon, /getSimpleIconCandidates/);
+  assert.match(brandIcon, /getInitials/);
+  assert.match(brandIcon, /rounded-\[22%\]/);
+  assert.match(brandIcon, /aspect-square/);
+  assert.match(brandIcon, /object-contain/);
+  assert.doesNotMatch(brandIcon, /\/api\/product-logos\//);
+  assert.doesNotMatch(brandIcon, /object-cover/);
+  assert.doesNotMatch(brandIcon, /CustomBrandMark/);
+  assert.doesNotMatch(brandIcon, /startsWith\(['"]https?:/);
+
+  assert.match(policy, /written-permission/);
+  assert.match(policy, /owned-by-geosub/);
+  assert.match(policy, /neutral fallback is/);
+  assert.match(policy, /Simple Icons is bundled locally under CC0-1\.0/);
+  assert.match(policy, /app-store-restricted/);
 });
 
-test("public logos are served from the persistent GeoSub cache", () => {
+test("legacy remote logo cache is restricted to authenticated diagnostics", () => {
   const route = readProductFile("..", "..", "api", "product-logos", "[slug]", "route.ts");
-  const brandIcon = readProductFile("..", "..", "..", "components", "BrandIcon.tsx");
   const storage = readProductFile("..", "..", "..", "lib", "product-logo-storage.ts");
 
-  assert.match(route, /readStoredProductLogo/);
+  assert.match(route, /getCurrentAdmin/);
+  assert.match(route, /if \(!admin\) return notFoundResponse\(\)/);
+  assert.match(route, /private, no-store/);
+  assert.doesNotMatch(route, /public, max-age/);
   assert.doesNotMatch(route, /cacheRemoteProductLogo/);
-  assert.doesNotMatch(route, /fetchOfficialSiteIcon/);
   assert.doesNotMatch(route, /fetch\(/);
-  assert.match(route, /stale-while-revalidate/);
   assert.match(route, /X-Content-Type-Options/);
-  assert.match(brandIcon, /\/api\/product-logos\//);
-  assert.match(brandIcon, /\?source=\$\{encodeURIComponent\(src\)\}/);
-  assert.match(brandIcon, /officialUrl\?\.trim\(\)/);
-  assert.match(brandIcon, /loadedLogoSrc/);
-  assert.match(brandIcon, /loading="eager"/);
-  assert.match(brandIcon, /image\.complete/);
-  assert.match(brandIcon, /image\.naturalWidth > 0/);
-  assert.ok(
-    brandIcon.indexOf('if (image.naturalWidth > 0)') <
-      brandIcon.indexOf('else if (image.complete)'),
-    'cached image dimensions must win before the completion failure check',
-  );
-  assert.doesNotMatch(
-    brandIcon,
-    /transition-opacity/,
-    'logo visibility must not depend on a CSS transition completing',
-  );
-  assert.match(
-    brandIcon,
-    /absolute inset-0 h-full w-full object-cover/,
-    'cached official images should fill the rounded app-icon frame',
-  );
-  assert.doesNotMatch(
-    brandIcon,
-    /h-\[72%\] w-\[72%\] object-contain/,
-    'official images should not look inset inside a second tile',
-  );
-  assert.match(brandIcon, /event\.currentTarget\.style\.display = 'none'/);
   assert.match(storage, /GEOSUB_LOGO_STORAGE_DIR/);
   assert.match(storage, /\/var\/lib\/geosub\/product-logos/);
   assert.match(storage, /MAX_LOGO_BYTES/);
 });
 
-test("published product logos have a reusable full-catalog synchronization command", () => {
+test("logo release gate audits public rendering without downloading third-party artwork", () => {
   const script = readProductFile("..", "..", "..", "scripts", "sync-product-logos.mts");
   const packageJson = readProductFile("..", "..", "..", "package.json");
 
   assert.match(script, /status: "PUBLISHED"/);
-  assert.match(script, /readStoredProductLogo/);
-  assert.match(script, /fetchOfficialSiteIcon/);
-  assert.match(script, /lookupAppStoreArtwork/);
-  assert.match(script, /cacheRemoteProductLogo/);
-  assert.match(script, /process\.argv\.includes\("--check"\)/);
+  assert.match(script, /getApprovedLocalBrandAsset/);
+  assert.match(script, /getSimpleIconCandidates/);
+  assert.match(script, /GeoSub neutral initials/);
+  assert.match(script, /legacy remote logo retained as diagnostic metadata only/);
+  assert.match(script, /Remote and App Store artwork is not downloaded or published/);
+  assert.doesNotMatch(script, /lookupAppStoreArtwork/);
+  assert.doesNotMatch(script, /cacheRemoteProductLogo/);
+  assert.doesNotMatch(script, /fetch\(/);
   assert.match(packageJson, /"check:logos"/);
   assert.match(packageJson, /"sync:logos"/);
 });
 
-test("product edit page explains the persistent official logo fallback", () => {
+test("admin logo workflow labels downloaded candidates as non-public evidence", () => {
+  const actions = readProductFile("actions.ts");
   const page = readProductFile("[id]", "edit", "page.tsx");
+  const syncAction = actions.slice(
+    actions.indexOf("export async function syncProductOfficialLogoAction"),
+    actions.indexOf("export async function saveProductSeoAction"),
+  );
 
-  assert.match(page, /官方网站高可信图标/);
-  assert.match(page, /Apple 官方应用图标/);
-  assert.match(page, /GeoSub 持久目录/);
-  assert.match(page, /不会显示破损图片/);
-  assert.match(page, /source\.type = 'app_store'/);
-  assert.doesNotMatch(page, /source\.source_key/);
-  assert.match(page, /getPricingDetailPath\("zh", product\.category, product\.slug\)/);
+  assert.match(syncAction, /diagnostic-only-not-public/);
+  assert.match(syncAction, /app-store-restricted-diagnostic/);
+  assert.match(syncAction, /it was not published/);
+  assert.doesNotMatch(syncAction, /data:\s*\{[\s\S]*logoUrl: selectedLogoUrl/);
+  assert.match(page, /缓存候选图标（不发布）/);
+  assert.match(page, /只有已登记许可的本地资产才能公开展示/);
+  assert.match(page, /远程 URL 和 App Store artwork 不会直接显示在前台/);
 });

@@ -7,7 +7,9 @@ const {
   backfillEntries,
   baselineCutoverFile,
   compatibilitySqlForEntry,
+  entriesForMode,
   prismaMigrations,
+  registryAliases,
   retiredEntries,
   schemaEntries,
   validateManifest,
@@ -17,6 +19,10 @@ const appDir = path.resolve(__dirname, "..");
 const repoDir = path.resolve(appDir, "..");
 const backendDir = path.join(repoDir, "geosub-backend");
 const includeBackfills = process.argv.includes("--include-backfills");
+const schemaMode = process.env.GEOSUB_SCHEMA_MODE || "schema";
+if (!new Set(["schema", "complete-schema", "post-cutover"]).has(schemaMode)) {
+  throw new Error(`Unsupported GEOSUB_SCHEMA_MODE: ${schemaMode}`);
+}
 
 dotenv.config({ path: path.join(appDir, ".env.local") });
 dotenv.config({ path: path.join(appDir, ".env") });
@@ -131,13 +137,25 @@ async function auditSqlMigrations(client) {
     );
   }
 
+  const requiredSchemaEntries = entriesForMode(schemaMode);
   const schema = await auditEntries({
     client,
-    entries: schemaEntries,
+    entries: requiredSchemaEntries,
     applied: schemaApplied,
     legacyApplied: schemaApplied,
     label: "SCHEMA  ",
     required: true,
+    legacyBaselineReady,
+  });
+  const requiredSchemaFiles = new Set(requiredSchemaEntries.map((entry) => entry.file));
+  const deferredEntries = schemaEntries.filter((entry) => !requiredSchemaFiles.has(entry.file));
+  const deferred = await auditEntries({
+    client,
+    entries: deferredEntries,
+    applied: schemaApplied,
+    legacyApplied: schemaApplied,
+    label: "DEFERRED ",
+    required: false,
     legacyBaselineReady,
   });
   const backfill = await auditEntries({
@@ -156,9 +174,16 @@ async function auditSqlMigrations(client) {
     ),
   );
   const knownSchema = new Set(schemaEntries.map((entry) => entry.file));
-  const unknownSchema = [...schemaApplied.keys()].filter(
-    (filename) => !knownSchema.has(filename) && !knownLegacy.has(filename),
+  const aliasChecksums = new Map(
+    registryAliases.map((entry) => [entry.file, new Set(entry.checksums)]),
   );
+  const unknownSchema = [];
+  for (const [filename, row] of schemaApplied) {
+    if (knownSchema.has(filename) || knownLegacy.has(filename)) continue;
+    const acceptedAliasChecksums = aliasChecksums.get(filename);
+    if (acceptedAliasChecksums?.has(row.checksum)) continue;
+    unknownSchema.push(filename);
+  }
   const knownBackfill = new Set(backfillEntries.map((entry) => entry.file));
   const unknownBackfill = [...backfillApplied.keys()].filter(
     (filename) => !knownBackfill.has(filename),
@@ -171,7 +196,7 @@ async function auditSqlMigrations(client) {
     failures.push(`unclassified registered backfill SQL: ${unknownBackfill.join(", ")}`);
   }
 
-  return { failures, schema, backfill };
+  return { failures, schema, deferred, backfill };
 }
 
 async function auditPrismaMigrations(client) {
@@ -214,7 +239,7 @@ async function main() {
 
   try {
     console.log(
-      `GeoSub migration audit: schema=${manifest.schema} backfill=${manifest.backfill} retired=${manifest.retired} prisma=${manifest.prisma}`,
+      `GeoSub migration audit: schema=${manifest.schema} active=${manifest.activeSchema} post-cutover=${manifest.postCutoverSchema} mode=${schemaMode} backfill=${manifest.backfill} retired=${manifest.retired} prisma=${manifest.prisma}`,
     );
     const sql = await auditSqlMigrations(client);
     const failures = [...sql.failures, ...(await auditPrismaMigrations(client))];
@@ -222,6 +247,11 @@ async function main() {
     console.log(
       `Backfill status: ${sql.backfill.complete} registered, ${sql.backfill.compatible} legacy-compatible, ${sql.backfill.missing} pending.`,
     );
+    if (sql.deferred.complete + sql.deferred.compatible + sql.deferred.missing > 0) {
+      console.log(
+        `Deferred schema status: ${sql.deferred.complete} registered, ${sql.deferred.compatible} structure-compatible, ${sql.deferred.missing} pending.`,
+      );
+    }
     if (failures.length > 0) {
       throw new Error(
         `Migration audit failed:\n- ${failures.join("\n- ")}\n` +
@@ -230,7 +260,7 @@ async function main() {
     }
 
     console.log(
-      `Migration audit passed: ${schemaEntries.length} schema and ${prismaMigrations.length} Prisma migrations.`,
+      `Migration audit passed: ${entriesForMode(schemaMode).length} required schema and ${prismaMigrations.length} Prisma migrations.`,
     );
   } finally {
     await client.end();

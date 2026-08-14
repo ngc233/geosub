@@ -45,7 +45,17 @@ test("pricing detail SEO copy uses search intent and live plan facts", () => {
   assert.match(source, /formatUsd\(stats\.minRegion\.priceUsd\)/);
   assert.match(source, /new Date\(\)\.getFullYear\(\)/);
   assert.match(source, /Price by Country/);
-  assert.match(source, /价格：全球各地区对比/);
+  assert.match(source, /多少钱？各地区价格对比/);
+  assert.match(source, /starts at about/);
+  assert.doesNotMatch(source, /Cheapest Regions/);
+});
+
+test("English plan titles leave room for the site-name suffix", () => {
+  assert.match(
+    source,
+    /title: \(name, year\) => `\$\{name\} Price by Country \(\$\{year\}\)`/,
+  );
+  assert.ok("ChatGPT Pro 20x Price by Country (2026) - GeoSub".length <= 60);
 });
 
 test("pricing detail metadata uses the dedicated SEO copy", () => {
@@ -55,5 +65,18 @@ test("pricing detail metadata uses the dedicated SEO copy", () => {
   assert.match(
     detailPage,
     /searchIntentCopy\?\.description \|\| seoCopy\.description/,
+  );
+  assert.match(
+    detailPage,
+    /searchIntentCopy\?\.description \|\| pageDescription/,
+  );
+});
+
+test("priority Chinese product overviews are not overridden by stale database SEO", () => {
+  assert.match(detailPage, /const hasOverviewEditorial = publishedPlans\.some/);
+  assert.match(detailPage, /configuredTitle && !hasOverviewEditorial/);
+  assert.match(
+    detailPage,
+    /hasChineseText\(seoMeta\?\.description\) &&\s*!hasOverviewEditorial/,
   );
 });

@@ -1,11 +1,26 @@
-import type { SiteLocale } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese";
+import type { SiteLocale } from "./site-locale.ts";
+import { withTraditionalChinese } from "./traditional-chinese.ts";
+import {
+  formatUsd,
+  getPlanStats,
+  type SubscriptionProduct,
+} from "./public-pricing-model.ts";
+import { getPlanDisplayName } from "./pricing-labels.ts";
+import { getPlanEditorialIndexingStatus } from "./product-editorial-content.ts";
 
 type OverviewCopy = {
   title: (productName: string, year: number) => string;
-  description: (productName: string, planCount: number, regionCount: number) => string;
+  description: (
+    productName: string,
+    planCount: number,
+    regionCount: number,
+    lowest?: ProductOverviewPriceFact | null,
+  ) => string;
   heading: string;
-  intro: (productName: string) => string;
+  intro: (
+    productName: string,
+    lowest?: ProductOverviewPriceFact | null,
+  ) => string;
   monthly: string;
   yearly: string;
   regions: (count: number) => string;
@@ -13,13 +28,63 @@ type OverviewCopy = {
   viewPlan: string;
 };
 
+export type ProductOverviewPriceFact = {
+  planName: string;
+  country: string;
+  price: string;
+};
+
+export function getProductOverviewDecisionPlans(
+  product: SubscriptionProduct,
+) {
+  const publishedPlans = product.plans.filter(
+    (plan) => plan.regions.length > 0,
+  );
+  const currentPlans = publishedPlans.filter(
+    (plan) =>
+      getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
+  );
+
+  return currentPlans.length > 0 ? currentPlans : publishedPlans;
+}
+
+export function getProductOverviewPriceFact(
+  product: SubscriptionProduct,
+): ProductOverviewPriceFact | null {
+  const decisionPlans = getProductOverviewDecisionPlans(product);
+  const monthlyPlans = decisionPlans.filter(
+    (plan) => plan.billing === "monthly",
+  );
+  const comparablePlans = monthlyPlans.length > 0 ? monthlyPlans : decisionPlans;
+
+  const lowest = comparablePlans
+    .map((plan) => ({ plan, stats: getPlanStats(plan) }))
+    .sort(
+      (left, right) =>
+        left.stats.minRegion.priceUsd - right.stats.minRegion.priceUsd,
+    )[0];
+
+  if (!lowest) return null;
+
+  return {
+    planName: getPlanDisplayName(product.name, lowest.plan.name),
+    country: lowest.stats.minRegion.country,
+    price: formatUsd(lowest.stats.minRegion.priceUsd),
+  };
+}
+
 const overviewCopy = withTraditionalChinese({
   zh: {
-    title: (name, year) => `${name} 套餐与全球价格对比（${year}）`,
-    description: (name, plans, regions) =>
-      `比较 ${name} 的 ${plans} 个订阅套餐及最多 ${regions} 个国家和地区的 App Store 价格，查看各套餐价格范围、覆盖地区和独立地区价格明细。`,
+    title: (name, year) => `${name} 套餐价格与最便宜地区（${year}）`,
+    description: (name, plans, regions, lowest) =>
+      lowest
+        ? `比较 ${name} 的 ${plans} 个订阅套餐及最多 ${regions} 个国家和地区的 App Store 价格。当前已核验最低价为 ${lowest.country}的 ${lowest.planName}，约 ${lowest.price}。`
+        : `比较 ${name} 的 ${plans} 个订阅套餐及最多 ${regions} 个国家和地区的 App Store 价格，查看各套餐价格范围、覆盖地区和独立地区价格明细。`,
     heading: "套餐概览",
-    intro: (name) => `先比较 ${name} 的套餐，再进入具体套餐查看各地区价格、税费和购买力差异。`,
+    intro: (name, lowest) =>
+      lowest
+        ? `${name} 当前已核验的最低价来自 ${lowest.country}的 ${lowest.planName}，约 ${lowest.price}。先比较套餐，再进入具体套餐查看各地区价格、税费和购买力差异。`
+        : `先比较 ${name} 的套餐，再进入具体套餐查看各地区价格、税费和购买力差异。`,
     monthly: "月付",
     yearly: "年付",
     regions: (count) => `${count} 个地区`,
@@ -27,11 +92,16 @@ const overviewCopy = withTraditionalChinese({
     viewPlan: "查看地区价格",
   },
   en: {
-    title: (name, year) => `${name} Plans and Prices by Country (${year})`,
-    description: (name, plans, regions) =>
-      `Compare ${plans} ${name} subscription plans across up to ${regions} App Store regions, including plan-level price ranges and links to verified country pricing.`,
+    title: (name, year) => `${name} Plans & Prices by Country (${year})`,
+    description: (name, plans, regions, lowest) =>
+      lowest
+        ? `The lowest reviewed ${name} price is ${lowest.price} for ${lowest.planName} in ${lowest.country}. Compare ${plans} plans across up to ${regions} App Store regions.`
+        : `Compare ${plans} ${name} subscription plans across up to ${regions} App Store regions, including plan-level price ranges and links to verified country pricing.`,
     heading: "Plan overview",
-    intro: (name) => `Compare ${name} plans first, then open a plan to review regional prices, taxes and purchasing-power differences.`,
+    intro: (name, lowest) =>
+      lowest
+        ? `The lowest reviewed ${name} price is ${lowest.price} for ${lowest.planName} in ${lowest.country}. Compare plans first, then review regional prices, taxes and purchasing-power differences.`
+        : `Compare ${name} plans first, then open a plan to review regional prices, taxes and purchasing-power differences.`,
     monthly: "Monthly",
     yearly: "Yearly",
     regions: (count) => `${count} regions`,
@@ -153,20 +223,27 @@ export function getPricingProductOverviewCopy({
   productName,
   planCount,
   regionCount,
+  lowest = null,
   year = new Date().getFullYear(),
 }: {
   locale: SiteLocale;
   productName: string;
   planCount: number;
   regionCount: number;
+  lowest?: ProductOverviewPriceFact | null;
   year?: number;
 }) {
   const copy = overviewCopy[locale];
   return {
     ...copy,
     metadataTitle: copy.title(productName, year),
-    pageTitle: copy.title(productName, year),
-    description: copy.description(productName, planCount, regionCount),
-    intro: copy.intro(productName),
+    pageTitle:
+      locale === "zh"
+        ? `${productName} 套餐与各地区价格`
+        : locale === "en"
+          ? `${productName} Plans and Prices by Country`
+          : copy.title(productName, year),
+    description: copy.description(productName, planCount, regionCount, lowest),
+    intro: copy.intro(productName, lowest),
   };
 }

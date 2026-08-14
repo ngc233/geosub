@@ -118,3 +118,20 @@ One schema ownership policy must be approved:
 After that decision, rebuild both temporary databases from the same verified
 backup and rerun all three B1 acceptance checks. Until all pass, do not merge or
 deploy the B1 migration reorganization.
+
+## B1.2 follow-up control plane
+
+The recommended ownership policy was implemented locally after this rehearsal:
+
+- `directus/directus` is pinned to `12.1.1`;
+- `directus_*` objects are externally owned and receive a separate unchanged
+  hash during shadow verification;
+- the 49 production-baseline schema migrations remain the default path;
+- schemas 049, 050, 051 and 053 require the explicit `post-cutover` mode;
+- three historical B1 rehearsal registry names are accepted only with their
+  recorded checksums;
+- generated catalog migrations are immutable after application.
+
+This removes the known control-plane causes of the failed rehearsal. It does
+not retroactively turn the 2026-08-12 run into passing evidence. A new isolated
+production-backup rehearsal is still mandatory before B1 release approval.

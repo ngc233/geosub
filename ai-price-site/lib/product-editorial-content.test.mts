@@ -18,6 +18,15 @@ const priorityPlans = {
   "hbo-max": ["basic-with-ads", "standard", "premium"],
   perplexity: ["pro", "max"],
   suno: ["basic", "pro", "premier-plan"],
+  captions: ["basic", "max"],
+  crunchyroll: ["fan", "mega-fan", "ultimate-fan"],
+  deezer: ["premium", "family"],
+  "kling-ai": ["standard", "pro", "premier"],
+  "leonardo-ai": ["essential", "premium", "ultimate"],
+  podimo: ["premium", "premium-plus"],
+  poe: ["basic", "plus"],
+  viki: ["standard", "plus"],
+  "youtube-premium": ["lite", "individual", "family"],
 };
 
 const officialSourceHosts: Record<string, string[]> = {
@@ -31,7 +40,29 @@ const officialSourceHosts: Record<string, string[]> = {
   suno: ["help.suno.com"],
   disney: ["www.disneyplus.com"],
   "hbo-max": ["help.max.com"],
+  captions: ["help.captions.ai"],
+  crunchyroll: ["help.crunchyroll.com"],
+  deezer: ["www.deezer.com"],
+  "kling-ai": ["app.klingai.com"],
+  "leonardo-ai": ["leonardo.ai"],
+  podimo: ["support.podimo.com"],
+  poe: ["help.poe.com"],
+  viki: ["support.viki.com"],
+  "youtube-premium": ["support.google.com"],
 };
+
+const legacyRouteProducts = new Set([
+  "chatgpt",
+  "claude",
+  "netflix",
+  "gemini",
+  "grok",
+  "manus",
+  "disney",
+  "hbo-max",
+  "perplexity",
+  "suno",
+]);
 
 test("priority products have complete Chinese and English plan guidance", () => {
   for (const [productSlug, planSlugs] of Object.entries(priorityPlans)) {
@@ -61,6 +92,7 @@ test("priority products have complete Chinese and English plan guidance", () => 
 
 test("priority product plan routes stay aligned with legacy query redirects", () => {
   for (const [productSlug, planSlugs] of Object.entries(priorityPlans)) {
+    if (!legacyRouteProducts.has(productSlug)) continue;
     for (const planSlug of planSlugs) {
       assert.equal(
         resolveLegacyPricingPlanSlug(productSlug, planSlug),

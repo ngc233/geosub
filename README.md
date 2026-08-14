@@ -75,5 +75,19 @@ Database data is not stored in Git. Use a private dump or backup artifact when m
 
 ## Current Status
 
-The project is in the "framework integration and stability hardening" phase. The automated discovery and collector pipeline has a working skeleton, but it still needs product-grade error handling, end-to-end test flows, and stronger generic pricing extraction.
+GeoSub is in product hardening and controlled-growth development. The public
+price comparison experience, internal admin workflow, collection pipeline,
+data-quality checks, multilingual routing, SEO controls, and self-hosted
+operations are implemented. Current work focuses on data authority, rights
+governance, collector resilience, content quality, performance, and release
+gates rather than adding isolated features without validation.
+
+## Rights and licensing
+
+GeoSub-owned code and original content are proprietary and all rights are
+reserved. See [LICENSE](LICENSE) for the repository terms,
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency and trademark
+boundaries, and
+[docs/product-brand-asset-register.md](docs/product-brand-asset-register.md)
+for the logo and brand-asset publication policy.
 

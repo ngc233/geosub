@@ -11,8 +11,20 @@ import {
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
+import AdminStatusBadge from "../../../components/admin/AdminStatusBadge";
+import {
+  adminOperationalStatusPriority,
+  assessProductOperationalStatus,
+  countAdminOperationalAssessments,
+  type AdminOperationalStatus,
+} from "../../../lib/admin-operational-status";
+import {
+  getPipelineGrowthSignals,
+  type PipelineGrowthSignal,
+} from "../../../lib/admin-pipeline-growth";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import { prisma } from "../../../lib/prisma";
+import BatchCollectionPanel from "./BatchCollectionPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +38,18 @@ const categories = [
   { value: "payment", label: "支付" },
   { value: "vpn", label: "网络工具" },
   { value: "other", label: "其他" },
+];
+
+const pipelineStages: Array<{
+  value: "all" | AdminOperationalStatus;
+  label: string;
+  description: string;
+}> = [
+  { value: "all", label: "全部产品", description: "查看完整流水线" },
+  { value: "exception", label: "需要介入", description: "采集失败或硬异常" },
+  { value: "pending", label: "系统处理中", description: "等待采集、审核或复采" },
+  { value: "not_started", label: "未开始", description: "还没有 App Store 任务" },
+  { value: "published", label: "已发布", description: "正式价格当前可用" },
 ];
 
 type PipelineProductRow = {
@@ -79,6 +103,11 @@ function toNumber(value: unknown) {
     return Number((value as { toNumber: () => number }).toNumber());
   }
   return 0;
+}
+
+function toQueryCount(value: string | undefined) {
+  const count = Number.parseInt(String(value ?? ""), 10);
+  return Number.isFinite(count) && count >= 0 ? count : null;
 }
 
 function formatDate(value: Date | string | null) {
@@ -206,6 +235,63 @@ function getPipelineState(row: PipelineProductRow) {
     className: "bg-emerald-50 text-emerald-700 ring-emerald-200",
     icon: CheckCircle2,
   };
+}
+
+function getPipelineOperationalAssessment(row: PipelineProductRow) {
+  return assessProductOperationalStatus({
+    publishStatus: row.product_status,
+    planCount: toNumber(row.plan_count),
+    activeCollectorJobCount: toNumber(row.app_store_job_count),
+    latestRunStatus: row.latest_run_status,
+    pendingWorkCount: toNumber(row.pending_observation_count),
+    blockedCount: toNumber(row.blocked_observation_count),
+    publishedPriceCount: toNumber(row.published_price_count),
+    stalePriceCount: toNumber(row.published_stale_price_count),
+  });
+}
+
+function getPipelineOperationalStatus(
+  row: PipelineProductRow,
+): AdminOperationalStatus {
+  return getPipelineOperationalAssessment(row)?.status ?? "not_started";
+}
+
+function getPublishReadiness(row: PipelineProductRow) {
+  const checks = [
+    { ready: toNumber(row.plan_count) > 0, missing: "补套餐" },
+    { ready: toNumber(row.app_store_job_count) > 0, missing: "补 App Store 采集任务" },
+    { ready: Boolean(row.latest_success_at), missing: "完成首次采集" },
+    { ready: toNumber(row.published_price_count) > 0, missing: "形成正式价格" },
+    {
+      ready:
+        toNumber(row.blocked_observation_count) === 0 &&
+        toNumber(row.published_stale_price_count) === 0,
+      missing: "处理异常或过期价格",
+    },
+  ];
+  const completed = checks.filter((check) => check.ready).length;
+
+  return {
+    completed,
+    total: checks.length,
+    nextAction: checks.find((check) => !check.ready)?.missing || "保持定期复采",
+  };
+}
+
+function sortPipelineRows(rows: PipelineProductRow[]) {
+  return [...rows].sort((left, right) => {
+    const leftStatus = getPipelineOperationalStatus(left);
+    const rightStatus = getPipelineOperationalStatus(right);
+    const statusDifference =
+      adminOperationalStatusPriority[leftStatus] - adminOperationalStatusPriority[rightStatus];
+    if (statusDifference !== 0) return statusDifference;
+
+    const readinessDifference =
+      getPublishReadiness(right).completed - getPublishReadiness(left).completed;
+    if (readinessDifference !== 0) return readinessDifference;
+
+    return left.product_name.localeCompare(right.product_name, "zh-CN");
+  });
 }
 
 async function getPipelineRows({ q, category }: { q: string; category: string }) {
@@ -558,24 +644,25 @@ function PipelineRecommendation({ stats }: { stats: PipelineStats }) {
 
 function PipelineStateBadge({ row }: { row: PipelineProductRow }) {
   const state = getPipelineState(row);
-  const Icon = state.icon;
+  const operationalStatus = getPipelineOperationalStatus(row);
 
   return (
-    <div
-      className={joinClasses(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ring-1",
-        state.className
-      )}
+    <AdminStatusBadge
+      status={operationalStatus}
       title={state.detail}
-    >
-      <Icon size={13} strokeWidth={2.4} />
-      {state.label}
-    </div>
+    />
   );
 }
 
-function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
+function ProductPipelineCard({
+  row,
+  growthSignal,
+}: {
+  row: PipelineProductRow;
+  growthSignal?: PipelineGrowthSignal;
+}) {
   const state = getPipelineState(row);
+  const readiness = getPublishReadiness(row);
   const pendingCount = toNumber(row.pending_observation_count);
   const blockedCount = toNumber(row.blocked_observation_count);
   const appStoreJobs = toNumber(row.app_store_job_count);
@@ -596,6 +683,7 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
             {row.product_slug} · {row.provider || "未填服务商"} · {productStatusLabel(row.product_status)}
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+            <span className="font-bold text-slate-800">{state.label}：</span>
             {state.detail}
           </p>
         </div>
@@ -672,7 +760,13 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-        <div className="flex flex-wrap gap-2 text-xs font-bold">
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-xs font-bold text-slate-600">
+            <span>发布准备 {readiness.completed}/{readiness.total}</span>
+            <span className="text-slate-300">·</span>
+            <span>下一步：{readiness.nextAction}</span>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs font-bold">
           {row.has_fresh_success ? (
             <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 ring-1 ring-emerald-200">
               12 小时内成功采集
@@ -698,6 +792,7 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
               正式价超过 14 天
             </span>
           ) : null}
+          </div>
         </div>
         <div className="flex gap-3 text-xs font-black">
           <AdminLink href={`/admin/products/${row.product_id}/edit`} className="text-blue-700 hover:text-blue-900">
@@ -711,6 +806,24 @@ function ProductPipelineCard({ row }: { row: PipelineProductRow }) {
           </AdminLink>
         </div>
       </div>
+      {growthSignal ? (
+        <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500">
+            <span className="font-bold text-slate-700">页面质量 {growthSignal.qualityScore}/100</span>
+            <span>搜索需求 {growthSignal.demandScore}</span>
+            {growthSignal.demandQueries.length > 0 ? (
+              <span title={growthSignal.demandQueries.join("、")}>
+                用户在搜：{growthSignal.demandQueries.slice(0, 2).join("、")}
+              </span>
+            ) : (
+              <span>暂未发现明确站内搜索需求</span>
+            )}
+          </div>
+          <AdminLink href={growthSignal.actionHref} className="shrink-0 font-black text-blue-700 hover:text-blue-900">
+            {growthSignal.recommendedAction}
+          </AdminLink>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -721,6 +834,14 @@ export default async function AdminPipelinePage({
   searchParams?: Promise<{
     q?: string;
     category?: string;
+    stage?: string;
+    batchRequested?: string;
+    batchQueued?: string;
+    batchStarted?: string;
+    batchProtected?: string;
+    batchSkipped?: string;
+    batchStartFailed?: string;
+    batchError?: string;
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
@@ -728,18 +849,57 @@ export default async function AdminPipelinePage({
   const category = categories.some((item) => item.value === params.category)
     ? String(params.category)
     : "all";
+  const stage = pipelineStages.some((item) => item.value === params.stage)
+    ? (String(params.stage) as "all" | AdminOperationalStatus)
+    : "all";
+  const batchRequested = toQueryCount(params.batchRequested);
+  const batchQueued = toQueryCount(params.batchQueued);
+  const batchStarted = toQueryCount(params.batchStarted);
+  const batchProtected = toQueryCount(params.batchProtected);
+  const batchSkipped = toQueryCount(params.batchSkipped);
+  const batchStartFailed = toQueryCount(params.batchStartFailed);
   let rows: PipelineProductRow[] = [];
+  let allRows: PipelineProductRow[] = [];
+  let growthSignals: PipelineGrowthSignal[] = [];
   let stats: PipelineStats = emptyPipelineStats();
   let loadError: string | null = null;
 
   try {
-    [rows, stats] = await Promise.all([
+    [allRows, stats, growthSignals] = await Promise.all([
       getPipelineRows({ q, category }),
       getPipelineStats(),
+      getPipelineGrowthSignals().catch(() => []),
     ]);
+    allRows = sortPipelineRows(allRows);
+    rows = stage === "all"
+      ? allRows
+      : allRows.filter((row) => getPipelineOperationalStatus(row) === stage);
   } catch (error) {
     loadError = getErrorMessage(error);
   }
+
+  const stageCounts = countAdminOperationalAssessments(
+    allRows.map(getPipelineOperationalAssessment),
+  );
+  const growthSignalByProduct = new Map(
+    growthSignals.map((signal) => [signal.productId, signal]),
+  );
+  const closestToPublish = [...allRows]
+    .filter((row) => getPipelineOperationalStatus(row) !== "published")
+    .sort((left, right) =>
+      getPublishReadiness(right).completed - getPublishReadiness(left).completed
+    )[0];
+  const closestReadiness = closestToPublish
+    ? getPublishReadiness(closestToPublish)
+    : null;
+  const stageHref = (nextStage: "all" | AdminOperationalStatus) => {
+    const query = new URLSearchParams();
+    if (q) query.set("q", q);
+    if (category !== "all") query.set("category", category);
+    if (nextStage !== "all") query.set("stage", nextStage);
+    const suffix = query.toString();
+    return suffix ? `/admin/pipeline?${suffix}` : "/admin/pipeline";
+  };
 
   return (
     <div>
@@ -755,6 +915,30 @@ export default async function AdminPipelinePage({
       />
 
       <AdminPipelineSteps currentStep="pipeline" />
+
+      {params.batchError ? (
+        <AdminCard className="mb-6 border-red-200 bg-red-50">
+          <div className="text-sm font-black text-red-800">批量更新没有提交成功</div>
+          <p className="mt-1 text-sm leading-6 text-red-700">
+            {params.batchError === "empty"
+              ? "请先选择至少一个产品，再加入采集队列。"
+              : "后台未能写入采集队列，请先查看系统状态后重试。"}
+          </p>
+        </AdminCard>
+      ) : batchRequested !== null && batchQueued !== null ? (
+        <AdminCard className="mb-6 border-blue-200 bg-blue-50">
+          <div className="text-sm font-black text-blue-900">批量更新已交给后台</div>
+          <p className="mt-1 text-sm leading-6 text-blue-800">
+            已选择 {batchRequested} 个产品，新增排队 {batchQueued} 个，立即启动 {batchStarted ?? 0} 个。
+            {(batchProtected ?? 0) > 0 ? ` ${batchProtected} 个处于冷却保护或已有运行记录。` : ""}
+            {(batchSkipped ?? 0) > 0 ? ` 共跳过 ${batchSkipped} 个未配置或受保护产品。` : ""}
+            {(batchStartFailed ?? 0) > 0 ? ` ${batchStartFailed} 个未能立即启动，但仍保留在定时队列。` : ""}
+          </p>
+          <AdminLinkButton href="/admin/collector-jobs" variant="secondary" size="sm" className="mt-3">
+            查看运行进度
+          </AdminLinkButton>
+        </AdminCard>
+      ) : null}
 
       {loadError ? (
         <AdminCard className="mb-6 border-amber-200 bg-amber-50">
@@ -779,6 +963,79 @@ export default async function AdminPipelinePage({
       ) : (
         <PipelineRecommendation stats={stats} />
       )}
+
+      <AdminCard className="mb-6 p-0">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-base font-black text-slate-950">产品现在处于哪一步</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            先按四种管理状态定位产品，再展开具体采集、审核和发布原因。
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-5">
+          {pipelineStages.map((item) => {
+            const active = stage === item.value;
+            const count = item.value === "all" ? allRows.length : stageCounts[item.value];
+
+            return (
+              <AdminLink
+                key={item.value}
+                href={stageHref(item.value)}
+                aria-current={active ? "page" : undefined}
+                className={joinClasses(
+                  "border-b border-slate-100 px-5 py-4 transition last:border-b-0 sm:border-r xl:border-b-0",
+                  active
+                    ? "bg-blue-50 text-blue-900"
+                    : "bg-white text-slate-700 hover:bg-slate-50",
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-black">{item.label}</span>
+                  <span className="text-lg font-black">{count}</span>
+                </div>
+                <div className="mt-1 text-xs text-slate-500">{item.description}</div>
+              </AdminLink>
+            );
+          })}
+        </div>
+      </AdminCard>
+
+      {closestToPublish && closestReadiness ? (
+        <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <AdminCard className="border-emerald-200 bg-emerald-50/60">
+            <div className="text-xs font-black text-emerald-700">最接近发布</div>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-lg font-black text-slate-950">
+                  {closestToPublish.product_name}
+                </div>
+                <div className="mt-1 text-sm text-slate-600">
+                  已完成 {closestReadiness.completed}/{closestReadiness.total} 项，下一步：{closestReadiness.nextAction}
+                </div>
+              </div>
+              <AdminLinkButton
+                href={`/admin/pipeline?q=${encodeURIComponent(closestToPublish.product_slug)}`}
+                variant="secondary"
+              >
+                只看这个产品
+              </AdminLinkButton>
+            </div>
+          </AdminCard>
+          <AdminCard className="border-slate-200 bg-slate-50">
+            <div className="text-xs font-black text-slate-500">沉睡库存</div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-lg font-black text-slate-950">
+                  {stageCounts.not_started} 个产品未开始
+                </div>
+                <div className="mt-1 text-sm text-slate-500">没有采集任务就不会自动产生价格。</div>
+              </div>
+              <AdminLinkButton href={stageHref("not_started")} variant="secondary">
+                查看
+              </AdminLinkButton>
+            </div>
+          </AdminCard>
+        </div>
+      ) : null}
 
       <div className="mb-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <AdminCard>
@@ -817,6 +1074,7 @@ export default async function AdminPipelinePage({
 
       <AdminCard className="mb-6">
         <form className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          {stage !== "all" ? <input type="hidden" name="stage" value={stage} /> : null}
           <div>
             <h2 className="text-base font-black text-slate-950">筛选产品</h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">
@@ -859,9 +1117,28 @@ export default async function AdminPipelinePage({
         </form>
       </AdminCard>
 
+      {rows.filter((row) => toNumber(row.app_store_job_count) > 0).length > 1 ? (
+        <BatchCollectionPanel
+          products={rows
+            .filter((row) => toNumber(row.app_store_job_count) > 0)
+            .map((row) => ({
+              slug: row.product_slug,
+              name: row.product_name,
+              needsUpdate:
+                getPipelineOperationalStatus(row) !== "published" ||
+                toNumber(row.due_job_count) > 0 ||
+                toNumber(row.published_stale_price_count) > 0,
+            }))}
+        />
+      ) : null}
+
       <div className="grid gap-4">
         {rows.map((row) => (
-          <ProductPipelineCard key={row.product_id} row={row} />
+          <ProductPipelineCard
+            key={row.product_id}
+            row={row}
+            growthSignal={growthSignalByProduct.get(row.product_id)}
+          />
         ))}
 
         {rows.length === 0 && !loadError ? (

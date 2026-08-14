@@ -20,8 +20,8 @@ MANIFEST_SCRIPT="$BACKEND_DIR/scripts/migration-manifest.cjs"
 case "$MODE" in
   core) MODE="schema" ;;
   content) MODE="backfill" ;;
-  schema|backfill|all) ;;
-  *) echo "Mode must be schema, backfill or all."; exit 1 ;;
+  schema|complete-schema|post-cutover|backfill|all) ;;
+  *) echo "Mode must be schema, complete-schema, post-cutover, backfill or all."; exit 1 ;;
 esac
 
 cd "$BACKEND_DIR"

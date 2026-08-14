@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import JapaneseInfoPage from "../../../components/JapaneseInfoPage";
+import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
   title: "プライバシーポリシー",
@@ -21,6 +22,7 @@ export default function JapanesePrivacyPage() {
       <p className="mt-6 text-sm leading-8 text-zinc-500">
         Google AnalyticsまたはGoogle Tag Managerを利用して、ページ閲覧、一般的な操作、サイトのパフォーマンスを測定することがあります。これらの情報はコンテンツと信頼性の改善に使用し、決済情報や価格比較に不要な機微情報を求めるものではありません。
       </p>
+      <PrivacyDisclosure locale="ja" />
     </JapaneseInfoPage>
   );
 }

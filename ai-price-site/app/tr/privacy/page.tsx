@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import TurkishInfoPage from "../../../components/TurkishInfoPage";
+import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
   title: "Gizlilik Politikası",
@@ -25,6 +26,7 @@ export default function TurkishPrivacyPage() {
         içeriği ve güvenilirliği geliştirmeye yardımcı olur; ödeme bilgileri
         veya hassas kimlik bilgileri istemek için kullanılmaz.
       </p>
+      <PrivacyDisclosure locale="tr" />
     </TurkishInfoPage>
   );
 }

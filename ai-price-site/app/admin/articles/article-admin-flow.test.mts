@@ -69,3 +69,17 @@ test("article admin keeps language-specific taxonomy, links and cache paths", ()
   assert.match(actions, /revalidatePath\("\/en\/guides"\)/);
   assert.match(actions, /revalidatePath\(`\/en\/guides\/\$\{slug\}`\)/);
 });
+
+test("article workflow exposes quality filters and an authenticated preview", () => {
+  const list = readArticleFile("page.tsx");
+  const editPage = readArticleFile("[id]/edit/page.tsx");
+  const previewPage = readArticleFile("[id]/preview/page.tsx");
+
+  assert.match(list, /evaluateArticleContentQuality/);
+  assert.match(list, /state=\$\{value\}/);
+  assert.match(list, /\/admin\/articles\/\$\{article\.id\}\/preview/);
+  assert.match(editPage, /预览当前内容/);
+  assert.match(previewPage, /renderArticleMarkdown/);
+  assert.match(previewPage, /不会改变发布状态/);
+  assert.match(previewPage, /quality\.nextAction/);
+});

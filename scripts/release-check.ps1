@@ -261,12 +261,12 @@ Invoke-Step -Name "Database migration manifest" -Block {
   & node (Join-Path $BackendDir "scripts\migration-manifest.cjs") validate "--frontend-dir=$FrontendDir"
 }
 
-Invoke-Step -Name "Frontend production dependency audit" -Block {
-  & $NpmPath --prefix $FrontendDir audit --omit=dev --audit-level=high
+Invoke-Step -Name "Frontend dependency audit" -Block {
+  & $NpmPath --prefix $FrontendDir audit --audit-level=high
 }
 
-Invoke-Step -Name "Backend production dependency audit" -Block {
-  & $NpmPath --prefix $BackendDir audit --omit=dev --audit-level=high
+Invoke-Step -Name "Backend dependency audit" -Block {
+  & $NpmPath --prefix $BackendDir audit --audit-level=high
 }
 
 Invoke-Step -Name "Frontend SEO indexing policy" -Block {

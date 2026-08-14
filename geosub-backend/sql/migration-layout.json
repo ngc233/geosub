@@ -1,6 +1,29 @@
 {
   "version": 1,
   "generatedFrom": "B1 SQL classification approved 2026-08-11",
+  "registryAliases": [
+    {
+      "file": "sql/schema/051_content_system_directus.sql",
+      "checksums": [
+        "7253b10117c56d024cc14c0e5e9edba7c4ebb567281d005fb9c75637e264b5d8"
+      ],
+      "reason": "Historical B1 rehearsal entry; Directus metadata is externally owned."
+    },
+    {
+      "file": "sql/schema/052_directus_cn_v2.sql",
+      "checksums": [
+        "92d7ba87688179c61e7bff80c0ab4525852535c7a687ec8db278014f080c9de5"
+      ],
+      "reason": "Historical B1 rehearsal entry; Directus localization is an explicit backfill."
+    },
+    {
+      "file": "sql/schema/053_article_soft_delete_trash.sql",
+      "checksums": [
+        "e4b537bd54894b318bb9a99746aac1d92fccc3c13e8732af833bd25547e5c498"
+      ],
+      "reason": "Historical B1 rehearsal entry superseded by canonical schema:052."
+    }
+  ],
   "schema": [
     {
       "id": "schema:001",
@@ -485,6 +508,7 @@
     {
       "id": "schema:049",
       "file": "sql/schema/049_event_rate_limits.sql",
+      "releasePhase": "post-cutover",
       "legacyFile": "sql/076_event_rate_limits.sql",
       "legacyChecksums": [
         "195b2a3161c65339cf5b126071202c9a92b5ad5efa2d029d658f7d7e4d76167f",
@@ -495,6 +519,7 @@
     {
       "id": "schema:050",
       "file": "sql/schema/050_content_system_tables.sql",
+      "releasePhase": "post-cutover",
       "legacyFile": "content-system-tables.sql",
       "legacyChecksums": [
         "604a225adc3bbb8bcff760ebb8151580d126f17fabd40400227ef6081aa1e8aa",
@@ -546,6 +571,7 @@
     {
       "id": "schema:051",
       "file": "sql/schema/051_content_system_navigation_index.sql",
+      "releasePhase": "post-cutover",
       "legacyFile": "content-system-directus.sql",
       "legacyChecksums": [
         "c0327c3f57369a53c225cf2f12aa08911d66e07a857b6f9d71c4feda95d88180",
@@ -580,6 +606,7 @@
     {
       "id": "schema:053",
       "file": "sql/schema/053_product_source_profiles.sql",
+      "releasePhase": "post-cutover",
       "legacyFile": "sql/006_price_observation_tables.sql",
       "legacyChecksums": [
         "9fe37a9730f2a85f82709f6dd8a39c4f948de756b87eb3f0af04e643f38ee56f",

@@ -23,6 +23,7 @@ const footerCopy: Record<
   PreparedSiteLocale,
   {
     description: string;
+    independence: string;
     rights: string;
     note: string;
     tagline: string;
@@ -32,6 +33,7 @@ const footerCopy: Record<
   zh: {
     description:
       "GeoSub 比较 AI 与流媒体订阅在不同国家和地区的公开价格，并提供汇率、税费与购买力信息。",
+    independence: "GeoSub 是独立比较服务，与页面所列品牌不存在隶属、赞助或背书关系。",
     rights: "保留所有权利。",
     note: "价格与可用性可能随地区、汇率、税费和平台政策变化，请以官方结算页为准。",
     tagline: "全球数字订阅价格数据",
@@ -40,6 +42,7 @@ const footerCopy: Record<
   en: {
     description:
       "GeoSub compares public AI and streaming subscription prices across countries, with exchange-rate, tax and affordability context.",
+    independence: "GeoSub is an independent comparison service and is not affiliated with, sponsored by, or endorsed by the brands shown.",
     rights: "All rights reserved.",
     note: "Prices and availability may change by region, exchange rate, tax, and platform policy. Always verify final prices on the official checkout page.",
     tagline: "Global Digital Subscription Pricing",
@@ -48,6 +51,7 @@ const footerCopy: Record<
   ja: {
     description:
       "GeoSub は、AI やストリーミングなどのデジタルサブスクリプション料金を国・地域別に比較できるデータプラットフォームです。",
+    independence: "GeoSub は独立した比較サービスであり、掲載ブランドとの提携、協賛、推奨関係はありません。",
     rights: "無断転載を禁じます。",
     note:
       "料金や提供状況は、地域、為替、税金、プラットフォームの方針によって変わる場合があります。最終的な料金は公式の決済画面でご確認ください。",
@@ -57,6 +61,7 @@ const footerCopy: Record<
   ko: {
     description:
       "GeoSub는 AI와 스트리밍 등 디지털 구독 서비스의 국가·지역별 가격을 비교하는 데이터 플랫폼입니다.",
+    independence: "GeoSub는 독립적인 비교 서비스이며 표시된 브랜드와 제휴, 후원 또는 보증 관계가 없습니다.",
     rights: "모든 권리 보유.",
     note:
       "가격과 이용 가능 여부는 지역, 환율, 세금 및 플랫폼 정책에 따라 달라질 수 있습니다. 최종 결제 금액은 공식 결제 화면에서 확인하세요.",
@@ -66,6 +71,7 @@ const footerCopy: Record<
   es: {
     description:
       "GeoSub es una plataforma de datos para comparar el precio de suscripciones digitales, como IA y streaming, entre países y regiones.",
+    independence: "GeoSub es un servicio de comparación independiente y no está afiliado, patrocinado ni respaldado por las marcas mostradas.",
     rights: "Todos los derechos reservados.",
     note:
       "Los precios y la disponibilidad pueden variar según la región, el tipo de cambio, los impuestos y las políticas de la plataforma. Comprueba siempre el importe final en la página oficial de pago.",
@@ -75,6 +81,7 @@ const footerCopy: Record<
   tr: {
     description:
       "GeoSub; yapay zekâ, dijital yayın ve diğer abonelik hizmetlerinin ülke ve bölgelere göre fiyatlarını karşılaştıran bir veri platformudur.",
+    independence: "GeoSub bağımsız bir karşılaştırma hizmetidir; gösterilen markalarla bağlı, sponsorlu veya onaylanmış değildir.",
     rights: "Tüm hakları saklıdır.",
     note:
       "Fiyatlar ve kullanılabilirlik; bölgeye, döviz kuruna, vergilere ve platform politikalarına göre değişebilir. Son tutarı her zaman resmî ödeme sayfasından doğrulayın.",
@@ -84,6 +91,7 @@ const footerCopy: Record<
   ar: {
     description:
       "GeoSub منصة بيانات لمقارنة أسعار الاشتراكات الرقمية، مثل خدمات الذكاء الاصطناعي والبث، بين الدول والمناطق.",
+    independence: "GeoSub خدمة مقارنة مستقلة، ولا تتبع العلامات المعروضة ولا تحظى برعايتها أو تأييدها.",
     rights: "جميع الحقوق محفوظة.",
     note:
       "قد تختلف الأسعار والتوافر حسب المنطقة وسعر الصرف والضرائب وسياسات المنصة. تحقّق دائمًا من السعر النهائي في صفحة الدفع الرسمية.",
@@ -92,6 +100,7 @@ const footerCopy: Record<
   },
   fr: {
     description: "GeoSub compare les prix des abonnements numériques, notamment les services d’IA et de streaming, entre les pays et les régions.",
+    independence: "GeoSub est un service de comparaison indépendant, sans affiliation, parrainage ni approbation des marques présentées.",
     rights: "Tous droits réservés.",
     note: "Les prix et la disponibilité peuvent varier selon la région, le taux de change, les taxes et les règles de la plateforme. Vérifiez toujours le montant final sur la page de paiement officielle.",
     tagline: "Prix des abonnements numériques dans le monde",
@@ -99,6 +108,7 @@ const footerCopy: Record<
   },
   it: {
     description: "GeoSub confronta i prezzi degli abbonamenti digitali, inclusi i servizi IA e streaming, tra paesi e regioni.",
+    independence: "GeoSub è un servizio di confronto indipendente e non è affiliato, sponsorizzato o approvato dai marchi mostrati.",
     rights: "Tutti i diritti riservati.",
     note: "Prezzi e disponibilità possono variare in base a regione, cambio, imposte e regole della piattaforma. Verifica sempre l’importo finale nella pagina di pagamento ufficiale.",
     tagline: "Prezzi degli abbonamenti digitali nel mondo",
@@ -106,6 +116,7 @@ const footerCopy: Record<
   },
   de: {
     description: "GeoSub vergleicht die Preise digitaler Abonnements, darunter KI- und Streaming-Dienste, nach Ländern und Regionen.",
+    independence: "GeoSub ist ein unabhängiger Vergleichsdienst und mit den dargestellten Marken weder verbunden noch von ihnen gesponsert oder empfohlen.",
     rights: "Alle Rechte vorbehalten.",
     note: "Preise und Verfügbarkeit können je nach Region, Wechselkurs, Steuern und Plattformregeln variieren. Prüfen Sie den Endbetrag immer auf der offiziellen Zahlungsseite.",
     tagline: "Digitale Abonnementpreise weltweit",
@@ -113,6 +124,7 @@ const footerCopy: Record<
   },
   pt: {
     description: "O GeoSub compara os preços de assinaturas digitais, incluindo serviços de IA e streaming, entre países e regiões.",
+    independence: "O GeoSub é um serviço de comparação independente, sem afiliação, patrocínio ou aprovação das marcas apresentadas.",
     rights: "Todos os direitos reservados.",
     note: "Os preços e a disponibilidade podem variar conforme a região, o câmbio, os impostos e as regras da plataforma. Confirme sempre o valor final na página oficial de pagamento.",
     tagline: "Preços de assinaturas digitais no mundo",
@@ -184,6 +196,10 @@ export default function Footer({
 
             <p className="mt-4 max-w-sm text-sm leading-7 text-zinc-500 dark:text-zinc-400">
               {copy.description}
+            </p>
+
+            <p className="mt-3 max-w-sm text-xs leading-6 text-zinc-400 dark:text-zinc-500">
+              {copy.independence}
             </p>
 
             <Link

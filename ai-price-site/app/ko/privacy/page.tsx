@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import KoreanInfoPage from "../../../components/KoreanInfoPage";
+import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
   title: "개인정보 처리방침",
@@ -24,6 +25,7 @@ export default function KoreanPrivacyPage() {
         콘텐츠와 안정성을 개선하는 데 사용하며, 결제 정보나 가격 비교에
         필요하지 않은 민감한 신원 정보를 요구하지 않습니다.
       </p>
+      <PrivacyDisclosure locale="ko" />
     </KoreanInfoPage>
   );
 }

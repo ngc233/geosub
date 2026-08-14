@@ -8,6 +8,9 @@
   VIEW_DIGITAL_SERVICE: "view_digital_service",
 
   SELECT_PLAN: "select_plan",
+  CLICK_PRODUCT_OVERVIEW: "click_product_overview",
+  CLICK_RELATED_PRICING_PRODUCT: "click_related_pricing_product",
+  CLICK_RELATED_PLAN: "click_related_plan",
   CLICK_COUNTRY: "click_country",
   CLICK_PRICE_MAP_REGION: "click_price_map_region",
 
@@ -36,6 +39,9 @@ export const ANALYTICS_PLACEMENTS = {
   REGION_PRICE_TABLE: "region_price_table",
   SHARE_MODAL: "share_modal",
   PRODUCT_HERO: "product_hero",
+  PRODUCT_OVERVIEW: "product_overview",
+  PRODUCT_OVERVIEW_CARD: "product_overview_card",
+  PLAN_DETAIL: "plan_detail",
   AFFILIATE_BOX: "affiliate_box",
   AD_SLOT: "ad_slot",
 } as const;

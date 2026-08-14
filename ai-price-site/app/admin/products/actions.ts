@@ -358,21 +358,11 @@ export async function createProductAction(formData: FormData) {
   const initialOfficialLogoUrl = product.logoUrl
     ? null
     : await fetchOfficialSiteIcon(product.officialUrl).catch(() => null);
-  const initialCachedOfficialLogo = initialOfficialLogoUrl
-    ? await cacheRemoteProductLogo({
-        productSlug: product.slug,
-        sourceUrl: initialOfficialLogoUrl,
-      }).catch(() => null)
-    : null;
-  if (initialOfficialLogoUrl && initialCachedOfficialLogo) {
-    product = await prisma.product.update({
-      where: {
-        id: product.id,
-      },
-      data: {
-        logoUrl: initialOfficialLogoUrl,
-      },
-    });
+  if (initialOfficialLogoUrl) {
+    await cacheRemoteProductLogo({
+      productSlug: product.slug,
+      sourceUrl: initialOfficialLogoUrl,
+    }).catch(() => null);
   }
 
   await prisma.auditLog.create({
@@ -409,17 +399,13 @@ export async function createProductAction(formData: FormData) {
       : null;
     const verifiedOfficialLogoUrl = cachedOfficialLogo ? selectedLogoUrl : null;
 
-    if (
-      (!product.logoUrl && verifiedOfficialLogoUrl) ||
-      (!product.officialUrl && appStoreApp.sellerUrl)
-    ) {
+    if (!product.officialUrl && appStoreApp.sellerUrl) {
       product = await prisma.product.update({
         where: {
           id: product.id,
         },
         data: {
-          logoUrl: product.logoUrl || verifiedOfficialLogoUrl,
-          officialUrl: product.officialUrl || appStoreApp.sellerUrl,
+          officialUrl: appStoreApp.sellerUrl,
         },
       });
     }
@@ -445,12 +431,13 @@ export async function createProductAction(formData: FormData) {
           appStoreName: appStoreApp.appStoreName,
           sellerName: appStoreApp.sellerName,
           sellerUrl: appStoreApp.sellerUrl,
-          logoUrl: product.logoUrl || verifiedOfficialLogoUrl,
-          logoSource: verifiedOfficialLogoUrl
+          logoCandidateUrl: verifiedOfficialLogoUrl,
+          logoSourceDiagnostic: verifiedOfficialLogoUrl
             ? officialLogoUrl
-              ? "official-site-cached"
-              : "app-store-cached"
+              ? "official-site-diagnostic"
+              : "app-store-restricted-diagnostic"
             : null,
+          logoUsage: "diagnostic-only-not-public",
         },
         note: "Automatically configured App Store source from product onboarding.",
       },
@@ -660,7 +647,9 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
   const officialUrl = product.officialUrl || appStoreLogo?.sellerUrl || null;
   const officialSiteLogo = await fetchOfficialSiteIcon(officialUrl).catch(() => null);
   const selectedLogoUrl = officialSiteLogo || appStoreLogo?.logoUrl || null;
-  const logoSource = officialSiteLogo ? "official-site-cached" : "app-store-cached";
+  const logoSource = officialSiteLogo
+    ? "official-site-diagnostic"
+    : "app-store-restricted-diagnostic";
 
   if (!selectedLogoUrl) {
     redirect(`/admin/products/${product.id}/edit?logoError=official-not-found`);
@@ -675,15 +664,12 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
     redirect(`/admin/products/${product.id}/edit?logoError=download-failed`);
   }
 
-  await prisma.product.update({
-    where: {
-      id: product.id,
-    },
-    data: {
-      logoUrl: selectedLogoUrl,
-      officialUrl: product.officialUrl || officialUrl,
-    },
-  });
+  if (!product.officialUrl && officialUrl) {
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { officialUrl },
+    });
+  }
 
   await prisma.auditLog.create({
     data: {
@@ -695,8 +681,9 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
         logoUrl: product.logoUrl,
       },
       newValue: {
-        logoUrl: selectedLogoUrl,
+        logoCandidateUrl: selectedLogoUrl,
         logoSource,
+        logoUsage: "diagnostic-only-not-public",
         cachedFileName: cachedOfficialSiteLogo.fileName,
         cachedChecksum: cachedOfficialSiteLogo.checksum,
         appStoreId,
@@ -705,14 +692,13 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
         sellerName: appStoreLogo?.sellerName || null,
       },
       note: officialSiteLogo
-        ? "Synced product logo from high-confidence official website icon."
-        : "Synced product logo from official App Store artwork.",
+        ? "Cached a high-confidence official website icon for rights review; it was not published."
+        : "Cached App Store artwork as restricted diagnostic evidence; it was not published.",
     },
   });
 
-  invalidatePublicPricing(product.slug);
   redirect(
-    `/admin/products/${product.id}/edit?logoSynced=${officialSiteLogo ? "official-site" : "app-store"}`,
+    `/admin/products/${product.id}/edit?logoSynced=diagnostic`,
   );
 }
 

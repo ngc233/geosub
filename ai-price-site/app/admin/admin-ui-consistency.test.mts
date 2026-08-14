@@ -87,8 +87,8 @@ test("admin destinations do not prefetch database-heavy pages", () => {
   assert.match(adminLink, /prefetch=\{false\}/);
   assert.match(adminLink, /prefetchOnIntent/);
   assert.match(adminLink, /router\.prefetch/);
-  assert.match(adminLink, /data-admin-navigation-progress/);
-  assert.match(adminLink, /aria-busy=\{isNavigating \|\| undefined\}/);
+  assert.doesNotMatch(adminLink, /data-admin-navigation-progress/);
+  assert.doesNotMatch(adminLink, /aria-busy=\{isNavigating \|\| undefined\}/);
   assert.match(sidebar, /"\/admin\/settings"/);
   assert.match(sidebar, /prefetchOnIntent=/);
   assert.match(dashboard, /<SegmentedControl[\s\S]*?prefetch=\{false\}/);

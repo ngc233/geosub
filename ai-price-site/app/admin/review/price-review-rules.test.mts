@@ -178,7 +178,8 @@ test("static App Store fallback decodes the original response bytes as UTF-8", (
   assert.match(appStoreCollector, /ReadAsByteArrayAsync\(\)/);
   assert.match(appStoreCollector, /RawContentStream/);
   assert.match(appStoreCollector, /New-Object Text\.UTF8Encoding\(\$false, \$true\)/);
-  assert.match(appStoreCollector, /Html = Get-Utf8ResponseContent -Response \$response/);
+  assert.match(appStoreCollector, /\$html = Get-Utf8ResponseContent -Response \$response/);
+  assert.match(appStoreCollector, /Html = \$html/);
   assert.doesNotMatch(appStoreCollector, /Html = \$response\.Content/);
 });
 
@@ -186,11 +187,11 @@ test("visible but unmatched App Store items remain retryable coverage gaps", () 
   assert.match(availabilitySemanticsSql, /'available_unmatched_items'/);
   assert.match(availabilitySemanticsSql, /item_count > 0/);
   assert.match(availabilitySemanticsSql, /subscription_item_count = 0/);
-  assert.match(appStoreCollector, /\$renderedPageHadNoItems = \$true/);
   assert.match(
     appStoreCollector,
-    /\$items\.Count -eq 0 -and !\$renderedPageHadNoItems/,
+    /\$items\.Count -eq 0[\s\S]*Falling back to browser rendering/,
   );
+  assert.match(appStoreCollector, /\$renderedPage\.Items\.Count -eq 0/);
   assert.match(
     appStoreCollector,
     /\$availabilityStatus = "available_unmatched_items"/,

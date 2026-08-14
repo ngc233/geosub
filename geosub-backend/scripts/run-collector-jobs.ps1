@@ -537,7 +537,7 @@ function Invoke-GenericWebSnapshot {
   }
 
   $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -MaximumRedirection 5 -TimeoutSec 45 -Headers @{
-    "User-Agent" = "GeoSubBot/0.1 (+https://geosub.local; pricing discovery)"
+    "User-Agent" = "GeoSubResearchBot/2.8 (+https://geosub.org/data-sources; contact: https://geosub.org/zh/contact)"
     "Accept-Language" = "en-US,en;q=0.9,zh-CN;q=0.8"
   }
 

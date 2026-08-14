@@ -14,6 +14,74 @@
 
 $ErrorActionPreference = "Stop"
 
+function Get-BoundedEnvironmentInteger {
+  param(
+    [string]$Name,
+    [int]$DefaultValue,
+    [int]$Minimum,
+    [int]$Maximum
+  )
+
+  $rawValue = [Environment]::GetEnvironmentVariable($Name)
+  $parsedValue = 0
+  if (
+    [string]::IsNullOrWhiteSpace($rawValue) -or
+    ![int]::TryParse($rawValue, [ref]$parsedValue)
+  ) {
+    return $DefaultValue
+  }
+
+  return [Math]::Min($Maximum, [Math]::Max($Minimum, $parsedValue))
+}
+
+function Test-EnvironmentFlagEnabled {
+  param(
+    [string]$Name,
+    [bool]$DefaultValue = $true
+  )
+
+  $rawValue = [Environment]::GetEnvironmentVariable($Name)
+  if ([string]::IsNullOrWhiteSpace($rawValue)) {
+    return $DefaultValue
+  }
+
+  return $rawValue.Trim().ToLowerInvariant() -notin @("0", "false", "no", "off", "disabled")
+}
+
+$AppStoreCollectionEnabled = Test-EnvironmentFlagEnabled -Name "GEOSUB_APP_STORE_COLLECTION_ENABLED"
+if (!$AppStoreCollectionEnabled) {
+  throw "App Store collection is disabled by GEOSUB_APP_STORE_COLLECTION_ENABLED. No storefront request was made."
+}
+
+$AppStoreRequestDelayMs = Get-BoundedEnvironmentInteger `
+  -Name "GEOSUB_APP_STORE_REQUEST_DELAY_MS" `
+  -DefaultValue 1000 `
+  -Minimum 250 `
+  -Maximum 10000
+$AppStoreMaxRetries = Get-BoundedEnvironmentInteger `
+  -Name "GEOSUB_APP_STORE_MAX_RETRIES" `
+  -DefaultValue 2 `
+  -Minimum 0 `
+  -Maximum 5
+$AppStoreCacheTtlMinutes = Get-BoundedEnvironmentInteger `
+  -Name "GEOSUB_APP_STORE_CACHE_TTL_MINUTES" `
+  -DefaultValue 720 `
+  -Minimum 0 `
+  -Maximum 1440
+$AppStoreUserAgent = if ([string]::IsNullOrWhiteSpace($env:GEOSUB_APP_STORE_USER_AGENT)) {
+  "GeoSubPriceResearch/2.8 (+https://geosub.org/data-sources; contact: https://geosub.org/zh/contact)"
+} else {
+  $env:GEOSUB_APP_STORE_USER_AGENT.Trim()
+}
+$AppStoreCacheDirectory = if ([string]::IsNullOrWhiteSpace($env:GEOSUB_APP_STORE_CACHE_DIR)) {
+  Join-Path ([IO.Path]::GetTempPath()) "geosub-app-store-cache"
+} else {
+  $env:GEOSUB_APP_STORE_CACHE_DIR.Trim()
+}
+$script:LastAppStoreRequestAt = $null
+
+[void][IO.Directory]::CreateDirectory($AppStoreCacheDirectory)
+
 if ([string]::IsNullOrWhiteSpace($ChromePath)) {
   if ($IsLinux) {
     foreach ($candidate in @("/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome", "/usr/bin/microsoft-edge")) {
@@ -661,6 +729,106 @@ function Get-Utf8ResponseContent {
   return [string]$Response.Content
 }
 
+function Get-AppStoreCachePath {
+  param(
+    [string]$Kind,
+    [string]$Url
+  )
+
+  $sha256 = [Security.Cryptography.SHA256]::Create()
+  try {
+    $bytes = [Text.Encoding]::UTF8.GetBytes("$Kind`n$Url")
+    $hash = ([BitConverter]::ToString($sha256.ComputeHash($bytes))).Replace("-", "").ToLowerInvariant()
+  } finally {
+    $sha256.Dispose()
+  }
+
+  return Join-Path $AppStoreCacheDirectory "$hash.$Kind"
+}
+
+function Get-FreshAppStoreCacheContent {
+  param([string]$Path)
+
+  if ($AppStoreCacheTtlMinutes -le 0 -or !(Test-Path -LiteralPath $Path)) {
+    return $null
+  }
+
+  $cacheFile = Get-Item -LiteralPath $Path
+  $cacheAge = (Get-Date).ToUniversalTime() - $cacheFile.LastWriteTimeUtc
+  if ($cacheAge.TotalMinutes -gt $AppStoreCacheTtlMinutes) {
+    return $null
+  }
+
+  $content = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8)
+  if ([string]::IsNullOrWhiteSpace($content)) {
+    return $null
+  }
+
+  return $content
+}
+
+function Set-AppStoreCacheContent {
+  param(
+    [string]$Path,
+    [string]$Content
+  )
+
+  if ($AppStoreCacheTtlMinutes -le 0 -or [string]::IsNullOrWhiteSpace($Content)) {
+    return
+  }
+
+  $temporaryPath = "$Path.$([Guid]::NewGuid().ToString('N')).tmp"
+  try {
+    [IO.File]::WriteAllText($temporaryPath, $Content, [Text.UTF8Encoding]::new($false))
+    Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
+  } finally {
+    Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
+  }
+}
+
+function Wait-AppStoreRequestSlot {
+  $now = Get-Date
+  $remainingDelayMs = $AppStoreRequestDelayMs
+  if ($null -ne $script:LastAppStoreRequestAt) {
+    $elapsedMs = ($now - $script:LastAppStoreRequestAt).TotalMilliseconds
+    $remainingDelayMs = [Math]::Max(0, $AppStoreRequestDelayMs - [int]$elapsedMs)
+  }
+
+  $jitterMs = Get-Random -Minimum 0 -Maximum 251
+  $totalDelayMs = $remainingDelayMs + $jitterMs
+  if ($totalDelayMs -gt 0) {
+    Start-Sleep -Milliseconds $totalDelayMs
+  }
+  $script:LastAppStoreRequestAt = Get-Date
+}
+
+function Test-RetryableAppStoreError {
+  param([object]$ErrorRecord)
+
+  $statusCode = $null
+  try {
+    if ($null -ne $ErrorRecord.Exception.Response.StatusCode) {
+      $statusCode = [int]$ErrorRecord.Exception.Response.StatusCode
+    }
+  } catch {
+    $statusCode = $null
+  }
+
+  if ($null -eq $statusCode) {
+    return $true
+  }
+
+  return $statusCode -in @(408, 425, 429) -or $statusCode -ge 500
+}
+
+function Wait-AppStoreRetryBackoff {
+  param([int]$Attempt)
+
+  $exponentialDelayMs = [Math]::Min(15000, 1000 * [Math]::Pow(2, $Attempt))
+  $jitterMs = Get-Random -Minimum 0 -Maximum 751
+  Start-Sleep -Milliseconds ([int]($exponentialDelayMs + $jitterMs))
+}
+
 function Get-AppStoreHtml {
   param(
     [string]$CountryCode,
@@ -669,19 +837,47 @@ function Get-AppStoreHtml {
   )
 
   $url = Get-AppStoreUrl -CountryCode $CountryCode -AppleAppId $AppleAppId -ConfiguredUrl $ConfiguredUrl
-  $response = Invoke-WebRequest `
-    -Uri $url `
-    -UseBasicParsing `
-    -TimeoutSec 30 `
-    -Headers @{
-      "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
-      "Accept-Language" = "en-US,en;q=0.9"
+  $cachePath = Get-AppStoreCachePath -Kind "html" -Url $url
+  $cachedHtml = Get-FreshAppStoreCacheContent -Path $cachePath
+  if ($null -ne $cachedHtml) {
+    Write-Host "Using fresh App Store HTML cache for $CountryCode."
+    return [pscustomobject]@{
+      Url = $url
+      Html = $cachedHtml
+      FromCache = $true
     }
-
-  return [pscustomobject]@{
-    Url = $url
-    Html = Get-Utf8ResponseContent -Response $response
   }
+
+  for ($attempt = 0; $attempt -le $AppStoreMaxRetries; $attempt += 1) {
+    try {
+      Wait-AppStoreRequestSlot
+      $response = Invoke-WebRequest `
+        -Uri $url `
+        -UseBasicParsing `
+        -TimeoutSec 30 `
+        -Headers @{
+          "User-Agent" = $AppStoreUserAgent
+          "Accept-Language" = "en-US,en;q=0.9"
+        }
+      $html = Get-Utf8ResponseContent -Response $response
+      Set-AppStoreCacheContent -Path $cachePath -Content $html
+
+      return [pscustomobject]@{
+        Url = $url
+        Html = $html
+        FromCache = $false
+      }
+    } catch {
+      if ($attempt -ge $AppStoreMaxRetries -or !(Test-RetryableAppStoreError -ErrorRecord $_)) {
+        throw
+      }
+
+      Write-Host "Transient App Store HTML request failure for $CountryCode. Retry $($attempt + 1)/$AppStoreMaxRetries."
+      Wait-AppStoreRetryBackoff -Attempt $attempt
+    }
+  }
+
+  throw "App Store HTML request exhausted its retry budget for $CountryCode."
 }
 
 function Get-AppStoreRenderedPage {
@@ -692,38 +888,79 @@ function Get-AppStoreRenderedPage {
   )
 
   $scriptPath = Join-Path $PSScriptRoot "render-app-store-prices.mjs"
-  $outputPath = Join-Path ([IO.Path]::GetTempPath()) "geosub-app-store-$([Guid]::NewGuid().ToString('N')).json"
-  $renderArgs = @(
-    $scriptPath,
-    "--country", $CountryCode,
-    "--app-id", $AppleAppId,
-    "--chrome-path", $ChromePath,
-    "--output-file", $outputPath
-  )
+  $url = Get-AppStoreUrl -CountryCode $CountryCode -AppleAppId $AppleAppId -ConfiguredUrl $ConfiguredUrl
+  $cachePath = Get-AppStoreCachePath -Kind "json" -Url $url
+  $resultJson = Get-FreshAppStoreCacheContent -Path $cachePath
+  $result = $null
 
-  if (![string]::IsNullOrWhiteSpace($ConfiguredUrl)) {
-    $renderArgs += @("--url", $ConfiguredUrl)
+  if ($null -ne $resultJson) {
+    try {
+      $result = $resultJson | ConvertFrom-Json
+      if (![bool]$result.ok -or @($result.items).Count -eq 0) {
+        $result = $null
+      } else {
+        Write-Host "Using fresh rendered App Store cache for $CountryCode."
+      }
+    } catch {
+      $result = $null
+    }
   }
 
-  try {
-    node @renderArgs
+  if ($null -eq $result) {
+    for ($attempt = 0; $attempt -le $AppStoreMaxRetries; $attempt += 1) {
+      $outputPath = Join-Path ([IO.Path]::GetTempPath()) "geosub-app-store-$([Guid]::NewGuid().ToString('N')).json"
+      $renderArgs = @(
+        $scriptPath,
+        "--country", $CountryCode,
+        "--app-id", $AppleAppId,
+        "--chrome-path", $ChromePath,
+        "--output-file", $outputPath,
+        "--user-agent", $AppStoreUserAgent
+      )
 
-    if ($LASTEXITCODE -ne 0) {
-      throw "Browser-rendered App Store collection failed with exit code $LASTEXITCODE."
+      if (![string]::IsNullOrWhiteSpace($ConfiguredUrl)) {
+        $renderArgs += @("--url", $ConfiguredUrl)
+      }
+
+      try {
+        Wait-AppStoreRequestSlot
+        node @renderArgs
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Browser-rendered App Store collection failed with exit code $LASTEXITCODE."
+        }
+
+        if (!(Test-Path -LiteralPath $outputPath)) {
+          throw "Browser-rendered App Store collection did not produce a result file."
+        }
+
+        $resultJson = [IO.File]::ReadAllText($outputPath, [Text.Encoding]::UTF8).Trim()
+        if ([string]::IsNullOrWhiteSpace($resultJson)) {
+          throw "Browser-rendered App Store collection produced an empty result file."
+        }
+
+        $result = $resultJson | ConvertFrom-Json
+        if (![bool]$result.ok -or @($result.items).Count -eq 0) {
+          throw "Browser-rendered App Store collection returned no subscription items."
+        }
+
+        Set-AppStoreCacheContent -Path $cachePath -Content $resultJson
+        break
+      } catch {
+        if ($attempt -ge $AppStoreMaxRetries -or !(Test-RetryableAppStoreError -ErrorRecord $_)) {
+          throw
+        }
+
+        Write-Host "Transient browser-rendered App Store failure for $CountryCode. Retry $($attempt + 1)/$AppStoreMaxRetries."
+        Wait-AppStoreRetryBackoff -Attempt $attempt
+      } finally {
+        Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
+      }
     }
+  }
 
-    if (!(Test-Path -LiteralPath $outputPath)) {
-      throw "Browser-rendered App Store collection did not produce a result file."
-    }
-
-    $resultJson = [IO.File]::ReadAllText($outputPath, [Text.Encoding]::UTF8).Trim()
-    if ([string]::IsNullOrWhiteSpace($resultJson)) {
-      throw "Browser-rendered App Store collection produced an empty result file."
-    }
-
-    $result = $resultJson | ConvertFrom-Json
-  } finally {
-    Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
+  if ($null -eq $result) {
+    throw "Browser-rendered App Store request exhausted its retry budget for $CountryCode."
   }
 
   $items = @($result.items | ForEach-Object {
@@ -1730,33 +1967,30 @@ foreach ($countryCode in $CountryCodes) {
   $collectorName = "collect-app-store-prices.ps1"
   $page = $null
   $items = @()
-  $renderedPageHadNoItems = $false
 
   try {
-    $renderedPage = Get-AppStoreRenderedPage -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
-    if ($renderedPage.Items.Count -eq 0) {
-      $renderedPageHadNoItems = $true
-      throw "No in-app purchases found in rendered App Store page."
+    $page = Get-AppStoreHtml -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
+    $items = @(Get-InAppPurchases -Html $page.Html)
+    if ($items.Count -eq 0) {
+      throw "No in-app purchases found in static App Store HTML."
     }
-
-    $page = [pscustomobject]@{
-      Url = $renderedPage.Url
-      FinalUrl = $renderedPage.FinalUrl
-      Status = $renderedPage.Status
-    }
-    $items = @($renderedPage.Items)
-    $parserVersion = $renderedPage.ParserVersion
-    $collectorName = $renderedPage.CollectorName
   } catch {
-    Write-Host "Rendered App Store collection failed for $code. Falling back to static HTML."
+    Write-Host "Lightweight App Store collection failed for $code. Falling back to browser rendering."
     Write-Host $_.Exception.Message
     try {
-      $page = Get-AppStoreHtml -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
-      $items = @(Get-InAppPurchases -Html $page.Html)
-
-      if ($items.Count -eq 0 -and !$renderedPageHadNoItems) {
-        throw "No in-app purchases found in static App Store HTML."
+      $renderedPage = Get-AppStoreRenderedPage -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
+      if ($renderedPage.Items.Count -eq 0) {
+        throw "No in-app purchases found in rendered App Store page."
       }
+
+      $page = [pscustomobject]@{
+        Url = $renderedPage.Url
+        FinalUrl = $renderedPage.FinalUrl
+        Status = $renderedPage.Status
+      }
+      $items = @($renderedPage.Items)
+      $parserVersion = $renderedPage.ParserVersion
+      $collectorName = $renderedPage.CollectorName
     } catch {
       $message = $_.Exception.Message
       $status = Get-AvailabilityStatusFromError -Message $message

@@ -1,14 +1,16 @@
 import AdminLink from "@/components/admin/AdminLink";
+import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
+import SegmentedControl from "../../../components/ui/SegmentedControl";
+import {
+  adminOperationalStatusMeta,
+  assessPlanOperationalStatus,
+  countAdminOperationalAssessments,
+  getAdminOperationalTotal,
+  isArchivedPublishStatus,
+  type AdminOperationalStatus,
+} from "../../../lib/admin-operational-status";
 import { prisma } from "../../../lib/prisma";
-
-function statusLabel(status: string) {
-  if (status === "PUBLISHED") return "已发布";
-  if (status === "DRAFT") return "草稿";
-  if (status === "REVIEW") return "待审核";
-  if (status === "ARCHIVED") return "已归档";
-  return status;
-}
 
 function cycleLabel(cycle: string) {
   if (cycle === "MONTHLY") return "月付";
@@ -21,18 +23,6 @@ function cycleLabel(cycle: string) {
   return cycle;
 }
 
-function statusClassName(status: string) {
-  if (status === "PUBLISHED") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  }
-
-  if (status === "DRAFT") {
-    return "bg-amber-50 text-amber-700 ring-amber-200";
-  }
-
-  return "bg-slate-100 text-slate-600 ring-slate-200";
-}
-
 function formatUsd(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "—";
@@ -41,7 +31,17 @@ function formatUsd(value?: number | null) {
   return `$${value.toFixed(2)}`;
 }
 
-export default async function AdminPlansPage() {
+export default async function AdminPlansPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ state?: string }>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const selectedState = ["not_started", "pending", "exception", "published"].includes(
+    String(params.state),
+  )
+    ? (String(params.state) as AdminOperationalStatus)
+    : "all";
   const plans = await prisma.plan.findMany({
     orderBy: [
       {
@@ -59,6 +59,7 @@ export default async function AdminPlansPage() {
     include: {
       product: true,
       regionPrices: {
+        where: { status: { not: "ARCHIVED" } },
         include: {
           country: true,
         },
@@ -66,14 +67,57 @@ export default async function AdminPlansPage() {
     },
   });
 
-  const publishedPlans = plans.filter((plan) => plan.status === "PUBLISHED");
-  const totalPrices = plans.reduce(
+  const archivedCount = plans.filter(
+    (plan) =>
+      isArchivedPublishStatus(String(plan.status)) ||
+      isArchivedPublishStatus(String(plan.product.status)),
+  ).length;
+  const activePlans = plans.filter(
+    (plan) =>
+      !isArchivedPublishStatus(String(plan.status)) &&
+      !isArchivedPublishStatus(String(plan.product.status)),
+  );
+  const assessPlan = (plan: (typeof plans)[number]) => {
+    const verifiedPriceCount = plan.regionPrices.filter(
+      (price) => price.dataQuality === "VERIFIED" && price.status === "PUBLISHED",
+    ).length;
+    const estimatedPriceCount = plan.regionPrices.filter(
+      (price) => price.dataQuality === "ESTIMATED",
+    ).length;
+    const pendingPriceCount = plan.regionPrices.filter(
+      (price) => price.dataQuality === "PENDING_REVIEW" || price.status !== "PUBLISHED",
+    ).length;
+    const stalePriceCount = plan.regionPrices.filter(
+      (price) => price.dataQuality === "STALE",
+    ).length;
+    const missingSourceCount = plan.regionPrices.filter(
+      (price) => !price.primarySourceId,
+    ).length;
+
+    return assessPlanOperationalStatus({
+      publishStatus: String(plan.status),
+      priceCount: plan.regionPrices.length,
+      verifiedPriceCount,
+      estimatedPriceCount,
+      pendingPriceCount,
+      stalePriceCount,
+      missingSourceCount,
+    });
+  };
+  const operationalCounts = countAdminOperationalAssessments(activePlans.map(assessPlan));
+  const activeTotal = getAdminOperationalTotal(operationalCounts);
+  const visiblePlans = selectedState === "all"
+    ? activePlans
+    : activePlans.filter((plan) => assessPlan(plan)?.status === selectedState);
+  const totalPrices = activePlans.reduce(
     (sum, plan) => sum + plan.regionPrices.length,
     0
   );
 
-  const plansWithPrices = plans.filter((plan) => plan.regionPrices.length > 0);
-  const plansWithoutPrices = plans.filter((plan) => plan.regionPrices.length === 0);
+  const plansWithPrices = activePlans.filter((plan) => plan.regionPrices.length > 0);
+  const plansWithoutPrices = activePlans.filter((plan) => plan.regionPrices.length === 0);
+  const stateHref = (state: "all" | AdminOperationalStatus) =>
+    state === "all" ? "/admin/plans" : `/admin/plans?state=${state}`;
 
   return (
     <div>
@@ -87,17 +131,17 @@ export default async function AdminPlansPage() {
         <AdminCard>
           <div className="text-sm font-bold text-slate-500">套餐总数</div>
           <div className="mt-2 text-2xl font-black text-slate-950">
-            {plans.length}
+            {activeTotal}
           </div>
           <div className="mt-2 text-sm text-slate-500">
-            已录入套餐数量。
+            活跃套餐数量；归档 {archivedCount} 个另计。
           </div>
         </AdminCard>
 
         <AdminCard>
           <div className="text-sm font-bold text-slate-500">已发布</div>
           <div className="mt-2 text-2xl font-black text-slate-950">
-            {publishedPlans.length}
+            {operationalCounts.published}
           </div>
           <div className="mt-2 text-sm text-slate-500">
             可用于前台展示的套餐。
@@ -153,6 +197,25 @@ export default async function AdminPlansPage() {
           </div>
         </div>
 
+        <div className="mb-5 max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <SegmentedControl
+            ariaLabel="套餐运营状态"
+            value={selectedState}
+            tone="blue"
+            className="min-w-[520px]"
+            items={[
+              { label: `全部 ${activeTotal}`, value: "all", href: stateHref("all") },
+              ...(["exception", "pending", "not_started", "published"] as AdminOperationalStatus[]).map(
+                (status) => ({
+                  label: `${adminOperationalStatusMeta[status].label} ${operationalCounts[status]}`,
+                  value: status,
+                  href: stateHref(status),
+                }),
+              ),
+            ]}
+          />
+        </div>
+
         <div className="overflow-hidden rounded-xl border border-slate-200">
           <div className="grid grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
             <div>产品</div>
@@ -165,7 +228,8 @@ export default async function AdminPlansPage() {
           </div>
 
           <div className="divide-y divide-slate-100 bg-white">
-            {plans.map((plan) => {
+            {visiblePlans.map((plan) => {
+              const assessment = assessPlan(plan);
               const prices = plan.regionPrices
                 .map((price) => Number(price.priceUsd))
                 .filter((value) => !Number.isNaN(value));
@@ -205,14 +269,13 @@ export default async function AdminPlansPage() {
                   </div>
 
                   <div>
-                    <span
-                      className={[
-                        "inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1",
-                        statusClassName(String(plan.status)),
-                      ].join(" ")}
-                    >
-                      {statusLabel(String(plan.status))}
-                    </span>
+                    <AdminStatusBadge
+                      status={assessment?.status ?? "not_started"}
+                      title={assessment?.reason}
+                    />
+                    <div className="mt-1 max-w-[180px] text-xs leading-5 text-slate-500">
+                      {assessment?.reason}
+                    </div>
                   </div>
 
                   <div className="font-black text-emerald-700">
@@ -226,7 +289,7 @@ export default async function AdminPlansPage() {
               );
             })}
 
-            {plans.length === 0 ? (
+            {visiblePlans.length === 0 ? (
               <div className="px-5 py-12 text-center text-sm font-bold text-slate-400">
                 暂无套餐数据。
               </div>

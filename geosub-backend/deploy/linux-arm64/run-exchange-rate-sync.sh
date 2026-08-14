@@ -17,6 +17,7 @@ DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 SHADOW_VERIFY="${GEOSUB_EXCHANGE_RATE_SHADOW_VERIFY:-0}"
+RUNTIME_MODE="${GEOSUB_EXCHANGE_RATE_RUNTIME:-legacy}"
 
 if [[ -z "${QUOTE_CURRENCIES//[[:space:],]/}" ]]; then
   echo "No quote currencies configured. Set GEOSUB_EXCHANGE_RATE_QUOTES in $ENV_FILE."
@@ -25,15 +26,33 @@ fi
 
 cd "$BACKEND_DIR"
 
-pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass \
-  -File "$BACKEND_DIR/scripts/sync-exchange-rates.ps1" \
-  -BaseCurrency "$BASE_CURRENCY" \
-  -QuoteCurrencies "$QUOTE_CURRENCIES" \
-  -ContainerName "$DB_CONTAINER" \
-  -DbName "$DB_NAME" \
-  -DbUser "$DB_USER"
+case "$RUNTIME_MODE" in
+  legacy)
+    pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass \
+      -File "$BACKEND_DIR/scripts/sync-exchange-rates.ps1" \
+      -BaseCurrency "$BASE_CURRENCY" \
+      -QuoteCurrencies "$QUOTE_CURRENCIES" \
+      -ContainerName "$DB_CONTAINER" \
+      -DbName "$DB_NAME" \
+      -DbUser "$DB_USER"
+    ;;
+  node)
+    if ! node "$BACKEND_DIR/scripts/check-exchange-rate-shadow-evidence.mjs" --required-cycles 3; then
+      echo "Exchange-rate Node cutover refused: three consecutive shadow cycles are required." >&2
+      exit 1
+    fi
 
-if [[ "$SHADOW_VERIFY" == "1" ]]; then
+    node "$BACKEND_DIR/scripts/sync-exchange-rates.mjs" \
+      --base "$BASE_CURRENCY" \
+      --quotes "$QUOTE_CURRENCIES"
+    ;;
+  *)
+    echo "Invalid GEOSUB_EXCHANGE_RATE_RUNTIME=$RUNTIME_MODE; expected legacy or node." >&2
+    exit 2
+    ;;
+esac
+
+if [[ "$RUNTIME_MODE" == "legacy" && "$SHADOW_VERIFY" == "1" ]]; then
   if ! node "$BACKEND_DIR/scripts/verify-exchange-rate-shadow.mjs"; then
     echo "Warning: exchange-rate shadow comparison failed; the legacy sync remains authoritative." >&2
   fi

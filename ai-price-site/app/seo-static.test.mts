@@ -12,6 +12,7 @@ import {
   seoIndexableLocales,
   seoSitemapBudgets,
 } from "../lib/seo-indexing-policy.ts";
+import { getCoreGuideDefinition } from "../lib/core-guide-content.ts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
@@ -114,7 +115,11 @@ test("known legacy Search Console URLs resolve without creating thin pages", () 
   assert.match(sitemap, /productRoutes/);
   assert.doesNotMatch(pricingDetail, /maandabonnement/);
   assert.match(rootLayout, /canonical: canonicalPath/);
-  assert.match(chineseGiftCardGuide, /title="数字礼品卡购买前检查"/);
+  assert.match(chineseGiftCardGuide, /CmsBackedGuidePage/);
+  assert.equal(
+    getCoreGuideDefinition("zh", "gift-card-guide").title,
+    "数字礼品卡购买前检查",
+  );
   assert.match(sitemap, /indexableStaticGuidePaths\.map/);
   assert.ok(indexableStaticGuidePaths.includes("/guides/gift-card-guide"));
   assert.match(nextConfig, /value:\s*"www\.geosub\.org"/);

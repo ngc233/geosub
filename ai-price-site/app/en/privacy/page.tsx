@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -34,6 +35,7 @@ export default function EnglishTrustPage() {
             GeoSub may use Google Analytics or Google Tag Manager to measure page views, general interactions and site performance. These measurements help improve content and reliability; they are not used to request payment details or sensitive identity information.
           </p>
         </div>
+        <PrivacyDisclosure locale="en" />
       </section>
     </main>
   );

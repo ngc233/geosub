@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ArabicInfoPage from "../../../components/ArabicInfoPage";
+import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
   title: "سياسة الخصوصية",
@@ -29,6 +30,7 @@ export default function ArabicPrivacyPage() {
           للاستفسار عن الخصوصية، استخدم وسيلة التواصل المنشورة في الموقع.
         </p>
       </div>
+      <PrivacyDisclosure locale="ar" />
     </ArabicInfoPage>
   );
 }

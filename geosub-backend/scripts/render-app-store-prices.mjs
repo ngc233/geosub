@@ -17,6 +17,10 @@ const country = (args.get("country") ?? "US").toLowerCase();
 const appId = args.get("app-id") ?? "6448311069";
 const configuredUrl = args.get("url");
 const outputFile = args.get("output-file");
+const userAgent =
+  args.get("user-agent") ??
+  process.env.GEOSUB_APP_STORE_USER_AGENT ??
+  "GeoSubPriceResearch/2.8 (+https://geosub.org/data-sources; contact: https://geosub.org/zh/contact)";
 const executablePath = resolveBrowserPath(args.get("chrome-path") ?? process.env.CHROME_PATH);
 const url = getAppStoreUrl(country, appId, configuredUrl);
 
@@ -105,8 +109,10 @@ const browser = await chromium.launch({
 try {
   const context = await browser.newContext({
     locale: "en-US",
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+    userAgent,
+    extraHTTPHeaders: {
+      "Accept-Language": "en-US,en;q=0.9"
+    },
     viewport: { width: 1365, height: 900 }
   });
 

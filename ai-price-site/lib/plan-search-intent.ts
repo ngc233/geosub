@@ -18,7 +18,9 @@ function lowerFirst(value: string) {
   return value ? value[0].toLocaleLowerCase("en") + value.slice(1) : value;
 }
 
-function clampDescription(value: string, maxLength = 180) {
+const SEO_DESCRIPTION_MAX_LENGTH = 160;
+
+function clampDescription(value: string, maxLength = SEO_DESCRIPTION_MAX_LENGTH) {
   const compact = value.replace(/\s+/g, " ").trim();
   if (compact.length <= maxLength) return compact;
 
@@ -62,7 +64,11 @@ function buildIntentDescription({
   separator: string;
   context: string;
 }) {
-  const available = 180 - prefix.length - separator.length - context.length;
+  const available =
+    SEO_DESCRIPTION_MAX_LENGTH -
+    prefix.length -
+    separator.length -
+    context.length;
   if (available < 24) {
     return clampDescription(`${prefix}${difference}${separator}${context}`);
   }
@@ -124,17 +130,17 @@ export function getPlanSearchIntentCopy({
     };
   }
 
-  const priceContext =
+  const priceLead =
     lowestCountry && lowestPrice
-      ? `Lowest reviewed: ${lowestPrice} in ${lowestCountry} across ${regionCount} regions.`
-      : `Compare prices across ${regionCount} reviewed regions.`;
+      ? `${displayName} starts at ${lowestPrice} per month in ${lowestCountry}.`
+      : `${displayName} prices are compared across ${regionCount} reviewed regions.`;
 
   return {
     description: buildIntentDescription({
-      prefix: `${displayName} price: `,
+      prefix: `${priceLead} `,
       difference: primaryDifference,
-      separator: ". ",
-      context: priceContext,
+      separator: " ",
+      context: `Compare ${regionCount} reviewed App Store regions.`,
     }),
     faqs: [
       {

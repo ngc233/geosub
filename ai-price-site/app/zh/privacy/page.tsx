@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
   title: "隐私政策",
@@ -34,6 +35,7 @@ export default function TrustPage() {
             GeoSub 可能使用 Google Analytics 或 Tag Manager 统计页面访问和点击，以改进内容与性能。统计用途会在本页说明，并避免收集与价格比较无关的敏感身份信息。
           </p>
         </div>
+        <PrivacyDisclosure locale="zh" />
       </section>
     </main>
   );

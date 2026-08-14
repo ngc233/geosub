@@ -1,5 +1,5 @@
 import AdminLink from "@/components/admin/AdminLink";
-import { Archive, FileText, Plus, Trash2 } from "lucide-react";
+import { Archive, Eye, FileText, Plus, Trash2 } from "lucide-react";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import {
@@ -8,6 +8,7 @@ import {
   getArticleTypeLabel,
   getAdminArticles,
 } from "../../../lib/articles";
+import { evaluateArticleContentQuality } from "../../../lib/article-content-quality";
 import { archiveArticleAction, moveArticleToTrashAction } from "./actions";
 
 function statusClassName(status: string) {
@@ -18,7 +19,23 @@ function statusClassName(status: string) {
   return "bg-zinc-50 text-zinc-600 ring-zinc-200";
 }
 
-export default async function AdminArticlesPage() {
+const articleFilters = [
+  ["all", "全部"],
+  ["published", "已发布"],
+  ["editing", "编辑中"],
+  ["needs-work", "待完善"],
+  ["archived", "已下架"],
+] as const;
+
+export default async function AdminArticlesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ state?: string }>;
+}) {
+  const query = searchParams ? await searchParams : {};
+  const selectedState = articleFilters.some(([value]) => value === query.state)
+    ? query.state || "all"
+    : "all";
   const [articles, trashedArticles] = await Promise.all([
     getAdminArticles(),
     getAdminArticles({ trashed: true }),
@@ -27,9 +44,39 @@ export default async function AdminArticlesPage() {
   const draftCount = articles.filter((article) => article.status === "DRAFT").length;
   const archivedCount = articles.filter((article) => article.status === "ARCHIVED").length;
   const indexableCount = articles.filter((article) => !article.noindex && article.status === "PUBLISHED").length;
-  const missingSeoCount = articles.filter(
-    (article) => !article.seoTitle || !article.seoDescription,
+  const articleRows = articles.map((article) => ({
+    article,
+    quality: evaluateArticleContentQuality({
+      locale: article.locale === "EN" ? "EN" : "ZH",
+      status: article.status,
+      title: article.title,
+      excerpt: article.excerpt,
+      bodyMarkdown: article.bodyMarkdown,
+      seoTitle: article.seoTitle,
+      seoDescription: article.seoDescription,
+      seoKeywords: article.seoKeywords,
+      canonicalUrl: article.canonicalUrl,
+      noindex: article.noindex,
+      relatedProductCount: article.relations.filter(
+        (relation) => relation.relationType === "RELATED_PRODUCT",
+      ).length,
+      relatedArticleCount: article.relations.filter(
+        (relation) => relation.relationType === "RELATED_ARTICLE",
+      ).length,
+    }),
+  }));
+  const needsWorkCount = articleRows.filter(
+    ({ quality }) => quality.status !== "ready",
   ).length;
+  const visibleRows = articleRows.filter(({ article, quality }) => {
+    if (selectedState === "published") return article.status === "PUBLISHED";
+    if (selectedState === "editing") {
+      return ["DRAFT", "REVIEW", "SCHEDULED"].includes(article.status);
+    }
+    if (selectedState === "needs-work") return quality.status !== "ready";
+    if (selectedState === "archived") return article.status === "ARCHIVED";
+    return true;
+  });
 
   return (
     <div>
@@ -91,13 +138,41 @@ export default async function AdminArticlesPage() {
           <div className="mt-2 text-sm text-slate-500">不会在前台展示。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">SEO 待补</div>
-          <div className="mt-2 text-3xl font-black text-amber-700">{missingSeoCount}</div>
-          <div className="mt-2 text-sm text-slate-500">缺标题或描述的文章。</div>
+          <div className="text-sm font-bold text-slate-500">内容待完善</div>
+          <div className="mt-2 text-3xl font-black text-amber-700">{needsWorkCount}</div>
+          <div className="mt-2 text-sm text-slate-500">正文、内链、搜索表达或技术信息仍有缺口。</div>
         </AdminCard>
       </div>
 
       <AdminCard>
+        <div className="mb-5 flex flex-wrap gap-2">
+          {articleFilters.map(([value, label]) => {
+            const active = selectedState === value;
+            const count = articleRows.filter(({ article, quality }) => {
+              if (value === "published") return article.status === "PUBLISHED";
+              if (value === "editing") return ["DRAFT", "REVIEW", "SCHEDULED"].includes(article.status);
+              if (value === "needs-work") return quality.status !== "ready";
+              if (value === "archived") return article.status === "ARCHIVED";
+              return true;
+            }).length;
+
+            return (
+              <AdminLink
+                key={value}
+                href={value === "all" ? "/admin/articles" : `/admin/articles?state=${value}`}
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-black transition ${
+                  active
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700"
+                }`}
+              >
+                {label}
+                <span className={active ? "text-blue-100" : "text-slate-400"}>{count}</span>
+              </AdminLink>
+            );
+          })}
+        </div>
+
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
             <h2 className="text-lg font-black text-slate-950">内容列表</h2>
@@ -116,21 +191,21 @@ export default async function AdminArticlesPage() {
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <div className="min-w-[980px]">
-            <div className="grid grid-cols-[minmax(220px,1.4fr)_110px_110px_110px_130px_120px_170px] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+            <div className="grid grid-cols-[minmax(220px,1.4fr)_100px_100px_170px_120px_110px_200px] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
               <div>标题</div>
               <div>类型</div>
               <div>状态</div>
-              <div>SEO</div>
+              <div>内容质量</div>
               <div>发布时间</div>
               <div>更新</div>
               <div>操作</div>
             </div>
 
             <div className="divide-y divide-slate-100 bg-white">
-              {articles.map((article) => (
+              {visibleRows.map(({ article, quality }) => (
                 <div
                   key={article.id}
-                  className="grid grid-cols-[minmax(220px,1.4fr)_110px_110px_110px_130px_120px_170px] items-center px-5 py-4 text-sm"
+                  className="grid grid-cols-[minmax(220px,1.4fr)_100px_100px_170px_120px_110px_200px] items-center px-5 py-4 text-sm"
                 >
                   <div>
                     <AdminLink
@@ -161,19 +236,18 @@ export default async function AdminArticlesPage() {
                   </div>
 
                   <div>
-                    {article.noindex ? (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-500 ring-1 ring-slate-200">
-                        不收录
-                      </span>
-                    ) : article.seoTitle && article.seoDescription ? (
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-200">
-                        完整
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
-                        待补
-                      </span>
-                    )}
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-black ring-1 ${
+                      quality.status === "ready"
+                        ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                        : quality.status === "needs_work"
+                          ? "bg-amber-50 text-amber-700 ring-amber-200"
+                          : "bg-red-50 text-red-700 ring-red-200"
+                    }`}>
+                      {quality.score} · {quality.statusLabel}
+                    </span>
+                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                      {quality.nextAction}
+                    </div>
                   </div>
 
                   <div className="text-xs font-bold text-slate-500">
@@ -191,7 +265,15 @@ export default async function AdminArticlesPage() {
                     >
                       编辑
                     </AdminLink>
-                    {article.status === "PUBLISHED" && !article.noindex ? (
+                    <AdminLink
+                      href={`/admin/articles/${article.id}/preview`}
+                      target="_blank"
+                      className="inline-flex items-center gap-1 text-xs font-black text-slate-600 hover:text-slate-950"
+                    >
+                      <Eye size={13} />
+                      预览
+                    </AdminLink>
+                    {article.status === "PUBLISHED" ? (
                       <AdminLink
                         href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                         target="_blank"
@@ -226,16 +308,20 @@ export default async function AdminArticlesPage() {
                 </div>
               ))}
 
-              {articles.length === 0 ? (
+              {visibleRows.length === 0 ? (
                 <div className="px-5 py-16 text-center">
                   <FileText className="mx-auto text-slate-300" size={36} />
-                  <div className="mt-4 text-sm font-bold text-slate-500">还没有文章。</div>
-                  <AdminLinkButton
-                    href="/admin/articles/new"
-                    className="mt-5"
-                  >
-                    新建第一篇
-                  </AdminLinkButton>
+                  <div className="mt-4 text-sm font-bold text-slate-500">
+                    {articles.length === 0 ? "还没有文章。" : "当前筛选下没有文章。"}
+                  </div>
+                  {articles.length === 0 ? (
+                    <AdminLinkButton
+                      href="/admin/articles/new"
+                      className="mt-5"
+                    >
+                      新建第一篇
+                    </AdminLinkButton>
+                  ) : null}
                 </div>
               ) : null}
             </div>

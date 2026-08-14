@@ -94,6 +94,18 @@ Each attempt appends one versioned JSON object to
 successful legacy task authoritative. Three separate scheduled cycles must pass before a
 production wrapper cutover is considered.
 
+The Linux wrapper now exposes a reversible runtime selector:
+
+- `GEOSUB_EXCHANGE_RATE_RUNTIME=legacy` is the default and remains the writer.
+- `GEOSUB_EXCHANGE_RATE_RUNTIME=node` first runs the three-cycle evidence gate and refuses
+  to write when the evidence is missing, invalid, or stale.
+- rolling back only requires restoring `legacy` and restarting the service; the retained
+  PowerShell script remains available for at least one successful release.
+
+Adding this selector does not approve the production cutover. The manifest remains
+`shadow-ready` until server evidence is reviewed and the environment change is made in a
+separate deployment.
+
 `check-exchange-rate-shadow-evidence.mjs` enforces that observation rule. It deduplicates
 repeated checks by legacy sync-run ID, counts only consecutive passing runs, and resets the
 count when the newest distinct run fails. The checker never changes the wrapper or database;

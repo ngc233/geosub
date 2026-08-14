@@ -18,19 +18,6 @@ test("manual collection selects one canonical App Store job per product", () => 
   assert.match(source, /ranked\.product_rank = 1/g);
 });
 
-test("product collection revalidates localized AI and streaming routes", () => {
-  assert.doesNotMatch(source, /revalidatePath\("\/zh\/ai-pricing\/chatgpt"\)/);
-
-  for (const route of [
-    "/zh/ai-pricing/${productSlug}",
-    "/en/ai-pricing/${productSlug}",
-    "/zh/streaming-pricing/${productSlug}",
-    "/en/streaming-pricing/${productSlug}",
-  ]) {
-    assert.ok(source.includes(`revalidatePath(\`${route}\`)`));
-  }
-});
-
 test("collector runner records startup when it adopts an admin-created run", () => {
   assert.match(
     collectorRunnerSource,

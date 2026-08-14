@@ -14,11 +14,10 @@ import {
   LogOut,
   Menu,
   MousePointerClick,
-  Radar,
+  Route,
   Search,
   SearchCheck,
   Settings,
-  ShieldCheck,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -35,14 +34,13 @@ const navGroups: Array<{
     label: "今日工作",
     items: [
       { label: "总览", href: "/admin", icon: LayoutDashboard },
-      { label: "采集与审核", href: "/admin/review", icon: ShieldCheck },
+      { label: "产品流水线", href: "/admin/pipeline", icon: Route },
       { label: "数据质量", href: "/admin/data-quality", icon: Activity },
     ],
   },
   {
     label: "数据生产",
     items: [
-      { label: "新产品接入", href: "/admin/discovery", icon: Radar },
       { label: "产品库", href: "/admin/products", icon: Boxes },
       { label: "套餐库", href: "/admin/plans", icon: Layers },
     ],
@@ -76,6 +74,14 @@ const navGroups: Array<{
 function isActive(pathname: string, href: string) {
   if (href === "/admin") {
     return pathname === "/admin";
+  }
+  if (href === "/admin/pipeline") {
+    return [
+      "/admin/pipeline",
+      "/admin/discovery",
+      "/admin/review",
+      "/admin/collector-jobs",
+    ].some((route) => pathname.startsWith(route));
   }
 
   return pathname.startsWith(href);

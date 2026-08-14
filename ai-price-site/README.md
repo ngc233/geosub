@@ -52,16 +52,17 @@ variables. `DATABASE_URL` is required. Directus, operational notifications,
 cron authorization and runtime tuning are optional and remain disabled or use
 documented defaults when left blank.
 
-`SEO_PRODUCT_QUALITY_GATE=enforce` makes sitemap inclusion and page robots use
-the same product-quality decision. Do not enable it in production until the
-admin SEO preview has been reviewed.
+Product-quality enforcement is enabled by default, so sitemap inclusion and
+page robots use the same reviewed decision. Set
+`SEO_PRODUCT_QUALITY_GATE=observe` to keep weak pages visible to search while
+auditing or rolling back the gate.
 
 Plans classified as legacy renewal tiers remain accessible for existing
 subscribers, but are always excluded from sitemap promotion and use
 `noindex, follow` in every product-quality gate mode.
 
 The full release gate generates the database-backed sitemap and enforces a
-120 URL total budget, with separate limits for product plans, guide details,
+140 URL total budget, with separate limits for product plans, guide details,
 and currency pairs.
 
 Real `.env` files must stay out of Git.

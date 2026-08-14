@@ -28,7 +28,7 @@ const staticDetailCopy = withTraditionalChinese({
     backToPricing: "← 返回订阅价格列表",
     visitOfficial: "访问官方网站 ↗",
     plans: "套餐",
-    faqTitle: (productName) => `${productName} 订阅定价 FAQ`,
+    faqTitle: (productName) => `${productName} 订阅价格常见问题`,
     empty: {
       eyebrow: "价格待审核",
       title: (productName, planName) => `${productName} ${planName} 价格正在审核`,
@@ -212,7 +212,7 @@ function getPageTitle(
   const name = getPlanDisplayName(productName, planName);
   const templates: Record<PreparedSiteLocale, string> = withTraditionalChinese({
     zh: `${name} 全球价格对比`,
-    en: `${name} Global Price Comparison`,
+    en: `${name} Price by Country`,
     ja: `${name} 世界の料金比較`,
     ko: `${name} 전 세계 가격 비교`,
     es: `Comparativa mundial de precios de ${name}`,

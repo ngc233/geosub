@@ -1,0 +1,24 @@
+GeoSub Proprietary License
+
+Copyright (c) 2026 GeoSub. All rights reserved.
+
+The source code, documentation, database design, user interface, and original
+content in this repository are proprietary to GeoSub unless a file or notice
+expressly states otherwise.
+
+No permission is granted to copy, modify, publish, distribute, sublicense,
+sell, host, or commercially use any GeoSub-owned portion of this repository
+without prior written authorization from GeoSub. Authorized operators may run
+and modify the software only within the scope of their written authorization.
+
+Third-party software, data, trademarks, product names, logos, and other brand
+assets remain subject to their respective licenses and owners' rights. Their
+presence in this repository does not grant any trademark, endorsement, or
+redistribution rights. See THIRD_PARTY_NOTICES.md and the brand asset register
+for additional information.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. TO THE MAXIMUM EXTENT
+PERMITTED BY LAW, GEOSUB SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.

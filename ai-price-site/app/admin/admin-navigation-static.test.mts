@@ -82,9 +82,8 @@ test("admin sidebar exposes only operational modules", () => {
     "/admin/system",
     "/admin/settings",
     "/admin/events",
-    "/admin/discovery",
+    "/admin/pipeline",
     "/admin/data-quality",
-    "/admin/review",
     "/admin/prices",
     "/admin/affordability",
     "/admin/products",
@@ -99,12 +98,38 @@ test("admin sidebar exposes only operational modules", () => {
   assert.doesNotMatch(source, /\/admin\/commercial/);
   assert.doesNotMatch(source, /\/admin\/pricing-preview/);
   assert.doesNotMatch(source, /\/admin\/affordability-preview/);
-  assert.doesNotMatch(source, /href: "\/admin\/pipeline"/);
+  assert.doesNotMatch(source, /href: "\/admin\/review"/);
+  assert.doesNotMatch(source, /href: "\/admin\/discovery"/);
   assert.match(source, /label: "今日工作"/);
   assert.match(source, /label: "数据生产"/);
   assert.match(source, /label: "数据资产"/);
-  assert.match(source, /label: "采集与审核"/);
-  assert.match(source, /label: "新产品接入"/);
+  assert.match(source, /label: "产品流水线"/);
+});
+
+test("product pipeline is the single lifecycle entry while specialist pages remain reachable", () => {
+  const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
+  const steps = readProjectFile("components/admin/AdminPipelineSteps.tsx");
+  const pipeline = readProjectFile("app/admin/pipeline/page.tsx");
+  const growth = readProjectFile("lib/admin-pipeline-growth.ts");
+
+  assert.match(sidebar, /label: "产品流水线", href: "\/admin\/pipeline"/);
+  assert.match(sidebar, /"\/admin\/collector-jobs"/);
+  assert.doesNotMatch(sidebar, /href: "\/admin\/review"/);
+  assert.doesNotMatch(sidebar, /href: "\/admin\/discovery"/);
+  assert.match(steps, /href: "\/admin\/discovery"/);
+  assert.match(steps, /href: "\/admin\/review"/);
+
+  assert.match(pipeline, /label: "需要介入"/);
+  assert.match(pipeline, /label: "系统处理中"/);
+  assert.match(pipeline, /label: "未开始"/);
+  assert.match(pipeline, /label: "已发布"/);
+  assert.match(pipeline, /最接近发布/);
+  assert.match(pipeline, /沉睡库存/);
+  assert.match(pipeline, /getPublishReadiness/);
+  assert.match(pipeline, /getPipelineGrowthSignals\(\)\.catch/);
+  assert.match(growth, /pipeline:growth-signals:30/);
+  assert.match(growth, /getSearchDemandSummary\(30\)/);
+  assert.match(growth, /getCachedProductSeoQualityAudits/);
 });
 test("admin navigation remains usable on mobile", () => {
   const source = readProjectFile("components/admin/AdminSidebar.tsx");
@@ -418,4 +443,45 @@ test("admin dashboard sessionizes events and computes a chronological funnel", (
   assert.match(schema, /@@index\(\[anonymousId, createdAt\]\)/);
   assert.match(migration, /event_logs_session_id_created_at_idx/);
   assert.match(migration, /event_logs_anonymous_id_created_at_idx/);
+});
+
+test("all admin asset views share one four-level operational status model", () => {
+  const sharedStatus = readProjectFile("lib/admin-operational-status.ts");
+  const badge = readProjectFile("components/admin/AdminStatusBadge.tsx");
+  const productPage = readProjectFile("app/admin/products/page.tsx");
+  const planPage = readProjectFile("app/admin/plans/page.tsx");
+  const pricePage = readProjectFile("app/admin/prices/page.tsx");
+  const pipelinePage = readProjectFile("app/admin/pipeline/page.tsx");
+  const qualityModel = readProjectFile("app/admin/data-quality/model.ts");
+  const qualityOverview = readProjectFile("app/admin/data-quality/DataQualityOverview.tsx");
+
+  for (const label of ["未开始", "待处理", "异常", "已发布"]) {
+    assert.match(sharedStatus, new RegExp(label));
+  }
+
+  assert.match(sharedStatus, /assessProductOperationalStatus/);
+  assert.match(sharedStatus, /assessPlanOperationalStatus/);
+  assert.match(sharedStatus, /assessPriceOperationalStatus/);
+  assert.match(sharedStatus, /countAdminOperationalAssessments/);
+  assert.match(sharedStatus, /getAdminOperationalTotal/);
+  assert.match(sharedStatus, /isArchivedPublishStatus/);
+  assert.match(sharedStatus, /normalizedQuality === "STALE"/);
+  assert.match(badge, /adminOperationalStatusMeta\[status\]/);
+  assert.match(productPage, /<AdminStatusBadge/);
+  assert.match(productPage, /assessProductOperationalStatus/);
+  assert.match(planPage, /<AdminStatusBadge/);
+  assert.match(planPage, /assessPlanOperationalStatus/);
+  assert.match(pricePage, /assessPriceOperationalStatus/);
+  assert.match(pricePage, /qualityLabel\(normalizeStatus\(price\.data_quality\)\)/);
+  assert.match(pipelinePage, /assessProductOperationalStatus/);
+  assert.match(qualityModel, /assessProductOperationalStatus/);
+  assert.match(qualityModel, /pendingWorkCount: row\.pending_app_store_count/);
+  assert.match(qualityModel, /blockedCount: row\.pending_anomaly_count/);
+  assert.doesNotMatch(qualityModel, /pendingWorkCount:[\s\S]{0,120}missing_pair_count/);
+  assert.doesNotMatch(badge, /label\?: string/);
+  assert.match(qualityOverview, /AdminStatCard label="已发布"/);
+  assert.doesNotMatch(qualityOverview, /operationalStatus === "published" \? "正常"/);
+  assert.match(planPage, /activeTotal = getAdminOperationalTotal\(operationalCounts\)/);
+  assert.match(productPage, /activeTotal = getAdminOperationalTotal\(operationalCounts\)/);
+  assert.match(pricePage, /activeTotal = getAdminOperationalTotal\(operationalCounts\)/);
 });

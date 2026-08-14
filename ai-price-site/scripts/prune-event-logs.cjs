@@ -54,28 +54,20 @@ async function main() {
     `Aggregated expired days: ${Number(before.covered_days || 0)}/${Number(before.expired_days || 0)}`
   );
 
+  if (Number(before.covered_days || 0) < Number(before.expired_days || 0)) {
+    console.warn(
+      "Some expired days are not fully aggregated. The hard retention limit still deletes their raw events."
+    );
+  }
+
   if (!apply) {
-    console.log("Dry run only. Pass --apply to delete events on aggregated days.");
+    console.log("Dry run only. Pass --apply to delete every expired raw event.");
     return;
   }
 
   const deleted = await prisma.$executeRawUnsafe(`
     DELETE FROM event_logs event
     WHERE event.created_at < NOW() - INTERVAL '${retentionDays} days'
-      AND EXISTS (
-        SELECT 1
-        FROM daily_stats page_views
-        WHERE page_views.stat_date = (event.created_at AT TIME ZONE 'UTC')::date
-          AND page_views.metric_key = 'page_views'
-          AND page_views.metadata ->> 'generatedBy' = 'aggregate-daily-stats'
-      )
-      AND EXISTS (
-        SELECT 1
-        FROM daily_stats click_events
-        WHERE click_events.stat_date = (event.created_at AT TIME ZONE 'UTC')::date
-          AND click_events.metric_key = 'click_events'
-          AND click_events.metadata ->> 'generatedBy' = 'aggregate-daily-stats'
-      )
   `);
 
   await prisma.adminSession.deleteMany({

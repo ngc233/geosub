@@ -121,6 +121,11 @@ test("post-deploy gate verifies the public canonical host and sitemap budget", (
   );
 });
 
+test("deployment probes use the dedicated process and database health endpoint", () => {
+  assert.match(postDeployCheck, /127\.0\.0\.1:3000\/api\/health/);
+  assert.doesNotMatch(postDeployCheck, /WEB_HEALTH_URL:-http:\/\/127\.0\.0\.1:3000\/zh\/ai-pricing/);
+});
+
 test("post-deploy gate verifies the public pricing CDN cache contract", () => {
   assert.match(postDeployCheck, /cdn-cache-control:/i);
   assert.match(postDeployCheck, /s-maxage=300/);
@@ -139,7 +144,9 @@ test("full release gate generates the database-backed sitemap and enforces page 
   assert.match(sitemapBudgetCheck, /seoSitemapBudgets\.guideDetailPages/);
   assert.match(sitemapBudgetCheck, /seoSitemapBudgets\.currencyPairPages/);
   assert.match(sitemapBudgetCheck, /stagedLocalePaths\.length/);
-  assert.match(sitemapBudgetCheck, /uniquePaths\.size/);
+  assert.match(sitemapBudgetCheck, /const paths = \[\.\.\.new Set\(rawPaths\)\]/);
+  assert.match(sitemapBudgetCheck, /duplicateUrls: 0/);
+  assert.match(sitemapBudgetCheck, /mergedDuplicateUrls/);
 });
 
 test("local migrations are immutable and both canonical registries are audited", () => {
@@ -173,13 +180,14 @@ test("release gate rejects secrets in tracked and untracked candidate files", ()
   assert.match(releaseCheck, /Repository secrets/);
 });
 
-test("release gate blocks high-risk production dependency advisories", () => {
-  assert.match(releaseCheck, /Frontend production dependency audit/);
-  assert.match(releaseCheck, /Backend production dependency audit/);
+test("release gate blocks high-risk dependency advisories", () => {
+  assert.match(releaseCheck, /Frontend dependency audit/);
+  assert.match(releaseCheck, /Backend dependency audit/);
   assert.equal(
-    releaseCheck.match(/audit --omit=dev --audit-level=high/g)?.length,
+    releaseCheck.match(/audit --audit-level=high/g)?.length,
     2,
   );
+  assert.doesNotMatch(releaseCheck, /audit --omit=dev/);
 });
 
 test("release gate audits multilingual indexing policy before build", () => {

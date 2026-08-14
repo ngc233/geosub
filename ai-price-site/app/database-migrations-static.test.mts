@@ -71,11 +71,25 @@ test("one migration layout classifies every schema, backfill and Prisma migratio
   assert.equal(summary.legacy, 95);
   assert.equal(summary.prisma, manifest.prismaMigrations.length);
   assert.equal(summary.schema, 53);
+  assert.equal(summary.activeSchema, 49);
+  assert.equal(summary.postCutoverSchema, 4);
   assert.equal(summary.backfill, 52);
   assert.equal(manifest.baselineCutoverFile, "sql/063_system_task_runs.sql");
   assert.ok(manifest.legacyBaselineFiles.includes("sql/062_app_store_coverage_gap_rechecks.sql"));
   assert.ok(!manifest.legacyBaselineFiles.includes(manifest.baselineCutoverFile));
   assert.equal(summary.prisma, 14);
+  assert.equal(manifest.entriesForMode("schema").length, 49);
+  assert.equal(manifest.entriesForMode("complete-schema").length, 53);
+  assert.deepEqual(
+    manifest.entriesForMode("post-cutover").map((entry: { file: string }) => entry.file),
+    [
+      "sql/schema/049_event_rate_limits.sql",
+      "sql/schema/050_content_system_tables.sql",
+      "sql/schema/051_content_system_navigation_index.sql",
+      "sql/schema/053_product_source_profiles.sql",
+    ],
+  );
+  assert.equal(manifest.registryAliases.length, 3);
   assert.deepEqual(manifest.prismaBaselineMigrations, manifest.prismaMigrations.slice(0, 2));
   assert.ok(
     manifest.schemaEntries.some(
@@ -109,7 +123,8 @@ test("local and production SQL runners consume the canonical manifest", () => {
   assert.match(productionRunner, /queue_app_store_coverage_gap_rechecks/);
   assert.doesNotMatch(productionRunner, /core_files=\(/);
   assert.match(localRunner, /apply-local-sql\.cjs/);
-  assert.match(localRunner, /"--mode",\s*"schema"/);
+  assert.match(localRunner, /GEOSUB_SCHEMA_MODE/);
+  assert.match(localRunner, /"--mode",\s*schemaMode/);
   assert.match(localRunner, /prisma\/build\/index\.js/);
   assert.match(localRunner, /prismaCli, "migrate", "deploy"/);
   assert.match(localRunner, /prepare-prisma-baseline\.cjs/);
@@ -158,6 +173,9 @@ test("B1 shadow verification refuses production and proves a zero-change run", (
   assert.match(shadowVerifier, /frontend_dir_override/);
   assert.match(shadowVerifier, /evidence_dir_override/);
   assert.match(shadowVerifier, /--schema-only/);
+  assert.match(shadowVerifier, /--exclude-table='public\.directus_\*'/);
+  assert.match(shadowVerifier, /--table='public\.directus_\*'/);
+  assert.match(shadowVerifier, /ownership_policy=geosub_strict_directus_external/);
   assert.match(shadowVerifier, /--data-only/);
   assert.match(shadowVerifier, /0 applied/);
   assert.match(shadowVerifier, /compatible/);
@@ -173,6 +191,7 @@ test("B1 empty database verification rebuilds once and proves idempotency", () =
   assert.match(emptySchemaVerifier, /frontend_dir_override/);
   assert.match(emptySchemaVerifier, /evidence_dir_override/);
   assert.match(emptySchemaVerifier, /Verification database is not empty/);
+  assert.match(emptySchemaVerifier, /GEOSUB_SCHEMA_MODE="complete-schema"/);
   assert.match(emptySchemaVerifier, /first-pass\.log/);
   assert.match(emptySchemaVerifier, /second-pass\.log/);
   assert.match(emptySchemaVerifier, /0 applied/);

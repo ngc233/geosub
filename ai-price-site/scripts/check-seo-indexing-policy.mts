@@ -62,8 +62,13 @@ assert.match(
 );
 assert.equal(
   getProductSeoGateMode(undefined),
+  "enforce",
+  "Product quality indexing must protect the sitemap by default.",
+);
+assert.equal(
+  getProductSeoGateMode("observe"),
   "observe",
-  "Product quality indexing must remain reversible by default.",
+  "Product quality enforcement must keep an explicit rollback mode.",
 );
 assert.match(
   sitemapSource,

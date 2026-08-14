@@ -1,3 +1,4 @@
+import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { getReviewPageData } from "./queries";
 import { ReviewOverviewSections } from "./ReviewOverviewSections";
 import { PendingProductReviewSection } from "./PendingProductReviewSection";
@@ -70,6 +71,7 @@ export default async function ReviewPage({
 
   return (
     <div className="space-y-6">
+      <AdminPipelineSteps currentStep="review" />
       <ReviewOverviewSections
         productQuery={productQuery}
         discoveryPromoted={discoveryPromoted}

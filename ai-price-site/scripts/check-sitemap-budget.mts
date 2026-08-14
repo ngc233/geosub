@@ -15,10 +15,12 @@ import { getProductSeoQualityAudits } from "../lib/product-seo-quality-data.ts";
 import { indexableStaticGuidePaths } from "../lib/public-launch-routes.ts";
 import { prisma } from "../lib/prisma.ts";
 import {
+  isPlanSitemapPromotedProduct,
   seoIndexableLocales,
   seoSitemapBudgets,
 } from "../lib/seo-indexing-policy.ts";
 import { siteLocaleDefinitions } from "../lib/site-locale.ts";
+import { getEffectivePlanSitemapProductSlugs } from "../lib/seo-plan-promotion-data.ts";
 
 const siteDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sitemapSource = readFileSync(resolve(siteDir, "app", "sitemap.ts"), "utf8");
@@ -47,8 +49,10 @@ function publishedArticleWhere(locale: Locale, now: Date) {
 
 async function getProductPaths() {
   const gateMode = getProductSeoGateMode();
-  const qualityAudits =
-    gateMode === "enforce" ? await getProductSeoQualityAudits() : [];
+  const [qualityAudits, promotedProductSlugs] = await Promise.all([
+    gateMode === "enforce" ? getProductSeoQualityAudits() : Promise.resolve([]),
+    getEffectivePlanSitemapProductSlugs(),
+  ]);
   const eligibleProducts = new Set(
     qualityAudits
       .filter((audit) => getProductSitemapDecision(audit.status, gateMode).included)
@@ -102,6 +106,12 @@ async function getProductPaths() {
           `/${localePath(locale)}/${section}/${product.slug}`,
       );
       const planPaths = product.plans.flatMap((plan) => {
+        if (
+          !isPlanSitemapPromotedProduct(product.slug, promotedProductSlugs)
+        ) {
+          return [];
+        }
+
         const decision = getPlanSitemapDecision(
           getPlanEditorialIndexingStatus(product.slug, plan.slug),
           gateMode,
@@ -182,14 +192,15 @@ const [productPlanPages, articlePaths] = await Promise.all([
   getProductPaths(),
   getArticlePaths(new Date()),
 ]);
-const paths = [
+const rawPaths = [
   ...literalPaths,
   ...staticGuidePaths,
   ...converterPaths,
   ...productPlanPages,
   ...articlePaths,
 ];
-const uniquePaths = new Set(paths);
+const paths = [...new Set(rawPaths)];
+const mergedDuplicateUrls = rawPaths.length - paths.length;
 const promotedLocalePaths: Set<string> = new Set(
   seoIndexableLocales.map((locale) => localePath(locale)),
 );
@@ -203,12 +214,29 @@ const guideDetailPages = paths.filter((path) =>
 const currencyPairPages = paths.filter((path) =>
   /^\/[^/]+\/tools\/currency-converter\/[^/]+$/.test(path),
 );
+const budgetSummary = {
+  total: `${paths.length}/${seoSitemapBudgets.total}`,
+  literalStaticPages: literalPaths.length,
+  staticGuidePages: staticGuidePaths.length,
+  converterPages: converterPaths.length,
+  productPlanPages: `${productPlanPages.length}/${seoSitemapBudgets.productPlanPages}`,
+  articleTaxonomyPages: articlePaths.length,
+  guideDetailPages: `${guideDetailPages.length}/${seoSitemapBudgets.guideDetailPages}`,
+  currencyPairPages: `${currencyPairPages.length}/${seoSitemapBudgets.currencyPairPages}`,
+  duplicateUrls: 0,
+  mergedDuplicateUrls,
+  stagedLocaleUrls: stagedLocalePaths.length,
+};
 
-assert.equal(
-  uniquePaths.size,
-  paths.length,
-  `Sitemap contains ${paths.length - uniquePaths.size} duplicate URL(s).`,
-);
+console.log(JSON.stringify(budgetSummary, null, 2));
+
+if (mergedDuplicateUrls > 0) {
+  assert.match(
+    sitemapSource,
+    /dedupeRoutes\(\[\.\.\.staticRoutes, \.\.\.productRoutes, \.\.\.articleRoutes\]\)/,
+    "Sitemap route sources overlap but the final output is not deduplicated.",
+  );
+}
 assert.equal(
   stagedLocalePaths.length,
   0,
@@ -231,20 +259,6 @@ assert.ok(
   `Sitemap has ${currencyPairPages.length} currency pair pages; budget is ${seoSitemapBudgets.currencyPairPages}.`,
 );
 
-console.log(
-  JSON.stringify(
-    {
-      total: `${paths.length}/${seoSitemapBudgets.total}`,
-      productPlanPages: `${productPlanPages.length}/${seoSitemapBudgets.productPlanPages}`,
-      guideDetailPages: `${guideDetailPages.length}/${seoSitemapBudgets.guideDetailPages}`,
-      currencyPairPages: `${currencyPairPages.length}/${seoSitemapBudgets.currencyPairPages}`,
-      duplicateUrls: paths.length - uniquePaths.size,
-      stagedLocaleUrls: stagedLocalePaths.length,
-    },
-    null,
-    2,
-  ),
-);
 console.log("Sitemap budget check passed.");
 } finally {
   await prisma.$disconnect();

@@ -60,7 +60,7 @@ test("public detail pages read affordability from the shared database view", () 
   assert.match(affordabilityLib, /ORDER BY income_share_percent DESC/);
 });
 
-test("collector success refreshes affordability after App Store auto review", () => {
+test("collector success refreshes affordability and invalidates shared pricing data", () => {
   const collectorRunner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
   const adminRunner = readRepoFile("ai-price-site/app/admin/review/collection-runner.ts");
 
@@ -78,7 +78,11 @@ test("collector success refreshes affordability after App Store auto review", ()
       collectorRunner.indexOf("refresh_plan_affordability_metrics()"),
     "published outliers should be quarantined before affordability is refreshed",
   );
-  assert.match(adminRunner, /revalidatePath\("\/admin\/affordability"\)/);
+  assert.match(
+    adminRunner,
+    /invalidatePublicPricing\(productSlug \|\| null\)/,
+    "the admin completion path should invalidate the shared product cache instead of naming one page",
+  );
 });
 
 test("collector runner keeps product identity stable and serializes shell launches", () => {

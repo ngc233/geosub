@@ -1,7 +1,7 @@
 import AdminLink from "@/components/admin/AdminLink";
-import { CheckCircle2, Radar, ShieldCheck, Workflow } from "lucide-react";
+import { CheckCircle2, Database, Radar, ShieldCheck, Workflow } from "lucide-react";
 
-type PipelineStep = "pipeline" | "discovery" | "collector" | "review";
+type PipelineStep = "pipeline" | "discovery" | "collector" | "review" | "published";
 
 const steps: Array<{
   id: PipelineStep;
@@ -30,10 +30,18 @@ const steps: Array<{
   {
     id: "review",
     number: "3",
-    title: "价格采集审核",
+    title: "采集与审核",
     href: "/admin/review",
     description: "按产品启动 App Store 采集，稳定价格自动入库，异常价格集中解释。",
     icon: ShieldCheck,
+  },
+  {
+    id: "published",
+    number: "4",
+    title: "正式价格",
+    href: "/admin/prices",
+    description: "查看已经通过验证并可供前台使用的套餐、地区与价格结果。",
+    icon: Database,
   },
 ];
 
@@ -50,7 +58,7 @@ export default function AdminPipelineSteps({
         <div>
           <h2 className="text-base font-bold text-slate-950">价格采集流水线</h2>
           <p className="mt-1 text-sm leading-6 text-slate-500">
-            后台主流程简化为三步：先定位产品状态，再补充线索，最后在同一个工作台完成采集、自动审核和异常处理。
+            先看产品卡在哪一步，再补产品线索、执行采集审核，最后确认正式价格结果。
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
@@ -59,7 +67,7 @@ export default function AdminPipelineSteps({
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {steps.map((step) => {
           const active = step.id === activeStep;
           const Icon = step.icon;

@@ -120,6 +120,13 @@ test("deployment installs verified backups and safe analytics retention", () => 
   assert.match(backupTimer, /OnCalendar=\*-\*-\* 02:40:00/);
   assert.match(retention, /Dry run only/);
   assert.match(retention, /generatedBy/);
+  assert.match(retention, /delete every expired raw event/);
+  assert.match(retention, /DELETE FROM event_logs event/);
+  assert.match(
+    retention,
+    /WHERE event\.created_at < NOW\(\) - INTERVAL '\$\{retentionDays\} days'/,
+  );
+  assert.doesNotMatch(retention, /DELETE FROM event_logs event[\s\S]*?AND EXISTS/);
   assert.match(retentionTimer, /OnCalendar=\*-\*-\* 04:30:00/);
   assert.match(upgrade, /npx prisma migrate deploy/);
   assert.match(upgrade, /geosub-db-backup\.timer/);

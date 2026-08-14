@@ -89,6 +89,10 @@ sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-apply-sql.sh schema
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/db-smoke-check.sh
 ```
 
+`schema` is the production-safe baseline. Use `complete-schema` only when
+building a fresh empty database. The deferred `post-cutover` mode is a separate
+change window and must not be folded into a routine upgrade.
+
 Run backfill SQL only when you intentionally want to initialize reference,
 Directus or product data from repository SQL files:
 
@@ -340,8 +344,11 @@ GEOSUB_REPO_DIR=/opt/geosub/geosub
 GEOSUB_GIT_BRANCH=main
 GEOSUB_SKIP_GIT_PULL=false
 GEOSUB_RUN_BACKFILLS=false
-GEOSUB_WEB_HEALTH_URL=http://127.0.0.1:3000/zh/ai-pricing
+GEOSUB_WEB_HEALTH_URL=http://127.0.0.1:3000/api/health
+GEOSUB_PUBLIC_HEALTH_URL=https://geosub.org/api/health
 GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS=18
+GEOSUB_EXCHANGE_RATE_RUNTIME=legacy
+GEOSUB_EXCHANGE_RATE_SHADOW_VERIFY=0
 GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD=1
 ```
 
@@ -416,6 +423,12 @@ made with a new SQL file, not by editing an old migration.
 ## Current collector behavior
 
 - App Store: plan-level prices. Uses lightweight HTML first, Chromium fallback second.
+  Storefront requests identify GeoSub transparently, use a bounded delay with
+  jitter, retry only transient failures with exponential backoff, and reuse a
+  successful response cache for 12 hours by default. Set
+  `GEOSUB_APP_STORE_COLLECTION_ENABLED=false` as an immediate network-request
+  brake without deleting jobs or timers. These controls do not increase the
+  scheduled collection frequency.
 - Web: official US web baseline price.
 - Google Play: public page evidence only. It does not expose plan-level prices,
   so it is stored as ignored evidence and is not eligible for auto-approval.

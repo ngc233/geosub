@@ -33,7 +33,9 @@
         "db:backfill": "node scripts/apply-local-sql.cjs --mode backfill",
         "db:backfill:status": "node scripts/check-migrations.cjs --include-backfills",
         "db:migrate:status": "node scripts/check-migrations.cjs",
+        "db:migrate:shadow": "node scripts/verify-local-migration-shadow.cjs",
         "seed:ci-quality": "node scripts/seed-ci-quality-fixture.cjs",
+        "seed:core-guides": "node --conditions=react-server --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed-core-guides.mts",
         "sync:exchange-rates": "node scripts/sync-exchange-rates.cjs",
         "aggregate:daily-stats": "node scripts/aggregate-daily-stats.cjs --days=90",
         "aggregate:daily-stats:recent": "node scripts/aggregate-daily-stats.cjs --days=3",
@@ -88,12 +90,12 @@
     "overrides": {
         "@hono/node-server": "2.0.11",
         "fast-uri": "3.1.5",
-        "js-yaml": "4.3.0",
+        "js-yaml": "4.3.1",
         "minimatch@3.1.5": {
-            "brace-expansion": "1.1.17"
+            "brace-expansion": "1.1.18"
         },
         "minimatch@10.2.5": {
-            "brace-expansion": "5.0.8"
+            "brace-expansion": "5.0.9"
         },
         "postcss": "8.5.26",
         "sharp": "0.35.3"

@@ -109,12 +109,14 @@ export function buildProductOverviewStructuredData({
   title,
   description,
   product,
+  faqs = [],
 }: {
   locale: SiteLocale;
   path: string;
   title: string;
   description: string;
   product: SubscriptionProduct;
+  faqs?: PricingFaq[];
 }) {
   const siteUrl = (
     process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org"
@@ -123,41 +125,61 @@ export function buildProductOverviewStructuredData({
   const language = getSiteLocaleDefinition(locale).htmlLang;
   const plans = product.plans.filter((plan) => plan.regions.length > 0);
 
+  const graph = [
+    {
+      "@type": "CollectionPage",
+      "@id": `${pageUrl}#page`,
+      name: title,
+      description,
+      url: pageUrl,
+      inLanguage: language,
+      dateModified: product.updatedAt,
+      isPartOf: {
+        "@id": `${siteUrl}/#website`,
+      },
+      about: {
+        "@type": "SoftwareApplication",
+        name: product.name,
+        applicationCategory:
+          product.category === "streaming"
+            ? "MultimediaApplication"
+            : "ProductivityApplication",
+      },
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${pageUrl}#plans`,
+      name: `${product.name} plans`,
+      numberOfItems: plans.length,
+      itemListElement: plans.map((plan, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: plan.name,
+        url: new URL(`${path}/${plan.slug}`, siteUrl).toString(),
+      })),
+    },
+    ...(faqs.length > 0
+      ? [
+          {
+            "@type": "FAQPage",
+            "@id": `${pageUrl}#faq`,
+            url: pageUrl,
+            inLanguage: language,
+            mainEntity: faqs.map((faq) => ({
+              "@type": "Question",
+              name: faq.q,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: faq.a,
+              },
+            })),
+          },
+        ]
+      : []),
+  ];
+
   return {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "CollectionPage",
-        "@id": `${pageUrl}#page`,
-        name: title,
-        description,
-        url: pageUrl,
-        inLanguage: language,
-        dateModified: product.updatedAt,
-        isPartOf: {
-          "@id": `${siteUrl}/#website`,
-        },
-        about: {
-          "@type": "SoftwareApplication",
-          name: product.name,
-          applicationCategory:
-            product.category === "streaming"
-              ? "MultimediaApplication"
-              : "ProductivityApplication",
-        },
-      },
-      {
-        "@type": "ItemList",
-        "@id": `${pageUrl}#plans`,
-        name: `${product.name} plans`,
-        numberOfItems: plans.length,
-        itemListElement: plans.map((plan, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: plan.name,
-          url: new URL(`${path}/${plan.slug}`, siteUrl).toString(),
-        })),
-      },
-    ],
+    "@graph": graph,
   };
 }

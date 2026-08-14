@@ -20,10 +20,14 @@ function run(label, command, args) {
 }
 
 function main() {
+  const schemaMode = process.env.GEOSUB_SCHEMA_MODE || "schema";
+  if (!new Set(["schema", "complete-schema", "post-cutover"]).has(schemaMode)) {
+    throw new Error(`Unsupported GEOSUB_SCHEMA_MODE: ${schemaMode}`);
+  }
   run("Applying schema-only SQL migrations", process.execPath, [
     path.join(__dirname, "apply-local-sql.cjs"),
     "--mode",
-    "schema",
+    schemaMode,
   ]);
 
   run("Preparing the Prisma baseline", process.execPath, [

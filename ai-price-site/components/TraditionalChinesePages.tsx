@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PrivacyDisclosure from "./PrivacyDisclosure";
 
 type InfoKey =
   | "about"
@@ -197,7 +198,8 @@ export function TraditionalChineseInfoPage({
 }: {
   segments: string[];
 }) {
-  const page = pageCopy[segments.join("/") as InfoKey];
+  const pageKey = segments.join("/") as InfoKey;
+  const page = pageCopy[pageKey];
 
   if (!page) {
     notFound();
@@ -226,6 +228,9 @@ export function TraditionalChineseInfoPage({
             </p>
           ))}
         </div>
+        {pageKey === "privacy" ? (
+          <PrivacyDisclosure locale="zh-tw" />
+        ) : null}
       </section>
     </main>
   );

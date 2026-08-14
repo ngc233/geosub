@@ -4,6 +4,10 @@ import {
   Loader2,
   ShieldAlert,
 } from "lucide-react";
+import {
+  assessProductOperationalStatus,
+  type AdminOperationalStatus,
+} from "../../../lib/admin-operational-status";
 import { reviewReasonLabel } from "../review/review-reason-copy";
 export type ProductQualityRow = {
   id: string;
@@ -437,6 +441,25 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     reason: "采集、审核和正式价格状态稳定，日常无需手工介入。",
     nextAction: "保持观察",
   };
+}
+
+export function getProductOperationalAssessment(row: ProductQualityRow) {
+  return assessProductOperationalStatus({
+    publishStatus: row.status,
+    planCount: row.plan_count,
+    activeCollectorJobCount: row.active_app_store_job_count,
+    latestRunStatus: row.latest_run_status,
+    pendingWorkCount: row.pending_app_store_count,
+    blockedCount: row.pending_anomaly_count,
+    publishedPriceCount: row.published_price_count,
+    stalePriceCount: row.stale_published_count,
+  });
+}
+
+export function getProductOperationalStatus(
+  row: ProductQualityRow,
+): AdminOperationalStatus {
+  return getProductOperationalAssessment(row)?.status ?? "not_started";
 }
 
 export function healthPriority(level: HealthLevel) {

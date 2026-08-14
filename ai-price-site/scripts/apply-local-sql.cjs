@@ -49,14 +49,18 @@ function requestedEntries() {
   const modeIndex = process.argv.indexOf("--mode");
   if (modeIndex >= 0) {
     const mode = process.argv[modeIndex + 1];
-    if (!mode) throw new Error("--mode requires schema, backfill or all.");
+    if (!mode) {
+      throw new Error(
+        "--mode requires schema, complete-schema, post-cutover, backfill or all.",
+      );
+    }
     return entriesForMode(mode);
   }
 
   const requestedFile = process.argv[2];
   if (!requestedFile) {
     throw new Error(
-      "Usage: node scripts/apply-local-sql.cjs --mode schema|backfill|all\n" +
+      "Usage: node scripts/apply-local-sql.cjs --mode schema|complete-schema|post-cutover|backfill|all\n" +
         "   or: node scripts/apply-local-sql.cjs ../geosub-backend/sql/<kind>/<file>.sql",
     );
   }

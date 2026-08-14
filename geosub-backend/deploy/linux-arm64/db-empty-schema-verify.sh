@@ -79,6 +79,7 @@ normalize_dump() {
 }
 
 export DATABASE_URL="$(database_url_for "$EMPTY_DB")"
+export GEOSUB_SCHEMA_MODE="complete-schema"
 
 echo "Building a fresh database through the complete migration toolchain: $EMPTY_DB"
 (

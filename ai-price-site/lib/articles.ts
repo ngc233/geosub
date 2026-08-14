@@ -214,12 +214,11 @@ export async function getPublishedArticles(locale: Locale = "ZH") {
   });
 }
 
-function publishedArticleWhere(locale: Locale = "ZH") {
+function publicArticleWhere(locale: Locale = "ZH") {
   const now = new Date();
 
   return {
     locale,
-    noindex: false,
     deletedAt: null,
     OR: [
       {
@@ -235,11 +234,18 @@ function publishedArticleWhere(locale: Locale = "ZH") {
   };
 }
 
+function publishedArticleWhere(locale: Locale = "ZH") {
+  return {
+    ...publicArticleWhere(locale),
+    noindex: false,
+  };
+}
+
 export async function getPublishedArticleBySlug(slug: string, locale: Locale = "ZH") {
   return prisma.article.findFirst({
     where: {
       slug,
-      ...publishedArticleWhere(locale),
+      ...publicArticleWhere(locale),
     },
     include: {
       category: true,
@@ -467,6 +473,14 @@ export async function getAdminArticles({
     },
     include: {
       category: true,
+      relations: {
+        where: {
+          status: "PUBLISHED",
+        },
+        select: {
+          relationType: true,
+        },
+      },
     },
     orderBy: [
       {

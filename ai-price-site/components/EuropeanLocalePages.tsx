@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { SiteLocale } from "../lib/site-locale";
+import PrivacyDisclosure from "./PrivacyDisclosure";
 
 type EuropeanLocale = Extract<SiteLocale, "fr" | "it" | "de" | "pt">;
 type InfoKey =
@@ -159,7 +160,8 @@ export function EuropeanHomePage({ locale }: { locale: EuropeanLocale }) {
 }
 
 export function EuropeanInfoPage({ locale, segments }: { locale: EuropeanLocale; segments: string[] }) {
-  const page = copy[locale].pages[segments.join("/") as InfoKey];
+  const pageKey = segments.join("/") as InfoKey;
+  const page = copy[locale].pages[pageKey];
   if (!page) notFound();
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
@@ -171,6 +173,7 @@ export function EuropeanInfoPage({ locale, segments }: { locale: EuropeanLocale;
           <h2 className="text-xl font-black text-zinc-950">{page.heading}</h2>
           {page.paragraphs.map((paragraph) => <p key={paragraph} className="mt-4 text-sm leading-8 text-zinc-600">{paragraph}</p>)}
         </div>
+        {pageKey === "privacy" ? <PrivacyDisclosure locale={locale} /> : null}
       </section>
     </main>
   );

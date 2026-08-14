@@ -49,6 +49,9 @@ export function eventNameZh(eventKey: string) {
     click_button: "按钮点击",
     click_ad: "广告点击",
     select_plan: "套餐切换",
+    click_product_overview: "返回产品套餐总览",
+    click_related_pricing_product: "关联产品点击",
+    click_related_plan: "关联套餐点击",
     click_country: "地区点击",
     open_share_modal: "打开分享弹窗",
     copy_link: "复制链接",
@@ -159,4 +162,3 @@ export function timeAgo(date: Date) {
   if (minutes > 0) return `${minutes} 分钟前`;
   return "刚刚";
 }
-

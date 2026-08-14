@@ -6,6 +6,8 @@ import test from 'node:test';
 
 import { validateRuntimeScriptManifest } from './check-runtime-script-manifest.mjs';
 
+const productionBackendDir = path.resolve(import.meta.dirname, '..');
+
 async function makeFixture(manifest) {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'geosub-runtime-manifest-'));
   await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
@@ -66,4 +68,19 @@ test('requires shadow replacements to exist before cutover', async () => {
   const fixture = await makeFixture(manifest);
   const result = await validateRuntimeScriptManifest(fixture);
   assert.match(result.errors.join('\n'), /Shadow-ready replacement does not exist/);
+});
+
+test('exchange-rate wrapper keeps a gated and reversible Node cutover path', async () => {
+  const wrapper = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(
+      path.join(productionBackendDir, 'deploy/linux-arm64/run-exchange-rate-sync.sh'),
+      'utf8',
+    ),
+  );
+
+  assert.match(wrapper, /GEOSUB_EXCHANGE_RATE_RUNTIME:-legacy/);
+  assert.match(wrapper, /check-exchange-rate-shadow-evidence\.mjs.*--required-cycles 3/);
+  assert.match(wrapper, /sync-exchange-rates\.mjs/);
+  assert.match(wrapper, /RUNTIME_MODE.*legacy/);
+  assert.match(wrapper, /RUNTIME_MODE.*node/);
 });

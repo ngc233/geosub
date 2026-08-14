@@ -33,11 +33,12 @@ test("current Chinese and English plans publish distinct search-intent copy", ()
 
       assert.ok(copy, `${locale}/${entry.productSlug}/${entry.planSlug}`);
       assert.ok(copy.description.length >= 70);
-      assert.ok(copy.description.length <= 180);
-      assert.match(
-        copy.description,
-        locale === "zh" ? /价格：/ : /price:/i,
-      );
+      assert.ok(copy.description.length <= 160);
+      if (locale === "zh") {
+        assert.match(copy.description, /价格：/);
+      } else {
+        assert.ok(copy.description.startsWith(`${displayName} starts at $19.99`));
+      }
       assert.ok(
         copy.description.includes(
           entry.content.plan.difference

@@ -10,7 +10,10 @@ import {
   siteLocaleDefinitions,
 } from "../lib/site-locale";
 import { getFeaturedCurrencyPairs } from "../lib/currency-pairs";
-import { seoIndexableLocales } from "../lib/seo-indexing-policy";
+import {
+  isPlanSitemapPromotedProduct,
+  seoIndexableLocales,
+} from "../lib/seo-indexing-policy";
 import {
   getPlanSitemapDecision,
   getProductSeoGateMode,
@@ -19,6 +22,7 @@ import {
 import { getProductSeoQualityAudits } from "../lib/product-seo-quality-data";
 import { getPlanEditorialIndexingStatus } from "../lib/product-editorial-content";
 import { indexableStaticGuidePaths } from "../lib/public-launch-routes";
+import { getEffectivePlanSitemapProductSlugs } from "../lib/seo-plan-promotion-data";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
@@ -56,6 +60,17 @@ function route(
   };
 }
 
+function dedupeRoutes(routes: MetadataRoute.Sitemap): MetadataRoute.Sitemap {
+  const byUrl = new Map<string, SitemapEntry>();
+
+  for (const entry of routes) {
+    const previous = byUrl.get(entry.url);
+    byUrl.set(entry.url, previous ? { ...previous, ...entry } : entry);
+  }
+
+  return [...byUrl.values()];
+}
+
 function getSitemapFallbackReason(error: unknown) {
   if (error && typeof error === "object") {
     const maybeCode = "code" in error ? String((error as { code?: unknown }).code) : "";
@@ -73,8 +88,10 @@ function getSitemapFallbackReason(error: unknown) {
 
 async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
   const gateMode = getProductSeoGateMode();
-  const qualityAudits =
-    gateMode === "enforce" ? await getProductSeoQualityAudits() : [];
+  const [qualityAudits, promotedProductSlugs] = await Promise.all([
+    gateMode === "enforce" ? getProductSeoQualityAudits() : Promise.resolve([]),
+    getEffectivePlanSitemapProductSlugs(),
+  ]);
   const sitemapEligibleProducts = new Set(
     qualityAudits
       .filter(
@@ -196,6 +213,12 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
       );
 
       const planRoutes = product.plans.flatMap((plan) => {
+        if (
+          !isPlanSitemapPromotedProduct(product.slug, promotedProductSlugs)
+        ) {
+          return [];
+        }
+
         const planDecision = getPlanSitemapDecision(
           getPlanEditorialIndexingStatus(product.slug, plan.slug),
           gateMode,
@@ -330,7 +353,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getArticleRoutes(now),
     ]);
 
-    return [...staticRoutes, ...productRoutes, ...articleRoutes];
+    return dedupeRoutes([...staticRoutes, ...productRoutes, ...articleRoutes]);
   } catch (error) {
     console.warn(
       `Sitemap dynamic routes skipped; using static routes only (${getSitemapFallbackReason(error)}).`,

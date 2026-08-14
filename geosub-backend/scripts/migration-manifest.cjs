@@ -10,6 +10,15 @@ const layout = JSON.parse(fs.readFileSync(layoutPath, "utf8"));
 const schemaEntries = Object.freeze(layout.schema.map((entry) => Object.freeze(entry)));
 const backfillEntries = Object.freeze(layout.backfill.map((entry) => Object.freeze(entry)));
 const retiredEntries = Object.freeze(layout.retired.map((entry) => Object.freeze(entry)));
+const registryAliases = Object.freeze(
+  (layout.registryAliases || []).map((entry) => Object.freeze(entry)),
+);
+const activeSchemaEntries = Object.freeze(
+  schemaEntries.filter((entry) => entry.releasePhase !== "post-cutover"),
+);
+const postCutoverSchemaEntries = Object.freeze(
+  schemaEntries.filter((entry) => entry.releasePhase === "post-cutover"),
+);
 
 const schemaFiles = Object.freeze(schemaEntries.map((entry) => entry.file));
 const backfillFiles = Object.freeze(backfillEntries.map((entry) => entry.file));
@@ -51,9 +60,11 @@ function normalizePath(value) {
 }
 
 function entriesForMode(mode) {
-  if (mode === "schema" || mode === "core") return [...schemaEntries];
+  if (mode === "schema" || mode === "core") return [...activeSchemaEntries];
+  if (mode === "complete-schema") return [...schemaEntries];
+  if (mode === "post-cutover") return [...postCutoverSchemaEntries];
   if (mode === "backfill" || mode === "content") return [...backfillEntries];
-  if (mode === "all") return [...schemaEntries, ...backfillEntries];
+  if (mode === "all") return [...activeSchemaEntries, ...backfillEntries];
   if (mode === "baseline-schema") {
     return schemaEntries.filter((entry) => entry.legacyBaseline);
   }
@@ -61,7 +72,7 @@ function entriesForMode(mode) {
     return backfillEntries.filter((entry) => entry.legacyBaseline);
   }
   throw new Error(
-    "Migration mode must be schema, backfill, all, baseline-schema or baseline-backfill.",
+    "Migration mode must be schema, complete-schema, post-cutover, backfill, all, baseline-schema or baseline-backfill.",
   );
 }
 
@@ -71,7 +82,8 @@ function filesForMode(mode) {
 }
 
 function entryForLegacyFile(legacyFile, mode = "schema") {
-  return entriesForMode(mode).find((entry) => entry.legacyFile === legacyFile) || null;
+  const entries = mode === "schema" ? schemaEntries : entriesForMode(mode);
+  return entries.find((entry) => entry.legacyFile === legacyFile) || null;
 }
 
 function assertSimpleIdentifier(value, context) {
@@ -201,8 +213,40 @@ function validateEntryGroup(entries, { kind, directory, automatic }) {
     if (automatic === false && entry.automatic !== false) {
       throw new Error(`Retired migration must declare automatic=false: ${entry.file}`);
     }
+    if (
+      kind === "schema" &&
+      entry.releasePhase !== undefined &&
+      entry.releasePhase !== "post-cutover"
+    ) {
+      throw new Error(`Invalid schema release phase on ${entry.file}: ${entry.releasePhase}`);
+    }
+    if (kind !== "schema" && entry.releasePhase !== undefined) {
+      throw new Error(`Only schema migrations may declare releasePhase: ${entry.file}`);
+    }
     validateCompatibility(entry);
   });
+}
+
+function validateRegistryAliases() {
+  const filenames = new Set();
+  for (const alias of registryAliases) {
+    if (
+      typeof alias.file !== "string" ||
+      !alias.file.startsWith("sql/schema/") ||
+      !alias.file.endsWith(".sql") ||
+      filenames.has(alias.file)
+    ) {
+      throw new Error(`Invalid historical registry alias: ${alias.file}`);
+    }
+    if (
+      !Array.isArray(alias.checksums) ||
+      alias.checksums.length === 0 ||
+      alias.checksums.some((checksum) => !/^[a-f0-9]{64}$/.test(checksum))
+    ) {
+      throw new Error(`Invalid historical registry alias checksum: ${alias.file}`);
+    }
+    filenames.add(alias.file);
+  }
 }
 
 function validateManifest({ frontendDir } = {}) {
@@ -225,6 +269,7 @@ function validateManifest({ frontendDir } = {}) {
     directory: "sql/backfill/retired",
     automatic: false,
   });
+  validateRegistryAliases();
 
   const allEntries = [...schemaEntries, ...backfillEntries, ...retiredEntries];
   const ids = allEntries.map((entry) => entry.id);
@@ -319,6 +364,8 @@ function validateManifest({ frontendDir } = {}) {
 
   return {
     schema: schemaEntries.length,
+    activeSchema: activeSchemaEntries.length,
+    postCutoverSchema: postCutoverSchemaEntries.length,
     backfill: backfillEntries.length,
     retired: retiredEntries.length,
     legacy: legacyInventory.size,
@@ -378,7 +425,7 @@ function runCli() {
   if (command === "validate") {
     const summary = validateManifest({ frontendDir });
     console.log(
-      `Migration manifest valid: schema=${summary.schema} backfill=${summary.backfill} retired=${summary.retired} legacy=${summary.legacy} prisma=${summary.prisma}`,
+      `Migration manifest valid: schema=${summary.schema} active=${summary.activeSchema} post-cutover=${summary.postCutoverSchema} backfill=${summary.backfill} retired=${summary.retired} legacy=${summary.legacy} prisma=${summary.prisma}`,
     );
     return;
   }
@@ -398,6 +445,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  activeSchemaEntries,
   backendDir,
   backfillEntries,
   backfillFiles,
@@ -413,6 +461,8 @@ module.exports = {
   legacyBaselineFiles,
   prismaMigrations,
   prismaBaselineMigrations,
+  postCutoverSchemaEntries,
+  registryAliases,
   retiredEntries,
   retiredFiles,
   schemaEntries,

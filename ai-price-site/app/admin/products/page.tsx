@@ -1,9 +1,18 @@
 import AdminLink from "@/components/admin/AdminLink";
+import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { Plus } from "lucide-react";
 import { Prisma, type ProductCategory } from "@prisma/client";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import SegmentedControl from "../../../components/ui/SegmentedControl";
+import {
+  adminOperationalStatusMeta,
+  assessProductOperationalStatus,
+  countAdminOperationalAssessments,
+  getAdminOperationalTotal,
+  isArchivedPublishStatus,
+  type AdminOperationalStatus,
+} from "../../../lib/admin-operational-status";
 import { prisma } from "../../../lib/prisma";
 
 type CategoryValue =
@@ -97,30 +106,6 @@ function getSelectedCategory(value?: string) {
   );
 }
 
-function statusLabel(status: string) {
-  if (status === "PUBLISHED") return "已发布";
-  if (status === "DRAFT") return "草稿";
-  if (status === "REVIEW") return "待审核";
-  if (status === "ARCHIVED") return "已归档";
-  return status;
-}
-
-function statusClassName(status: string) {
-  if (status === "PUBLISHED") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  }
-
-  if (status === "DRAFT") {
-    return "bg-amber-50 text-amber-700 ring-amber-200";
-  }
-
-  if (status === "REVIEW") {
-    return "bg-blue-50 text-blue-700 ring-blue-200";
-  }
-
-  return "bg-slate-100 text-slate-600 ring-slate-200";
-}
-
 type ProductAssetRow = {
   id: string;
   slug: string;
@@ -139,6 +124,12 @@ type ProductAssetRow = {
   stale_price_count: unknown;
   pending_price_count: unknown;
   missing_source_count: unknown;
+  app_store_job_count: unknown;
+  latest_run_status: string | null;
+  pending_observation_count: unknown;
+  blocked_observation_count: unknown;
+  published_price_count: unknown;
+  published_stale_price_count: unknown;
   last_checked_at: Date | string | null;
 };
 
@@ -158,6 +149,12 @@ type ProductAsset = {
   stalePriceCount: number;
   pendingPriceCount: number;
   missingSourceCount: number;
+  appStoreJobCount: number;
+  latestRunStatus: string | null;
+  pendingObservationCount: number;
+  blockedObservationCount: number;
+  publishedPriceCount: number;
+  publishedStalePriceCount: number;
   lastCheckedAt: Date | null;
 };
 
@@ -208,6 +205,12 @@ function normalizeProductAsset(row: ProductAssetRow): ProductAsset {
     stalePriceCount: toNumber(row.stale_price_count),
     pendingPriceCount: toNumber(row.pending_price_count),
     missingSourceCount: toNumber(row.missing_source_count),
+    appStoreJobCount: toNumber(row.app_store_job_count),
+    latestRunStatus: row.latest_run_status,
+    pendingObservationCount: toNumber(row.pending_observation_count),
+    blockedObservationCount: toNumber(row.blocked_observation_count),
+    publishedPriceCount: toNumber(row.published_price_count),
+    publishedStalePriceCount: toNumber(row.published_stale_price_count),
     lastCheckedAt: toDate(row.last_checked_at),
   };
 }
@@ -232,12 +235,19 @@ async function getProductAssets() {
       COALESCE(price_stats.stale_price_count, 0)::int AS stale_price_count,
       COALESCE(price_stats.pending_price_count, 0)::int AS pending_price_count,
       COALESCE(price_stats.missing_source_count, 0)::int AS missing_source_count,
+      COALESCE(job_stats.app_store_job_count, 0)::int AS app_store_job_count,
+      latest_run.status AS latest_run_status,
+      COALESCE(observation_stats.pending_observation_count, 0)::int AS pending_observation_count,
+      COALESCE(observation_stats.blocked_observation_count, 0)::int AS blocked_observation_count,
+      COALESCE(published_stats.published_price_count, 0)::int AS published_price_count,
+      COALESCE(published_stats.published_stale_price_count, 0)::int AS published_stale_price_count,
       price_stats.last_checked_at
     FROM products product
     LEFT JOIN LATERAL (
       SELECT COUNT(*)::int AS plan_count
       FROM plans plan
       WHERE plan.product_id = product.id
+        AND plan.status <> 'archived'::publish_status
     ) plan_stats ON TRUE
     LEFT JOIN LATERAL (
       SELECT
@@ -252,7 +262,48 @@ async function getProductAssets() {
         MAX(COALESCE(price.last_checked_at, price.updated_at)) AS last_checked_at
       FROM region_prices price
       WHERE price.product_id = product.id
+        AND price.status <> 'archived'::publish_status
     ) price_stats ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*) FILTER (
+        WHERE source.type = 'app_store'::price_source_type
+      )::int AS app_store_job_count
+      FROM collector_jobs job
+      LEFT JOIN price_sources source ON source.id = job.source_id
+      WHERE job.product_id = product.id
+        AND job.job_type = 'ai_pricing'
+        AND job.status <> 'archived'
+    ) job_stats ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT run.status
+      FROM collector_jobs scoped_job
+      JOIN collector_job_runs run ON run.job_id = scoped_job.id
+      WHERE scoped_job.product_id = product.id
+        AND scoped_job.job_type = 'ai_pricing'
+      ORDER BY run.started_at DESC
+      LIMIT 1
+    ) latest_run ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT
+        COUNT(*)::int AS pending_observation_count,
+        COUNT(*) FILTER (WHERE COALESCE(observation.anomaly_flag, FALSE))::int AS blocked_observation_count
+      FROM price_observations observation
+      WHERE observation.product_id = product.id
+        AND observation.status = 'pending'::observation_status
+        AND observation.billing_platform = 'ios'::billing_platform
+    ) observation_stats ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT
+        COUNT(*)::int AS published_price_count,
+        COUNT(*) FILTER (
+          WHERE price.last_checked_at IS NULL
+            OR price.last_checked_at < NOW() - INTERVAL '14 days'
+        )::int AS published_stale_price_count
+      FROM region_prices price
+      WHERE price.product_id = product.id
+        AND price.status = 'published'::publish_status
+        AND price.billing_platform = 'ios'::billing_platform
+    ) published_stats ON TRUE
     ORDER BY product.sort_order ASC, product.created_at ASC, product.name ASC
   `;
 
@@ -262,87 +313,35 @@ async function getProductAssets() {
 async function getCountryCoverage(category?: CategoryValue) {
   const categoryFilter =
     category && category !== "all"
-      ? Prisma.sql`WHERE product.category = ${category}::product_category`
+      ? Prisma.sql`AND product.category = ${category}::product_category`
       : Prisma.empty;
 
   const rows = await prisma.$queryRaw<Array<{ country_count: unknown }>>`
     SELECT COUNT(DISTINCT price.country_id)::int AS country_count
     FROM region_prices price
     JOIN products product ON product.id = price.product_id
+    WHERE price.status <> 'archived'::publish_status
+      AND product.status <> 'archived'::publish_status
     ${categoryFilter}
   `;
 
   return toNumber(rows[0]?.country_count);
 }
 
-function getHealth(product: ProductAsset) {
-  if (product.planCount === 0) {
-    return {
-      label: "无套餐",
-      tone: "danger",
-      detail: "该服务还没有套餐，无法形成可用价格页。",
-    };
-  }
-
-  if (product.priceCount === 0) {
-    return {
-      label: "无价格",
-      tone: "danger",
-      detail: "该服务已有套餐，但还没有区域价格。",
-    };
-  }
-
-  const staleCount = product.stalePriceCount;
-
-  if (staleCount > 0) {
-    return {
-      label: `过期 ${staleCount}`,
-      tone: "danger",
-      detail: "存在过期价格，需要优先更新。",
-    };
-  }
-
-  const noSourceCount = product.missingSourceCount;
-
-  if (noSourceCount > 0) {
-    return {
-      label: `缺来源 ${noSourceCount}`,
-      tone: "warning",
-      detail: "部分价格缺少主来源，后续需要补来源。",
-    };
-  }
-
-  const pendingCount = product.pendingPriceCount;
-
-  if (pendingCount > 0) {
-    return {
-      label: `待审核 ${pendingCount}`,
-      tone: "warning",
-      detail: "部分价格仍处于待审核状态。",
-    };
-  }
-
-  return {
-    label: "正常",
-    tone: "success",
-    detail: "该服务已有套餐、价格和可用数据质量。",
-  };
-}
-
-function healthClassName(tone: string) {
-  if (tone === "success") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  }
-
-  if (tone === "danger") {
-    return "bg-red-50 text-red-700 ring-red-200";
-  }
-
-  if (tone === "warning") {
-    return "bg-amber-50 text-amber-700 ring-amber-200";
-  }
-
-  return "bg-slate-100 text-slate-600 ring-slate-200";
+function assessProduct(product: ProductAsset) {
+  return assessProductOperationalStatus({
+    publishStatus: product.status,
+    planCount: product.planCount,
+    activeCollectorJobCount: product.appStoreJobCount,
+    latestRunStatus: product.latestRunStatus,
+    pendingWorkCount: product.pendingObservationCount,
+    blockedCount: product.blockedObservationCount,
+    publishedPriceCount: product.publishedPriceCount,
+    priceCount: product.priceCount,
+    verifiedPriceCount: product.verifiedPriceCount,
+    stalePriceCount: product.publishedStalePriceCount,
+    missingSourceCount: product.missingSourceCount,
+  });
 }
 
 function formatDate(value: Date | null) {
@@ -368,27 +367,59 @@ export default async function AdminProductsPage({
 }: {
   searchParams?: Promise<{
     category?: string;
+    state?: string;
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
   const selectedCategory = getSelectedCategory(params?.category);
+  const selectedState = ["not_started", "pending", "exception", "published"].includes(
+    String(params?.state),
+  )
+    ? (String(params?.state) as AdminOperationalStatus)
+    : "all";
 
   const [allProducts, countryCoverage] = await Promise.all([
     getProductAssets(),
     getCountryCoverage(selectedCategory.value),
   ]);
 
-  const products =
+  const archivedCount = allProducts.filter((product) =>
+    isArchivedPublishStatus(product.status),
+  ).length;
+  const activeProducts = allProducts.filter(
+    (product) => !isArchivedPublishStatus(product.status),
+  );
+  const categoryProducts =
     selectedCategory.value === "all"
-      ? allProducts
-      : allProducts.filter(
+      ? activeProducts
+      : activeProducts.filter(
           (product) => product.category === selectedCategory.dbValue
         );
+  const operationalCounts = countAdminOperationalAssessments(
+    categoryProducts.map(assessProduct),
+  );
+  const activeTotal = getAdminOperationalTotal(operationalCounts);
+  const products = selectedState === "all"
+    ? categoryProducts
+    : categoryProducts.filter((product) => assessProduct(product)?.status === selectedState);
+  const buildFilterHref = ({
+    category = selectedCategory.value,
+    state = selectedState,
+  }: {
+    category?: CategoryValue;
+    state?: "all" | AdminOperationalStatus;
+  }) => {
+    const query = new URLSearchParams();
+    if (category !== "all") query.set("category", category);
+    if (state !== "all") query.set("state", state);
+    const suffix = query.toString();
+    return suffix ? `/admin/products?${suffix}` : "/admin/products";
+  };
 
   const categoryStats = categoryConfigs
     .filter((category) => category.value !== "all")
     .map((category) => {
-      const categoryProducts = allProducts.filter(
+      const categoryProducts = activeProducts.filter(
         (product) => product.category === category.dbValue
       );
 
@@ -396,10 +427,9 @@ export default async function AdminProductsPage({
 
       const priceCount = categoryProducts.reduce((sum, product) => sum + product.priceCount, 0);
 
-      const issueCount = categoryProducts.filter((product) => {
-        const health = getHealth(product);
-        return health.tone !== "success";
-      }).length;
+      const issueCount = categoryProducts.filter(
+        (product) => assessProduct(product)?.status !== "published",
+      ).length;
 
       return {
         ...category,
@@ -410,14 +440,13 @@ export default async function AdminProductsPage({
       };
     });
 
-  const totalPlans = products.reduce((sum, product) => sum + product.planCount, 0);
+  const totalPlans = categoryProducts.reduce((sum, product) => sum + product.planCount, 0);
 
-  const totalPrices = products.reduce((sum, product) => sum + product.priceCount, 0);
+  const totalPrices = categoryProducts.reduce((sum, product) => sum + product.priceCount, 0);
 
-  const issueProducts = products.filter((product) => {
-    const health = getHealth(product);
-    return health.tone !== "success";
-  });
+  const issueProducts = categoryProducts.filter(
+    (product) => assessProduct(product)?.status !== "published",
+  );
 
   return (
     <div>
@@ -457,7 +486,7 @@ export default async function AdminProductsPage({
         <AdminCard>
           <div className="text-sm font-bold text-slate-500">产品 / 套餐</div>
           <div className="mt-2 text-2xl font-black text-slate-950">
-            {products.length} / {totalPlans}
+            {activeTotal} / {totalPlans}
           </div>
           <div className="mt-2 text-sm text-slate-500">
             当前筛选范围内的产品与套餐数量。
@@ -480,7 +509,7 @@ export default async function AdminProductsPage({
             {issueProducts.length}
           </div>
           <div className="mt-2 text-sm text-slate-500">
-            无套餐、无价格、缺来源或价格过期的服务。
+            当前分类需要补资料、采集、审核或修复的服务；归档 {archivedCount} 个另计。
           </div>
         </AdminCard>
       </div>
@@ -502,7 +531,7 @@ export default async function AdminProductsPage({
             return (
               <AdminLink
                 key={category.value}
-                href={`/admin/products?category=${category.value}`}
+                href={buildFilterHref({ category: category.value })}
                 className={[
                   "rounded-xl border p-5 transition",
                   active
@@ -594,19 +623,38 @@ export default async function AdminProductsPage({
             </div>
           </div>
 
-          <SegmentedControl
-            ariaLabel="产品分类"
-            value={selectedCategory.value}
-            tone="blue"
-            items={categoryConfigs.map((category) => ({
-              label: category.shortLabel,
-              value: category.value,
-              href:
-                category.value === "all"
-                  ? "/admin/products"
-                  : `/admin/products?category=${category.value}`,
-            }))}
-          />
+          <div className="max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <SegmentedControl
+              ariaLabel="产品分类"
+              value={selectedCategory.value}
+              tone="blue"
+              className="min-w-[720px]"
+              items={categoryConfigs.map((category) => ({
+                label: category.shortLabel,
+                value: category.value,
+                href: buildFilterHref({ category: category.value }),
+              }))}
+            />
+          </div>
+
+          <div className="max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <SegmentedControl
+              ariaLabel="产品运营状态"
+              value={selectedState}
+              tone="blue"
+              className="min-w-[520px]"
+              items={[
+                { label: `全部 ${activeTotal}`, value: "all", href: buildFilterHref({ state: "all" }) },
+                ...(["exception", "pending", "not_started", "published"] as AdminOperationalStatus[]).map(
+                  (status) => ({
+                    label: `${adminOperationalStatusMeta[status].label} ${operationalCounts[status]}`,
+                    value: status,
+                    href: buildFilterHref({ state: status }),
+                  }),
+                ),
+              ]}
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -618,7 +666,7 @@ export default async function AdminProductsPage({
             <div>套餐</div>
             <div>国家</div>
             <div>价格</div>
-            <div>数据健康</div>
+            <div>当前原因</div>
             <div>最后检查</div>
             <div>状态</div>
             <div>操作</div>
@@ -626,7 +674,7 @@ export default async function AdminProductsPage({
 
           <div className="divide-y divide-slate-100 bg-white">
             {products.map((product) => {
-              const health = getHealth(product);
+              const assessment = assessProduct(product);
               const category = categoryConfigs.find(
                 (item) => item.dbValue === product.category
               );
@@ -673,16 +721,8 @@ export default async function AdminProductsPage({
                     {product.priceCount}
                   </div>
 
-                  <div>
-                    <span
-                      title={health.detail}
-                      className={[
-                        "inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1",
-                        healthClassName(health.tone),
-                      ].join(" ")}
-                    >
-                      {health.label}
-                    </span>
+                  <div className="text-xs leading-5 text-slate-500">
+                    {assessment?.reason}
                   </div>
 
                   <div className="text-xs font-bold text-slate-500">
@@ -690,14 +730,10 @@ export default async function AdminProductsPage({
                   </div>
 
                   <div>
-                    <span
-                      className={[
-                        "inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1",
-                        statusClassName(String(product.status)),
-                      ].join(" ")}
-                    >
-                      {statusLabel(String(product.status))}
-                    </span>
+                    <AdminStatusBadge
+                      status={assessment?.status ?? "not_started"}
+                      title={assessment?.reason}
+                    />
                   </div>
 
                   <div>

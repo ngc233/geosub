@@ -2,148 +2,96 @@
 
 await import("dotenv/config");
 
-const [{ prisma }, { fetchOfficialSiteIcon }, logoStorage] = await Promise.all([
-  import("../lib/prisma.ts"),
-  import("../lib/official-site-logo.ts"),
-  import("../lib/product-logo-storage.ts"),
-]);
+import { access } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import * as icons from "simple-icons";
+import {
+  approvedLocalBrandAssets,
+  getApprovedLocalBrandAsset,
+  getSimpleIconCandidates,
+  isRestrictedLegacyLogoReference,
+  type ApprovedLocalBrandAsset,
+} from "../lib/product-brand-assets.ts";
 
-const { cacheRemoteProductLogo, readStoredProductLogo } = logoStorage;
-const checkOnly = process.argv.includes("--check");
-const refresh = process.argv.includes("--refresh");
-
-function extractAppStoreId(value: string | null | undefined) {
-  return value?.match(/\/id(\d+)/i)?.[1] || null;
-}
-
-function normalizeAppStoreArtworkUrl(value: string | null | undefined) {
-  const url = value?.trim();
-  return url
-    ? url.replace(/\/\d+x\d+bb\.(jpg|jpeg|png|webp)$/i, "/512x512bb.$1")
-    : null;
-}
-
-async function lookupAppStoreArtwork(appStoreId: string | null) {
-  if (!appStoreId) return null;
-
-  const response = await fetch(
-    `https://itunes.apple.com/lookup?id=${encodeURIComponent(appStoreId)}`,
-    {
-      headers: { "User-Agent": "GeoSubLogoSync/1.0 (+https://geosub.org)" },
-      cache: "no-store",
-      signal: AbortSignal.timeout(12_000),
-    },
-  );
-
-  if (!response.ok) return null;
-
-  const data = (await response.json()) as {
-    results?: Array<{
-      artworkUrl512?: string;
-      artworkUrl100?: string;
-      artworkUrl60?: string;
-    }>;
-  };
-  const app = data.results?.[0];
-
-  return normalizeAppStoreArtworkUrl(
-    app?.artworkUrl512 || app?.artworkUrl100 || app?.artworkUrl60,
-  );
-}
+const { prisma } = await import("../lib/prisma.ts");
+const publicDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "../public");
+const iconPack = icons as unknown as Record<string, { path?: string } | undefined>;
 
 const products = await prisma.product.findMany({
   where: { status: "PUBLISHED" },
   select: {
-    id: true,
     slug: true,
     logoUrl: true,
-    officialUrl: true,
-    collectorJobs: {
-      where: { status: { not: "archived" } },
-      select: {
-        source: {
-          select: { type: true, baseUrl: true },
-        },
-      },
-    },
   },
   orderBy: { slug: "asc" },
 });
 
-const missing: string[] = [];
 const failures: string[] = [];
-let cached = 0;
-let unchanged = 0;
+let approvedLocalCount = 0;
+let simpleIconCount = 0;
+let neutralCount = 0;
+let restrictedLegacyCount = 0;
 
 for (const product of products) {
-  const stored = await readStoredProductLogo(product.slug);
-
-  if (stored && !refresh) {
-    unchanged += 1;
-    console.log(`OK    ${product.slug}: ${stored.fileName}`);
-    continue;
-  }
-
-  if (checkOnly) {
-    missing.push(product.slug);
-    console.error(`MISS  ${product.slug}: no persistent cached logo`);
-    continue;
-  }
-
-  const appStoreUrl = product.collectorJobs.find(
-    (job) => job.source?.type === "APP_STORE",
-  )?.source?.baseUrl;
-  const appStoreId = extractAppStoreId(appStoreUrl);
-  const officialSiteLogo = refresh || !product.logoUrl
-    ? await fetchOfficialSiteIcon(product.officialUrl).catch(() => null)
-    : null;
-  const appStoreLogo = await lookupAppStoreArtwork(appStoreId).catch(() => null);
-  const candidates = [
-    refresh ? officialSiteLogo : product.logoUrl,
-    refresh ? product.logoUrl : officialSiteLogo,
-    appStoreLogo,
-  ].filter((value, index, values): value is string =>
-    Boolean(value && values.indexOf(value) === index),
+  const approvedLocalAsset = getApprovedLocalBrandAsset(product.slug);
+  const simpleIconName = getSimpleIconCandidates(product.slug).find(
+    (candidate) => Boolean(iconPack[candidate]?.path),
   );
 
-  let synchronizedUrl: string | null = null;
+  if (approvedLocalAsset) {
+    const filePath = resolve(publicDirectory, approvedLocalAsset.path.replace(/^\//, ""));
+    const isInsidePublicDirectory = filePath.startsWith(`${publicDirectory}\\`) ||
+      filePath.startsWith(`${publicDirectory}/`);
+    const exists = isInsidePublicDirectory
+      ? await access(filePath).then(() => true).catch(() => false)
+      : false;
 
-  for (const sourceUrl of candidates) {
-    const result = await cacheRemoteProductLogo({
-      productSlug: product.slug,
-      sourceUrl,
-    }).catch(() => null);
-
-    if (result) {
-      synchronizedUrl = sourceUrl;
-      console.log(`SYNC  ${product.slug}: ${result.fileName}`);
-      break;
+    if (!exists) {
+      failures.push(`${product.slug}: registered local asset is missing`);
+      console.error(`FAIL  ${product.slug}: registered local asset is missing`);
+      continue;
     }
+
+    approvedLocalCount += 1;
+    console.log(`LOCAL ${product.slug}: ${approvedLocalAsset.path}`);
+  } else if (simpleIconName) {
+    simpleIconCount += 1;
+    console.log(`ICON  ${product.slug}: Simple Icons ${simpleIconName}`);
+  } else {
+    neutralCount += 1;
+    console.log(`TEXT  ${product.slug}: GeoSub neutral initials`);
   }
 
-  if (!synchronizedUrl) {
-    failures.push(product.slug);
-    console.error(`FAIL  ${product.slug}: no downloadable official logo`);
-    continue;
+  if (isRestrictedLegacyLogoReference(product.logoUrl)) {
+    restrictedLegacyCount += 1;
+    console.log(`NOTE  ${product.slug}: legacy remote logo retained as diagnostic metadata only`);
   }
+}
 
-  if (product.logoUrl !== synchronizedUrl) {
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { logoUrl: synchronizedUrl },
-    });
+for (const [slug, asset] of Object.entries(
+  approvedLocalBrandAssets as Record<string, ApprovedLocalBrandAsset>,
+)) {
+  if (!asset.path.startsWith("/brand-assets/")) {
+    failures.push(`${slug}: approved asset must be stored under /brand-assets/`);
   }
-
-  cached += 1;
+  if (!asset.evidenceReference.trim() || !asset.reviewedAt.trim()) {
+    failures.push(`${slug}: rights evidence and review date are required`);
+  }
 }
 
 await prisma.$disconnect();
 
 console.log(
-  `Logo coverage: ${products.length - missing.length - failures.length}/${products.length}; ` +
-    `cached ${cached}; unchanged ${unchanged}; missing ${missing.length}; failed ${failures.length}.`,
+  `Public logo coverage: ${products.length - failures.length}/${products.length}; ` +
+    `approved local ${approvedLocalCount}; Simple Icons ${simpleIconCount}; ` +
+    `neutral ${neutralCount}; restricted legacy references ${restrictedLegacyCount}.`,
+);
+console.log(
+  "Remote and App Store artwork is not downloaded or published by this command. " +
+    "Register rights-cleared assets in lib/product-brand-assets.ts before use.",
 );
 
-if (missing.length > 0 || failures.length > 0) {
+if (failures.length > 0) {
   process.exitCode = 1;
 }

@@ -2,9 +2,14 @@ import "dotenv/config";
 import { prisma } from "../lib/prisma.ts";
 import { getProductSitemapDecision } from "../lib/product-seo-indexing-policy.ts";
 import { getProductSeoQualityAudits } from "../lib/product-seo-quality-data.ts";
-import { seoIndexableLocales } from "../lib/seo-indexing-policy.ts";
+import {
+  isPlanSitemapPromotedProduct,
+  seoIndexableLocales,
+} from "../lib/seo-indexing-policy.ts";
+import { getEffectivePlanSitemapProductSlugs } from "../lib/seo-plan-promotion-data.ts";
 
 const audits = await getProductSeoQualityAudits();
+const promotedProductSlugs = await getEffectivePlanSitemapProductSlugs();
 const report = audits.map((audit) => {
   const decision = getProductSitemapDecision(audit.status, "enforce");
 
@@ -14,6 +19,7 @@ const report = audits.map((audit) => {
     recommendation: audit.statusLabel,
     sitemapPlanPages:
       decision.included
+      && isPlanSitemapPromotedProduct(audit.slug, promotedProductSlugs)
         ? audit.currentPlanCount * seoIndexableLocales.length
         : 0,
     plans: audit.planCount,

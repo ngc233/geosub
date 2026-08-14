@@ -11,12 +11,11 @@ const outputPath = path.join(
   "backfill",
   "049_expand_competitor_catalog.sql",
 );
-const requiredOutputPath = path.join(
-  backendDir,
-  "sql",
-  "backfill",
-  "050_ensure_required_catalog_products.sql",
-);
+const requiredProductMigrationPaths = [
+  path.join(backendDir, "sql", "backfill", "050_ensure_required_catalog_products.sql"),
+  path.join(backendDir, "sql", "backfill", "051_normalize_suno_app_store_plans.sql"),
+  path.join(backendDir, "sql", "backfill", "052_normalize_copilot_app_store_plans.sql"),
+];
 const allowedCategories = new Set(["ai", "streaming"]);
 const allowedBillingCycles = new Set([
   "monthly",
@@ -405,26 +404,28 @@ function main() {
   const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
   validateCatalog(catalog);
   const generated = buildSql(catalog);
-  const generatedRequired = buildSql({ products: catalog.required_products });
 
   if (process.argv.includes("--check")) {
     if (!fs.existsSync(outputPath) || fs.readFileSync(outputPath, "utf8") !== generated) {
       throw new Error("Generated catalog migration is missing or out of date.");
     }
-    if (
-      !fs.existsSync(requiredOutputPath) ||
-      fs.readFileSync(requiredOutputPath, "utf8") !== generatedRequired
-    ) {
-      throw new Error("Generated required-product migration is missing or out of date.");
+    const missingRequiredMigrations = requiredProductMigrationPaths.filter(
+      (migrationPath) => !fs.existsSync(migrationPath),
+    );
+    if (missingRequiredMigrations.length > 0) {
+      throw new Error(
+        `Required-product migrations are missing: ${missingRequiredMigrations
+          .map((migrationPath) => path.relative(backendDir, migrationPath))
+          .join(", ")}.`,
+      );
     }
-    console.log("Catalog expansion and generated migration are current.");
+    console.log("Catalog expansion is current; existing-product corrections are immutable migrations.");
     return;
   }
 
   fs.writeFileSync(outputPath, generated, "utf8");
-  fs.writeFileSync(requiredOutputPath, generatedRequired, "utf8");
   console.log(`Wrote ${path.relative(backendDir, outputPath)}.`);
-  console.log(`Wrote ${path.relative(backendDir, requiredOutputPath)}.`);
+  console.log("Required existing products remain managed by immutable correction migrations.");
 }
 
 try {

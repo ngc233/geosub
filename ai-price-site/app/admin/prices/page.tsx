@@ -1,5 +1,15 @@
 import AdminLink from "@/components/admin/AdminLink";
+import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
+import SegmentedControl from "../../../components/ui/SegmentedControl";
+import {
+  adminOperationalStatusMeta,
+  assessPriceOperationalStatus,
+  assessProductOperationalStatus,
+  countAdminOperationalAssessments,
+  getAdminOperationalTotal,
+  type AdminOperationalStatus,
+} from "../../../lib/admin-operational-status";
 import { prisma } from "../../../lib/prisma";
 
 const categoryOrder = ["ai", "software", "streaming", "game", "gift_card", "payment", "vpn", "other"];
@@ -19,41 +29,12 @@ function categoryLabel(category: string) {
   return categoryMeta[category]?.label || category;
 }
 
-function statusLabel(status: string) {
-  if (status === "PUBLISHED") return "已发布";
-  if (status === "DRAFT") return "草稿";
-  if (status === "REVIEW") return "待审核";
-  if (status === "ARCHIVED") return "已归档";
-  return status;
-}
-
 function qualityLabel(quality: string) {
   if (quality === "VERIFIED") return "已验证";
   if (quality === "ESTIMATED") return "估算";
   if (quality === "STALE") return "过期";
   if (quality === "PENDING_REVIEW") return "待审核";
   return quality;
-}
-
-function qualityClassName(quality: string) {
-  if (quality === "VERIFIED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (quality === "ESTIMATED") return "bg-blue-50 text-blue-700 ring-blue-200";
-  if (quality === "STALE") return "bg-red-50 text-red-700 ring-red-200";
-  return "bg-amber-50 text-amber-700 ring-amber-200";
-}
-
-function statusClassName(status: string) {
-  if (status === "PUBLISHED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "ARCHIVED") return "bg-slate-100 text-slate-600 ring-slate-200";
-  if (status === "REVIEW") return "bg-amber-50 text-amber-700 ring-amber-200";
-  return "bg-slate-50 text-slate-600 ring-slate-200";
-}
-
-function productStatusClassName(status: string) {
-  if (status === "PUBLISHED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "REVIEW") return "bg-blue-50 text-blue-700 ring-blue-200";
-  if (status === "ARCHIVED") return "bg-slate-100 text-slate-600 ring-slate-200";
-  return "bg-amber-50 text-amber-700 ring-amber-200";
 }
 
 function formatMoney(amount: number, currency: string) {
@@ -92,6 +73,7 @@ type ProductPriceSummaryRow = {
   min_price_usd: unknown;
   max_price_usd: unknown;
   verified_price_count: unknown;
+  pending_price_count: unknown;
   stale_price_count: unknown;
   no_source_price_count: unknown;
 };
@@ -110,12 +92,14 @@ type ProductPriceSummary = {
   minPriceUsd: number | null;
   maxPriceUsd: number | null;
   verifiedPriceCount: number;
+  pendingPriceCount: number;
   stalePriceCount: number;
   noSourcePriceCount: number;
 };
 
 type PriceSiteStatsRow = {
   price_count: unknown;
+  archived_price_count: unknown;
   country_count: unknown;
   min_price_usd: unknown;
   max_price_usd: unknown;
@@ -181,6 +165,7 @@ function normalizeProductSummary(row: ProductPriceSummaryRow): ProductPriceSumma
     minPriceUsd: toNullableNumber(row.min_price_usd),
     maxPriceUsd: toNullableNumber(row.max_price_usd),
     verifiedPriceCount: toNumber(row.verified_price_count),
+    pendingPriceCount: toNumber(row.pending_price_count),
     stalePriceCount: toNumber(row.stale_price_count),
     noSourcePriceCount: toNumber(row.no_source_price_count),
   };
@@ -202,6 +187,7 @@ async function getProductPriceSummaries() {
       price_stats.min_price_usd,
       price_stats.max_price_usd,
       COALESCE(price_stats.verified_price_count, 0)::int AS verified_price_count,
+      COALESCE(price_stats.pending_price_count, 0)::int AS pending_price_count,
       COALESCE(price_stats.stale_price_count, 0)::int AS stale_price_count,
       COALESCE(price_stats.no_source_price_count, 0)::int AS no_source_price_count
     FROM products product
@@ -218,11 +204,17 @@ async function getProductPriceSummaries() {
         MIN(price.price_usd) AS min_price_usd,
         MAX(price.price_usd) AS max_price_usd,
         COUNT(*) FILTER (WHERE price.data_quality = 'verified'::data_quality)::int AS verified_price_count,
+        COUNT(*) FILTER (
+          WHERE price.data_quality IN ('estimated'::data_quality, 'pending_review'::data_quality)
+            OR price.status <> 'published'::publish_status
+        )::int AS pending_price_count,
         COUNT(*) FILTER (WHERE price.data_quality = 'stale'::data_quality)::int AS stale_price_count,
         COUNT(*) FILTER (WHERE price.primary_source_id IS NULL)::int AS no_source_price_count
       FROM region_prices price
       WHERE price.product_id = product.id
+        AND price.status <> 'archived'::publish_status
     ) price_stats ON TRUE
+    WHERE product.status <> 'archived'::publish_status
     ORDER BY product.category ASC, product.sort_order ASC, product.name ASC
   `;
 
@@ -233,17 +225,20 @@ async function getSitePriceStats() {
   const rows = await prisma.$queryRaw<PriceSiteStatsRow[]>`
     SELECT
       COUNT(*)::int AS price_count,
+      (SELECT COUNT(*)::int FROM region_prices archived_price WHERE archived_price.status = 'archived'::publish_status) AS archived_price_count,
       COUNT(DISTINCT country_id)::int AS country_count,
       MIN(price_usd) AS min_price_usd,
       MAX(price_usd) AS max_price_usd,
       COUNT(*) FILTER (WHERE data_quality = 'stale'::data_quality)::int AS stale_price_count,
       COUNT(*) FILTER (WHERE primary_source_id IS NULL)::int AS no_source_price_count
     FROM region_prices
+    WHERE status <> 'archived'::publish_status
   `;
   const row = rows[0];
 
   return {
     priceCount: toNumber(row?.price_count),
+    archivedPriceCount: toNumber(row?.archived_price_count),
     countryCount: toNumber(row?.country_count),
     minPriceUsd: toNullableNumber(row?.min_price_usd),
     maxPriceUsd: toNullableNumber(row?.max_price_usd),
@@ -282,6 +277,9 @@ async function getPriceDetailRows({ page, pageSize }: { page: number; pageSize: 
     JOIN plans plan ON plan.id = price.plan_id
     JOIN countries country ON country.id = price.country_id
     LEFT JOIN price_sources source ON source.id = price.primary_source_id
+    WHERE product.status <> 'archived'::publish_status
+      AND plan.status <> 'archived'::publish_status
+      AND price.status <> 'archived'::publish_status
     ORDER BY product.category ASC, product.sort_order ASC, product.name ASC, plan.sort_order ASC, price.price_usd ASC
     LIMIT ${pageSize}
     OFFSET ${offset}
@@ -349,9 +347,15 @@ export default async function AdminPricesPage({
 }: {
   searchParams?: Promise<{
     pricePage?: string;
+    state?: string;
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
+  const selectedState = ["not_started", "pending", "exception", "published"].includes(
+    String(params.state),
+  )
+    ? (String(params.state) as AdminOperationalStatus)
+    : "all";
   const detailPageSize = 50;
   const detailPage = Math.max(1, Number(params.pricePage ?? 1) || 1);
   const [products, siteStats, detailRows, taxCoverage] = await Promise.all([
@@ -360,7 +364,21 @@ export default async function AdminPricesPage({
     getPriceDetailRows({ page: detailPage, pageSize: detailPageSize }),
     getTaxCoverage(),
   ]);
-  const publishedProducts = products.filter((product) => product.status === "PUBLISHED");
+  const assessProduct = (product: ProductPriceSummary) =>
+    assessProductOperationalStatus({
+      publishStatus: product.status,
+      planCount: product.planCount,
+      priceCount: product.priceCount,
+      verifiedPriceCount: product.verifiedPriceCount,
+      pendingWorkCount: product.pendingPriceCount,
+      stalePriceCount: product.stalePriceCount,
+      missingSourceCount: product.noSourcePriceCount,
+    });
+  const operationalCounts = countAdminOperationalAssessments(products.map(assessProduct));
+  const activeTotal = getAdminOperationalTotal(operationalCounts);
+  const publishedProducts = products.filter(
+    (product) => assessProduct(product)?.status === "published",
+  );
   const productsWithPrices = products.filter((product) => product.priceCount > 0);
   const plansWithPrices = products.reduce(
     (sum, product) => sum + product.plansWithPricesCount,
@@ -379,6 +397,7 @@ export default async function AdminPricesPage({
   const safeDetailPage = Math.min(detailPage, detailTotalPages);
   const buildDetailPageHref = (nextPage: number) => {
     const query = new URLSearchParams();
+    if (selectedState !== "all") query.set("state", selectedState);
     if (nextPage > 1) query.set("pricePage", String(nextPage));
     const value = query.toString();
     return value ? `/admin/prices?${value}` : "/admin/prices";
@@ -413,6 +432,15 @@ export default async function AdminPricesPage({
       noSourcePrices: product.noSourcePriceCount,
     };
   });
+  const visibleProductSummaries = productSummaries.filter(
+    ({ product }) => selectedState === "all" || assessProduct(product)?.status === selectedState,
+  );
+  const stateHref = (state: "all" | AdminOperationalStatus) => {
+    const query = new URLSearchParams();
+    if (state !== "all") query.set("state", state);
+    const suffix = query.toString();
+    return suffix ? `/admin/prices?${suffix}` : "/admin/prices";
+  };
 
   return (
     <div>
@@ -426,7 +454,7 @@ export default async function AdminPricesPage({
         <AdminCard>
           <div className="text-sm font-bold text-slate-500">产品覆盖</div>
           <div className="mt-2 text-2xl font-black text-slate-950">
-            {productsWithPrices.length} / {products.length}
+            {productsWithPrices.length} / {activeTotal}
           </div>
           <div className="mt-2 text-sm text-slate-500">
             已发布产品 {publishedProducts.length} 个。
@@ -459,7 +487,7 @@ export default async function AdminPricesPage({
             {siteStats.stalePriceCount + siteStats.noSourcePriceCount}
           </div>
           <div className="mt-2 text-sm text-slate-500">
-            过期 {siteStats.stalePriceCount}，缺来源 {siteStats.noSourcePriceCount}。
+            过期 {siteStats.stalePriceCount}，缺来源 {siteStats.noSourcePriceCount}；归档 {siteStats.archivedPriceCount} 条另计。
           </div>
         </AdminCard>
 
@@ -568,8 +596,29 @@ export default async function AdminPricesPage({
           </AdminLink>
         </div>
 
+        <div className="mb-5 max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <SegmentedControl
+            ariaLabel="正式价格产品状态"
+            value={selectedState}
+            tone="blue"
+            className="min-w-[520px]"
+            items={[
+              { label: `全部 ${activeTotal}`, value: "all", href: stateHref("all") },
+              ...(["exception", "pending", "not_started", "published"] as AdminOperationalStatus[]).map(
+                (status) => ({
+                  label: `${adminOperationalStatusMeta[status].label} ${operationalCounts[status]}`,
+                  value: status,
+                  href: stateHref(status),
+                }),
+              ),
+            ]}
+          />
+        </div>
+
         <div className="grid gap-3 lg:grid-cols-2">
-          {productSummaries.map((summary) => (
+          {visibleProductSummaries.map((summary) => {
+            const assessment = assessProduct(summary.product);
+            return (
             <div key={summary.product.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -578,14 +627,10 @@ export default async function AdminPricesPage({
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">
                       {categoryLabel(summary.product.category)}
                     </span>
-                    <span
-                      className={[
-                        "rounded-full px-2.5 py-1 text-xs font-black ring-1",
-                        productStatusClassName(String(summary.product.status)),
-                      ].join(" ")}
-                    >
-                      {statusLabel(String(summary.product.status))}
-                    </span>
+                    <AdminStatusBadge
+                      status={assessment?.status ?? "not_started"}
+                      title={assessment?.reason}
+                    />
                   </div>
                   <div className="mt-1 font-mono text-xs text-slate-400">
                     {summary.product.slug} · {summary.product.provider || "未填服务商"}
@@ -636,8 +681,11 @@ export default async function AdminPricesPage({
                   </AdminLink>
                 </div>
               </div>
+              <div className="mt-3 text-xs leading-5 text-slate-500">
+                {assessment?.reason}
+              </div>
             </div>
-          ))}
+          );})}
         </div>
       </AdminCard>
 
@@ -708,22 +756,21 @@ export default async function AdminPricesPage({
 
                   <td className="px-4 py-4">
                     <div className="flex flex-col gap-2">
-                      <span
-                        className={[
-                          "inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-black ring-1",
-                          statusClassName(normalizeStatus(price.status)),
-                        ].join(" ")}
-                      >
-                        {statusLabel(normalizeStatus(price.status))}
-                      </span>
-                      <span
-                        className={[
-                          "inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-black ring-1",
-                          qualityClassName(normalizeStatus(price.data_quality)),
-                        ].join(" ")}
-                      >
-                        {qualityLabel(normalizeStatus(price.data_quality))}
-                      </span>
+                      {(() => {
+                        const assessment = assessPriceOperationalStatus({
+                          status: normalizeStatus(price.status),
+                          dataQuality: normalizeStatus(price.data_quality),
+                          hasSource: Boolean(price.source_name),
+                        });
+                        return assessment ? (
+                          <>
+                            <AdminStatusBadge status={assessment.status} title={assessment.reason} />
+                            <span className="text-xs text-slate-500">
+                              数据：{qualityLabel(normalizeStatus(price.data_quality))}
+                            </span>
+                          </>
+                        ) : null;
+                      })()}
                     </div>
                   </td>
 

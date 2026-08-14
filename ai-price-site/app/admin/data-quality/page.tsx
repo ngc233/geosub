@@ -1,9 +1,10 @@
 import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { readAdminReadModel } from "../../../lib/admin-read-model-cache";
+import { countAdminOperationalAssessments } from "../../../lib/admin-operational-status";
 import { DataQualityOverview } from "./DataQualityOverview";
 import {
-  countByHealth,
   getProductHealth,
+  getProductOperationalAssessment,
   healthPriority,
 } from "./model";
 import {
@@ -36,28 +37,9 @@ export default async function AdminDataQualityPage() {
 
     return a.name.localeCompare(b.name, "zh-CN");
   });
-  const goodCount = countByHealth(rows, "good");
-  const infoCount = countByHealth(rows, "info");
-  const warningCount = countByHealth(rows, "warning");
-  const dangerCount = countByHealth(rows, "danger");
-  const autoClosedTotal = rows.reduce(
-    (sum, row) => sum + row.auto_closed_observation_count,
-    0,
+  const operationalCounts = countAdminOperationalAssessments(
+    rows.map(getProductOperationalAssessment),
   );
-  const autoRepairProductCount = rows.filter(
-    (row) =>
-      row.anomaly_refresh_status === "active" ||
-      row.stale_refresh_status === "active" ||
-      row.coverage_refresh_status === "active" ||
-      (row.hard_anomaly_count > 0 && row.anomaly_refresh_success_count < 3) ||
-      (row.stale_published_count > 0 && row.stale_refresh_success_count < 3) ||
-      (row.missing_pair_count > 0 && row.coverage_refresh_success_count < 3) ||
-      row.pending_stability_count > 0,
-  ).length;
-  const needsConfigurationCount = rows.filter(
-    (row) =>
-      row.active_app_store_job_count <= 0 || row.latest_run_status === "failed",
-  ).length;
   const coverageGapProductCount = rows.filter(
     (row) => row.missing_pair_count > 0,
   ).length;
@@ -66,13 +48,7 @@ export default async function AdminDataQualityPage() {
     <DataQualityOverview
       rows={rows}
       latestRepairCycle={latestRepairCycle}
-      goodCount={goodCount}
-      infoCount={infoCount}
-      warningCount={warningCount}
-      dangerCount={dangerCount}
-      autoClosedTotal={autoClosedTotal}
-      autoRepairProductCount={autoRepairProductCount}
-      needsConfigurationCount={needsConfigurationCount}
+      operationalCounts={operationalCounts}
       coverageGapProductCount={coverageGapProductCount}
     />
   );

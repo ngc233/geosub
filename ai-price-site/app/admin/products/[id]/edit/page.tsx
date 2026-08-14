@@ -189,13 +189,13 @@ export default async function EditProductPage({
 
       {query?.logoSynced ? (
         <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
-          官方 Logo 已同步并保存到 GeoSub 服务器，前台不再直接加载第三方图片。
+          候选图标已缓存为内部核验资料，尚未公开展示。取得使用许可并登记后，才能加入前台品牌资产目录。
         </div>
       ) : null}
 
       {query?.logoError === "official-not-found" || query?.logoError === "not-found" ? (
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
-          暂未找到高可信官网图标或 Apple 官方应用图标。请补充官方网站或手动填写官方 SVG/PNG Logo URL。
+          暂未找到可供核验的官网图标或 App Store 候选图。前台将继续使用合规的 Simple Icons 或中性首字母。
         </div>
       ) : null}
 
@@ -273,8 +273,9 @@ export default async function EditProductPage({
 
             <AdminInput
               name="logoUrl"
-              label="Logo URL"
+              label="候选 Logo URL"
               defaultValue={product.logoUrl || ""}
+              helperText="仅作为内部来源记录；远程 URL 和 App Store artwork 不会直接显示在前台。"
             />
 
             <AdminInput
@@ -316,8 +317,8 @@ export default async function EditProductPage({
 
       <AdminCard className="mt-6">
         <AdminSectionHeader
-          title="官方 Logo"
-          description="优先同步官方网站高可信图标，找不到时使用 Apple 官方应用图标；图片统一下载到 GeoSub 持久目录。"
+          title="品牌图标与权利核验"
+          description="可缓存官网或 App Store 候选图用于内部核验，但只有已登记许可的本地资产才能公开展示。"
         />
 
         <div className="flex flex-col gap-4 rounded-xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -325,11 +326,11 @@ export default async function EditProductPage({
             <BrandIcon product={product} size="md" />
             <div>
               <div className="text-sm font-bold text-slate-950">
-                当前展示：{product.logoUrl ? "产品 Logo URL" : "系统兜底图标"}
+                当前前台：合规本地资产 / Simple Icons / 中性首字母
               </div>
               <div className="mt-1 max-w-2xl text-xs leading-6 text-slate-600">
-                新增产品后，优先维护官方网站；如果官网品牌图标有变化，重新点击同步即可更新。
-                找不到高可信官网图标时，前台会继续使用内置品牌图标，不会显示破损图片。
+                候选图只用于确认品牌身份和后续申请许可，不会因缓存成功而自动发布。
+                没有合规品牌图标时，前台显示稳定的中性首字母，不会加载第三方图片或仿制图形。
               </div>
             </div>
           </div>
@@ -338,7 +339,7 @@ export default async function EditProductPage({
             <input type="hidden" name="productId" value={product.id} />
             <input type="hidden" name="appStoreId" value={latestAppStoreJob?.app_store_id || ""} />
             <AdminButton type="submit" variant="secondary">
-              自动同步官方 Logo
+              缓存候选图标（不发布）
             </AdminButton>
           </form>
         </div>

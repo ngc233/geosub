@@ -210,6 +210,7 @@ test("public pricing runtime does not import the legacy static product catalog",
 
 test("priority product guidance is rendered on public detail pages", () => {
   const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const topicLinks = readAppFile("..", "components", "PricingTopicLinks.tsx");
   const editorialSection = readAppFile(
     "..",
     "components",
@@ -219,10 +220,34 @@ test("priority product guidance is rendered on public detail pages", () => {
   assert.match(detailPage, /getProductEditorialContent/);
   assert.match(detailPage, /getPlanEditorialIndexingStatus/);
   assert.match(detailPage, /<ProductEditorialSection/);
+  assert.match(detailPage, /planName=\{activePlan\.name\}/);
   assert.match(editorialSection, /content\.plan\.bestFor/);
   assert.match(editorialSection, /content\.plan\.difference/);
   assert.match(editorialSection, /content\.plan\.availabilityNote/);
+  assert.match(editorialSection, /GitCompareArrows/);
+  assert.match(editorialSection, /UserRound/);
   assert.match(editorialSection, /TrackedLink/);
+  assert.match(detailPage, /<RelatedPlanChoices/);
+  assert.match(topicLinks, /getPlanEditorialIndexingStatus/);
+  assert.match(topicLinks, /=== "current"/);
+  assert.match(topicLinks, /getPricingPlanPath/);
+});
+
+test("product overview and related pricing links expose clear next actions", () => {
+  const planOverview = readAppFile(
+    "..",
+    "components",
+    "ProductPlanOverview.tsx",
+  );
+  const topicLinks = readAppFile("..", "components", "PricingTopicLinks.tsx");
+
+  assert.match(planOverview, /min-h-11/);
+  assert.match(planOverview, /border-lime-300/);
+  assert.match(planOverview, /copy\.viewPlan/);
+  assert.match(planOverview, /copy\.regions\(plan\.regions\.length\)/);
+  assert.match(topicLinks, /productAction/);
+  assert.match(topicLinks, /min-h-16/);
+  assert.match(topicLinks, /hover:border-lime-400/);
 });
 
 test("pricing detail pages keep AI and streaming paths synchronized", () => {
@@ -411,11 +436,23 @@ test("legacy renewal plans are noindex even while product quality is observed", 
 test("product navigation points to the self-canonical product overview", () => {
   const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
   const sidebar = readAppFile("..", "components", "ProductSidebar.tsx");
+  const topicLinks = readAppFile("..", "components", "PricingTopicLinks.tsx");
+  const planOverview = readAppFile("..", "components", "ProductPlanOverview.tsx");
 
   assert.match(detailPage, /<ProductPlanOverview product=\{product\} locale=\{locale\} \/>/);
+  assert.match(detailPage, /<ProductOverviewLink[\s\S]*?href=\{productCanonicalPath\}/);
+  assert.match(detailPage, /<RelatedPricingProducts[\s\S]*?products=\{sidebarProducts\}/);
   assert.doesNotMatch(detailPage, /defaultPlanSlug:/);
   assert.doesNotMatch(sidebar, /defaultPlanSlug/);
   assert.match(sidebar, /`\$\{path\}\/\$\{product\.slug\}`/);
+  assert.match(topicLinks, /product\.slug !== currentSlug/);
+  assert.match(topicLinks, /product\.category === category/);
+  assert.match(topicLinks, /\.slice\(0, 4\)/);
+  assert.match(topicLinks, /locale === "zh" \|\| locale === "en"/);
+  assert.match(topicLinks, /getProductHref\(product, basePath\)/);
+  assert.match(planOverview, /data-track-event="select_plan"/);
+  assert.match(planOverview, /data-track-placement="product_overview_card"/);
+  assert.match(planOverview, /data-track-button=\{`\$\{product\.slug\}:\$\{plan\.slug\}`\}/);
 });
 
 test("pricing detail pages do not contain mojibake text tokens", () => {

@@ -11,11 +11,14 @@ import {
   type CollectionRunResult,
   type CollectionRunStatus,
 } from "./collection-status";
+import type { BatchCollectionResult } from "../pipeline/batch-collection";
+import { getCollectionRevalidationPaths } from "./collection-revalidation";
 
 const MANUAL_COLLECTION_COOLDOWN_SECONDS = 120;
 const MANUAL_COLLECTION_FRESH_HOURS = 12;
 const COLLECTOR_START_TIMEOUT_MINUTES = 3;
 const COLLECTOR_RUN_TIMEOUT_MINUTES = 20;
+const BATCH_IMMEDIATE_START_LIMIT = 1;
 
 type StartedCollectorProcess = {
   pid: number | null;
@@ -305,6 +308,111 @@ export async function startCollectorJobRunInBackground(jobId: string) {
   return runId;
 }
 
+export async function queueBatchAppStoreCollections(
+  productSlugs: string[],
+): Promise<BatchCollectionResult> {
+  const uniqueSlugs = [...new Set(productSlugs.map((slug) => slug.trim().toLowerCase()).filter(Boolean))];
+
+  if (uniqueSlugs.length === 0) {
+    return {
+      requestedCount: 0,
+      queuedCount: 0,
+      startedCount: 0,
+      protectedCount: 0,
+      skippedCount: 0,
+      failedToStartCount: 0,
+    };
+  }
+
+  const candidates = await prisma.$queryRaw<
+    Array<{
+      job_id: string;
+      product_slug: string;
+      has_recent_run: boolean;
+    }>
+  >`
+    WITH ranked_jobs AS (
+      SELECT
+        job.id,
+        product.slug AS product_slug,
+        EXISTS (
+          SELECT 1
+          FROM collector_job_runs run
+          WHERE run.job_id = job.id
+            AND run.started_at > NOW() - (${MANUAL_COLLECTION_COOLDOWN_SECONDS} || ' seconds')::interval
+        ) AS has_recent_run,
+        ROW_NUMBER() OVER (
+          PARTITION BY job.product_id
+          ORDER BY
+            job.priority DESC,
+            (COALESCE(job.job_config ->> 'app_store_id', '') <> '') DESC,
+            job.updated_at DESC,
+            job.created_at DESC
+        ) AS product_rank
+      FROM collector_jobs job
+      JOIN products product ON product.id = job.product_id
+      JOIN price_sources source ON source.id = job.source_id
+      WHERE product.slug IN (${Prisma.join(uniqueSlugs)})
+        AND source.type = 'app_store'::price_source_type
+        AND job.job_type = 'ai_pricing'
+        AND job.status <> 'archived'
+    )
+    SELECT
+      id::text AS job_id,
+      product_slug,
+      has_recent_run
+    FROM ranked_jobs
+    WHERE product_rank = 1
+    ORDER BY product_slug
+  `;
+
+  const protectedJobs = candidates.filter((candidate) => candidate.has_recent_run);
+  const queueableJobs = candidates.filter((candidate) => !candidate.has_recent_run);
+  const queueableJobIds = queueableJobs.map((candidate) => candidate.job_id);
+
+  if (queueableJobIds.length > 0) {
+    await prisma.$executeRaw`
+      UPDATE collector_jobs
+      SET
+        status = 'active',
+        next_run_at = NOW(),
+        last_error = NULL,
+        priority = GREATEST(priority, 100),
+        updated_at = NOW()
+      WHERE id::text IN (${Prisma.join(queueableJobIds)})
+    `;
+  }
+
+  let startedCount = 0;
+  let failedToStartCount = 0;
+
+  for (const candidate of queueableJobs.slice(0, BATCH_IMMEDIATE_START_LIMIT)) {
+    try {
+      await startCollectorJobRunInBackground(candidate.job_id);
+      startedCount += 1;
+    } catch {
+      failedToStartCount += 1;
+    }
+  }
+
+  if (queueableJobs.length > 0) {
+    invalidatePublicPricing(null);
+  }
+
+  for (const pathToRevalidate of getCollectionRevalidationPaths()) {
+    revalidatePath(pathToRevalidate);
+  }
+
+  return {
+    requestedCount: uniqueSlugs.length,
+    queuedCount: queueableJobs.length,
+    startedCount,
+    protectedCount: protectedJobs.length,
+    skippedCount: Math.max(0, uniqueSlugs.length - queueableJobs.length),
+    failedToStartCount,
+  };
+}
+
 export async function queueAndRunAppStoreCollection(productSlug: string): Promise<CollectionRunResult> {
   if (productSlug) {
     const readiness = await getProductCollectionReadiness(productSlug);
@@ -456,19 +564,8 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
     invalidatePublicPricing(productSlug || null);
   }
 
-  revalidatePath("/admin/review");
-  revalidatePath("/admin/pipeline");
-  revalidatePath("/admin/collector-jobs");
-  revalidatePath("/admin/affordability");
-  revalidatePath("/zh/ai-pricing");
-  revalidatePath("/en/ai-pricing");
-  revalidatePath("/zh/streaming-pricing");
-  revalidatePath("/en/streaming-pricing");
-  if (productSlug) {
-    revalidatePath(`/zh/ai-pricing/${productSlug}`);
-    revalidatePath(`/en/ai-pricing/${productSlug}`);
-    revalidatePath(`/zh/streaming-pricing/${productSlug}`);
-    revalidatePath(`/en/streaming-pricing/${productSlug}`);
+  for (const pathToRevalidate of getCollectionRevalidationPaths(productSlug)) {
+    revalidatePath(pathToRevalidate);
   }
 
   return {

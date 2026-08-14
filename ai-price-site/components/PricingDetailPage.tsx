@@ -10,6 +10,11 @@ import ProductPlanOverview from "./ProductPlanOverview";
 import PlanTabs from "./PlanTabs";
 import SharePriceModal from "./SharePriceModal";
 import MobileProductSwitcher from "./MobileProductSwitcher";
+import {
+  ProductOverviewLink,
+  RelatedPlanChoices,
+  RelatedPricingProducts,
+} from "./PricingTopicLinks";
 import PricingPlatformView from "./PricingPlatformView";
 import AffordabilityComparison from "./AffordabilityComparison";
 import {
@@ -26,9 +31,14 @@ import {
 } from "../lib/exchange-rates";
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
-import { getPricingProductOverviewCopy } from "../lib/pricing-product-overview-copy";
+import {
+  getPricingProductOverviewCopy,
+  getProductOverviewDecisionPlans,
+  getProductOverviewPriceFact,
+} from "../lib/pricing-product-overview-copy";
 import { getPlanDisplayName } from "../lib/pricing-labels";
 import { getPlanSearchIntentCopy } from "../lib/plan-search-intent";
+import { getProductOverviewSearchFaqs } from "../lib/product-overview-search-intent";
 import {
   getPlanEditorialIndexingStatus,
   getProductEditorialContent,
@@ -523,18 +533,24 @@ export async function getPricingDetailMetadata({
     const overviewCopy = getPricingProductOverviewCopy({
       locale,
       productName: product.name,
-      planCount: publishedPlans.length,
+      planCount: getProductOverviewDecisionPlans(product).length,
       regionCount,
+      lowest: getProductOverviewPriceFact(product),
     });
+    const hasOverviewEditorial = publishedPlans.some((plan) =>
+      Boolean(getProductEditorialContent(locale, product.slug, plan.slug)),
+    );
     const configuredTitle = hasChineseText(seoMeta?.title)
       ? stripGeoSubTitleSuffix(seoMeta?.title || "")
       : "";
     const title =
-      locale === "zh" && configuredTitle
+      locale === "zh" && configuredTitle && !hasOverviewEditorial
         ? configuredTitle
         : overviewCopy.metadataTitle;
     const description =
-      locale === "zh" && hasChineseText(seoMeta?.description)
+      locale === "zh" &&
+      hasChineseText(seoMeta?.description) &&
+      !hasOverviewEditorial
         ? seoMeta?.description || overviewCopy.description
         : overviewCopy.description;
     const robots = getProductRobotsPolicy(
@@ -735,23 +751,33 @@ export default async function PricingDetailPage({
     const overviewCopy = getPricingProductOverviewCopy({
       locale,
       productName: product.name,
-      planCount: publishedPlans.length,
+      planCount: getProductOverviewDecisionPlans(product).length,
       regionCount,
+      lowest: getProductOverviewPriceFact(product),
     });
+    const hasOverviewEditorial = publishedPlans.some((plan) =>
+      Boolean(getProductEditorialContent(locale, product.slug, plan.slug)),
+    );
     const pageTitle =
-      locale === "zh" && hasChineseText(seoMeta?.h1)
+      locale === "zh" &&
+      hasChineseText(seoMeta?.h1) &&
+      !hasOverviewEditorial
         ? seoMeta?.h1 || overviewCopy.pageTitle
         : overviewCopy.pageTitle;
     const pageDescription =
-      locale === "zh" && hasChineseText(seoMeta?.description)
+      locale === "zh" &&
+      hasChineseText(seoMeta?.description) &&
+      !hasOverviewEditorial
         ? seoMeta?.description || overviewCopy.description
         : overviewCopy.description;
+    const overviewFaqs = getProductOverviewSearchFaqs({ locale, product });
     const structuredData = buildProductOverviewStructuredData({
       locale,
       path: productCanonicalPath,
       title: pageTitle,
       description: pageDescription,
       product,
+      faqs: overviewFaqs,
     });
     const pageCopy = getPricingDetailPageCopy({
       locale,
@@ -822,6 +848,18 @@ export default async function PricingDetailPage({
           </section>
 
           <ProductPlanOverview product={product} locale={locale} />
+
+          <RelatedPricingProducts
+            locale={locale}
+            category={product.category}
+            products={sidebarProducts}
+            currentSlug={product.slug}
+            basePath={detailBasePath}
+          />
+
+          {overviewFaqs.length > 0 ? (
+            <FaqSection title={pageCopy.faqTitle} faqs={overviewFaqs} />
+          ) : null}
         </div>
       </main>
     );
@@ -963,7 +1001,7 @@ export default async function PricingDetailPage({
                 </h1>
 
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
-                  {pageDescription}
+                  {searchIntentCopy?.description || pageDescription}
                 </p>
 
                 {product.officialUrl ? (
@@ -996,6 +1034,11 @@ export default async function PricingDetailPage({
               basePath={detailBasePath}
               locale={locale}
             />
+            <ProductOverviewLink
+              locale={locale}
+              productName={product.name}
+              href={productCanonicalPath}
+            />
           </div>
         </section>
 
@@ -1021,6 +1064,7 @@ export default async function PricingDetailPage({
             {editorialContent ? (
               <ProductEditorialSection
                 productSlug={product.slug}
+                planName={activePlan.name}
                 content={editorialContent}
               />
             ) : null}
@@ -1040,6 +1084,12 @@ export default async function PricingDetailPage({
         ) : (
           <NoPublishedPricesSection copy={pageCopy.empty} />
         )}
+
+        <RelatedPlanChoices
+          locale={locale}
+          product={product}
+          currentPlanSlug={activePlan.slug}
+        />
 
         <FaqSection
           title={pageCopy.faqTitle}

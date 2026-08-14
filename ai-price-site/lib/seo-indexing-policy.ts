@@ -12,6 +12,31 @@ export const seoSitemapBudgets = {
   currencyPairPages: 16,
 } as const;
 
+// Product overviews can be indexable while plan URLs are promoted in stages.
+// Keep this list explicit so a catalog or content expansion cannot silently
+// multiply the sitemap beyond the release budget.
+export const seoPlanSitemapProductSlugs = [
+  "chatgpt",
+  "claude",
+  "netflix",
+  "gemini",
+  "grok",
+  "manus",
+  "disney",
+  "hbo-max",
+  "perplexity",
+  "suno",
+  "youtube-premium",
+  "crunchyroll",
+] as const;
+
+export function isPlanSitemapPromotedProduct(
+  productSlug: string,
+  promotedProductSlugs: readonly string[] = seoPlanSitemapProductSlugs,
+) {
+  return promotedProductSlugs.includes(productSlug);
+}
+
 export const seoLocalePromotionRequirements = [
   "localized-editorial-summary",
   "local-currency-context",

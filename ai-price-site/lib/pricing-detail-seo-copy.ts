@@ -16,7 +16,7 @@ type SeoTemplate = {
 
 const seoTemplates = withTraditionalChinese({
   zh: {
-    title: (name, year) => `${name}价格：全球各地区对比（${year}）`,
+    title: (name, year) => `${name} 多少钱？各地区价格对比（${year}）`,
     description: (name, regionCount, lowestCountry, lowestPrice) =>
       `比较 ${regionCount} 个国家和地区的 ${name} App Store 订阅价格。当前最低约 ${lowestPrice}（${lowestCountry}），并查看本地价格、税费、汇率与购买力差异。`,
     fallbackDescription: (name) =>
@@ -25,7 +25,7 @@ const seoTemplates = withTraditionalChinese({
   en: {
     title: (name, year) => `${name} Price by Country (${year})`,
     description: (name, regionCount, lowestCountry, lowestPrice) =>
-      `Compare ${name} App Store prices across ${regionCount} countries and regions. The current lowest is about ${lowestPrice} in ${lowestCountry}, with local prices, taxes, exchange rates and affordability.`,
+      `${name} starts at about ${lowestPrice} per month in ${lowestCountry}. Compare reviewed App Store prices across ${regionCount} countries and regions, including taxes, exchange rates and affordability.`,
     fallbackDescription: (name) =>
       `Compare ${name} App Store subscription prices by country, including local prices, taxes, exchange rates and affordability.`,
   },

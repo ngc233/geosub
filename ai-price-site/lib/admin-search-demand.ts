@@ -310,7 +310,11 @@ async function loadSearchDemandSummary(days: SearchDemandRange) {
           journey.target_href,
           journey.search_clicked_at,
           MIN(event.created_at) FILTER (
-            WHERE event.event_key = 'select_plan'
+            WHERE event.event_key IN (
+              'select_plan',
+              'click_product_overview',
+              'click_related_plan'
+            )
           ) AS plan_engaged_at,
           MIN(event.created_at) FILTER (
             WHERE event.event_key IN (
@@ -333,6 +337,8 @@ async function loadSearchDemandSummary(days: SearchDemandRange) {
           )
           AND event.event_key IN (
             'select_plan',
+            'click_product_overview',
+            'click_related_plan',
             'click_affiliate',
             'click_official',
             'click_ad'
