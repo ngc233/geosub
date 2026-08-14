@@ -100,7 +100,11 @@ export default function BrandIcon({
         <img
           src={approvedLocalAsset.path}
           alt={product.name ? `${product.name} logo` : ""}
-          className="h-[78%] w-[78%] object-contain"
+          className={
+            approvedLocalAsset.displayMode === "app-icon"
+              ? "h-full w-full object-cover"
+              : "h-[72%] w-[72%] object-contain"
+          }
           loading="eager"
           decoding="async"
           onError={() => setLocalAssetFailed(true)}

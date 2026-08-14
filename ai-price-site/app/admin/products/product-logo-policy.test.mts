@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
@@ -19,17 +20,54 @@ test("public brand icons use rights-reviewed local sources and deterministic fal
   assert.match(brandIcon, /getInitials/);
   assert.match(brandIcon, /rounded-\[22%\]/);
   assert.match(brandIcon, /aspect-square/);
+  assert.match(brandIcon, /h-full w-full object-cover/);
   assert.match(brandIcon, /object-contain/);
   assert.doesNotMatch(brandIcon, /\/api\/product-logos\//);
-  assert.doesNotMatch(brandIcon, /object-cover/);
   assert.doesNotMatch(brandIcon, /CustomBrandMark/);
   assert.doesNotMatch(brandIcon, /startsWith\(['"]https?:/);
 
-  assert.match(policy, /written-permission/);
-  assert.match(policy, /owned-by-geosub/);
-  assert.match(policy, /neutral fallback is/);
+  assert.match(policy, /product-brand-assets\.json/);
+  assert.match(policy, /official-app-store-artwork/);
+  assert.match(policy, /owner-approved-nominative-identification/);
   assert.match(policy, /Simple Icons is bundled locally under CC0-1\.0/);
   assert.match(policy, /app-store-restricted/);
+});
+
+test("the published baseline has checksum-verified local app icons", () => {
+  const projectRoot = resolve(productsDir, "..", "..", "..");
+  const manifest = JSON.parse(
+    readFileSync(resolve(projectRoot, "data", "product-brand-assets.json"), "utf8"),
+  ) as {
+    products: Record<string, { path: string; sha256: string; displayMode: string }>;
+  };
+  const publishedBaseline = [
+    "captions",
+    "chatgpt",
+    "claude",
+    "gemini",
+    "grok",
+    "heygen",
+    "kimi",
+    "kling-ai",
+    "manus",
+    "microsoft-copilot",
+    "perplexity",
+    "pollo-ai",
+    "suno",
+    "disney",
+    "f1-tv",
+    "hbo-max",
+    "netflix",
+  ];
+
+  for (const slug of publishedBaseline) {
+    assert.ok(manifest.products[slug], `${slug} is missing from the local asset manifest`);
+  }
+  for (const [slug, asset] of Object.entries(manifest.products)) {
+    const file = readFileSync(resolve(projectRoot, "public", asset.path.replace(/^\//, "")));
+    assert.equal(createHash("sha256").update(file).digest("hex"), asset.sha256, slug);
+    assert.equal(asset.displayMode, "app-icon", slug);
+  }
 });
 
 test("legacy remote logo cache is restricted to authenticated diagnostics", () => {
@@ -55,14 +93,16 @@ test("logo release gate audits public rendering without downloading third-party 
   assert.match(script, /status: "PUBLISHED"/);
   assert.match(script, /getApprovedLocalBrandAsset/);
   assert.match(script, /getSimpleIconCandidates/);
-  assert.match(script, /GeoSub neutral initials/);
+  assert.match(script, /neutral initials are not valid published coverage/);
+  assert.match(script, /checksum does not match the reviewed manifest/);
+  assert.match(script, /maxReviewAgeDays = 120/);
   assert.match(script, /legacy remote logo retained as diagnostic metadata only/);
-  assert.match(script, /Remote and App Store artwork is not downloaded or published/);
+  assert.match(script, /Public rendering uses committed local files only/);
   assert.doesNotMatch(script, /lookupAppStoreArtwork/);
   assert.doesNotMatch(script, /cacheRemoteProductLogo/);
   assert.doesNotMatch(script, /fetch\(/);
   assert.match(packageJson, /"check:logos"/);
-  assert.match(packageJson, /"sync:logos"/);
+  assert.match(packageJson, /"refresh:brand-assets"/);
 });
 
 test("admin logo workflow labels downloaded candidates as non-public evidence", () => {

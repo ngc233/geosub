@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.8.1 - 2026-08-15
+
+- Replaced remote and letter-based product-logo fallbacks with a reviewed local
+  App Store artwork registry for every published product and the next catalog
+  candidates.
+- Added reproducible asset fetching, source provenance, content hashes and
+  review dates so brand artwork can be refreshed without runtime network
+  dependencies.
+- Strengthened release checks to reject missing, modified, stale or placeholder
+  logos, and normalized public product icons to consistent app-icon geometry.
+
 ## 2.7.0 - 2026-08-11
 
 - Reduced repeated admin database work with short-lived read-model caches,

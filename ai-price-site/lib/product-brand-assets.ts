@@ -1,22 +1,28 @@
+import productBrandAssetManifest from "../data/product-brand-assets.json" with { type: "json" };
+
 export type ApprovedLocalBrandAsset = {
   path: `/brand-assets/${string}`;
-  rightsBasis: "written-permission" | "owned-by-geosub";
+  sourceClass: "official-app-store-artwork" | "permission-backed" | "owned-by-geosub";
+  usageBasis: "owner-approved-nominative-identification" | "written-permission" | "owned-by-geosub";
   evidenceReference: string;
+  sourceUrl: string;
+  appStoreId?: string;
+  trackName: string;
+  sellerName: string;
+  mimeType: string;
+  byteLength: number;
+  sha256: string;
   reviewedAt: string;
+  displayMode: "app-icon" | "brand-mark";
 };
 
-// Add an entry only after the rights evidence has been recorded in
-// docs/product-brand-asset-register.md and the file has been committed under
-// public/brand-assets. An empty registry is intentional: a neutral fallback is
-// safer than presenting an unreviewed image as an official brand asset.
-export const approvedLocalBrandAssets = {} satisfies Record<
+// This generated manifest is refreshed only by the explicit maintenance command.
+// Public rendering never requests the recorded remote source URL.
+export const approvedLocalBrandAssets = productBrandAssetManifest.products as Record<
   string,
   ApprovedLocalBrandAsset
 >;
-const approvedLocalBrandAssetRegistry = approvedLocalBrandAssets as Record<
-  string,
-  ApprovedLocalBrandAsset
->;
+const approvedLocalBrandAssetRegistry = approvedLocalBrandAssets;
 
 export const restrictedLegacyBrandAssetClass = "app-store-restricted";
 
