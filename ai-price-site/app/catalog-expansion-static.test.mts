@@ -18,6 +18,14 @@ const collector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
 );
+const sunoNormalization = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/backfill/051_normalize_suno_app_store_plans.sql"),
+  "utf8",
+);
+const copilotNormalization = readFileSync(
+  resolve(repoRoot, "geosub-backend/sql/backfill/052_normalize_copilot_app_store_plans.sql"),
+  "utf8",
+);
 
 type CatalogProduct = {
   slug: string;
@@ -119,6 +127,18 @@ test("required existing products are reproducible on a clean database", () => {
     ["kimi", "perplexity", "suno"],
   );
   assert.match(migration, /catalog-expansion-2026-08/);
+  const suno = catalog.required_products.find(
+    (product: { slug: string }) => product.slug === "suno",
+  );
+  assert.deepEqual(
+    suno.plans.map((plan: { slug: string }) => plan.slug),
+    ["basic", "pro", "premier-plan"],
+  );
+  assert.match(sunoNormalization, /status = 'archived'::publish_status/);
+  assert.doesNotMatch(sunoNormalization, /DELETE FROM/);
+  assert.match(copilotNormalization, /Microsoft 365 Personal/);
+  assert.match(copilotNormalization, /status = 'archived'::publish_status/);
+  assert.doesNotMatch(copilotNormalization, /DELETE FROM/);
 });
 
 test("catalog migration is review-first, idempotent and staggered", () => {
@@ -133,6 +153,7 @@ test("catalog migration is review-first, idempotent and staggered", () => {
 
 test("collector reads expansion specs and preserves billing and country scope", () => {
   assert.match(collector, /catalog-expansion-2026-08\.json/);
+  assert.match(collector, /required_products/);
   assert.match(collector, /Test-ProductSpecCountryScope/);
   assert.match(collector, /match_product_name/);
   assert.equal(bySlug.get("x-premium")?.match_product_name, "X");

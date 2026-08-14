@@ -44,8 +44,9 @@ function normalizeAlias(value) {
 }
 
 function loadAllSpecs() {
-  const specs = JSON.parse(fs.readFileSync(specPath, "utf8"));
+  const maintainedSpecs = JSON.parse(fs.readFileSync(specPath, "utf8"));
   const expansion = JSON.parse(fs.readFileSync(expansionPath, "utf8"));
+  const specs = {};
 
   for (const product of [
     ...(expansion.products || []),
@@ -71,6 +72,9 @@ function loadAllSpecs() {
       })),
     };
   }
+
+  // Maintained specifications override review-first expansion defaults.
+  Object.assign(specs, maintainedSpecs);
 
   return specs;
 }

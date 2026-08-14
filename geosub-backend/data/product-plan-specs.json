@@ -219,6 +219,63 @@
       }
     ]
   },
+  "perplexity": {
+    "name": "Perplexity",
+    "app_store_id": "1668000334",
+    "plans": [
+      {
+        "slug": "pro",
+        "name": "Perplexity Pro",
+        "aliases": ["perplexity pro", "pro"],
+        "sort_order": 10,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 8.0,
+        "expected_monthly_usd_max": 45.0
+      },
+      {
+        "slug": "max",
+        "name": "Perplexity Max",
+        "aliases": ["perplexity max", "max"],
+        "sort_order": 20,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 80.0,
+        "expected_monthly_usd_max": 330.0
+      }
+    ]
+  },
+  "suno": {
+    "name": "Suno",
+    "app_store_id": "6480136315",
+    "plans": [
+      {
+        "slug": "basic",
+        "name": "Suno Basic",
+        "aliases": ["suno basic", "basic", "basic plan", "suno basic plan"],
+        "sort_order": 10,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 3.0,
+        "expected_monthly_usd_max": 15.0
+      },
+      {
+        "slug": "pro",
+        "name": "Suno Pro",
+        "aliases": ["suno pro", "pro", "pro plan", "suno pro plan"],
+        "sort_order": 20,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 5.0,
+        "expected_monthly_usd_max": 25.0
+      },
+      {
+        "slug": "premier-plan",
+        "name": "Suno Premier",
+        "aliases": ["suno premier", "premier", "premier plan", "suno premier plan"],
+        "sort_order": 30,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 20.0,
+        "expected_monthly_usd_max": 60.0
+      }
+    ]
+  },
   "disney": {
     "name": "Disney+",
     "app_store_id": "1446075923",

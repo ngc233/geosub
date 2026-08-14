@@ -1119,6 +1119,24 @@
         "a5f74f7be07c71de46b7c57ca0822f682e499d07d09e81d63936b2a343fef504"
       ],
       "legacyBaseline": false
+    },
+    {
+      "id": "backfill:051",
+      "file": "sql/backfill/051_normalize_suno_app_store_plans.sql",
+      "legacyFile": "normalize_suno_app_store_plans.sql",
+      "legacyChecksums": [
+        "26c1084cb171de72a68cefef9e5261301ad08c7ecfe7324f078fddac58d6c523"
+      ],
+      "legacyBaseline": false
+    },
+    {
+      "id": "backfill:052",
+      "file": "sql/backfill/052_normalize_copilot_app_store_plans.sql",
+      "legacyFile": "normalize_copilot_app_store_plans.sql",
+      "legacyChecksums": [
+        "dd3cd16997955a7ba9404fe006853a2977cbdd0fca247bf3a2e6ec66461c97ee"
+      ],
+      "legacyBaseline": false
     }
   ],
   "retired": [

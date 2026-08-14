@@ -14,6 +14,10 @@ function assertEqual(actual, expected, label) {
   }
 }
 
+function expectedPlanKey(productSlug, planSlug) {
+  return `${productSlug}/${planSlug}`;
+}
+
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is missing.");
 
@@ -26,9 +30,10 @@ async function main() {
       ...(catalog.required_products || []),
     ];
     const slugs = managedProducts.map((product) => product.slug);
-    const expectedPlanCount = managedProducts.reduce(
-      (count, product) => count + product.plans.length,
-      0,
+    const expectedPlans = new Set(
+      managedProducts.flatMap((product) =>
+        product.plans.map((plan) => expectedPlanKey(product.slug, plan.slug)),
+      ),
     );
     const expectedAppProducts = managedProducts.filter(
       (product) => product.app_store?.collector_enabled,
@@ -40,12 +45,6 @@ async function main() {
           (SELECT COUNT(*)::int FROM products WHERE slug = ANY($1::text[]) AND status = 'review'::publish_status) AS review_products,
           (SELECT COUNT(*)::int FROM products WHERE slug = ANY($1::text[]) AND status = 'published'::publish_status) AS published_products,
           (SELECT COUNT(*)::int FROM products WHERE slug = ANY($1::text[]) AND status = 'archived'::publish_status) AS archived_products,
-          (
-            SELECT COUNT(*)::int
-            FROM plans plan
-            JOIN products product ON product.id = plan.product_id
-            WHERE product.slug = ANY($1::text[])
-          ) AS plans,
           (
             SELECT COUNT(*)::int
             FROM collector_jobs job
@@ -79,10 +78,40 @@ async function main() {
       "active products",
     );
     assertEqual(row.archived_products, 0, "archived products");
-    assertEqual(row.plans, expectedPlanCount, "plans");
     assertEqual(row.jobs, expectedAppProducts * 2, "collector jobs");
     assertEqual(row.official_profiles, managedProducts.length, "official profiles");
     assertEqual(row.app_profiles, expectedAppProducts, "App Store profiles");
+
+    const planResult = await client.query(
+      `
+        SELECT
+          product.slug AS product_slug,
+          plan.slug AS plan_slug,
+          plan.status::text AS plan_status
+        FROM plans plan
+        JOIN products product ON product.id = plan.product_id
+        WHERE product.slug = ANY($1::text[])
+      `,
+      [slugs],
+    );
+    const activePlanKeys = new Set(
+      planResult.rows
+        .filter((plan) => plan.plan_status !== "archived")
+        .map((plan) => expectedPlanKey(plan.product_slug, plan.plan_slug)),
+    );
+    const missingPlans = [...expectedPlans].filter((key) => !activePlanKeys.has(key));
+    if (missingPlans.length > 0) {
+      throw new Error(`canonical plans missing or archived: ${missingPlans.join(", ")}.`);
+    }
+    const unexpectedActivePlans = [...activePlanKeys].filter(
+      (key) => !expectedPlans.has(key),
+    );
+    if (unexpectedActivePlans.length > 0) {
+      throw new Error(
+        `active plans outside the canonical catalog: ${unexpectedActivePlans.join(", ")}.`,
+      );
+    }
+    const historicalPlanCount = planResult.rows.length - expectedPlans.size;
 
     const cycleResult = await client.query(
       `
@@ -97,7 +126,11 @@ async function main() {
     );
 
     console.log("Catalog expansion database check passed.");
-    console.log(row);
+    console.log({
+      ...row,
+      canonical_plans: expectedPlans.size,
+      retained_historical_plans: historicalPlanCount,
+    });
     console.log(cycleResult.rows);
   } finally {
     await client.end();

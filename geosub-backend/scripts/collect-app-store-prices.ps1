@@ -89,18 +89,10 @@ function Load-ProductPlanSpecs {
   $expansionPath = Join-Path $PSScriptRoot "..\data\catalog-expansion-2026-08.json"
   $merged = [ordered]@{}
 
-  if (Test-Path -LiteralPath $specPath) {
-    $specJson = [IO.File]::ReadAllText($specPath, [Text.Encoding]::UTF8)
-    $baseSpecs = $specJson | ConvertFrom-Json
-    foreach ($property in @($baseSpecs.PSObject.Properties)) {
-      $merged[$property.Name] = $property.Value
-    }
-  }
-
   if (Test-Path -LiteralPath $expansionPath) {
     $expansionJson = [IO.File]::ReadAllText($expansionPath, [Text.Encoding]::UTF8)
     $expansion = $expansionJson | ConvertFrom-Json
-    $expandedProducts = @($expansion.products) + @($expansion.existing_plan_specs)
+    $expandedProducts = @($expansion.products) + @($expansion.required_products) + @($expansion.existing_plan_specs)
 
     foreach ($product in $expandedProducts) {
       if ($null -eq $product.app_store -or ![bool]$product.app_store.collector_enabled) {
@@ -142,6 +134,16 @@ function Load-ProductPlanSpecs {
       }
 
       $merged[[string]$product.slug] = [pscustomobject]$spec
+    }
+  }
+
+  # Maintained product specifications are authoritative. The expansion file
+  # supplies review-first defaults for newly introduced catalog entries.
+  if (Test-Path -LiteralPath $specPath) {
+    $specJson = [IO.File]::ReadAllText($specPath, [Text.Encoding]::UTF8)
+    $baseSpecs = $specJson | ConvertFrom-Json
+    foreach ($property in @($baseSpecs.PSObject.Properties)) {
+      $merged[$property.Name] = $property.Value
     }
   }
 

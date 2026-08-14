@@ -479,13 +479,14 @@
       "name": "Suno",
       "category": "ai",
       "provider": "Suno",
-      "description": "Compare Suno Pro and Premier creator subscriptions across supported App Store regions.",
+      "description": "Compare Suno Basic, Pro and Premier creator subscriptions across supported App Store regions.",
       "official_url": "https://suno.com/",
       "sort_order": 300,
       "app_store": { "id": "6480136315", "collector_enabled": true },
       "plans": [
-        { "slug": "pro", "name": "Suno Pro", "billing_cycle": "monthly", "aliases": ["suno pro", "pro"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 5, "expected_usd_max": 25 },
-        { "slug": "premier", "name": "Suno Premier", "billing_cycle": "monthly", "aliases": ["suno premier", "premier"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 20, "expected_usd_max": 60 }
+        { "slug": "basic", "name": "Suno Basic", "billing_cycle": "monthly", "aliases": ["suno basic", "basic", "basic plan", "suno basic plan"], "sort_order": 10, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 3, "expected_usd_max": 15 },
+        { "slug": "pro", "name": "Suno Pro", "billing_cycle": "monthly", "aliases": ["suno pro", "pro", "pro plan", "suno pro plan"], "sort_order": 20, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 5, "expected_usd_max": 25 },
+        { "slug": "premier-plan", "name": "Suno Premier", "billing_cycle": "monthly", "aliases": ["suno premier", "premier", "premier plan", "suno premier plan"], "sort_order": 30, "price_selection_strategy": "lowest_in_expected_range", "expected_usd_min": 20, "expected_usd_max": 60 }
       ]
     }
   ],
