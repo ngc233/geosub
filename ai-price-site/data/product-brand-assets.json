@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-14T17:32:55.130Z",
+  "generatedAt": "2026-08-15T13:52:38.994Z",
   "usagePurpose": "nominative-product-identification",
   "products": {
     "anghami": {
@@ -30,6 +30,21 @@
       "mimeType": "image/jpeg",
       "byteLength": 29864,
       "sha256": "b25ae0d76fd6fee46db53f9aeb579812c06bce0a5fffe9bdfeb34de5a6ecf969",
+      "reviewedAt": "2026-08-15",
+      "displayMode": "app-icon"
+    },
+    "character-ai": {
+      "path": "/brand-assets/character-ai.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id1671705818",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/01/53/76/015376de-80ff-5595-808c-9b8f4d969f03/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg",
+      "appStoreId": "1671705818",
+      "trackName": "Character AI: Chat, Talk, Text",
+      "sellerName": "Character Technologies, Inc.",
+      "mimeType": "image/jpeg",
+      "byteLength": 14591,
+      "sha256": "06b4d897a2d36fcc2678fcee09df93f6bf8842b13a56bfa2330a434249290d64",
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },
@@ -98,13 +113,13 @@
       "sourceClass": "official-app-store-artwork",
       "usageBasis": "owner-approved-nominative-identification",
       "evidenceReference": "https://apps.apple.com/us/app/id6477489729",
-      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/16/af/44/16af4490-5928-e166-a715-c93fb1d71685/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-0-85-220.png/512x512bb.jpg",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/d2/be/ea/d2beea3f-65c5-cf7f-70e2-8a8dba86be05/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-0-85-220.png/512x512bb.jpg",
       "appStoreId": "6477489729",
       "trackName": "Google Gemini",
       "sellerName": "Google LLC",
       "mimeType": "image/jpeg",
       "byteLength": 19684,
-      "sha256": "d218f2f7ad21a18a3e1487943874d3367ba92623de1906d9eedd999a1c2ece67",
+      "sha256": "5c7b7ab3e3e642c732405d30b08b91edc31a090bc27ebb17fe70b27ce970f52f",
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },
@@ -183,6 +198,21 @@
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },
+    "le-chat": {
+      "path": "/brand-assets/le-chat.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id6740410176",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/75/7b/4a/757b4a9b-8c35-7fab-8b79-ca19d19a78c6/chat-0-0-1x_U007epad-0-1-sRGB-85-220.png/512x512bb.jpg",
+      "appStoreId": "6740410176",
+      "trackName": "Vibe by Mistral (ex-Le Chat)",
+      "sellerName": "MISTRAL AI",
+      "mimeType": "image/jpeg",
+      "byteLength": 21673,
+      "sha256": "25cbd1481eb01fcae4b4e0135b406a12c47899689ba45692ad71ce0fe358e9b7",
+      "reviewedAt": "2026-08-15",
+      "displayMode": "app-icon"
+    },
     "leonardo-ai": {
       "path": "/brand-assets/leonardo-ai.jpg",
       "sourceClass": "official-app-store-artwork",
@@ -203,13 +233,13 @@
       "sourceClass": "official-app-store-artwork",
       "usageBasis": "owner-approved-nominative-identification",
       "evidenceReference": "https://apps.apple.com/us/app/id6740909540",
-      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/a1/22/8d/a1228dc9-8b13-345a-1d3f-517f44e05210/IconManus-0-0-1x_U007epad-0-1-0-P3-85-220.png/512x512bb.jpg",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f4/b9/15/f4b915b7-688e-753d-8900-a5ddbc53ecf7/IconManus-0-0-1x_U007epad-0-1-0-P3-85-220.png/512x512bb.jpg",
       "appStoreId": "6740909540",
       "trackName": "Manus - AI Agent & Automation",
       "sellerName": "BUTTERFLY EFFECT PTE. LTD.",
       "mimeType": "image/jpeg",
       "byteLength": 28467,
-      "sha256": "3ac04452255e55fce81d28355332462b602932256f3e102abe5d78b64eceabd1",
+      "sha256": "1e1f7ed27194ce26be2d3bd5df883f4b7a05441b55ed335bf392b3385c53ee76",
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },
@@ -288,6 +318,21 @@
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },
+    "runwayml": {
+      "path": "/brand-assets/runwayml.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id1665024375",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e4/ea/23/e4ea23e9-4315-49a5-eb87-1f6d79658080/runway-0-0-1x_U007ephone-0-1-P3-85-220.png/512x512bb.jpg",
+      "appStoreId": "1665024375",
+      "trackName": "RunwayML",
+      "sellerName": "Runway AI, Inc.",
+      "mimeType": "image/jpeg",
+      "byteLength": 26471,
+      "sha256": "40a8f45e0c3caee0e8c9e049db02a05818e6845eb53754fbf66f2f2d81fc982a",
+      "reviewedAt": "2026-08-15",
+      "displayMode": "app-icon"
+    },
     "suno": {
       "path": "/brand-assets/suno.jpg",
       "sourceClass": "official-app-store-artwork",
@@ -359,7 +404,7 @@
       "sellerName": "Netflix, Inc.",
       "mimeType": "image/jpeg",
       "byteLength": 23192,
-      "sha256": "45b0c215ac13f8bd31c3351f11aeb9bfbbb4ecaceb0d9b2b179cc17ef09de8bd",
+      "sha256": "e545afe6ad3ce704f4e39cfda36e41ceacd1c6b5230153609effb0120f542fc8",
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },
@@ -375,6 +420,21 @@
       "mimeType": "image/jpeg",
       "byteLength": 33101,
       "sha256": "d4069a6519e6f09c412709fd8b360cf0086618fa9ccf60aab723cee6eab6e711",
+      "reviewedAt": "2026-08-15",
+      "displayMode": "app-icon"
+    },
+    "x-premium": {
+      "path": "/brand-assets/x-premium.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id333903271",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/aa/7f/b1/aa7fb1d7-f047-2c30-c378-7256948c0f3f/ProductionAppIcon-0-0-1x_U007emarketing-0-8-0-0-0-85-220.png/512x512bb.jpg",
+      "appStoreId": "333903271",
+      "trackName": "X",
+      "sellerName": "X Corp.",
+      "mimeType": "image/jpeg",
+      "byteLength": 19401,
+      "sha256": "6f35c6b300c5b7e6568a9d4c980ac516877ebb63528f1d1f371b4c36c32b9e2a",
       "reviewedAt": "2026-08-15",
       "displayMode": "app-icon"
     },
