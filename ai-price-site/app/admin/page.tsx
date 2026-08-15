@@ -35,8 +35,8 @@ import {
   DashboardPanel,
   FunnelSegmentList,
   RankingList,
-  TrendChart,
 } from "./DashboardComponents";
+import { TrendChart } from "./TrendChart";
 import {
   commercialEntryNameZh,
   dailyOperationPresentation,
@@ -49,7 +49,12 @@ import {
   timeAgo,
   toCount,
 } from "./dashboard-formatters";
-import { getDashboardData, getDashboardPeriod } from "./queries";
+import {
+  formatDateInput,
+  getDashboardData,
+  getDashboardPeriod,
+  getYesterdayUtc,
+} from "./queries";
 
 export default async function AdminDashboardPage({
   searchParams,
@@ -420,7 +425,24 @@ export default async function AdminDashboardPage({
       </div>
 
       <div className="mb-8">
-        <TrendChart period={period} trend={data.trend} />
+        <TrendChart
+          period={{
+            range: period.range,
+            from: period.from,
+            to: period.to,
+            isCustom: period.isCustom,
+            error: period.error,
+          }}
+          latestCompleteDate={formatDateInput(getYesterdayUtc())}
+          trend={data.trend}
+          comparison={data.trendComparison ?? {
+            previousPageViews: 0,
+            previousClicks: 0,
+            previousTrend: [],
+            previousFrom: "",
+            previousTo: "",
+          }}
+        />
       </div>
 
       <div className="mb-8 grid gap-5 2xl:grid-cols-[1.6fr_1fr]">

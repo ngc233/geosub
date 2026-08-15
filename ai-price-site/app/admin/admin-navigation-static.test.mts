@@ -16,6 +16,7 @@ function readAdminDashboardSource() {
     "app/admin/page.tsx",
     "app/admin/queries.ts",
     "app/admin/DashboardComponents.tsx",
+    "app/admin/TrendChart.tsx",
     "app/admin/dashboard-formatters.ts",
   ]
     .map(readProjectFile)
@@ -189,7 +190,7 @@ test("admin dashboard provides a product-level daily operations summary", () => 
   assert.match(operations, /getAuthorityCoverageTaskRecords\(audits\)/);
 });
 
-test("admin dashboard keeps today live while historical analytics are aggregated", () => {
+test("admin dashboard keeps today live but excludes it from completed-day trends", () => {
   const dashboard = readAdminDashboardSource();
   const packageJson = readProjectFile("package.json");
   const upgrade = readRepoFile("geosub-backend/deploy/linux-arm64/upgrade.sh");
@@ -198,11 +199,13 @@ test("admin dashboard keeps today live while historical analytics are aggregated
   );
 
   assert.match(dashboard, /function getTodayStartUtc/);
+  assert.match(dashboard, /function getYesterdayUtc/);
   assert.match(dashboard, /DASHBOARD_INTERACTION_EVENT_KEYS/);
   assert.match(dashboard, /open_share_modal/);
-  assert.match(dashboard, /metricValue: todayPageViews/);
-  assert.match(dashboard, /metricValue: todayClickEvents/);
-  assert.match(dashboard, /当天数据实时读取 event_logs/);
+  assert.match(dashboard, /今天的实时数据单独显示在上方卡片中/);
+  assert.match(dashboard, /todayPageViews/);
+  assert.match(dashboard, /todayClickEvents/);
+  assert.doesNotMatch(dashboard, /includesToday/);
   assert.doesNotMatch(dashboard, /prisma\.adSlot\.count/);
   assert.doesNotMatch(dashboard, /prisma\.siteSetting\.count/);
 
@@ -218,13 +221,24 @@ test("admin dashboard keeps today live while historical analytics are aggregated
 test("admin dashboard renders non-zero trend totals as visible svg lines", () => {
   const dashboard = readAdminDashboardSource();
 
-  assert.match(dashboard, /const hasTrendData = totalPageViews > 0 \|\| totalClicks > 0/);
-  assert.match(dashboard, /const pageViewPoints = trend/);
-  assert.match(dashboard, /const clickPoints = trend/);
-  assert.match(dashboard, /<polyline\s+points=\{pageViewPoints\}/);
-  assert.match(dashboard, /<polyline\s+points=\{clickPoints\}/);
+  assert.match(dashboard, /const hasVisibleData =/);
+  assert.match(dashboard, /const getPoints =/);
+  assert.match(dashboard, /points=\{getPoints\(trend, "pageViews"\)\}/);
+  assert.match(dashboard, /points=\{getPoints\(trend, "clicks"\)\}/);
   assert.match(dashboard, /所选时段还没有正式访问或点击数据/);
   assert.doesNotMatch(dashboard, /style=\{\{ height: `\$\{pageHeight\}%` \}\}/);
+});
+
+test("admin dashboard trend cards control series and can compare or export", () => {
+  const dashboard = readAdminDashboardSource();
+
+  assert.match(dashboard, /checked=\{showPageViews\}/);
+  assert.match(dashboard, /checked=\{showClicks\}/);
+  assert.match(dashboard, /checked=\{compare\}/);
+  assert.match(dashboard, /strokeDasharray="10 8"/);
+  assert.match(dashboard, /buildTrendCsv/);
+  assert.match(dashboard, /导出 CSV/);
+  assert.match(dashboard, /虚线为上一周期/);
 });
 
 test("admin dashboard uses consolidated summaries and real service heat", () => {
@@ -244,10 +258,12 @@ test("admin dashboard supports bounded custom date ranges", () => {
   const dashboard = readAdminDashboardSource();
 
   assert.match(dashboard, /function getDashboardPeriod/);
-  assert.match(dashboard, /days < 1 \|\| days > 730 \|\| to > today/);
+  assert.match(dashboard, /days < 1 \|\| days > 730 \|\| to >= today/);
   assert.match(dashboard, /name="from"/);
   assert.match(dashboard, /name="to"/);
-  assert.match(dashboard, /type="date"/);
+  assert.match(dashboard, /type="text"/);
+  assert.match(dashboard, /placeholder="YYYY-MM-DD"/);
+  assert.match(dashboard, /结束日期不能晚于昨天/);
   assert.match(dashboard, /所选时段暂无可归属到产品的正式访问或互动/);
 });
 

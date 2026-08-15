@@ -122,6 +122,12 @@ export function getTodayUtc() {
   return getUtcDateOnly(new Date());
 }
 
+export function getYesterdayUtc() {
+  const yesterday = getTodayUtc();
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  return yesterday;
+}
+
 function getTodayStartUtc() {
   return getTodayUtc();
 }
@@ -129,15 +135,12 @@ function getTodayStartUtc() {
 function getRangeStartUtc(days: number) {
   const today = getTodayUtc();
   const start = new Date(today);
-  start.setUTCDate(start.getUTCDate() - days + 1);
+  start.setUTCDate(start.getUTCDate() - days);
   return start;
 }
 
 function getRangeEndExclusiveUtc() {
-  const today = getTodayUtc();
-  const end = new Date(today);
-  end.setUTCDate(end.getUTCDate() + 1);
-  return end;
+  return getTodayUtc();
 }
 
 function formatMonthDay(date: Date) {
@@ -178,6 +181,7 @@ export function getDashboardPeriod(params: {
 }): DashboardPeriod {
   const range = normalizeRange(params.range);
   const today = getTodayUtc();
+  const yesterday = getYesterdayUtc();
   const defaultStart = getRangeStartUtc(range);
   const defaultPeriod = {
     range,
@@ -185,7 +189,7 @@ export function getDashboardPeriod(params: {
     start: defaultStart,
     endExclusive: getRangeEndExclusiveUtc(),
     from: formatDateInput(defaultStart),
-    to: formatDateInput(today),
+    to: formatDateInput(yesterday),
     isCustom: false,
   } satisfies DashboardPeriod;
 
@@ -205,10 +209,10 @@ export function getDashboardPeriod(params: {
 
   const days = Math.floor((to.getTime() - from.getTime()) / 86_400_000) + 1;
 
-  if (days < 1 || days > 730 || to > today) {
+  if (days < 1 || days > 730 || to >= today) {
     return {
       ...defaultPeriod,
-      error: "自定义范围需在今天以前，且不能超过 730 天。",
+      error: "自定义范围的结束日期不能晚于昨天，且不能超过 730 天。",
     };
   }
 
@@ -327,6 +331,10 @@ function buildTrendSeriesFromDailyStats({
 export async function getDashboardData(period: DashboardPeriod) {
   const todayStart = getTodayStartUtc();
   const staleSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const comparisonStart = new Date(period.start);
+  comparisonStart.setUTCDate(comparisonStart.getUTCDate() - period.days);
+  const comparisonEnd = new Date(period.start);
+  comparisonEnd.setUTCDate(comparisonEnd.getUTCDate() - 1);
 
   const [
     summaryRows,
@@ -424,7 +432,7 @@ export async function getDashboardData(period: DashboardPeriod) {
     prisma.dailyStat.findMany({
       where: {
         statDate: {
-          gte: period.start,
+          gte: comparisonStart,
           lt: period.endExclusive,
         },
         metricKey: {
@@ -848,29 +856,35 @@ export async function getDashboardData(period: DashboardPeriod) {
   const todayAffiliateClicks = toCount(summary?.today_affiliate_clicks);
   const todayOfficialClicks = toCount(summary?.today_official_clicks);
   const todayButtonClicks = toCount(summary?.today_button_clicks);
-  const includesToday =
-    period.start <= getTodayUtc() && period.endExclusive > getTodayUtc();
 
   const trend = buildTrendSeriesFromDailyStats({
-    stats: [
-      ...trendStats,
-      ...(includesToday
-        ? [
-            {
-              statDate: getTodayUtc(),
-              metricKey: "page_views",
-              metricValue: todayPageViews,
-            },
-            {
-              statDate: getTodayUtc(),
-              metricKey: "click_events",
-              metricValue: todayClickEvents,
-            },
-          ]
-        : []),
-    ],
+    stats: trendStats,
     period,
   });
+  const previousTrendStats = trendStats.filter(
+    (item) => item.statDate >= comparisonStart && item.statDate < period.start,
+  );
+  const previousTrend = buildTrendSeriesFromDailyStats({
+    stats: previousTrendStats,
+    period: {
+      ...period,
+      start: comparisonStart,
+      endExclusive: period.start,
+      from: formatDateInput(comparisonStart),
+      to: formatDateInput(comparisonEnd),
+    },
+  });
+  const trendComparison = {
+    previousPageViews: previousTrendStats
+      .filter((item) => item.metricKey === "page_views")
+      .reduce((sum, item) => sum + item.metricValue, 0),
+    previousClicks: previousTrendStats
+      .filter((item) => item.metricKey === "click_events")
+      .reduce((sum, item) => sum + item.metricValue, 0),
+    previousTrend,
+    previousFrom: formatDateInput(comparisonStart),
+    previousTo: formatDateInput(comparisonEnd),
+  };
 
   const topServices = serviceHeatRows.map((service) => ({
     label: service.name,
@@ -936,6 +950,7 @@ export async function getDashboardData(period: DashboardPeriod) {
     todayOfficialClicks,
     todayButtonClicks,
     trend,
+    trendComparison,
     digitalServices: toCount(summary?.digital_services),
     plans: toCount(summary?.plans),
     countries: toCount(summary?.countries),
@@ -959,4 +974,3 @@ export async function getDashboardData(period: DashboardPeriod) {
     recentEvents,
   };
 }
-

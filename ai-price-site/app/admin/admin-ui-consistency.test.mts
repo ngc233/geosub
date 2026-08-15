@@ -16,6 +16,7 @@ function readAdminDashboardSource() {
     "app/admin/page.tsx",
     "app/admin/queries.ts",
     "app/admin/DashboardComponents.tsx",
+    "app/admin/TrendChart.tsx",
     "app/admin/dashboard-formatters.ts",
   ]
     .map(readProjectFile)
