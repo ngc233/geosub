@@ -6,6 +6,8 @@ export type RegionPrice = {
   code: string;
   priceUsd: number;
   localPrice: string;
+  localPriceValue?: number;
+  currencyCode?: string;
   tax: string;
   taxConfidence?: "high" | "medium" | "low" | "unknown";
   taxSourceKind?: "manual" | "official" | "apple" | "provider" | "inferred";
@@ -24,6 +26,7 @@ export type RegionPrice = {
   fxRateDate?: string;
   reviewedAt?: string;
   sourceName?: string;
+  sourceUrl?: string;
   confidenceScore?: number;
   dataQuality?: "verified" | "estimated" | "stale" | "pending_review" | "unknown";
   isCheap?: boolean;

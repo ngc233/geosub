@@ -33,8 +33,9 @@ test("detail risk model combines platform, price gap and tax signals", () => {
   assert.match(source, /taxConfidence === "low"[\s\S]*score \+= 5/);
   assert.match(source, /taxConfidence === "medium"[\s\S]*score \+= 1/);
   assert.match(source, /getRiskLevelFromScore\(finalScore\)/);
-  assert.match(source, /Model rating: /);
-  assert.match(source, /模型判断：/);
+  assert.doesNotMatch(source, /Model rating: /);
+  assert.doesNotMatch(source, /模型判断：/);
+  assert.match(source, /internal anomaly signal/);
   assert.match(source, /translateRiskProfileTextToZh/);
   assert.match(source, /官方结算页和平台规则为准/);
   assert.match(source, /new Set\(\[requirements, baseNote\]/);

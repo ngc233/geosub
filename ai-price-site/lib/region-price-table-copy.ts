@@ -40,7 +40,7 @@ const preparedRegionPriceTableCopy = {
     vsUs: "米国比",
     taxNote: "税情報",
     source: "ソース",
-    statusRisk: "価格帯・リスク",
+    statusRisk: "価格帯・契約条件",
     sameAsUs: "米国と同額",
     aboveUs: (percent) => `米国より ${percent}% 高い`,
     belowUs: (percent) => `米国より ${percent}% 安い`,
@@ -77,12 +77,12 @@ const preparedRegionPriceTableCopy = {
     taxHelp:
       "VAT、GST、消費税、売上税の情報は参考です。順位では税金を再加算せず、最終価格は App Store の決済画面を優先します。",
     riskHelp:
-      "価格帯は米国基準との比較です。リスクはアカウント地域、支払い方法、請求情報、プラットフォーム管理を総合した目安です。",
+      "価格帯は米国基準との比較です。契約条件は、現地ストアでの掲載、アカウント地域、支払い方法、公式ソース、確認日を事実ごとに示します。未確認の条件を利用可能とは推定しません。",
     empty: (source) => `${source} の料金データはまだありません。`,
     showMore: (count) => `さらに ${count} 地域を表示`,
     collapse: "地域一覧を折りたたむ",
     riskNote:
-      "注意：GeoSub は地域別の公開料金を比較するためのサービスで、プラットフォーム規約の回避を推奨しません。地域をまたぐ契約は Apple ID の地域、支払い方法、請求情報、税金、リスク管理の影響を受けます。契約可否は公式の決済画面で確認してください。",
+      "契約条件：GeoSub は確認できる公開情報のみを表示します。現地 App Store に価格があっても、他地域のアカウントで購入できるとは限りません。未確認の条件はそのまま明記します。",
     helpAria: (label, help) => `${label}の説明：${help}`,
   },
   ko: {
@@ -107,7 +107,7 @@ const preparedRegionPriceTableCopy = {
     vsUs: "미국 대비",
     taxNote: "세금 안내",
     source: "출처",
-    statusRisk: "가격대·위험",
+    statusRisk: "가격대·구독 조건",
     sameAsUs: "미국과 동일",
     aboveUs: (percent) => `미국보다 ${percent}% 비쌈`,
     belowUs: (percent) => `미국보다 ${percent}% 저렴`,
@@ -144,12 +144,12 @@ const preparedRegionPriceTableCopy = {
     taxHelp:
       "VAT, GST, 소비세 또는 판매세 안내는 참고용입니다. 순위에는 세금을 다시 더하지 않으며 최종 가격은 App Store 결제 화면을 기준으로 합니다.",
     riskHelp:
-      "가격대는 미국 기준과 비교한 결과입니다. 위험은 계정 지역, 결제 수단, 청구 정보와 플랫폼 관리 정책을 종합한 지표입니다.",
+      "가격대는 미국 기준과 비교합니다. 구독 조건은 현지 스토어 등록, 계정 지역, 결제 수단, 공식 출처와 확인일을 사실별로 보여 줍니다. 확인되지 않은 조건은 가능하다고 추정하지 않습니다.",
     empty: (source) => `${source} 가격 데이터가 아직 없습니다.`,
     showMore: (count) => `${count}개 지역 더 보기`,
     collapse: "지역 목록 접기",
     riskNote:
-      "주의: GeoSub는 지역별 공개 구독 가격을 비교하며 플랫폼 규정 우회를 권장하지 않습니다. 다른 지역 구독은 Apple ID 지역, 결제 수단, 청구 정보, 세금과 플랫폼 위험 관리의 영향을 받을 수 있습니다. 실제 구독 가능 여부는 공식 결제 화면을 확인하세요.",
+      "구독 조건: GeoSub는 확인 가능한 공개 정보만 표시합니다. 현지 App Store에 가격이 있어도 다른 지역 계정에서 구매할 수 있다는 뜻은 아닙니다. 확인되지 않은 조건은 그대로 표시합니다.",
     helpAria: (label, help) => `${label} 설명: ${help}`,
   },
   es: {
@@ -174,7 +174,7 @@ const preparedRegionPriceTableCopy = {
     vsUs: "Frente a EE. UU.",
     taxNote: "Impuestos",
     source: "Fuente",
-    statusRisk: "Nivel y riesgo",
+    statusRisk: "Nivel y acceso",
     sameAsUs: "Igual que EE. UU.",
     aboveUs: (percent) => `${percent}% más caro que EE. UU.`,
     belowUs: (percent) => `${percent}% más barato que EE. UU.`,
@@ -211,12 +211,12 @@ const preparedRegionPriceTableCopy = {
     taxHelp:
       "Las notas sobre IVA, GST, impuestos al consumo o ventas son orientativas. La clasificación no vuelve a sumar impuestos; prevalece el pago final de App Store.",
     riskHelp:
-      "El nivel compara cada región con EE. UU. El riesgo considera la región de la cuenta, el método de pago, la facturación y los controles de la plataforma.",
+      "El nivel compara la región con la referencia de EE. UU. El acceso muestra por separado la disponibilidad en la tienda, la región de la cuenta, el pago, la fuente oficial y la fecha de verificación. No se presupone lo que no está verificado.",
     empty: (source) => `Todavía no hay precios disponibles de ${source}.`,
     showMore: (count) => `Mostrar ${count} regiones más`,
     collapse: "Mostrar menos regiones",
     riskNote:
-      "Aviso: GeoSub compara precios públicos por región y no promueve eludir las normas de la plataforma. Las suscripciones entre regiones pueden depender de la región del Apple ID, el método de pago, la facturación, los impuestos y los controles de riesgo. La disponibilidad final se confirma en el pago oficial.",
+      "Condiciones de acceso: GeoSub solo muestra hechos públicos verificables. Que exista un precio en la App Store local no garantiza la compra desde una cuenta de otra región; lo no verificado se indica expresamente.",
     helpAria: (label, help) => `${label}: ${help}`,
   },
   tr: {
@@ -241,7 +241,7 @@ const preparedRegionPriceTableCopy = {
     vsUs: "ABD'ye göre",
     taxNote: "Vergi notu",
     source: "Kaynak",
-    statusRisk: "Seviye ve risk",
+    statusRisk: "Fiyat düzeyi ve erişim",
     sameAsUs: "ABD ile aynı",
     aboveUs: (percent) => `ABD'den %${percent} daha pahalı`,
     belowUs: (percent) => `ABD'den %${percent} daha ucuz`,
@@ -278,12 +278,12 @@ const preparedRegionPriceTableCopy = {
     taxHelp:
       "KDV, GST, tüketim veya satış vergisi notları yalnızca bilgi amaçlıdır. Sıralamada vergi yeniden eklenmez; App Store ödeme ekranı esas alınır.",
     riskHelp:
-      "Seviye, bölgeyi ABD ölçütüyle karşılaştırır. Risk; hesap bölgesi, ödeme yöntemi, fatura bilgileri ve platform kontrollerini yansıtır.",
+      "Fiyat düzeyi bölgeyi ABD ölçütüyle karşılaştırır. Erişim koşulları mağaza listesi, hesap bölgesi, ödeme yöntemi, resmî kaynak ve doğrulama tarihini ayrı ayrı gösterir. Doğrulanmayan koşullar uygun kabul edilmez.",
     empty: (source) => `${source} için henüz fiyat yok.`,
     showMore: (count) => `${count} bölge daha göster`,
     collapse: "Daha az bölge göster",
     riskNote:
-      "Uyarı: GeoSub bölgesel abonelik maliyetlerini karşılaştırmak için herkese açık fiyatları sunar ve platform kurallarını aşmayı teşvik etmez. Bölgeler arası abonelikler Apple ID bölgesi, ödeme yöntemi, fatura bilgileri, vergiler ve risk kontrollerinden etkilenebilir. Son kullanılabilirlik resmî ödeme ekranına bağlıdır.",
+      "Erişim koşulları: GeoSub yalnızca doğrulanabilir kamuya açık bilgileri gösterir. Yerel App Store'da fiyat bulunması, başka bölgedeki bir hesapla satın alınabileceği anlamına gelmez; doğrulanmayan koşullar açıkça belirtilir.",
     helpAria: (label, help) => `${label}: ${help}`,
   },
   ar: {
@@ -308,7 +308,7 @@ const preparedRegionPriceTableCopy = {
     vsUs: "مقارنة بأمريكا",
     taxNote: "ملاحظة ضريبية",
     source: "المصدر",
-    statusRisk: "المستوى والمخاطر",
+    statusRisk: "مستوى السعر وشروط الوصول",
     sameAsUs: "مثل السعر الأمريكي",
     aboveUs: (percent) => `أغلى من أمريكا بنسبة ${percent}%`,
     belowUs: (percent) => `أرخص من أمريكا بنسبة ${percent}%`,
@@ -345,12 +345,12 @@ const preparedRegionPriceTableCopy = {
     taxHelp:
       "ملاحظات ضريبة القيمة المضافة أو GST أو ضريبة الاستهلاك والمبيعات للإحاطة فقط. لا يضيف الترتيب الضريبة مرة أخرى؛ يظل سعر الدفع في App Store هو المعتمد.",
     riskHelp:
-      "يقارن المستوى كل منطقة بالمعيار الأمريكي. وتعكس المخاطر منطقة الحساب وطريقة الدفع وبيانات الفوترة وضوابط المنصة.",
+      "يقارن مستوى السعر المنطقة بالمرجع الأمريكي. وتعرض شروط الوصول بشكل منفصل توفر الباقة في المتجر ومنطقة الحساب وطريقة الدفع والمصدر الرسمي وتاريخ التحقق. ولا نفترض صحة ما لم يتم التحقق منه.",
     empty: (source) => `لا تتوفر أسعار ${source} بعد.`,
     showMore: (count) => `عرض ${count} مناطق إضافية`,
     collapse: "عرض مناطق أقل",
     riskNote:
-      "تنبيه: تعرض GeoSub فروق الأسعار العامة لمقارنة تكاليف الاشتراكات ولا تشجع على تجاوز قواعد المنصة. قد تتأثر الاشتراكات عبر المناطق بمنطقة Apple ID وطريقة الدفع وبيانات الفوترة والضرائب وضوابط المخاطر. يعتمد التوفر النهائي على صفحة الدفع الرسمية.",
+      "شروط الوصول: تعرض GeoSub المعلومات العامة القابلة للتحقق فقط. وجود سعر في App Store المحلي لا يعني بالضرورة إمكانية الشراء بحساب من منطقة أخرى، وتُذكر الشروط غير المتحقق منها بوضوح.",
     helpAria: (label, help) => `${label}: ${help}`,
   },
   fr: {
@@ -361,7 +361,7 @@ const preparedRegionPriceTableCopy = {
     usdEquivalent: "Équivalent en dollars", usdSort: "Valeur en dollars", cnyEstimate: "Estimation en yuans CNY",
     cnySort: "Valeur estimée en yuans", perMonth: "/mois", rank: "Rang", region: "Région",
     localPrice: "Prix local", vsUs: "Écart avec les États-Unis", taxNote: "Fiscalité", source: "Source",
-    statusRisk: "Niveau et risque", sameAsUs: "Même prix qu’aux États-Unis",
+    statusRisk: "Niveau et accès", sameAsUs: "Même prix qu’aux États-Unis",
     aboveUs: (p) => `${p}% plus cher qu’aux États-Unis`, belowUs: (p) => `${p}% moins cher qu’aux États-Unis`,
     statusLow: "Bas", statusHigh: "Élevé", statusAbove: "Au-dessus de la normale", statusBase: "Référence",
     riskLow: "faible", riskMedium: "modéré", riskHigh: "élevé", riskNeedsReview: "à vérifier",
@@ -378,10 +378,10 @@ const preparedRegionPriceTableCopy = {
     convertedHelp: "Convertit les prix locaux dans une monnaie commune pour faciliter la comparaison.",
     vsUsHelp: "Prend le prix américain comme référence et indique l’écart de chaque région.",
     taxHelp: "Les indications de TVA, GST et taxes sur les ventes sont informatives. Aucune taxe n’est rajoutée au classement ; le montant App Store au paiement prévaut.",
-    riskHelp: "Le niveau compare la région à la référence américaine. Le risque tient compte du pays du compte, du paiement, de la facturation et des contrôles de la plateforme.",
+    riskHelp: "Le niveau compare la région à la référence américaine. L’accès détaille séparément la présence dans la boutique, la région du compte, le paiement, la source officielle et la date de vérification. Les conditions non vérifiées ne sont pas supposées disponibles.",
     empty: (source) => `Aucun prix ${source} disponible.`, showMore: (count) => `Afficher ${count} régions supplémentaires`,
     collapse: "Afficher moins de régions",
-    riskNote: "Avertissement : GeoSub présente les écarts de prix publics à titre comparatif et n’encourage pas le contournement des règles. La disponibilité finale dépend de la page de paiement officielle.",
+    riskNote: "Conditions d’accès : GeoSub n’affiche que des faits publics vérifiables. Un prix dans l’App Store local ne garantit pas l’achat avec un compte d’une autre région ; les conditions non vérifiées sont indiquées comme telles.",
     helpAria: (label, help) => `${label} : ${help}`,
   },
   it: {
@@ -392,7 +392,7 @@ const preparedRegionPriceTableCopy = {
     usdEquivalent: "Equivalente in dollari", usdSort: "Valore in dollari", cnyEstimate: "Stima in yuan CNY",
     cnySort: "Valore stimato in yuan", perMonth: "/mese", rank: "Posizione", region: "Regione",
     localPrice: "Prezzo locale", vsUs: "Confronto con gli Stati Uniti", taxNote: "Nota fiscale", source: "Fonte",
-    statusRisk: "Livello e rischio", sameAsUs: "Uguale agli Stati Uniti",
+    statusRisk: "Livello e accesso", sameAsUs: "Uguale agli Stati Uniti",
     aboveUs: (p) => `${p}% più caro degli Stati Uniti`, belowUs: (p) => `${p}% meno caro degli Stati Uniti`,
     statusLow: "Basso", statusHigh: "Alto", statusAbove: "Sopra la media", statusBase: "Riferimento",
     riskLow: "basso", riskMedium: "medio", riskHigh: "alto", riskNeedsReview: "da verificare",
@@ -409,10 +409,10 @@ const preparedRegionPriceTableCopy = {
     convertedHelp: "Converte i prezzi locali in una valuta comune per agevolare il confronto.",
     vsUsHelp: "Usa il prezzo statunitense come riferimento e mostra la differenza per ogni regione.",
     taxHelp: "Le note su IVA, GST e imposte sulle vendite sono informative. La classifica non aggiunge imposte; fa fede il prezzo App Store al pagamento.",
-    riskHelp: "Il livello confronta la regione con il riferimento statunitense. Il rischio considera paese dell’account, pagamento, fatturazione e controlli della piattaforma.",
+    riskHelp: "Il livello confronta la regione con il riferimento statunitense. L’accesso mostra separatamente disponibilità nello store, regione dell’account, pagamento, fonte ufficiale e data di verifica. Le condizioni non verificate non vengono date per disponibili.",
     empty: (source) => `Nessun prezzo ${source} disponibile.`, showMore: (count) => `Mostra altre ${count} regioni`,
     collapse: "Mostra meno regioni",
-    riskNote: "Avvertenza: GeoSub mostra differenze di prezzo pubbliche a scopo comparativo e non incoraggia l’elusione delle regole. La disponibilità finale dipende dalla pagina di pagamento ufficiale.",
+    riskNote: "Condizioni di accesso: GeoSub mostra solo fatti pubblici verificabili. Un prezzo nell’App Store locale non garantisce l’acquisto con un account di un’altra regione; le condizioni non verificate sono indicate chiaramente.",
     helpAria: (label, help) => `${label}: ${help}`,
   },
   de: {
@@ -423,7 +423,7 @@ const preparedRegionPriceTableCopy = {
     usdEquivalent: "Dollarwert", usdSort: "Wert in US-Dollar", cnyEstimate: "Geschätzter Yuanwert CNY",
     cnySort: "Geschätzter Yuanwert", perMonth: "/Monat", rank: "Rang", region: "Region",
     localPrice: "Lokaler Preis", vsUs: "Vergleich mit den USA", taxNote: "Steuerhinweis", source: "Quelle",
-    statusRisk: "Niveau und Risiko", sameAsUs: "Gleicher Preis wie in den USA",
+    statusRisk: "Preisniveau und Zugang", sameAsUs: "Gleicher Preis wie in den USA",
     aboveUs: (p) => `${p}% teurer als in den USA`, belowUs: (p) => `${p}% günstiger als in den USA`,
     statusLow: "Niedrig", statusHigh: "Hoch", statusAbove: "Über dem Normalwert", statusBase: "Referenz",
     riskLow: "niedrig", riskMedium: "mittel", riskHigh: "hoch", riskNeedsReview: "zu prüfen",
@@ -440,10 +440,10 @@ const preparedRegionPriceTableCopy = {
     convertedHelp: "Rechnet lokale Preise für einen leichteren Vergleich in eine gemeinsame Währung um.",
     vsUsHelp: "Nutzt den US-Preis als Referenz und zeigt die Abweichung jeder Region.",
     taxHelp: "Hinweise zu MwSt., GST und Verkaufssteuern dienen nur zur Information. Die Rangliste schlägt keine Steuer auf; maßgeblich ist der App-Store-Endpreis.",
-    riskHelp: "Das Niveau vergleicht die Region mit der US-Referenz. Das Risiko berücksichtigt Kontoland, Zahlung, Rechnungsdaten und Plattformprüfungen.",
+    riskHelp: "Das Preisniveau vergleicht die Region mit der US-Referenz. Beim Zugang werden Store-Verfügbarkeit, Accountregion, Zahlungsmethode, offizielle Quelle und Prüfdatum getrennt ausgewiesen. Ungeprüfte Bedingungen gelten nicht als verfügbar.",
     empty: (source) => `Noch keine ${source}-Preise verfügbar.`, showMore: (count) => `${count} weitere Regionen anzeigen`,
     collapse: "Weniger Regionen anzeigen",
-    riskNote: "Hinweis: GeoSub zeigt öffentliche Preisunterschiede zum Vergleich und empfiehlt keine Umgehung von Plattformregeln. Die endgültige Verfügbarkeit richtet sich nach der offiziellen Zahlungsseite.",
+    riskNote: "Zugangsbedingungen: GeoSub zeigt nur überprüfbare öffentliche Fakten. Ein Preis im lokalen App Store garantiert keinen Kauf mit einem Account aus einer anderen Region; ungeprüfte Bedingungen werden ausdrücklich gekennzeichnet.",
     helpAria: (label, help) => `${label}: ${help}`,
   },
   pt: {
@@ -454,7 +454,7 @@ const preparedRegionPriceTableCopy = {
     usdEquivalent: "Equivalente em dólares", usdSort: "Valor em dólares", cnyEstimate: "Estimativa em yuan CNY",
     cnySort: "Valor estimado em yuan", perMonth: "/mês", rank: "Posição", region: "Região",
     localPrice: "Preço local", vsUs: "Comparação com os EUA", taxNote: "Nota fiscal", source: "Fonte",
-    statusRisk: "Nível e risco", sameAsUs: "Mesmo preço dos EUA",
+    statusRisk: "Nível e acesso", sameAsUs: "Mesmo preço dos EUA",
     aboveUs: (p) => `${p}% mais caro do que nos EUA`, belowUs: (p) => `${p}% mais barato do que nos EUA`,
     statusLow: "Baixo", statusHigh: "Alto", statusAbove: "Acima do normal", statusBase: "Referência",
     riskLow: "baixo", riskMedium: "médio", riskHigh: "alto", riskNeedsReview: "a verificar",
@@ -471,10 +471,10 @@ const preparedRegionPriceTableCopy = {
     convertedHelp: "Converte preços locais para uma moeda comum, facilitando a comparação.",
     vsUsHelp: "Usa o preço dos EUA como referência e mostra a diferença de cada região.",
     taxHelp: "As notas sobre IVA, GST e impostos sobre vendas são informativas. A classificação não volta a adicionar impostos; prevalece o preço da App Store no pagamento.",
-    riskHelp: "O nível compara a região com a referência dos EUA. O risco considera país da conta, pagamento, faturação e controlos da plataforma.",
+    riskHelp: "O nível compara a região com a referência dos EUA. O acesso apresenta separadamente a disponibilidade na loja, a região da conta, o pagamento, a fonte oficial e a data de verificação. Condições não verificadas não são tratadas como disponíveis.",
     empty: (source) => `Ainda não há preços de ${source}.`, showMore: (count) => `Mostrar mais ${count} regiões`,
     collapse: "Mostrar menos regiões",
-    riskNote: "Aviso: o GeoSub apresenta diferenças de preços públicas para comparação e não incentiva o contorno das regras. A disponibilidade final depende da página oficial de pagamento.",
+    riskNote: "Condições de acesso: o GeoSub mostra apenas factos públicos verificáveis. Um preço na App Store local não garante a compra com uma conta de outra região; as condições não verificadas são assinaladas claramente.",
     helpAria: (label, help) => `${label}: ${help}`,
   },
 } satisfies Record<

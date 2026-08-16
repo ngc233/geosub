@@ -21,6 +21,10 @@ import {
 } from "../lib/seo-indexing-policy.ts";
 import { siteLocaleDefinitions } from "../lib/site-locale.ts";
 import { getEffectivePlanSitemapProductSlugs } from "../lib/seo-plan-promotion-data.ts";
+import {
+  getCountryPagePilotPath,
+  getIndexApprovedCountryPagePilots,
+} from "../lib/country-page-pilot.ts";
 
 const siteDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sitemapSource = readFileSync(resolve(siteDir, "app", "sitemap.ts"), "utf8");
@@ -188,6 +192,9 @@ const converterPaths = seoIndexableLocales.flatMap((locale) => [
       `/${localePath(locale)}/tools/currency-converter/${pair.slug}`,
   ),
 ]);
+const countryPagePaths = getIndexApprovedCountryPagePilots().flatMap((pilot) =>
+  seoIndexableLocales.map((locale) => getCountryPagePilotPath(pilot, locale)),
+);
 const [productPlanPages, articlePaths] = await Promise.all([
   getProductPaths(),
   getArticlePaths(new Date()),
@@ -197,6 +204,7 @@ const rawPaths = [
   ...staticGuidePaths,
   ...converterPaths,
   ...productPlanPages,
+  ...countryPagePaths,
   ...articlePaths,
 ];
 const paths = [...new Set(rawPaths)];
@@ -220,6 +228,7 @@ const budgetSummary = {
   staticGuidePages: staticGuidePaths.length,
   converterPages: converterPaths.length,
   productPlanPages: `${productPlanPages.length}/${seoSitemapBudgets.productPlanPages}`,
+  countryPages: `${countryPagePaths.length}/${seoSitemapBudgets.countryPages}`,
   articleTaxonomyPages: articlePaths.length,
   guideDetailPages: `${guideDetailPages.length}/${seoSitemapBudgets.guideDetailPages}`,
   currencyPairPages: `${currencyPairPages.length}/${seoSitemapBudgets.currencyPairPages}`,
@@ -233,7 +242,7 @@ console.log(JSON.stringify(budgetSummary, null, 2));
 if (mergedDuplicateUrls > 0) {
   assert.match(
     sitemapSource,
-    /dedupeRoutes\(\[\.\.\.staticRoutes, \.\.\.productRoutes, \.\.\.articleRoutes\]\)/,
+    /dedupeRoutes\(\[[\s\S]*\.\.\.staticRoutes,[\s\S]*\.\.\.productRoutes,[\s\S]*\.\.\.articleRoutes,[\s\S]*\.\.\.countryPageRoutes,[\s\S]*\]\)/,
     "Sitemap route sources overlap but the final output is not deduplicated.",
   );
 }
@@ -249,6 +258,11 @@ assert.ok(
 assert.ok(
   productPlanPages.length <= seoSitemapBudgets.productPlanPages,
   `Sitemap has ${productPlanPages.length} product plan pages; budget is ${seoSitemapBudgets.productPlanPages}.`,
+);
+assert.equal(
+  countryPagePaths.length,
+  seoSitemapBudgets.countryPages,
+  `Sitemap must contain exactly ${seoSitemapBudgets.countryPages} approved country pages; found ${countryPagePaths.length}.`,
 );
 assert.ok(
   guideDetailPages.length <= seoSitemapBudgets.guideDetailPages,

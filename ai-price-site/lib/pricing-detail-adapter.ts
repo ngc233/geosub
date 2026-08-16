@@ -69,6 +69,7 @@ type PricingDetailRow = {
   fx_rate_date: string | null;
   reviewed_at: Date | string | null;
   source_name: string | null;
+  source_url: string | null;
   confidence_score: number | null;
   data_quality: string | null;
 };
@@ -324,6 +325,8 @@ function buildProductFromRows(
       code: countryCode,
       priceUsd: toNumber(row.price_usd),
       localPrice: formatLocalPrice(row.local_price, row.currency, locale),
+      localPriceValue: toNumber(row.local_price),
+      currencyCode: row.currency?.toUpperCase() || undefined,
       tax: getTaxNote({
         taxNote: row.tax_note,
         taxProfileNoteZh: row.tax_profile_note_zh,
@@ -352,6 +355,7 @@ function buildProductFromRows(
       fxRateDate: row.fx_rate_date || undefined,
       reviewedAt: formatDate(row.reviewed_at),
       sourceName: row.source_name || (row.billing_platform === "ios" ? "App Store" : undefined),
+      sourceUrl: row.source_url || undefined,
       confidenceScore: Number(row.confidence_score || 0),
       dataQuality:
         row.data_quality === "verified" ||
@@ -490,6 +494,7 @@ export async function getPricingDetailProduct(
       latest_observation.raw_payload ->> 'fx_rate_date' AS fx_rate_date,
       latest_observation.reviewed_at,
       source.name AS source_name,
+      latest_observation.source_url,
       rp.confidence_score,
       rp.data_quality::text AS data_quality
     FROM products p
@@ -510,6 +515,7 @@ export async function getPricingDetailProduct(
     LEFT JOIN LATERAL (
       SELECT
         po.raw_payload,
+        po.source_url,
         COALESCE(
           NULLIF(po.raw_payload ->> 'approved_at', '')::timestamptz,
           NULLIF(po.raw_payload ->> 'auto_approved_at', '')::timestamptz,

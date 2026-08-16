@@ -12,6 +12,11 @@ import { getRegionPriceTableCopy } from "../lib/region-price-table-copy";
 import type { PreparedSiteLocale } from "../lib/site-locale";
 import { localizeTaxNote } from "../lib/tax-note-localization";
 import { getBillingCycleSuffix } from "../lib/billing-cycle-label";
+import {
+  assessSubscriptionAccess,
+  getSubscriptionAccessCopy,
+  type SubscriptionAccessEvidence,
+} from "../lib/subscription-access";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 
@@ -133,31 +138,16 @@ function getStatusDot(diffPercent: number) {
   return "bg-zinc-300";
 }
 
-function getRiskLabel(
-  level: RegionPrice["riskLevel"],
-  locale: PreparedSiteLocale,
-) {
-  const copy = getRegionPriceTableCopy(locale);
-  if (level === "low") return copy.riskLow;
-  if (level === "high") return copy.riskHigh;
-  if (level === "medium") return copy.riskMedium;
-  return copy.riskNeedsReview;
-}
-
-function getRiskClass(level: RegionPrice["riskLevel"]) {
-  if (level === "low") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800";
+function getAccessEvidenceClass(evidence: SubscriptionAccessEvidence) {
+  if (evidence === "confirmed") {
+    return "text-emerald-700 dark:text-emerald-300";
   }
 
-  if (level === "high") {
-    return "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-800";
+  if (evidence === "conditional") {
+    return "text-amber-700 dark:text-amber-300";
   }
 
-  if (level === "medium") {
-    return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800";
-  }
-
-  return "bg-zinc-50 text-zinc-500 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-800";
+  return "text-zinc-500 dark:text-zinc-400";
 }
 
 function getTaxConfidenceLabel(
@@ -388,7 +378,7 @@ function HeaderHelp({
   );
 }
 
-function RiskStatus({
+function SubscriptionConditions({
   region,
   diffPercent,
   locale,
@@ -398,12 +388,10 @@ function RiskStatus({
   locale: PreparedSiteLocale;
 }) {
   const [open, setOpen] = useState(false);
-  const copy = getRegionPriceTableCopy(locale);
-  const fallback = copy.riskFallback;
-  const tooltip =
-    joinTooltipParts([region.riskNote, region.riskFactors]) || fallback;
+  const accessCopy = getSubscriptionAccessCopy(locale);
+  const assessment = assessSubscriptionAccess(region);
   const statusLabel = getStatusByLocale(diffPercent, locale);
-  const riskLabel = copy.riskPrefix(getRiskLabel(region.riskLevel, locale));
+  const accessLabel = accessCopy.conclusion[assessment.conclusion];
 
   return (
     <div
@@ -416,33 +404,58 @@ function RiskStatus({
       <button
         type="button"
         className="inline-flex min-w-0 items-center gap-2 text-left text-sm text-zinc-500 outline-none transition hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-300/60 dark:text-zinc-400 dark:hover:text-zinc-200"
-        aria-label={`${statusLabel} · ${riskLabel}: ${tooltip}`}
+        aria-label={`${statusLabel} · ${accessLabel}`}
       >
         <span className={`h-2 w-2 shrink-0 rounded-full ${getStatusDot(diffPercent)}`} />
         <span className="shrink-0">{statusLabel}</span>
         <span
           className={[
             "hidden h-5 shrink-0 items-center rounded-md px-1.5 text-[11px] font-semibold ring-1 ring-inset xl:inline-flex",
-            getRiskClass(region.riskLevel),
+            assessment.conclusion === "restrictions"
+              ? "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800"
+              : "bg-zinc-50 text-zinc-500 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-800",
           ].join(" ")}
         >
-          {riskLabel}
+          {accessLabel}
         </span>
       </button>
       <span
         role="tooltip"
         className={[
-          "pointer-events-none absolute right-0 top-full z-[90] mt-2 w-[min(280px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
+          "pointer-events-none absolute right-0 top-full z-[90] mt-2 w-[min(340px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
           open ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
         ].join(" ")}
       >
         <span className="mb-1.5 flex items-center gap-2">
           <span className={`h-1.5 w-1.5 rounded-full ${getStatusDot(diffPercent)}`} />
           <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-            {statusLabel} · {riskLabel}
+            {statusLabel} · {accessLabel}
           </span>
         </span>
-        <span className="block">{tooltip}</span>
+        <span className="grid gap-1.5">
+          {assessment.facts.map((fact) => {
+            const evidenceLabel =
+              fact.key === "checked" &&
+              fact.evidence === "confirmed" &&
+              region.lastCheckedAt
+                ? accessCopy.checkedValue(region.lastCheckedAt)
+                : accessCopy.evidence[fact.evidence];
+
+            return (
+              <span
+                key={fact.key}
+                className="flex items-start justify-between gap-4 border-t border-zinc-100 pt-1.5 first:border-t-0 first:pt-0 dark:border-zinc-800"
+              >
+                <span>{accessCopy.facts[fact.key]}</span>
+                <span
+                  className={`shrink-0 font-semibold ${getAccessEvidenceClass(fact.evidence)}`}
+                >
+                  {evidenceLabel}
+                </span>
+              </span>
+            );
+          })}
+        </span>
       </span>
     </div>
   );
@@ -570,7 +583,11 @@ function RegionPriceRow({
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {copy.statusRisk}
         </div>
-        <RiskStatus region={region} diffPercent={diffPercent} locale={locale} />
+        <SubscriptionConditions
+          region={region}
+          diffPercent={diffPercent}
+          locale={locale}
+        />
       </div>
     </div>
   );

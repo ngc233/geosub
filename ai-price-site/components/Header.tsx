@@ -423,6 +423,12 @@ function normalizePath(pathname: string) {
   return normalized || "/";
 }
 
+function isCountryPagePilotPath(pathname: string) {
+  return /^\/(?:zh|en)\/(?:ai-pricing|streaming-pricing)\/[^/]+\/regions\/[^/]+$/.test(
+    normalizePath(pathname),
+  );
+}
+
 function isNavItemActive(item: NavItem, pathname: string) {
   if (item.external) return false;
 
@@ -501,6 +507,9 @@ export default function Header({
   const currentLocaleCode = getSiteLocaleFromPath(pathname);
   const currentLocale =
     languages.find((item) => item.code === currentLocaleCode) || languages[0];
+  const availableLanguages = isCountryPagePilotPath(pathname)
+    ? languages.filter((language) => language.code === "zh" || language.code === "en")
+    : languages;
   const copy = headerCopy[currentLocaleCode];
   const currentLocaleNavItems =
     initialNavItemsByLocale[currentLocaleCode] || [];
@@ -711,7 +720,7 @@ export default function Header({
               role="menu"
             >
               <div className="min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-white p-1.5 dark:border-zinc-800 dark:bg-zinc-900">
-                {languages.map((language) => {
+                {availableLanguages.map((language) => {
                   const active = language.code === currentLocaleCode;
 
                   return (

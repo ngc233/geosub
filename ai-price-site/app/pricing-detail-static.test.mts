@@ -233,6 +233,22 @@ test("priority product guidance is rendered on public detail pages", () => {
   assert.match(topicLinks, /getPricingPlanPath/);
 });
 
+test("approved country analyses are discoverable from product detail pages", () => {
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const countryPilots = readAppFile("..", "lib", "country-page-pilot.ts");
+
+  assert.match(detailPage, /function CountryAnalysisLinks/);
+  assert.match(detailPage, /getIndexApprovedCountryPagePilots/);
+  assert.match(detailPage, /getCountryPagePilotPath/);
+  assert.match(detailPage, /eventKey="click_country"/);
+  assert.match(detailPage, /placement="product_country_analysis"/);
+  assert.match(countryPilots, /countryPageIndexApprovals/);
+  assert.match(
+    countryPilots,
+    /prevents catalog growth[\s\S]*multiplying the[\s\S]*sitemap/,
+  );
+});
+
 test("product overview and related pricing links expose clear next actions", () => {
   const planOverview = readAppFile(
     "..",

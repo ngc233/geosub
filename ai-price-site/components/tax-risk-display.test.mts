@@ -10,10 +10,14 @@ function readComponent(fileName: string) {
   return readFileSync(resolve(componentsDir, fileName), "utf8");
 }
 
-test("region table tax and risk labels cover every prepared locale", () => {
+test("region table tax and subscription conditions cover every prepared locale", () => {
   const source = readComponent("ExpandableRegionPriceTable.tsx");
   const copySource = readFileSync(
     resolve(componentsDir, "../lib/region-price-table-copy.ts"),
+    "utf8",
+  );
+  const accessSource = readFileSync(
+    resolve(componentsDir, "../lib/subscription-access.ts"),
     "utf8",
   );
 
@@ -23,18 +27,22 @@ test("region table tax and risk labels cover every prepared locale", () => {
   );
   assert.match(source, /locale: PreparedSiteLocale/);
   assert.match(source, /getRegionPriceTableCopy\(locale\)/);
-  assert.match(source, /return copy\.riskNeedsReview/);
+  assert.match(source, /assessSubscriptionAccess\(region\)/);
+  assert.match(source, /getSubscriptionAccessCopy\(locale\)/);
+  assert.match(source, /assessment\.facts\.map/);
+  assert.match(source, /accessCopy\.checkedValue\(region\.lastCheckedAt\)/);
   assert.match(source, /return copy\.taxInferred/);
   assert.match(source, /return copy\.taxVerified/);
   assert.match(source, /return copy\.taxMedium/);
   assert.match(source, /return copy\.taxNeedsReview/);
-  assert.match(source, /copy\.riskPrefix\(getRiskLabel\(region\.riskLevel, locale\)\)/);
   assert.match(
     copySource,
     /satisfies Record<[\s\S]*Exclude<PreparedSiteLocale, "zh" \| "zh-tw" \| "en">/,
   );
-  for (const locale of ["ja", "ko", "es", "tr", "ar"]) {
+  assert.match(accessSource, /satisfies Record<PreparedSiteLocale, SubscriptionAccessCopy>/);
+  for (const locale of ["ja", "ko", "es", "tr", "ar", "fr", "it", "de", "pt"]) {
     assert.match(copySource, new RegExp(`\\n  ${locale}:`));
+    assert.match(accessSource, new RegExp(`\\n  ${locale}:`));
   }
 });
 

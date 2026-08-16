@@ -1,5 +1,12 @@
 import type { MetadataRoute } from "next";
-import { Locale, ProductCategory, PublishStatus } from "@prisma/client";
+import {
+  BillingCycle,
+  BillingPlatform,
+  Locale,
+  PriceType,
+  ProductCategory,
+  PublishStatus,
+} from "@prisma/client";
 import {
   getPublishedArticleCategories,
   getPublishedArticleTags,
@@ -23,6 +30,11 @@ import { getProductSeoQualityAudits } from "../lib/product-seo-quality-data";
 import { getPlanEditorialIndexingStatus } from "../lib/product-editorial-content";
 import { indexableStaticGuidePaths } from "../lib/public-launch-routes";
 import { getEffectivePlanSitemapProductSlugs } from "../lib/seo-plan-promotion-data";
+import {
+  getCountryPageIndexApproval,
+  getCountryPagePilotPath,
+  getIndexApprovedCountryPagePilots,
+} from "../lib/country-page-pilot";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
@@ -300,6 +312,95 @@ async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
   return [...chineseRoutes, ...englishRoutes];
 }
 
+async function getCountryPageRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
+  const pilots = getIndexApprovedCountryPagePilots();
+  const productSlugs = [...new Set(pilots.map((pilot) => pilot.productSlug))];
+  const countryCodes = [...new Set(pilots.map((pilot) => pilot.countryCode))];
+  const products = await prisma.product.findMany({
+    where: {
+      slug: { in: productSlugs },
+      status: PublishStatus.PUBLISHED,
+    },
+    select: {
+      slug: true,
+      category: true,
+      updatedAt: true,
+      plans: {
+        where: {
+          status: PublishStatus.PUBLISHED,
+          billingCycle: BillingCycle.MONTHLY,
+        },
+        select: {
+          updatedAt: true,
+          regionPrices: {
+            where: {
+              status: PublishStatus.PUBLISHED,
+              priceUsd: { gt: 0 },
+              billingPlatform: BillingPlatform.IOS,
+              priceType: PriceType.LIST_PRICE,
+              country: { code: { in: countryCodes } },
+            },
+            select: {
+              lastCheckedAt: true,
+              publishedAt: true,
+              updatedAt: true,
+              country: { select: { code: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return pilots.flatMap((pilot) => {
+    const expectedCategory = pilot.category === "streaming"
+      ? ProductCategory.STREAMING
+      : ProductCategory.AI;
+    const product = products.find(
+      (candidate) =>
+        candidate.slug === pilot.productSlug &&
+        candidate.category === expectedCategory,
+    );
+    if (!product) return [];
+
+    const matchingPlans = product.plans.filter((plan) =>
+      plan.regionPrices.some(
+        (price) => price.country.code.toUpperCase() === pilot.countryCode,
+      ),
+    );
+    const matchingPrices = matchingPlans.flatMap((plan) =>
+      plan.regionPrices.filter(
+        (price) => price.country.code.toUpperCase() === pilot.countryCode,
+      ),
+    );
+    if (matchingPrices.length === 0) return [];
+
+    const approval = getCountryPageIndexApproval(pilot);
+    const approvalDate = approval ? new Date(approval.approvedAt) : now;
+    const lastModified = latestDate(
+      [
+        product.updatedAt,
+        ...matchingPlans.map((plan) => plan.updatedAt),
+        ...matchingPrices.flatMap((price) => [
+          price.lastCheckedAt,
+          price.publishedAt,
+          price.updatedAt,
+        ]),
+      ],
+      approvalDate,
+    );
+
+    return seoIndexableLocales.map((locale, index) =>
+      route(
+        getCountryPagePilotPath(pilot, locale),
+        "daily",
+        0.7 - index * 0.04,
+        lastModified,
+      ),
+    );
+  });
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -347,12 +448,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [productRoutes, articleRoutes] = await Promise.all([
+    const [productRoutes, articleRoutes, countryPageRoutes] = await Promise.all([
       getProductRoutes(now),
       getArticleRoutes(now),
+      getCountryPageRoutes(now),
     ]);
 
-    return dedupeRoutes([...staticRoutes, ...productRoutes, ...articleRoutes]);
+    return dedupeRoutes([
+      ...staticRoutes,
+      ...productRoutes,
+      ...articleRoutes,
+      ...countryPageRoutes,
+    ]);
   } catch (error) {
     console.warn(
       `Sitemap dynamic routes skipped; using static routes only (${getSitemapFallbackReason(error)}).`,

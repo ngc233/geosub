@@ -71,6 +71,11 @@ import {
   type DisplayCurrency,
 } from "../lib/display-currency";
 import {
+  getCountryPagePilotPath,
+  getIndexApprovedCountryPagePilots,
+  type CountryPagePilotLocale,
+} from "../lib/country-page-pilot";
+import {
   getPublicPricingProductCacheTag,
   PUBLIC_EXCHANGE_RATE_CACHE_TAG,
   PUBLIC_EXCHANGE_RATE_REVALIDATE_SECONDS,
@@ -683,6 +688,82 @@ export async function getPricingDetailMetadata({
   };
 }
 
+function CountryAnalysisLinks({
+  locale,
+  productSlug,
+  category,
+}: {
+  locale: SiteLocale;
+  productSlug: string;
+  category: "ai" | "streaming";
+}) {
+  if (locale !== "zh" && locale !== "en") return null;
+
+  const pilotLocale: CountryPagePilotLocale = locale;
+  const pilots = getIndexApprovedCountryPagePilots().filter(
+    (pilot) =>
+      pilot.productSlug === productSlug && pilot.category === category,
+  );
+
+  if (pilots.length === 0) return null;
+
+  const copy = locale === "zh"
+    ? {
+        title: "地区价格分析",
+        description:
+          "查看已经完成价格与来源复核的重点地区，了解本币变化、套餐结构和购买前需要确认的条件。",
+        action: "查看完整分析",
+      }
+    : {
+        title: "Regional price analysis",
+        description:
+          "Explore reviewed regional pages covering local-price changes, plan structure and conditions to confirm before subscribing.",
+        action: "Read the full analysis",
+      };
+
+  return (
+    <section className="border-y border-zinc-200 py-6 dark:border-zinc-800">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-semibold text-zinc-950 dark:text-white">
+          {copy.title}
+        </h2>
+        <p className="max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+          {copy.description}
+        </p>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {pilots.map((pilot) => (
+          <TrackedLink
+            key={`${pilot.productSlug}-${pilot.countryCode}`}
+            href={getCountryPagePilotPath(pilot, pilotLocale)}
+            eventKey="click_country"
+            eventName="Open regional price analysis"
+            buttonKey={`${pilot.productSlug}:${pilot.countryCode}`}
+            countryId={pilot.countryCode}
+            placement="product_country_analysis"
+            className="group flex min-w-0 items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white px-4 py-3 transition hover:border-lime-300 hover:bg-lime-50/60 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-lime-500/40 dark:hover:bg-lime-500/10"
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-zinc-950 dark:text-white">
+                {pilot.title[pilotLocale]}
+              </span>
+              <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                {pilot.countryName[pilotLocale]} · {copy.action}
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="shrink-0 text-lg text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-lime-700 dark:group-hover:text-lime-300"
+            >
+              →
+            </span>
+          </TrackedLink>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default async function PricingDetailPage({
   params,
   searchParams,
@@ -848,6 +929,12 @@ export default async function PricingDetailPage({
           </section>
 
           <ProductPlanOverview product={product} locale={locale} />
+
+          <CountryAnalysisLinks
+            locale={locale}
+            productSlug={product.slug}
+            category={product.category}
+          />
 
           <RelatedPricingProducts
             locale={locale}
@@ -1059,6 +1146,12 @@ export default async function PricingDetailPage({
                   locale={locale}
                 />
               }
+            />
+
+            <CountryAnalysisLinks
+              locale={locale}
+              productSlug={product.slug}
+              category={product.category}
             />
 
             {editorialContent ? (

@@ -20,6 +20,13 @@ function readSharePriceModalSource() {
     .join("\n");
 }
 
+test("global link defaults do not override button text utilities", () => {
+  const globals = readFileSync(resolve(componentsDir, "../app/globals.css"), "utf8");
+
+  assert.match(globals, /@layer base\s*\{\s*a\s*\{/);
+  assert.doesNotMatch(globals, /^a\s*\{/m);
+});
+
 test("active public listing cards use the current compact radius system", () => {
   const dbPricingCard = readComponent("DbPricingCard.tsx");
   const brandIcon = readComponent("BrandIcon.tsx");
@@ -107,7 +114,9 @@ test("English pricing details localize purchasing power and shared controls", ()
   assert.match(regionTable, /getRegionPriceTableCopy\(locale\)/);
   assert.match(pricingCopy, /No \$\{source\} pricing yet/);
   assert.match(pricingCopy, /No \$\{source\} pricing is available yet/);
-  assert.match(pricingCopy, /Risk note: GeoSub presents public price differences/);
+  assert.match(pricingCopy, /Access note: GeoSub shows only verifiable public facts/);
+  assert.match(pricingCopy, /Unknown conditions are not inferred as available/);
+  assert.doesNotMatch(pricingCopy, /Risk note:/);
   assert.match(pricingCopy, /LegacyPublicPricingLocale/);
   assert.match(worldMap, /getMarkerMeta\(marker\.kind, mapCopy\)/);
 });

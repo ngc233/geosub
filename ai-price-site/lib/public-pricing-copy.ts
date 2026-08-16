@@ -135,7 +135,7 @@ const publicPricingCopy = {
       vsUs: "对比美国",
       taxNote: "税费说明",
       source: "来源",
-      statusRisk: "状态/风险",
+      statusRisk: "价格位置 / 订阅条件",
       sameAsUs: "与美国相同",
       aboveUs: (percent: number) => `比美国贵 ${percent}%`,
       belowUs: (percent: number) => `比美国便宜 ${percent}%`,
@@ -169,12 +169,12 @@ const publicPricingCopy = {
       taxHelp:
         "当地 VAT、GST、消费税或销售税说明，仅作背景参考；价格排序不额外加税，最终以 App Store 结算页为准。",
       riskHelp:
-        "状态表示该地区价格相对美国是低价、基准、偏高或高价；风险表示跨区订阅时账号地区、付款方式、账单信息和平台风控的综合判断。",
+        "价格位置用于对比美国基准；订阅条件逐项说明当地商店是否提供套餐、账号地区、付款方式、官方入口和核验日期。未核验的条件不会被推断为可用。",
       empty: (source: string) => `暂无 ${source} 价格数据。`,
       showMore: (count: number) => `显示更多 ${count} 个地区`,
       collapse: "收起地区列表",
       riskNote:
-        "风险提示：GeoSub 展示公开价格差异，方便比较不同地区的订阅成本，不鼓励规避平台规则。跨地区订阅可能受到 Apple ID 地区、付款方式、账单信息、税费和平台风控影响，最终是否可订阅请以官方结算页面为准。",
+        "订阅条件说明：GeoSub 只展示可核验的公开事实。当地 App Store 出现价格不代表其他地区账号一定能够购买；账号地区、付款方式和礼品卡支持未确认时会明确标为未核验。",
       helpAria: (label: string, help: string) => `${label}说明：${help}`,
     },
   },
@@ -312,7 +312,7 @@ const publicPricingCopy = {
       vsUs: "vs US",
       taxNote: "Tax note",
       source: "Source",
-      statusRisk: "Status / risk",
+      statusRisk: "Price position / access",
       sameAsUs: "Same as US",
       aboveUs: (percent: number) => `${percent}% above US`,
       belowUs: (percent: number) => `${percent}% below US`,
@@ -349,12 +349,12 @@ const publicPricingCopy = {
       taxHelp:
         "VAT, GST, consumption tax or sales tax notes are contextual only. Rankings do not add tax again; final App Store checkout remains authoritative.",
       riskHelp:
-        "Status compares each region against the US baseline. Risk reflects account region, payment method, billing information and platform controls.",
+        "Price position compares the region with the US baseline. Access lists verifiable store availability, account-region and payment conditions, the official source and the verification date. Unknown conditions are not inferred as available.",
       empty: (source: string) => `No ${source} pricing is available yet.`,
       showMore: (count: number) => `Show ${count} more regions`,
       collapse: "Collapse regions",
       riskNote:
-        "Risk note: GeoSub presents public price differences to compare regional subscription costs and does not encourage bypassing platform rules. Cross-region subscriptions may be affected by Apple ID region, payment method, billing information, taxes and platform risk controls. Final availability depends on the official checkout page.",
+        "Access note: GeoSub shows only verifiable public facts. A listed local App Store price does not prove that an account from another region can purchase it; unverified account, payment and gift-card conditions are labeled accordingly.",
       helpAria: (label: string, help: string) => `${label}: ${help}`,
     },
   },

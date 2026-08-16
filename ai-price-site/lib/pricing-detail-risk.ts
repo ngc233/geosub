@@ -512,29 +512,9 @@ export function assessAppStoreRisk({
   return {
     level: finalLevel,
     score: finalScore,
-    note: `${riskNote} ${
-      locale === "zh"
-        ? "模型判断："
-        : locale === "ja"
-          ? "評価："
-          : locale === "ko"
-            ? "평가: "
-            : locale === "es"
-              ? "Evaluación: "
-              : locale === "tr"
-                ? "Değerlendirme: "
-                : locale === "ar"
-                  ? "التقييم: "
-                : locale === "fr"
-                  ? "Évaluation : "
-                : locale === "it"
-                  ? "Valutazione: "
-                : locale === "de"
-                  ? "Bewertung: "
-                : locale === "pt"
-                  ? "Avaliação: "
-                : "Model rating: "
-    }${getRiskLevelLabel(finalLevel, locale)} (${finalScore}/100).`,
+    // The score remains an internal anomaly signal. Public pages show the
+    // underlying subscription conditions instead of presenting it as fact.
+    note: riskNote,
     factors: factors
       .map((factor) =>
         locale === "fr" || locale === "it" || locale === "de" || locale === "pt"

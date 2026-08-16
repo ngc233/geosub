@@ -86,11 +86,12 @@ test("expandable region rows are client-side and keep a real toggle state", () =
   assert.match(source, /显示更多/);
 });
 
-test("region table risk and tax hints use site styled tooltips", () => {
+test("region table subscription conditions and tax hints use site styled tooltips", () => {
   const source = readComponent("ExpandableRegionPriceTable.tsx");
 
   assert.match(source, /function TaxTooltip/);
-  assert.match(source, /function RiskStatus/);
+  assert.match(source, /function SubscriptionConditions/);
+  assert.match(source, /assessment\.facts\.map/);
   assert.match(source, /role="tooltip"/);
   assert.match(source, /shadow-\[0_18px_50px_rgba\(15,23,42,0\.14\)\]/);
   assert.doesNotMatch(source, /title=\{region\.code\}/);

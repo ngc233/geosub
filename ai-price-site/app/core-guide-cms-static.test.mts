@@ -25,7 +25,10 @@ test("sitemap deduplicates CMS articles that share promoted static URLs", () => 
   const source = readFileSync(resolve(appDir, "sitemap.ts"), "utf8");
 
   assert.match(source, /function dedupeRoutes/);
-  assert.match(source, /dedupeRoutes\(\[\.\.\.staticRoutes, \.\.\.productRoutes, \.\.\.articleRoutes\]\)/);
+  assert.match(
+    source,
+    /dedupeRoutes\(\[[\s\S]*\.\.\.staticRoutes,[\s\S]*\.\.\.productRoutes,[\s\S]*\.\.\.articleRoutes,[\s\S]*\.\.\.countryPageRoutes,[\s\S]*\]\)/,
+  );
 });
 
 test("noindex articles remain publicly readable but stay out of discovery lists", () => {
