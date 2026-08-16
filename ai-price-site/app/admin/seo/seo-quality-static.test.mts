@@ -113,6 +113,7 @@ test("remaining published-product SEO gaps are filled and deduplicated", () => {
   assert.match(productSeoMigration, /ensure_published_product_seo_metadata/);
   assert.match(productSeoMigration, /trg_products_ensure_published_seo/);
   assert.match(productSeoMigration, /product\.status = 'published'/);
+  assert.match(productSeoMigration, /LEFT\(default_description, 180\)/);
 });
 
 test("admin SEO page keeps bounded read-only Google and Bing observation baselines", () => {

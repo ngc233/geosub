@@ -45,8 +45,11 @@ BEGIN
         ' 在不同国家和地区的 App Store 订阅价格，查看当地货币、美元折算、税费说明、汇率日期与购买力差异，帮助判断更合适的套餐和订阅地区。'
       ELSE
         'Compare ' || NEW.name ||
-        ' App Store subscription prices by country, with local currency, USD conversion, tax notes, exchange-rate dates and purchasing-power context for each plan.'
+        ' App Store subscription prices by country, including local prices, taxes, exchange rates and affordability.'
     END;
+    -- Keep generated descriptions inside the public SEO quality gate even
+    -- when a product has an unusually long display name.
+    default_description := LEFT(default_description, 180);
     default_h1 := CASE locale_code
       WHEN 'zh' THEN NEW.name || ' 全球订阅价格与套餐对比'
       ELSE NEW.name || ' global subscription pricing by plan'
