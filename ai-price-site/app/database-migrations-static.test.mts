@@ -74,18 +74,18 @@ test("one migration layout classifies every schema, backfill and Prisma migratio
   assert.equal(summary.schema, manifest.schemaEntries.length);
   assert.equal(summary.backfill, manifest.backfillEntries.length);
   assert.equal(summary.retired, manifest.retiredFiles.size);
-  assert.equal(summary.legacy, 96);
+  assert.equal(summary.legacy, 97);
   assert.equal(summary.prisma, manifest.prismaMigrations.length);
-  assert.equal(summary.schema, 54);
-  assert.equal(summary.activeSchema, 50);
+  assert.equal(summary.schema, 55);
+  assert.equal(summary.activeSchema, 51);
   assert.equal(summary.postCutoverSchema, 4);
   assert.equal(summary.backfill, 52);
   assert.equal(manifest.baselineCutoverFile, "sql/063_system_task_runs.sql");
   assert.ok(manifest.legacyBaselineFiles.includes("sql/062_app_store_coverage_gap_rechecks.sql"));
   assert.ok(!manifest.legacyBaselineFiles.includes(manifest.baselineCutoverFile));
   assert.equal(summary.prisma, 14);
-  assert.equal(manifest.entriesForMode("schema").length, 50);
-  assert.equal(manifest.entriesForMode("complete-schema").length, 54);
+  assert.equal(manifest.entriesForMode("schema").length, 51);
+  assert.equal(manifest.entriesForMode("complete-schema").length, 55);
   assert.deepEqual(
     manifest.entriesForMode("post-cutover").map((entry: { file: string }) => entry.file),
     [
@@ -100,6 +100,11 @@ test("one migration layout classifies every schema, backfill and Prisma migratio
   assert.ok(
     manifest.schemaEntries.some(
       (entry: { file: string }) => entry.file === "sql/schema/053_product_source_profiles.sql",
+    ),
+  );
+  assert.ok(
+    manifest.schemaEntries.some(
+      (entry: { file: string }) => entry.file === "sql/schema/055_product_seo_description_bounds.sql",
     ),
   );
   assert.ok(

@@ -661,6 +661,15 @@
           "collector_job_runs.promote_public_product_after_successful_collection_trigger"
         ]
       }
+    },
+    {
+      "id": "schema:055",
+      "file": "sql/schema/055_product_seo_description_bounds.sql",
+      "legacyFile": "sql/078_product_seo_description_bounds.sql",
+      "legacyChecksums": [
+        "1dcd9bba202b2d9c8c811c12ff7258b94f06e3e58e885bb741aacf2250f38d7d"
+      ],
+      "legacyBaseline": false
     }
   ],
   "backfill": [

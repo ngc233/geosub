@@ -12,6 +12,9 @@ const qualityData = readFileSync(
   "utf8",
 );
 const productSeoMigration = readSqlMigration("sql/073_product_seo_content_quality.sql");
+const productSeoDescriptionBoundsMigration = readSqlMigration(
+  "sql/078_product_seo_description_bounds.sql",
+);
 const observationPanel = readFileSync(
   resolve(testDir, "SeoObservationPanel.tsx"),
   "utf8",
@@ -113,7 +116,9 @@ test("remaining published-product SEO gaps are filled and deduplicated", () => {
   assert.match(productSeoMigration, /ensure_published_product_seo_metadata/);
   assert.match(productSeoMigration, /trg_products_ensure_published_seo/);
   assert.match(productSeoMigration, /product\.status = 'published'/);
-  assert.match(productSeoMigration, /LEFT\(default_description, 180\)/);
+  assert.doesNotMatch(productSeoMigration, /LEFT\(default_description, 180\)/);
+  assert.match(productSeoDescriptionBoundsMigration, /LEFT\(default_description, 180\)/);
+  assert.match(productSeoDescriptionBoundsMigration, /CREATE OR REPLACE FUNCTION ensure_published_product_seo_metadata/);
 });
 
 test("admin SEO page keeps bounded read-only Google and Bing observation baselines", () => {

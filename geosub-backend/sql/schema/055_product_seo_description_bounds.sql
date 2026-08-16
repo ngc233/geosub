@@ -1,11 +1,5 @@
--- GeoSub schema migration. Split from sql/073_product_seo_content_quality.sql; see migration-layout.json.
-
-CREATE UNIQUE INDEX IF NOT EXISTS uniq_seo_meta_product_plan_locale
-ON seo_meta (
-  product_id,
-  COALESCE(plan_id, '00000000-0000-0000-0000-000000000000'::uuid),
-  locale
-);
+-- Keep generated product SEO descriptions inside the public quality gate
+-- without rewriting the already-applied product SEO migration.
 
 CREATE OR REPLACE FUNCTION ensure_published_product_seo_metadata()
 RETURNS TRIGGER
@@ -45,8 +39,9 @@ BEGIN
         ' 在不同国家和地区的 App Store 订阅价格，查看当地货币、美元折算、税费说明、汇率日期与购买力差异，帮助判断更合适的套餐和订阅地区。'
       ELSE
         'Compare ' || NEW.name ||
-        ' App Store subscription prices by country, with local currency, USD conversion, tax notes, exchange-rate dates and purchasing-power context for each plan.'
+        ' App Store subscription prices by country, including local prices, taxes, exchange rates and affordability.'
     END;
+    default_description := LEFT(default_description, 180);
     default_h1 := CASE locale_code
       WHEN 'zh' THEN NEW.name || ' 全球订阅价格与套餐对比'
       ELSE NEW.name || ' global subscription pricing by plan'
@@ -116,10 +111,3 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-DROP TRIGGER IF EXISTS trg_products_ensure_published_seo ON products;
-CREATE TRIGGER trg_products_ensure_published_seo
-AFTER INSERT OR UPDATE OF name, slug, category, status
-ON products
-FOR EACH ROW
-EXECUTE FUNCTION ensure_published_product_seo_metadata();
