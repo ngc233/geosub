@@ -27,7 +27,6 @@ export const seoPlanSitemapProductSlugs = [
   "perplexity",
   "suno",
   "youtube-premium",
-  "crunchyroll",
 ] as const;
 
 export function isPlanSitemapPromotedProduct(

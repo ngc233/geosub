@@ -334,7 +334,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     route("/zh/guides", "weekly", 0.72),
     route("/zh/data-sources", "monthly", 0.64),
     route("/zh/about", "monthly", 0.45),
-    route("/zh/contact", "monthly", 0.35),
     route("/zh/privacy", "yearly", 0.25),
     route("/zh/terms", "yearly", 0.25),
     route("/en", "daily", 0.72),
