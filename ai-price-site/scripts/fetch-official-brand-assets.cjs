@@ -6,6 +6,7 @@ const { resolve } = require("node:path");
 
 const products = [
   { slug: "anghami", appStoreId: "545395155", expectedName: /Anghami/i },
+  { slug: "boomplay", appStoreId: "1437251983", expectedName: /Boomplay/i },
   { slug: "captions", appStoreId: "1541407007", expectedName: /Captions/i },
   { slug: "character-ai", appStoreId: "1671705818", expectedName: /Character[.]AI|Character AI/i },
   { slug: "chatgpt", appStoreId: "6448311069", expectedName: /^ChatGPT$/i },
@@ -31,9 +32,12 @@ const products = [
   { slug: "runwayml", appStoreId: "1665024375", expectedName: /Runway/i },
   { slug: "suno", appStoreId: "6480136315", expectedName: /Suno/i },
   { slug: "disney", appStoreId: "1446075923", expectedName: /Disney/i },
+  { slug: "dramabox", appStoreId: "6445905219", expectedName: /DramaBox/i },
   { slug: "f1-tv", appStoreId: "1315007279", expectedName: /F1 TV/i },
   { slug: "hbo-max", appStoreId: "1666653815", expectedName: /HBO Max|Max:/i },
+  { slug: "mubi", appStoreId: "626148774", expectedName: /^MUBI:/i },
   { slug: "netflix", appStoreId: "363590051", expectedName: /^Netflix$/i },
+  { slug: "soundcloud", appStoreId: "336353151", expectedName: /^SoundCloud:/i },
   { slug: "viki", appStoreId: "445553058", expectedName: /Viki/i },
   { slug: "x-premium", appStoreId: "333903271", expectedName: /^X$/i },
   { slug: "youtube-premium", appStoreId: "544007664", expectedName: /YouTube/i },

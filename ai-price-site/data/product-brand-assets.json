@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-16T05:49:00.199Z",
+  "generatedAt": "2026-08-16T10:08:53.817Z",
   "usagePurpose": "nominative-product-identification",
   "products": {
     "anghami": {
@@ -15,6 +15,21 @@
       "mimeType": "image/jpeg",
       "byteLength": 54436,
       "sha256": "0d00fc78f7cd229fc41e684617096e3c56c5c979d4f7f6a4ceedd313e68174a3",
+      "reviewedAt": "2026-08-16",
+      "displayMode": "app-icon"
+    },
+    "boomplay": {
+      "path": "/brand-assets/boomplay.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id1437251983",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/42/db/ba/42dbba1e-362e-c66a-1955-fbaeaefee4b0/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/512x512bb.jpg",
+      "appStoreId": "1437251983",
+      "trackName": "Boomplay: Music & Live Stream",
+      "sellerName": "TRANSSNET MUSIC LIMITED",
+      "mimeType": "image/jpeg",
+      "byteLength": 19083,
+      "sha256": "c92c979df4e23372f88d7edd6f80cd545a22b26e0f7850379350a8cd99e686a0",
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
     },
@@ -143,13 +158,13 @@
       "sourceClass": "official-app-store-artwork",
       "usageBasis": "owner-approved-nominative-identification",
       "evidenceReference": "https://apps.apple.com/us/app/id6670324846",
-      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/1b/fe/97/1bfe97fb-c395-94a3-3ac6-3f241249473b/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-P3-0-85-220.png/512x512bb.jpg",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e7/8b/1b/e78b1be5-a960-f6eb-0d5a-6f7c2a2158f8/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-P3-0-85-220.png/512x512bb.jpg",
       "appStoreId": "6670324846",
       "trackName": "Grok AI",
       "sellerName": "X Corp.",
       "mimeType": "image/jpeg",
       "byteLength": 28957,
-      "sha256": "0abe2a9a282573a950215ae34557ffc6e786e7166d9a4a0695991853027051b6",
+      "sha256": "309b196097933989362e4d04543f4a20c1f2471aa3c250493bd29cc5df22445f",
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
     },
@@ -188,13 +203,13 @@
       "sourceClass": "official-app-store-artwork",
       "usageBasis": "owner-approved-nominative-identification",
       "evidenceReference": "https://apps.apple.com/us/app/id6474233312",
-      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/34/3a/31/343a3156-2fba-d41e-6781-4237e7dcc656/AppIcon26-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/7f/d8/db/7fd8dbe5-85f9-925a-ee6f-51278a11127e/AppIcon26-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
       "appStoreId": "6474233312",
       "trackName": "Kimi - Kimi K3 is Live",
       "sellerName": "Beijing Moonshot Technology Co., Ltd",
       "mimeType": "image/jpeg",
       "byteLength": 63951,
-      "sha256": "63e55f946ea3a9dbc28c6577419d927771700beb9f6c9b144c1eaa4b2fe53683",
+      "sha256": "3b3a88e5f10ba7db91a7d05b2f2d97061a16467acac1defe2d19654a62ea0749",
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
     },
@@ -393,6 +408,21 @@
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
     },
+    "dramabox": {
+      "path": "/brand-assets/dramabox.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id6445905219",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/c5/a0/ab/c5a0abe3-42a6-8a68-9083-f4c2ea04c1e1/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220.png/512x512bb.jpg",
+      "appStoreId": "6445905219",
+      "trackName": "DramaBox - Stream Drama Shorts",
+      "sellerName": "STORYMATRIX PTE. LTD",
+      "mimeType": "image/jpeg",
+      "byteLength": 23947,
+      "sha256": "262f4dadc587f024e893695c0eea2eebf35e351c80ec97be07be79c2fe38a63b",
+      "reviewedAt": "2026-08-16",
+      "displayMode": "app-icon"
+    },
     "f1-tv": {
       "path": "/brand-assets/f1-tv.jpg",
       "sourceClass": "official-app-store-artwork",
@@ -423,6 +453,21 @@
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
     },
+    "mubi": {
+      "path": "/brand-assets/mubi.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id626148774",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b8/87/f7/b887f7a3-6904-5d97-613d-0cd7788ef659/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "appStoreId": "626148774",
+      "trackName": "MUBI: Stream Great Cinema",
+      "sellerName": "MUBI, Inc.",
+      "mimeType": "image/jpeg",
+      "byteLength": 26223,
+      "sha256": "cc710715921313423c59890dc245a77c9ad7b4247d8f210c5d6eb402f5a9761f",
+      "reviewedAt": "2026-08-16",
+      "displayMode": "app-icon"
+    },
     "netflix": {
       "path": "/brand-assets/netflix.jpg",
       "sourceClass": "official-app-store-artwork",
@@ -435,6 +480,21 @@
       "mimeType": "image/jpeg",
       "byteLength": 23192,
       "sha256": "e545afe6ad3ce704f4e39cfda36e41ceacd1c6b5230153609effb0120f542fc8",
+      "reviewedAt": "2026-08-16",
+      "displayMode": "app-icon"
+    },
+    "soundcloud": {
+      "path": "/brand-assets/soundcloud.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id336353151",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/9c/4b/a4/9c4ba497-4519-270c-359c-8ab31555f1f8/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "appStoreId": "336353151",
+      "trackName": "SoundCloud: The Music You Love",
+      "sellerName": "SoundCloud Global Limited & Co KG",
+      "mimeType": "image/jpeg",
+      "byteLength": 17256,
+      "sha256": "bf5d1dc064e2be2c114da3f808065403f4f61e8f0b40edee6bd45064b08dac51",
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
     },
