@@ -647,6 +647,20 @@
           "product_source_profiles.trg_product_source_profiles_updated_at"
         ]
       }
+    },
+    {
+      "id": "schema:054",
+      "file": "sql/schema/054_successful_collection_publication_gate.sql",
+      "legacyFile": "sql/077_successful_collection_publication_gate.sql",
+      "legacyChecksums": [
+        "df8043d0a583a221ff7c85812681d94aab174dee71aaa51fbcc9848120c57ddf"
+      ],
+      "legacyBaseline": false,
+      "compatibility": {
+        "triggers": [
+          "collector_job_runs.promote_public_product_after_successful_collection_trigger"
+        ]
+      }
     }
   ],
   "backfill": [

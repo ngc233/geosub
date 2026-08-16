@@ -322,8 +322,8 @@ function validateManifest({ frontendDir } = {}) {
   }
 
   const legacyInventory = new Set(allEntries.map((entry) => entry.legacyFile));
-  if (legacyInventory.size !== 95) {
-    throw new Error(`Expected 95 classified legacy SQL files, found ${legacyInventory.size}.`);
+  if (legacyInventory.size !== 96) {
+    throw new Error(`Expected 96 classified legacy SQL files, found ${legacyInventory.size}.`);
   }
   if (!legacyInventory.has(baselineCutoverFile)) {
     throw new Error("The legacy baseline boundary is absent from the compatibility map.");
