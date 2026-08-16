@@ -61,7 +61,13 @@ const migrationAudit = readFileSync(
 );
 const packageJson = JSON.parse(
   readFileSync(resolve(frontendDir, "package.json"), "utf8"),
-) as { scripts: Record<string, string> };
+) as { scripts: Record<string, string>; version: string };
+
+test("release metadata version matches the application package", () => {
+  const releaseVersion = readFileSync(resolve(repoDir, "VERSION"), "utf8").trim();
+
+  assert.equal(releaseVersion, packageJson.version);
+});
 
 test("one migration layout classifies every schema, backfill and Prisma migration", () => {
   const summary = manifest.validateManifest({ frontendDir });
