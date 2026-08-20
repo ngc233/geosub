@@ -1,8 +1,9 @@
 ﻿"use client";
 
 import Image from "next/image";
-import type { FocusEvent, MouseEvent } from "react";
-import { useMemo, useState } from "react";
+import { Check, ChevronDown, ExternalLink, Plus, Scale, Search, X } from "lucide-react";
+import type { FocusEvent, MouseEvent, ReactNode } from "react";
+import { useId, useMemo, useState } from "react";
 import type { ProductPlan, RegionPrice } from "../lib/public-pricing-model";
 import { formatUsd } from "../lib/public-pricing-model";
 import AppleStyleExpandableRows from "./AppleStyleExpandableRows";
@@ -17,6 +18,17 @@ import {
   getSubscriptionAccessCopy,
   type SubscriptionAccessEvidence,
 } from "../lib/subscription-access";
+import {
+  filterRegionPrices,
+  getRegionPriceToolbarCopy,
+  type RegionPriceQuickFilter,
+} from "../lib/region-price-toolbar";
+import {
+  getRegionComparisonKey,
+  getRegionPriceDecisionCopy,
+  REGION_COMPARISON_LIMIT,
+  toggleRegionComparison,
+} from "../lib/region-price-decision";
 
 type PlatformFilter = "ios" | "web" | "android" | "all";
 
@@ -28,6 +40,7 @@ type Props = {
   displayCurrency?: string;
   displayCurrencyLabel?: string;
   formatDisplayPrice?: (value: number) => string;
+  toolbarCurrencyControl?: ReactNode;
   showPlatformFilter?: boolean;
   showSourceColumn?: boolean;
 };
@@ -37,6 +50,13 @@ const platformOptions: Array<{ value: PlatformFilter }> = [
   { value: "web" },
   { value: "android" },
   { value: "all" },
+];
+
+const quickFilterOptions: RegionPriceQuickFilter[] = [
+  "all",
+  "belowReference",
+  "trustedTax",
+  "traceableSource",
 ];
 
 function getPlatformOptionLabel(
@@ -264,6 +284,7 @@ function TaxTooltip({
   locale: PreparedSiteLocale;
 }) {
   const [open, setOpen] = useState(false);
+  const tooltipId = useId();
   const label = getTaxConfidenceLabel(region, locale);
   const tooltip = getTaxTooltip(region, locale);
 
@@ -275,18 +296,27 @@ function TaxTooltip({
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
     >
-      <div className="max-w-full truncate text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-        {taxDisplay}
-      </div>
-      <span
-        className={[
-          "mt-1 inline-flex h-5 items-center rounded-md px-1.5 text-[11px] font-medium ring-1 ring-inset",
-          getTaxConfidenceClass(region),
-        ].join(" ")}
+      <button
+        type="button"
+        className="max-w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70"
+        aria-expanded={open}
+        aria-describedby={tooltipId}
+        onClick={() => setOpen(true)}
       >
-        {label}
-      </span>
+        <span className="block max-w-full truncate text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+          {taxDisplay}
+        </span>
+        <span
+          className={[
+            "mt-1 inline-flex h-5 items-center rounded-md px-1.5 text-[11px] font-medium ring-1 ring-inset",
+            getTaxConfidenceClass(region),
+          ].join(" ")}
+        >
+          {label}
+        </span>
+      </button>
       <span
+        id={tooltipId}
         role="tooltip"
         className={[
           "pointer-events-none absolute left-0 top-full z-[90] mt-2 w-[min(280px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
@@ -388,6 +418,7 @@ function SubscriptionConditions({
   locale: PreparedSiteLocale;
 }) {
   const [open, setOpen] = useState(false);
+  const tooltipId = useId();
   const accessCopy = getSubscriptionAccessCopy(locale);
   const assessment = assessSubscriptionAccess(region);
   const statusLabel = getStatusByLocale(diffPercent, locale);
@@ -405,6 +436,9 @@ function SubscriptionConditions({
         type="button"
         className="inline-flex min-w-0 items-center gap-2 text-left text-sm text-zinc-500 outline-none transition hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-300/60 dark:text-zinc-400 dark:hover:text-zinc-200"
         aria-label={`${statusLabel} · ${accessLabel}`}
+        aria-expanded={open}
+        aria-describedby={tooltipId}
+        onClick={() => setOpen(true)}
       >
         <span className={`h-2 w-2 shrink-0 rounded-full ${getStatusDot(diffPercent)}`} />
         <span className="shrink-0">{statusLabel}</span>
@@ -420,6 +454,7 @@ function SubscriptionConditions({
         </span>
       </button>
       <span
+        id={tooltipId}
         role="tooltip"
         className={[
           "pointer-events-none absolute right-0 top-full z-[90] mt-2 w-[min(340px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
@@ -461,6 +496,263 @@ function SubscriptionConditions({
   );
 }
 
+function RegionComparisonToggle({
+  country,
+  selected,
+  disabled,
+  locale,
+  onClick,
+}: {
+  country: string;
+  selected: boolean;
+  disabled: boolean;
+  locale: PreparedSiteLocale;
+  onClick: () => void;
+}) {
+  const copy = getRegionPriceDecisionCopy(locale);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={selected}
+      aria-label={selected ? copy.removeRegion(country) : copy.selectRegion(country)}
+      title={disabled ? copy.compareLimit : undefined}
+      className={[
+        "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60",
+        selected
+          ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
+          : "border border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:text-white",
+        disabled ? "cursor-not-allowed opacity-40" : "",
+      ].join(" ")}
+    >
+      {selected ? (
+        <Check aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.4} />
+      ) : (
+        <Plus aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.2} />
+      )}
+      <span>{copy.compare}</span>
+    </button>
+  );
+}
+
+function RegionEvidencePanel({
+  region,
+  referencePrice,
+  hasUsReference,
+  displayCurrencyLabel,
+  formatDisplayPrice,
+  locale,
+  panelId,
+}: {
+  region: RegionPrice;
+  referencePrice: number;
+  hasUsReference: boolean;
+  displayCurrencyLabel: string;
+  formatDisplayPrice: (value: number) => string;
+  locale: PreparedSiteLocale;
+  panelId: string;
+}) {
+  const decisionCopy = getRegionPriceDecisionCopy(locale);
+  const accessCopy = getSubscriptionAccessCopy(locale);
+  const tableCopy = getRegionPriceTableCopy(locale);
+  const assessment = assessSubscriptionAccess(region);
+  const localizedCountry =
+    getLocalizedRegionName(region.code, locale) || region.country;
+  const diffPercent = getDiffPercent(region, referencePrice);
+  const taxDisplay = formatTaxDisplay(region, locale);
+
+  return (
+    <div
+      id={panelId}
+      className="border-b border-zinc-200 bg-zinc-50/75 px-4 py-4 md:px-6 dark:border-zinc-800 dark:bg-zinc-950/45"
+    >
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <div>
+          <div className="text-sm font-semibold text-zinc-950 dark:text-white">
+            {decisionCopy.evidenceTitle(localizedCountry)}
+          </div>
+          <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+            {getRegionPlatformLabel(region)}
+          </div>
+        </div>
+        {region.sourceUrl ? (
+          <a
+            href={region.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-zinc-700 transition-colors hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          >
+            {decisionCopy.source}
+            <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
+      </div>
+
+      <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          [decisionCopy.localPrice, region.localPrice],
+          [decisionCopy.convertedPrice, `${formatDisplayPrice(region.priceUsd)} · ${displayCurrencyLabel}`],
+          [
+            decisionCopy.referenceDifference,
+            getDiffTextByLocale(diffPercent, locale, hasUsReference),
+          ],
+          [decisionCopy.taxStatus, `${taxDisplay} · ${getTaxConfidenceLabel(region, locale)}`],
+          [decisionCopy.priceDate, region.lastCheckedAt || "—"],
+          [decisionCopy.fxDate, region.fxRateDate || "—"],
+          [decisionCopy.source, region.sourceName || getRegionPlatformLabel(region)],
+        ].map(([label, value]) => (
+          <div key={label} className="min-w-0 border-t border-zinc-200/80 pt-2 dark:border-zinc-800">
+            <div className="text-[11px] font-medium text-zinc-400">{label}</div>
+            <div className="mt-1 break-words text-sm font-medium tabular-nums text-zinc-700 dark:text-zinc-200">
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+        <div className="mb-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+          {decisionCopy.accessConditions}
+        </div>
+        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+          {assessment.facts.map((fact) => {
+            const evidenceLabel =
+              fact.key === "checked" &&
+              fact.evidence === "confirmed" &&
+              region.lastCheckedAt
+                ? accessCopy.checkedValue(region.lastCheckedAt)
+                : accessCopy.evidence[fact.evidence];
+
+            return (
+              <div key={fact.key} className="flex items-start justify-between gap-3 text-xs leading-5">
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  {accessCopy.facts[fact.key]}
+                </span>
+                <span className={`shrink-0 font-semibold ${getAccessEvidenceClass(fact.evidence)}`}>
+                  {evidenceLabel}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        {!region.sourceUrl ? (
+          <div className="mt-3 text-xs text-zinc-400">
+            {decisionCopy.sourceUnavailable} · {tableCopy.riskNote}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function RegionComparisonPanel({
+  regions,
+  referencePrice,
+  hasUsReference,
+  displayCurrencyLabel,
+  formatDisplayPrice,
+  locale,
+  onRemove,
+  onClear,
+}: {
+  regions: RegionPrice[];
+  referencePrice: number;
+  hasUsReference: boolean;
+  displayCurrencyLabel: string;
+  formatDisplayPrice: (value: number) => string;
+  locale: PreparedSiteLocale;
+  onRemove: (region: RegionPrice) => void;
+  onClear: () => void;
+}) {
+  const copy = getRegionPriceDecisionCopy(locale);
+
+  return (
+    <section
+      className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-950/55"
+      aria-label={copy.comparisonTitle}
+    >
+      <div className="flex items-start justify-between gap-4 px-4 py-3 md:px-6">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950 dark:text-white">
+            <Scale aria-hidden="true" className="h-4 w-4" />
+            {copy.comparisonTitle}
+            <span className="text-xs font-medium tabular-nums text-zinc-400">
+              {copy.selected(regions.length)}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+            {copy.comparisonIntro}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClear}
+          className="shrink-0 text-xs font-semibold text-zinc-500 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
+        >
+          {copy.clearComparison}
+        </button>
+      </div>
+
+      <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          className="grid min-w-max border-t border-zinc-200 dark:border-zinc-800"
+          style={{ gridTemplateColumns: `repeat(${regions.length}, minmax(210px, 1fr))` }}
+        >
+          {regions.map((region) => {
+            const localizedCountry =
+              getLocalizedRegionName(region.code, locale) || region.country;
+            const diffPercent = getDiffPercent(region, referencePrice);
+
+            return (
+              <div
+                key={getRegionComparisonKey(region)}
+                className="min-w-[210px] border-e border-zinc-200 px-4 py-3 last:border-e-0 md:px-6 dark:border-zinc-800"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <CountryFlag code={region.code} />
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-zinc-950 dark:text-white">
+                        {localizedCountry}
+                      </div>
+                      <div className="mt-0.5 text-xs text-zinc-400">{region.code}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(region)}
+                    aria-label={copy.removeRegion(localizedCountry)}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-200/70 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                  >
+                    <X aria-hidden="true" className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="mt-3 text-lg font-semibold tabular-nums text-zinc-950 dark:text-white">
+                  {formatDisplayPrice(region.priceUsd)}
+                </div>
+                <div className="mt-0.5 text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                  {region.localPrice} · {displayCurrencyLabel}
+                </div>
+                <div className={`mt-2 text-xs font-semibold tabular-nums ${getDiffTone(diffPercent)}`}>
+                  {getDiffTextByLocale(diffPercent, locale, hasUsReference)}
+                </div>
+                <div className="mt-3 border-t border-zinc-200 pt-2 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                  <div>{formatTaxDisplay(region, locale)}</div>
+                  <div className="tabular-nums">
+                    {region.lastCheckedAt || "—"} · {region.fxRateDate || "—"}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function RegionPriceRow({
   region,
   rank,
@@ -473,6 +765,11 @@ function RegionPriceRow({
   showSourceColumn,
   billingCycle,
   locale,
+  comparisonSelected,
+  comparisonDisabled,
+  evidenceOpen,
+  onToggleComparison,
+  onToggleEvidence,
 }: {
   region: RegionPrice;
   rank: number;
@@ -485,6 +782,11 @@ function RegionPriceRow({
   showSourceColumn: boolean;
   billingCycle: ProductPlan["billing"];
   locale: PreparedSiteLocale;
+  comparisonSelected: boolean;
+  comparisonDisabled: boolean;
+  evidenceOpen: boolean;
+  onToggleComparison: () => void;
+  onToggleEvidence: () => void;
 }) {
   const diffPercent = getDiffPercent(region, referencePrice);
   const columns = showSourceColumn
@@ -494,17 +796,130 @@ function RegionPriceRow({
   const copy = getRegionPriceTableCopy(locale);
   const localizedCountry =
     getLocalizedRegionName(region.code, locale) || region.country;
+  const billingSuffix = getBillingCycleSuffix(billingCycle, locale);
+  const freshnessLabel = [
+    region.lastCheckedAt
+      ? `${copy.priceCollected} ${region.lastCheckedAt}`
+      : "",
+    region.fxRateDate ? `${copy.fxBasis} ${region.fxRateDate}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const decisionCopy = getRegionPriceDecisionCopy(locale);
+  const evidencePanelId = useId();
 
   return (
-    <div
-      className={[
-        "grid gap-3 border-b border-zinc-100 px-5 py-3 last:border-b-0 md:items-center md:px-6 dark:border-zinc-800",
-        columns,
-      ].join(" ")}
-    >
-      <div className="text-sm tabular-nums text-zinc-400">{rank}</div>
+    <>
+      <article
+        className="border-b border-zinc-100 px-4 py-4 last:border-b-0 md:hidden dark:border-zinc-800"
+        aria-label={`${localizedCountry} · ${formatDisplayPrice(region.priceUsd)}`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-800"
+              aria-hidden="true"
+            >
+              <CountryFlag code={region.code} />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-zinc-950 dark:text-white">
+                {localizedCountry}
+              </div>
+              <div className="mt-0.5 text-xs tabular-nums text-zinc-400">
+                #{rank} · {region.localPrice}
+              </div>
+            </div>
+          </div>
 
-      <div className="flex min-w-0 items-center gap-3">
+          <div className="shrink-0 text-right">
+            <div className="text-lg font-semibold tabular-nums text-zinc-950 dark:text-white">
+              {formatDisplayPrice(region.priceUsd)}
+              <span className="ml-0.5 text-xs font-normal text-zinc-400">
+                {billingSuffix}
+              </span>
+            </div>
+            <div className="mt-0.5 text-xs text-zinc-400">
+              {displayCurrency === "USD"
+                ? copy.usdEquivalent
+                : displayCurrencyLabel}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-4 border-y border-zinc-100 py-2.5 dark:border-zinc-800">
+          <div>
+            <div className="text-[11px] text-zinc-400">
+              {hasUsReference ? copy.vsUs : referenceCountry}
+            </div>
+            <div className={`mt-1 text-sm font-semibold tabular-nums ${getDiffTone(diffPercent)}`}>
+              {getDiffTextByLocale(diffPercent, locale, hasUsReference)}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[11px] text-zinc-400">{copy.source}</div>
+            <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+              {getRegionPlatformLabel(region)}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          <div className="min-w-0">
+            <div className="mb-1 text-[11px] text-zinc-400">{copy.taxNote}</div>
+            <TaxTooltip region={region} taxDisplay={taxDisplay} locale={locale} />
+          </div>
+          <div className="min-w-0 text-right">
+            <div className="mb-1 text-[11px] text-zinc-400">{copy.statusRisk}</div>
+            <div className="flex justify-end">
+              <SubscriptionConditions
+                region={region}
+                diffPercent={diffPercent}
+                locale={locale}
+              />
+            </div>
+          </div>
+        </div>
+
+        {freshnessLabel ? (
+          <div className="mt-3 text-xs tabular-nums leading-5 text-zinc-400">
+            {freshnessLabel}
+          </div>
+        ) : null}
+
+        <div className="mt-3 flex items-center gap-2">
+          <RegionComparisonToggle
+            country={localizedCountry}
+            selected={comparisonSelected}
+            disabled={comparisonDisabled}
+            locale={locale}
+            onClick={onToggleComparison}
+          />
+          <button
+            type="button"
+            onClick={onToggleEvidence}
+            aria-expanded={evidenceOpen}
+            aria-controls={evidencePanelId}
+            className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-600 transition-colors hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          >
+            {evidenceOpen ? decisionCopy.hideEvidence : decisionCopy.evidence}
+            <ChevronDown
+              aria-hidden="true"
+              className={`h-3.5 w-3.5 transition-transform ${evidenceOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+        </div>
+      </article>
+
+      <div
+        className={[
+          "hidden gap-3 border-b border-zinc-100 px-5 py-3 last:border-b-0 md:grid md:items-center md:px-6 dark:border-zinc-800",
+          columns,
+        ].join(" ")}
+      >
+        <div className="text-sm tabular-nums text-zinc-400">{rank}</div>
+
+        <div className="flex min-w-0 items-center gap-3">
         <div
           className="flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-800"
           aria-hidden="true"
@@ -519,77 +934,113 @@ function RegionPriceRow({
             {region.localPrice}
           </div>
         </div>
-      </div>
+        </div>
 
-      <div>
+        <div className="space-y-2">
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {copy.localPrice}
         </div>
-        <div className="text-sm text-zinc-600 dark:text-zinc-300">
+        <div className="text-sm tabular-nums text-zinc-600 dark:text-zinc-300">
           {region.localPrice}
         </div>
-      </div>
+        </div>
 
-      <div>
+        <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {displayCurrency === "USD" ? copy.usdEquivalent : displayCurrencyLabel}
         </div>
         <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
           {formatDisplayPrice(region.priceUsd)}
           <span className="ml-0.5 text-xs font-normal text-zinc-400">
-            {getBillingCycleSuffix(billingCycle, locale)}
+            {billingSuffix}
           </span>
         </div>
         {displayCurrency !== "USD" ? (
           <div className="mt-0.5 text-xs text-zinc-400">{displayCurrencyLabel}</div>
         ) : null}
-        {region.lastCheckedAt || region.fxRateDate ? (
-          <div className="mt-0.5 text-xs text-zinc-400">
-            {region.lastCheckedAt ? `${copy.priceCollected} ${region.lastCheckedAt}` : ""}
-            {region.lastCheckedAt && region.fxRateDate ? " · " : ""}
-            {region.fxRateDate ? `${copy.fxBasis} ${region.fxRateDate}` : ""}
+        {freshnessLabel ? (
+          <div className="mt-0.5 text-xs tabular-nums text-zinc-400">
+            {freshnessLabel}
           </div>
         ) : null}
-      </div>
+        </div>
 
-      <div>
+        <div>
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {hasUsReference ? copy.vsUs : referenceCountry}
         </div>
-        <div className={`text-sm font-medium ${getDiffTone(diffPercent)}`}>
+        <div className={`text-sm font-medium tabular-nums ${getDiffTone(diffPercent)}`}>
           {getDiffTextByLocale(diffPercent, locale, hasUsReference)}
         </div>
-      </div>
+        </div>
 
-      <div className="min-w-0">
+        <div className="min-w-0">
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {copy.taxNote}
         </div>
         <TaxTooltip region={region} taxDisplay={taxDisplay} locale={locale} />
-      </div>
+        </div>
 
-      {showSourceColumn ? (
+        {showSourceColumn ? (
+          <div>
+            <div className="mb-1 text-xs text-zinc-400 md:hidden">
+              {copy.source}
+            </div>
+            <div className="text-sm text-zinc-500 dark:text-zinc-400">
+              {getRegionPlatformLabel(region)}
+            </div>
+          </div>
+        ) : null}
+
         <div>
           <div className="mb-1 text-xs text-zinc-400 md:hidden">
-            {copy.source}
+            {copy.statusRisk}
           </div>
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">
-            {getRegionPlatformLabel(region)}
+          <SubscriptionConditions
+            region={region}
+            diffPercent={diffPercent}
+            locale={locale}
+          />
+          <div className="flex items-center gap-1.5">
+            <RegionComparisonToggle
+              country={localizedCountry}
+              selected={comparisonSelected}
+              disabled={comparisonDisabled}
+              locale={locale}
+              onClick={onToggleComparison}
+            />
+            <button
+              type="button"
+              onClick={onToggleEvidence}
+              aria-expanded={evidenceOpen}
+              aria-controls={evidencePanelId}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 transition-colors hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:text-zinc-400 dark:hover:text-white"
+              title={evidenceOpen ? decisionCopy.hideEvidence : decisionCopy.evidence}
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className={`h-3.5 w-3.5 transition-transform ${evidenceOpen ? "rotate-180" : ""}`}
+              />
+              <span className="sr-only">
+                {evidenceOpen ? decisionCopy.hideEvidence : decisionCopy.evidence}
+              </span>
+            </button>
           </div>
         </div>
-      ) : null}
-
-      <div>
-        <div className="mb-1 text-xs text-zinc-400 md:hidden">
-          {copy.statusRisk}
-        </div>
-        <SubscriptionConditions
-          region={region}
-          diffPercent={diffPercent}
-          locale={locale}
-        />
       </div>
-    </div>
+
+      {evidenceOpen ? (
+        <RegionEvidencePanel
+          region={region}
+          referencePrice={referencePrice}
+          hasUsReference={hasUsReference}
+          displayCurrencyLabel={displayCurrencyLabel}
+          formatDisplayPrice={formatDisplayPrice}
+          locale={locale}
+          panelId={evidencePanelId}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -601,12 +1052,18 @@ export default function ExpandableRegionPriceTable({
   displayCurrency = "USD",
   displayCurrencyLabel,
   formatDisplayPrice = formatUsd,
+  toolbarCurrencyControl,
   showPlatformFilter = true,
   showSourceColumn = false,
 }: Props) {
   const [platform, setPlatform] = useState<PlatformFilter>(() =>
     getDefaultPlatform(plan.regions),
   );
+  const [regionQuery, setRegionQuery] = useState("");
+  const [quickFilter, setQuickFilter] =
+    useState<RegionPriceQuickFilter>("all");
+  const [selectedRegionKeys, setSelectedRegionKeys] = useState<string[]>([]);
+  const [expandedRegionKey, setExpandedRegionKey] = useState<string | null>(null);
 
   const platformCounts = useMemo(() => {
     return plan.regions.reduce<Record<string, number>>((counts, region) => {
@@ -618,7 +1075,7 @@ export default function ExpandableRegionPriceTable({
 
   const effectivePlatform = showPlatformFilter ? platform : "all";
 
-  const filteredRegions = useMemo(() => {
+  const platformRegions = useMemo(() => {
     if (effectivePlatform === "all") return getSortedRegions(plan.regions);
 
     return getSortedRegions(
@@ -626,13 +1083,35 @@ export default function ExpandableRegionPriceTable({
     );
   }, [plan.regions, effectivePlatform]);
 
-  const referenceRegion = getReferenceRegion(filteredRegions);
+  const referenceRegion = getReferenceRegion(platformRegions);
   const referencePrice = referenceRegion?.priceUsd || 0;
+  const filteredRegions = getSortedRegions(
+    filterRegionPrices({
+      regions: platformRegions,
+      query: regionQuery,
+      filter: quickFilter,
+      referencePrice,
+      locale,
+    }),
+  );
+  const quickFilterCounts = Object.fromEntries(
+    quickFilterOptions.map((filter) => [
+      filter,
+      filterRegionPrices({
+        regions: platformRegions,
+        query: regionQuery,
+        filter,
+        referencePrice,
+        locale,
+      }).length,
+    ]),
+  ) as Record<RegionPriceQuickFilter, number>;
   const hasUsReference = referenceRegion?.code.toUpperCase() === "US";
   const referenceCountry = referenceRegion
     ? getLocalizedRegionName(referenceRegion.code, locale) || referenceRegion.country
     : "";
   const copy = getRegionPriceTableCopy(locale);
+  const toolbarCopy = getRegionPriceToolbarCopy(locale);
   const effectiveDisplayCurrencyLabel =
     displayCurrencyLabel || copy.usd;
   const activePlatformLabel =
@@ -648,6 +1127,51 @@ export default function ExpandableRegionPriceTable({
     displayCurrency === "USD" ? copy.usdEquivalent : effectiveDisplayCurrencyLabel;
   const sortCurrencyLabel =
     displayCurrency === "USD" ? copy.usdSort : effectiveDisplayCurrencyLabel;
+  const selectedRegions = selectedRegionKeys
+    .map((key) =>
+      platformRegions.find((region) => getRegionComparisonKey(region) === key),
+    )
+    .filter((region): region is RegionPrice => Boolean(region));
+
+  const handleToggleComparison = (region: RegionPrice) => {
+    const regionKey = getRegionComparisonKey(region);
+    setSelectedRegionKeys((current) =>
+      toggleRegionComparison(current, regionKey),
+    );
+  };
+
+  const renderRegionRow = (region: RegionPrice, rank: number) => {
+    const regionKey = getRegionComparisonKey(region);
+    const comparisonSelected = selectedRegionKeys.includes(regionKey);
+    const comparisonDisabled =
+      !comparisonSelected && selectedRegionKeys.length >= REGION_COMPARISON_LIMIT;
+
+    return (
+      <RegionPriceRow
+        key={`${plan.slug}-${regionKey}`}
+        region={region}
+        rank={rank}
+        referencePrice={referencePrice}
+        referenceCountry={referenceCountry}
+        hasUsReference={hasUsReference}
+        displayCurrency={displayCurrency}
+        displayCurrencyLabel={effectiveDisplayCurrencyLabel}
+        formatDisplayPrice={formatDisplayPrice}
+        showSourceColumn={shouldShowSourceColumn}
+        billingCycle={plan.billing}
+        locale={locale}
+        comparisonSelected={comparisonSelected}
+        comparisonDisabled={comparisonDisabled}
+        evidenceOpen={expandedRegionKey === regionKey}
+        onToggleComparison={() => handleToggleComparison(region)}
+        onToggleEvidence={() =>
+          setExpandedRegionKey((current) =>
+            current === regionKey ? null : regionKey,
+          )
+        }
+      />
+    );
+  };
 
   const visibleRegions = filteredRegions.slice(0, initialVisibleCount);
   const hiddenRegions = filteredRegions.slice(initialVisibleCount);
@@ -663,7 +1187,7 @@ export default function ExpandableRegionPriceTable({
         description={copy.description(activePlatformLabel, sortCurrencyLabel)}
         actions={
           <div className="text-xs text-zinc-400">
-            {copy.regionCount(filteredRegions.length)}
+            {copy.regionCount(platformRegions.length)}
           </div>
         }
       />
@@ -690,7 +1214,11 @@ export default function ExpandableRegionPriceTable({
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => setPlatform(option.value)}
+                  onClick={() => {
+                    setPlatform(option.value);
+                    setSelectedRegionKeys([]);
+                    setExpandedRegionKey(null);
+                  }}
                   className={[
                     "relative z-10 flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium transition-colors",
                     active
@@ -707,6 +1235,101 @@ export default function ExpandableRegionPriceTable({
             })}
           </div>
         </div>
+      ) : null}
+
+      <div
+        className="sticky top-16 z-30 border-b border-zinc-200 bg-white/95 px-4 py-2.5 shadow-[0_6px_18px_rgba(24,24,27,0.06)] backdrop-blur-xl md:px-6 dark:border-zinc-800 dark:bg-zinc-900/95 dark:shadow-black/20"
+        aria-label={toolbarCopy.toolbarLabel}
+      >
+        <div className="flex flex-wrap items-center gap-2.5">
+          {toolbarCurrencyControl ? (
+            <div className="shrink-0">{toolbarCurrencyControl}</div>
+          ) : null}
+
+          <label className="relative min-w-[150px] flex-1 md:max-w-[280px]">
+            <span className="sr-only">{toolbarCopy.searchLabel}</span>
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+              strokeWidth={2}
+            />
+            <input
+              type="search"
+              value={regionQuery}
+              onChange={(event) => setRegionQuery(event.target.value)}
+              placeholder={toolbarCopy.searchPlaceholder}
+              className="h-9 w-full rounded-lg border border-zinc-200 bg-zinc-50/80 ps-9 pe-9 text-[13px] font-medium text-zinc-950 outline-none transition-colors placeholder:text-zinc-400 focus:border-lime-400 focus:bg-white focus:ring-4 focus:ring-lime-500/10 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none dark:border-zinc-700 dark:bg-zinc-950/60 dark:text-white dark:focus:border-lime-500/60 dark:focus:bg-zinc-950"
+            />
+            {regionQuery ? (
+              <button
+                type="button"
+                onClick={() => setRegionQuery("")}
+                className="absolute end-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-200/70 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                aria-label={toolbarCopy.clearSearch}
+              >
+                <X aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.2} />
+              </button>
+            ) : null}
+          </label>
+
+          <div
+            className="order-last flex min-w-0 basis-full items-center gap-1 overflow-x-auto rounded-lg bg-zinc-100 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:order-none md:basis-auto md:flex-initial dark:bg-zinc-950/70"
+            role="group"
+            aria-label={toolbarCopy.filtersLabel}
+          >
+            {quickFilterOptions.map((filter) => {
+              const active = quickFilter === filter;
+
+              return (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setQuickFilter(filter)}
+                  className={[
+                    "flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold transition-colors",
+                    active
+                      ? "bg-zinc-950 text-white shadow-sm dark:bg-white dark:text-zinc-950"
+                      : "text-zinc-500 hover:bg-white hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white",
+                  ].join(" ")}
+                  aria-pressed={active}
+                >
+                  <span>{toolbarCopy.filterLabels[filter]}</span>
+                  <span
+                    className={[
+                      "tabular-nums",
+                      active ? "text-white/65 dark:text-zinc-500" : "text-zinc-400",
+                    ].join(" ")}
+                  >
+                    {quickFilterCounts[filter]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            className="ms-auto hidden shrink-0 text-xs font-semibold tabular-nums text-zinc-500 md:block dark:text-zinc-400"
+            aria-live="polite"
+          >
+            {toolbarCopy.resultCount(filteredRegions.length, platformRegions.length)}
+          </div>
+          <div className="sr-only md:hidden" aria-live="polite">
+            {toolbarCopy.resultCount(filteredRegions.length, platformRegions.length)}
+          </div>
+        </div>
+      </div>
+
+      {selectedRegions.length > 0 ? (
+        <RegionComparisonPanel
+          regions={selectedRegions}
+          referencePrice={referencePrice}
+          hasUsReference={hasUsReference}
+          displayCurrencyLabel={effectiveDisplayCurrencyLabel}
+          formatDisplayPrice={formatDisplayPrice}
+          locale={locale}
+          onRemove={handleToggleComparison}
+          onClear={() => setSelectedRegionKeys([])}
+        />
       ) : null}
 
       <div className="overflow-hidden">
@@ -745,50 +1368,27 @@ export default function ExpandableRegionPriceTable({
 
         {filteredRegions.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-zinc-400">
-            {copy.empty(activePlatformLabel)}
+            {regionQuery.trim() || quickFilter !== "all"
+              ? toolbarCopy.noMatches
+              : copy.empty(activePlatformLabel)}
           </div>
         ) : (
           <>
             <div>
-              {visibleRegions.map((region, index) => (
-                <RegionPriceRow
-                  key={`${plan.slug}-${region.code}-${region.billingPlatform || "unknown"}`}
-                  region={region}
-                  rank={index + 1}
-                  referencePrice={referencePrice}
-                  referenceCountry={referenceCountry}
-                  hasUsReference={hasUsReference}
-                  displayCurrency={displayCurrency}
-                  displayCurrencyLabel={effectiveDisplayCurrencyLabel}
-                  formatDisplayPrice={formatDisplayPrice}
-                  showSourceColumn={shouldShowSourceColumn}
-                  billingCycle={plan.billing}
-                  locale={locale}
-                />
-              ))}
+              {visibleRegions.map((region, index) =>
+                renderRegionRow(region, index + 1),
+              )}
             </div>
 
             <AppleStyleExpandableRows
+              key={`${plan.slug}-${effectivePlatform}-${displayCurrency}-${regionQuery}-${quickFilter}`}
               hiddenCount={hiddenRegions.length}
               showLabel={copy.showMore(hiddenRegions.length)}
               hideLabel={copy.collapse}
             >
-              {hiddenRegions.map((region, index) => (
-                <RegionPriceRow
-                  key={`${plan.slug}-${region.code}-${region.billingPlatform || "unknown"}`}
-                  region={region}
-                  rank={initialVisibleCount + index + 1}
-                  referencePrice={referencePrice}
-                  referenceCountry={referenceCountry}
-                  hasUsReference={hasUsReference}
-                  displayCurrency={displayCurrency}
-                  displayCurrencyLabel={effectiveDisplayCurrencyLabel}
-                  formatDisplayPrice={formatDisplayPrice}
-                  showSourceColumn={shouldShowSourceColumn}
-                  billingCycle={plan.billing}
-                  locale={locale}
-                />
-              ))}
+              {hiddenRegions.map((region, index) =>
+                renderRegionRow(region, initialVisibleCount + index + 1),
+              )}
             </AppleStyleExpandableRows>
           </>
         )}

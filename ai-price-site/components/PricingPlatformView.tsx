@@ -314,12 +314,14 @@ function CurrencySelect({
   options,
   disabledCurrencies,
   locale,
+  compact = false,
 }: {
   value: DisplayCurrency;
   onChange: (currency: DisplayCurrency) => void;
   options: DisplayCurrency[];
   disabledCurrencies: DisplayCurrency[];
   locale: SiteLocale;
+  compact?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -353,7 +355,13 @@ function CurrencySelect({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-[184px] shrink-0">
+    <div
+      ref={containerRef}
+      className={[
+        "relative shrink-0",
+        compact ? "w-[138px] sm:w-[168px]" : "w-[184px]",
+      ].join(" ")}
+    >
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -727,6 +735,16 @@ export default function PricingPlatformView({
   };
   const selectedRate =
     selectedExchangeRate.rate || UNAVAILABLE_EXCHANGE_RATE;
+  const disabledCurrencies = useMemo(
+    () =>
+      supportedDisplayCurrencies.filter((currency) => {
+        const exchangeRate = exchangeRates[currency];
+        return Boolean(
+          !exchangeRate || exchangeRate.isFallback || exchangeRate.isStale,
+        );
+      }),
+    [exchangeRates],
+  );
 
   const handleCurrencyChange = (currency: DisplayCurrency) => {
     const exchangeRate = exchangeRates[currency];
@@ -797,6 +815,16 @@ export default function PricingPlatformView({
             formatDisplayPrice={(value) =>
               formatDisplayPrice(value, displayCurrency, selectedRate, locale)
             }
+            toolbarCurrencyControl={
+              <CurrencySelect
+                value={displayCurrency}
+                onChange={handleCurrencyChange}
+                options={[...supportedDisplayCurrencies]}
+                disabledCurrencies={disabledCurrencies}
+                locale={locale}
+                compact
+              />
+            }
             showPlatformFilter={false}
             showSourceColumn={platform === "all"}
           />
@@ -805,4 +833,3 @@ export default function PricingPlatformView({
     </div>
   );
 }
-

@@ -5,6 +5,7 @@ import {
   canonicalizeObservedSearchPath,
   seoSearchPerformanceBaseline,
 } from "./seo-search-performance-baseline.ts";
+import { getLegacyPricingPlanRedirectPath } from "./pricing-routes.ts";
 
 test("legacy query observations are attributed to stable plan paths", () => {
   assert.equal(
@@ -15,6 +16,29 @@ test("legacy query observations are attributed to stable plan paths", () => {
     canonicalizeObservedSearchPath("/zh/streaming-pricing"),
     "/zh/streaming-pricing",
   );
+});
+
+test("every observed legacy plan URL keeps a one-hop canonical redirect target", () => {
+  const legacyObservations = seoSearchPerformanceBaseline.filter((observation) =>
+    observation.path.includes("?plan="),
+  );
+
+  assert.ok(legacyObservations.length > 0);
+
+  for (const observation of legacyObservations) {
+    const url = new URL(observation.path, "https://geosub.org");
+    const redirectTarget = getLegacyPricingPlanRedirectPath(
+      url.pathname,
+      url.searchParams.get("plan"),
+    );
+
+    assert.equal(
+      redirectTarget,
+      canonicalizeObservedSearchPath(observation.path),
+      observation.path,
+    );
+    assert.ok(redirectTarget && !redirectTarget.includes("?"));
+  }
 });
 
 test("cross-engine search priorities favor demand and low CTR opportunities", () => {

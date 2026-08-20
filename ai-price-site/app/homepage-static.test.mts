@@ -11,7 +11,10 @@ function readAppFile(...segments: string[]) {
 }
 
 test("home pages only link to currently available public sections", () => {
-  const zhHome = readAppFile("zh", "page.tsx");
+  const zhHome = [
+    readAppFile("zh", "page.tsx"),
+    readFileSync(resolve(appDir, "..", "components", "HomepageExperience.tsx"), "utf8"),
+  ].join("\n");
   const enHome = readAppFile("en", "page.tsx");
   const jaHome = readAppFile("ja", "page.tsx");
   const koHome = readAppFile("ko", "page.tsx");
@@ -123,10 +126,35 @@ test("English home page is not the launch placeholder", () => {
 });
 
 test("Chinese home page describes the current official scope", () => {
-  const zhHome = readAppFile("zh", "page.tsx");
+  const zhRoute = readAppFile("zh", "page.tsx");
+  const zhHome = readFileSync(
+    resolve(appDir, "..", "components", "HomepageExperience.tsx"),
+    "utf8",
+  );
+  const zhMap = readFileSync(
+    resolve(appDir, "..", "components", "HomeHeroMap.tsx"),
+    "utf8",
+  );
 
-  assert.match(zhHome, /比较 AI 与流媒体订阅的 App Store 地区价格/);
-  assert.match(zhHome, /切换常用显示币种/);
+  assert.match(zhRoute, /getDbAiPricingProducts/);
+  assert.match(zhRoute, /unstable_cache/);
+  assert.match(zhHome, /别只看标价/);
+  assert.match(zhHome, /看清订阅在你所在地的真实成本/);
+  assert.match(zhHome, /数字订阅成本情报/);
+  assert.match(zhHome, /每个价格结论，都应该有证据可追溯/);
+  assert.doesNotMatch(zhHome, /Browse by need/);
+  assert.match(zhMap, /全球订阅价格分布图/);
+  assert.match(zhHome, /href=\{product\.href\}/);
+  assert.match(zhHome, /onMouseEnter=\{\(\) => setActiveIndex\(index\)\}/);
+  assert.doesNotMatch(zhHome, /查看完整地区价格/);
+  assert.match(zhHome, /ROTATION_INTERVAL/);
   assert.match(zhHome, /数据来源/);
   assert.match(zhHome, /订阅指南/);
+  assert.match(zhMap, /resolveLabelPositions/);
+  assert.match(zhMap, /data-home-map-label/);
+  assert.match(zhMap, /const LABEL_HEIGHT = 30/);
+  assert.match(zhMap, /function markerLabelWidth/);
+  assert.match(zhMap, /rx=\{LABEL_HEIGHT \/ 2\}/);
+  assert.match(zhHome, /rounded-lg border border-zinc-200/);
+  assert.doesNotMatch(zhHome, /grid gap-px border border-zinc-200 bg-zinc-200/);
 });

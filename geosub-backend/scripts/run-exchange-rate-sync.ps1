@@ -51,7 +51,7 @@ try {
   & (Get-PowerShellHost) -NoProfile -ExecutionPolicy Bypass `
     -File $syncScript `
     -BaseCurrency $BaseCurrency `
-    -QuoteCurrencies $QuoteCurrencies 2>&1 |
+    -QuoteCurrencies ($QuoteCurrencies -join ",") 2>&1 |
     Tee-Object -FilePath $logFile -Append
 
   if ($LASTEXITCODE -ne 0) {

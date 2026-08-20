@@ -46,6 +46,28 @@ const sitemapBudgetCheck = readFileSync(
   resolve(appDir, "..", "scripts", "check-sitemap-budget.mts"),
   "utf8",
 );
+const windowsExchangeRateTaskInstaller = readFileSync(
+  resolve(
+    appDir,
+    "..",
+    "..",
+    "geosub-backend",
+    "scripts",
+    "install-exchange-rate-sync-task.ps1",
+  ),
+  "utf8",
+);
+const windowsExchangeRateTaskRunner = readFileSync(
+  resolve(
+    appDir,
+    "..",
+    "..",
+    "geosub-backend",
+    "scripts",
+    "run-exchange-rate-sync.ps1",
+  ),
+  "utf8",
+);
 
 test("ARM64 upgrades persist deployment evidence before changing runtime state", () => {
   assert.match(upgrade, /PREVIOUS_COMMIT="\$\(repo_commit\)"/);
@@ -124,6 +146,24 @@ test("post-deploy gate verifies the public canonical host and sitemap budget", (
 test("deployment probes use the dedicated process and database health endpoint", () => {
   assert.match(postDeployCheck, /127\.0\.0\.1:3000\/api\/health/);
   assert.doesNotMatch(postDeployCheck, /WEB_HEALTH_URL:-http:\/\/127\.0\.0\.1:3000\/zh\/ai-pricing/);
+});
+
+test("Windows exchange-rate scheduling stays inside the freshness window", () => {
+  assert.match(windowsExchangeRateTaskInstaller, /\[int\]\$IntervalHours = 12/);
+  assert.match(windowsExchangeRateTaskInstaller, /AddHours\(\$IntervalHours\)/);
+  assert.match(windowsExchangeRateTaskInstaller, /-Trigger \$triggers/);
+  assert.match(
+    windowsExchangeRateTaskInstaller,
+    /StartWhenAvailable/,
+  );
+  assert.doesNotMatch(
+    windowsExchangeRateTaskInstaller,
+    /-Trigger \$trigger\b/,
+  );
+  assert.match(
+    windowsExchangeRateTaskRunner,
+    /-QuoteCurrencies \(\$QuoteCurrencies -join ","\)/,
+  );
 });
 
 test("post-deploy gate verifies the public pricing CDN cache contract", () => {

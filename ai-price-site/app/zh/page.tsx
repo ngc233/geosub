@@ -1,77 +1,79 @@
-﻿import Link from "next/link";
+import { unstable_cache } from "next/cache";
 
-const sections = [
-  {
-    title: "AI 订阅",
-    desc: "比较 ChatGPT、Claude、Gemini、Grok 等 AI 订阅在不同国家和地区的价格差异。",
-    href: "/zh/ai-pricing/",
-    tag: "AI",
-  },
-  {
-    title: "流媒体",
-    desc: "比较已收录流媒体服务在不同国家和地区的公开订阅价格。",
-    href: "/zh/streaming-pricing/",
-    tag: "Streaming",
-  },
-  {
-    title: "数据来源",
-    desc: "了解价格来源、汇率日期、税费说明，以及异常价格如何被排除。",
-    href: "/zh/data-sources/",
-    tag: "Data",
-  },
-  {
-    title: "订阅指南",
-    desc: "查看地区价格、支付账号、价格方法论和订阅决策相关内容。",
-    href: "/zh/guides/",
-    tag: "Guides",
-  },
-];
+import HomepageExperience, {
+  type HomepageEvidence,
+  type HomepageProduct,
+} from "../../components/HomepageExperience";
+import { getDbAiPricingProducts } from "../../lib/db-ai-pricing";
+import { getDefaultPlan } from "../../lib/db-pricing-types";
 
-export default function ZhHomePage() {
-  return (
-    <main className="min-h-screen bg-[#faf8f2]">
-      <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-black uppercase tracking-[0.22em] text-lime-600">
-            Global Digital Subscription Pricing
-          </p>
+const FEATURED_PRODUCT_SLUGS = [
+  "chatgpt",
+  "claude",
+  "gemini",
+  "netflix",
+  "disney",
+  "hbo-max",
+] as const;
 
-          <h1 className="mt-5 text-4xl font-black tracking-tight text-zinc-950 md:text-6xl">
-            全球数字订阅价格对比
-          </h1>
+const getHomepageProducts = unstable_cache(
+  async () => getDbAiPricingProducts({ locale: "zh" }),
+  ["zh-homepage-products"],
+  { revalidate: 1800, tags: ["pricing-products", "homepage-pricing"] },
+);
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
-            比较 AI 与流媒体订阅的 App Store 地区价格，切换常用显示币种，并结合税费、更新时间和本地购买力理解真实成本。
-          </p>
-        </div>
+function getProductHref(category: HomepageProduct["category"], slug: string) {
+  return `/${category === "streaming" ? "zh/streaming-pricing" : "zh/ai-pricing"}/${slug}/`;
+}
 
-        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2">
-          {sections.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="group rounded-xl border border-zinc-200 bg-white p-7 shadow-sm shadow-zinc-950/[0.03] transition duration-200 ease-out hover:-translate-y-0.5 hover:border-lime-200 hover:bg-lime-50/40 hover:shadow-md hover:shadow-lime-900/[0.06]"
-            >
-              <div className="mb-5 inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-black text-zinc-500 transition duration-200 ease-out group-hover:bg-lime-100 group-hover:text-lime-700">
-                {item.tag}
-              </div>
+async function loadHomepageData() {
+  try {
+    const allProducts = await getHomepageProducts();
+    const compactProducts = allProducts.flatMap<HomepageProduct>((product) => {
+      const plan = getDefaultPlan(product);
+      if (!plan || plan.regions.length === 0) return [];
+      return [{
+        slug: product.slug,
+        name: product.name,
+        category: product.category,
+        planName: plan.name,
+        href: getProductHref(product.category, product.slug),
+        updatedAt: product.updatedAt,
+        logoUrl: product.logoUrl,
+        regions: plan.regions.map((region) => ({
+          code: region.code,
+          countryName: region.countryName,
+          priceUsd: region.priceUsd,
+        })),
+      }];
+    });
 
-              <h2 className="text-2xl font-black tracking-tight text-zinc-950">
-                {item.title}
-              </h2>
+    const featured = FEATURED_PRODUCT_SLUGS.flatMap((slug) => {
+      const product = compactProducts.find((item) => item.slug === slug);
+      return product ? [product] : [];
+    });
+    const products = featured.length >= 3 ? featured : compactProducts.slice(0, 6);
+    const evidence: HomepageEvidence = {
+      products: compactProducts.length,
+      regions: new Set(compactProducts.flatMap((product) => product.regions.map((region) => region.code))).size,
+      prices: compactProducts.reduce((sum, product) => sum + product.regions.length, 0),
+      updatedAt:
+        compactProducts
+          .map((product) => product.updatedAt)
+          .sort((a, b) => b.localeCompare(a))[0] || new Date().toISOString(),
+    };
 
-              <p className="mt-3 min-h-[72px] text-sm leading-6 text-zinc-500">
-                {item.desc}
-              </p>
+    return { products, evidence };
+  } catch (error) {
+    console.error("Failed to load the Chinese homepage pricing experience", error);
+    return {
+      products: [] as HomepageProduct[],
+      evidence: { products: 0, regions: 0, prices: 0, updatedAt: new Date().toISOString() },
+    };
+  }
+}
 
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-black text-lime-600 transition duration-200 ease-out group-hover:gap-3">
-                查看更多
-                <span aria-hidden="true">→</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
+export default async function ZhHomePage() {
+  const { products, evidence } = await loadHomepageData();
+  return <HomepageExperience products={products} evidence={evidence} />;
 }

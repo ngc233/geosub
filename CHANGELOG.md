@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.9.0 - 2026-08-20
+
+- Reworked regional price details for clearer desktop and mobile reading,
+  including aligned price metadata and touch-accessible tax and subscription
+  evidence.
+- Added a compact sticky lookup toolbar with localized region search,
+  evidence-backed quick filters and synchronized currency controls.
+- Added bounded comparison for up to three regions and expandable evidence
+  details covering listed and converted prices, reference differences, tax
+  confidence, collection and exchange-rate dates, official sources and known
+  subscription conditions.
+- Kept the improvements shared across AI and streaming subscriptions without
+  changing public URLs, SEO metadata, the database model, the homepage or the
+  collection pipeline.
+- Expanded multilingual regression coverage and verified the release on
+  desktop and mobile viewports with no page-level horizontal overflow.
+- Corrected the Windows exchange-rate task to run twice daily, keeping local
+  development inside the same 18-hour freshness policy used by price pages.
+- Reworked the Chinese homepage around GeoSub's own evidence-led proposition,
+  with a data-driven regional map, collision-safe compact price labels,
+  product switching and clearer paths into AI, streaming, currency and guide
+  content across desktop and mobile layouts.
+
 ## 2.8.1 - 2026-08-15
 
 - Replaced remote and letter-based product-logo fallbacks with a reviewed local
@@ -488,4 +511,3 @@
 - Added layered price collection scheduling: daily light patrol, weekly full scan, and anomaly rechecks.
 - Added exchange-rate-first price accuracy maintenance entrypoint.
 - Added OpenTheRank external difference probe as alert-only evidence.
-

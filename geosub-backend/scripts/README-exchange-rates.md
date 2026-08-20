@@ -70,6 +70,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install-exchange-rate-sync-ta
 
 Task name: `GeoSub Exchange Rate Sync`
 
+The installer creates two daily triggers 12 hours apart. This keeps the local
+database inside the same 18-hour freshness window enforced by the public price
+pages, including after a missed run is started when the computer becomes
+available again.
+
 The task runs:
 
 ```powershell

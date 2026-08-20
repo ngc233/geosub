@@ -1,6 +1,7 @@
 param(
   [string]$TaskName = "GeoSub Exchange Rate Sync",
   [string]$RunAt = "03:15",
+  [int]$IntervalHours = 12,
   [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 )
 
@@ -16,7 +17,16 @@ $action = New-ScheduledTaskAction `
   -Execute "powershell.exe" `
   -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$runnerScript`""
 
-$trigger = New-ScheduledTaskTrigger -Daily -At $RunAt
+if ($IntervalHours -ne 12) {
+  throw "IntervalHours must be 12 so the task stays inside the 18-hour freshness window."
+}
+
+$firstRun = [datetime]::ParseExact($RunAt, "HH:mm", $null)
+$secondRun = $firstRun.AddHours($IntervalHours).ToString("HH:mm")
+$triggers = @(
+  New-ScheduledTaskTrigger -Daily -At $RunAt
+  New-ScheduledTaskTrigger -Daily -At $secondRun
+)
 
 $settings = New-ScheduledTaskSettingsSet `
   -StartWhenAvailable `
@@ -33,12 +43,12 @@ $principal = New-ScheduledTaskPrincipal `
 Register-ScheduledTask `
   -TaskName $TaskName `
   -Action $action `
-  -Trigger $trigger `
+  -Trigger $triggers `
   -Settings $settings `
   -Principal $principal `
-  -Description "Daily GeoSub exchange-rate sync into PostgreSQL." `
+  -Description "Twice-daily GeoSub exchange-rate sync into PostgreSQL." `
   -Force | Out-Null
 
 Write-Host "Scheduled task installed: $TaskName"
-Write-Host "Daily run time: $RunAt"
+Write-Host "Daily run times: $RunAt and $secondRun"
 Write-Host "Runner: $runnerScript"
