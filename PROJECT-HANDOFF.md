@@ -1,5 +1,10 @@
 # GeoSub Project Handoff
 
+> 2026-08-22 更新：如需重装 Windows 或在全新机器继续，请优先阅读
+> `SYSTEM-REINSTALL-HANDOFF-2026-08-22.md`。该文件记录当前 GitHub/生产提交、
+> 私密资料备份清单、从零恢复步骤和可直接复制的新任务提示词。本文件保留更完整的
+> 历史技术背景。
+
 Updated: 2026-08-21 (Asia/Singapore)
 
 This file is the source of truth for continuing GeoSub in a new Codex task or
