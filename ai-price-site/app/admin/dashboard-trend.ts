@@ -1,10 +1,12 @@
 export type TrendPoint = {
   label: string;
+  totalPageViews: number;
   pageViews: number;
   clicks: number;
 };
 
 export type TrendComparison = {
+  previousTotalPageViews: number;
   previousPageViews: number;
   previousClicks: number;
   previousTrend: TrendPoint[];
@@ -57,25 +59,29 @@ function escapeCsvCell(value: string | number) {
 export function buildTrendCsv({
   trend,
   previousTrend,
+  showTotalPageViews,
   showPageViews,
   showClicks,
   compare,
 }: {
   trend: TrendPoint[];
   previousTrend: TrendPoint[];
+  showTotalPageViews: boolean;
   showPageViews: boolean;
   showClicks: boolean;
   compare: boolean;
 }) {
   const headers: Array<string> = ["当前日期"];
 
-  if (showPageViews) headers.push("当前访问量");
-  if (showClicks) headers.push("当前点击事件");
+  if (showTotalPageViews) headers.push("当前全站汇总浏览量");
+  if (showPageViews) headers.push("当前已同意访问");
+  if (showClicks) headers.push("当前已同意点击");
 
   if (compare) {
     headers.push("上一周期日期");
-    if (showPageViews) headers.push("上一周期访问量");
-    if (showClicks) headers.push("上一周期点击事件");
+    if (showTotalPageViews) headers.push("上一周期全站汇总浏览量");
+    if (showPageViews) headers.push("上一周期已同意访问");
+    if (showClicks) headers.push("上一周期已同意点击");
   }
 
   const rowCount = Math.max(trend.length, compare ? previousTrend.length : 0);
@@ -84,11 +90,13 @@ export function buildTrendCsv({
     const previous = previousTrend[index];
     const cells: Array<string | number> = [current?.label ?? ""];
 
+    if (showTotalPageViews) cells.push(current?.totalPageViews ?? "");
     if (showPageViews) cells.push(current?.pageViews ?? "");
     if (showClicks) cells.push(current?.clicks ?? "");
 
     if (compare) {
       cells.push(previous?.label ?? "");
+      if (showTotalPageViews) cells.push(previous?.totalPageViews ?? "");
       if (showPageViews) cells.push(previous?.pageViews ?? "");
       if (showClicks) cells.push(previous?.clicks ?? "");
     }

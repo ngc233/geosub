@@ -398,19 +398,26 @@ export default async function AdminDashboardPage({
 
       <div className="mb-4">
         <h2 className="text-lg font-bold text-slate-950">今日运营</h2>
-        <p className="mt-1 text-sm text-slate-500">访问与商业点击按 UTC 当日实时统计。</p>
+        <p className="mt-1 text-sm text-slate-500">
+          访问与商业点击按 UTC 当日实时统计，仅包含明确允许统计的访客。
+        </p>
       </div>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <AdminStatCard
-          label="今日访问量"
-          value={data.todayPageViews}
-          helper="UTC 今日 · 实时读取 event_logs"
+          label="今日全站浏览"
+          value={data.todayTotalPageViews}
+          helper="无 Cookie · 无访客 ID · UTC 每日汇总"
         />
         <AdminStatCard
-          label="今日点击"
+          label="今日已同意访问"
+          value={data.todayPageViews}
+          helper="UTC 今日 · 同意统计样本"
+        />
+        <AdminStatCard
+          label="今日已同意点击"
           value={data.todayClickEvents}
-          helper="UTC 今日 · 实时读取前台交互事件"
+          helper="UTC 今日 · 同意统计样本"
         />
         <AdminStatCard
           label="Affiliate 点击"
@@ -436,6 +443,7 @@ export default async function AdminDashboardPage({
           latestCompleteDate={formatDateInput(getYesterdayUtc())}
           trend={data.trend}
           comparison={data.trendComparison ?? {
+            previousTotalPageViews: 0,
             previousPageViews: 0,
             previousClicks: 0,
             previousTrend: [],
@@ -448,7 +456,7 @@ export default async function AdminDashboardPage({
       <div className="mb-8 grid gap-5 2xl:grid-cols-[1.6fr_1fr]">
         <DashboardPanel
           title="严格会话转化漏斗"
-          description="仅统计同一 30 分钟会话内按时间顺序完成的路径；直接进入详情页不会计入列表起始漏斗。"
+          description="仅统计已同意样本中，同一 30 分钟会话内按时间顺序完成的路径；直接进入详情页不会计入列表起始漏斗。"
           actionHref={eventLogHref}
           actionLabel="核对事件"
         >
@@ -491,7 +499,7 @@ export default async function AdminDashboardPage({
 
         <DashboardPanel
           title="流量质量监控"
-          description="用于发现埋点缺失、失效页面和可能放大统计的异常高频访问。"
+          description="用于检查已同意样本中的埋点缺失、失效页面和可能放大统计的异常高频访问。"
           actionHref={eventLogHref}
           actionLabel="查看明细"
         >
@@ -551,7 +559,7 @@ export default async function AdminDashboardPage({
       <div className="mb-8 grid gap-5 xl:grid-cols-3">
         <DashboardPanel
           title="服务热度排行"
-          description="按所选时段的真实访问和互动计算；一次互动按 3 分计入热度，用于识别用户真正关注的产品。"
+          description="按所选时段的已同意访问和互动计算；一次互动按 3 分计入热度，用于识别样本用户关注的产品。"
           actionHref="/admin/products"
           actionLabel="进入服务库"
         >

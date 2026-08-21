@@ -34,6 +34,21 @@ test("privacy disclosure covers every public locale and states the retention per
   assert.match(source, /Google Tag Manager/);
 });
 
+test("privacy disclosure distinguishes daily page totals from consented analytics", async () => {
+  const source = await readFile(
+    new URL("./PrivacyDisclosure.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /无标识的页面汇总/);
+  assert.match(source, /不设置或读取 Cookie/);
+  assert.match(source, /不创建访客或会话标识/);
+  assert.match(source, /不保存原始 IP、User-Agent、来源页面或单次访问记录/);
+  assert.match(source, /Page totals without identifiers/);
+  assert.match(source, /cannot identify unique visitors/);
+  assert.match(source, /not used for click attribution or funnel analysis/);
+});
+
 test("catch-all legal pages render the full privacy disclosure", async () => {
   const [
     european,

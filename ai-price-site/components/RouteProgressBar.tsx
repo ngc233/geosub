@@ -8,7 +8,7 @@ const START_DELAY_MS = 120;
 const FINISH_DELAY_MS = 180;
 const SAFETY_TIMEOUT_MS = 12_000;
 
-function isInternalNavigation(event: MouseEvent) {
+function getInternalNavigation(event: MouseEvent) {
   if (
     event.defaultPrevented ||
     event.button !== 0 ||
@@ -17,11 +17,11 @@ function isInternalNavigation(event: MouseEvent) {
     event.shiftKey ||
     event.altKey
   ) {
-    return false;
+    return null;
   }
 
   const target = event.target;
-  if (!(target instanceof Element)) return false;
+  if (!(target instanceof Element)) return null;
 
   const anchor = target.closest<HTMLAnchorElement>("a[href]");
   if (
@@ -30,18 +30,24 @@ function isInternalNavigation(event: MouseEvent) {
     anchor.hasAttribute("download") ||
     anchor.dataset.routeProgress === "off"
   ) {
-    return false;
+    return null;
   }
 
   const destination = new URL(anchor.href, window.location.href);
-  if (destination.origin !== window.location.origin) return false;
+  if (destination.origin !== window.location.origin) return null;
 
   const current = new URL(window.location.href);
   const sameDocument =
     destination.pathname === current.pathname &&
     destination.search === current.search;
 
-  return !sameDocument;
+  if (sameDocument) return null;
+
+  return {
+    preserveScroll:
+      current.pathname.startsWith("/admin") &&
+      destination.pathname === current.pathname,
+  };
 }
 
 export default function RouteProgressBar() {
@@ -135,10 +141,11 @@ export default function RouteProgressBar() {
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
-      if (isInternalNavigation(event)) {
-        resetScrollOnCompleteRef.current = true;
-        start();
-      }
+      const navigation = getInternalNavigation(event);
+      if (!navigation) return;
+
+      resetScrollOnCompleteRef.current = !navigation.preserveScroll;
+      start();
     };
     const handlePopState = () => {
       resetScrollOnCompleteRef.current = false;

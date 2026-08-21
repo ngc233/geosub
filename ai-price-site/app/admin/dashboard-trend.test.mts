@@ -43,8 +43,9 @@ test("trend comparison handles zero baselines without fake percentages", () => {
 
 test("trend csv follows the visible series and comparison state", () => {
   const csv = buildTrendCsv({
-    trend: [{ label: "8/14", pageViews: 20, clicks: 5 }],
-    previousTrend: [{ label: "8/7", pageViews: 12, clicks: 3 }],
+    trend: [{ label: "8/14", totalPageViews: 80, pageViews: 20, clicks: 5 }],
+    previousTrend: [{ label: "8/7", totalPageViews: 60, pageViews: 12, clicks: 3 }],
+    showTotalPageViews: true,
     showPageViews: true,
     showClicks: false,
     compare: true,
@@ -52,7 +53,7 @@ test("trend csv follows the visible series and comparison state", () => {
 
   assert.equal(
     csv,
-    "当前日期,当前访问量,上一周期日期,上一周期访问量\r\n8/14,20,8/7,12",
+    "当前日期,当前全站汇总浏览量,当前已同意访问,上一周期日期,上一周期全站汇总浏览量,上一周期已同意访问\r\n8/14,80,20,8/7,60,12",
   );
-  assert.doesNotMatch(csv, /点击事件/);
+  assert.doesNotMatch(csv, /已同意点击/);
 });

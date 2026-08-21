@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ComponentProps } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type AdminLinkProps = ComponentProps<typeof Link> & {
   prefetchOnIntent?: boolean;
@@ -19,13 +19,18 @@ export default function AdminLink({
   onFocus,
   onMouseEnter,
   prefetchOnIntent = false,
+  scroll,
   ...props
 }: AdminLinkProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const hrefValue = typeof href === "string" ? href : href.pathname || "";
+  const destinationPathname = hrefValue.split("?")[0].split("#")[0];
+  const preserveSamePageScroll =
+    pathname.startsWith("/admin") && destinationPathname === pathname;
 
   const prefetchDestination = () => {
     if (!prefetchOnIntent) return;
-    const hrefValue = typeof href === "string" ? href : href.pathname;
     if (hrefValue?.startsWith("/admin")) router.prefetch(hrefValue);
   };
 
@@ -34,6 +39,7 @@ export default function AdminLink({
       {...props}
       href={href}
       prefetch={false}
+      scroll={scroll ?? !preserveSamePageScroll}
       onFocus={(event) => {
         prefetchDestination();
         onFocus?.(event);

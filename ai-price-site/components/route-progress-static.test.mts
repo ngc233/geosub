@@ -27,8 +27,15 @@ test("admin links rely on the global progress bar", () => {
 });
 
 test("ordinary navigation resets scroll without overriding browser history restoration", () => {
-  assert.match(progressBar, /resetScrollOnCompleteRef\.current = true/);
+  assert.match(progressBar, /resetScrollOnCompleteRef\.current = !navigation\.preserveScroll/);
   assert.match(progressBar, /resetScrollOnCompleteRef\.current = false/);
   assert.match(progressBar, /window\.scrollTo\(0, 0\)/);
   assert.match(progressBar, /window\.addEventListener\("popstate", handlePopState\)/);
+});
+
+test("same-page admin navigation preserves the operator scroll position", () => {
+  assert.match(progressBar, /current\.pathname\.startsWith\("\/admin"\)/);
+  assert.match(progressBar, /destination\.pathname === current\.pathname/);
+  assert.match(progressBar, /!navigation\.preserveScroll/);
+  assert.match(adminLink, /scroll=\{scroll \?\? !preserveSamePageScroll\}/);
 });

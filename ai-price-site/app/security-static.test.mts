@@ -59,6 +59,25 @@ test("public event ingestion is bounded and accepts known analytics keys only", 
   assert.match(route, /status: 413/);
 });
 
+test("cookieless page views store daily counters without browser identifiers", () => {
+  const route = readProjectFile("app/api/page-views/route.ts");
+  const provider = readProjectFile(
+    "components/analytics/AggregatePageViewProvider.tsx",
+  );
+  const layout = readProjectFile("app/layout.tsx");
+
+  assert.match(route, /MAX_REQUEST_BYTES = 1024/);
+  assert.match(route, /new TextEncoder\(\)\.encode\(rawPayload\)\.byteLength/);
+  assert.match(route, /fetchSite !== "same-origin"/);
+  assert.match(route, /dimensionType: "global" \| "page"/);
+  assert.match(route, /metricValue: \{ increment: 1 \}/);
+  assert.match(route, /identifiers: "none"/);
+  assert.doesNotMatch(route, /eventLog|anonymousId|sessionId|userAgent|ipCountry/);
+  assert.match(provider, /credentials: "omit"/);
+  assert.doesNotMatch(provider, /cookie|localStorage|sessionStorage|visitor|sessionId/i);
+  assert.match(layout, /<AggregatePageViewProvider\s*\/>/);
+});
+
 test("global responses carry baseline production security headers", () => {
   const config = readProjectFile("next.config.ts");
   const proxy = readProjectFile("proxy.ts");

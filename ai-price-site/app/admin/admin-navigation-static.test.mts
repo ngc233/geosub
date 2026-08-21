@@ -225,7 +225,7 @@ test("admin dashboard renders non-zero trend totals as visible svg lines", () =>
   assert.match(dashboard, /const getPoints =/);
   assert.match(dashboard, /points=\{getPoints\(trend, "pageViews"\)\}/);
   assert.match(dashboard, /points=\{getPoints\(trend, "clicks"\)\}/);
-  assert.match(dashboard, /所选时段还没有正式访问或点击数据/);
+  assert.match(dashboard, /所选时段还没有页面汇总或已同意行为数据/);
   assert.doesNotMatch(dashboard, /style=\{\{ height: `\$\{pageHeight\}%` \}\}/);
 });
 
@@ -498,6 +498,22 @@ test("major admin data pages report slow workloads", () => {
   assert.match(sources, /discovery\.page-data/);
   assert.match(sources, /affordability\.page-data/);
   assert.match(sources, /events\.page-data/);
+});
+
+test("admin actions preserve scroll while consented analytics stays clearly labeled", () => {
+  const layout = readProjectFile("app/admin/layout.tsx");
+  const scrollRestoration = readProjectFile(
+    "components/admin/AdminScrollRestoration.tsx",
+  );
+  const dashboard = readProjectFile("app/admin/page.tsx");
+  const trend = readProjectFile("app/admin/TrendChart.tsx");
+
+  assert.match(layout, /<AdminScrollRestoration\s*\/>/);
+  assert.match(scrollRestoration, /document\.addEventListener\("submit"/);
+  assert.match(scrollRestoration, /window\.scrollTo\(0, pending\.scrollY\)/);
+  assert.match(dashboard, /今日已同意访问/);
+  assert.match(dashboard, /同意统计样本/);
+  assert.match(trend, /Cookie 同意机制于 2026-08-12 上线/);
 });
 
 test("all admin asset views share one four-level operational status model", () => {

@@ -2,6 +2,7 @@
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import { measureAdminWorkload } from "../../lib/admin-performance";
 import packageJson from "../../package.json";
+import AdminScrollRestoration from "../../components/admin/AdminScrollRestoration";
 
 export default async function AdminLayout({
   children,
@@ -12,6 +13,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
+      <AdminScrollRestoration />
       <div className="flex min-h-screen flex-col lg:flex-row">
         <AdminSidebar email={admin.email} version={packageJson.version} />
 

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
+import { AGGREGATE_PAGE_VIEW_METRIC } from "../../lib/aggregate-page-views";
 import {
   deviceNameZh,
   trafficSourceNameZh,
@@ -20,6 +21,7 @@ export type DashboardPeriod = {
 };
 
 type DashboardSummaryRow = {
+  today_total_page_views: bigint;
   today_page_views: bigint;
   today_click_events: bigint;
   today_affiliate_clicks: bigint;
@@ -281,11 +283,22 @@ function buildTrendSeriesFromDailyStats({
     days.push(date);
   }
 
-  const statMap = new Map<string, { pageViews: number; clicks: number }>();
+  const statMap = new Map<
+    string,
+    { totalPageViews: number; pageViews: number; clicks: number }
+  >();
 
   for (const item of stats) {
     const key = item.statDate.toISOString().slice(0, 10);
-    const current = statMap.get(key) || { pageViews: 0, clicks: 0 };
+    const current = statMap.get(key) || {
+      totalPageViews: 0,
+      pageViews: 0,
+      clicks: 0,
+    };
+
+    if (item.metricKey === AGGREGATE_PAGE_VIEW_METRIC) {
+      current.totalPageViews = item.metricValue;
+    }
 
     if (item.metricKey === "page_views") {
       current.pageViews = item.metricValue;
@@ -300,10 +313,15 @@ function buildTrendSeriesFromDailyStats({
 
   const daily = days.map((date) => {
     const key = date.toISOString().slice(0, 10);
-    const stat = statMap.get(key) || { pageViews: 0, clicks: 0 };
+    const stat = statMap.get(key) || {
+      totalPageViews: 0,
+      pageViews: 0,
+      clicks: 0,
+    };
 
     return {
       date,
+      totalPageViews: stat.totalPageViews,
       pageViews: stat.pageViews,
       clicks: stat.clicks,
     };
@@ -321,6 +339,10 @@ function buildTrendSeriesFromDailyStats({
         bucketSize === 1
           ? formatMonthDay(first.date)
           : `${formatMonthDay(first.date)}-${formatMonthDay(last.date)}`,
+      totalPageViews: chunk.reduce(
+        (sum, item) => sum + item.totalPageViews,
+        0,
+      ),
       pageViews: chunk.reduce((sum, item) => sum + item.pageViews, 0),
       clicks: chunk.reduce((sum, item) => sum + item.clicks, 0),
     });
@@ -385,6 +407,14 @@ export async function getDashboardData(period: DashboardPeriod) {
       )
       SELECT
         event_summary.*,
+        COALESCE((
+          SELECT metric_value
+          FROM daily_stats
+          WHERE stat_date = (NOW() AT TIME ZONE 'UTC')::date
+            AND metric_key = ${AGGREGATE_PAGE_VIEW_METRIC}
+            AND dimension_type = 'global'
+            AND dimension_key = 'global'
+        ), 0)::bigint AS today_total_page_views,
         (SELECT COUNT(*)::bigint FROM products) AS digital_services,
         (SELECT COUNT(*)::bigint FROM plans) AS plans,
         (SELECT COUNT(*)::bigint FROM countries) AS countries,
@@ -436,7 +466,7 @@ export async function getDashboardData(period: DashboardPeriod) {
           lt: period.endExclusive,
         },
         metricKey: {
-          in: ["page_views", "click_events"],
+          in: [AGGREGATE_PAGE_VIEW_METRIC, "page_views", "click_events"],
         },
         dimensionType: "global",
         dimensionKey: "global",
@@ -867,6 +897,7 @@ export async function getDashboardData(period: DashboardPeriod) {
   ]);
 
   const summary = summaryRows[0];
+  const todayTotalPageViews = toCount(summary?.today_total_page_views);
   const todayPageViews = toCount(summary?.today_page_views);
   const todayClickEvents = toCount(summary?.today_click_events);
   const todayAffiliateClicks = toCount(summary?.today_affiliate_clicks);
@@ -891,6 +922,9 @@ export async function getDashboardData(period: DashboardPeriod) {
     },
   });
   const trendComparison = {
+    previousTotalPageViews: previousTrendStats
+      .filter((item) => item.metricKey === AGGREGATE_PAGE_VIEW_METRIC)
+      .reduce((sum, item) => sum + item.metricValue, 0),
     previousPageViews: previousTrendStats
       .filter((item) => item.metricKey === "page_views")
       .reduce((sum, item) => sum + item.metricValue, 0),
@@ -960,6 +994,7 @@ export async function getDashboardData(period: DashboardPeriod) {
   };
 
   return {
+    todayTotalPageViews,
     todayPageViews,
     todayClickEvents,
     todayAffiliateClicks,

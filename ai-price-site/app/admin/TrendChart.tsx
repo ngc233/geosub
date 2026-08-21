@@ -59,22 +59,35 @@ function SeriesCard({
   previous: number;
   checked: boolean;
   compare: boolean;
-  tone: "blue" | "indigo";
+  tone: "emerald" | "blue" | "indigo";
   onChange: (checked: boolean) => void;
 }) {
-  const activeClasses =
-    tone === "blue"
-      ? "border-blue-200 bg-blue-50 text-blue-950"
-      : "border-indigo-200 bg-indigo-50 text-indigo-950";
-  const labelClass = tone === "blue" ? "text-blue-700" : "text-indigo-700";
-  const checkClass = tone === "blue" ? "border-blue-600 bg-blue-600" : "border-indigo-500 bg-indigo-500";
-  const lineClass = tone === "blue" ? "bg-blue-600" : "bg-indigo-500";
+  const toneClasses = {
+    emerald: {
+      active: "border-emerald-200 bg-emerald-50 text-emerald-950",
+      label: "text-emerald-700",
+      check: "border-emerald-600 bg-emerald-600",
+      line: "bg-emerald-600",
+    },
+    blue: {
+      active: "border-blue-200 bg-blue-50 text-blue-950",
+      label: "text-blue-700",
+      check: "border-blue-600 bg-blue-600",
+      line: "bg-blue-600",
+    },
+    indigo: {
+      active: "border-indigo-200 bg-indigo-50 text-indigo-950",
+      label: "text-indigo-700",
+      check: "border-indigo-500 bg-indigo-500",
+      line: "bg-indigo-500",
+    },
+  }[tone];
 
   return (
     <label
       className={`cursor-pointer rounded-xl border px-4 py-3 transition focus-within:ring-4 focus-within:ring-blue-500/10 ${
         checked
-          ? activeClasses
+          ? toneClasses.active
           : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
       }`}
     >
@@ -86,16 +99,16 @@ function SeriesCard({
         onChange={(event) => onChange(event.target.checked)}
       />
       <div className="flex items-center justify-between gap-3">
-        <span className={`inline-flex items-center gap-2 text-xs font-semibold ${checked ? labelClass : "text-slate-500"}`}>
+        <span className={`inline-flex items-center gap-2 text-xs font-semibold ${checked ? toneClasses.label : "text-slate-500"}`}>
           <span
             className={`inline-flex h-4 w-4 items-center justify-center rounded border ${
-              checked ? checkClass : "border-slate-300 bg-white"
+              checked ? toneClasses.check : "border-slate-300 bg-white"
             }`}
             aria-hidden="true"
           >
             {checked ? <Check size={11} strokeWidth={3} className="text-white" /> : null}
           </span>
-          <span className={`h-0.5 w-5 ${checked ? lineClass : "bg-slate-300"}`} aria-hidden="true" />
+          <span className={`h-0.5 w-5 ${checked ? toneClasses.line : "bg-slate-300"}`} aria-hidden="true" />
           {label}
         </span>
         <span className="hidden text-[11px] font-medium text-slate-500 sm:inline">点击切换</span>
@@ -128,25 +141,32 @@ export function TrendChart({
   trend: TrendPoint[];
   comparison: TrendComparison;
 }) {
+  const [showTotalPageViews, setShowTotalPageViews] = useState(true);
   const [showPageViews, setShowPageViews] = useState(true);
   const [showClicks, setShowClicks] = useState(true);
   const [compare, setCompare] = useState(false);
 
+  const totalAggregatePageViews = trend.reduce(
+    (sum, item) => sum + item.totalPageViews,
+    0,
+  );
   const totalPageViews = trend.reduce((sum, item) => sum + item.pageViews, 0);
   const totalClicks = trend.reduce((sum, item) => sum + item.clicks, 0);
   const visibleValues = trend.flatMap((item) => [
+    ...(showTotalPageViews ? [item.totalPageViews] : []),
     ...(showPageViews ? [item.pageViews] : []),
     ...(showClicks ? [item.clicks] : []),
   ]);
   const comparisonValues = compare
     ? comparison.previousTrend.flatMap((item) => [
+        ...(showTotalPageViews ? [item.totalPageViews] : []),
         ...(showPageViews ? [item.pageViews] : []),
         ...(showClicks ? [item.clicks] : []),
       ])
     : [];
   const maxValue = Math.max(1, ...visibleValues, ...comparisonValues);
   const { axisMax, ticks } = getNiceAxisScale(maxValue);
-  const hasVisibleSeries = showPageViews || showClicks;
+  const hasVisibleSeries = showTotalPageViews || showPageViews || showClicks;
   const hasVisibleData =
     visibleValues.some((value) => value > 0) ||
     comparisonValues.some((value) => value > 0);
@@ -161,7 +181,10 @@ export function TrendChart({
   const getX = (index: number, total = trend.length) =>
     chartLeft + (total <= 1 ? plotWidth / 2 : (index / (total - 1)) * plotWidth);
   const getY = (value: number) => chartTop + plotHeight - (value / axisMax) * plotHeight;
-  const getPoints = (series: TrendPoint[], key: "pageViews" | "clicks") =>
+  const getPoints = (
+    series: TrendPoint[],
+    key: "totalPageViews" | "pageViews" | "clicks",
+  ) =>
     series
       .map((item, index) => `${getX(index, series.length)},${getY(item[key])}`)
       .join(" ");
@@ -170,6 +193,7 @@ export function TrendChart({
     const csv = buildTrendCsv({
       trend,
       previousTrend: comparison.previousTrend,
+      showTotalPageViews,
       showPageViews,
       showClicks,
       compare,
@@ -192,9 +216,9 @@ export function TrendChart({
     >
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="text-base font-bold text-slate-950">访问与点击趋势</h2>
+          <h2 className="text-base font-bold text-slate-950">全站浏览与同意行为趋势</h2>
           <p className="mt-1 text-sm text-slate-500">
-            趋势仅显示已经结束的 UTC 自然日；今天的实时数据单独显示在上方卡片中。
+            全站浏览是无 Cookie、无访客 ID 的 UTC 每日页面汇总；访问与点击仅包含明确允许统计的访客。趋势只显示已经结束的自然日，今天的实时数据单独显示在上方卡片中。Cookie 同意机制于 2026-08-12 上线，两套指标口径不同，不应互相替代或直接同比。
           </p>
         </div>
 
@@ -294,9 +318,18 @@ export function TrendChart({
         </div>
       </div>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2">
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <SeriesCard
-          label="访问量"
+          label="全站汇总浏览"
+          total={totalAggregatePageViews}
+          previous={comparison.previousTotalPageViews}
+          checked={showTotalPageViews}
+          compare={compare}
+          tone="emerald"
+          onChange={setShowTotalPageViews}
+        />
+        <SeriesCard
+          label="已同意访问"
           total={totalPageViews}
           previous={comparison.previousPageViews}
           checked={showPageViews}
@@ -305,7 +338,7 @@ export function TrendChart({
           onChange={setShowPageViews}
         />
         <SeriesCard
-          label="点击事件"
+          label="已同意点击"
           total={totalClicks}
           previous={comparison.previousClicks}
           checked={showClicks}
@@ -328,7 +361,7 @@ export function TrendChart({
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
               className="h-64 min-w-[640px] w-full"
               role="img"
-              aria-label={`访问趋势：${totalPageViews} 次访问，${totalClicks} 次点击${compare ? "，已叠加上一周期" : ""}`}
+              aria-label={`访问趋势：${totalAggregatePageViews} 次全站汇总浏览，${totalPageViews} 次已同意访问，${totalClicks} 次已同意点击${compare ? "，已叠加上一周期" : ""}`}
             >
               {ticks.map((value) => {
                 const y = chartTop + plotHeight - (value / axisMax) * plotHeight;
@@ -356,6 +389,19 @@ export function TrendChart({
                 );
               })}
 
+              {compare && showTotalPageViews ? (
+                <polyline
+                  data-series="previous-total-page-views"
+                  points={getPoints(comparison.previousTrend, "totalPageViews")}
+                  fill="none"
+                  stroke="#6ee7b7"
+                  strokeWidth="3"
+                  strokeDasharray="10 8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ) : null}
               {compare && showPageViews ? (
                 <polyline
                   data-series="previous-page-views"
@@ -377,6 +423,18 @@ export function TrendChart({
                   stroke="#c7d2fe"
                   strokeWidth="3"
                   strokeDasharray="10 8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ) : null}
+              {showTotalPageViews ? (
+                <polyline
+                  data-series="current-total-page-views"
+                  points={getPoints(trend, "totalPageViews")}
+                  fill="none"
+                  stroke="#059669"
+                  strokeWidth="4"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   vectorEffect="non-scaling-stroke"
@@ -412,6 +470,11 @@ export function TrendChart({
                     const x = getX(index, comparison.previousTrend.length);
                     return (
                       <g key={`previous-${item.label}`}>
+                        {showTotalPageViews ? (
+                          <circle cx={x} cy={getY(item.totalPageViews)} r="3.5" fill="#6ee7b7">
+                            <title>{`上一周期 ${item.label}：全站汇总浏览 ${item.totalPageViews}`}</title>
+                          </circle>
+                        ) : null}
                         {showPageViews ? (
                           <circle cx={x} cy={getY(item.pageViews)} r="3.5" fill="#93c5fd">
                             <title>{`上一周期 ${item.label}：访问 ${item.pageViews}`}</title>
@@ -431,6 +494,11 @@ export function TrendChart({
                 const x = getX(index);
                 return (
                   <g key={item.label}>
+                    {showTotalPageViews ? (
+                      <circle cx={x} cy={getY(item.totalPageViews)} r="5" fill="#059669" stroke="white" strokeWidth="2">
+                        <title>{`${item.label}：全站汇总浏览 ${item.totalPageViews}`}</title>
+                      </circle>
+                    ) : null}
                     {showPageViews ? (
                       <circle cx={x} cy={getY(item.pageViews)} r="5" fill="#2563eb" stroke="white" strokeWidth="2">
                         <title>{`${item.label}：访问 ${item.pageViews}`}</title>
@@ -459,7 +527,7 @@ export function TrendChart({
         ) : (
           <div className="flex h-64 items-center justify-center px-6 text-center text-sm text-slate-500">
             {hasVisibleSeries
-              ? "所选时段还没有正式访问或点击数据，产生新访问后会自动绘制趋势线。"
+              ? "所选时段还没有页面汇总或已同意行为数据，产生新访问后会自动绘制趋势线。"
               : "请至少选择一个指标以显示趋势线。"}
           </div>
         )}

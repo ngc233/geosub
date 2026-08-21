@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Suspense } from "react";
 import "./globals.css";
 import AnalyticsConsentBanner from "../components/analytics/AnalyticsConsentBanner";
+import AggregatePageViewProvider from "../components/analytics/AggregatePageViewProvider";
 import AnalyticsProvider from "../components/analytics/AnalyticsProvider";
 import DocumentLocaleSync from "../components/DocumentLocaleSync";
 import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScripts";
@@ -316,6 +317,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
         <GoogleAnalyticsScripts nonce={nonce} />
+        <AggregatePageViewProvider />
         <AnalyticsProvider />
         <SiteChrome>{children}</SiteChrome>
         <AnalyticsConsentBanner consentRequired={analyticsConsentRequired} />
