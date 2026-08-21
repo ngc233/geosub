@@ -41,7 +41,7 @@ const siteMetadataCopy: Record<
   zh: {
     title: "GeoSub - 全球数字订阅价格数据平台",
     description:
-      "GeoSub 用于比较 AI 订阅、流媒体和其他数字订阅在不同国家和地区的价格差异、税费说明和购买力视角。",
+      "比较 ChatGPT、Claude、Gemini、Netflix 等数字订阅在不同国家和地区的公开价格、汇率换算、税费与购买力差异，并查看数据更新时间。",
     keywords: [
       "订阅价格",
       "AI 订阅价格",

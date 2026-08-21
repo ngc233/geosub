@@ -712,6 +712,47 @@ function BurdenRow({
   );
 }
 
+function AffordabilitySummaryRow({
+  row,
+  rank,
+  locale,
+}: {
+  row: PlanAffordabilityRow;
+  rank: number;
+  locale: PreparedSiteLocale;
+}) {
+  const copy = getAffordabilityCopy(locale);
+  const countryName = getCountryName(row, locale);
+  const burden = `${row.burdenVsUs.toFixed(2)}${copy.times}`;
+  const incomeShare = copy.incomeShare(
+    formatPercent(row.incomeSharePercent, locale),
+  );
+
+  return (
+    <div
+      className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 border-b border-zinc-100 px-5 py-3 last:border-b-0 md:grid-cols-[52px_minmax(140px,0.8fr)_120px_minmax(180px,1.5fr)] md:px-6 dark:border-zinc-800"
+      aria-label={`${countryName} · ${formatUsd(row.priceUsd, locale)} · ${burden} · ${incomeShare}`}
+    >
+      <span className="text-sm tabular-nums text-zinc-400">#{rank}</span>
+      <span className="truncate text-sm font-semibold text-zinc-950 dark:text-white">
+        {countryName}
+      </span>
+      <span className="hidden text-sm font-semibold tabular-nums text-zinc-950 md:block dark:text-white">
+        {formatUsd(row.priceUsd, locale)}
+      </span>
+      <span className="text-right md:text-left">
+        <span className="block text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
+          {burden}
+        </span>
+        <span className="block text-xs text-zinc-400">{incomeShare}</span>
+        <span className="mt-0.5 block text-xs tabular-nums text-zinc-400 md:hidden">
+          {formatUsd(row.priceUsd, locale)}
+        </span>
+      </span>
+    </div>
+  );
+}
+
 export default function AffordabilityComparison({
   productName,
   planName,
@@ -832,11 +873,10 @@ export default function AffordabilityComparison({
           showLabel={copy.showMore(hiddenRows.length)}
           hideLabel={copy.collapse}
           renderChildren={() => hiddenRows.map((row, index) => (
-            <BurdenRow
+            <AffordabilitySummaryRow
               key={`${sortMode}-${row.planSlug}-${row.countryCode}`}
               row={row}
               rank={initialVisibleCount + index + 1}
-              maxBurden={maxBurden}
               locale={locale}
             />
           ))}

@@ -6,6 +6,7 @@ import { loadCoreGuideCmsState } from "../lib/core-guide-cms";
 import {
   getCoreGuideDefinition,
   parseCoreGuideMarkdown,
+  type CoreGuideDefinition,
   type CoreGuideLocale,
   type CoreGuideSlug,
 } from "../lib/core-guide-content";
@@ -22,6 +23,22 @@ function absoluteUrl(path: string) {
   return new URL(path, `${siteUrl}/`).toString();
 }
 
+function resolveSeoDescription(
+  definition: CoreGuideDefinition,
+  ...candidates: Array<string | null | undefined>
+) {
+  const candidate = candidates.find((value) => value?.trim())?.trim();
+
+  if (
+    !candidate ||
+    definition.previousSeoDescriptions?.includes(candidate)
+  ) {
+    return definition.seoDescription;
+  }
+
+  return candidate;
+}
+
 export async function getCoreGuideMetadata({
   locale,
   slug,
@@ -36,11 +53,12 @@ export async function getCoreGuideMetadata({
   const title = stripGeoSubTitleSuffix(
     article?.seoTitle || article?.ogTitle || article?.title || definition.seoTitle,
   );
-  const description =
-    article?.seoDescription ||
-    article?.ogDescription ||
-    article?.excerpt ||
-    definition.seoDescription;
+  const description = resolveSeoDescription(
+    definition,
+    article?.seoDescription,
+    article?.ogDescription,
+    article?.excerpt,
+  );
   const canonical = article?.canonicalUrl || absoluteUrl(path);
   const image = article?.ogImageUrl || article?.coverImageUrl || undefined;
   const isUnavailableInCms = state.managed && !article;
@@ -120,7 +138,7 @@ export default async function CmsBackedGuidePage({
     "@context": "https://schema.org",
     "@type": article?.structuredDataType === "NONE" ? "WebPage" : "Article",
     headline: title,
-    description: article?.seoDescription || definition.seoDescription,
+    description: resolveSeoDescription(definition, article?.seoDescription),
     ...(article?.publishedAt ? { datePublished: article.publishedAt.toISOString() } : {}),
     ...(article?.updatedAt ? { dateModified: article.updatedAt.toISOString() } : {}),
     author: {

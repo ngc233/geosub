@@ -11,6 +11,8 @@ test("CMS-backed core guides render their persisted content-cluster links", asyn
   assert.match(cmsSource, /article\?\.relations/);
   assert.match(cmsSource, /streaming-pricing/);
   assert.match(cmsSource, /relatedLinks=\{relatedLinks\}/);
+  assert.match(cmsSource, /function resolveSeoDescription/);
+  assert.match(cmsSource, /previousSeoDescriptions\?\.includes\(candidate\)/);
   assert.match(guideSource, /relatedLinks\.map/);
   assert.match(guideSource, /md:grid-cols-2/);
 });

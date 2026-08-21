@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "This page explains the basic terms, information boundaries, and disclaimers for using GeoSub.",
+  description: "Read the terms for using GeoSub, including the scope of its subscription price comparisons, information limitations, external links, and checkout disclaimers.",
 };
 
 export default function EnglishTrustPage() {

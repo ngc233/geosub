@@ -1173,6 +1173,35 @@ export default function ExpandableRegionPriceTable({
     );
   };
 
+  const renderRegionSummaryRow = (region: RegionPrice, rank: number) => {
+    const localizedCountry =
+      getLocalizedRegionName(region.code, locale) || region.country;
+    const billingSuffix = getBillingCycleSuffix(plan.billing, locale);
+
+    return (
+      <div
+        key={`${plan.slug}-summary-${getRegionComparisonKey(region)}`}
+        className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 border-b border-zinc-100 px-4 py-3 last:border-b-0 md:grid-cols-[44px_minmax(160px,1fr)_140px_130px] md:px-6 dark:border-zinc-800"
+        aria-label={`${localizedCountry} · ${region.localPrice} · ${formatDisplayPrice(region.priceUsd)}`}
+      >
+        <span className="text-sm tabular-nums text-zinc-400">#{rank}</span>
+        <span className="truncate text-sm font-semibold text-zinc-950 dark:text-white">
+          {localizedCountry}
+        </span>
+        <span className="hidden text-sm tabular-nums text-zinc-600 md:block dark:text-zinc-300">
+          {region.localPrice}
+        </span>
+        <span className="text-right text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
+          {formatDisplayPrice(region.priceUsd)}
+          <span className="ms-1 text-xs font-normal text-zinc-400">{billingSuffix}</span>
+          <span className="mt-0.5 block text-xs font-normal text-zinc-400 md:hidden">
+            {region.localPrice}
+          </span>
+        </span>
+      </div>
+    );
+  };
+
   const visibleRegions = filteredRegions.slice(0, initialVisibleCount);
   const hiddenRegions = filteredRegions.slice(initialVisibleCount);
   const headerColumns = shouldShowSourceColumn
@@ -1386,7 +1415,7 @@ export default function ExpandableRegionPriceTable({
               showLabel={copy.showMore(hiddenRegions.length)}
               hideLabel={copy.collapse}
               renderChildren={() => hiddenRegions.map((region, index) =>
-                renderRegionRow(region, initialVisibleCount + index + 1),
+                renderRegionSummaryRow(region, initialVisibleCount + index + 1),
               )}
             />
           </>

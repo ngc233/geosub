@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = {
   title: "数字订阅价格、支付与账号指南",
   description:
-    "GeoSub 指南汇总数字订阅价格、地区订阅、礼品卡、支付方式、账号注册和 AI 工具测评内容。",
+    "阅读数字订阅价格、跨区支付、账号地区与礼品卡指南，了解汇率、税费和购买限制，并查看 GeoSub 的数据核验方法与 AI 工具测评。",
 };
 
 export default async function GuidesPage() {

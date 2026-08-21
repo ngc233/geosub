@@ -151,6 +151,9 @@ test("public pricing lists prepare every v2.1 locale and keep exact update dates
 
   assert.match(listing, /locale: PreparedSiteLocale/);
   assert.match(listing, /getPricingListCopy\(locale\)/);
+  assert.match(listing, /getPricingDetailPath/);
+  assert.match(listing, /按产品查看全部套餐/);
+  assert.match(listing, /filteredProducts\.map\(\(product\) =>/);
   assert.doesNotMatch(listing, /locale === "en"/);
   assert.match(card, /locale: PreparedSiteLocale/);
   assert.match(card, /getPricingListCopy\(locale\)\.card/);

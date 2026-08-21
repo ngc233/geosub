@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "关于 GeoSub",
-  description: "GeoSub 比较 AI 与流媒体订阅在不同国家和地区的公开价格，并说明汇率、税费、更新时间与购买力差异。",
+  description: "了解 GeoSub 如何比较 AI 与流媒体订阅在不同国家和地区的公开价格，以及我们对汇率、税费、更新时间、购买力和购买条件的说明边界。",
 };
 
 export default function TrustPage() {

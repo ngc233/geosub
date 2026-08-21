@@ -69,9 +69,6 @@ export function buildPricingStructuredData({
           name: "GeoSub",
           url: siteUrl,
         },
-        isPartOf: {
-          "@id": `${siteUrl}/#website`,
-        },
         variableMeasured: [
           {
             "@type": "PropertyValue",

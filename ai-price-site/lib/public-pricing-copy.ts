@@ -13,7 +13,7 @@ const publicPricingCopy = {
             "比较 ChatGPT、Claude、Gemini 等 AI 工具在不同地区的订阅价格，查看最低价地区、高价地区、税费说明和价格差距。",
           metaTitle: "AI 订阅价格对比 - ChatGPT、Claude、Gemini 全球价格",
           metaDescription:
-            "比较 ChatGPT、Claude、Gemini 等 AI 订阅在不同国家和地区的 App Store 价格、显示币种换算、税费说明和购买力差异。",
+            "比较 ChatGPT、Claude、Gemini、Grok 等 AI 订阅在不同国家和地区的 App Store 价格、显示币种换算、税费、购买力与更新时间，查找已核验的低价地区。",
         },
         streaming: {
           eyebrow: "GeoSub 流媒体价格数据",
@@ -23,7 +23,7 @@ const publicPricingCopy = {
           metaTitle:
             "流媒体订阅价格对比 - Netflix、Disney+ 全球价格",
           metaDescription:
-            "比较 Netflix、Disney+ 等已收录流媒体订阅在不同国家和地区的价格、税费、更新时间和区域价格差异。",
+            "比较 Netflix、Disney+、HBO Max 等流媒体订阅在不同国家和地区的公开价格、汇率换算、税费、购买力与更新时间，查看已核验的地区价差。",
         },
       },
       categoryAria: "数字服务分类",

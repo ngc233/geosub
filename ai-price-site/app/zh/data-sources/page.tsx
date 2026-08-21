@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "数据来源与价格口径",
   description:
-    "GeoSub 使用经过核验的 App Store 地区订阅价格，并同时标注汇率日期、税费说明和数据可信状态。",
+    "了解 GeoSub 的 App Store 地区订阅价格来源、套餐匹配与异常审核流程，以及汇率日期、税费说明、更新时间和数据可信状态的含义。",
 };
 
 const sourceLayers = [

@@ -260,6 +260,8 @@ test("pricing details publish page-specific metadata and matching structured dat
   assert.match(pricingSeo, /spatialCoverage/);
   assert.match(pricingSeo, /getSiteLocaleDefinition\(locale\)\.htmlLang/);
   assert.match(pricingSeo, /regionalPricePropertyLabels/);
+  assert.equal((pricingSeo.match(/isPartOf:/g) || []).length, 1);
+  assert.doesNotMatch(pricingSeo, /license:/);
   assert.doesNotMatch(sharedDetail, /in 2026/);
   assert.doesNotMatch(sharedDetail, /截至 2026 年/);
 });

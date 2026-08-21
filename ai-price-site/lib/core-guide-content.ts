@@ -124,8 +124,11 @@ const definitions: Record<CoreGuideLocale, Record<CoreGuideSlug, CoreGuideDefini
       title: "GeoSub 如何检查订阅价格",
       description: "每条地区价格都会先匹配套餐，再检查币种、计费周期和样本一致性；只有可直接比较的数据才会展示。",
       seoTitle: "GeoSub 订阅价格数据方法",
-      seoDescription: "了解 GeoSub 如何采集、检查并标注 App Store 地区订阅价格，以及页面上不同日期的含义。",
+      seoDescription: "了解 GeoSub 如何采集、匹配、检查并标注 App Store 地区订阅价格，以及价格采集、汇率基准、套餐复核和页面更新时间分别代表什么。",
       seoKeywords: "订阅价格数据, App Store 价格, 价格核验, 汇率日期",
+      previousSeoDescriptions: [
+        "了解 GeoSub 如何采集、检查并标注 App Store 地区订阅价格，以及页面上不同日期的含义。",
+      ],
       articleType: "METHODOLOGY",
       sections: [
         {

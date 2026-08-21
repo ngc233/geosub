@@ -129,7 +129,7 @@ const copyByLocale: Record<SiteLocale, CurrencyPairCopy> = {
   zh: {
     title: (from, to, code) => `${from}兑${to}汇率换算（${code}）`,
     description: (from, to, fromCode, toCode) =>
-      `使用定期更新的参考汇率，将${from}（${fromCode}）换算为${to}（${toCode}），并查看常见订阅金额的快速对照。`,
+      `使用定期更新的参考汇率，将${from}（${fromCode}）换算为${to}（${toCode}），查看常见订阅金额、汇率基准时间和实际扣款差异提示。`,
     eyebrow: "精选货币对",
     currentRate: "当前参考汇率",
     examplesTitle: "常见金额换算",

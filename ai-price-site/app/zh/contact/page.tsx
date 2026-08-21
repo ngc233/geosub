@@ -1,6 +1,6 @@
 export const metadata = {
   title: '联系我们',
-  description: '联系 GeoSub，提交数据纠错、功能建议、合作请求或隐私相关问题。',
+  description: '联系 GeoSub 提交订阅价格、税费、地区名称或汇率纠错，也可反馈功能建议、内容与数据合作请求，以及隐私政策相关问题。',
 };
 
 const contactItems = [

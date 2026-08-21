@@ -32,7 +32,7 @@ const currencyConverterCopy: Record<SiteLocale, CurrencyConverterCopy> =
     zh: {
       metadataTitle: "订阅汇率换算器",
       metadataDescription:
-        "使用 GeoSub 定期更新的参考汇率，换算 AI、流媒体和软件订阅的跨币种月费。",
+        "使用 GeoSub 定期更新的参考汇率换算 AI、流媒体和软件订阅月费，查看常见金额的多币种对照、汇率基准时间与实际扣款提示。",
       eyebrow: "订阅实用工具",
       title: "订阅汇率换算器",
       description:

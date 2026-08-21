@@ -77,16 +77,23 @@ test("plan tabs use short labels on narrow screens", () => {
   assert.doesNotMatch(segmentedControl, /rounded-xl/);
 });
 
-test("expandable region rows are client-side and keep a real toggle state", () => {
+test("expandable region rows keep crawlable content behind a native disclosure", () => {
   const source = readComponent("AppleStyleExpandableRows.tsx");
+  const regionTable = readComponent("ExpandableRegionPriceTable.tsx");
+  const affordability = readComponent("AffordabilityComparison.tsx");
 
-  assert.match(source, /"use client"/);
-  assert.match(source, /useState\(false\)/);
-  assert.match(source, /onClick=\{\(\) => setOpen/);
-  assert.match(source, /aria-expanded=\{open\}/);
-  assert.match(source, /\{open \? <div/);
+  assert.doesNotMatch(source, /"use client"/);
+  assert.doesNotMatch(source, /useState/);
+  assert.match(source, /<details className="group">/);
+  assert.match(source, /<summary/);
+  assert.doesNotMatch(source, /\{open \?/);
   assert.match(source, /renderChildren\(\)/);
+  assert.match(source, /group-open:hidden/);
   assert.match(source, /显示更多/);
+  assert.match(regionTable, /function renderRegionSummaryRow|const renderRegionSummaryRow/);
+  assert.match(regionTable, /renderChildren=\{\(\) => hiddenRegions\.map[\s\S]*renderRegionSummaryRow/);
+  assert.match(affordability, /function AffordabilitySummaryRow/);
+  assert.match(affordability, /renderChildren=\{\(\) => hiddenRows\.map[\s\S]*<AffordabilitySummaryRow/);
 });
 
 test("region table subscription conditions and tax hints use site styled tooltips", () => {
