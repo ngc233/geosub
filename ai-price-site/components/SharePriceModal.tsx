@@ -31,6 +31,9 @@ export default function SharePriceModal({
   locale = 'zh',
 }: SharePriceModalProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const text = shareCopy[locale];
   const [copyText, setCopyText] = useState(text.copyLink);
@@ -59,9 +62,51 @@ export default function SharePriceModal({
       return;
     }
 
+    const previouslyFocusedElement = document.activeElement;
+    const triggerElement = triggerRef.current;
+    const previousBodyOverflow = document.body.style.overflow;
+    const focusFrame = window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => !element.hasAttribute('hidden'));
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialogRef.current.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (!dialogRef.current.contains(activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? lastElement : firstElement).focus();
+        return;
+      }
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -69,8 +114,14 @@ export default function SharePriceModal({
     document.body.style.overflow = 'hidden';
 
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousBodyOverflow;
+      if (previouslyFocusedElement instanceof HTMLElement) {
+        previouslyFocusedElement.focus();
+      } else {
+        triggerElement?.focus();
+      }
     };
   }, [open]);
 
@@ -132,6 +183,7 @@ export default function SharePriceModal({
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         data-track-event="open_share_modal"
@@ -153,6 +205,8 @@ export default function SharePriceModal({
           onClick={() => setOpen(false)}
         >
           <div
+            ref={dialogRef}
+            tabIndex={-1}
             className="relative w-full max-w-[460px] overflow-hidden rounded-2xl bg-white shadow-2xl shadow-zinc-950/25"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
@@ -160,6 +214,7 @@ export default function SharePriceModal({
             aria-label={text.dialogLabel}
           >
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={() => setOpen(false)}
               className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-zinc-500 shadow-sm ring-1 ring-zinc-200/80 transition-colors hover:bg-zinc-100 hover:text-zinc-950"

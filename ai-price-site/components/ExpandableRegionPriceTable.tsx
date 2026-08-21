@@ -1385,11 +1385,10 @@ export default function ExpandableRegionPriceTable({
               hiddenCount={hiddenRegions.length}
               showLabel={copy.showMore(hiddenRegions.length)}
               hideLabel={copy.collapse}
-            >
-              {hiddenRegions.map((region, index) =>
+              renderChildren={() => hiddenRegions.map((region, index) =>
                 renderRegionRow(region, initialVisibleCount + index + 1),
               )}
-            </AppleStyleExpandableRows>
+            />
           </>
         )}
       </div>

@@ -54,6 +54,7 @@ test("mobile product switcher closes outside and uses current dropdown radius", 
   assert.match(source, /event\.key === "Escape"/);
   assert.match(source, /role="menu"/);
   assert.match(source, /role="menuitem"/);
+  assert.match(source, /\{open \? <div/);
   assert.doesNotMatch(source, /rounded-3xl/);
   assert.doesNotMatch(source, /rounded-2xl/);
   assert.doesNotMatch(source, /rounded-xl/);
@@ -83,6 +84,8 @@ test("expandable region rows are client-side and keep a real toggle state", () =
   assert.match(source, /useState\(false\)/);
   assert.match(source, /onClick=\{\(\) => setOpen/);
   assert.match(source, /aria-expanded=\{open\}/);
+  assert.match(source, /\{open \? <div/);
+  assert.match(source, /renderChildren\(\)/);
   assert.match(source, /显示更多/);
 });
 
@@ -115,6 +118,9 @@ test("share modal keeps the generated card as the primary preview", () => {
 
   assert.match(source, /role="dialog"/);
   assert.match(source, /aria-modal="true"/);
+  assert.match(source, /closeButtonRef\.current\?\.focus\(\)/);
+  assert.match(source, /event\.key !== 'Tab'/);
+  assert.match(source, /previouslyFocusedElement\.focus\(\)/);
   assert.match(source, /ref=\{cardRef\}/);
   assert.match(source, /toPng\(cardRef\.current/);
   assert.doesNotMatch(source, /marginBottom/);

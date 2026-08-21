@@ -1,5 +1,4 @@
 import type { SiteLocale } from '../lib/site-locale';
-import { withTraditionalChinese } from '../lib/traditional-chinese';
 
 export type ShareCopy = {
   button: string;
@@ -31,7 +30,7 @@ export type ShareCopy = {
   monthlySuffix: string;
 };
 
-export const shareCopy = withTraditionalChinese({
+export const shareCopy = {
   zh: {
     button: '分享价格图',
     dialogLabel: '分享价格图',
@@ -62,6 +61,35 @@ export const shareCopy = withTraditionalChinese({
     comparisonTrail: '。',
     monthlySuffix: '/月',
   },
+  "zh-tw": {
+    button: "分享價格圖",
+    dialogLabel: "分享價格圖",
+    close: "關閉彈窗",
+    global: "全球",
+    cardTitle: (productName) => `${productName} 各地區價格`,
+    planBadge: (planName, referencePrice) => `${planName} 套餐 · 美國基準 ${referencePrice}`,
+    cheapestRegion: "最低價地區",
+    cheaper: "更便宜",
+    usBase: "美國基準",
+    moreExpensive: "更貴",
+    cheapestList: "↓ 最便宜",
+    expensiveList: "↑ 最貴",
+    verifiedAt: (date) => `GeoSub · 資料校驗於 ${date} · geosub.org`,
+    download: "下載 PNG",
+    downloading: "正在生成...",
+    copyLink: "複製連結",
+    copied: "已複製",
+    copyFailed: "複製失敗",
+    shareText: (planName, low, high, spread) => `${planName} 全球訂閱價格對比：最低 ${low}，最高 ${high}，價差 ${spread}%。`,
+    mapAria: (planName) => `${planName} 分享地圖`,
+    shareTo: (platform) => `分享到 ${platform}`,
+    diffAbove: (percent) => `比美國貴 ${percent}%`,
+    diffBelow: (percent) => `比美國便宜 ${percent}%`,
+    diffSame: "與美國價格相同",
+    comparisonLead: (lowest, highest) => `${lowest} 與 ${highest} 的價格差約 `,
+    comparisonTrail: "。",
+    monthlySuffix: "/月",
+},
   en: {
     button: 'Share price card',
     dialogLabel: 'Share price card',
@@ -311,4 +339,4 @@ export const shareCopy = withTraditionalChinese({
     diffSame: 'Mesmo preço dos EUA', comparisonLead: (l,h) => `A diferença entre ${l} e ${h} é de cerca de `,
     comparisonTrail: '.', monthlySuffix: '/mês',
   },
-} satisfies Record<Exclude<SiteLocale, "zh-tw">, ShareCopy>);
+} satisfies Record<SiteLocale, ShareCopy>;

@@ -14,7 +14,6 @@ import {
   type PreparedSiteLocale,
   type SiteLocale,
 } from "../lib/site-locale";
-import { withTraditionalChinese } from "../lib/traditional-chinese";
 import GlobalSearch from "./GlobalSearch";
 
 export type NavChild = {
@@ -33,7 +32,7 @@ export type NavItem = {
 };
 
 const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
-  withTraditionalChinese({
+  {
   zh: [
     { name: "首页", href: "/", match: ["/"] },
     {
@@ -77,6 +76,49 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
     },
     { name: "数据来源", href: "/data-sources", match: ["/data-sources"] },
   ],
+  "zh-tw": [
+    { name: "首頁", href: "/", match: ["/"] },
+    {
+        name: "數字訂閱",
+        href: "/ai-pricing",
+        match: ["/ai-pricing", "/streaming-pricing"],
+        children: [
+            {
+                name: "AI 訂閱",
+                href: "/ai-pricing",
+                description: "比較 ChatGPT、Claude、Gemini 等 AI 服務訂閱價格。",
+            },
+            {
+                name: "流媒體",
+                href: "/streaming-pricing",
+                description: "比較 Netflix、YouTube Premium、Spotify 等內容訂閱價格。",
+            },
+        ],
+    },
+    {
+        name: "訂閱指南",
+        href: "/guides",
+        match: ["/guides", "/articles"],
+        children: [
+            {
+                name: "全部指南",
+                href: "/guides",
+                description: "檢視訂閱、支付、帳號和價格方法論內容。",
+            },
+            {
+                name: "價格指南",
+                href: "/guides/price-guide",
+                description: "瞭解地區價格差異、匯率、稅費和購買決策。",
+            },
+            {
+                name: "支付與帳號",
+                href: "/guides/payment-account",
+                description: "跨區支付、帳號註冊和訂閱注意事項。",
+            },
+        ],
+    },
+    { name: "資料來源", href: "/data-sources", match: ["/data-sources"] },
+],
   en: [
     { name: "Home", href: "/", match: ["/"] },
     {
@@ -288,7 +330,7 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
     { name: "Guias", href: "/guides", match: ["/guides", "/articles"] },
     { name: "Fontes de dados", href: "/data-sources", match: ["/data-sources"] },
   ],
-  });
+  };
 
 const languages = supportedSiteLocales.map((code) => ({
   code,
@@ -306,7 +348,7 @@ const headerCopy: Record<
     closeMenuLabel: string;
     currentSectionLabel: string;
   }
-> = withTraditionalChinese({
+> = {
   zh: {
     home: "首页",
     homeLinkLabel: "GeoSub 首页",
@@ -315,6 +357,14 @@ const headerCopy: Record<
     closeMenuLabel: "关闭菜单",
     currentSectionLabel: "当前栏目：",
   },
+  "zh-tw": {
+    home: "首頁",
+    homeLinkLabel: "GeoSub 首頁",
+    primaryNavigationLabel: "主導航",
+    openMenuLabel: "開啟選單",
+    closeMenuLabel: "關閉選單",
+    currentSectionLabel: "當前欄目：",
+},
   en: {
     home: "Home",
     homeLinkLabel: "GeoSub home",
@@ -395,7 +445,7 @@ const headerCopy: Record<
     closeMenuLabel: "Fechar menu",
     currentSectionLabel: "Secção atual:",
   },
-});
+};
 
 function shouldHideNavigationHref(href: string) {
   return shouldHideFromPublicNavigation(stripSiteLocale(normalizePath(href)));

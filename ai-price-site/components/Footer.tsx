@@ -17,7 +17,6 @@ import {
   type PreparedSiteLocale,
   type SiteLocale,
 } from "../lib/site-locale";
-import { withTraditionalChinese } from "../lib/traditional-chinese";
 
 const footerCopy: Record<
   PreparedSiteLocale,
@@ -29,7 +28,7 @@ const footerCopy: Record<
     tagline: string;
     converterLabel: string;
   }
-> = withTraditionalChinese({
+> = {
   zh: {
     description:
       "GeoSub 比较 AI 与流媒体订阅在不同国家和地区的公开价格，并提供汇率、税费与购买力信息。",
@@ -39,6 +38,14 @@ const footerCopy: Record<
     tagline: "全球数字订阅价格数据",
     converterLabel: "订阅汇率换算器",
   },
+  "zh-tw": {
+    description: "GeoSub 比較 AI 與流媒體訂閱在不同國家和地區的公開價格，並提供匯率、稅費與購買力資訊。",
+    independence: "GeoSub 是獨立比較服務，與頁面所列品牌不存在隸屬、贊助或背書關係。",
+    rights: "保留所有權利。",
+    note: "價格與可用性可能隨地區、匯率、稅費和平台政策變化，請以官方結算頁為準。",
+    tagline: "全球數字訂閱價格資料",
+    converterLabel: "訂閱匯率換算器",
+},
   en: {
     description:
       "GeoSub compares public AI and streaming subscription prices across countries, with exchange-rate, tax and affordability context.",
@@ -130,7 +137,7 @@ const footerCopy: Record<
     tagline: "Preços de assinaturas digitais no mundo",
     converterLabel: "Conversor de moedas para assinaturas",
   },
-});
+};
 
 function shouldHideHref(href: string) {
   return shouldHideFromPublicNavigation(stripSiteLocale(href));

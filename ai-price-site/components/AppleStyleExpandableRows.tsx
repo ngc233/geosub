@@ -1,19 +1,18 @@
 "use client";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { ReactNode } from "react";
 import { useState } from "react";
 
 type Props = {
   hiddenCount: number;
-  children: ReactNode;
+  renderChildren: () => React.ReactNode;
   showLabel?: string;
   hideLabel?: string;
 };
 
 export default function AppleStyleExpandableRows({
   hiddenCount,
-  children,
+  renderChildren,
   showLabel,
   hideLabel = "收起地区列表",
 }: Props) {
@@ -37,15 +36,9 @@ export default function AppleStyleExpandableRows({
         </button>
       </div>
 
-      <div
-        className={[
-          "grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-        ].join(" ")}
-        aria-hidden={!open}
-      >
-        <div className="min-h-0">{children}</div>
-      </div>
+      {open ? <div className="grid grid-rows-[1fr] overflow-hidden opacity-100">
+        <div className="min-h-0">{renderChildren()}</div>
+      </div> : null}
     </div>
   );
 }

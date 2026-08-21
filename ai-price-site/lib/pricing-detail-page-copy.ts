@@ -2,7 +2,6 @@ import { formatUsd, type PlanStats } from "./public-pricing-model";
 import { getPlanDisplayName } from "./pricing-labels";
 import type { PricingFaq } from "./pricing-seo";
 import type { PreparedSiteLocale } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese";
 
 type StaticDetailCopy = {
   metadataFallbackTitle: string;
@@ -22,7 +21,7 @@ type StaticDetailCopy = {
   };
 };
 
-const staticDetailCopy = withTraditionalChinese({
+const staticDetailCopy = {
   zh: {
     metadataFallbackTitle: "订阅价格详情",
     backToPricing: "← 返回订阅价格列表",
@@ -41,6 +40,23 @@ const staticDetailCopy = withTraditionalChinese({
       conditionValue: "通过审核后发布",
     },
   },
+  "zh-tw": {
+    metadataFallbackTitle: "訂閱價格詳情",
+    backToPricing: "← 返回訂閱價格列表",
+    visitOfficial: "訪問官方網站 ↗",
+    plans: "套餐",
+    faqTitle: (productName) => `${productName} 訂閱價格常見問題`,
+    empty: {
+        eyebrow: "價格待稽核",
+        title: (productName, planName) => `${productName} ${planName} 價格正在稽核`,
+        description: "該套餐暫時沒有足夠的已核驗地區價格。價格通過來源、幣種、週期和一致性檢查後，本頁才會展示地區排名、地圖和購買力對比。",
+        status: "當前狀態",
+        statusValue: "待稽核",
+        source: "資料來源",
+        condition: "展示條件",
+        conditionValue: "通過稽核後釋出",
+    },
+},
   en: {
     metadataFallbackTitle: "Pricing Detail",
     backToPricing: "← Back to pricing list",
@@ -199,10 +215,7 @@ const staticDetailCopy = withTraditionalChinese({
       condition: "Condição de publicação", conditionValue: "Publicado após verificação",
     },
   },
-} satisfies Record<
-  Exclude<PreparedSiteLocale, "zh-tw">,
-  StaticDetailCopy
->);
+} satisfies Record<PreparedSiteLocale, StaticDetailCopy>;
 
 function getPageTitle(
   locale: PreparedSiteLocale,
@@ -210,8 +223,9 @@ function getPageTitle(
   planName: string,
 ) {
   const name = getPlanDisplayName(productName, planName);
-  const templates: Record<PreparedSiteLocale, string> = withTraditionalChinese({
+  const templates: Record<PreparedSiteLocale, string> = {
     zh: `${name} 全球价格对比`,
+    "zh-tw": `${name} 全球價格對比`,
     en: `${name} Price by Country`,
     ja: `${name} 世界の料金比較`,
     ko: `${name} 전 세계 가격 비교`,
@@ -222,14 +236,15 @@ function getPageTitle(
     it: `Confronto mondiale dei prezzi di ${name}`,
     de: `${name}: weltweiter Preisvergleich`,
     pt: `Comparação mundial dos preços de ${name}`,
-  });
+  };
   return templates[locale];
 }
 
 function getDescription(locale: PreparedSiteLocale, productName: string) {
   const descriptions: Record<PreparedSiteLocale, string> =
-    withTraditionalChinese({
+    {
     zh: `按套餐和地区比较 ${productName} 在 App Store 的公开订阅价格，并结合当前显示币种、税费和购买力理解真实成本。`,
+    "zh-tw": `按套餐和地區比較 ${productName} 在 App Store 的公開訂閱價格，並結合當前顯示幣種、稅費和購買力理解真實成本。`,
     en: `Compare ${productName} public App Store subscription prices by plan and region, with localized currency, tax and purchasing-power context.`,
     ja: `${productName} のApp Store公開料金をプラン・地域別に比較し、表示通貨、税金、現地の購買力を含めて実質的な負担を確認できます。`,
     ko: `${productName}의 App Store 공개 구독 가격을 요금제와 지역별로 비교하고 표시 통화, 세금, 현지 구매력을 함께 확인하세요.`,
@@ -240,7 +255,7 @@ function getDescription(locale: PreparedSiteLocale, productName: string) {
     it: `Confronta i prezzi pubblici App Store di ${productName} per piano e regione, considerando la valuta visualizzata, le imposte e il potere d’acquisto locale.`,
     de: `Vergleichen Sie die öffentlichen App-Store-Preise von ${productName} nach Tarif und Region unter Berücksichtigung der Anzeigewährung, Steuern und lokalen Kaufkraft.`,
     pt: `Compare os preços públicos da App Store de ${productName} por plano e região, considerando a moeda apresentada, os impostos e o poder de compra local.`,
-    });
+    };
   return descriptions[locale];
 }
 
@@ -256,7 +271,7 @@ function getFaqs(
   const lowestPrice = stats ? formatUsd(stats.minRegion.priceUsd) : null;
 
   const faqByLocale: Record<PreparedSiteLocale, PricingFaq[]> =
-    withTraditionalChinese({
+    {
     zh: [
       {
         q: `截至 ${year} 年，${name} 哪个地区价格最低？`,
@@ -281,6 +296,30 @@ function getFaqs(
         a: "GeoSub 会定期重新核验已发布价格，并分别标注价格采集日期、汇率日期、套餐复核日期和页面更新时间。平台刚刚调价时，页面需要通过一致性检查后才会更新。",
       },
     ],
+    "zh-tw": [
+    {
+        q: `截至 ${year} 年，${name} 哪個地區價格最低？`,
+        a: lowestCountry
+            ? `按本頁最近核驗的 App Store 價格，${lowestCountry}當前最低，美元折算約 ${lowestPrice}/月。價格可能隨平台定價、稅費和匯率變化，請同時檢視頁面標註日期，並以官方結算價為準。`
+            : "本頁會在取得足夠的已核驗地區價格後顯示最低價地區。價格可能隨平台定價、稅費和匯率變化，請以頁面標註日期和官方結算價為準。",
+    },
+    {
+        q: `${name} 的顯示價格是否含稅？`,
+        a: "是否含稅取決於地區和平台結算規則。本頁會標註已知的 VAT、GST、銷售稅或待核驗狀態；銀行換匯費和結算時新增的稅費可能不在展示價格中，最終以官方結算頁為準。",
+    },
+    {
+        q: `我可以直接購買最便宜地區的 ${name} 嗎？`,
+        a: "不一定。能否訂閱通常取決於 Apple ID 地區、付款方式、帳單資訊、當地可用性和平台風控。GeoSub 用於比較公開價格，不建議通過虛假資料或違反平台規則的方式跨區訂閱。",
+    },
+    {
+        q: `${productName} 在不同地區為什麼價格不同？`,
+        a: "地區價格會受到本地定價策略、稅費、匯率、市場定位和購買力差異影響。美元折算價用於橫向比較，但不代表平台僅按即時匯率換算各地價格。",
+    },
+    {
+        q: `${name} 地區價格多久更新一次？`,
+        a: "GeoSub 會定期重新核驗已釋出價格，並分別標註價格採集日期、匯率日期、套餐複核日期和頁面更新時間。平台剛剛調價時，頁面需要通過一致性檢查後才會更新。",
+    },
+],
     en: [
       {
         q: `Which region has the lowest ${name} price in ${year}?`,
@@ -453,7 +492,7 @@ function getFaqs(
       { q: `Porque é que ${productName} custa mais em algumas regiões?`, a: "Estratégias locais de preço, impostos, câmbio, posicionamento e poder de compra influenciam o valor. O equivalente em dólares facilita a comparação, mas não significa que a plataforma use apenas o câmbio do dia." },
       { q: `Com que frequência são atualizados os preços regionais de ${name}?`, a: "O GeoSub volta a verificar regularmente os preços publicados e distingue a data de recolha, a data do câmbio, a revisão do plano e a atualização da página. As alterações só são publicadas após os controlos de coerência." },
     ],
-    });
+    };
 
   return faqByLocale[locale];
 }

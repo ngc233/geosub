@@ -106,6 +106,7 @@ test("country page metadata and sitemap share the approval decision", () => {
   );
   assert.match(page, /isCountryPagePilotIndexApproved\(pilot\)/);
   assert.match(page, /getCountryPagePilotLanguageAlternates\(pilot\)/);
+  assert.match(page, /!exchangeRate\.isExpired/);
   assert.match(page, /robots:\s*\{\s*index:\s*indexApproved,\s*follow:\s*true\s*\}/);
   assert.match(page, /title:\s*pilot\.title\[locale\]/);
   assert.doesNotMatch(page, /title:\s*`\$\{pilot\.title\[locale\]\}/);

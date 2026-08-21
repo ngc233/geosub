@@ -1,5 +1,4 @@
 import type { PreparedSiteLocale } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese.ts";
 
 type TaxNoteCopy = {
   include: (label: string, usually: boolean) => string;
@@ -19,7 +18,7 @@ type TaxNoteCopy = {
   terms: Record<string, string>;
 };
 
-const taxNoteCopy = withTraditionalChinese({
+const taxNoteCopy = {
   zh: {
     include: (label, usually) => (usually ? `通常含 ${label}` : `含 ${label}`),
     provinceVaries: (detail) =>
@@ -43,6 +42,28 @@ const taxNoteCopy = withTraditionalChinese({
       "by region": "因地区不同",
     },
   },
+  "zh-tw": {
+    include: (label, usually) => (usually ? `通常含 ${label}` : `含 ${label}`),
+    provinceVaries: (detail) => detail ? `各省 ${detail} GST/HST 不同` : "各省 GST/HST 不同",
+    stateIcsmVaries: "州稅（ICMS）不同",
+    stateSalesTaxVaries: "各州銷售稅不同",
+    regionalSalesTaxVaries: "銷售稅因地區不同",
+    vatNeedsReview: "VAT 規則需複核",
+    usuallyGstInclusive: "通常已含 GST，最終以結算頁為準",
+    usuallyVatInclusive: "通常已含 VAT，最終以結算頁為準",
+    appStoreGstInclusive: "App Store 標價通常已含 GST，最終以結算頁為準",
+    appStoreVatInclusive: "App Store 標價通常已含 VAT，最終以結算頁為準",
+    digitalServiceTaxVaries: "數字服務稅務規則可能隨服務類別變化，最終以結算頁為準",
+    noCountryProfile: "未匹配到國家稅率資料；最終以 App Store 結算頁為準",
+    checkoutApplies: "最終以結算頁為準",
+    unknown: "稅務規則因地區而異，最終以 App Store 結算頁為準",
+    terms: {
+        "consumption tax": "消費稅",
+        "service tax": "服務稅",
+        "sales tax": "銷售稅",
+        "by region": "因地區不同",
+    },
+},
   ja: {
     include: (label, usually) => (usually ? `通常は${label}込み` : `${label}込み`),
     provinceVaries: (detail) =>
@@ -242,9 +263,9 @@ const taxNoteCopy = withTraditionalChinese({
     terms: { "consumption tax": "imposto sobre o consumo", "service tax": "imposto sobre serviços", "sales tax": "imposto sobre vendas", "by region": "por região" },
   },
 } satisfies Record<
-  Exclude<PreparedSiteLocale, "en" | "zh-tw">,
+  Exclude<PreparedSiteLocale, "en">,
   TaxNoteCopy
->);
+>;
 
 function localizeIncludedLabel(label: string, copy: TaxNoteCopy) {
   return Object.entries(copy.terms).reduce(

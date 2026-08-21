@@ -3,6 +3,7 @@
 const { createHash } = require("node:crypto");
 const { mkdir, writeFile } = require("node:fs/promises");
 const { resolve } = require("node:path");
+const sharp = require("sharp");
 
 const products = [
   { slug: "anghami", appStoreId: "545395155", expectedName: /Anghami/i },
@@ -45,6 +46,7 @@ const products = [
 
 const projectRoot = resolve(__dirname, "..");
 const outputDirectory = resolve(projectRoot, "public", "brand-assets");
+const thumbnailDirectory = resolve(outputDirectory, "thumbs");
 const manifestPath = resolve(projectRoot, "data", "product-brand-assets.json");
 const reviewedAt = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Singapore",
@@ -116,6 +118,7 @@ async function main() {
   }
 
   await mkdir(outputDirectory, { recursive: true });
+  await mkdir(thumbnailDirectory, { recursive: true });
   const manifest = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
@@ -127,6 +130,10 @@ async function main() {
     const { product, result, extension, buffer, contentType } = download;
     const filename = `${product.slug}.${extension}`;
     await writeFile(resolve(outputDirectory, filename), buffer);
+    await sharp(buffer)
+      .resize(96, 96, { fit: "cover" })
+      .webp({ quality: 82, effort: 6 })
+      .toFile(resolve(thumbnailDirectory, `${product.slug}.webp`));
     manifest.products[product.slug] = {
       path: `/brand-assets/${filename}`,
       sourceClass: "official-app-store-artwork",

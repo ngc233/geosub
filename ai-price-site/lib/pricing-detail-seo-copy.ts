@@ -1,7 +1,6 @@
 import { formatUsd, type PlanStats } from "./public-pricing-model";
 import { getPlanDisplayName } from "./pricing-labels";
 import type { SiteLocale } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese";
 
 type SeoTemplate = {
   title: (name: string, year: number) => string;
@@ -14,7 +13,7 @@ type SeoTemplate = {
   fallbackDescription: (name: string) => string;
 };
 
-const seoTemplates = withTraditionalChinese({
+const seoTemplates = {
   zh: {
     title: (name, year) => `${name} 多少钱？各地区价格对比（${year}）`,
     description: (name, regionCount, lowestCountry, lowestPrice) =>
@@ -22,6 +21,11 @@ const seoTemplates = withTraditionalChinese({
     fallbackDescription: (name) =>
       `比较 ${name} 在不同国家和地区的 App Store 订阅价格、本地货币、税费、汇率与购买力差异。`,
   },
+  "zh-tw": {
+    title: (name, year) => `${name} 多少錢？各地區價格對比（${year}）`,
+    description: (name, regionCount, lowestCountry, lowestPrice) => `比較 ${regionCount} 個國家和地區的 ${name} App Store 訂閱價格。當前最低約 ${lowestPrice}（${lowestCountry}），並檢視本地價格、稅費、匯率與購買力差異。`,
+    fallbackDescription: (name) => `比較 ${name} 在不同國家和地區的 App Store 訂閱價格、本地貨幣、稅費、匯率與購買力差異。`,
+},
   en: {
     title: (name, year) => `${name} Price by Country (${year})`,
     description: (name, regionCount, lowestCountry, lowestPrice) =>
@@ -92,7 +96,7 @@ const seoTemplates = withTraditionalChinese({
     fallbackDescription: (name) =>
       `Compare o preço da assinatura de ${name} na App Store por país, incluindo preços locais, impostos, câmbio e poder de compra.`,
   },
-} satisfies Record<Exclude<SiteLocale, "zh-tw">, SeoTemplate>);
+} satisfies Record<SiteLocale, SeoTemplate>;
 
 export function getPricingDetailSeoCopy({
   locale,

@@ -2,7 +2,6 @@ import type {
   PreparedSiteLocale,
   SiteLocale,
 } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese";
 
 type PreparedDetailLocale = PreparedSiteLocale | "de" | "fr";
 
@@ -33,7 +32,7 @@ type DetailCopyTemplate = Record<
   }
 >;
 
-const detailCopyTemplates = withTraditionalChinese({
+const detailCopyTemplates = {
   zh: {
     priceOverview: {
       title: "{planName} 全球价格分布概览",
@@ -59,6 +58,27 @@ const detailCopyTemplates = withTraditionalChinese({
       title: "常见问题",
     },
   },
+  "zh-tw": {
+    priceOverview: {
+        title: "{planName} 全球價格分佈概覽",
+        description: "快速檢視當前套餐在不同國家和地區的價格區間、最低價、最高價和相對差異。",
+    },
+    priceHeatmap: {
+        title: "{planName} 全球價格熱力圖",
+        description: "基於國家和地區的分級設色圖，顏色越綠表示相對便宜，黃色接近基準，紅色表示相對更貴；點選或懸停國家可檢視具體價格。",
+    },
+    priceTable: {
+        title: "{planName} 地區價格明細表",
+        description: "按國家和地區展示本地價格、美元折算價、稅費說明和相對美國基準的差異。",
+    },
+    affordability: {
+        title: "{productName} 本地購買力對比",
+        description: "同一訂閱價格在不同收入水平地區的實際負擔不同，本模組用於觀察價格和本地購買力之間的關係。",
+    },
+    faq: {
+        title: "常見問題",
+    },
+},
 
   en: {
     priceOverview: {
@@ -281,10 +301,7 @@ const detailCopyTemplates = withTraditionalChinese({
       title: "الأسئلة الشائعة",
     },
   },
-  } satisfies Record<
-    Exclude<PreparedDetailLocale, "zh-tw">,
-    DetailCopyTemplate
-  >);
+  } satisfies Record<PreparedDetailLocale, DetailCopyTemplate>;
 
 function fillTemplate(template: string, input: DetailCopyInput) {
   return template
@@ -345,7 +362,7 @@ export type DetailMapCopy = {
   perMonth: string;
 };
 
-const detailMapCopy = withTraditionalChinese({
+const detailMapCopy = {
   zh: {
     currentBenchmark: "当前基准",
     covered: "已覆盖",
@@ -374,6 +391,33 @@ const detailMapCopy = withTraditionalChinese({
     closeDetail: "关闭地图详情",
     perMonth: "/mo",
   },
+  "zh-tw": {
+    currentBenchmark: "當前基準",
+    covered: "已覆蓋",
+    none: "暫無",
+    regionsSuffix: "個地區",
+    noUsBenchmarkNotice: "當前套餐暫缺美國價格，地圖使用已收錄的最低價地區作為比較基準，並在圖中明確標註。",
+    zoomOutAria: "縮小地圖",
+    resetAria: "重置地圖",
+    zoomInAria: "放大地圖",
+    mapAria: (planName) => `${planName} 全球價格熱力圖`,
+    noPriceData: "暫無價格資料",
+    sameAsBenchmark: "與基準價格相同",
+    moreExpensive: (percent) => `比基準貴 ${percent}%`,
+    cheaper: (percent) => `比基準便宜 ${Math.abs(percent)}%`,
+    localPrice: "本地價格",
+    tax: "稅費",
+    noRegionPrice: "當前暫無該地區價格資料。",
+    cheaperLegend: "更便宜",
+    benchmarkLegend: "接近基準",
+    expensiveLegend: "更貴",
+    lowest: "當前最低價",
+    highest: "當前最高價",
+    reference: "當前基準",
+    recorded: "已收錄地區",
+    closeDetail: "關閉地圖詳情",
+    perMonth: "/mo",
+},
 
   en: {
     currentBenchmark: "Benchmark",
@@ -630,10 +674,7 @@ const detailMapCopy = withTraditionalChinese({
     closeDetail: "إغلاق تفاصيل الخريطة",
     perMonth: "/شهر",
   },
-  } satisfies Record<
-    Exclude<PreparedDetailLocale, "zh-tw">,
-    DetailMapCopy
-  >);
+  } satisfies Record<PreparedDetailLocale, DetailMapCopy>;
 
 export function getDetailMapCopy(locale: DetailLocale): DetailMapCopy {
   return detailMapCopy[locale];
@@ -668,7 +709,7 @@ export type DetailTableCopy = {
   clearlyHigh: string;
 };
 
-const detailTableCopy = withTraditionalChinese({
+const detailTableCopy = {
   zh: {
     rank: "#",
     region: "地区",
@@ -699,6 +740,35 @@ const detailTableCopy = withTraditionalChinese({
     slightlyHigh: "偏高",
     clearlyHigh: "明显偏高",
   },
+  "zh-tw": {
+    rank: "#",
+    region: "地區",
+    price: "價格",
+    priceHelp: "該地區當前收錄的訂閱價格。主價格為美元折算價，下方為本地幣種價格。",
+    difference: "較美國",
+    differenceHelp: "以美國價格作為基準，展示該地區美元折算價比美國便宜或貴多少。",
+    taxNotes: "稅費 / 說明",
+    taxNotesHelp: "顯示該地區稅費、VAT、GST 或其他可能影響最終結算價的說明。",
+    judgement: "價格判斷",
+    judgementHelp: "根據相對美國基準價的差異，將地區劃分為低價區、接近基準、中高價或高價區。",
+    helpAriaSuffix: "說明",
+    description: (visibleCount, totalCount) => `按美元折算價從低到高排序。預設展示前 ${Math.min(visibleCount, totalCount)} 個地區。`,
+    totalRegions: (totalCount) => `共 ${totalCount} 個地區`,
+    showMore: (count) => `顯示更多 ${count} 個地區`,
+    collapse: "收起地區列表",
+    perMonth: "/mo",
+    localApproxPrefix: "≈",
+    sameAsBenchmark: "與美國相同",
+    aboveBenchmark: (percent) => `比美國貴 ${percent}%`,
+    belowBenchmark: (percent) => `比美國低 ${Math.abs(percent)}%`,
+    lowPriceZone: "低價區",
+    nearBenchmark: "接近基準",
+    midHighPrice: "中高價",
+    highPriceZone: "高價區",
+    friendly: "較友好",
+    slightlyHigh: "偏高",
+    clearlyHigh: "明顯偏高",
+},
 
   en: {
     rank: "#",
@@ -977,10 +1047,7 @@ const detailTableCopy = withTraditionalChinese({
     slightlyHigh: "مرتفع قليلًا",
     clearlyHigh: "مرتفع بوضوح",
   },
-  } satisfies Record<
-    Exclude<PreparedDetailLocale, "zh-tw">,
-    DetailTableCopy
-  >);
+  } satisfies Record<PreparedDetailLocale, DetailTableCopy>;
 
 export function getDetailTableCopy(locale: DetailLocale): DetailTableCopy {
   return detailTableCopy[locale];

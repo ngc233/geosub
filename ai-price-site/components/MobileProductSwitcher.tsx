@@ -115,12 +115,7 @@ export default function MobileProductSwitcher({
         </span>
       </button>
 
-      <div
-        className={[
-          "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
-          open ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-        ].join(" ")}
-      >
+      {open ? <div className="mt-3 grid grid-rows-[1fr] opacity-100">
         <div className="min-h-0 overflow-hidden">
           <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm shadow-zinc-950/[0.04] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20" role="menu">
             {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
@@ -160,7 +155,7 @@ export default function MobileProductSwitcher({
             ))}
           </div>
         </div>
-      </div>
+      </div> : null}
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
 } from "simple-icons";
 import {
   getApprovedLocalBrandAsset,
+  getOptimizedBrandAssetPath,
   getSimpleIconCandidates,
 } from "../lib/product-brand-assets";
 
@@ -138,8 +139,10 @@ export default function BrandIcon({
     >
       {approvedLocalAsset && !localAssetFailed ? (
         <img
-          src={approvedLocalAsset.path}
+          src={getOptimizedBrandAssetPath(approvedLocalAsset)}
           alt={product.name ? `${product.name} logo` : ""}
+          width={96}
+          height={96}
           className={
             approvedLocalAsset.displayMode === "app-icon"
               ? "h-full w-full object-cover"

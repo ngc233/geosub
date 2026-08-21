@@ -1,5 +1,4 @@
 import type { SiteLocale } from "./site-locale.ts";
-import { withTraditionalChinese } from "./traditional-chinese.ts";
 import {
   formatUsd,
   getPlanStats,
@@ -73,7 +72,7 @@ export function getProductOverviewPriceFact(
   };
 }
 
-const overviewCopy = withTraditionalChinese({
+const overviewCopy = {
   zh: {
     title: (name, year) => `${name} 套餐价格与最便宜地区（${year}）`,
     description: (name, plans, regions, lowest) =>
@@ -91,6 +90,21 @@ const overviewCopy = withTraditionalChinese({
     priceRange: "美元价格范围",
     viewPlan: "查看地区价格",
   },
+  "zh-tw": {
+    title: (name, year) => `${name} 套餐價格與最便宜地區（${year}）`,
+    description: (name, plans, regions, lowest) => lowest
+        ? `比較 ${name} 的 ${plans} 個訂閱套餐及最多 ${regions} 個國家和地區的 App Store 價格。當前已核驗最低價為 ${lowest.country}的 ${lowest.planName}，約 ${lowest.price}。`
+        : `比較 ${name} 的 ${plans} 個訂閱套餐及最多 ${regions} 個國家和地區的 App Store 價格，檢視各套餐價格範圍、覆蓋地區和獨立地區價格明細。`,
+    heading: "套餐概覽",
+    intro: (name, lowest) => lowest
+        ? `${name} 當前已核驗的最低價來自 ${lowest.country}的 ${lowest.planName}，約 ${lowest.price}。先比較套餐，再進入具體套餐檢視各地區價格、稅費和購買力差異。`
+        : `先比較 ${name} 的套餐，再進入具體套餐檢視各地區價格、稅費和購買力差異。`,
+    monthly: "月付",
+    yearly: "年付",
+    regions: (count) => `${count} 個地區`,
+    priceRange: "美元價格範圍",
+    viewPlan: "檢視地區價格",
+},
   en: {
     title: (name, year) => `${name} Plans & Prices by Country (${year})`,
     description: (name, plans, regions, lowest) =>
@@ -216,7 +230,7 @@ const overviewCopy = withTraditionalChinese({
     priceRange: "Intervalo de preços em USD",
     viewPlan: "Ver preços regionais",
   },
-} satisfies Record<Exclude<SiteLocale, "zh-tw">, OverviewCopy>);
+} satisfies Record<SiteLocale, OverviewCopy>;
 
 export function getPricingProductOverviewCopy({
   locale,

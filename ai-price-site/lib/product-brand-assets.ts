@@ -56,6 +56,11 @@ export function getApprovedLocalBrandAsset(productSlug: string) {
   return approvedLocalBrandAssetRegistry[productSlug.trim().toLowerCase()] || null;
 }
 
+export function getOptimizedBrandAssetPath(asset: ApprovedLocalBrandAsset) {
+  const filename = asset.path.split("/").pop()?.replace(/\.[^.]+$/, ".webp");
+  return `/brand-assets/thumbs/${filename}?v=${asset.sha256.slice(0, 12)}`;
+}
+
 export function getSimpleIconCandidates(productSlug: string) {
   return simpleIconCandidates[productSlug.trim().toLowerCase()] || [];
 }

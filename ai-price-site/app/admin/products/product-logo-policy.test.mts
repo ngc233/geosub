@@ -16,11 +16,14 @@ test("public brand icons use rights-reviewed local sources and deterministic fal
   const policy = readProductFile("..", "..", "..", "lib", "product-brand-assets.ts");
 
   assert.match(brandIcon, /getApprovedLocalBrandAsset/);
+  assert.match(brandIcon, /getOptimizedBrandAssetPath/);
   assert.match(brandIcon, /getSimpleIconCandidates/);
   assert.match(brandIcon, /getInitials/);
   assert.match(brandIcon, /simpleIconRegistry/);
   assert.doesNotMatch(brandIcon, /import \* as icons/);
   assert.match(brandIcon, /loading=\{priority \? "eager" : "lazy"\}/);
+  assert.match(brandIcon, /width=\{96\}/);
+  assert.match(brandIcon, /height=\{96\}/);
   assert.match(brandIcon, /rounded-\[22%\]/);
   assert.match(brandIcon, /aspect-square/);
   assert.match(brandIcon, /h-full w-full object-cover/);
@@ -71,7 +74,11 @@ test("the published baseline has checksum-verified local app icons", () => {
   }
   for (const [slug, asset] of Object.entries(manifest.products)) {
     const file = readFileSync(resolve(projectRoot, "public", asset.path.replace(/^\//, "")));
+    const thumbnail = readFileSync(
+      resolve(projectRoot, "public", "brand-assets", "thumbs", `${slug}.webp`),
+    );
     assert.equal(createHash("sha256").update(file).digest("hex"), asset.sha256, slug);
+    assert.ok(thumbnail.byteLength < file.byteLength, `${slug} thumbnail is not smaller`);
     assert.equal(asset.displayMode, "app-icon", slug);
   }
 });

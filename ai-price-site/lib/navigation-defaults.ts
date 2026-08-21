@@ -3,7 +3,6 @@ import {
   isPreparedSiteLocale,
   type PreparedSiteLocale,
 } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese";
 
 export type DefaultNavigationChild = {
   label: string;
@@ -22,7 +21,7 @@ type DefaultNavigationMap = Record<
 >;
 
 export const defaultNavigationItems: DefaultNavigationMap =
-  withTraditionalChinese({
+  {
   zh: {
     header: [
       { label: "首页", href: "/zh" },
@@ -75,6 +74,58 @@ export const defaultNavigationItems: DefaultNavigationMap =
       },
     ],
   },
+  "zh-tw": {
+    header: [
+        { label: "首頁", href: "/zh-tw" },
+        {
+            label: "數字訂閱",
+            href: "/zh-tw/ai-pricing",
+            children: [
+                { label: "AI 訂閱", href: "/zh-tw/ai-pricing" },
+                { label: "流媒體", href: "/zh-tw/streaming-pricing" },
+            ],
+        },
+        { label: "訂閱指南", href: "/zh-tw/guides" },
+        { label: "資料來源", href: "/zh-tw/data-sources" },
+    ],
+    footer: [
+        {
+            label: "價格資料",
+            href: "/zh-tw/ai-pricing",
+            children: [
+                { label: "AI 訂閱價格", href: "/zh-tw/ai-pricing" },
+                { label: "流媒體價格", href: "/zh-tw/streaming-pricing" },
+            ],
+        },
+        {
+            label: "指南",
+            href: "/zh-tw/guides",
+            children: [
+                { label: "全部指南", href: "/zh-tw/guides" },
+                { label: "價格指南", href: "/zh-tw/guides/price-guide" },
+                { label: "支付與帳號", href: "/zh-tw/guides/payment-account" },
+                { label: "方法論", href: "/zh-tw/guides/methodology" },
+            ],
+        },
+        {
+            label: "站點",
+            href: "/zh-tw/about",
+            children: [
+                { label: "關於 GeoSub", href: "/zh-tw/about" },
+                { label: "資料來源", href: "/zh-tw/data-sources" },
+                { label: "聯絡我們", href: "/zh-tw/contact" },
+            ],
+        },
+        {
+            label: "政策",
+            href: "/zh-tw/privacy",
+            children: [
+                { label: "隱私政策", href: "/zh-tw/privacy" },
+                { label: "服務條款", href: "/zh-tw/terms" },
+            ],
+        },
+    ],
+},
   en: {
     header: [
       { label: "Home", href: "/en/" },
@@ -505,7 +556,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
       ] },
     ],
   },
-  });
+  };
 
 export function getDefaultNavigationItems({
   locale,

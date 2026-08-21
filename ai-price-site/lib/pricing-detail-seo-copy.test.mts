@@ -31,10 +31,10 @@ test("pricing detail SEO copy covers every active locale", () => {
     assert.match(source, new RegExp(`\\n  ${locale}: \\{`));
   }
 
-  assert.match(source, /withTraditionalChinese/);
+  assert.match(source, /"zh-tw": \{/);
   assert.match(
     source,
-    /Record<Exclude<SiteLocale, "zh-tw">, SeoTemplate>/,
+    /Record<SiteLocale, SeoTemplate>/,
   );
 });
 

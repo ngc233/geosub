@@ -2,7 +2,6 @@ import { getPublicPricingCopy } from "./public-pricing-copy";
 import {
   type PreparedSiteLocale,
 } from "./site-locale";
-import { toTraditionalChinese } from "./traditional-chinese";
 
 type WidenCopy<T> =
   T extends string
@@ -416,13 +415,7 @@ const preparedPricingListCopy = {
 >;
 
 export function getPricingListCopy(locale: PreparedSiteLocale) {
-  if (locale === "zh-tw") {
-    return toTraditionalChinese(
-      getPublicPricingCopy("zh").listing,
-    ) as PricingListCopy;
-  }
-
-  if (locale === "zh" || locale === "en") {
+  if (locale === "zh" || locale === "zh-tw" || locale === "en") {
     return getPublicPricingCopy(locale).listing as PricingListCopy;
   }
 

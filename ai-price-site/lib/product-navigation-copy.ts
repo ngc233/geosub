@@ -1,5 +1,4 @@
 import type { SiteLocale } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese";
 
 type ProductNavigationCopy = {
   products: string;
@@ -10,7 +9,7 @@ type ProductNavigationCopy = {
 };
 
 const productNavigationCopy: Record<SiteLocale, ProductNavigationCopy> =
-  withTraditionalChinese({
+  {
   zh: {
     products: "产品总览",
     currentProduct: "当前产品",
@@ -18,6 +17,13 @@ const productNavigationCopy: Record<SiteLocale, ProductNavigationCopy> =
     streaming: "流媒体",
     other: "其他",
   },
+  "zh-tw": {
+    products: "產品總覽",
+    currentProduct: "當前產品",
+    ai: "AI 訂閱",
+    streaming: "流媒體",
+    other: "其他",
+},
   en: {
     products: "Products",
     currentProduct: "Current product",
@@ -88,7 +94,7 @@ const productNavigationCopy: Record<SiteLocale, ProductNavigationCopy> =
     streaming: "Streaming",
     other: "Outros",
   },
-  });
+  };
 
 export function getProductNavigationCopy(locale: SiteLocale) {
   return productNavigationCopy[locale];

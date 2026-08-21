@@ -1,5 +1,4 @@
 import type { SiteLocale } from "./site-locale";
-import { withTraditionalChinese } from "./traditional-chinese";
 
 export type CurrencyConverterCopy = {
   metadataTitle: string;
@@ -29,7 +28,7 @@ export type CurrencyConverterCopy = {
 };
 
 const currencyConverterCopy: Record<SiteLocale, CurrencyConverterCopy> =
-  withTraditionalChinese({
+  {
     zh: {
       metadataTitle: "订阅汇率换算器",
       metadataDescription:
@@ -74,6 +73,45 @@ const currencyConverterCopy: Record<SiteLocale, CurrencyConverterCopy> =
         },
       ],
     },
+    "zh-tw": {
+    metadataTitle: "訂閱匯率換算器",
+    metadataDescription: "使用 GeoSub 定期更新的參考匯率，換算 AI、流媒體和軟體訂閱的跨幣種月費。",
+    eyebrow: "訂閱實用工具",
+    title: "訂閱匯率換算器",
+    description: "把海外 AI、流媒體和軟體訂閱價格換算成你熟悉的幣種。匯率通常每 12 小時同步一次，適合估算月費與比較不同地區價格。",
+    amountLabel: "金額與原幣種",
+    amountAria: "需要換算的金額",
+    fromAria: "選擇原幣種",
+    toLabel: "換算為",
+    toAria: "選擇目標幣種",
+    swap: "交換幣種",
+    swapAria: "交換原幣種和目標幣種",
+    approximately: "約等於",
+    invalidAmount: "請輸入有效金額",
+    unavailable: "當前匯率不可用",
+    quickTitle: "常見訂閱金額",
+    quickDescription: "快速檢視常見美元月費檔位的本幣估算。",
+    comparisonTitle: "多幣種快速對照",
+    unavailableShort: "不可用",
+    stale: "當前使用最近一次可用匯率，可能與即時匯率有偏差；下次同步後會自動更新。",
+    rateBasis: "匯率基準",
+    pending: "待同步",
+    resultNote: "結果僅供估算，實際扣款以支付平台為準。",
+    questions: [
+        {
+            question: "匯率多久更新一次？",
+            answer: "GeoSub 通常每 12 小時同步一次參考匯率，並在換算器底部標出當前匯率的基準日期。",
+        },
+        {
+            question: "為什麼實際扣款可能不同？",
+            answer: "銀行卡匯率、支付平台換匯、稅費和結算時間都可能使最終扣款與換算結果略有差異。",
+        },
+        {
+            question: "這個工具適合比較什麼？",
+            answer: "它適合快速換算常見訂閱月費。決定是否訂閱前，還應檢視產品頁上的地區價格、稅務說明和更新時間。",
+        },
+    ],
+},
     en: {
       metadataTitle: "Subscription Currency Converter",
       metadataDescription:
@@ -406,7 +444,7 @@ const currencyConverterCopy: Record<SiteLocale, CurrencyConverterCopy> =
         { question: "Para que serve melhor este conversor?", answer: "Serve para estimar rapidamente uma mensalidade. Antes de subscrever, consulte também os preços regionais, impostos e datas na página do produto." },
       ],
     },
-  });
+  };
 
 export function getCurrencyConverterCopy(locale: SiteLocale) {
   return currencyConverterCopy[locale];

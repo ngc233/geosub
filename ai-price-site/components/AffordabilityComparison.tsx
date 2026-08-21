@@ -12,7 +12,6 @@ import {
   getLocalizedRegionName,
 } from "../lib/locale-format";
 import type { PreparedSiteLocale } from "../lib/site-locale";
-import { withTraditionalChinese } from "../lib/traditional-chinese";
 import ExpandableAffordabilityRows from "./ExpandableAffordabilityRows";
 import {
   DataNote,
@@ -74,7 +73,7 @@ type AffordabilityCopy = {
   collapse: string;
 };
 
-const affordabilityCopy = withTraditionalChinese({
+const affordabilityCopy = {
   zh: {
     times: "倍",
     sectionTitle: (productName: string) => `${productName} 本地购买力对比`,
@@ -117,6 +116,44 @@ const affordabilityCopy = withTraditionalChinese({
     showMore: (count: number) => `显示更多 ${count} 个地区`,
     collapse: "收起地区列表",
   },
+  "zh-tw": {
+    times: "倍",
+    sectionTitle: (productName: string) => `${productName} 本地購買力對比`,
+    sectionDescription: (planName: string) => `把 ${planName} 的月費與當地月均收入放在一起比較，判斷同一筆訂閱在不同地區實際有多重。`,
+    highestBurden: "最難承受",
+    lowestBurden: "最易承受",
+    usBase: "美國基準",
+    highestBurdenHelper: (share: string, times: string) => `佔月收入 ${share} · 美國的 ${times} 倍`,
+    lowestBurdenHelper: (share: string, times: string) => `佔月收入 ${share} · 美國的 ${times} 倍`,
+    usBaseHelper: (share: string) => `佔月收入 ${share} · 記為 1.00 倍`,
+    chartTitle: "本地訂閱負擔排行",
+    chartDescription: "數值越高，代表這筆月費佔當地收入越多。條形中的細線是美國 1.00 倍基準。",
+    pressureFirst: "最難承受",
+    accessibleFirst: "最易承受",
+    rank: "排名",
+    region: "地區",
+    monthlyFee: "月費",
+    burden: "本地負擔",
+    usBenchmark: "美國 1.00 倍",
+    incomeShare: (share: string) => `佔月收入 ${share}`,
+    monthlyIncome: (income: string) => `月均收入約 ${income}`,
+    priceCheaper: (value: number) => `比美國便宜 ${Math.abs(Math.round(value))}%`,
+    priceHigher: (value: number) => `比美國貴 ${Math.abs(Math.round(value))}%`,
+    priceSame: "與美國價格接近",
+    relativeBurden: (value: string) => `美國的 ${value} 倍`,
+    bands: {
+        lighter: "比美國負擔輕",
+        similar: "接近美國",
+        elevated: "負擔偏重",
+        heavy: "負擔較重",
+        severe: "負擔很重",
+    },
+    methodLabel: "怎麼算",
+    method: "月費 ÷ 當地月均收入，再與美國同套餐的收入佔比比較。這個指標用於比較相對壓力，不代表個人實際收入或支付成功率。",
+    dataNote: (metric: string, indicator: string, year: string, checked: string) => `收入指標採用 ${metric}${indicator ? `（${indicator}）` : ""}，收入資料年份為 ${year}，價格檢查時間為 ${checked}。購買力結果用於解釋地區價格壓力，不等同於個人支付能力。`,
+    showMore: (count: number) => `顯示更多 ${count} 個地區`,
+    collapse: "收起地區列表",
+},
   en: {
     times: "×",
     sectionTitle: (productName: string) => `${productName} local affordability`,
@@ -459,10 +496,7 @@ const affordabilityCopy = withTraditionalChinese({
     dataNote: (m,i,y,c) => `Indicador de rendimento: ${m}${i ? ` (${i})` : ""}. Ano dos dados: ${y}. Preço verificado em: ${c}. Os resultados descrevem pressão regional, não capacidade individual de pagamento.`,
     showMore: (c) => `Mostrar mais ${c} regiões`, collapse: "Mostrar menos regiões",
   },
-} satisfies Record<
-  Exclude<PreparedSiteLocale, "zh-tw">,
-  AffordabilityCopy
->);
+} satisfies Record<PreparedSiteLocale, AffordabilityCopy>;
 
 function getAffordabilityCopy(locale: PreparedSiteLocale) {
   return affordabilityCopy[locale];
@@ -797,8 +831,7 @@ export default function AffordabilityComparison({
           hiddenCount={hiddenRows.length}
           showLabel={copy.showMore(hiddenRows.length)}
           hideLabel={copy.collapse}
-        >
-          {hiddenRows.map((row, index) => (
+          renderChildren={() => hiddenRows.map((row, index) => (
             <BurdenRow
               key={`${sortMode}-${row.planSlug}-${row.countryCode}`}
               row={row}
@@ -807,7 +840,7 @@ export default function AffordabilityComparison({
               locale={locale}
             />
           ))}
-        </ExpandableAffordabilityRows>
+        />
       </div>
 
       <div className="border-t border-zinc-100 px-5 py-4 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:px-6">

@@ -272,7 +272,11 @@ export default async function CountryPricingPilotPage({
         </div>
         <div className="border-t border-zinc-200 py-6 sm:border-l sm:border-t-0 sm:px-6 xl:border-l-0 xl:border-r dark:border-zinc-800 dark:xl:border-zinc-800">
           <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400">{copy.fx}</div>
-          {exchangeRate && !exchangeRate.isFallback && exchangeRate.rate > 0 && currencyCode ? (
+          {exchangeRate &&
+          !exchangeRate.isFallback &&
+          !exchangeRate.isExpired &&
+          exchangeRate.rate > 0 &&
+          currencyCode ? (
             <>
               <div className="mt-2 font-black text-zinc-950 dark:text-white">
                 1 USD = {formatRate(exchangeRate.rate, locale)} {currencyCode}
