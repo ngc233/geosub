@@ -54,7 +54,7 @@ database volumes, logs, `.next` or `node_modules` into Git or portable archives.
 Remote:  https://github.com/ngc233/geosub.git
 Branch:  codex/v2.9-hardening
 Base:    f00b2c8cea02a53c8f7c2054ac8d1662fdea759b
-Release: the commit containing this handoff
+Release code: f24783d (`fix(seo): improve crawlability and metadata quality`)
 Version: 2.9.0
 ```
 
@@ -161,6 +161,24 @@ large diff because dependencies were re-resolved on Windows. Do not discard
 the lockfile mechanically; first verify that it still matches `package.json`
 with `npm ci` and the full gates.
 
+### 4.8 Search crawlability and metadata quality
+
+- Collapsed regional price and affordability rows now remain in server HTML
+  behind native disclosure controls, using compact semantic summary rows rather
+  than duplicating the full interactive row UI.
+- The measured ChatGPT Plus response is about 441 KB decompressed and 44.9 KB
+  gzip locally, while all 39 regional prices remain present in server HTML.
+- Dataset JSON-LD no longer assigns a WebSite node to the Dataset `isPartOf`
+  field. No data-reuse license was invented because the current terms do not
+  grant one.
+- Short static descriptions were expanded where the visible page supports the
+  added detail. Known older CMS guide descriptions now fall back to the reviewed
+  baseline without overriding genuinely edited CMS copy.
+- Chinese and English pricing lists now link directly to every product overview,
+  giving crawlers and visitors a clear list -> product -> plan path.
+- No webmaster settings, indexing requests, sitemap submissions or production
+  data were changed as part of this work.
+
 ## 5. Release Candidate Inventory
 
 The release-candidate areas include:
@@ -207,6 +225,12 @@ The latest complete verification on 2026-08-21 produced:
 - Share-price modal opened and closed correctly; PNG and social actions were
   present.
 - No new console errors were recorded for the production build on port 3010.
+- `npm run preflight:full` passed under Node 22.23.2 against the healthy local
+  PostgreSQL database after the SEO crawlability batch.
+- Sitemap budget passed at 146/148 URLs with zero duplicate URLs and zero staged
+  locale URLs.
+- Desktop 1280 x 720 and mobile 390 x 844 checks passed for the final pricing
+  detail build, with no horizontal overflow or console errors.
 - Admin dashboard cold reads were about 134-165 ms and cached reads were 0-1
   ms; the measured navigation query plan was about 0.13 ms, so no speculative
   query or index change was made.
