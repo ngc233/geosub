@@ -10,6 +10,7 @@ export type ExchangeRateSnapshot = {
   fetchedAt: string | null;
   isFallback: boolean;
   isStale?: boolean;
+  isExpired?: boolean;
 };
 
 type RawExchangeRate = {
@@ -23,6 +24,7 @@ type RawExchangeRate = {
 
 const UNAVAILABLE_USD_CNY_RATE = 0;
 const MAX_FRESH_RATE_AGE_HOURS = 18;
+const MAX_USABLE_RATE_AGE_HOURS = 24 * 7;
 
 function toNumber(value: unknown) {
   if (typeof value === "number") return value;
@@ -55,16 +57,18 @@ function formatDateTime(value: Date | string | null) {
   return String(value);
 }
 
-function isStaleFetchedAt(value: Date | string | null) {
-  if (!value) return true;
+function getRateAgeHours(value: Date | string | null) {
+  if (!value) return Number.POSITIVE_INFINITY;
 
   const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return true;
+  if (Number.isNaN(date.getTime())) return Number.POSITIVE_INFINITY;
 
-  return Date.now() - date.getTime() > MAX_FRESH_RATE_AGE_HOURS * 60 * 60 * 1000;
+  return Math.max(0, Date.now() - date.getTime()) / (60 * 60 * 1000);
 }
 
 function toSnapshot(row: RawExchangeRate, rate: number): ExchangeRateSnapshot {
+  const ageHours = getRateAgeHours(row.fetched_at);
+
   return {
     baseCurrency: row.base_currency,
     quoteCurrency: row.quote_currency,
@@ -73,7 +77,8 @@ function toSnapshot(row: RawExchangeRate, rate: number): ExchangeRateSnapshot {
     rateDate: formatDateOnly(row.rate_date),
     fetchedAt: formatDateTime(row.fetched_at),
     isFallback: false,
-    isStale: isStaleFetchedAt(row.fetched_at),
+    isStale: ageHours > MAX_FRESH_RATE_AGE_HOURS,
+    isExpired: ageHours > MAX_USABLE_RATE_AGE_HOURS,
   };
 }
 
@@ -143,6 +148,7 @@ export async function getLatestExchangeRate(
     fetchedAt: null,
     isFallback: true,
     isStale: true,
+    isExpired: true,
   };
 }
 

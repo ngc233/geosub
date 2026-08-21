@@ -18,6 +18,7 @@ WEB_HEALTH_URL="${GEOSUB_WEB_HEALTH_URL:-http://127.0.0.1:3000/api/health}"
 PUBLIC_SITE_URL="${GEOSUB_PUBLIC_SITE_URL:-https://geosub.org}"
 PUBLIC_WWW_URL="${GEOSUB_PUBLIC_WWW_URL:-https://www.geosub.org/}"
 MAX_SITEMAP_URLS="${GEOSUB_MAX_SITEMAP_URLS:-148}"
+MIN_SITEMAP_URLS="${GEOSUB_MIN_SITEMAP_URLS:-80}"
 MAX_EXCHANGE_RATE_AGE_HOURS="${GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS:-18}"
 REQUIRED_EXCHANGE_RATE_QUOTES="AED,ARS,AUD,BRL,CAD,CHF,CLP,CNY,COP,DKK,EGP,EUR,GBP,HKD,IDR,ILS,INR,JPY,KES,KRW,MXN,MYR,NGN,NOK,NZD,PHP,PKR,PLN,SAR,SEK,SGD,THB,TRY,TWD,VND,ZAR"
 MIN_PUBLISHED_SUBSCRIPTION_USD="${GEOSUB_MIN_PUBLISHED_SUBSCRIPTION_USD:-1}"
@@ -588,11 +589,24 @@ if command -v curl >/dev/null 2>&1; then
       printf '%s' "$sitemap_content" |
         awk -F'<loc>' '{ count += NF - 1 } END { print count + 0 }'
     )"
-    if (( sitemap_url_count > 0 && sitemap_url_count <= MAX_SITEMAP_URLS )); then
-      pass "public sitemap URL budget: ${sitemap_url_count}/${MAX_SITEMAP_URLS}"
+    if (( sitemap_url_count >= MIN_SITEMAP_URLS && sitemap_url_count <= MAX_SITEMAP_URLS )); then
+      pass "public sitemap URL budget: ${sitemap_url_count} (${MIN_SITEMAP_URLS}-${MAX_SITEMAP_URLS})"
     else
-      fail "public sitemap URL budget exceeded or empty: ${sitemap_url_count}/${MAX_SITEMAP_URLS}"
+      fail "public sitemap URL count outside release range: ${sitemap_url_count} (${MIN_SITEMAP_URLS}-${MAX_SITEMAP_URLS})"
     fi
+
+    required_sitemap_urls=(
+      "$PUBLIC_SITE_URL/zh/ai-pricing/chatgpt"
+      "$PUBLIC_SITE_URL/en/ai-pricing/chatgpt"
+      "$PUBLIC_SITE_URL/zh/streaming-pricing/netflix"
+    )
+    for required_sitemap_url in "${required_sitemap_urls[@]}"; do
+      if printf '%s' "$sitemap_content" | grep -Fq "<loc>${required_sitemap_url}</loc>"; then
+        pass "public sitemap dynamic sentinel: $required_sitemap_url"
+      else
+        fail "public sitemap missing dynamic sentinel: $required_sitemap_url"
+      fi
+    done
 
     if printf '%s' "$sitemap_content" |
       grep -Eq '<loc>https://geosub\.org/(zh-tw|ja|ko|es|tr|ar|fr|it|de|pt)(/|<)'; then

@@ -21,6 +21,7 @@ export type ConverterRate = {
   rateDate: string | null;
   fetchedAt: string | null;
   isStale: boolean;
+  isExpired: boolean;
 };
 
 const quickAmounts = [4.99, 9.99, 19.99, 24.99];
@@ -275,7 +276,7 @@ export default function SubscriptionCurrencyConverter({
   );
   const disabledCurrencies = supportedDisplayCurrencies.filter((currency) => {
     const rate = rateMap.get(currency);
-    return !rate || rate.rate <= 0 || rate.isStale;
+    return !rate || rate.rate <= 0 || rate.isExpired;
   });
 
   function convert(

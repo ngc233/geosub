@@ -4,6 +4,7 @@ import { AdminLinkButton } from "@/components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminCard";
 import { evaluateArticleContentQuality } from "@/lib/article-content-quality";
 import { articleStatusLabels, renderArticleMarkdown } from "@/lib/articles";
+import { sanitizeArticleHtml } from "@/lib/content-safety";
 import { prisma } from "@/lib/prisma";
 
 export default async function ArticlePreviewPage({
@@ -47,7 +48,9 @@ export default async function ArticlePreviewPage({
       (relation) => relation.relationType === "RELATED_ARTICLE",
     ).length,
   });
-  const html = article.bodyHtml || renderArticleMarkdown(article.bodyMarkdown);
+  const html = sanitizeArticleHtml(
+    article.bodyHtml || renderArticleMarkdown(article.bodyMarkdown),
+  );
 
   return (
     <div>

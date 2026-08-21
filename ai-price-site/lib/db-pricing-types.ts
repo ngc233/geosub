@@ -23,6 +23,7 @@ export type DbPricingPlan = {
   name: string;
   billingCycle: string;
   indexingStatus: "current" | "legacy";
+  totalRegions?: number;
   regions: DbPricingRegion[];
 };
 

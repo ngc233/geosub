@@ -38,6 +38,8 @@ import {
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
+export const dynamic = "force-dynamic";
+
 type SitemapEntry = MetadataRoute.Sitemap[number];
 
 function absoluteUrl(path: string) {
@@ -461,8 +463,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...countryPageRoutes,
     ]);
   } catch (error) {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        `Sitemap generation failed (${getSitemapFallbackReason(error)}).`,
+      );
+      throw error;
+    }
+
     console.warn(
-      `Sitemap dynamic routes skipped; using static routes only (${getSitemapFallbackReason(error)}).`,
+      `Development sitemap is using static routes only (${getSitemapFallbackReason(error)}).`,
     );
     return staticRoutes;
   }

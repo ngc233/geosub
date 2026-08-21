@@ -27,6 +27,7 @@ function getCachedPricingListProducts(
     () => getDbAiPricingProducts({
       locale,
       categories: [dbCategoryByPublicCategory[category]],
+      compactForListing: true,
     }),
     ["public-pricing-list", locale, category],
     {

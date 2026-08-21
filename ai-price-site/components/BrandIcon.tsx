@@ -2,7 +2,26 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useState, type SVGProps } from "react";
-import * as icons from "simple-icons";
+import {
+  siAnthropic,
+  siApplemusic,
+  siClaude,
+  siCrunchyroll,
+  siDeepseek,
+  siDeezer,
+  siElevenlabs,
+  siGooglegemini,
+  siHbomax,
+  siMax,
+  siMeta,
+  siMistralai,
+  siNetflix,
+  siPerplexity,
+  siPoe,
+  siSpotify,
+  siSuno,
+  siYoutube,
+} from "simple-icons";
 import {
   getApprovedLocalBrandAsset,
   getSimpleIconCandidates,
@@ -18,6 +37,7 @@ type BrandIconProps = {
   };
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
+  priority?: boolean;
 };
 
 type SimpleIcon = {
@@ -34,11 +54,30 @@ const sizeMap = {
   xl: { box: "h-16 w-16", svg: "h-10 w-10", text: "text-lg" },
 };
 
-function getSimpleIcon(productSlug: string): SimpleIcon | null {
-  const iconPack = icons as unknown as Record<string, SimpleIcon | undefined>;
+const simpleIconRegistry: Record<string, SimpleIcon> = {
+  siAnthropic,
+  siApplemusic,
+  siClaude,
+  siCrunchyroll,
+  siDeepseek,
+  siDeezer,
+  siElevenlabs,
+  siGooglegemini,
+  siHbomax,
+  siMax,
+  siMeta,
+  siMistralai,
+  siNetflix,
+  siPerplexity,
+  siPoe,
+  siSpotify,
+  siSuno,
+  siYoutube,
+};
 
+function getSimpleIcon(productSlug: string): SimpleIcon | null {
   for (const name of getSimpleIconCandidates(productSlug)) {
-    const icon = iconPack[name];
+    const icon = simpleIconRegistry[name];
     if (icon?.path) return icon;
   }
 
@@ -84,6 +123,7 @@ export default function BrandIcon({
   product,
   size = "md",
   className = "",
+  priority = false,
 }: BrandIconProps) {
   const [localAssetFailed, setLocalAssetFailed] = useState(false);
   const approvedLocalAsset = getApprovedLocalBrandAsset(product.slug);
@@ -105,7 +145,7 @@ export default function BrandIcon({
               ? "h-full w-full object-cover"
               : "h-[72%] w-[72%] object-contain"
           }
-          loading="eager"
+          loading={priority ? "eager" : "lazy"}
           decoding="async"
           onError={() => setLocalAssetFailed(true)}
         />

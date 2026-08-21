@@ -102,6 +102,7 @@ test("AI and streaming listing routes delegate locale and category to one shared
   assert.match(sharedPage, /unstable_cache/);
   assert.match(sharedPage, /PUBLIC_PRICING_LIST_CACHE_TAG/);
   assert.match(sharedPage, /PUBLIC_PRICING_REVALIDATE_SECONDS/);
+  assert.match(sharedPage, /compactForListing: true/);
 });
 
 test("public pricing responses use a short shared cache without caching query variants", () => {
@@ -127,6 +128,9 @@ test("pricing list query requires published products, plans and prices", () => {
   assert.match(source, /plans:\s*\{\s*some:/);
   assert.match(source, /regionPrices:\s*\{\s*some:/);
   assert.match(source, /getLocalizedCountryName/);
+  assert.match(source, /select:\s*\{/);
+  assert.match(source, /visiblePriceIndexes/);
+  assert.match(source, /totalRegions: sortedPrices\.length/);
   assert.doesNotMatch(source, /countryNameZhMap/);
 });
 

@@ -69,8 +69,9 @@ test("localized exchange-rate fallback never shows a hardcoded estimate", () => 
   assert.doesNotMatch(pricingView, /7\.25/);
   assert.match(
     pricingView,
-    /exchangeRate\.isFallback \|\| exchangeRate\.isStale/,
+    /exchangeRate\.isFallback \|\| exchangeRate\.isExpired/,
   );
+  assert.match(pricingView, /getStaleRateWarning/);
   assert.match(pricingView, /getPricingPlatformCopy\(locale\)/);
   assert.match(pricingCopy, /getPublicPricingCopy\(locale\)\.pricing/);
   assert.match(
@@ -105,6 +106,7 @@ test("exchange-rate freshness is stricter than the public 12-hour refresh window
 
   assert.match(cronRoute, /recommendedSchedule:\s*"Every 12 hours"/);
   assert.match(exchangeRates, /const MAX_FRESH_RATE_AGE_HOURS = 18;/);
+  assert.match(exchangeRates, /const MAX_USABLE_RATE_AGE_HOURS = 24 \* 7;/);
   assert.equal(requiredQuotes.split(",").length, 36);
   assert.match(runtimeCore, /DEFAULT_EXCHANGE_RATE_QUOTES/);
   assert.ok(localCheck.includes(requiredQuotes));

@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, Map } from "lucide-react";
@@ -29,6 +28,9 @@ import {
   supportedDisplayCurrencies,
   type DisplayCurrency,
 } from "../lib/display-currency";
+import SharePriceModal, {
+  type SharePriceProduct,
+} from "./SharePriceModal";
 
 function MapLoadingPlaceholder() {
   return (
@@ -118,14 +120,15 @@ type CurrencyExchangeRate = {
   fetchedAt?: string | null;
   isFallback?: boolean;
   isStale?: boolean;
+  isExpired?: boolean;
 };
 
 type PricingPlatformViewProps = {
   productName: string;
+  shareProduct: SharePriceProduct;
   plan: ProductPlan;
   defaultCurrency: DisplayCurrency;
   exchangeRates: Partial<Record<DisplayCurrency, CurrencyExchangeRate>>;
-  shareAction?: ReactNode;
   locale?: SiteLocale;
 };
 
@@ -238,7 +241,29 @@ function getExchangeRateNote(
     { maximumFractionDigits: 4 },
   )} ${currency}`;
 
-  return suffix ? `${prefix} · ${suffix}` : prefix;
+  const staleWarning = exchangeRate.isStale
+    ? getStaleRateWarning(locale)
+    : null;
+  return [prefix, suffix, staleWarning].filter(Boolean).join(" · ");
+}
+
+function getStaleRateWarning(locale: SiteLocale) {
+  const warnings: Record<SiteLocale, string> = {
+    zh: "当前使用最近一次可用汇率，可能与实时汇率有偏差",
+    "zh-tw": "目前使用最近一次可用匯率，可能與即時匯率有偏差",
+    en: "Using the latest available rate; the live rate may differ",
+    ja: "直近の利用可能なレートを使用中です。現在のレートとは異なる場合があります",
+    ko: "최근 사용 가능한 환율을 적용 중이며 실시간 환율과 다를 수 있습니다",
+    es: "Se usa el último tipo disponible; el tipo actual puede variar",
+    tr: "Son kullanılabilir kur kullanılıyor; güncel kur farklı olabilir",
+    ar: "يُستخدم أحدث سعر متاح وقد يختلف عن السعر الحالي",
+    fr: "Dernier taux disponible utilisé ; le taux actuel peut différer",
+    it: "È usato l'ultimo tasso disponibile; il tasso attuale può variare",
+    de: "Der zuletzt verfügbare Kurs wird verwendet; der aktuelle Kurs kann abweichen",
+    pt: "Está sendo usada a última taxa disponível; a taxa atual pode variar",
+  };
+
+  return warnings[locale];
 }
 
 function formatDisplayPrice(
@@ -482,7 +507,7 @@ function PricingLead({
   const disabledCurrencies = supportedDisplayCurrencies.filter((currency) => {
     const exchangeRate = exchangeRates[currency];
     return Boolean(
-      !exchangeRate || exchangeRate.isFallback || exchangeRate.isStale,
+      !exchangeRate || exchangeRate.isFallback || exchangeRate.isExpired,
     );
   });
   const planDisplayName = getPlanDisplayName(productName, plan.name);
@@ -533,7 +558,14 @@ function PricingLead({
             />
           </div>
 
-          <div className="text-xs leading-5 text-zinc-400 md:text-right">
+          <div
+            className={[
+              "text-xs leading-5 md:text-right",
+              selectedExchangeRate.isStale
+                ? "font-medium text-amber-700 dark:text-amber-300"
+                : "text-zinc-400",
+            ].join(" ")}
+          >
             {displayCurrency !== "USD"
               ? exchangeRateNote
               : displayCurrencyLabel}
@@ -655,14 +687,14 @@ function RankingList({
 
 function PriceDistribution({
   productName,
+  shareProduct,
   plan,
-  shareAction,
   locale,
   formatPrice,
 }: {
   productName: string;
+  shareProduct: SharePriceProduct;
   plan: ProductPlan;
-  shareAction?: ReactNode;
   locale: SiteLocale;
   formatPrice: (value: number) => string;
 }) {
@@ -678,7 +710,14 @@ function PriceDistribution({
         eyebrow={copy.distributionEyebrow}
         title={copy.distributionTitle}
         description={copy.distributionDescription(productName)}
-        actions={shareAction}
+        actions={
+          <SharePriceModal
+            product={shareProduct}
+            plan={plan}
+            stats={getPlanStats(plan)}
+            locale={locale}
+          />
+        }
       />
 
       <div className="p-4 md:p-5">
@@ -711,10 +750,10 @@ function PriceDistribution({
 
 export default function PricingPlatformView({
   productName,
+  shareProduct,
   plan,
   defaultCurrency,
   exchangeRates,
-  shareAction,
   locale = "zh",
 }: PricingPlatformViewProps) {
   const [platform] = useState<PlatformFilter>("ios");
@@ -725,7 +764,7 @@ export default function PricingPlatformView({
     currencyPreference !== "USD" &&
     (!preferredExchangeRate ||
       preferredExchangeRate.isFallback ||
-      preferredExchangeRate.isStale)
+      preferredExchangeRate.isExpired)
       ? "USD"
       : currencyPreference;
   const selectedExchangeRate = exchangeRates[displayCurrency] || {
@@ -740,7 +779,7 @@ export default function PricingPlatformView({
       supportedDisplayCurrencies.filter((currency) => {
         const exchangeRate = exchangeRates[currency];
         return Boolean(
-          !exchangeRate || exchangeRate.isFallback || exchangeRate.isStale,
+          !exchangeRate || exchangeRate.isFallback || exchangeRate.isExpired,
         );
       }),
     [exchangeRates],
@@ -751,7 +790,7 @@ export default function PricingPlatformView({
     if (
       !exchangeRate ||
       exchangeRate.isFallback ||
-      exchangeRate.isStale
+      exchangeRate.isExpired
     ) {
       setCurrencyPreference("USD");
       return;
@@ -798,8 +837,8 @@ export default function PricingPlatformView({
           />
           <PriceDistribution
             productName={productName}
+            shareProduct={shareProduct}
             plan={filteredPlan}
-            shareAction={shareAction}
             locale={locale}
             formatPrice={(value) =>
               formatDisplayPrice(value, displayCurrency, selectedRate, locale)

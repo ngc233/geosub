@@ -24,6 +24,12 @@ type TaxProfileRow = {
   frontend_note_zh: string | null;
   frontend_note_en: string | null;
 };
+type HomepagePricingEvidenceRow = {
+  products: number;
+  regions: number;
+  prices: number;
+  updated_at: Date | null;
+};
 function getProductDescription({
   name,
   locale,
@@ -371,9 +377,13 @@ function getTaxFrontendNote({
 export async function getDbAiPricingProducts({
   locale = "zh",
   categories = [ProductCategory.AI, ProductCategory.STREAMING],
+  productSlugs,
+  compactForListing = false,
 }: {
   locale?: DbPricingLocale;
   categories?: ProductCategory[];
+  productSlugs?: readonly string[];
+  compactForListing?: boolean;
 } = {}) {
   const requestedLocale = locale;
   locale = locale === "zh-tw" ? "zh" : locale;
@@ -384,6 +394,9 @@ export async function getDbAiPricingProducts({
         category: {
           in: categories,
         },
+        ...(productSlugs?.length
+          ? { slug: { in: [...productSlugs] } }
+          : {}),
         status: "PUBLISHED",
         plans: {
           some: {
@@ -400,7 +413,13 @@ export async function getDbAiPricingProducts({
         { sortOrder: "asc" },
         { createdAt: "asc" },
       ],
-      include: {
+      select: {
+        slug: true,
+        name: true,
+        provider: true,
+        category: true,
+        logoUrl: true,
+        updatedAt: true,
         plans: {
           where: {
             status: "PUBLISHED",
@@ -409,7 +428,11 @@ export async function getDbAiPricingProducts({
             { sortOrder: "asc" },
             { createdAt: "asc" },
           ],
-          include: {
+          select: {
+            slug: true,
+            name: true,
+            billingCycle: true,
+            updatedAt: true,
             regionPrices: {
               where: {
                 status: "PUBLISHED",
@@ -417,8 +440,21 @@ export async function getDbAiPricingProducts({
               orderBy: {
                 priceUsd: "asc",
               },
-              include: {
-                country: true,
+              select: {
+                localPrice: true,
+                currency: true,
+                priceUsd: true,
+                taxNote: true,
+                dataQuality: true,
+                lastCheckedAt: true,
+                updatedAt: true,
+                country: {
+                  select: {
+                    code: true,
+                    nameZh: true,
+                    nameEn: true,
+                  },
+                },
               },
             },
           },
@@ -456,7 +492,19 @@ export async function getDbAiPricingProducts({
 
       const displayName = product.name;
 
-      const plans = product.plans
+      const defaultPlan =
+        product.plans.find(
+          (plan) =>
+            getPlanEditorialIndexingStatus(product.slug, plan.slug) ===
+            "current",
+        ) || product.plans[0];
+      const plansToMap = compactForListing
+        ? defaultPlan
+          ? [defaultPlan]
+          : []
+        : product.plans;
+
+      const plans = plansToMap
         .map<DbPricingPlan | null>((plan) => {
           const sortedPrices = [...plan.regionPrices].sort(
             (a, b) => Number(a.priceUsd) - Number(b.priceUsd)
@@ -467,12 +515,19 @@ export async function getDbAiPricingProducts({
           }
 
           const expensiveStart = Math.max(0, sortedPrices.length - 2);
+          const visiblePriceIndexes = compactForListing && sortedPrices.length > 5
+            ? new Set([0, 1, 2, 3, sortedPrices.length - 1])
+            : null;
 
-          const regions = sortedPrices.map<DbPricingRegion>((price, index) => {
+          const regions = sortedPrices.flatMap<DbPricingRegion>((price, index) => {
+            if (visiblePriceIndexes && !visiblePriceIndexes.has(index)) {
+              return [];
+            }
+
             const code = price.country.code.toUpperCase();
             const taxProfile = taxProfileByCountry.get(code);
 
-            return {
+            return [{
               rank: index + 1,
               code,
               countryName: getLocalizedCountryName({
@@ -505,7 +560,7 @@ export async function getDbAiPricingProducts({
               isReference: code === "US",
               isCheap: index <= 2,
               isExpensive: index >= expensiveStart && sortedPrices.length > 3,
-            };
+            }];
           });
 
           return {
@@ -516,6 +571,7 @@ export async function getDbAiPricingProducts({
               product.slug,
               plan.slug,
             ),
+            totalRegions: sortedPrices.length,
             regions,
           };
         })
@@ -551,4 +607,29 @@ export async function getDbAiPricingProducts({
   return requestedLocale === "zh-tw"
     ? toTraditionalChinese(localizedProducts)
     : localizedProducts;
+}
+
+export async function getDbHomepagePricingEvidence() {
+  const [row] = await prisma.$queryRaw<Array<HomepagePricingEvidenceRow>>`
+    SELECT
+      COUNT(DISTINCT p.id)::int AS products,
+      COUNT(DISTINCT rp.country_id)::int AS regions,
+      COUNT(*)::int AS prices,
+      MAX(COALESCE(rp.last_checked_at, rp.updated_at)) AS updated_at
+    FROM region_prices rp
+    JOIN products p ON p.id = rp.product_id
+    JOIN plans pl ON pl.id = rp.plan_id
+    WHERE rp.status = 'published'::publish_status
+      AND p.status = 'published'::publish_status
+      AND pl.status = 'published'::publish_status
+      AND p.category IN ('ai'::product_category, 'streaming'::product_category)
+      AND rp.price_usd > 0
+  `;
+
+  return {
+    products: Number(row?.products || 0),
+    regions: Number(row?.regions || 0),
+    prices: Number(row?.prices || 0),
+    updatedAt: formatDate(row?.updated_at || new Date()),
+  };
 }

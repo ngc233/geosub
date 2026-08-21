@@ -137,6 +137,8 @@ test("Chinese home page describes the current official scope", () => {
   );
 
   assert.match(zhRoute, /getDbAiPricingProducts/);
+  assert.match(zhRoute, /getDbHomepagePricingEvidence/);
+  assert.match(zhRoute, /productSlugs: FEATURED_PRODUCT_SLUGS/);
   assert.match(zhRoute, /unstable_cache/);
   assert.match(zhHome, /别只看标价/);
   assert.match(zhHome, /看清订阅在你所在地的真实成本/);
@@ -157,4 +159,20 @@ test("Chinese home page describes the current official scope", () => {
   assert.match(zhMap, /rx=\{LABEL_HEIGHT \/ 2\}/);
   assert.match(zhHome, /rounded-lg border border-zinc-200/);
   assert.doesNotMatch(zhHome, /grid gap-px border border-zinc-200 bg-zinc-200/);
+});
+
+test("homepage evidence query uses the mapped PostgreSQL enum values", () => {
+  const source = readFileSync(
+    resolve(appDir, "..", "lib", "db-ai-pricing.ts"),
+    "utf8",
+  );
+
+  assert.match(source, /rp\.status = 'published'::publish_status/);
+  assert.match(source, /p\.status = 'published'::publish_status/);
+  assert.match(source, /pl\.status = 'published'::publish_status/);
+  assert.match(
+    source,
+    /p\.category IN \('ai'::product_category, 'streaming'::product_category\)/,
+  );
+  assert.doesNotMatch(source, /status = 'PUBLISHED'/);
 });

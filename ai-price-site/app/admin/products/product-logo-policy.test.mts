@@ -18,6 +18,9 @@ test("public brand icons use rights-reviewed local sources and deterministic fal
   assert.match(brandIcon, /getApprovedLocalBrandAsset/);
   assert.match(brandIcon, /getSimpleIconCandidates/);
   assert.match(brandIcon, /getInitials/);
+  assert.match(brandIcon, /simpleIconRegistry/);
+  assert.doesNotMatch(brandIcon, /import \* as icons/);
+  assert.match(brandIcon, /loading=\{priority \? "eager" : "lazy"\}/);
   assert.match(brandIcon, /rounded-\[22%\]/);
   assert.match(brandIcon, /aspect-square/);
   assert.match(brandIcon, /h-full w-full object-cover/);

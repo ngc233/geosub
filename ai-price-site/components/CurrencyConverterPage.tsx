@@ -16,6 +16,7 @@ import {
   type DisplayCurrency,
 } from "../lib/display-currency";
 import { getLatestUsdExchangeRates } from "../lib/exchange-rates";
+import { serializeJsonLd } from "../lib/json-ld";
 import {
   getLocaleRobotsPolicy,
   isSeoIndexableLocale,
@@ -135,6 +136,7 @@ export async function getConverterRates(): Promise<ConverterRate[]> {
         rateDate: null,
         fetchedAt: null,
         isStale: false,
+        isExpired: false,
       };
     }
 
@@ -146,6 +148,7 @@ export async function getConverterRates(): Promise<ConverterRate[]> {
       rateDate: snapshot?.rateDate || null,
       fetchedAt: snapshot?.fetchedAt || null,
       isStale: !snapshot || Boolean(snapshot.isStale),
+      isExpired: !snapshot || Boolean(snapshot.isExpired),
     };
   });
 }
@@ -231,9 +234,7 @@ export default async function CurrencyConverterPage({
     <main className="min-h-screen bg-[#faf8f3]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
-        }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
       <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 md:py-14">
         <header className="mb-7 max-w-3xl">

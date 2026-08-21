@@ -8,7 +8,6 @@ import TrackedLink from "./analytics/TrackedLink";
 import ProductSidebar from "./ProductSidebar";
 import ProductPlanOverview from "./ProductPlanOverview";
 import PlanTabs from "./PlanTabs";
-import SharePriceModal from "./SharePriceModal";
 import MobileProductSwitcher from "./MobileProductSwitcher";
 import {
   ProductOverviewLink,
@@ -25,6 +24,7 @@ import {
 } from "../lib/public-pricing-model";
 import { getPricingDetailProduct } from "../lib/pricing-detail-adapter";
 import { getPlanAffordability } from "../lib/affordability";
+import { serializeJsonLd } from "../lib/json-ld";
 import {
   getLatestUsdExchangeRates,
   type ExchangeRateSnapshot,
@@ -871,7 +871,7 @@ export default async function PricingDetailPage({
       <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
         <ProductSidebar
           products={sidebarProducts}
@@ -899,7 +899,16 @@ export default async function PricingDetailPage({
 
           <section className="border-b border-zinc-200 pb-4 dark:border-zinc-800">
             <div className="flex items-start gap-3">
-              <BrandIcon product={product} size="md" />
+              <BrandIcon
+                product={{
+                  slug: product.slug,
+                  name: product.name,
+                  logoUrl: product.logoUrl,
+                  officialUrl: product.officialUrl,
+                }}
+                size="md"
+                priority
+              />
               <div>
                 <div className="text-sm font-medium text-zinc-400">
                   {product.brand}
@@ -982,6 +991,7 @@ export default async function PricingDetailPage({
             fetchedAt: null,
             isFallback: false,
             isStale: false,
+            isExpired: false,
           }
         : latestExchangeRates[currency] || {
             baseCurrency: "USD",
@@ -992,6 +1002,7 @@ export default async function PricingDetailPage({
             fetchedAt: null,
             isFallback: true,
             isStale: true,
+            isExpired: true,
           },
     ]),
   ) as Record<DisplayCurrency, ExchangeRateSnapshot>;
@@ -1047,7 +1058,7 @@ export default async function PricingDetailPage({
     <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
       <ProductSidebar
         products={sidebarProducts}
@@ -1076,7 +1087,16 @@ export default async function PricingDetailPage({
         <section className="border-b border-zinc-200 pb-4 dark:border-zinc-800">
           <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-3">
-              <BrandIcon product={product} size="md" />
+              <BrandIcon
+                product={{
+                  slug: product.slug,
+                  name: product.name,
+                  logoUrl: product.logoUrl,
+                  officialUrl: product.officialUrl,
+                }}
+                size="md"
+                priority
+              />
 
               <div>
                 <div className="text-sm font-medium text-zinc-400">
@@ -1134,18 +1154,16 @@ export default async function PricingDetailPage({
             <PricingPlatformView
               key={`${locale}-${activePlan.slug}`}
               productName={product.name}
+              shareProduct={{
+                name: product.name,
+                slug: product.slug,
+                brand: product.brand,
+                updatedAt: product.updatedAt,
+              }}
               plan={activePlan}
               defaultCurrency={defaultCurrency}
               exchangeRates={exchangeRates}
               locale={locale}
-              shareAction={
-                <SharePriceModal
-                  product={product}
-                  plan={activePlan}
-                  stats={stats}
-                  locale={locale}
-                />
-              }
             />
 
             <CountryAnalysisLinks

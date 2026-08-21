@@ -225,7 +225,16 @@ export default async function CountryPricingPilotPage({
 
       <header className="border-b border-zinc-200 pb-8 dark:border-zinc-800">
         <div className="flex items-start gap-4">
-          <BrandIcon product={product} size="lg" />
+          <BrandIcon
+            product={{
+              slug: product.slug,
+              name: product.name,
+              logoUrl: product.logoUrl,
+              officialUrl: product.officialUrl,
+            }}
+            size="lg"
+            priority
+          />
           <div className="min-w-0">
             <div className="text-sm font-bold text-lime-700 dark:text-lime-400">
               {copy.eyebrow} · {pilot.countryName[locale]}

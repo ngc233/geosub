@@ -84,6 +84,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
       ? [...cheapRegions, maxRegion]
       : cheapRegions;
   const spread = getPlanSpread(defaultPlan);
+  const regionCount = defaultPlan.totalRegions ?? defaultPlan.regions.length;
 
   const copy = getPricingListCopy(locale).card;
 
@@ -105,7 +106,14 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
     >
       <div className="p-6 md:p-7">
         <div className="flex items-start gap-4">
-          <BrandIcon product={product} size="md" />
+          <BrandIcon
+            product={{
+              slug: product.slug,
+              name: product.name,
+              logoUrl: product.logoUrl,
+            }}
+            size="md"
+          />
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-4">
@@ -131,7 +139,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                 </span>
 
                 <span className="text-xs font-bold text-zinc-500">
-                  {defaultPlan.regions.length} {copy.regions}
+                  {regionCount} {copy.regions}
                 </span>
               </div>
             </div>

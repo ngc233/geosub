@@ -9,6 +9,7 @@ import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScrip
 import RouteProgressBar from "../components/RouteProgressBar";
 import SiteChrome from "../components/SiteChrome";
 import { isAnalyticsConsentRequired } from "../lib/analytics-consent";
+import { serializeJsonLd } from "../lib/json-ld";
 import { launchedMirroredStaticPaths } from "../lib/public-launch-routes";
 import {
   getLocaleRobotsPolicy,
@@ -312,7 +313,7 @@ export default async function RootLayout({
           nonce={nonce}
           type="application/ld+json"
           suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
         <GoogleAnalyticsScripts nonce={nonce} />
         <AnalyticsProvider />

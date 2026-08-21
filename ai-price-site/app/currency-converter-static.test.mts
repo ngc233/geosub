@@ -156,13 +156,13 @@ test("converter reads all display rates in one database round trip", () => {
   assert.doesNotMatch(page, /getLatestExchangeRate\("USD", currency\)/);
 });
 
-test("stale or missing exchange rates cannot produce a conversion", () => {
+test("missing or expired exchange rates cannot produce a conversion", () => {
   const converter = readSiteFile(
     "components",
     "SubscriptionCurrencyConverter.tsx",
   );
 
-  assert.match(converter, /!rate \|\| rate\.rate <= 0 \|\| rate\.isStale/);
+  assert.match(converter, /!rate \|\| rate\.rate <= 0 \|\| rate\.isExpired/);
   assert.match(converter, /rateMap\.get\(from\)\?\.rate \|\| 0/);
   assert.match(converter, /if \(fromRate <= 0 \|\| toRate <= 0\) return null/);
   assert.match(converter, /pairIsStale/);

@@ -8,6 +8,8 @@ import {
   getPublishedArticleBySlug,
   renderArticleMarkdown,
 } from "../../../../lib/articles";
+import { sanitizeArticleHtml } from "../../../../lib/content-safety";
+import { serializeJsonLd } from "../../../../lib/json-ld";
 import { stripGeoSubTitleSuffix } from "../../../../lib/pricing-routes";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org";
@@ -87,7 +89,9 @@ export default async function GuideArticlePage({
     notFound();
   }
 
-  const html = article.bodyHtml || renderArticleMarkdown(article.bodyMarkdown);
+  const html = sanitizeArticleHtml(
+    article.bodyHtml || renderArticleMarkdown(article.bodyMarkdown),
+  );
   const url = article.canonicalUrl || absoluteUrl(`/zh/guides/${article.slug}`);
   const image = article.ogImageUrl || article.coverImageUrl || undefined;
   const structuredData =
@@ -122,7 +126,7 @@ export default async function GuideArticlePage({
       {structuredData ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
       ) : null}
 

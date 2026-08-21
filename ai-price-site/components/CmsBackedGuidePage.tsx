@@ -10,6 +10,7 @@ import {
   type CoreGuideSlug,
 } from "../lib/core-guide-content";
 import { stripGeoSubTitleSuffix } from "../lib/pricing-routes";
+import { serializeJsonLd } from "../lib/json-ld";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
@@ -138,7 +139,7 @@ export default async function CmsBackedGuidePage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
       <PublicGuidePage
         eyebrow={

@@ -4,14 +4,21 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
 import { Share2 } from 'lucide-react';
 
-import { formatUsd, type PlanStats, type ProductPlan, type SubscriptionProduct } from '../lib/public-pricing-model';
+import { formatUsd, type PlanStats, type ProductPlan } from '../lib/public-pricing-model';
 import { getPlanDisplayName } from '../lib/pricing-labels';
 import type { SiteLocale } from '../lib/site-locale';
 import { shareCopy } from './SharePriceCopy';
 import ShareMiniMap, { getDiffPercent, getReadableDiffByLocale, getShortDiff } from './SharePriceMap';
 
+export type SharePriceProduct = {
+  name: string;
+  slug: string;
+  brand: string;
+  updatedAt: string;
+};
+
 type SharePriceModalProps = {
-  product: SubscriptionProduct;
+  product: SharePriceProduct;
   plan: ProductPlan;
   stats: PlanStats;
   locale?: SiteLocale;

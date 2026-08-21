@@ -510,12 +510,31 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
     /satisfies Record<Exclude<SiteLocale, "zh-tw">, ShareCopy>/,
   );
   assert.match(shareModal, /Share price card/);
-  assert.match(detailPage, /<SharePriceModal[\s\S]*locale=\{locale\}/);
+  assert.match(platformView, /<SharePriceModal[\s\S]*locale=\{locale\}/);
   assert.match(detailPage, /const pageCopy = getPricingDetailPageCopy/);
   assert.match(detailPage, /: pageCopy\.pageTitle/);
   assert.doesNotMatch(detailPage, /\$\{productName\} Plus 订阅/);
   assert.doesNotMatch(platformView, /\$\{productName\} \$\{plan\.name\}/);
   assert.doesNotMatch(shareModal, /\$\{product\.name\} \$\{plan\.name\}/);
+});
+
+test("pricing detail sends product identity once to the pricing client boundary", () => {
+  const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
+  const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");
+  const shareModal = readSharePriceModalSource();
+
+  assert.doesNotMatch(shareModal, /SubscriptionProduct/);
+  assert.doesNotMatch(detailPage, /<SharePriceModal/);
+  assert.match(
+    detailPage,
+    /<PricingPlatformView[\s\S]*shareProduct=\{\{[\s\S]*name: product\.name,[\s\S]*slug: product\.slug,[\s\S]*brand: product\.brand,[\s\S]*updatedAt: product\.updatedAt,[\s\S]*\}\}/,
+  );
+  assert.match(platformView, /stats=\{getPlanStats\(plan\)\}/);
+  assert.doesNotMatch(detailPage, /<BrandIcon product=\{product\}/);
+  assert.match(
+    detailPage,
+    /<BrandIcon[\s\S]*product=\{\{[\s\S]*slug: product\.slug,[\s\S]*name: product\.name,[\s\S]*logoUrl: product\.logoUrl,[\s\S]*officialUrl: product\.officialUrl,[\s\S]*\}\}/,
+  );
 });
 
 test("pricing FAQs answer customer questions instead of explaining internal source policy", () => {
