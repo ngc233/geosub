@@ -671,48 +671,64 @@ export async function getDashboardData(period: DashboardPeriod) {
             ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/?$'
         ORDER BY event.session_key, event.created_at, event.id
       ),
-      detail_starts AS (
-        SELECT DISTINCT ON (list.session_key)
-          list.session_key,
-          event.created_at AS detail_at,
+      detail_events AS MATERIALIZED (
+        SELECT
+          event.session_key,
+          event.id,
+          event.created_at,
           CASE
             WHEN SPLIT_PART(COALESCE(event.page_path, ''), '?', 1)
               ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/]+/?$'
             THEN SPLIT_PART(SPLIT_PART(event.page_path, '?', 1), '/', 4)
             ELSE NULL
           END AS product_slug
-        FROM list_starts list
-        JOIN sessionized_events event
-          ON event.session_key = list.session_key
-          AND event.created_at >= list.list_at
+        FROM sessionized_events event
         WHERE (
             event.event_key = 'page_view'
             AND SPLIT_PART(COALESCE(event.page_path, ''), '?', 1)
               ~ '^/(zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)/(ai-pricing|streaming-pricing)/[^/]+/?$'
           )
           OR event.event_key = 'view_digital_service'
+      ),
+      detail_starts AS (
+        SELECT DISTINCT ON (list.session_key)
+          list.session_key,
+          event.created_at AS detail_at,
+          event.product_slug
+        FROM list_starts list
+        JOIN detail_events event
+          ON event.session_key = list.session_key
+          AND event.created_at >= list.list_at
         ORDER BY list.session_key, event.created_at, event.id
+      ),
+      plan_events AS MATERIALIZED (
+        SELECT event.session_key, event.created_at
+        FROM sessionized_events event
+        WHERE event.event_key = 'select_plan'
       ),
       plan_starts AS (
         SELECT
           detail.session_key,
           MIN(event.created_at) AS plan_at
         FROM detail_starts detail
-        JOIN sessionized_events event
+        JOIN plan_events event
           ON event.session_key = detail.session_key
           AND event.created_at >= detail.detail_at
-        WHERE event.event_key = 'select_plan'
         GROUP BY detail.session_key
+      ),
+      commercial_events AS MATERIALIZED (
+        SELECT event.session_key, event.created_at
+        FROM sessionized_events event
+        WHERE event.event_key IN ('click_affiliate', 'click_official', 'click_ad')
       ),
       commercial_starts AS (
         SELECT
           plan.session_key,
           MIN(event.created_at) AS commercial_at
         FROM plan_starts plan
-        JOIN sessionized_events event
+        JOIN commercial_events event
           ON event.session_key = plan.session_key
           AND event.created_at >= plan.plan_at
-        WHERE event.event_key IN ('click_affiliate', 'click_official', 'click_ad')
         GROUP BY plan.session_key
       ),
       session_funnel AS (

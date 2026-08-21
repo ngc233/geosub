@@ -21,6 +21,7 @@ import {
   parseAdminEventFilters,
   sourceNameZh,
 } from "../../../lib/admin-event-analytics";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -101,18 +102,26 @@ export default async function AdminEventsPage({
   });
 
   const selectedProduct = products.find((product) => product.slug === filters.product) || null;
-  const highFrequencyVisitorIds = await findHighFrequencyVisitorIds(filters);
+  const highFrequencyVisitorIds = await measureAdminWorkload(
+    "events.high-frequency-visitors",
+    () => findHighFrequencyVisitorIds(filters),
+  );
   const where = buildAdminEventWhere(
     filters,
     selectedProduct,
     highFrequencyVisitorIds,
   );
 
-  const totalEvents = await prisma.eventLog.count({ where });
+  const totalEvents = await measureAdminWorkload(
+    "events.total-count",
+    () => prisma.eventLog.count({ where }),
+  );
   const totalPages = Math.max(1, Math.ceil(totalEvents / PAGE_SIZE));
   const page = Math.min(requestedPage, totalPages);
 
-  const [pageViews, commercialClicks, uniqueVisitors, automatedEvents, events] = await Promise.all([
+  const [pageViews, commercialClicks, uniqueVisitors, automatedEvents, events] = await measureAdminWorkload(
+    "events.page-data",
+    () => Promise.all([
     prisma.eventLog.count({ where: { AND: [where, { eventKey: "page_view" }] } }),
     prisma.eventLog.count({
       where: { AND: [where, { eventKey: { in: [...COMMERCIAL_EVENT_KEYS] } }] },
@@ -149,7 +158,8 @@ export default async function AdminEventsPage({
         createdAt: true,
       },
     }),
-  ]);
+    ]),
+  );
 
   const automatedPageEventRows = events.length > 0
     ? await prisma.eventLog.findMany({

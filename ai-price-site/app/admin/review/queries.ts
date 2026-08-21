@@ -44,6 +44,7 @@ async function getReviewPageDataUnmeasured({
     WITH scoped_pending AS (
       SELECT
         pending.*,
+        observation.product_id,
         COALESCE(
           observation.raw_payload ->> 'auto_review_reason_code',
           CASE
@@ -101,6 +102,7 @@ async function getReviewPageDataUnmeasured({
     ),
     product_summary AS (
       SELECT
+        product_id,
         product_slug,
         MAX(product_name) AS product_name,
         COUNT(*)::int AS pending_count,
@@ -112,7 +114,7 @@ async function getReviewPageDataUnmeasured({
         COUNT(*) FILTER (WHERE review_reason_code = 'low_confidence')::int AS low_confidence_count,
         MAX(observed_at) AS latest_observed_at
       FROM scoped_pending
-      GROUP BY product_slug
+      GROUP BY product_id, product_slug
     ),
     totals AS (
       SELECT
@@ -129,13 +131,14 @@ async function getReviewPageDataUnmeasured({
     ),
     history_summary AS (
       SELECT
-        history.product_slug,
-        COUNT(*) FILTER (WHERE history.review_status = 'approved')::int AS approved_count,
-        COUNT(*) FILTER (WHERE history.review_status = 'rejected')::int AS rejected_count,
-        COUNT(*) FILTER (WHERE history.review_status = 'ignored')::int AS ignored_count
-      FROM price_observations_review_history_view history
-      JOIN product_page page ON page.product_slug = history.product_slug
-      GROUP BY history.product_slug
+        page.product_slug,
+        COUNT(*) FILTER (WHERE history.status = 'approved'::observation_status)::int AS approved_count,
+        COUNT(*) FILTER (WHERE history.status = 'rejected'::observation_status)::int AS rejected_count,
+        COUNT(*) FILTER (WHERE history.status = 'ignored'::observation_status)::int AS ignored_count
+      FROM product_page page
+      JOIN price_observations history ON history.product_id = page.product_id
+      WHERE history.status <> 'pending'::observation_status
+      GROUP BY page.product_slug
     )
     SELECT
       totals.total_product_count,
@@ -426,40 +429,60 @@ async function getReviewPageDataUnmeasured({
   const getHistoryStatsRows = () => prisma.$queryRaw<HistoryStatsRow[]>`
     SELECT
       COUNT(*)::int AS history_count,
-      COUNT(*) FILTER (WHERE review_status = 'approved')::int AS approved_count,
-      COUNT(*) FILTER (WHERE review_status = 'ignored')::int AS ignored_count,
-      COUNT(*) FILTER (WHERE review_status = 'rejected')::int AS rejected_count
-    FROM price_observations_review_history_view
+      COUNT(*) FILTER (WHERE status = 'approved'::observation_status)::int AS approved_count,
+      COUNT(*) FILTER (WHERE status = 'ignored'::observation_status)::int AS ignored_count,
+      COUNT(*) FILTER (WHERE status = 'rejected'::observation_status)::int AS rejected_count
+    FROM price_observations
+    WHERE status <> 'pending'::observation_status
   `;
 
   const getHistoryRows = () => prisma.$queryRaw<HistoryRow[]>`
+    WITH selected_history AS MATERIALIZED (
+      SELECT observation.id, observation.updated_at
+      FROM price_observations observation
+      WHERE observation.status <> 'pending'::observation_status
+      ORDER BY observation.updated_at DESC, observation.id DESC
+      LIMIT ${historyPageSize}
+      OFFSET ${historyOffset}
+    )
     SELECT
-      id,
-      product_slug,
-      product_name,
-      plan_slug,
-      plan_name,
-      country_code,
-      country_name_zh,
-      country_name_en,
-      platform,
-      source_type,
-      observed_local_price,
-      observed_currency,
-      observed_price_text,
-      observed_price_usd,
-      confidence_score,
-      review_status,
-      source_url,
-      observed_at,
-      region_price_status,
-      promoted_platform,
-      promoted_data_quality,
-      updated_at
-    FROM price_observations_review_history_view
-    ORDER BY updated_at DESC
-    LIMIT ${historyPageSize}
-    OFFSET ${historyOffset}
+      observation.id,
+      product.slug AS product_slug,
+      product.name AS product_name,
+      plan.slug AS plan_slug,
+      plan.name AS plan_name,
+      country.code AS country_code,
+      country.name_zh AS country_name_zh,
+      country.name_en AS country_name_en,
+      observation.billing_platform::text AS platform,
+      observation.source_level::text AS source_type,
+      observation.raw_price AS observed_local_price,
+      observation.currency AS observed_currency,
+      COALESCE(
+        observation.raw_payload ->> 'observed_price_text',
+        CASE
+          WHEN observation.raw_price IS NOT NULL AND observation.currency IS NOT NULL
+          THEN observation.raw_price::text || ' ' || observation.currency
+          ELSE NULL
+        END
+      ) AS observed_price_text,
+      observation.converted_usd AS observed_price_usd,
+      observation.confidence_score,
+      observation.status::text AS review_status,
+      observation.source_url,
+      observation.observed_at,
+      promoted.status::text AS region_price_status,
+      promoted.billing_platform::text AS promoted_platform,
+      promoted.data_quality::text AS promoted_data_quality,
+      observation.updated_at
+    FROM selected_history selected
+    JOIN price_observations observation ON observation.id = selected.id
+    LEFT JOIN products product ON product.id = observation.product_id
+    LEFT JOIN plans plan ON plan.id = observation.plan_id
+    LEFT JOIN countries country ON country.id = observation.country_id
+    LEFT JOIN region_prices promoted
+      ON promoted.id::text = observation.raw_payload ->> 'promoted_region_price_id'
+    ORDER BY selected.updated_at DESC, selected.id DESC
   `;
 
   const getCollectorStatusRows = () => prisma.$queryRaw<CollectorStatusRow[]>`

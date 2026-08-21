@@ -10,6 +10,7 @@ import {
   getAdminOperationalTotal,
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 
 const categoryOrder = ["ai", "software", "streaming", "game", "gift_card", "payment", "vpn", "other"];
@@ -358,12 +359,15 @@ export default async function AdminPricesPage({
     : "all";
   const detailPageSize = 50;
   const detailPage = Math.max(1, Number(params.pricePage ?? 1) || 1);
-  const [products, siteStats, detailRows, taxCoverage] = await Promise.all([
-    getProductPriceSummaries(),
-    getSitePriceStats(),
-    getPriceDetailRows({ page: detailPage, pageSize: detailPageSize }),
-    getTaxCoverage(),
-  ]);
+  const [products, siteStats, detailRows, taxCoverage] = await measureAdminWorkload(
+    "prices.page-data",
+    () => Promise.all([
+      getProductPriceSummaries(),
+      getSitePriceStats(),
+      getPriceDetailRows({ page: detailPage, pageSize: detailPageSize }),
+      getTaxCoverage(),
+    ]),
+  );
   const assessProduct = (product: ProductPriceSummary) =>
     assessProductOperationalStatus({
       publishStatus: product.status,

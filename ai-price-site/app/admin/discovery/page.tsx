@@ -1,6 +1,7 @@
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { AdminButton } from "../../../components/admin/AdminButton";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 import AdminLink from "@/components/admin/AdminLink";
 import {
@@ -265,7 +266,9 @@ export default async function DiscoveryPage({
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
-  const [candidates, sources, recentChecks] = await Promise.all([
+  const [candidates, sources, recentChecks] = await measureAdminWorkload(
+    "discovery.page-data",
+    () => Promise.all([
     prisma.$queryRaw<CandidateRow[]>`
       SELECT
         c.id::text,
@@ -390,7 +393,8 @@ export default async function DiscoveryPage({
       ORDER BY c.checked_at DESC
       LIMIT 30
     `,
-  ]);
+    ]),
+  );
 
   const newCount = candidates.filter((candidate) => candidate.status === "new").length;
   const watchingCount = candidates.filter((candidate) => candidate.status === "watching").length;

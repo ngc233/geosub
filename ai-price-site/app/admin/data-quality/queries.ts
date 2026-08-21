@@ -111,7 +111,7 @@ export async function getProductQualityRows() {
       FROM region_prices price
       GROUP BY price.product_id
     ),
-    published_plan_stats AS (
+    published_plan_stats AS MATERIALIZED (
       SELECT
         price.product_id,
         price.plan_id,
@@ -500,4 +500,3 @@ export async function getLatestRepairCycle() {
 
   return rows[0] || null;
 }
-

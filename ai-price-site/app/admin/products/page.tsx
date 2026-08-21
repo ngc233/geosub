@@ -13,6 +13,7 @@ import {
   isArchivedPublishStatus,
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 
 type CategoryValue =
@@ -378,10 +379,13 @@ export default async function AdminProductsPage({
     ? (String(params?.state) as AdminOperationalStatus)
     : "all";
 
-  const [allProducts, countryCoverage] = await Promise.all([
-    getProductAssets(),
-    getCountryCoverage(selectedCategory.value),
-  ]);
+  const [allProducts, countryCoverage] = await measureAdminWorkload(
+    "products.page-data",
+    () => Promise.all([
+      getProductAssets(),
+      getCountryCoverage(selectedCategory.value),
+    ]),
+  );
 
   const archivedCount = allProducts.filter((product) =>
     isArchivedPublishStatus(product.status),

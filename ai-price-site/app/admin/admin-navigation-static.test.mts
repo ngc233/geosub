@@ -435,6 +435,12 @@ test("admin dashboard sessionizes events and computes a chronological funnel", (
   assert.match(dashboard, /FunnelQualityRow/);
   assert.match(dashboard, /anonymous_event_gaps/);
   assert.match(dashboard, /INTERVAL '30 minutes'/);
+  assert.match(dashboard, /detail_events AS MATERIALIZED/);
+  assert.match(dashboard, /plan_events AS MATERIALIZED/);
+  assert.match(dashboard, /commercial_events AS MATERIALIZED/);
+  assert.match(dashboard, /JOIN detail_events event/);
+  assert.match(dashboard, /JOIN plan_events event/);
+  assert.match(dashboard, /JOIN commercial_events event/);
   assert.match(dashboard, /event\.created_at >= list\.list_at/);
   assert.match(dashboard, /event\.created_at >= detail\.detail_at/);
   assert.match(dashboard, /event\.created_at >= plan\.plan_at/);
@@ -459,6 +465,39 @@ test("admin dashboard sessionizes events and computes a chronological funnel", (
   assert.match(schema, /@@index\(\[anonymousId, createdAt\]\)/);
   assert.match(migration, /event_logs_session_id_created_at_idx/);
   assert.match(migration, /event_logs_anonymous_id_created_at_idx/);
+});
+
+test("admin quality and review summaries materialize repeated aggregates", () => {
+  const qualityQueries = readProjectFile("app/admin/data-quality/queries.ts");
+  const reviewQueries = readProjectFile("app/admin/review/queries.ts");
+
+  assert.match(qualityQueries, /published_plan_stats AS MATERIALIZED/);
+  assert.match(reviewQueries, /JOIN price_observations history ON history\.product_id = page\.product_id/);
+  assert.match(reviewQueries, /selected_history AS MATERIALIZED/);
+  assert.match(reviewQueries, /observation\.updated_at DESC, observation\.id DESC/);
+  assert.match(reviewQueries, /FROM price_observations\s+WHERE status <> 'pending'/);
+  assert.doesNotMatch(
+    reviewQueries,
+    /FROM price_observations_review_history_view history\s+JOIN product_page/,
+  );
+});
+
+test("major admin data pages report slow workloads", () => {
+  const sources = [
+    "app/admin/pipeline/page.tsx",
+    "app/admin/products/page.tsx",
+    "app/admin/prices/page.tsx",
+    "app/admin/discovery/page.tsx",
+    "app/admin/affordability/page.tsx",
+    "app/admin/events/page.tsx",
+  ].map(readProjectFile).join("\n");
+
+  assert.match(sources, /pipeline\.page-data/);
+  assert.match(sources, /products\.page-data/);
+  assert.match(sources, /prices\.page-data/);
+  assert.match(sources, /discovery\.page-data/);
+  assert.match(sources, /affordability\.page-data/);
+  assert.match(sources, /events\.page-data/);
 });
 
 test("all admin asset views share one four-level operational status model", () => {

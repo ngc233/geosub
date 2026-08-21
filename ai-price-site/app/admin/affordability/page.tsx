@@ -1,3 +1,4 @@
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -129,36 +130,40 @@ function levelClassName(level: string) {
 }
 
 export default async function AffordabilityPreviewPage() {
-  const summaryRows = await prisma.$queryRaw<SummaryRow[]>`
-    SELECT *
-    FROM plan_affordability_summary_view
-    ORDER BY product_slug, plan_slug
-  `;
-
-  const detailRows = await prisma.$queryRaw<DetailRow[]>`
-    SELECT
-      product_slug,
-      product_name,
-      plan_slug,
-      plan_name,
-      country_code,
-      country_name_zh,
-      country_name_en,
-      price_usd,
-      monthly_income_usd,
-      income_share_percent,
-      burden_vs_us,
-      affordability_level,
-      income_data_year,
-      income_source,
-      income_metric_type,
-      income_indicator_code,
-      income_synced_at,
-      price_last_checked_at
-    FROM plan_affordability_detail_view
-    WHERE product_slug = 'chatgpt'
-    ORDER BY plan_slug, income_share_percent DESC
-  `;
+  const [summaryRows, detailRows] = await measureAdminWorkload(
+    "affordability.page-data",
+    () => Promise.all([
+      prisma.$queryRaw<SummaryRow[]>`
+        SELECT *
+        FROM plan_affordability_summary_view
+        ORDER BY product_slug, plan_slug
+      `,
+      prisma.$queryRaw<DetailRow[]>`
+        SELECT
+          product_slug,
+          product_name,
+          plan_slug,
+          plan_name,
+          country_code,
+          country_name_zh,
+          country_name_en,
+          price_usd,
+          monthly_income_usd,
+          income_share_percent,
+          burden_vs_us,
+          affordability_level,
+          income_data_year,
+          income_source,
+          income_metric_type,
+          income_indicator_code,
+          income_synced_at,
+          price_last_checked_at
+        FROM plan_affordability_detail_view
+        WHERE product_slug = 'chatgpt'
+        ORDER BY plan_slug, income_share_percent DESC
+      `,
+    ]),
+  );
 
   const latestSummary = summaryRows[0];
   const latestDetail = detailRows[0];

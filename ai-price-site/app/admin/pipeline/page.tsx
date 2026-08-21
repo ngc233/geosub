@@ -22,6 +22,7 @@ import {
   getPipelineGrowthSignals,
   type PipelineGrowthSignal,
 } from "../../../lib/admin-pipeline-growth";
+import { measureAdminWorkload } from "../../../lib/admin-performance";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import { prisma } from "../../../lib/prisma";
 import BatchCollectionPanel from "./BatchCollectionPanel";
@@ -865,11 +866,14 @@ export default async function AdminPipelinePage({
   let loadError: string | null = null;
 
   try {
-    [allRows, stats, growthSignals] = await Promise.all([
-      getPipelineRows({ q, category }),
-      getPipelineStats(),
-      getPipelineGrowthSignals().catch(() => []),
-    ]);
+    [allRows, stats, growthSignals] = await measureAdminWorkload(
+      "pipeline.page-data",
+      () => Promise.all([
+        getPipelineRows({ q, category }),
+        getPipelineStats(),
+        getPipelineGrowthSignals().catch(() => []),
+      ]),
+    );
     allRows = sortPipelineRows(allRows);
     rows = stage === "all"
       ? allRows
