@@ -12,6 +12,7 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
       { title: "无标识的页面汇总", body: "为显示全站页面浏览总量，GeoSub 会在不设置或读取 Cookie、也不创建访客或会话标识的情况下，把标准化页面路径直接计入 UTC 每日汇总。应用统计不保存原始 IP、User-Agent、来源页面或单次访问记录；该计数不能识别独立访客，也不能用于点击归因或漏斗分析。" },
       { title: "我们记录什么", body: "在获得所需同意后，GeoSub 可能记录匿名访客标识、会话标识、访问页面、来源页面、点击或交互类型、时间、浏览器与设备类别，以及用于理解该次交互的有限技术信息。公开浏览不要求姓名、身份证件、支付资料或 Apple 账号信息。" },
       { title: "为什么记录", body: "这些数据用于维持安全与稳定、发现故障、统计内容使用情况，并改进价格页面和导航。我们不会把分析数据用于判断个人信用，也不会出售可识别个人身份的信息。" },
+      { title: "联系工单", body: "当你主动提交联系工单时，GeoSub 会保存你填写的联系类型、称呼、邮箱、组织、主题、相关页面和详细说明，用于识别、处理和回复请求。为限制滥用，系统仅保存由请求来源生成的不可逆哈希，不保存原始 IP；工单不会公开展示，也不会用于广告画像。处理完成后，我们会按运营与安全需要定期删除或最小化不再必要的工单信息。" },
       { title: "同意、第三方与保存期", body: "带有访客或会话标识的第一方行为分析，以及 Google Analytics 或 Google Tag Manager，只会在你选择接受后运行；Google 会按其政策处理收到的数据。这些第一方原始分析事件默认最多保存 180 天，之后删除或仅保留汇总统计。上方无标识的每日页面汇总是独立计数，不会启用这些工具。" },
       { title: "你的选择", body: "你可以拒绝或随时重新打开页尾的分析设置。拒绝后，GeoSub 会停止非必要分析并清除本站分析会话。需要查询、更正或删除与浏览器标识有关的数据时，请通过网站联系页面提交请求。" },
     ],
@@ -132,20 +133,21 @@ export default function PrivacyDisclosure({ locale }: { locale: SiteLocale }) {
   const text = copy[locale];
 
   return (
-    <section className="mt-10 border-t border-zinc-200 pt-8 dark:border-zinc-800">
-      <p className="text-xs font-bold text-zinc-400 dark:text-zinc-500">
+    <section className="mt-10">
+      <p className="text-xs font-bold tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
         {text.updated}
       </p>
-      <div className="mt-6 grid gap-x-10 gap-y-8 md:grid-cols-2">
-        {text.sections.map((section) => (
-          <div key={section.title}>
-            <h2 className="text-base font-black text-zinc-950 dark:text-white">
+      <div className="mt-6 grid gap-px border border-black/10 bg-black/10 md:grid-cols-2">
+        {text.sections.map((section, index) => (
+          <article key={section.title} className="bg-white p-6 sm:p-8 dark:bg-zinc-900">
+            <span className="text-xs font-black text-lime-700 dark:text-lime-400">{String(index + 1).padStart(2, "0")}</span>
+            <h2 className="mt-5 text-lg font-black text-zinc-950 dark:text-white">
               {section.title}
             </h2>
             <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
               {section.body}
             </p>
-          </div>
+          </article>
         ))}
       </div>
     </section>

@@ -13,6 +13,7 @@ import {
 import { getPlanDisplayName } from "../lib/pricing-labels";
 import { getPricingPlanPath } from "../lib/pricing-routes";
 import type { SubscriptionProduct } from "../lib/public-pricing-model";
+import BrandIcon from "./BrandIcon";
 
 type IndexablePricingLocale = Extract<SiteLocale, "zh" | "en">;
 
@@ -29,7 +30,7 @@ const copy: Record<
   }
 > = {
   zh: {
-    allPlans: (productName) => `查看 ${productName} 全部套餐`,
+    allPlans: () => "套餐概览",
     relatedTitle: {
       ai: "比较更多 AI 订阅",
       streaming: "比较更多流媒体订阅",
@@ -41,7 +42,7 @@ const copy: Record<
     planLink: (planName) => `${planName} 地区价格`,
   },
   en: {
-    allPlans: (productName) => `Compare all ${productName} plans`,
+    allPlans: () => "Plan overview",
     relatedTitle: {
       ai: "Compare more AI subscriptions",
       streaming: "Compare more streaming subscriptions",
@@ -78,10 +79,10 @@ export function ProductOverviewLink({
       data-track-name="Compare all product plans"
       data-track-button={productName}
       data-track-placement="plan_tabs"
-      className="inline-flex items-center gap-1.5 text-sm font-semibold text-lime-700 transition hover:text-lime-900 dark:text-lime-300 dark:hover:text-lime-200"
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-semibold text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
     >
       {copy[locale].allPlans(productName)}
-      <ArrowRight aria-hidden="true" className="size-4" />
+      <ArrowRight aria-hidden="true" className="size-3.5" strokeWidth={1.8} />
     </Link>
   );
 }
@@ -135,22 +136,23 @@ export function RelatedPricingProducts({
             data-track-name="Open related pricing product"
             data-track-button={product.slug}
             data-track-placement="product_overview"
-            className="group flex min-h-16 min-w-0 items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-4 py-3 transition hover:border-lime-400 hover:bg-lime-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-950/60 dark:hover:border-lime-600 dark:hover:bg-lime-950/25"
+            className="group flex min-h-16 min-w-0 items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-950/60 dark:hover:border-zinc-800"
           >
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-zinc-950 dark:text-white">
-                {product.name}
-              </span>
-              <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
-                {localeCopy.productAction}
+            <span className="flex min-w-0 items-center gap-3">
+              <BrandIcon product={product} size="sm" />
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-zinc-950 dark:text-white">
+                  {product.name}
+                </span>
+                <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
+                  {localeCopy.productAction}
+                </span>
               </span>
             </span>
-            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-lime-100 text-lime-800 transition group-hover:bg-lime-200 dark:bg-lime-900/50 dark:text-lime-200 dark:group-hover:bg-lime-900/70">
-              <ArrowRight
-                aria-hidden="true"
-                className="size-4 transition-transform group-hover:translate-x-0.5 rtl:rotate-180"
-              />
-            </span>
+            <ArrowRight
+              aria-hidden="true"
+              className="size-4 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-zinc-700 rtl:rotate-180 dark:group-hover:text-zinc-200"
+            />
           </Link>
         ))}
       </div>
@@ -218,16 +220,14 @@ export function RelatedPlanChoices({
               data-track-name="Open related pricing plan"
               data-track-button={plan.slug}
               data-track-placement="plan_detail"
-              className="group rounded-md border border-zinc-200 bg-white px-4 py-3 transition hover:border-lime-400 hover:bg-lime-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-950/60 dark:hover:border-lime-600 dark:hover:bg-lime-950/25"
+              className="group rounded-md border border-zinc-200 bg-white px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-950/60 dark:hover:border-zinc-800"
             >
-              <span className="flex items-center justify-between gap-3 text-sm font-semibold text-zinc-900 group-hover:text-lime-800 dark:text-zinc-100 dark:group-hover:text-lime-200">
+              <span className="flex items-center justify-between gap-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 {localeCopy.planLink(displayName)}
-                <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-lime-100 text-lime-800 transition group-hover:bg-lime-200 dark:bg-lime-900/50 dark:text-lime-200 dark:group-hover:bg-lime-900/70">
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="size-4 transition-transform group-hover:translate-x-0.5 rtl:rotate-180"
-                  />
-                </span>
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-zinc-700 rtl:rotate-180 dark:group-hover:text-zinc-200"
+                />
               </span>
               {editorial ? (
                 <span className="mt-1 block text-xs leading-5 text-zinc-500 dark:text-zinc-400">

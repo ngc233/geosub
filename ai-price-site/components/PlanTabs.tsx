@@ -1,5 +1,6 @@
 ﻿import SegmentedControl from "./ui/SegmentedControl";
 import type { ProductPlan } from "../lib/public-pricing-model";
+import { getPlanTabLabel } from "../lib/pricing-labels";
 import { getPricingPlanPath } from "../lib/pricing-routes";
 import type { SiteLocale } from "../lib/site-locale";
 
@@ -108,20 +109,6 @@ const planTabsCopy: Record<
   },
 };
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function getShortPlanName(name: string, productName: string) {
-  const productPrefix = new RegExp(`^${escapeRegExp(productName)}\\s+`, "i");
-  const shortened = name
-    .replace(productPrefix, "")
-    .replace(/\s+Subscription$/i, "")
-    .trim();
-
-  return shortened || name;
-}
-
 export default function PlanTabs({
   productName,
   productSlug,
@@ -137,41 +124,43 @@ export default function PlanTabs({
   const copy = planTabsCopy[locale];
 
   return (
-    <SegmentedControl
-      ariaLabel={copy.ariaLabel}
-      value={activePlanSlug}
-      tone="green"
-      items={plans.map((plan) => ({
-        label:
-          plan.regions.length > 0
-            ? plan.name
-            : plan.priceStatus === "pending"
-              ? `${plan.name} ${copy.pending}`
-              : `${plan.name} ${copy.noPrice}`,
-        shortLabel:
-          plan.regions.length > 0
-            ? getShortPlanName(plan.name, productName)
-            : plan.priceStatus === "pending"
-              ? `${getShortPlanName(plan.name, productName)} ${copy.pendingShort}`
-              : `${getShortPlanName(plan.name, productName)} ${copy.noPriceShort}`,
-        value: plan.slug,
-        tracking: {
-          event: "select_plan",
-          name: "Select subscription plan",
-          button: `${productSlug}:${plan.slug}`,
-          placement: "plan_tabs",
-        },
-        href:
-          plan.regions.length > 0
-            ? getPricingPlanPath(
-                locale,
-                basePath.includes("streaming-pricing") ? "streaming" : "ai",
-                productSlug,
-                plan.slug,
-              )
-            : undefined,
-        disabled: plan.regions.length === 0,
-      }))}
-    />
+    <div className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <SegmentedControl
+        ariaLabel={copy.ariaLabel}
+        value={activePlanSlug}
+        size="sm"
+        tone="green"
+        className="min-w-max"
+        items={plans.map((plan) => {
+          const shortName = getPlanTabLabel(productName, plan.name);
+
+          return {
+            label:
+              plan.regions.length > 0
+                ? shortName
+                : plan.priceStatus === "pending"
+                  ? `${shortName} ${copy.pendingShort}`
+                  : `${shortName} ${copy.noPriceShort}`,
+            value: plan.slug,
+            tracking: {
+              event: "select_plan",
+              name: "Select subscription plan",
+              button: `${productSlug}:${plan.slug}`,
+              placement: "plan_tabs",
+            },
+            href:
+              plan.regions.length > 0
+                ? getPricingPlanPath(
+                    locale,
+                    basePath.includes("streaming-pricing") ? "streaming" : "ai",
+                    productSlug,
+                    plan.slug,
+                  )
+                : undefined,
+            disabled: plan.regions.length === 0,
+          };
+        })}
+      />
+    </div>
   );
 }

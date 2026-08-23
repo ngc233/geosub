@@ -117,7 +117,10 @@ export default function MobileProductSwitcher({
 
       {open ? <div className="mt-3 grid grid-rows-[1fr] opacity-100">
         <div className="min-h-0 overflow-hidden">
-          <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm shadow-zinc-950/[0.04] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20" role="menu">
+          <div
+            className="max-h-[min(65dvh,32rem)] overflow-y-auto overscroll-contain rounded-lg border border-zinc-200 bg-white p-3 shadow-sm shadow-zinc-950/[0.04] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20"
+            role="menu"
+          >
             {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
               <div key={category} className="py-2">
                 <div className="px-3 pb-2 text-xs font-black text-zinc-400 dark:text-zinc-500">

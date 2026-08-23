@@ -30,6 +30,7 @@ test("region table tax and subscription conditions cover every prepared locale",
   assert.match(source, /assessSubscriptionAccess\(region\)/);
   assert.match(source, /getSubscriptionAccessCopy\(locale\)/);
   assert.match(source, /assessment\.facts\.map/);
+  assert.match(source, /accessCopy\.automaticTitle/);
   assert.match(source, /accessCopy\.checkedValue\(region\.lastCheckedAt\)/);
   assert.match(source, /return copy\.taxInferred/);
   assert.match(source, /return copy\.taxVerified/);

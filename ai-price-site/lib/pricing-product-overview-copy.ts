@@ -24,6 +24,8 @@ type OverviewCopy = {
   yearly: string;
   regions: (count: number) => string;
   priceRange: string;
+  coverage: string;
+  channel: string;
   viewPlan: string;
 };
 
@@ -88,6 +90,8 @@ const overviewCopy = {
     yearly: "年付",
     regions: (count) => `${count} 个地区`,
     priceRange: "美元价格范围",
+    coverage: "覆盖地区",
+    channel: "价格渠道",
     viewPlan: "查看地区价格",
   },
   "zh-tw": {
@@ -103,6 +107,8 @@ const overviewCopy = {
     yearly: "年付",
     regions: (count) => `${count} 個地區`,
     priceRange: "美元價格範圍",
+    coverage: "覆蓋地區",
+    channel: "價格渠道",
     viewPlan: "檢視地區價格",
 },
   en: {
@@ -120,6 +126,8 @@ const overviewCopy = {
     yearly: "Yearly",
     regions: (count) => `${count} regions`,
     priceRange: "USD price range",
+    coverage: "Coverage",
+    channel: "Price channel",
     viewPlan: "View regional prices",
   },
   ja: {
@@ -132,6 +140,8 @@ const overviewCopy = {
     yearly: "年額",
     regions: (count) => `${count}地域`,
     priceRange: "米ドル換算の価格帯",
+    coverage: "対象地域",
+    channel: "価格チャネル",
     viewPlan: "地域別料金を見る",
   },
   ko: {
@@ -144,6 +154,8 @@ const overviewCopy = {
     yearly: "연간",
     regions: (count) => `${count}개 지역`,
     priceRange: "미국 달러 가격 범위",
+    coverage: "지원 지역",
+    channel: "가격 채널",
     viewPlan: "지역별 가격 보기",
   },
   es: {
@@ -156,6 +168,8 @@ const overviewCopy = {
     yearly: "Anual",
     regions: (count) => `${count} regiones`,
     priceRange: "Rango de precios en USD",
+    coverage: "Cobertura",
+    channel: "Canal de precios",
     viewPlan: "Ver precios regionales",
   },
   tr: {
@@ -168,6 +182,8 @@ const overviewCopy = {
     yearly: "Yıllık",
     regions: (count) => `${count} bölge`,
     priceRange: "USD fiyat aralığı",
+    coverage: "Kapsam",
+    channel: "Fiyat kanalı",
     viewPlan: "Bölgesel fiyatları gör",
   },
   ar: {
@@ -180,6 +196,8 @@ const overviewCopy = {
     yearly: "سنوي",
     regions: (count) => `${count} منطقة`,
     priceRange: "نطاق السعر بالدولار",
+    coverage: "التغطية",
+    channel: "قناة السعر",
     viewPlan: "عرض الأسعار الإقليمية",
   },
   fr: {
@@ -192,6 +210,8 @@ const overviewCopy = {
     yearly: "Annuel",
     regions: (count) => `${count} régions`,
     priceRange: "Fourchette en USD",
+    coverage: "Couverture",
+    channel: "Canal de prix",
     viewPlan: "Voir les prix régionaux",
   },
   it: {
@@ -204,6 +224,8 @@ const overviewCopy = {
     yearly: "Annuale",
     regions: (count) => `${count} aree`,
     priceRange: "Intervallo in USD",
+    coverage: "Copertura",
+    channel: "Canale di prezzo",
     viewPlan: "Vedi i prezzi regionali",
   },
   de: {
@@ -216,6 +238,8 @@ const overviewCopy = {
     yearly: "Jährlich",
     regions: (count) => `${count} Regionen`,
     priceRange: "Preisspanne in USD",
+    coverage: "Abdeckung",
+    channel: "Preiskanal",
     viewPlan: "Regionale Preise ansehen",
   },
   pt: {
@@ -228,6 +252,8 @@ const overviewCopy = {
     yearly: "Anual",
     regions: (count) => `${count} regiões`,
     priceRange: "Intervalo de preços em USD",
+    coverage: "Cobertura",
+    channel: "Canal de preços",
     viewPlan: "Ver preços regionais",
   },
 } satisfies Record<SiteLocale, OverviewCopy>;

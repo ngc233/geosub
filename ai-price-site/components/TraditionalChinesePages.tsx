@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import PrivacyDisclosure from "./PrivacyDisclosure";
 
@@ -183,7 +184,7 @@ export function TraditionalChineseHomePage() {
                 {section.description}
               </p>
               <span className="mt-6 inline-flex items-center gap-2 text-sm font-black text-lime-600">
-                查看內容 <span aria-hidden="true">→</span>
+                查看內容 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
               </span>
             </Link>
           ))}

@@ -15,6 +15,7 @@
   CLICK_PRICE_MAP_REGION: "click_price_map_region",
 
   CLICK_OFFICIAL: "click_official",
+  DOWNLOAD_PRICE_REPORT: "download_price_report",
   CLICK_AFFILIATE: "click_affiliate",
   CLICK_AD: "click_ad",
 

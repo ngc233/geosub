@@ -7,7 +7,39 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing. Please check .env file.");
 }
 
+const databaseUrl = new URL(process.env.DATABASE_URL);
+const allowedLocalHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+if (!allowedLocalHosts.has(databaseUrl.hostname)) {
+  throw new Error(`Refusing to seed a non-local database host: ${databaseUrl.hostname}`);
+}
+if (!databaseUrl.pathname.slice(1).toLowerCase().includes("geosub")) {
+  throw new Error("Refusing to seed a database without 'geosub' in its name.");
+}
+
 const client = new Client({ connectionString: process.env.DATABASE_URL });
+
+const demoCountries = [
+  ["US", "美国", "United States", "USD", "North America", 1, 1],
+  ["CA", "加拿大", "Canada", "CAD", "North America", 1.36, 2],
+  ["MX", "墨西哥", "Mexico", "MXN", "Latin America", 18.1, 3],
+  ["BR", "巴西", "Brazil", "BRL", "Latin America", 5.48, 4],
+  ["AR", "阿根廷", "Argentina", "ARS", "Latin America", 1350, 5],
+  ["GB", "英国", "United Kingdom", "GBP", "Europe", 0.78, 6],
+  ["DE", "德国", "Germany", "EUR", "Europe", 0.86, 7],
+  ["FR", "法国", "France", "EUR", "Europe", 0.86, 8],
+  ["IT", "意大利", "Italy", "EUR", "Europe", 0.86, 9],
+  ["ES", "西班牙", "Spain", "EUR", "Europe", 0.86, 10],
+  ["JP", "日本", "Japan", "JPY", "Asia", 156, 11],
+  ["KR", "韩国", "South Korea", "KRW", "Asia", 1380, 12],
+  ["CN", "中国", "China", "CNY", "Asia", 7.2, 13],
+  ["IN", "印度", "India", "INR", "Asia", 83.8, 14],
+  ["SG", "新加坡", "Singapore", "SGD", "Asia", 1.35, 15],
+  ["TW", "中国台湾", "Taiwan", "TWD", "Asia", 32.2, 16],
+  ["AU", "澳大利亚", "Australia", "AUD", "Oceania", 1.51, 17],
+  ["NZ", "新西兰", "New Zealand", "NZD", "Oceania", 1.67, 18],
+  ["TR", "土耳其", "Turkey", "TRY", "Europe", 40.8, 19],
+  ["ZA", "南非", "South Africa", "ZAR", "Africa", 17.9, 20],
+];
 
 async function one(sql, params = []) {
   const result = await client.query(sql, params);
@@ -18,7 +50,30 @@ async function many(sql, params = []) {
   return client.query(sql, params);
 }
 
-async function upsertProduct({ slug, name, provider, description, officialUrl, sortOrder }) {
+async function upsertCountry({ code, nameZh, nameEn, currency, region, sortOrder }) {
+  return one(
+    `
+      INSERT INTO countries (
+        id, code, name_zh, name_en, currency, region, is_reference,
+        is_supported, sort_order, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, $1 = 'US', TRUE, $6, NOW(), NOW()
+      )
+      ON CONFLICT (code) DO UPDATE SET
+        name_zh = EXCLUDED.name_zh,
+        name_en = EXCLUDED.name_en,
+        currency = EXCLUDED.currency,
+        region = EXCLUDED.region,
+        is_supported = TRUE,
+        sort_order = EXCLUDED.sort_order,
+        updated_at = NOW()
+      RETURNING id, code
+    `,
+    [code, nameZh, nameEn, currency, region, sortOrder]
+  );
+}
+
+async function upsertProduct({ slug, name, category = "ai", provider, description, officialUrl, sortOrder }) {
   return one(
     `
       INSERT INTO products (
@@ -26,8 +81,8 @@ async function upsertProduct({ slug, name, provider, description, officialUrl, s
         status, featured, sort_order, created_at, updated_at
       )
       VALUES (
-        gen_random_uuid(), $1, $2, 'ai'::product_category, $3, $4, $5,
-        'published'::publish_status, TRUE, $6, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3::product_category, $4, $5, $6,
+        'published'::publish_status, TRUE, $7, NOW(), NOW()
       )
       ON CONFLICT (slug) DO UPDATE SET
         name = EXCLUDED.name,
@@ -41,7 +96,28 @@ async function upsertProduct({ slug, name, provider, description, officialUrl, s
         updated_at = NOW()
       RETURNING id, slug
     `,
-    [slug, name, provider, description, officialUrl, sortOrder]
+    [slug, name, category, provider, description, officialUrl, sortOrder]
+  );
+}
+
+async function upsertExchangeRate({ quoteCurrency, rate }) {
+  return one(
+    `
+      INSERT INTO exchange_rates (
+        id, base_currency, quote_currency, rate, source, rate_date,
+        fetched_at, status, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), 'USD', $1, $2::numeric, 'local-demo', CURRENT_DATE,
+        NOW(), 'active', NOW(), NOW()
+      )
+      ON CONFLICT (base_currency, quote_currency, rate_date, source) DO UPDATE SET
+        rate = EXCLUDED.rate,
+        fetched_at = NOW(),
+        status = 'active',
+        updated_at = NOW()
+      RETURNING id
+    `,
+    [quoteCurrency, rate]
   );
 }
 
@@ -179,18 +255,18 @@ async function ensureCollectorJob({
         UPDATE collector_jobs
         SET status = 'active',
             schedule = 'daily',
-            job_type = $6::text,
+            job_type = $5::text,
             discovery_candidate_id = COALESCE($2::uuid, discovery_candidate_id),
             discovery_source_id = COALESCE($3::uuid, discovery_source_id),
-            job_config = $7::jsonb,
-            priority = $5::int,
+            job_config = $6::jsonb,
+            priority = $4::int,
             next_run_at = NOW() + INTERVAL '6 hours',
             last_run_at = NOW() - INTERVAL '1 day',
             success_count = GREATEST(success_count, 2),
             updated_at = NOW()
         WHERE id = $1
       `,
-      [existing.id, candidateId, discoverySourceId, collectorKind, priority, jobType, JSON.stringify(jobConfig)]
+      [existing.id, candidateId, discoverySourceId, priority, jobType, JSON.stringify(jobConfig)]
     );
     return existing;
   }
@@ -203,14 +279,14 @@ async function ensureCollectorJob({
         success_count, error_count, job_config, priority, created_at, updated_at
       )
       VALUES (
-        gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4::uuid, $7::text, 'daily', 'active',
+        gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4::uuid, $6::text, 'daily', 'active',
         NOW() - INTERVAL '1 day', NOW() + INTERVAL '6 hours',
-        2, 0, $8::jsonb,
-        $6::int, NOW(), NOW()
+        2, 0, $7::jsonb,
+        $5::int, NOW(), NOW()
       )
       RETURNING id
     `,
-    [sourceId, productId, candidateId, discoverySourceId, collectorKind, priority, jobType, JSON.stringify(jobConfig)]
+    [sourceId, productId, candidateId, discoverySourceId, priority, jobType, JSON.stringify(jobConfig)]
   );
 }
 
@@ -219,6 +295,15 @@ async function main() {
   await many("BEGIN");
 
   try {
+    for (const [code, nameZh, nameEn, currency, region, , sortOrder] of demoCountries) {
+      await upsertCountry({ code, nameZh, nameEn, currency, region, sortOrder });
+    }
+    for (const [, , , currency, , unitsPerUsd] of demoCountries) {
+      if (currency !== "USD") {
+        await upsertExchangeRate({ quoteCurrency: currency, rate: unitsPerUsd });
+      }
+    }
+
     const chatgpt = await upsertProduct({
       slug: "chatgpt",
       name: "ChatGPT",
@@ -256,7 +341,7 @@ async function main() {
       description: "Claude Pro monthly plan.",
       sortOrder: 10,
     });
-    await upsertPlan(gemini.id, {
+    const geminiPlus = await upsertPlan(gemini.id, {
       slug: "plus",
       name: "Google AI Plus",
       description: "Google AI Plus monthly App Store plan.",
@@ -273,6 +358,52 @@ async function main() {
       name: "Google AI Ultra",
       description: "Google AI Ultra monthly App Store plan.",
       sortOrder: 30,
+    });
+
+    const netflix = await upsertProduct({
+      slug: "netflix",
+      name: "Netflix",
+      category: "streaming",
+      provider: "Netflix",
+      description: "Streaming subscription with regional monthly pricing.",
+      officialUrl: "https://www.netflix.com/",
+      sortOrder: 40,
+    });
+    const disney = await upsertProduct({
+      slug: "disney",
+      name: "Disney+",
+      category: "streaming",
+      provider: "Disney",
+      description: "Disney streaming subscription with regional monthly pricing.",
+      officialUrl: "https://www.disneyplus.com/",
+      sortOrder: 50,
+    });
+    const hboMax = await upsertProduct({
+      slug: "hbo-max",
+      name: "Max",
+      category: "streaming",
+      provider: "Warner Bros. Discovery",
+      description: "Max streaming subscription with regional monthly pricing.",
+      officialUrl: "https://www.max.com/",
+      sortOrder: 60,
+    });
+    const netflixStandard = await upsertPlan(netflix.id, {
+      slug: "standard",
+      name: "Standard",
+      description: "Netflix Standard monthly plan.",
+      sortOrder: 10,
+    });
+    const disneyPremium = await upsertPlan(disney.id, {
+      slug: "premium",
+      name: "Premium",
+      description: "Disney+ Premium monthly plan.",
+      sortOrder: 10,
+    });
+    const hboMaxStandard = await upsertPlan(hboMax.id, {
+      slug: "standard",
+      name: "Standard",
+      description: "Max Standard monthly plan.",
+      sortOrder: 10,
     });
 
     const openAiOfficial = await upsertSource({
@@ -329,6 +460,46 @@ async function main() {
       reliabilityScore: 78,
       note: "App Store source for Google Gemini in-app subscription tiers.",
     });
+    const streamingDemoSource = await upsertSource({
+      sourceKey: "local-demo-streaming-official",
+      name: "Local Streaming Official Pricing",
+      sourceLevel: "A",
+      type: "official_page",
+      provider: "Local demo",
+      baseUrl: "https://example.com/geosub-local-streaming-prices",
+      reliabilityScore: 90,
+      note: "Local-only demo source for streaming price page verification.",
+    });
+
+    const demoProductPlans = [
+      { product: chatgpt, plan: chatgptPlus, baseUsd: 20, source: openAiOfficial },
+      { product: claude, plan: claudePro, baseUsd: 20, source: anthropicOfficial },
+      { product: gemini, plan: geminiPlus, baseUsd: 19.99, source: googleOfficial },
+      { product: netflix, plan: netflixStandard, baseUsd: 17.99, source: streamingDemoSource },
+      { product: disney, plan: disneyPremium, baseUsd: 15.99, source: streamingDemoSource },
+      { product: hboMax, plan: hboMaxStandard, baseUsd: 16.99, source: streamingDemoSource },
+    ];
+
+    for (const [productIndex, item] of demoProductPlans.entries()) {
+      for (const [countryIndex, country] of demoCountries.entries()) {
+        const [countryCode, , , currency, , unitsPerUsd] = country;
+        const regionalFactor = 0.84 + ((countryIndex + productIndex * 2) % 9) * 0.04;
+        const priceUsd = Number((item.baseUsd * regionalFactor).toFixed(2));
+        const localPrice = currency === "JPY" || currency === "KRW" || currency === "ARS"
+          ? Math.round(priceUsd * unitsPerUsd)
+          : Number((priceUsd * unitsPerUsd).toFixed(2));
+        await upsertRegionPrice({
+          productId: item.product.id,
+          planId: item.plan.id,
+          countryCode,
+          localPrice,
+          currency,
+          priceUsd,
+          usBasePrice: item.baseUsd,
+          sourceId: item.source.id,
+        });
+      }
+    }
 
     await upsertRegionPrice({ productId: chatgpt.id, planId: chatgptPlus.id, countryCode: "US", localPrice: 20, currency: "USD", priceUsd: 20, usBasePrice: 20, sourceId: openAiOfficial.id });
     await upsertRegionPrice({ productId: chatgpt.id, planId: chatgptPlus.id, countryCode: "JP", localPrice: 3000, currency: "JPY", priceUsd: 19.2, usBasePrice: 20, sourceId: openAiOfficial.id });
@@ -455,7 +626,7 @@ async function main() {
           ($1, $2, $3, 'succeeded', 'official_site', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day' + INTERVAL '8 seconds', 8210, 'Parsed 3 regional prices from official page.', jsonb_build_object('demo_seed', 'geosub-local-demo')),
           ($4, $2, $5, 'succeeded', 'app_store', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours' + INTERVAL '12 seconds', 12014, 'Found App Store subscription tiers for JP and SG.', jsonb_build_object('demo_seed', 'geosub-local-demo')),
           ($6, $7, $8, 'failed', 'official_site', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '4 hours' + INTERVAL '4 seconds', 4210, 'Selector changed; queued for parser review.', jsonb_build_object('demo_seed', 'geosub-local-demo')),
-          ($9, $10, $11, 'queued', 'app_store', NOW() - INTERVAL '10 minutes', NULL, NULL, 'Gemini App Store collection is queued for the next collector run.', jsonb_build_object('demo_seed', 'geosub-local-demo'))
+          ($9, $10, $11, 'running', 'app_store', NOW() - INTERVAL '10 minutes', NULL, NULL, 'Gemini App Store collection is running in the local demo.', jsonb_build_object('demo_seed', 'geosub-local-demo'))
       `,
       [chatgptOfficialJob.id, chatgpt.id, openAiOfficial.id, chatgptAppStoreJob.id, openAiAppStore.id, claudeJob.id, claude.id, anthropicOfficial.id, geminiAppStoreJob.id, gemini.id, googleAppStore.id]
     );

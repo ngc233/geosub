@@ -76,6 +76,9 @@ test("language switching never links staged locales to unpublished guide details
     getLanguageSwitchHref("/zh/ai-pricing/chatgpt/plus", "ja"),
     "/ja/ai-pricing/chatgpt/plus",
   );
+  assert.equal(getLanguageSwitchHref("/zh/contact", "en"), "/en");
+  assert.equal(getLanguageSwitchHref("/zh/contact", "zh-tw"), "/zh-tw");
+  assert.equal(getLanguageSwitchHref("/zh/contact", "zh"), "/zh/contact");
 });
 
 test("known legacy Search Console URLs resolve without creating thin pages", () => {
@@ -184,7 +187,7 @@ test("SEO indexing policy keeps accessible locales separate from promoted locale
   assert.deepEqual(seoSitemapBudgets, {
     total: 148,
     productPlanPages: 96,
-    countryPages: 8,
+    countryPages: 6,
     guideDetailPages: 24,
     currencyPairPages: 16,
   });

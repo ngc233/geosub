@@ -1,5 +1,6 @@
 import AdminLink from "@/components/admin/AdminLink";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
+import { ArrowRight } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import SegmentedControl from "../../../components/ui/SegmentedControl";
 import {
@@ -183,16 +184,18 @@ export default async function AdminPlansPage({
           <div className="flex gap-4">
             <AdminLink
               href="/admin/products"
-              className="text-sm font-black text-blue-700 hover:text-blue-900"
+              className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
             >
-              产品库 →
+              产品库
+              <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
             </AdminLink>
 
             <AdminLink
               href="/admin/prices"
-              className="text-sm font-black text-blue-700 hover:text-blue-900"
+              className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
             >
-              价格库 →
+              价格库
+              <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
             </AdminLink>
           </div>
         </div>

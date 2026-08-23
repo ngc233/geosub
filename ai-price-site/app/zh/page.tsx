@@ -52,6 +52,8 @@ async function loadHomepageData() {
           code: region.code,
           countryName: region.countryName,
           priceUsd: region.priceUsd,
+          localPrice: region.localPrice,
+          tax: region.taxNote,
         })),
       }];
     });

@@ -67,7 +67,15 @@ test("global search is shared by the header and supports every launched locale",
   assert.match(header, /<GlobalSearch locale=\{currentLocaleCode\}\s*\/>/);
   assert.match(search, /Record<PreparedSiteLocale,\s*SearchCopy>/);
   assert.match(search, /role="dialog"/);
+  assert.match(search, /createPortal\(/);
+  assert.match(search, /document\.body/);
+  assert.match(search, /data-global-search-overlay/);
+  assert.match(search, /fixed inset-0[^\n]*min-h-dvh/);
   assert.match(search, /onClick=\{\(event\) => \{/);
+  assert.match(search, /icon: Bot/);
+  assert.match(search, /icon: MonitorPlay/);
+  assert.match(search, /icon: BadgeDollarSign/);
+  assert.doesNotMatch(search, /icon: Sparkles|icon: Clapperboard/);
   assert.match(search, /event\.key === "Escape"/);
   assert.match(search, /event\.key === "ArrowDown"/);
   assert.match(search, /function trackSearchResult/);

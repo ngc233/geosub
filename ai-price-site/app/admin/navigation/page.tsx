@@ -1,5 +1,5 @@
 import AdminLink from "@/components/admin/AdminLink";
-import { ArrowDown, ArrowUp, Pencil } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Pencil } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import SegmentedControl from "../../../components/ui/SegmentedControl";
@@ -514,9 +514,10 @@ export default async function AdminNavigationPage({
       <div className="mt-6">
         <AdminLink
           href="/admin"
-          className="text-sm font-black text-blue-700 hover:text-blue-900"
+          className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
         >
-          ← 返回运营驾驶舱
+          <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.8} />
+          返回运营驾驶舱
         </AdminLink>
       </div>
     </div>

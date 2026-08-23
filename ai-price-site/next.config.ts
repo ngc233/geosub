@@ -38,6 +38,9 @@ const nextConfig: NextConfig = {
   distDir: process.env.GEOSUB_NEXT_DIST_DIR || ".next",
   allowedDevOrigins: ["127.0.0.1"],
   trailingSlash: false,
+  outputFileTracingIncludes: {
+    "/reports/**/*": ["./assets/fonts/*.otf", "./assets/fonts/*.ttf", "./node_modules/@fontsource/**/*.woff"],
+  },
   async redirects() {
     return [
       {

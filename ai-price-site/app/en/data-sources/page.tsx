@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Check } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Data Sources and Pricing Methodology",
@@ -107,8 +108,8 @@ export default function EnglishDataSourcesPage() {
               <ul className="mt-4 space-y-3 text-sm leading-6 text-zinc-600">
                 {qualityRules.map((rule) => (
                   <li key={rule} className="flex gap-2">
-                    <span className="mt-1.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-lime-700 ring-1 ring-lime-200">
-                      ✓
+                    <span className="mt-1.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-lime-700 ring-1 ring-lime-200">
+                      <Check aria-hidden="true" className="size-3" strokeWidth={2.2} />
                     </span>
                     <span>{rule}</span>
                   </li>

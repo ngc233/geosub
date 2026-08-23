@@ -1,10 +1,8 @@
-import {
-  TraditionalChineseHomePage,
-  traditionalChineseHomeMetadata,
-} from "../../components/TraditionalChinesePages";
+import { traditionalChineseHomeMetadata } from "../../components/TraditionalChinesePages";
+import LocalizedHomepagePage from "../../components/LocalizedHomepagePage";
 
 export const metadata = traditionalChineseHomeMetadata;
 
 export default function Page() {
-  return <TraditionalChineseHomePage />;
+  return <LocalizedHomepagePage locale="zh-tw" />;
 }

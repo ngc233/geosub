@@ -302,10 +302,11 @@ export default async function RootLayout({
     <html
       lang={localeDefinition.htmlLang}
       dir={localeDefinition.direction}
+      data-scroll-behavior="smooth"
       data-analytics-consent-required={String(analyticsConsentRequired)}
       suppressHydrationWarning
     >
-      <body className="min-h-screen bg-slate-50 text-slate-950 antialiased">
+      <body className="min-h-screen text-slate-950 antialiased">
         <Suspense fallback={null}>
           <RouteProgressBar />
         </Suspense>

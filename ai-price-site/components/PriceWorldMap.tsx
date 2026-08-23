@@ -16,6 +16,11 @@ import {
   getDetailModuleCopy,
   type DetailLocale,
 } from "../lib/detail-page-copy";
+import {
+  GEO_PRICING_MAP_COLORS,
+  getGeoPriceDifference,
+  getGeoPriceFill,
+} from "../lib/geo-pricing-map";
 
 type PriceWorldMapProps = {
   plan: ProductPlan;
@@ -72,7 +77,7 @@ type DragState = {
 
 type KeyMarker = {
   key: string;
-  kind: "min" | "max" | "reference";
+  kind: "min" | "reference";
   region: RegionPrice;
   x: number;
   y: number;
@@ -81,6 +86,16 @@ type KeyMarker = {
 
 const WIDTH = 900;
 const HEIGHT = 430;
+
+function getInitialViewState(): ViewState {
+  const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+  const scale = mobile ? 1.35 : 1;
+  return {
+    scale,
+    x: (WIDTH * (1 - scale)) / 2,
+    y: (HEIGHT * (1 - scale)) / 2,
+  };
+}
 
 const ISO2_TO_NUMERIC: Record<string, number> = {
   US: 840,
@@ -141,28 +156,9 @@ function getCountryNumericCode(code: string) {
   return ISO2_TO_NUMERIC[code.toUpperCase()];
 }
 
-function getDiffPercent(regionPrice: number, referencePrice: number) {
-  if (referencePrice <= 0) return 0;
-  return Math.round(((regionPrice - referencePrice) / referencePrice) * 100);
-}
-
 function getCountryColor(region?: RegionPrice, referencePrice?: number) {
-  if (!region || !referencePrice) return "#e5e7eb";
-
-  const diff = getDiffPercent(region.priceUsd, referencePrice);
-
-  if (diff <= -40) return "#16a34a";
-  if (diff <= -20) return "#4ade80";
-  if (diff <= -5) return "#bbf7d0";
-  if (diff < 5) return "#fde68a";
-  if (diff < 20) return "#fb923c";
-  if (diff < 40) return "#f87171";
-
-  return "#dc2626";
-}
-
-function getCountryOpacity(region?: RegionPrice) {
-  return region ? 1 : 0.58;
+  if (!region || !referencePrice) return getGeoPriceFill();
+  return getGeoPriceFill(getGeoPriceDifference(region.priceUsd, referencePrice));
 }
 
 function getDiffLabel(
@@ -177,9 +173,9 @@ function getDiffLabel(
 
 function getDiffTextColor(diffPercent?: number) {
   if (typeof diffPercent !== "number") return "text-zinc-400";
-  if (diffPercent > 0) return "text-rose-600 dark:text-rose-400";
-  if (diffPercent < 0) return "text-lime-700 dark:text-lime-400";
-  return "text-amber-600 dark:text-amber-300";
+  if (diffPercent > 0) return "text-[#a24b3a] dark:text-[#f0a08f]";
+  if (diffPercent < 0) return "text-[#4f7f2a] dark:text-[#bef264]";
+  return "text-zinc-600 dark:text-zinc-300";
 }
 
 function getSummaryLabel({
@@ -212,39 +208,6 @@ function getSummaryLabel({
   return copy.recorded;
 }
 
-function getMarkerMeta(
-  kind: KeyMarker["kind"],
-  copy: ReturnType<typeof getDetailMapCopy>,
-) {
-  if (kind === "min") {
-    return {
-      label: copy.lowest,
-      dot: "#16a34a",
-      border: "#16a34a",
-      fill: "#ecfccb",
-      text: "#166534",
-    };
-  }
-
-  if (kind === "max") {
-    return {
-      label: copy.highest,
-      dot: "#f97316",
-      border: "#f97316",
-      fill: "#fff7ed",
-      text: "#c2410c",
-    };
-  }
-
-  return {
-    label: copy.reference,
-    dot: "#71717a",
-    border: "#d4d4d8",
-    fill: "#ffffff",
-    text: "#3f3f46",
-  };
-}
-
 export default function PriceWorldMap({
   plan,
   locale = "zh",
@@ -252,11 +215,7 @@ export default function PriceWorldMap({
   formatPrice = formatUsd,
 }: PriceWorldMapProps) {
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
-  const [view, setView] = useState<ViewState>({
-    scale: 1,
-    x: 0,
-    y: 0,
-  });
+  const [view, setView] = useState<ViewState>(getInitialViewState);
   const [dragState, setDragState] = useState<DragState | null>(null);
 
   const mapCopy = getDetailMapCopy(locale);
@@ -325,15 +284,9 @@ export default function PriceWorldMap({
 
     const selected = [
       minRegion ? { kind: "min" as const, region: minRegion } : null,
-      maxRegion &&
-      (!minRegion || maxRegion.code.toUpperCase() !== minRegion.code.toUpperCase())
-        ? { kind: "max" as const, region: maxRegion }
-        : null,
       referenceRegion &&
       (!minRegion ||
-        referenceRegion.code.toUpperCase() !== minRegion.code.toUpperCase()) &&
-      (!maxRegion ||
-        referenceRegion.code.toUpperCase() !== maxRegion.code.toUpperCase())
+        referenceRegion.code.toUpperCase() !== minRegion.code.toUpperCase())
         ? { kind: "reference" as const, region: referenceRegion }
         : null,
     ].filter(Boolean) as Array<{
@@ -370,11 +323,23 @@ export default function PriceWorldMap({
           region,
           x: centroid[0],
           y: centroid[1],
-          diffPercent: getDiffPercent(region.priceUsd, referencePrice),
+          diffPercent: getGeoPriceDifference(region.priceUsd, referencePrice),
         };
       })
       .filter(Boolean) as KeyMarker[];
-  }, [mapData.features, mapData.pathGenerator, maxRegion, minRegion, referencePrice, referenceRegion]);
+  }, [mapData.features, mapData.pathGenerator, minRegion, referencePrice, referenceRegion]);
+
+  const markersAreClose = keyMarkers.length === 2
+    && Math.hypot(
+      keyMarkers[0].x - keyMarkers[1].x,
+      keyMarkers[0].y - keyMarkers[1].y,
+    ) < 130;
+  const maximumSaving = minRegion && referenceRegion
+    ? Math.max(0, -getGeoPriceDifference(minRegion.priceUsd, referenceRegion.priceUsd))
+    : 0;
+  const highestDifference = maxRegion && referenceRegion
+    ? getGeoPriceDifference(maxRegion.priceUsd, referenceRegion.priceUsd)
+    : 0;
 
   const zoomIn = () => {
     setView((current) => ({
@@ -391,11 +356,7 @@ export default function PriceWorldMap({
   };
 
   const resetView = () => {
-    setView({
-      scale: 1,
-      x: 0,
-      y: 0,
-    });
+    setView(getInitialViewState());
   };
 
   return (
@@ -452,12 +413,14 @@ export default function PriceWorldMap({
       ) : null}
 
       <div
+        data-detail-geo-pricing
         className={
           compact
-            ? "relative overflow-hidden rounded-xl border border-zinc-100 bg-[#fbfaf7] dark:border-zinc-800 dark:bg-zinc-950/40"
-            : "relative mx-4 mt-5 overflow-hidden rounded-xl border border-zinc-100 bg-[#fbfaf7] dark:border-zinc-800 dark:bg-zinc-950/40 md:mx-6"
+            ? "grid overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70 lg:grid-cols-[minmax(0,1fr)_280px]"
+            : "mx-4 mt-5 grid overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70 lg:grid-cols-[minmax(0,1fr)_280px] md:mx-6"
         }
       >
+      <div className="relative min-w-0 overflow-hidden bg-[#fafbfa] dark:bg-zinc-950/40">
         <div className="absolute right-3 top-3 z-20 flex items-center gap-0.5 rounded-full border border-zinc-200 bg-white/85 p-0.5 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85 md:right-4 md:top-4 md:gap-1 md:p-1">
           <button
             type="button"
@@ -490,7 +453,7 @@ export default function PriceWorldMap({
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className={`w-full select-none ${
-            compact ? "h-[420px]" : "h-[300px] md:h-auto"
+            compact ? "h-[320px] sm:h-[400px]" : "h-[300px] md:h-auto"
           } ${
             dragState ? "cursor-grabbing" : "cursor-grab"
           }`}
@@ -523,18 +486,6 @@ export default function PriceWorldMap({
             setDragState(null);
           }}
         >
-          <style>{`
-            @keyframes geosub-map-pulse {
-              0% { opacity: 0.28; r: 7px; }
-              70% { opacity: 0; r: 23px; }
-              100% { opacity: 0; r: 23px; }
-            }
-
-            .geosub-map-pulse {
-              animation: geosub-map-pulse 2.4s ease-out infinite;
-            }
-          `}</style>
-
           <rect
             width={WIDTH}
             height={HEIGHT}
@@ -556,7 +507,7 @@ export default function PriceWorldMap({
 
               const diffPercent =
                 region && referencePrice
-                  ? getDiffPercent(region.priceUsd, referencePrice)
+                  ? getGeoPriceDifference(region.priceUsd, referencePrice)
                   : undefined;
 
               const path = mapData.pathGenerator(
@@ -572,10 +523,10 @@ export default function PriceWorldMap({
               return (
                 <path
                   key={uniqueKey}
+                  data-detail-map-country={region?.code || "no-data"}
                   d={path}
                   fill={getCountryColor(region, referencePrice)}
-                  opacity={getCountryOpacity(region)}
-                  stroke="#ffffff"
+                  stroke={GEO_PRICING_MAP_COLORS.outline}
                   strokeWidth={region ? 0.9 : 0.55}
                   vectorEffect="non-scaling-stroke"
                   className={[
@@ -628,103 +579,58 @@ export default function PriceWorldMap({
             })}
 
             {keyMarkers.map((marker) => {
-              const meta = getMarkerMeta(marker.kind, mapCopy);
-              const isRightSide = marker.x > WIDTH * 0.58;
-              const tagWidth = marker.kind === "reference" ? 94 : 118;
-              const tagHeight = 44;
-              const tagX = isRightSide ? -tagWidth - 12 : 12;
-              const tagY = -tagHeight - 10;
+              const forceLeft = markersAreClose && marker.kind === "min";
+              const labelOnLeft = forceLeft || (!markersAreClose && marker.x > WIDTH * 0.72);
+              const labelX = labelOnLeft ? -89 : 13;
+              const pinColor = marker.kind === "min"
+                ? GEO_PRICING_MAP_COLORS.savingPin
+                : GEO_PRICING_MAP_COLORS.benchmarkPin;
 
               return (
                 <g
                   key={marker.key}
-                  className={marker.kind === "reference" ? "hidden md:block" : ""}
+                  data-detail-map-pin={marker.kind}
                   transform={`translate(${marker.x} ${marker.y})`}
                   pointerEvents="none"
                 >
-                  {marker.kind === "min" ? (
-                    <circle
-                      className="geosub-map-pulse motion-reduce:hidden"
-                      cx="0"
-                      cy="0"
-                      r="7"
-                      fill={meta.dot}
-                    />
-                  ) : null}
-
                   <line
-                    x1={isRightSide ? -4 : 4}
-                    y1="-4"
-                    x2={isRightSide ? tagX + tagWidth : tagX}
-                    y2={tagY + tagHeight}
-                    stroke={meta.border}
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    opacity="0.75"
+                    x1={labelOnLeft ? -7 : 7}
+                    y1="0"
+                    x2={labelOnLeft ? -10 : 10}
+                    y2="0"
+                    stroke={pinColor}
+                    strokeWidth="1.5"
                     vectorEffect="non-scaling-stroke"
                   />
-
                   <circle
                     cx="0"
                     cy="0"
-                    r="4.5"
-                    fill={meta.dot}
-                    stroke="#ffffff"
-                    strokeWidth="2.5"
+                    r="7"
+                    fill="#ffffff"
+                    stroke={pinColor}
+                    strokeWidth="3"
                     vectorEffect="non-scaling-stroke"
                   />
-
-                  <g transform={`translate(${tagX} ${tagY})`}>
+                  <g transform={`translate(${labelX} -13)`}>
                     <rect
-                      x="0"
-                      y="0"
-                      width={tagWidth}
-                      height={tagHeight}
-                      rx="9"
-                      fill={meta.fill}
-                      stroke={meta.border}
-                      strokeWidth="1.2"
+                      width="76"
+                      height="26"
+                      rx="8"
+                      fill="#ffffff"
+                      stroke="#d7dcd7"
+                      strokeWidth="1"
                       vectorEffect="non-scaling-stroke"
-                      filter="drop-shadow(0 6px 12px rgba(24,24,27,0.12))"
                     />
-
                     <text
-                      x="10"
+                      x="38"
                       y="17"
-                      fill={meta.text}
+                      textAnchor="middle"
+                      fill="#3f4742"
                       fontSize="10"
                       fontWeight="800"
-                      letterSpacing="0"
                     >
-                      {meta.label} · {marker.region.code.toUpperCase()}
+                      {marker.kind === "min" ? mapCopy.lowest : mapCopy.reference} · {marker.region.code.toUpperCase()}
                     </text>
-
-                    <text
-                      x="10"
-                      y="34"
-                      fill="#18181b"
-                      fontSize={marker.kind === "reference" ? "12" : "13"}
-                      fontWeight="900"
-                      letterSpacing="0"
-                    >
-                      {formatPrice(marker.region.priceUsd)}
-                    </text>
-
-                    {marker.kind !== "reference" ? (
-                      <text
-                        x={tagWidth - 10}
-                        y="34"
-                        textAnchor="end"
-                        fill={meta.text}
-                        fontSize="10"
-                        fontWeight="800"
-                        letterSpacing="0"
-                      >
-                        {marker.diffPercent > 0
-                          ? `+${marker.diffPercent}%`
-                          : `${marker.diffPercent}%`}
-                      </text>
-                    ) : null}
                   </g>
                 </g>
               );
@@ -734,16 +640,17 @@ export default function PriceWorldMap({
 
         {hoverInfo ? (
           <div
-            className="pointer-events-auto fixed z-50 w-64 rounded-lg border border-zinc-200 bg-white p-4 shadow-xl shadow-zinc-900/10 transition-all duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
-            style={{
-              left:
-                typeof window !== "undefined"
-                  ? Math.min(hoverInfo.x + 16, window.innerWidth - 280)
-                  : hoverInfo.x + 16,
-              top:
-                typeof window !== "undefined"
-                  ? Math.min(hoverInfo.y + 16, window.innerHeight - 190)
-                  : hoverInfo.y + 16,
+            data-detail-map-selection
+            className={hoverInfo.locked
+              ? "pointer-events-auto absolute bottom-3 left-3 right-3 z-50 rounded-lg border border-zinc-200 bg-white p-4 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30 sm:right-auto sm:w-64"
+              : "pointer-events-none fixed z-50 hidden w-64 rounded-lg border border-zinc-200 bg-white p-4 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30 md:block"}
+            style={hoverInfo.locked ? undefined : {
+              left: typeof window !== "undefined"
+                ? Math.min(hoverInfo.x + 16, window.innerWidth - 280)
+                : hoverInfo.x + 16,
+              top: typeof window !== "undefined"
+                ? Math.min(hoverInfo.y + 16, window.innerHeight - 190)
+                : hoverInfo.y + 16,
             }}
           >
             <div className="flex items-start justify-between gap-3">
@@ -812,6 +719,55 @@ export default function PriceWorldMap({
         ) : null}
       </div>
 
+      <aside className="flex flex-col border-t border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70 sm:p-5 lg:border-l lg:border-t-0">
+        <div className="border-b border-zinc-100 pb-4 dark:border-zinc-800">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400">{mapCopy.covered}</p>
+          <div className="mt-1 text-lg font-semibold text-zinc-950 dark:text-white">
+            {plan.regions.length} {mapCopy.regionsSuffix}
+          </div>
+        </div>
+
+        <div className="py-4">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold text-lime-600 dark:text-lime-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#84cc16]" aria-hidden="true" />
+            {mapCopy.lowest}
+          </p>
+          <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
+            <div>
+              <div className="text-[15px] font-semibold text-lime-600 dark:text-lime-400">{minRegion?.country || mapCopy.none}</div>
+              <div className="mt-0.5 text-xs font-medium text-lime-700 dark:text-lime-300">
+                {maximumSaving ? getDiffLabel(-maximumSaving, mapCopy) : mapCopy.sameAsBenchmark}
+              </div>
+            </div>
+            <div className="text-right text-2xl font-semibold leading-none tabular-nums text-lime-600 dark:text-lime-400">
+              {minRegion ? formatPrice(minRegion.priceUsd) : "—"}
+            </div>
+          </div>
+        </div>
+
+        <dl className="divide-y divide-zinc-100 border-y border-zinc-100 text-xs dark:divide-zinc-800 dark:border-zinc-800">
+          <div className="flex items-center justify-between gap-3 py-3">
+            <dt className="text-zinc-500 dark:text-zinc-400">{mapCopy.reference}</dt>
+            <dd className="font-semibold text-zinc-900 dark:text-white">{referenceRegion ? `${referenceRegion.country} · ${formatPrice(referenceRegion.priceUsd)}` : "—"}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-3 py-3">
+            <dt className="flex items-center gap-1.5 text-[#a24b3a] dark:text-[#f0a08f]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#c56550]" aria-hidden="true" />
+              {mapCopy.highest}
+            </dt>
+            <dd className="text-right font-semibold text-[#a24b3a] dark:text-[#f0a08f]">
+              {maxRegion ? `${maxRegion.country} · ${formatPrice(maxRegion.priceUsd)}` : "—"}
+              {highestDifference > 0 ? <span className="mt-0.5 block text-[10px] font-medium text-[#a24b3a] dark:text-[#f0a08f]">{getDiffLabel(highestDifference, mapCopy)}</span> : null}
+            </dd>
+          </div>
+        </dl>
+
+        <p className="mt-auto pt-4 text-[11px] leading-5 text-zinc-500 dark:text-zinc-400">
+          {heatmapCopy.description}
+        </p>
+      </aside>
+      </div>
+
       <div className={compact ? "px-1 pb-1 pt-4" : "px-5 pb-6 pt-5 md:px-6"}>
         <div className="mb-2 flex items-center justify-between text-xs font-bold text-zinc-400">
           <span>{mapCopy.cheaperLegend}</span>
@@ -819,7 +775,13 @@ export default function PriceWorldMap({
           <span>{mapCopy.expensiveLegend}</span>
         </div>
 
-        <div className="h-3 rounded-full bg-gradient-to-r from-green-600 via-amber-200 to-red-600" />
+        <div className="grid h-3 grid-cols-5 overflow-hidden rounded-full" aria-hidden="true">
+          <span style={{ backgroundColor: GEO_PRICING_MAP_COLORS.deepestSaving }} />
+          <span style={{ backgroundColor: GEO_PRICING_MAP_COLORS.saving }} />
+          <span style={{ backgroundColor: GEO_PRICING_MAP_COLORS.nearBenchmark }} />
+          <span style={{ backgroundColor: GEO_PRICING_MAP_COLORS.aboveBenchmark }} />
+          <span style={{ backgroundColor: GEO_PRICING_MAP_COLORS.highestPremium }} />
+        </div>
 
         <div className="mt-2 flex items-center justify-between text-[11px] font-bold text-zinc-400">
           <span>-40%</span>

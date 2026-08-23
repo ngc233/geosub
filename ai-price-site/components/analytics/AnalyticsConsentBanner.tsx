@@ -73,44 +73,46 @@ export default function AnalyticsConsentBanner({
 
   return (
     <section
-      className="fixed inset-x-3 bottom-3 z-[120] mx-auto max-w-3xl rounded-xl border border-zinc-200 bg-white/95 p-4 text-zinc-950 shadow-2xl shadow-zinc-950/15 backdrop-blur md:bottom-5 md:p-5 dark:border-zinc-800 dark:bg-zinc-950/95 dark:text-white"
+      className="fixed inset-x-3 bottom-3 z-[120] mx-auto max-w-5xl rounded-xl border border-zinc-200 bg-white/95 p-3.5 text-zinc-950 shadow-[0_16px_40px_rgba(15,23,42,0.12)] backdrop-blur md:bottom-4 md:p-4 dark:border-zinc-800 dark:bg-zinc-950/95 dark:text-white"
       role="dialog"
       aria-live="polite"
       aria-label={copy.title}
     >
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-lime-100 text-lime-800 dark:bg-lime-500/15 dark:text-lime-300">
-          <ShieldCheck className="size-5" aria-hidden="true" />
-        </span>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-5">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-lime-100 text-lime-800 dark:bg-lime-500/15 dark:text-lime-300">
+            <ShieldCheck className="size-4" aria-hidden="true" />
+          </span>
 
-        <div className="min-w-0 flex-1">
-          <h2 className="text-base font-black">{copy.title}</h2>
-          <p className="mt-1 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-            {copy.description}{" "}
-            <Link
-              href={withSiteLocale("/privacy", locale)}
-              className="font-bold text-zinc-950 underline decoration-zinc-300 underline-offset-4 transition hover:text-lime-700 dark:text-white dark:decoration-zinc-600 dark:hover:text-lime-300"
-            >
-              {copy.privacy}
-            </Link>
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => chooseConsent(ANALYTICS_CONSENT_GRANTED)}
-              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-lime-600 bg-lime-500 px-4 text-sm font-black text-zinc-950 transition hover:bg-lime-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/20"
-            >
-              {copy.accept}
-            </button>
-            <button
-              type="button"
-              onClick={() => chooseConsent(ANALYTICS_CONSENT_DENIED)}
-              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-950 focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
-            >
-              {copy.reject}
-            </button>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold">{copy.title}</h2>
+            <p className="mt-1 text-[13px] leading-5 text-zinc-600 dark:text-zinc-300">
+              {copy.description}{" "}
+              <Link
+                href={withSiteLocale("/privacy", locale)}
+                className="font-semibold text-zinc-800 underline decoration-zinc-300 underline-offset-4 transition hover:text-zinc-950 dark:text-white dark:decoration-zinc-600"
+              >
+                {copy.privacy}
+              </Link>
+            </p>
           </div>
+        </div>
+
+        <div className="flex shrink-0 flex-wrap gap-2 pl-11 md:pl-0">
+          <button
+            type="button"
+            onClick={() => chooseConsent(ANALYTICS_CONSENT_GRANTED)}
+            className="inline-flex min-h-9 items-center justify-center rounded-lg border border-zinc-950 bg-zinc-950 px-3.5 text-white transition hover:bg-zinc-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/20 dark:border-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            <span className="text-xs font-semibold">{copy.accept}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => chooseConsent(ANALYTICS_CONSENT_DENIED)}
+            className="inline-flex min-h-9 items-center justify-center rounded-lg border border-zinc-300 bg-white px-3.5 text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-950 focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
+          >
+            <span className="text-xs font-semibold">{copy.reject}</span>
+          </button>
         </div>
       </div>
     </section>

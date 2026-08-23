@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { getPlanDisplayName } from "../lib/pricing-labels.ts";
+import {
+  getPlanDisplayName,
+  getPlanTabLabel,
+} from "../lib/pricing-labels.ts";
 import {
   getLegacyPricingPlanRedirectPath,
   getPricingDetailPath,
@@ -221,11 +224,15 @@ test("priority product guidance is rendered on public detail pages", () => {
   assert.match(detailPage, /getPlanEditorialIndexingStatus/);
   assert.match(detailPage, /<ProductEditorialSection/);
   assert.match(detailPage, /planName=\{activePlan\.name\}/);
+  assert.match(detailPage, /locale=\{locale\}/);
   assert.match(editorialSection, /content\.plan\.bestFor/);
   assert.match(editorialSection, /content\.plan\.difference/);
   assert.match(editorialSection, /content\.plan\.availabilityNote/);
+  assert.doesNotMatch(editorialSection, /\{content\.summary\}/);
+  assert.match(editorialSection, /`\$\{planName\} 适合谁`/);
   assert.match(editorialSection, /GitCompareArrows/);
   assert.match(editorialSection, /UserRound/);
+  assert.match(editorialSection, /ExternalLink/);
   assert.match(editorialSection, /TrackedLink/);
   assert.match(detailPage, /<RelatedPlanChoices/);
   assert.match(topicLinks, /getPlanEditorialIndexingStatus/);
@@ -257,13 +264,24 @@ test("product overview and related pricing links expose clear next actions", () 
   );
   const topicLinks = readAppFile("..", "components", "PricingTopicLinks.tsx");
 
-  assert.match(planOverview, /min-h-11/);
-  assert.match(planOverview, /border-lime-300/);
+  assert.match(planOverview, /data-single-plan/);
+  assert.match(planOverview, /lg:grid-cols-\[minmax\(0,1fr\)_auto\]/);
+  assert.match(planOverview, /copy\.coverage/);
+  assert.match(planOverview, /copy\.channel/);
+  assert.match(planOverview, /stats\.minRegion\.country/);
+  assert.match(planOverview, /stats\.maxRegion\.country/);
+  assert.match(planOverview, /editorial\.differenceLabel/);
+  assert.match(planOverview, /editorial\.plan\.difference/);
+  assert.match(planOverview, /border-zinc-200 bg-white/);
+  assert.doesNotMatch(planOverview, /border-lime-300 bg-lime-50/);
   assert.match(planOverview, /copy\.viewPlan/);
   assert.match(planOverview, /copy\.regions\(plan\.regions\.length\)/);
   assert.match(topicLinks, /productAction/);
   assert.match(topicLinks, /min-h-16/);
-  assert.match(topicLinks, /hover:border-lime-400/);
+  assert.match(topicLinks, /hover:shadow-md/);
+  assert.match(topicLinks, /<BrandIcon product=\{product\} size="sm" \/>/);
+  assert.doesNotMatch(topicLinks, /bg-lime-100 text-lime-800/);
+  assert.doesNotMatch(topicLinks, /hover:border-lime-/);
 });
 
 test("pricing detail pages keep AI and streaming paths synchronized", () => {
@@ -489,6 +507,11 @@ test("pricing detail labels avoid duplicated product and plan names", () => {
   assert.equal(getPlanDisplayName("ChatGPT", "ChatGPT Plus"), "ChatGPT Plus");
   assert.equal(getPlanDisplayName("Netflix", "Premium"), "Netflix Premium");
   assert.equal(getPlanDisplayName("Google AI", "Google AI Pro"), "Google AI Pro");
+  assert.equal(getPlanDisplayName("Gemini", "Google AI Plus"), "Google AI Plus");
+  assert.equal(getPlanTabLabel("ChatGPT", "ChatGPT Pro 5x"), "Pro 5x");
+  assert.equal(getPlanTabLabel("Gemini", "Google AI Plus"), "Plus");
+  assert.equal(getPlanTabLabel("Gemini", "Google AI Pro"), "Pro");
+  assert.equal(getPlanTabLabel("Gemini", "Google AI Ultra"), "Ultra");
 
   const detailPage = readAppFile("..", "components", "PricingDetailPage.tsx");
   const platformView = readAppFile("..", "components", "PricingPlatformView.tsx");

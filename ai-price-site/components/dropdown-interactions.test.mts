@@ -28,6 +28,7 @@ test("language and currency dropdowns close on outside interaction and Escape", 
   assert.match(header, /document\.addEventListener\("focusin"/);
   assert.match(header, /event\.key === "Escape"/);
   assert.match(header, /setLanguageMenuOpen\(false\)/);
+  assert.match(header, /setMobileOpen\(false\)/);
   assert.match(pricingPlatform, /document\.addEventListener\("pointerdown"/);
   assert.match(pricingPlatform, /event\.key === "Escape"/);
   assert.match(pricingPlatform, /setOpen\(false\)/);
@@ -54,6 +55,9 @@ test("mobile product switcher closes outside and uses current dropdown radius", 
   assert.match(source, /event\.key === "Escape"/);
   assert.match(source, /role="menu"/);
   assert.match(source, /role="menuitem"/);
+  assert.match(source, /max-h-\[min\(65dvh,32rem\)\]/);
+  assert.match(source, /overflow-y-auto/);
+  assert.match(source, /overscroll-contain/);
   assert.match(source, /\{open \? <div/);
   assert.doesNotMatch(source, /rounded-3xl/);
   assert.doesNotMatch(source, /rounded-2xl/);
@@ -61,17 +65,20 @@ test("mobile product switcher closes outside and uses current dropdown radius", 
   assert.match(source, /rounded-lg border border-zinc-200 bg-white/);
 });
 
-test("plan tabs use short labels on narrow screens", () => {
+test("plan tabs use compact labels at every viewport width", () => {
   const planTabs = readComponent("PlanTabs.tsx");
   const segmentedControl = readComponent("ui/SegmentedControl.tsx");
 
-  assert.match(planTabs, /shortLabel/);
-  assert.match(planTabs, /getShortPlanName/);
+  assert.doesNotMatch(planTabs, /shortLabel:/);
+  assert.match(planTabs, /getPlanTabLabel/);
   assert.match(planTabs, /productName/);
-  assert.match(planTabs, /escapeRegExp\(productName\)/);
   assert.doesNotMatch(planTabs, /ChatGPT\|Claude\|Gemini/);
+  assert.match(planTabs, /size="sm"/);
+  assert.match(planTabs, /overflow-x-auto/);
+  assert.match(planTabs, /className="min-w-max"/);
   assert.match(segmentedControl, /sm:hidden/);
   assert.match(segmentedControl, /hidden truncate sm:inline/);
+  assert.match(segmentedControl, /aria-current=\{active \? "page" : undefined\}/);
   assert.match(segmentedControl, /relative inline-grid rounded-lg/);
   assert.match(segmentedControl, /const thumbRadius = "rounded-md"/);
   assert.doesNotMatch(segmentedControl, /rounded-xl/);
@@ -136,7 +143,9 @@ test("share modal keeps the generated card as the primary preview", () => {
   assert.doesNotMatch(source, /分享 \{product\.name\} 价格/);
   assert.doesNotMatch(source, />分享到</);
   assert.doesNotMatch(source, /min-w-\[86px\] rounded-xl/);
-  assert.match(source, /min-w-\[86px\] rounded-lg/);
+  assert.match(source, /grid grid-cols-2 gap-2/);
+  assert.match(source, /h-10.*rounded-lg/);
+  assert.match(source, /data-share-price-card/);
 });
 
 test("site chrome derives language from the client route", () => {

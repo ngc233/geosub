@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf8f3;
+  --background: #f7f8fa;
   --foreground: #18181b;
 }
 
@@ -47,9 +47,64 @@ body {
   }
 }
 
+.gs-home-product-nav {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.gs-home-product-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.gs-geo-map-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.gs-geo-map-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.gs-product-sidebar-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+
+.gs-product-sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.gs-product-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.gs-product-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 999px;
+}
+
+.gs-product-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gs-product-sidebar-scroll {
+    scrollbar-color: #52525b transparent;
+  }
+
+  .gs-product-sidebar-scroll::-webkit-scrollbar-thumb {
+    background: #52525b;
+  }
+
+  .gs-product-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: #71717a;
+  }
+}
+
 .gs-home-product-spread {
   max-width: 0;
-  margin-left: -0.5rem;
+  margin-inline-start: -0.5rem;
   opacity: 0;
   transform: translateX(-0.25rem);
   transition:
@@ -61,7 +116,7 @@ body {
 
 .gs-home-product-arrow {
   max-width: 0;
-  margin-left: -0.5rem;
+  margin-inline-start: -0.5rem;
   opacity: 0;
   transform: translateX(-0.25rem);
   transition:
@@ -72,18 +127,16 @@ body {
 }
 
 @media (hover: hover) {
-  .gs-home-product-link:hover .gs-home-product-spread,
-  .gs-home-product-link:focus-visible .gs-home-product-spread {
-    max-width: 6rem;
-    margin-left: 0;
+  .gs-home-product-link[data-selected="true"] .gs-home-product-spread {
+    max-width: 12rem;
+    margin-inline-start: 0;
     opacity: 1;
     transform: translateX(0);
   }
 
-  .gs-home-product-link:hover .gs-home-product-arrow,
-  .gs-home-product-link:focus-visible .gs-home-product-arrow {
+  .gs-home-product-link[data-selected="true"] .gs-home-product-arrow {
     max-width: 1rem;
-    margin-left: 0;
+    margin-inline-start: 0;
     opacity: 1;
     transform: translateX(0);
   }
@@ -91,8 +144,8 @@ body {
 
 @media (hover: none) {
   .gs-home-product-link[data-selected="true"] .gs-home-product-spread {
-    max-width: 6rem;
-    margin-left: 0;
+    max-width: 12rem;
+    margin-inline-start: 0;
     opacity: 1;
     transform: translateX(0);
   }
@@ -100,32 +153,10 @@ body {
 
 @media (max-width: 639px) {
   .gs-home-product-link[data-selected="true"] .gs-home-product-spread {
-    max-width: 6rem;
-    margin-left: 0;
+    max-width: 12rem;
+    margin-inline-start: 0;
     opacity: 1;
     transform: translateX(0);
-  }
-}
-
-/* 页面整体背景，偏接近 opentherank 那种浅米色 */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at top left, rgba(132, 204, 22, 0.08), transparent 28rem),
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 24rem),
-    #faf8f3;
-}
-
-@media (prefers-color-scheme: dark) {
-  body::before {
-    background:
-      radial-gradient(circle at top left, rgba(132, 204, 22, 0.08), transparent 28rem),
-      radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 24rem),
-      #09090b;
   }
 }
 

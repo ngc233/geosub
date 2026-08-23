@@ -94,10 +94,10 @@ export default function DbAiPricingClient({
         </div>
       ) : null}
 
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-white">
+            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
               {activeTab.label}
             </h2>
             <span className="rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700">
@@ -110,14 +110,14 @@ export default function DbAiPricingClient({
           </p>
         </div>
 
-        <div className="text-sm font-bold text-zinc-400">
+        <div className="text-sm font-medium text-zinc-400">
           {copy.productCount(filteredProducts.length)}
         </div>
       </div>
 
       {filteredProducts.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 gap-8 overflow-visible xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 overflow-visible xl:grid-cols-2">
             {filteredProducts.map((product) => (
               <DbPricingCard
                 key={product.slug}
@@ -143,7 +143,7 @@ export default function DbAiPricingClient({
                   <Link
                     key={`${product.slug}-overview`}
                     href={getPricingDetailPath(locale, product.category, product.slug)}
-                    className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:border-lime-400 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:border-lime-600 dark:hover:text-white"
+                    className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white"
                   >
                     {product.name}
                   </Link>

@@ -62,14 +62,14 @@ test("country page pilot has distinct Chinese and English decision content", () 
   }
 });
 
-test("country page indexing uses an exact four-pair approval list", () => {
+test("country page indexing uses only release-ready approvals", () => {
   const approvedPilots = getIndexApprovedCountryPagePilots();
-  assert.equal(countryPageIndexApprovals.length, 4);
+  assert.equal(countryPageIndexApprovals.length, 3);
   assert.deepEqual(
     approvedPilots
       .map((pilot) => `${pilot.productSlug}:${pilot.countryCode}`)
       .sort(),
-    ["chatgpt:PH", "claude:KR", "gemini:JP", "grok:KR"],
+    ["chatgpt:PH", "claude:KR", "grok:KR"],
   );
   assert.equal(
     approvedPilots.flatMap((pilot) =>
@@ -77,7 +77,7 @@ test("country page indexing uses an exact four-pair approval list", () => {
         getCountryPagePilotPath(pilot, locale),
       ),
     ).length,
-    8,
+    6,
   );
   assert.ok(
     countryPagePilots

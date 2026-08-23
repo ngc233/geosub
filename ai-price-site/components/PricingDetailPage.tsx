@@ -3,6 +3,13 @@ import Link from "next/link";
 import { unstable_cache } from "next/cache";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ProductCategory } from "@prisma/client";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  Download,
+  ExternalLink,
+} from "lucide-react";
 import BrandIcon from "./BrandIcon";
 import TrackedLink from "./analytics/TrackedLink";
 import ProductSidebar from "./ProductSidebar";
@@ -16,6 +23,7 @@ import {
 } from "./PricingTopicLinks";
 import PricingPlatformView from "./PricingPlatformView";
 import AffordabilityComparison from "./AffordabilityComparison";
+import PricingPressureSwitcher from "./PricingPressureSwitcher";
 import {
   formatUsd,
   getPlanStats,
@@ -23,13 +31,20 @@ import {
   type ProductPlan,
 } from "../lib/public-pricing-model";
 import { getPricingDetailProduct } from "../lib/pricing-detail-adapter";
-import { getPlanAffordability } from "../lib/affordability";
+import {
+  getPlanAffordability,
+  type AffordabilityQuality,
+  type BigMacBenchmark,
+  type PlanAffordabilityRow,
+} from "../lib/affordability";
+import { getLocalizedRegionName } from "../lib/locale-format";
 import { serializeJsonLd } from "../lib/json-ld";
 import {
   getLatestUsdExchangeRates,
   type ExchangeRateSnapshot,
 } from "../lib/exchange-rates";
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
+import { getPricingPressureCopy } from "../lib/pricing-pressure-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
 import {
   getPricingProductOverviewCopy,
@@ -188,7 +203,7 @@ const getCachedPublicExchangeRates = unstable_cache(
 function getCachedPlanAffordability(productSlug: string, planSlug: string) {
   return unstable_cache(
     () => getPlanAffordability(productSlug, planSlug),
-    ["public-pricing-affordability", productSlug, planSlug],
+    ["public-pricing-affordability-v3", productSlug, planSlug],
     {
       revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
       tags: [
@@ -217,6 +232,21 @@ function hasChineseText(value?: string | null) {
   return Boolean(value && /[\u3400-\u9fff]/.test(value));
 }
 
+const reportDownloadLabel: Record<SiteLocale, string> = {
+  zh: "下载价格报告",
+  "zh-tw": "下載價格報告",
+  en: "Download price report",
+  ja: "価格レポートをダウンロード",
+  ko: "가격 보고서 다운로드",
+  es: "Descargar informe de precios",
+  tr: "Fiyat raporunu indir",
+  ar: "تنزيل تقرير الأسعار",
+  fr: "Télécharger le rapport de prix",
+  it: "Scarica il rapporto prezzi",
+  de: "Preisbericht herunterladen",
+  pt: "Baixar relatório de preços",
+};
+
 function getDiffPercent(price: number, referencePrice: number) {
   if (referencePrice <= 0) return 0;
   return Math.round(((price - referencePrice) / referencePrice) * 100);
@@ -239,16 +269,29 @@ function getReferenceRegion(plan: ProductPlan) {
   );
 }
 
-function PurchasingPowerSection({
-  productName,
+function PricePositionSection({
   plan,
+  bigMacBenchmarks = [],
+  locale,
 }: {
-  productName: string;
   plan: ProductPlan;
+  bigMacBenchmarks: BigMacBenchmark[];
+  locale: SiteLocale;
 }) {
+  const copy = getPricingPressureCopy(locale).position;
+  const intlLocale = getSiteLocaleDefinition(locale).intlLocale;
   const sortedRegions = getSortedRegions(plan);
   const referenceRegion = getReferenceRegion(plan);
   const referencePrice = referenceRegion.priceUsd;
+  const bigMacByCountry = new Map(
+    bigMacBenchmarks.map((benchmark) => [benchmark.countryCode.toUpperCase(), benchmark]),
+  );
+  const latestBigMacObservation = bigMacBenchmarks
+    .map((benchmark) => benchmark.observedOn)
+    .sort((a, b) => new Date(String(b)).getTime() - new Date(String(a)).getTime())[0];
+  const latestBigMacDate = latestBigMacObservation
+    ? new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(latestBigMacObservation))
+    : "-";
 
   const rows = sortedRegions.map((region) => {
     const diff = getDiffPercent(region.priceUsd, referencePrice);
@@ -273,6 +316,7 @@ function PurchasingPowerSection({
       label,
       tone,
       normalized,
+      bigMac: bigMacByCountry.get(region.code.toUpperCase()) || null,
     };
   });
   const cheapest = rows[0];
@@ -282,26 +326,39 @@ function PurchasingPowerSection({
     rows.reduce((closest, row) =>
       Math.abs(row.diff) < Math.abs(closest.diff) ? row : closest,
     rows[0]);
-  const matrixRows = rows.slice(0, 28);
+  const referenceRow = rows.find(
+    ({ region }) => region.code.toUpperCase() === referenceRegion.code.toUpperCase(),
+  ) || nearBaseline;
+  const representativeRows = rows.length <= 12
+    ? rows
+    : [...rows.slice(0, 6), referenceRow, ...rows.slice(-5)]
+        .filter((row, index, collection) =>
+          collection.findIndex((candidate) => candidate.region.code === row.region.code) === index,
+        )
+        .sort((a, b) => a.diff - b.diff);
+  const maxAbsoluteDiff = Math.max(
+    20,
+    ...representativeRows.map((row) => Math.abs(row.diff)),
+  );
 
   return (
     <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
       <div className="border-b border-zinc-100 px-5 py-5 dark:border-zinc-800 md:px-6">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-white">
-            {productName} 价格压力判断
+            {copy.title}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-            收入指标还未完成本地刷新时，先用已发布 App Store 价格做过渡判断：看哪些地区低于基准、哪些地区明显溢价。收入数据接入后会自动升级为本地订阅负担排行。
+            {copy.description}
           </p>
         </div>
       </div>
 
       <div className="grid gap-3 border-b border-zinc-100 px-5 py-5 dark:border-zinc-800 md:grid-cols-3 md:px-6">
         {[
-          { label: "最低公开价", row: cheapest, helper: "可作为价格锚点，但仍需结合税费和账号风险。" },
-          { label: "接近基准", row: nearBaseline, helper: `${referenceRegion.country} 作为当前基准地区。` },
-          { label: "最高溢价", row: mostExpensive, helper: "适合放入解释和风险提示，而不是推荐位。" },
+          { label: copy.lowest, row: cheapest, helper: copy.lowestHint },
+          { label: copy.nearBase, row: nearBaseline, helper: copy.baseHint(referenceRegion.country) },
+          { label: copy.highest, row: mostExpensive, helper: copy.highestHint },
         ].map(({ label, row, helper }) => (
           <div key={label} className="rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-800">
             <div className="text-xs font-medium text-zinc-400">{label}</div>
@@ -322,41 +379,75 @@ function PurchasingPowerSection({
               </div>
             </div>
             <div className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{helper}</div>
+            <div className="mt-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              {row.bigMac
+                ? copy.bigMac(new Intl.NumberFormat(intlLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(row.region.priceUsd / row.bigMac.priceUsd), row.bigMac.usesRegionalReference)
+                : copy.noBigMac}
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-5 px-5 py-5 dark:border-zinc-800 md:px-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
-        <div>
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-zinc-950 dark:text-white">价格差矩阵</h3>
-              <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                以 {referenceRegion.country} 为 0% 基准，越靠左越便宜，越靠右溢价越明显。
-              </p>
-            </div>
-            <div className="text-xs text-zinc-400">{matrixRows.length} 个地区</div>
+      <div className="px-5 py-5 md:px-6">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-zinc-950 dark:text-white">{copy.chartTitle}</h3>
+            <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+              {copy.chartDescription(referenceRegion.country)}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[#84cc16]" />{copy.lowEnd}</span>
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-zinc-950 dark:bg-white" />{copy.usBase}</span>
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[#c56550]" />{copy.highEnd}</span>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <div className="grid grid-cols-[72px_minmax(0,1fr)_70px] items-center gap-3 border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 text-[11px] font-medium text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/40 sm:grid-cols-[150px_minmax(0,1fr)_120px]">
+            <span>{copy.region}</span>
+            <span className="flex justify-between"><span>{copy.cheaper}</span><span>{copy.usBase} 0%</span><span>{copy.pricier}</span></span>
+            <span className="text-right">{copy.priceDiff}</span>
           </div>
 
-          <div className="relative h-[220px] overflow-hidden rounded-lg border border-zinc-200 bg-[linear-gradient(to_right,rgba(113,113,122,0.10)_1px,transparent_1px)] bg-[size:25%_100%] dark:border-zinc-800">
-            <div className="absolute inset-y-0 left-1/2 border-l border-zinc-300 dark:border-zinc-700" />
-            <div className="absolute left-3 top-3 text-xs text-zinc-400">更便宜</div>
-            <div className="absolute right-3 top-3 text-xs text-zinc-400">更贵</div>
-            {matrixRows.map(({ region, diff, tone }, index) => {
-              const x = Math.max(5, Math.min(95, 50 + diff / 2));
-              const y = 18 + (index % 7) * 26;
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {representativeRows.map(({ region, diff, bigMac }) => {
+              const position = 50 + (diff / maxAbsoluteDiff) * 44;
+              const code = region.code.toUpperCase();
+              const isCheapest = code === cheapest.region.code.toUpperCase();
+              const isMostExpensive = code === mostExpensive.region.code.toUpperCase();
+              const isReference = code === referenceRegion.code.toUpperCase();
+              const pointTone = isCheapest
+                ? "bg-[#84cc16] ring-lime-500/20"
+                : isMostExpensive
+                  ? "bg-[#c56550] ring-[#c56550]/20"
+                  : isReference
+                    ? "bg-zinc-950 ring-zinc-950/15 dark:bg-white"
+                    : "bg-zinc-400 ring-zinc-400/15";
 
               return (
-                <div
-                  key={`fallback-power-${region.code}`}
-                  className="absolute -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: `${x}%`, top: `${y}px` }}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span className={`h-2.5 w-2.5 rounded-full ${tone}`} />
-                    <span className="rounded bg-white/85 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 shadow-sm dark:bg-zinc-900/85 dark:text-zinc-300">
-                      {region.code}
-                    </span>
+                <div key={`price-position-${code}`} className="grid min-h-12 grid-cols-[72px_minmax(0,1fr)_70px] items-center gap-3 px-3 py-2 sm:grid-cols-[150px_minmax(0,1fr)_120px]">
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-200 sm:text-sm">{region.country}</div>
+                    <div className="text-[10px] text-zinc-400">{code}</div>
+                  </div>
+
+                  <div className="relative h-5" title={`${region.country}：${getDiffText(diff)}`}>
+                    <div className="absolute left-0 right-0 top-1/2 h-px bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="absolute bottom-0 top-0 left-1/2 border-l border-zinc-300 dark:border-zinc-600" />
+                    <span
+                      className={`absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-4 ${pointTone}`}
+                      style={{ left: `${Math.max(6, Math.min(94, position))}%` }}
+                    />
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-xs font-semibold tabular-nums text-zinc-900 dark:text-white sm:text-sm">{formatUsd(region.priceUsd)}</div>
+                    <div className="text-[10px] font-medium tabular-nums text-zinc-500 dark:text-zinc-400">{getDiffText(diff)}</div>
+                  </div>
+
+                  <div className="col-start-2 col-end-4 -mt-1 text-[10px] text-zinc-400 sm:hidden">
+                    {bigMac ? copy.bigMac(new Intl.NumberFormat(intlLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(region.priceUsd / bigMac.priceUsd), bigMac.usesRegionalReference) : copy.noBigMac}
                   </div>
                 </div>
               );
@@ -364,28 +455,143 @@ function PurchasingPowerSection({
           </div>
         </div>
 
-        <div className="content-start space-y-2">
-          {rows.slice(0, 8).map(({ region, diff, label, tone, normalized }) => (
-            <div key={`fallback-row-${region.code}`} className="rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-zinc-950 dark:text-white">{region.country}</div>
-                  <div className="mt-0.5 text-xs text-zinc-400">{formatUsd(region.priceUsd)}</div>
-                </div>
-                <div className="text-right text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">
-                  {getDiffText(diff)}
-                </div>
+        {rows.length > representativeRows.length ? (
+          <p className="mt-3 text-xs leading-5 text-zinc-400">
+            {copy.limited(representativeRows.length, rows.length)}
+          </p>
+        ) : null}
+      </div>
+      <div className="border-t border-zinc-100 px-5 py-4 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:px-6">
+        {copy.source(latestBigMacDate)}{" "}<a className="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-800 dark:hover:text-zinc-200" href="https://github.com/TheEconomist/big-mac-data" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+    </section>
+  );
+}
+
+function PriceBurdenMatrix({ rows, locale }: { rows: PlanAffordabilityRow[]; locale: SiteLocale }) {
+  const copy = getPricingPressureCopy(locale).matrix;
+  const maxBurden = Math.max(1, ...rows.map((row) => row.burdenVsUs));
+  const minDiff = Math.min(...rows.map((row) => row.diffVsUsPercent));
+  const maxDiff = Math.max(...rows.map((row) => row.diffVsUsPercent));
+  const diffRange = Math.max(20, maxDiff - minDiff);
+  const xMin = minDiff - diffRange * 0.08;
+  const xMax = maxDiff + diffRange * 0.08;
+  const highestBurden = [...rows].sort((a, b) => b.burdenVsUs - a.burdenVsUs)[0];
+  const lowestBurden = [...rows].sort((a, b) => a.burdenVsUs - b.burdenVsUs)[0];
+  const cheapest = [...rows].sort((a, b) => a.diffVsUsPercent - b.diffVsUsPercent)[0];
+  const mostExpensive = [...rows].sort((a, b) => b.diffVsUsPercent - a.diffVsUsPercent)[0];
+  const highlighted = new Set([
+    "US",
+    highestBurden.countryCode.toUpperCase(),
+    lowestBurden.countryCode.toUpperCase(),
+    cheapest.countryCode.toUpperCase(),
+    mostExpensive.countryCode.toUpperCase(),
+  ]);
+  const quadrants = [
+    {
+      ...copy.quadrants[0],
+      count: rows.filter((row) => row.diffVsUsPercent < 0 && row.burdenVsUs <= 1).length,
+    },
+    {
+      ...copy.quadrants[1],
+      count: rows.filter((row) => row.diffVsUsPercent < 0 && row.burdenVsUs > 1).length,
+    },
+    {
+      ...copy.quadrants[2],
+      count: rows.filter((row) => row.diffVsUsPercent >= 0 && row.burdenVsUs <= 1).length,
+    },
+    {
+      ...copy.quadrants[3],
+      count: rows.filter((row) => row.diffVsUsPercent >= 0 && row.burdenVsUs > 1).length,
+    },
+  ];
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="border-b border-zinc-100 px-5 py-5 dark:border-zinc-800 md:px-6">
+        <h2 className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-white">{copy.title}</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+          {copy.description}
+        </p>
+      </div>
+
+      <div className="grid gap-5 px-5 py-5 md:px-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.55fr)]">
+        <div
+          className="relative h-[360px] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/40"
+          role="img"
+          aria-label={copy.ariaLabel}
+        >
+          <div className="absolute inset-y-0 border-l border-zinc-300 dark:border-zinc-700" style={{ left: `${((0 - xMin) / (xMax - xMin)) * 100}%` }} />
+          <div className="absolute inset-x-0 border-t border-zinc-300 dark:border-zinc-700" style={{ bottom: `${Math.min(94, (1 / maxBurden) * 100)}%` }} />
+          <span className="absolute left-3 top-3 text-[11px] font-medium text-zinc-400">{copy.heavier}</span>
+          <span className="absolute bottom-3 left-3 text-[11px] font-medium text-zinc-400">{copy.lowerPrice}</span>
+          <span className="absolute bottom-3 right-3 text-[11px] font-medium text-zinc-400">{copy.higherPrice}</span>
+
+          {rows.map((row) => {
+            const code = row.countryCode.toUpperCase();
+            const x = ((row.diffVsUsPercent - xMin) / (xMax - xMin)) * 100;
+            const y = Math.max(6, Math.min(94, (row.burdenVsUs / maxBurden) * 100));
+            const isHighlighted = highlighted.has(code);
+            const tone = code === "US"
+              ? "bg-zinc-950 ring-zinc-950/15 dark:bg-white"
+              : row.diffVsUsPercent < 0
+                ? "bg-[#84cc16] ring-lime-500/20"
+                : "bg-[#c56550] ring-[#c56550]/20";
+            const country = getLocalizedRegionName(code, locale) || row.countryNameZh || code;
+
+            return (
+              <span
+                key={`pressure-matrix-${row.planSlug}-${code}`}
+                className="absolute -translate-x-1/2 translate-y-1/2"
+                style={{ left: `${x}%`, bottom: `${y}%` }}
+                title={copy.pointTitle(country, getDiffText(row.diffVsUsPercent), row.burdenVsUs.toFixed(2))}
+              >
+                <span className={`block rounded-full ring-4 ${tone} ${isHighlighted ? "size-3" : "size-2 opacity-75"}`} />
+                {isHighlighted ? (
+                  <span className="absolute left-1/2 top-4 -translate-x-1/2 whitespace-nowrap rounded-md border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                    {code}
+                  </span>
+                ) : null}
+              </span>
+            );
+          })}
+        </div>
+
+        <div className="grid content-start gap-2 sm:grid-cols-2 lg:grid-cols-1">
+          {quadrants.map((quadrant) => (
+            <div key={quadrant.title} className="rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-800">
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className="text-sm font-semibold text-zinc-950 dark:text-white">{quadrant.title}</h3>
+                <span className="text-lg font-semibold tabular-nums text-zinc-950 dark:text-white">{quadrant.count}</span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div className={`h-full rounded-full ${tone}`} style={{ width: `${normalized}%` }} />
-              </div>
-              <div className="mt-1.5 text-xs text-zinc-400">{label}</div>
+              <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{quadrant.helper}</p>
             </div>
           ))}
         </div>
       </div>
+
+      <div className="border-t border-zinc-100 px-5 py-4 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:px-6">
+        {copy.note}
+      </div>
     </section>
   );
+}
+
+function getAffordabilityUnavailableReason(quality: AffordabilityQuality, locale: SiteLocale) {
+  const copy = getPricingPressureCopy(locale).pending;
+  if (quality.reasons.includes("no_computed_rows")) {
+    return copy.noRows;
+  }
+  if (quality.reasons.includes("insufficient_coverage")) {
+    return copy.coverage(quality.coveredRegions, quality.publishedRegions);
+  }
+  if (quality.reasons.includes("missing_us_baseline")) {
+    return copy.noUs;
+  }
+  if (quality.reasons.includes("stale_income_data")) {
+    return copy.stale;
+  }
+  return copy.generic;
 }
 
 function FaqSection({
@@ -412,9 +618,11 @@ function FaqSection({
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-zinc-950 dark:text-white">
               {faq.q}
-              <span className="text-zinc-400 transition group-open:rotate-180">
-                ↓
-              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className="size-4 shrink-0 text-zinc-400 transition-transform group-open:rotate-180"
+                strokeWidth={1.8}
+              />
             </summary>
 
             <p className="mt-3 max-w-4xl text-sm leading-7 text-zinc-500 dark:text-zinc-400">
@@ -741,7 +949,7 @@ function CountryAnalysisLinks({
             buttonKey={`${pilot.productSlug}:${pilot.countryCode}`}
             countryId={pilot.countryCode}
             placement="product_country_analysis"
-            className="group flex min-w-0 items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white px-4 py-3 transition hover:border-lime-300 hover:bg-lime-50/60 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-lime-500/40 dark:hover:bg-lime-500/10"
+            className="group flex min-w-0 items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-800"
           >
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-zinc-950 dark:text-white">
@@ -751,12 +959,11 @@ function CountryAnalysisLinks({
                 {pilot.countryName[pilotLocale]} · {copy.action}
               </span>
             </span>
-            <span
+            <ArrowRight
               aria-hidden="true"
-              className="shrink-0 text-lg text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-lime-700 dark:group-hover:text-lime-300"
-            >
-              →
-            </span>
+              className="size-4 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-zinc-700 rtl:rotate-180 dark:group-hover:text-zinc-200"
+              strokeWidth={1.8}
+            />
           </TrackedLink>
         ))}
       </div>
@@ -868,7 +1075,7 @@ export default async function PricingDetailPage({
     });
 
     return (
-      <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
+      <main className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
@@ -884,8 +1091,9 @@ export default async function PricingDetailPage({
           <div className="space-y-3">
             <Link
               href={detailBasePath}
-              className="inline-flex text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
             >
+              <ArrowLeft aria-hidden="true" className="size-3.5 shrink-0 rtl:rotate-180" strokeWidth={1.8} />
               {pageCopy.backToPricing}
             </Link>
 
@@ -913,7 +1121,7 @@ export default async function PricingDetailPage({
                 <div className="text-sm font-medium text-zinc-400">
                   {product.brand}
                 </div>
-                <h1 className="mt-0.5 text-[26px] font-semibold leading-tight text-zinc-950 md:text-[32px] dark:text-white">
+                <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-zinc-950 md:text-[30px] dark:text-white">
                   {pageTitle}
                 </h1>
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
@@ -928,9 +1136,10 @@ export default async function PricingDetailPage({
                     placement="product_overview_hero"
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-lime-500/40 dark:hover:bg-lime-500/10 dark:hover:text-lime-200"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-600 shadow-sm transition hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
                   >
                     {pageCopy.visitOfficial}
+                    <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
                   </TrackedLink>
                 ) : null}
               </div>
@@ -975,7 +1184,20 @@ export default async function PricingDetailPage({
   const [affordability, latestExchangeRates] = await Promise.all([
     activePlan.billing === "monthly"
       ? getCachedPlanAffordability(product.slug, activePlan.slug)
-      : Promise.resolve({ summary: null, rows: [] }),
+      : Promise.resolve({
+          summary: null,
+          rows: [],
+          bigMacBenchmarks: [],
+          quality: {
+            publishable: false,
+            reasons: ["no_computed_rows" as const],
+            coveredRegions: 0,
+            publishedRegions: 0,
+            coverageRatio: 0,
+            minIncomeYear: null,
+            maxIncomeYear: null,
+          },
+        }),
     getCachedPublicExchangeRates(),
   ]);
   const exchangeRates = Object.fromEntries(
@@ -1055,7 +1277,7 @@ export default async function PricingDetailPage({
   });
 
   return (
-    <main className="mx-auto flex max-w-7xl gap-6 px-5 py-5">
+    <main className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
@@ -1071,8 +1293,9 @@ export default async function PricingDetailPage({
         <div className="space-y-3">
           <Link
             href={detailBasePath}
-            className="inline-flex text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
           >
+            <ArrowLeft aria-hidden="true" className="size-3.5 shrink-0 rtl:rotate-180" strokeWidth={1.8} />
             {pageCopy.backToPricing}
           </Link>
 
@@ -1103,7 +1326,7 @@ export default async function PricingDetailPage({
                   {product.brand}
                 </div>
 
-                <h1 className="mt-0.5 text-[26px] font-semibold leading-tight text-zinc-950 md:text-[32px] dark:text-white">
+                <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-zinc-950 md:text-[30px] dark:text-white">
                   {pageTitle}
                 </h1>
 
@@ -1120,19 +1343,29 @@ export default async function PricingDetailPage({
                     placement="product_hero"
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-lime-500/40 dark:hover:bg-lime-500/10 dark:hover:text-lime-200"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-600 shadow-sm transition hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
                   >
                     {pageCopy.visitOfficial}
+                    <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
                   </TrackedLink>
                 ) : null}
               </div>
             </div>
+            <TrackedLink
+              href={`/reports/${locale}/${product.slug}-global-pricing.pdf`}
+              eventKey="download_price_report"
+              eventName="Download global pricing report"
+              buttonKey={product.slug}
+              placement="product_hero"
+              download={`${product.slug}-${locale}-global-pricing.pdf`}
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+            >
+              <Download aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
+              {reportDownloadLabel[locale]}
+            </TrackedLink>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-zinc-400">
-              {pageCopy.plans}
-            </span>
+          <div className="mt-4 flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center">
             <PlanTabs
               productName={product.name}
               productSlug={product.slug}
@@ -1176,21 +1409,36 @@ export default async function PricingDetailPage({
               <ProductEditorialSection
                 productSlug={product.slug}
                 planName={activePlan.name}
+                locale={locale}
                 content={editorialContent}
               />
             ) : null}
 
-            {affordability.rows.length > 0 ? (
-              <AffordabilityComparison
-                productName={product.name}
-                planName={activePlan.name}
-                summary={affordability.summary}
-                rows={affordability.rows}
-                locale={locale}
-              />
-            ) : locale === "zh" ? (
-              <PurchasingPowerSection productName={product.name} plan={activePlan} />
-            ) : null}
+            <PricingPressureSwitcher
+              locale={locale}
+              productName={product.name}
+              priceView={(
+                <PricePositionSection
+                  plan={activePlan}
+                  bigMacBenchmarks={affordability.bigMacBenchmarks}
+                  locale={locale}
+                />
+              )}
+              burdenView={affordability.rows.length > 0 ? (
+                <AffordabilityComparison
+                  productName={product.name}
+                  planName={activePlan.name}
+                  summary={affordability.summary}
+                  rows={affordability.rows}
+                  locale={locale}
+                  embedded
+                />
+              ) : undefined}
+              matrixView={affordability.rows.length > 0 ? (
+                <PriceBurdenMatrix rows={affordability.rows} locale={locale} />
+              ) : undefined}
+              unavailableReason={getAffordabilityUnavailableReason(affordability.quality, locale)}
+            />
           </>
         ) : (
           <NoPublishedPricesSection copy={pageCopy.empty} />

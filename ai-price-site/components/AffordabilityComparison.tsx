@@ -25,6 +25,7 @@ type Props = {
   summary: PlanAffordabilitySummary | null;
   rows: PlanAffordabilityRow[];
   locale?: PreparedSiteLocale;
+  embedded?: boolean;
 };
 
 type SortMode = "pressure" | "accessible";
@@ -533,6 +534,40 @@ function formatDate(
   return formatLocalizedDate(value, locale) || "-";
 }
 
+const bigMacCopy: Record<PreparedSiteLocale, {
+  equivalent: (value: string) => string;
+  unavailable: string;
+  source: string;
+  regionalReference: string;
+}> = {
+  zh: { equivalent: (value) => `约等于当地 ${value} 个巨无霸`, unavailable: "暂无当地巨无霸参照", source: "巨无霸价格参照", regionalReference: "欧元区参照" },
+  "zh-tw": { equivalent: (value) => `約等於當地 ${value} 個大麥克`, unavailable: "暫無當地大麥克參照", source: "大麥克價格參照", regionalReference: "歐元區參照" },
+  en: { equivalent: (value) => `About ${value} local Big Macs`, unavailable: "No local Big Mac reference", source: "Big Mac price reference", regionalReference: "euro-area reference" },
+  ja: { equivalent: (value) => `現地のビッグマック約 ${value} 個分`, unavailable: "現地のビッグマック参照なし", source: "ビッグマック価格参照", regionalReference: "ユーロ圏参照" },
+  ko: { equivalent: (value) => `현지 빅맥 약 ${value}개`, unavailable: "현지 빅맥 기준 없음", source: "빅맥 가격 기준", regionalReference: "유로 지역 기준" },
+  es: { equivalent: (value) => `Equivale a unos ${value} Big Macs locales`, unavailable: "Sin referencia local de Big Mac", source: "Referencia de precio Big Mac", regionalReference: "referencia de la zona euro" },
+  tr: { equivalent: (value) => `Yaklaşık ${value} yerel Big Mac`, unavailable: "Yerel Big Mac referansı yok", source: "Big Mac fiyat referansı", regionalReference: "Avro bölgesi referansı" },
+  ar: { equivalent: (value) => `يعادل نحو ${value} من بيج ماك محليًا`, unavailable: "لا يتوفر مرجع محلي لبيج ماك", source: "مرجع سعر بيج ماك", regionalReference: "مرجع منطقة اليورو" },
+  fr: { equivalent: (value) => `Environ ${value} Big Mac locaux`, unavailable: "Aucune référence Big Mac locale", source: "Référence de prix Big Mac", regionalReference: "référence zone euro" },
+  it: { equivalent: (value) => `Circa ${value} Big Mac locali`, unavailable: "Nessun riferimento Big Mac locale", source: "Riferimento prezzo Big Mac", regionalReference: "riferimento area euro" },
+  de: { equivalent: (value) => `Etwa ${value} lokale Big Macs`, unavailable: "Kein lokaler Big-Mac-Vergleich", source: "Big-Mac-Preisvergleich", regionalReference: "Euroraum-Referenz" },
+  pt: { equivalent: (value) => `Cerca de ${value} Big Macs locais`, unavailable: "Sem referência local de Big Mac", source: "Referência de preço Big Mac", regionalReference: "referência da zona euro" },
+};
+
+function getBigMacEquivalent(row: PlanAffordabilityRow, locale: PreparedSiteLocale) {
+  const equivalent = row.bigMacEquivalent;
+  if (!equivalent) return bigMacCopy[locale].unavailable;
+  const label = bigMacCopy[locale].equivalent(
+    new Intl.NumberFormat(locale === "zh-tw" ? "zh-Hant" : locale, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(equivalent),
+  );
+  return row.bigMacUsesRegionalReference
+    ? `${label} · ${bigMacCopy[locale].regionalReference}`
+    : label;
+}
+
 function metricLabel(metricType?: string | null) {
   const map: Record<string, string> = {
     GNI_PPP: "GNI per capita, PPP",
@@ -562,44 +597,44 @@ function getCountryName(
 function getBurdenTone(value: number) {
   if (value > 4) {
     return {
-      bar: "bg-rose-500",
-      text: "text-rose-600 dark:text-rose-300",
-      badge: "bg-rose-50 text-rose-600 ring-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-800",
+      bar: "bg-[#b9533f]",
+      text: "text-[#a74633] dark:text-[#e5a294]",
+      badge: "bg-[#f8e9e5] text-[#9f4938] ring-[#e4b1a6] dark:bg-[#b9533f]/15 dark:text-[#e5a294] dark:ring-[#b9533f]/35",
       band: "severe" as const,
     };
   }
 
   if (value > 2) {
     return {
-      bar: "bg-orange-500",
-      text: "text-orange-600 dark:text-orange-300",
-      badge: "bg-orange-50 text-orange-700 ring-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:ring-orange-800",
+      bar: "bg-[#c56550]",
+      text: "text-[#ad503e] dark:text-[#e9aa9d]",
+      badge: "bg-[#faece8] text-[#a44b39] ring-[#e7b8ae] dark:bg-[#c56550]/15 dark:text-[#e9aa9d] dark:ring-[#c56550]/35",
       band: "heavy" as const,
     };
   }
 
   if (value > 1.2) {
     return {
-      bar: "bg-amber-500",
-      text: "text-amber-700 dark:text-amber-300",
-      badge: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800",
+      bar: "bg-[#d89586]",
+      text: "text-[#a65f51] dark:text-[#e8b7ad]",
+      badge: "bg-[#fbf0ed] text-[#98584c] ring-[#ebc8c0] dark:bg-[#d89586]/15 dark:text-[#e8b7ad] dark:ring-[#d89586]/35",
       band: "elevated" as const,
     };
   }
 
   if (value >= 0.8) {
     return {
-      bar: "bg-sky-500",
-      text: "text-sky-700 dark:text-sky-300",
-      badge: "bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:ring-sky-800",
+      bar: "bg-zinc-500",
+      text: "text-zinc-700 dark:text-zinc-200",
+      badge: "bg-zinc-100 text-zinc-600 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700",
       band: "similar" as const,
     };
   }
 
   return {
-    bar: "bg-emerald-500",
-    text: "text-emerald-700 dark:text-emerald-300",
-    badge: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800",
+    bar: "bg-[#84cc16]",
+    text: "text-lime-700 dark:text-lime-300",
+    badge: "bg-lime-50 text-lime-700 ring-lime-200 dark:bg-lime-500/10 dark:text-lime-300 dark:ring-lime-500/30",
     band: "lighter" as const,
   };
 }
@@ -627,9 +662,9 @@ function SummaryMetric({
 }) {
   const valueClass =
     tone === "green"
-      ? "text-emerald-700 dark:text-emerald-300"
+      ? "text-lime-700 dark:text-lime-300"
       : tone === "red"
-        ? "text-rose-600 dark:text-rose-300"
+        ? "text-[#a74633] dark:text-[#e5a294]"
         : "text-zinc-950 dark:text-white";
 
   return (
@@ -707,6 +742,9 @@ function BurdenRow({
           <span>{copy.monthlyIncome(formatUsd(row.monthlyIncomeUsd, locale, 0))}</span>
           <span>{copy.relativeBurden(row.burdenVsUs.toFixed(2))}</span>
         </div>
+        <div className="mt-2 inline-flex rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+          {getBigMacEquivalent(row, locale)}
+        </div>
       </div>
     </div>
   );
@@ -745,6 +783,9 @@ function AffordabilitySummaryRow({
           {burden}
         </span>
         <span className="block text-xs text-zinc-400">{incomeShare}</span>
+        <span className="mt-0.5 block text-[11px] text-zinc-400">
+          {getBigMacEquivalent(row, locale)}
+        </span>
         <span className="mt-0.5 block text-xs tabular-nums text-zinc-400 md:hidden">
           {formatUsd(row.priceUsd, locale)}
         </span>
@@ -759,6 +800,7 @@ export default function AffordabilityComparison({
   summary,
   rows,
   locale = "zh",
+  embedded = false,
 }: Props) {
   const [sortMode, setSortMode] = useState<SortMode>("pressure");
   const copy = getAffordabilityCopy(locale);
@@ -789,10 +831,12 @@ export default function AffordabilityComparison({
 
   return (
     <PublicSection>
-      <PublicSectionHeader
-        title={copy.sectionTitle(productName)}
-        description={copy.sectionDescription(planName)}
-      />
+      {!embedded ? (
+        <PublicSectionHeader
+          title={copy.sectionTitle(productName)}
+          description={copy.sectionDescription(planName)}
+        />
+      ) : null}
 
       <div className="grid grid-cols-3 divide-x divide-zinc-100 border-t border-zinc-100 dark:divide-zinc-800 dark:border-zinc-800">
         <SummaryMetric
@@ -858,15 +902,28 @@ export default function AffordabilityComparison({
           </div>
         </div>
 
-        {visibleRows.map((row, index) => (
-          <BurdenRow
-            key={`${sortMode}-${row.planSlug}-${row.countryCode}`}
-            row={row}
-            rank={index + 1}
-            maxBurden={maxBurden}
-            locale={locale}
-          />
-        ))}
+        <div className="hidden md:block">
+          {visibleRows.map((row, index) => (
+            <BurdenRow
+              key={`${sortMode}-${row.planSlug}-${row.countryCode}`}
+              row={row}
+              rank={index + 1}
+              maxBurden={maxBurden}
+              locale={locale}
+            />
+          ))}
+        </div>
+
+        <div className="md:hidden">
+          {visibleRows.map((row, index) => (
+            <AffordabilitySummaryRow
+              key={`compact-${sortMode}-${row.planSlug}-${row.countryCode}`}
+              row={row}
+              rank={index + 1}
+              locale={locale}
+            />
+          ))}
+        </div>
 
         <ExpandableAffordabilityRows
           hiddenCount={hiddenRows.length}
@@ -889,12 +946,26 @@ export default function AffordabilityComparison({
       </div>
 
       <DataNote>
-        {copy.dataNote(
-          metricLabel(summary.incomeMetricType),
-          summary.incomeIndicatorCode || "",
-          String(summary.incomeDataYear || "-"),
-          formatDate(latestPriceCheckedAt, locale),
-        )}
+        <span>
+          {copy.dataNote(
+            metricLabel(summary.incomeMetricType),
+            summary.incomeIndicatorCode || "",
+            String(summary.incomeDataYear || "-"),
+            formatDate(latestPriceCheckedAt, locale),
+          )}
+        </span>{" "}
+        <span>
+          {bigMacCopy[locale].source}：
+          <a
+            className="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-800 dark:hover:text-zinc-200"
+            href="https://github.com/TheEconomist/big-mac-data"
+            target="_blank"
+            rel="noreferrer"
+          >
+            The Economist Big Mac Index
+          </a>{" "}
+          (CC BY 4.0)。
+        </span>
       </DataNote>
     </PublicSection>
   );

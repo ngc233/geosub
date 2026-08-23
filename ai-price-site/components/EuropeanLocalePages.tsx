@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import type { SiteLocale } from "../lib/site-locale";
 import PrivacyDisclosure from "./PrivacyDisclosure";
@@ -150,7 +151,7 @@ export function EuropeanHomePage({ locale }: { locale: EuropeanLocale }) {
               <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-black text-zinc-500">{section.tag}</span>
               <h2 className="mt-5 text-2xl font-black tracking-tight text-zinc-950">{section.title}</h2>
               <p className="mt-3 min-h-[72px] text-sm leading-6 text-zinc-500">{section.description}</p>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-black text-lime-600">{text.view} <span aria-hidden="true">→</span></span>
+              <span className="mt-6 inline-flex items-center gap-2 text-sm font-black text-lime-600">{text.view} <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} /></span>
             </Link>
           ))}
         </div>

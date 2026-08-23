@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 
-type Tone = "neutral" | "green" | "red" | "amber";
+type Tone = "neutral" | "green" | "red" | "amber" | "saving" | "premium";
 
 function toneTextClass(tone: Tone) {
+  if (tone === "saving") return "text-[#4f7f2a] dark:text-[#bef264]";
+  if (tone === "premium") return "text-[#a24b3a] dark:text-[#f0a08f]";
   if (tone === "green") return "text-lime-700 dark:text-lime-300";
   if (tone === "red") return "text-rose-600 dark:text-rose-300";
   if (tone === "amber") return "text-amber-700 dark:text-amber-300";

@@ -36,7 +36,7 @@ type BrandIconProps = {
     officialUrl?: string | null;
     icon?: string | null;
   };
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   priority?: boolean;
 };
@@ -49,6 +49,7 @@ type SimpleIcon = {
 };
 
 const sizeMap = {
+  xs: { box: "h-6 w-6", svg: "h-4 w-4", text: "text-[9px]" },
   sm: { box: "h-8 w-8", svg: "h-5 w-5", text: "text-[10px]" },
   md: { box: "h-12 w-12", svg: "h-7 w-7", text: "text-sm" },
   lg: { box: "h-14 w-14", svg: "h-8 w-8", text: "text-base" },

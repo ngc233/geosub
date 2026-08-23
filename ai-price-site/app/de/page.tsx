@@ -1,2 +1,5 @@
-import { EuropeanHomePage } from "../../components/EuropeanLocalePages";
-export default function Page() { return <EuropeanHomePage locale="de" />; }
+import LocalizedHomepagePage from "../../components/LocalizedHomepagePage";
+
+export default function Page() {
+  return <LocalizedHomepagePage locale="de" />;
+}

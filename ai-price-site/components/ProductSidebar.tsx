@@ -56,8 +56,8 @@ export default function ProductSidebar({
   );
 
   return (
-    <aside className="hidden shrink-0 lg:block lg:w-60">
-      <div className="sticky top-24 rounded-xl border border-zinc-200 bg-white/75 p-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/60">
+    <aside className="hidden shrink-0 lg:block lg:w-52">
+      <div className="gs-product-sidebar-scroll sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain rounded-lg border border-zinc-200 bg-white p-2.5 dark:border-zinc-800 dark:bg-zinc-900/60">
         <div className="px-2 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
           {copy.products}
         </div>
@@ -88,7 +88,7 @@ export default function ProductSidebar({
                         data-track-name="Switch digital service"
                         data-track-button={product.slug}
                         data-track-placement="product_sidebar"
-                        className={`relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full before:transition-opacity ${
+                        className={`relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full before:transition-opacity ${
                           active
                             ? "bg-zinc-50 text-zinc-950 before:bg-lime-500 before:opacity-100 dark:bg-zinc-800/70 dark:text-white"
                             : "text-zinc-600 before:opacity-0 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"

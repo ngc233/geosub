@@ -1,4 +1,5 @@
 import AdminLink from "@/components/admin/AdminLink";
+import { ArrowRight } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { prisma } from "../../../lib/prisma";
 
@@ -170,9 +171,10 @@ export default async function AdminPricingPreviewPage() {
 
               <AdminLink
                 href="/admin/products"
-                className="text-sm font-black text-blue-700 hover:text-blue-900"
+                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
               >
-                返回服务库 →
+                返回服务库
+                <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
               </AdminLink>
             </div>
 

@@ -29,7 +29,7 @@ function getCachedPricingListProducts(
       categories: [dbCategoryByPublicCategory[category]],
       compactForListing: true,
     }),
-    ["public-pricing-list", locale, category],
+    ["public-pricing-list-v2", locale, category],
     {
       revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
       tags: [PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_LIST_CACHE_TAG],
@@ -48,13 +48,13 @@ export default async function PricingListPage({
   const copy = getPricingListCopy(locale).pages[category];
 
   return (
-    <main className="mx-auto max-w-7xl overflow-visible px-6 py-16">
-      <div className="mb-10 text-center">
-        <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-lime-600">
+    <main className="mx-auto max-w-6xl overflow-visible px-5 py-12 md:py-14">
+      <div className="mb-9 text-center">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700">
           {copy.eyebrow}
         </p>
 
-        <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-zinc-950 md:text-5xl dark:text-white">
+        <h1 className="mb-4 text-3xl font-semibold tracking-[-0.025em] text-zinc-950 md:text-4xl dark:text-white">
           {copy.title}
         </h1>
 

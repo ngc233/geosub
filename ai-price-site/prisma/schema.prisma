@@ -1374,3 +1374,52 @@ model SearchAlias {
   @@index([planId])
   @@map("search_aliases")
 }
+
+model ContactTicket {
+  id String @id @default(uuid()) @db.Uuid
+
+  category     String @db.VarChar(30)
+  status       String @default("new") @db.VarChar(20)
+  name         String @db.VarChar(100)
+  email        String @db.VarChar(254)
+  organization String? @db.VarChar(160)
+  subject      String @db.VarChar(200)
+  message      String @db.Text
+  pageUrl      String? @map("page_url") @db.VarChar(1000)
+  sourcePath   String? @map("source_path") @db.VarChar(500)
+  rateKeyHash  String @map("rate_key_hash") @db.Char(64)
+  adminNote    String? @map("admin_note") @db.Text
+
+  repliedAt DateTime? @map("replied_at") @db.Timestamptz(6)
+  closedAt  DateTime? @map("closed_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([category, createdAt(sort: Desc)])
+  @@index([rateKeyHash, createdAt(sort: Desc)])
+  @@map("contact_tickets")
+}
+
+model CountryConsumerBenchmark {
+  id BigInt @id @default(autoincrement())
+
+  benchmarkType String   @map("benchmark_type")
+  countryCode   String   @map("country_code")
+  countryIso3   String   @map("country_iso3")
+  currency      String
+  localPrice    Decimal  @map("local_price") @db.Decimal(14, 4)
+  priceUsd      Decimal  @map("price_usd") @db.Decimal(14, 4)
+  observedOn    DateTime @map("observed_on") @db.Date
+  sourceName    String   @map("source_name")
+  sourceUrl     String   @map("source_url")
+  license       String
+
+  sourceUpdatedAt DateTime? @map("source_updated_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([benchmarkType, countryIso3, observedOn])
+  @@index([benchmarkType, countryIso3, observedOn(sort: Desc)], map: "idx_country_consumer_benchmarks_latest")
+  @@map("country_consumer_benchmarks")
+}

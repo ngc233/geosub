@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { Share2 } from 'lucide-react';
+import { Download, Share, X } from 'lucide-react';
+import { siFacebook, siReddit, siTelegram, siX } from 'simple-icons';
 
 import { formatUsd, type PlanStats, type ProductPlan } from '../lib/public-pricing-model';
 import { getPlanDisplayName } from '../lib/pricing-labels';
 import type { SiteLocale } from '../lib/site-locale';
 import { shareCopy } from './SharePriceCopy';
-import ShareMiniMap, { getDiffPercent, getReadableDiffByLocale, getShortDiff } from './SharePriceMap';
+import ShareMiniMap, { getDiffPercent, getReadableDiffByLocale } from './SharePriceMap';
 
 export type SharePriceProduct = {
   name: string;
@@ -23,6 +24,14 @@ type SharePriceModalProps = {
   stats: PlanStats;
   locale?: SiteLocale;
 };
+
+function SocialBrandIcon({ icon }: { icon: { path: string } }) {
+  return (
+    <svg aria-hidden="true" className="size-5" fill="currentColor" viewBox="0 0 24 24">
+      <path d={icon.path} />
+    </svg>
+  );
+}
 
 export default function SharePriceModal({
   product,
@@ -45,8 +54,12 @@ export default function SharePriceModal({
     [plan.regions]
   );
 
-  const cheapRegions = sortedRegions.slice(0, 3);
-  const expensiveRegions = [...sortedRegions].reverse().slice(0, 3);
+  const lowestRegions = sortedRegions.filter(
+    (region) => Math.abs(region.priceUsd - stats.minRegion.priceUsd) < 0.005,
+  );
+  const highestRegions = sortedRegions.filter(
+    (region) => Math.abs(region.priceUsd - stats.maxRegion.priceUsd) < 0.005,
+  );
 
   const referenceRegion =
     plan.regions.find((region) => region.code.toUpperCase() === 'US') ||
@@ -56,6 +69,14 @@ export default function SharePriceModal({
     stats.minRegion.priceUsd,
     referenceRegion.priceUsd
   );
+  const regionSeparator = locale === 'zh' || locale === 'zh-tw' || locale === 'ja'
+    ? '、'
+    : ', ';
+  const lowestRegionNames = lowestRegions.map((region) => region.country).join(regionSeparator);
+  const highestRegionNames = highestRegions.map((region) => region.country).join(regionSeparator);
+  const verifiedDate = plan.freshness?.pageUpdatedAt || product.updatedAt;
+  const sourceLabel = plan.freshness?.sourceLabel || referenceRegion.sourceName || 'App Store';
+  const fxRateDate = plan.freshness?.fxRateDate || referenceRegion.fxRateDate;
 
   useEffect(() => {
     if (!open) {
@@ -147,7 +168,7 @@ export default function SharePriceModal({
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 3,
-        backgroundColor: '#fffaf3',
+        backgroundColor: '#f7f8fa',
       });
 
       const link = document.createElement('a');
@@ -190,12 +211,10 @@ export default function SharePriceModal({
         data-track-name="Open price share modal"
         data-track-button={`${product.slug}:${plan.slug}`}
         data-track-placement="share_modal"
-        className="group inline-flex items-center justify-center gap-2 rounded-xl border border-lime-300 bg-lime-50 px-3.5 py-2 text-sm font-semibold text-lime-900 transition-colors hover:border-lime-400 hover:bg-lime-100 dark:border-lime-500/30 dark:bg-lime-500/10 dark:text-lime-200 dark:hover:bg-lime-500/20"
+        data-share-price-trigger
+        className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
       >
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 text-lime-800 transition-colors dark:bg-lime-950/30 dark:text-lime-200">
-          <Share2 className="h-4 w-4" strokeWidth={2.2} />
-        </span>
-
+        <Share aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
         <span>{text.button}</span>
       </button>
 
@@ -207,7 +226,7 @@ export default function SharePriceModal({
           <div
             ref={dialogRef}
             tabIndex={-1}
-            className="relative w-full max-w-[460px] overflow-hidden rounded-2xl bg-white shadow-2xl shadow-zinc-950/25"
+            className="relative w-full max-w-[560px] overflow-hidden rounded-xl bg-white shadow-2xl shadow-zinc-950/25"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -217,256 +236,110 @@ export default function SharePriceModal({
               ref={closeButtonRef}
               type="button"
               onClick={() => setOpen(false)}
-              className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-zinc-500 shadow-sm ring-1 ring-zinc-200/80 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+              className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 shadow-sm transition-colors hover:bg-zinc-50 hover:text-zinc-950"
               aria-label={text.close}
             >
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              >
-                <path d="M6 6l12 12" />
-                <path d="M18 6L6 18" />
-              </svg>
+              <X aria-hidden="true" className="size-5" strokeWidth={1.8} />
             </button>
 
             <div className="max-h-[calc(100vh-2rem)] overflow-y-auto p-3 pt-12 [scrollbar-width:none] sm:p-4 sm:pt-12 [&::-webkit-scrollbar]:hidden">
               <div
                 ref={cardRef}
-                className="w-full rounded-2xl border border-zinc-200 bg-[#fffaf3] p-4 text-zinc-950 shadow-sm sm:p-5"
+                data-share-price-card
+                className="w-full rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4 text-zinc-950 shadow-sm sm:p-5"
               >
-                    <div>
-                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-500">
-                        <span className="h-[3px] w-10 rounded-full bg-blue-500" />
-                        {product.brand} · {text.global} · {plan.freshness?.pageUpdatedAt || product.updatedAt}
-                      </div>
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                  <span className="h-0.5 w-7 rounded-full bg-lime-500" />
+                  {product.brand} · {text.global}
+                </div>
 
-                      <h2 className="mt-3 text-[32px] font-black leading-[0.95] tracking-tight text-zinc-950">
-                        {text.cardTitle(product.name)}
-                      </h2>
+                <h2 className="mt-3 text-[28px] font-semibold leading-none tracking-[-0.025em] text-zinc-950">
+                  {text.cardTitle(product.name)}
+                </h2>
 
-                      <div className="mt-3 inline-flex max-w-full items-center rounded-md bg-zinc-950 px-3 py-1.5 text-[10px] font-black tracking-[0.12em] text-white">
-                        {referenceRegion.code.toUpperCase() === 'US'
-                          ? text.planBadge(
-                              planDisplayName,
-                              formatUsd(referenceRegion.priceUsd),
-                            )
-                          : `${planDisplayName} · ${referenceRegion.country} ${formatUsd(referenceRegion.priceUsd)}`}
-                      </div>
+                <div className="mt-3 inline-flex max-w-full items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-zinc-700">
+                  {referenceRegion.code.toUpperCase() === 'US'
+                    ? text.planBadge(planDisplayName, formatUsd(referenceRegion.priceUsd))
+                    : `${planDisplayName} · ${referenceRegion.country} ${formatUsd(referenceRegion.priceUsd)}`}
+                </div>
+
+                <ShareMiniMap
+                  plan={plan}
+                  referenceRegion={referenceRegion}
+                  locale={locale}
+                />
+
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border border-lime-200 bg-lime-50 p-3">
+                    <div className="text-[9px] font-semibold text-lime-700">
+                      {lowestRegions.length > 1
+                        ? text.tiedCheapestRegion(lowestRegions.length)
+                        : text.cheapestRegion}
                     </div>
-
-                  <ShareMiniMap
-                    plan={plan}
-                    referenceRegion={referenceRegion}
-                    locale={locale}
-                  />
-
-                  <div className="mt-4 rounded-[22px] border border-lime-100 bg-gradient-to-r from-lime-100 to-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <div className="text-[11px] font-black uppercase tracking-wide text-lime-700">
-                          {text.cheapestRegion}
-                        </div>
-
-                        <div className="mt-2 flex items-end gap-3">
-                          <div className="text-[42px] font-black leading-none text-zinc-950">
-                            {stats.minRegion.code}
-                          </div>
-
-                          <div className="pb-1">
-                            <div className="text-xl font-black leading-none text-zinc-950">
-                              {stats.minRegion.country}
-                            </div>
-                            <div className="mt-1 text-xs font-bold text-zinc-500">
-                              {getReadableDiffByLocale(cheapDiff, locale)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-[34px] font-black leading-none text-lime-700">
-                          {formatUsd(stats.minRegion.priceUsd)}
-                        </div>
-                        <div className="mt-1 text-[11px] font-bold text-zinc-500">
-                          {text.monthlySuffix}
-                        </div>
-                      </div>
+                    <div className="mt-2 line-clamp-2 min-h-8 text-xs font-semibold leading-4 text-zinc-950">
+                      {lowestRegionNames}
+                    </div>
+                    <div className="mt-2 text-lg font-semibold leading-none text-lime-700">
+                      {formatUsd(stats.minRegion.priceUsd)}
+                    </div>
+                    <div className="mt-1 text-[9px] text-zinc-500">
+                      {getReadableDiffByLocale(cheapDiff, locale)}
                     </div>
                   </div>
 
-                  <div className="my-4 text-center text-sm font-bold italic text-zinc-600">
-                    “{text.comparisonLead(
-                      stats.minRegion.country,
-                      stats.maxRegion.country,
-                    )}
-                    <span className="text-rose-500">
-                      {stats.spreadPercent}%
-                    </span>
-                    {text.comparisonTrail}”
+                  <div className="rounded-lg border border-zinc-200 bg-white p-3">
+                    <div className="text-[9px] font-semibold text-zinc-500">
+                      {referenceRegion.code.toUpperCase() === 'US' ? text.usBase : referenceRegion.country}
+                    </div>
+                    <div className="mt-2 line-clamp-2 min-h-8 text-xs font-semibold leading-4 text-zinc-950">
+                      {referenceRegion.country}
+                    </div>
+                    <div className="mt-2 text-lg font-semibold leading-none text-zinc-950">
+                      {formatUsd(referenceRegion.priceUsd)}
+                    </div>
+                    <div className="mt-1 text-[9px] text-zinc-500">{text.monthlySuffix}</div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-[20px] border border-lime-100 bg-lime-50 p-3">
-                      <div className="mb-2 text-[10px] font-black tracking-wide text-lime-700">
-                        {text.cheapestList}
-                      </div>
-
-                      <div className="space-y-2">
-                        {cheapRegions.map((region) => {
-                          const diff = getDiffPercent(
-                            region.priceUsd,
-                            referenceRegion.priceUsd
-                          );
-
-                          return (
-                            <div
-                              key={`${region.code}-cheap-share`}
-                              className="grid grid-cols-[1fr_auto] items-baseline gap-2 text-xs"
-                            >
-                              <span className="min-w-0 truncate font-black text-zinc-900">
-                                {region.code} · {region.country}
-                              </span>
-                              <span className="font-black text-lime-700">
-                                {formatUsd(region.priceUsd)}
-                                <span className="ml-1 text-[10px]">
-                                  {getShortDiff(diff)}
-                                </span>
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                  <div className="rounded-lg border border-[#e6c4bc] bg-[#f8eeeb] p-3">
+                    <div className="text-[9px] font-semibold text-[#a24b3a]">
+                      {text.highestRegion}
                     </div>
-
-                    <div className="rounded-[20px] border border-rose-100 bg-rose-50 p-3">
-                      <div className="mb-2 text-[10px] font-black tracking-wide text-rose-600">
-                        {text.expensiveList}
-                      </div>
-
-                      <div className="space-y-2">
-                        {expensiveRegions.map((region) => {
-                          const diff = getDiffPercent(
-                            region.priceUsd,
-                            referenceRegion.priceUsd
-                          );
-
-                          return (
-                            <div
-                              key={`${region.code}-expensive-share`}
-                              className="grid grid-cols-[1fr_auto] items-baseline gap-2 text-xs"
-                            >
-                              <span className="min-w-0 truncate font-black text-zinc-900">
-                                {region.code} · {region.country}
-                              </span>
-                              <span className="font-black text-rose-600">
-                                {formatUsd(region.priceUsd)}
-                                <span className="ml-1 text-[10px]">
-                                  {getShortDiff(diff)}
-                                </span>
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                    <div className="mt-2 line-clamp-2 min-h-8 text-xs font-semibold leading-4 text-zinc-950">
+                      {highestRegionNames}
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-center gap-2 border-t border-orange-100 pt-3 text-[10px] font-bold text-zinc-400">
-                    <span className="h-3 w-3 rounded bg-blue-500" />
-                    <span>
-                      {text.verifiedAt(plan.freshness?.pageUpdatedAt || product.updatedAt)}
-                    </span>
+                    <div className="mt-2 text-lg font-semibold leading-none text-[#a24b3a]">
+                      {formatUsd(stats.maxRegion.priceUsd)}
+                    </div>
+                    <div className="mt-1 text-[9px] text-zinc-500">{text.monthlySuffix}</div>
                   </div>
                 </div>
 
-              <button
-                type="button"
-                onClick={handleDownload}
-                disabled={downloading}
-                data-track-event="download_share_image"
-                data-track-name="Download price share image"
-                data-track-button={`${product.slug}:${plan.slug}`}
-                data-track-placement="share_modal"
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 py-4 text-base font-black text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 3v12" />
-                  <path d="M7 10l5 5 5-5" />
-                  <path d="M5 21h14" />
-                </svg>
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2.5">
+                  <span className="text-[10px] font-medium text-zinc-500">{text.maxSpread}</span>
+                  <span className="text-base font-semibold text-zinc-950">{stats.spreadPercent}%</span>
+                </div>
 
-                {downloading ? text.downloading : text.download}
-              </button>
+                <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-zinc-200 pt-3 text-[9px] leading-4 text-zinc-500">
+                  <span>{text.priceSource}: <strong className="font-semibold text-zinc-700">{sourceLabel}</strong></span>
+                  <span>{text.coverage(plan.regions.length)}</span>
+                  {fxRateDate ? <span>{text.fxDate}: <strong className="font-semibold text-zinc-700">{fxRateDate}</strong></span> : <span />}
+                  <span>GeoSub · {text.verifiedAt(verifiedDate).replace(/^GeoSub\s*[·・]\s*/, '')}</span>
+                </div>
+              </div>
 
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleSocialShare('x')}
-                  data-track-event="share_to_social"
-                  data-track-name="Share price card to X"
-                  data-track-button={`${product.slug}:${plan.slug}:x`}
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  data-track-event="download_share_image"
+                  data-track-name="Download price share image"
+                  data-track-button={`${product.slug}:${plan.slug}`}
                   data-track-placement="share_modal"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
-                  aria-label={text.shareTo('X')}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <span className="text-xl font-black">𝕏</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSocialShare('facebook')}
-                  data-track-event="share_to_social"
-                  data-track-name="Share price card to Facebook"
-                  data-track-button={`${product.slug}:${plan.slug}:facebook`}
-                  data-track-placement="share_modal"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
-                  aria-label={text.shareTo('Facebook')}
-                >
-                  <span className="text-xl font-black">f</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSocialShare('telegram')}
-                  data-track-event="share_to_social"
-                  data-track-name="Share price card to Telegram"
-                  data-track-button={`${product.slug}:${plan.slug}:telegram`}
-                  data-track-placement="share_modal"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
-                  aria-label={text.shareTo('Telegram')}
-                >
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M21.7 3.3 2.9 10.6c-1.3.5-1.3 1.2-.2 1.5l4.8 1.5 1.9 5.8c.2.7.4.9.8.9.4 0 .6-.2.9-.5l2.6-2.5 5.3 3.9c1 .5 1.6.3 1.9-.9l3.4-15.9c.3-1.4-.5-2-1.6-1.5ZM8.2 13.2l10.6-6.7c.5-.3.9-.1.5.2l-8.6 7.8-.3 3.3-1.3-4.1Z" />
-                  </svg>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSocialShare('reddit')}
-                  data-track-event="share_to_social"
-                  data-track-name="Share price card to Reddit"
-                  data-track-button={`${product.slug}:${plan.slug}:reddit`}
-                  data-track-placement="share_modal"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 text-zinc-800 transition-colors hover:bg-zinc-950 hover:text-white"
-                  aria-label={text.shareTo('Reddit')}
-                >
-                  <span className="text-lg font-black">r</span>
+                  <Download aria-hidden="true" className="size-4" strokeWidth={1.8} />
+                  {downloading ? text.downloading : text.download}
                 </button>
 
                 <button
@@ -476,9 +349,63 @@ export default function SharePriceModal({
                   data-track-name="Copy price page link"
                   data-track-button={`${product.slug}:${plan.slug}`}
                   data-track-placement="share_modal"
-                  className="ml-auto min-w-[86px] rounded-lg border border-zinc-200 px-3 py-2 text-sm font-black text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950"
                 >
                   {copyText}
+                </button>
+              </div>
+
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSocialShare('x')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to X"
+                  data-track-button={`${product.slug}:${plan.slug}:x`}
+                  data-track-placement="share_modal"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-950"
+                  aria-label={text.shareTo('X')}
+                >
+                  <SocialBrandIcon icon={siX} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSocialShare('facebook')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to Facebook"
+                  data-track-button={`${product.slug}:${plan.slug}:facebook`}
+                  data-track-placement="share_modal"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-950"
+                  aria-label={text.shareTo('Facebook')}
+                >
+                  <SocialBrandIcon icon={siFacebook} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSocialShare('telegram')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to Telegram"
+                  data-track-button={`${product.slug}:${plan.slug}:telegram`}
+                  data-track-placement="share_modal"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-950"
+                  aria-label={text.shareTo('Telegram')}
+                >
+                  <SocialBrandIcon icon={siTelegram} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSocialShare('reddit')}
+                  data-track-event="share_to_social"
+                  data-track-name="Share price card to Reddit"
+                  data-track-button={`${product.slug}:${plan.slug}:reddit`}
+                  data-track-placement="share_modal"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-950"
+                  aria-label={text.shareTo('Reddit')}
+                >
+                  <SocialBrandIcon icon={siReddit} />
                 </button>
               </div>
             </div>

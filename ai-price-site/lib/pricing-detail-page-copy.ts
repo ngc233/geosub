@@ -24,8 +24,8 @@ type StaticDetailCopy = {
 const staticDetailCopy = {
   zh: {
     metadataFallbackTitle: "订阅价格详情",
-    backToPricing: "← 返回订阅价格列表",
-    visitOfficial: "访问官方网站 ↗",
+    backToPricing: "返回订阅价格列表",
+    visitOfficial: "访问官方网站",
     plans: "套餐",
     faqTitle: (productName) => `${productName} 订阅价格常见问题`,
     empty: {
@@ -42,8 +42,8 @@ const staticDetailCopy = {
   },
   "zh-tw": {
     metadataFallbackTitle: "訂閱價格詳情",
-    backToPricing: "← 返回訂閱價格列表",
-    visitOfficial: "訪問官方網站 ↗",
+    backToPricing: "返回訂閱價格列表",
+    visitOfficial: "訪問官方網站",
     plans: "套餐",
     faqTitle: (productName) => `${productName} 訂閱價格常見問題`,
     empty: {
@@ -59,8 +59,8 @@ const staticDetailCopy = {
 },
   en: {
     metadataFallbackTitle: "Pricing Detail",
-    backToPricing: "← Back to pricing list",
-    visitOfficial: "Visit official website ↗",
+    backToPricing: "Back to pricing list",
+    visitOfficial: "Visit official website",
     plans: "Plans",
     faqTitle: (productName) => `${productName} Pricing FAQ`,
     empty: {
@@ -78,8 +78,8 @@ const staticDetailCopy = {
   },
   ja: {
     metadataFallbackTitle: "サブスクリプション料金の詳細",
-    backToPricing: "← 料金一覧に戻る",
-    visitOfficial: "公式サイトを見る ↗",
+    backToPricing: "料金一覧に戻る",
+    visitOfficial: "公式サイトを見る",
     plans: "プラン",
     faqTitle: (productName) => `${productName} 料金に関するよくある質問`,
     empty: {
@@ -97,8 +97,8 @@ const staticDetailCopy = {
   },
   ko: {
     metadataFallbackTitle: "구독 가격 상세",
-    backToPricing: "← 가격 목록으로 돌아가기",
-    visitOfficial: "공식 웹사이트 방문 ↗",
+    backToPricing: "가격 목록으로 돌아가기",
+    visitOfficial: "공식 웹사이트 방문",
     plans: "요금제",
     faqTitle: (productName) => `${productName} 가격 자주 묻는 질문`,
     empty: {
@@ -116,8 +116,8 @@ const staticDetailCopy = {
   },
   es: {
     metadataFallbackTitle: "Detalle del precio de suscripción",
-    backToPricing: "← Volver a la lista de precios",
-    visitOfficial: "Visitar el sitio oficial ↗",
+    backToPricing: "Volver a la lista de precios",
+    visitOfficial: "Visitar el sitio oficial",
     plans: "Planes",
     faqTitle: (productName) => `Preguntas frecuentes sobre los precios de ${productName}`,
     empty: {
@@ -135,8 +135,8 @@ const staticDetailCopy = {
   },
   tr: {
     metadataFallbackTitle: "Abonelik fiyatı ayrıntıları",
-    backToPricing: "← Fiyat listesine dön",
-    visitOfficial: "Resmî web sitesini ziyaret et ↗",
+    backToPricing: "Fiyat listesine dön",
+    visitOfficial: "Resmî web sitesini ziyaret et",
     plans: "Paketler",
     faqTitle: (productName) => `${productName} fiyatları hakkında sık sorulan sorular`,
     empty: {
@@ -154,8 +154,8 @@ const staticDetailCopy = {
   },
   ar: {
     metadataFallbackTitle: "تفاصيل سعر الاشتراك",
-    backToPricing: "العودة إلى قائمة الأسعار →",
-    visitOfficial: "زيارة الموقع الرسمي ↗",
+    backToPricing: "العودة إلى قائمة الأسعار",
+    visitOfficial: "زيارة الموقع الرسمي",
     plans: "الباقات",
     faqTitle: (productName) => `أسئلة شائعة عن أسعار ${productName}`,
     empty: {
@@ -172,8 +172,8 @@ const staticDetailCopy = {
     },
   },
   fr: {
-    metadataFallbackTitle: "Détail du prix de l’abonnement", backToPricing: "← Retour à la liste des prix",
-    visitOfficial: "Visiter le site officiel ↗", plans: "Offres",
+    metadataFallbackTitle: "Détail du prix de l’abonnement", backToPricing: "Retour à la liste des prix",
+    visitOfficial: "Visiter le site officiel", plans: "Offres",
     faqTitle: (p) => `Questions fréquentes sur les prix de ${p}`,
     empty: {
       eyebrow: "Prix en cours de vérification", title: (p,n) => `Le prix de ${p} ${n} est en cours de vérification`,
@@ -183,8 +183,8 @@ const staticDetailCopy = {
     },
   },
   it: {
-    metadataFallbackTitle: "Dettagli del prezzo dell’abbonamento", backToPricing: "← Torna all’elenco dei prezzi",
-    visitOfficial: "Visita il sito ufficiale ↗", plans: "Piani",
+    metadataFallbackTitle: "Dettagli del prezzo dell’abbonamento", backToPricing: "Torna all’elenco dei prezzi",
+    visitOfficial: "Visita il sito ufficiale", plans: "Piani",
     faqTitle: (p) => `Domande frequenti sui prezzi di ${p}`,
     empty: {
       eyebrow: "Prezzo in verifica", title: (p,n) => `Il prezzo di ${p} ${n} è in verifica`,
@@ -194,8 +194,8 @@ const staticDetailCopy = {
     },
   },
   de: {
-    metadataFallbackTitle: "Details zum Abonnementpreis", backToPricing: "← Zurück zur Preisliste",
-    visitOfficial: "Offizielle Website besuchen ↗", plans: "Tarife",
+    metadataFallbackTitle: "Details zum Abonnementpreis", backToPricing: "Zurück zur Preisliste",
+    visitOfficial: "Offizielle Website besuchen", plans: "Tarife",
     faqTitle: (p) => `Häufige Fragen zu den Preisen von ${p}`,
     empty: {
       eyebrow: "Preis wird geprüft", title: (p,n) => `Der Preis für ${p} ${n} wird geprüft`,
@@ -205,8 +205,8 @@ const staticDetailCopy = {
     },
   },
   pt: {
-    metadataFallbackTitle: "Detalhes do preço da assinatura", backToPricing: "← Voltar à lista de preços",
-    visitOfficial: "Visitar o site oficial ↗", plans: "Planos",
+    metadataFallbackTitle: "Detalhes do preço da assinatura", backToPricing: "Voltar à lista de preços",
+    visitOfficial: "Visitar o site oficial", plans: "Planos",
     faqTitle: (p) => `Perguntas frequentes sobre os preços de ${p}`,
     empty: {
       eyebrow: "Preço em verificação", title: (p,n) => `O preço de ${p} ${n} está em verificação`,

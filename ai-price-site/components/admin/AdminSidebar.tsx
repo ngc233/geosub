@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MailOpen,
   MousePointerClick,
   Route,
   Search,
@@ -64,6 +65,7 @@ const navGroups: Array<{
   {
     label: "系统",
     items: [
+      { label: "联系工单", href: "/admin/contact-tickets", icon: MailOpen },
       { label: "任务状态", href: "/admin/system", icon: Activity },
       { label: "访问事件", href: "/admin/events", icon: MousePointerClick },
       { label: "系统设置", href: "/admin/settings", icon: Settings },

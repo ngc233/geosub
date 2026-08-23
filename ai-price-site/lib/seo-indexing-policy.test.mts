@@ -55,7 +55,7 @@ test("sitemap budgets stay bounded by the total release budget", () => {
   assert.deepEqual(seoSitemapBudgets, {
     total: 148,
     productPlanPages: 96,
-    countryPages: 8,
+    countryPages: 6,
     guideDetailPages: 24,
     currencyPairPages: 16,
   });

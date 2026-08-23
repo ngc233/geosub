@@ -444,6 +444,8 @@ export async function getDbAiPricingProducts({
                 localPrice: true,
                 currency: true,
                 priceUsd: true,
+                billingPlatform: true,
+                priceType: true,
                 taxNote: true,
                 dataQuality: true,
                 lastCheckedAt: true,
@@ -506,7 +508,42 @@ export async function getDbAiPricingProducts({
 
       const plans = plansToMap
         .map<DbPricingPlan | null>((plan) => {
-          const sortedPrices = [...plan.regionPrices].sort(
+          const listPriceCandidates = plan.regionPrices.filter(
+            (price) => String(price.priceType) === "LIST_PRICE",
+          );
+          const comparableCandidates = listPriceCandidates.length > 0
+            ? listPriceCandidates
+            : plan.regionPrices;
+          const platformPriority = new Map(
+            ["IOS", "WEB", "ANDROID", "STEAM", "GIFT_CARD", "UNKNOWN"].map(
+              (platform, index) => [platform, index],
+            ),
+          );
+          const listingPriceByCountry = new Map<
+            string,
+            (typeof comparableCandidates)[number]
+          >();
+
+          if (compactForListing) {
+            for (const price of comparableCandidates) {
+              const code = price.country.code.toUpperCase();
+              const current = listingPriceByCountry.get(code);
+              const nextPriority =
+                platformPriority.get(String(price.billingPlatform)) ?? Number.MAX_SAFE_INTEGER;
+              const currentPriority = current
+                ? platformPriority.get(String(current.billingPlatform)) ?? Number.MAX_SAFE_INTEGER
+                : Number.MAX_SAFE_INTEGER;
+
+              if (!current || nextPriority < currentPriority) {
+                listingPriceByCountry.set(code, price);
+              }
+            }
+          }
+
+          const comparablePrices = compactForListing
+            ? [...listingPriceByCountry.values()]
+            : plan.regionPrices;
+          const sortedPrices = [...comparablePrices].sort(
             (a, b) => Number(a.priceUsd) - Number(b.priceUsd)
           );
 
@@ -515,8 +552,11 @@ export async function getDbAiPricingProducts({
           }
 
           const expensiveStart = Math.max(0, sortedPrices.length - 2);
+          const referenceIndex = sortedPrices.findIndex(
+            (price) => price.country.code.toUpperCase() === "US",
+          );
           const visiblePriceIndexes = compactForListing && sortedPrices.length > 5
-            ? new Set([0, 1, 2, 3, sortedPrices.length - 1])
+            ? new Set([0, 1, 2, referenceIndex, sortedPrices.length - 1])
             : null;
 
           const regions = sortedPrices.flatMap<DbPricingRegion>((price, index) => {

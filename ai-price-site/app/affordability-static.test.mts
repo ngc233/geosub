@@ -57,7 +57,28 @@ test("public detail pages read affordability from the shared database view", () 
   assert.match(sharedPage, /locale=\{locale\}/);
   assert.match(affordabilityLib, /FROM plan_affordability_summary_view/);
   assert.match(affordabilityLib, /FROM plan_affordability_detail_view/);
-  assert.match(affordabilityLib, /ORDER BY income_share_percent DESC/);
+  assert.match(affordabilityLib, /ORDER BY affordability\.income_share_percent DESC/);
+  assert.match(affordabilityLib, /LEFT JOIN latest_big_mac_prices/);
+  assert.match(affordabilityLib, /assessAffordabilityQuality/);
+  assert.match(affordabilityLib, /coverageRatio < 0\.8/);
+  assert.match(affordabilityLib, /missing_us_baseline/);
+  assert.match(affordabilityLib, /stale_income_data/);
+});
+
+test("local affordability preview is isolated and quality-gated", () => {
+  const previewScript = readRepoFile(
+    "ai-price-site/scripts/refresh-local-affordability-preview.cjs",
+  );
+  const packageJson = readRepoFile("ai-price-site/package.json");
+
+  assert.match(previewScript, /allowedLocalHosts/);
+  assert.match(previewScript, /Refusing to update a non-local database host/);
+  assert.match(previewScript, /source_summary = 'Seeded local demo source'/);
+  assert.match(previewScript, /'ios'::billing_platform/);
+  assert.match(previewScript, /refresh_plan_affordability_metrics\('chatgpt', 'plus'\)/);
+  assert.match(previewScript, /coverage >= 0\.8/);
+  assert.match(previewScript, /ROLLBACK/);
+  assert.match(packageJson, /"preview:affordability"/);
 });
 
 test("collector success refreshes affordability and invalidates shared pricing data", () => {

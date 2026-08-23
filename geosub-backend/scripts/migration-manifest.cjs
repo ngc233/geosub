@@ -52,6 +52,8 @@ const prismaMigrations = Object.freeze([
   "20260801093000_search_conversion_repairs",
   "20260801143000_authority_coverage_tasks",
   "20260801183000_operations_notification_deliveries",
+  "20260822100000_contact_tickets",
+  "20260823100000_big_mac_benchmarks",
 ]);
 const prismaBaselineMigrations = Object.freeze(prismaMigrations.slice(0, 2));
 

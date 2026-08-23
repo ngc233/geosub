@@ -16,7 +16,6 @@ import { getBillingCycleSuffix } from "../lib/billing-cycle-label";
 import {
   assessSubscriptionAccess,
   getSubscriptionAccessCopy,
-  type SubscriptionAccessEvidence,
 } from "../lib/subscription-access";
 import {
   filterRegionPrices,
@@ -134,9 +133,8 @@ function getDiffTextByLocale(
 }
 
 function getDiffTone(diffPercent: number) {
-  if (diffPercent < -5) return "text-emerald-700 dark:text-emerald-300";
-  if (diffPercent > 18) return "text-rose-600 dark:text-rose-300";
-  if (diffPercent > 5) return "text-amber-700 dark:text-amber-300";
+  if (diffPercent < -5) return "text-[#3f7d20] dark:text-[#bef264]";
+  if (diffPercent > 5) return "text-[#a24b3a] dark:text-[#f0a08f]";
   return "text-zinc-500 dark:text-zinc-400";
 }
 
@@ -152,22 +150,10 @@ function getStatusByLocale(
 }
 
 function getStatusDot(diffPercent: number) {
-  if (diffPercent < -5) return "bg-emerald-500";
-  if (diffPercent > 18) return "bg-rose-500";
-  if (diffPercent > 5) return "bg-amber-500";
+  if (diffPercent < -5) return "bg-[#84cc16]";
+  if (diffPercent > 18) return "bg-[#c56550]";
+  if (diffPercent > 5) return "bg-[#e6b8ad]";
   return "bg-zinc-300";
-}
-
-function getAccessEvidenceClass(evidence: SubscriptionAccessEvidence) {
-  if (evidence === "confirmed") {
-    return "text-emerald-700 dark:text-emerald-300";
-  }
-
-  if (evidence === "conditional") {
-    return "text-amber-700 dark:text-amber-300";
-  }
-
-  return "text-zinc-500 dark:text-zinc-400";
 }
 
 function getTaxConfidenceLabel(
@@ -422,76 +408,64 @@ function SubscriptionConditions({
   const accessCopy = getSubscriptionAccessCopy(locale);
   const assessment = assessSubscriptionAccess(region);
   const statusLabel = getStatusByLocale(diffPercent, locale);
-  const accessLabel = accessCopy.conclusion[assessment.conclusion];
+  const hasAutomaticEvidence = assessment.facts.length > 0;
 
   return (
     <div
       className="relative inline-flex min-w-0 items-center"
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={() => hasAutomaticEvidence && setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
+      onFocus={() => hasAutomaticEvidence && setOpen(true)}
       onBlur={() => setOpen(false)}
     >
       <button
         type="button"
-        className="inline-flex min-w-0 items-center gap-2 text-left text-sm text-zinc-500 outline-none transition hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-300/60 dark:text-zinc-400 dark:hover:text-zinc-200"
-        aria-label={`${statusLabel} · ${accessLabel}`}
-        aria-expanded={open}
-        aria-describedby={tooltipId}
-        onClick={() => setOpen(true)}
+        className={`inline-flex min-w-0 items-center gap-2 text-left text-sm outline-none transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-zinc-300/60 ${getDiffTone(diffPercent)}`}
+        aria-label={statusLabel}
+        aria-expanded={hasAutomaticEvidence ? open : undefined}
+        aria-describedby={hasAutomaticEvidence ? tooltipId : undefined}
+        onClick={() => hasAutomaticEvidence && setOpen(true)}
       >
         <span className={`h-2 w-2 shrink-0 rounded-full ${getStatusDot(diffPercent)}`} />
         <span className="shrink-0">{statusLabel}</span>
+      </button>
+      {hasAutomaticEvidence ? (
         <span
+          id={tooltipId}
+          role="tooltip"
           className={[
-            "hidden h-5 shrink-0 items-center rounded-md px-1.5 text-[11px] font-semibold ring-1 ring-inset xl:inline-flex",
-            assessment.conclusion === "restrictions"
-              ? "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800"
-              : "bg-zinc-50 text-zinc-500 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-800",
+            "pointer-events-none absolute right-0 top-full z-[90] mt-2 w-[min(320px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
+            open ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
           ].join(" ")}
         >
-          {accessLabel}
-        </span>
-      </button>
-      <span
-        id={tooltipId}
-        role="tooltip"
-        className={[
-          "pointer-events-none absolute right-0 top-full z-[90] mt-2 w-[min(340px,calc(100vw-32px))] rounded-lg border border-zinc-200/80 bg-white/95 p-3 text-left text-xs leading-5 text-zinc-600 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur transition duration-150 ease-out dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:text-zinc-300",
-          open ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
-        ].join(" ")}
-      >
-        <span className="mb-1.5 flex items-center gap-2">
-          <span className={`h-1.5 w-1.5 rounded-full ${getStatusDot(diffPercent)}`} />
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-            {statusLabel} · {accessLabel}
+          <span className="mb-1.5 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#84cc16]" />
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+              {accessCopy.automaticTitle}
+            </span>
+          </span>
+          <span className="grid gap-1.5">
+            {assessment.facts.map((fact) => {
+              const evidenceLabel =
+                fact.key === "checked" && region.lastCheckedAt
+                  ? accessCopy.checkedValue(region.lastCheckedAt)
+                  : accessCopy.evidence.confirmed;
+
+              return (
+                <span
+                  key={fact.key}
+                  className="flex items-start justify-between gap-4 border-t border-zinc-100 pt-1.5 first:border-t-0 first:pt-0 dark:border-zinc-800"
+                >
+                  <span>{accessCopy.facts[fact.key]}</span>
+                  <span className="shrink-0 font-semibold text-emerald-700 dark:text-emerald-400">
+                    {evidenceLabel}
+                  </span>
+                </span>
+              );
+            })}
           </span>
         </span>
-        <span className="grid gap-1.5">
-          {assessment.facts.map((fact) => {
-            const evidenceLabel =
-              fact.key === "checked" &&
-              fact.evidence === "confirmed" &&
-              region.lastCheckedAt
-                ? accessCopy.checkedValue(region.lastCheckedAt)
-                : accessCopy.evidence[fact.evidence];
-
-            return (
-              <span
-                key={fact.key}
-                className="flex items-start justify-between gap-4 border-t border-zinc-100 pt-1.5 first:border-t-0 first:pt-0 dark:border-zinc-800"
-              >
-                <span>{accessCopy.facts[fact.key]}</span>
-                <span
-                  className={`shrink-0 font-semibold ${getAccessEvidenceClass(fact.evidence)}`}
-                >
-                  {evidenceLabel}
-                </span>
-              </span>
-            );
-          })}
-        </span>
-      </span>
+      ) : null}
     </div>
   );
 }
@@ -556,7 +530,6 @@ function RegionEvidencePanel({
 }) {
   const decisionCopy = getRegionPriceDecisionCopy(locale);
   const accessCopy = getSubscriptionAccessCopy(locale);
-  const tableCopy = getRegionPriceTableCopy(locale);
   const assessment = assessSubscriptionAccess(region);
   const localizedCountry =
     getLocalizedRegionName(region.code, locale) || region.country;
@@ -612,37 +585,32 @@ function RegionEvidencePanel({
         ))}
       </div>
 
-      <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
-        <div className="mb-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
-          {decisionCopy.accessConditions}
-        </div>
-        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-          {assessment.facts.map((fact) => {
-            const evidenceLabel =
-              fact.key === "checked" &&
-              fact.evidence === "confirmed" &&
-              region.lastCheckedAt
-                ? accessCopy.checkedValue(region.lastCheckedAt)
-                : accessCopy.evidence[fact.evidence];
-
-            return (
-              <div key={fact.key} className="flex items-start justify-between gap-3 text-xs leading-5">
-                <span className="text-zinc-500 dark:text-zinc-400">
-                  {accessCopy.facts[fact.key]}
-                </span>
-                <span className={`shrink-0 font-semibold ${getAccessEvidenceClass(fact.evidence)}`}>
-                  {evidenceLabel}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        {!region.sourceUrl ? (
-          <div className="mt-3 text-xs text-zinc-400">
-            {decisionCopy.sourceUnavailable} · {tableCopy.riskNote}
+      {assessment.facts.length > 0 ? (
+        <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+          <div className="mb-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+            {accessCopy.automaticTitle}
           </div>
-        ) : null}
-      </div>
+          <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+            {assessment.facts.map((fact) => {
+            const evidenceLabel =
+              fact.key === "checked" && region.lastCheckedAt
+                ? accessCopy.checkedValue(region.lastCheckedAt)
+                : accessCopy.evidence.confirmed;
+
+              return (
+                <div key={fact.key} className="flex items-start justify-between gap-3 text-xs leading-5">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    {accessCopy.facts[fact.key]}
+                  </span>
+                  <span className="shrink-0 font-semibold text-emerald-700 dark:text-emerald-400">
+                    {evidenceLabel}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -790,8 +758,8 @@ function RegionPriceRow({
 }) {
   const diffPercent = getDiffPercent(region, referencePrice);
   const columns = showSourceColumn
-    ? "md:grid-cols-[44px_minmax(142px,1.05fr)_120px_108px_124px_minmax(136px,1fr)_82px_118px]"
-    : "md:grid-cols-[44px_minmax(150px,1.05fr)_122px_108px_124px_minmax(144px,1fr)_118px]";
+    ? "md:grid-cols-[40px_minmax(120px,1fr)_104px_96px_110px_minmax(104px,1fr)_64px_124px]"
+    : "md:grid-cols-[40px_minmax(130px,1fr)_110px_100px_112px_minmax(116px,1fr)_124px]";
   const taxDisplay = formatTaxDisplay(region, locale);
   const copy = getRegionPriceTableCopy(locale);
   const localizedCountry =
@@ -805,6 +773,7 @@ function RegionPriceRow({
   ]
     .filter(Boolean)
     .join(" · ");
+  const desktopFreshnessDate = region.lastCheckedAt || region.fxRateDate;
   const decisionCopy = getRegionPriceDecisionCopy(locale);
   const evidencePanelId = useId();
 
@@ -813,6 +782,7 @@ function RegionPriceRow({
       <article
         className="border-b border-zinc-100 px-4 py-4 last:border-b-0 md:hidden dark:border-zinc-800"
         aria-label={`${localizedCountry} · ${formatDisplayPrice(region.priceUsd)}`}
+        data-region-price-row={region.code.toUpperCase()}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -833,7 +803,10 @@ function RegionPriceRow({
           </div>
 
           <div className="shrink-0 text-right">
-            <div className="text-lg font-semibold tabular-nums text-zinc-950 dark:text-white">
+            <div
+              className={`text-lg font-semibold tabular-nums ${getDiffTone(diffPercent)}`}
+              data-region-price-converted
+            >
               {formatDisplayPrice(region.priceUsd)}
               <span className="ml-0.5 text-xs font-normal text-zinc-400">
                 {billingSuffix}
@@ -913,9 +886,10 @@ function RegionPriceRow({
 
       <div
         className={[
-          "hidden gap-3 border-b border-zinc-100 px-5 py-3 last:border-b-0 md:grid md:items-center md:px-6 dark:border-zinc-800",
+          "hidden gap-2 border-b border-zinc-100 px-5 py-3 last:border-b-0 md:grid md:items-center md:px-6 dark:border-zinc-800",
           columns,
         ].join(" ")}
+        data-region-price-row={region.code.toUpperCase()}
       >
         <div className="text-sm tabular-nums text-zinc-400">{rank}</div>
 
@@ -949,18 +923,21 @@ function RegionPriceRow({
         <div className="mb-1 text-xs text-zinc-400 md:hidden">
           {displayCurrency === "USD" ? copy.usdEquivalent : displayCurrencyLabel}
         </div>
-        <div className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
+        <div
+          className={`text-sm font-semibold tabular-nums ${getDiffTone(diffPercent)}`}
+          data-region-price-converted
+        >
           {formatDisplayPrice(region.priceUsd)}
           <span className="ml-0.5 text-xs font-normal text-zinc-400">
             {billingSuffix}
           </span>
         </div>
-        {displayCurrency !== "USD" ? (
-          <div className="mt-0.5 text-xs text-zinc-400">{displayCurrencyLabel}</div>
-        ) : null}
-        {freshnessLabel ? (
-          <div className="mt-0.5 text-xs tabular-nums text-zinc-400">
-            {freshnessLabel}
+        {desktopFreshnessDate ? (
+          <div
+            className="mt-0.5 whitespace-nowrap text-[11px] tabular-nums text-zinc-400"
+            title={freshnessLabel}
+          >
+            {desktopFreshnessDate}
           </div>
         ) : null}
         </div>
@@ -1177,12 +1154,14 @@ export default function ExpandableRegionPriceTable({
     const localizedCountry =
       getLocalizedRegionName(region.code, locale) || region.country;
     const billingSuffix = getBillingCycleSuffix(plan.billing, locale);
+    const diffPercent = getDiffPercent(region, referencePrice);
 
     return (
       <div
         key={`${plan.slug}-summary-${getRegionComparisonKey(region)}`}
         className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 border-b border-zinc-100 px-4 py-3 last:border-b-0 md:grid-cols-[44px_minmax(160px,1fr)_140px_130px] md:px-6 dark:border-zinc-800"
         aria-label={`${localizedCountry} · ${region.localPrice} · ${formatDisplayPrice(region.priceUsd)}`}
+        data-region-price-row={region.code.toUpperCase()}
       >
         <span className="text-sm tabular-nums text-zinc-400">#{rank}</span>
         <span className="truncate text-sm font-semibold text-zinc-950 dark:text-white">
@@ -1191,7 +1170,10 @@ export default function ExpandableRegionPriceTable({
         <span className="hidden text-sm tabular-nums text-zinc-600 md:block dark:text-zinc-300">
           {region.localPrice}
         </span>
-        <span className="text-right text-sm font-semibold tabular-nums text-zinc-950 dark:text-white">
+        <span
+          className={`text-right text-sm font-semibold tabular-nums ${getDiffTone(diffPercent)}`}
+          data-region-price-converted
+        >
           {formatDisplayPrice(region.priceUsd)}
           <span className="ms-1 text-xs font-normal text-zinc-400">{billingSuffix}</span>
           <span className="mt-0.5 block text-xs font-normal text-zinc-400 md:hidden">
@@ -1205,8 +1187,8 @@ export default function ExpandableRegionPriceTable({
   const visibleRegions = filteredRegions.slice(0, initialVisibleCount);
   const hiddenRegions = filteredRegions.slice(initialVisibleCount);
   const headerColumns = shouldShowSourceColumn
-    ? "md:grid-cols-[44px_minmax(142px,1.05fr)_120px_108px_124px_minmax(136px,1fr)_82px_118px]"
-    : "md:grid-cols-[44px_minmax(150px,1.05fr)_122px_108px_124px_minmax(144px,1fr)_118px]";
+    ? "md:grid-cols-[40px_minmax(120px,1fr)_104px_96px_110px_minmax(104px,1fr)_64px_124px]"
+    : "md:grid-cols-[40px_minmax(130px,1fr)_110px_100px_112px_minmax(116px,1fr)_124px]";
 
   return (
     <PublicSection>
@@ -1364,7 +1346,7 @@ export default function ExpandableRegionPriceTable({
       <div className="overflow-hidden">
         <div
           className={[
-            "hidden gap-3 border-b border-zinc-100 bg-zinc-50/70 px-5 py-3 text-xs font-medium text-zinc-400 md:grid md:px-6 dark:border-zinc-800 dark:bg-zinc-900/40",
+            "hidden gap-2 border-b border-zinc-100 bg-zinc-50/70 px-5 py-3 text-xs font-medium text-zinc-400 md:grid md:px-6 dark:border-zinc-800 dark:bg-zinc-900/40",
             headerColumns,
           ].join(" ")}
         >
@@ -1391,7 +1373,6 @@ export default function ExpandableRegionPriceTable({
             label={copy.statusRisk}
             help={copy.riskHelp}
             locale={locale}
-            className="pl-4"
           />
         </div>
 

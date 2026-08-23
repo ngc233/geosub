@@ -274,12 +274,6 @@ export const countryPageIndexApprovals = [
     countryCode: "PH",
     approvedAt: "2026-08-16",
   },
-  {
-    productSlug: "gemini",
-    category: "ai",
-    countryCode: "JP",
-    approvedAt: "2026-08-16",
-  },
 ] as const satisfies readonly CountryPageIndexApproval[];
 
 function countryPageIndexKey({

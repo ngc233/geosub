@@ -12,7 +12,6 @@ import {
 import ExpandableRegionPriceTable from "./ExpandableRegionPriceTable";
 import {
   MetricItem,
-  MetricStrip,
   PublicSection,
   PublicSectionHeader,
 } from "./ui/PublicPage";
@@ -490,7 +489,6 @@ function PricingLead({
   const stats = getPlanStats(plan);
   const referenceRegion = getReferenceRegion(plan);
   const hasUsReference = referenceRegion.code.toUpperCase() === "US";
-  const displayCurrencyLabel = getCurrencyLabel(displayCurrency, locale);
   const selectedExchangeRate = exchangeRates[displayCurrency] || {
     rate: UNAVAILABLE_EXCHANGE_RATE,
     isFallback: true,
@@ -516,35 +514,34 @@ function PricingLead({
   return (
     <PublicSection>
       <div className="p-5 md:p-6">
-        <div className="mb-3 inline-flex rounded-md bg-lime-50 px-2.5 py-1 text-xs font-semibold text-lime-700 ring-1 ring-lime-200 dark:bg-lime-950/30 dark:text-lime-300 dark:ring-lime-900">
-          {copy.appStoreSource}
-        </div>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <h2 className="text-[24px] font-semibold leading-tight text-zinc-950 md:whitespace-nowrap md:text-[28px] dark:text-white">
-              {copy.conclusionTitle(planDisplayName)}
-            </h2>
-            <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
-              {copy.conclusionLead(platformLabel, stats.minRegion.country)}{" "}
-              <strong className="font-semibold text-lime-700 dark:text-lime-300">
-                {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, selectedRate, locale)}
-              </strong>
-              {copy.conclusionMiddle(stats.maxRegion.country)}{" "}
-              <strong className="font-semibold text-rose-600 dark:text-rose-300">
-                {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, selectedRate, locale)}
-              </strong>
-              {copy.conclusionSpread(stats.spreadPercent)}
-            </p>
-          </div>
-
-          <div className="text-xs text-zinc-400 lg:text-right">
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span className="inline-flex rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            {platformLabel}
+          </span>
+          <span className="whitespace-nowrap text-xs text-zinc-400">
             {plan.freshness?.pageUpdatedAt
               ? copy.pageUpdated(plan.freshness.pageUpdatedAt)
               : copy.regionCount(plan.regions.length)}
-          </div>
+          </span>
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.015em] text-zinc-950 md:text-[26px] dark:text-white">
+            {copy.conclusionTitle(planDisplayName)}
+          </h2>
+          <p className="mt-2 max-w-4xl text-[15px] leading-7 text-zinc-600 dark:text-zinc-300">
+            {copy.conclusionLead(platformLabel, stats.minRegion.country)}{" "}
+            <strong className="font-semibold text-[#4f7f2a] dark:text-[#bef264]">
+              {formatMonthlyPrice(stats.minRegion.priceUsd, displayCurrency, selectedRate, locale)}
+            </strong>
+            {copy.conclusionMiddle(stats.maxRegion.country)}{" "}
+            <strong className="font-semibold text-[#a24b3a] dark:text-[#f0a08f]">
+              {formatMonthlyPrice(stats.maxRegion.priceUsd, displayCurrency, selectedRate, locale)}
+            </strong>
+            {copy.conclusionSpread(stats.spreadPercent)}
+          </p>
         </div>
 
-        <div className="mt-4 grid gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800 md:grid-cols-[auto_1fr] md:items-center">
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             <span className="shrink-0 text-xs font-semibold text-zinc-400">
               {copy.displayCurrency}
@@ -555,50 +552,63 @@ function PricingLead({
               options={[...supportedDisplayCurrencies]}
               disabledCurrencies={disabledCurrencies}
               locale={locale}
+              compact
             />
           </div>
 
-          <div
-            className={[
-              "text-xs leading-5 md:text-right",
-              selectedExchangeRate.isStale
-                ? "font-medium text-amber-700 dark:text-amber-300"
-                : "text-zinc-400",
-            ].join(" ")}
-          >
-            {displayCurrency !== "USD"
-              ? exchangeRateNote
-              : displayCurrencyLabel}
-          </div>
+          {displayCurrency !== "USD" ? (
+            <div
+              className={[
+                "text-xs leading-5",
+                selectedExchangeRate.isStale
+                  ? "font-medium text-amber-700 dark:text-amber-300"
+                  : "text-zinc-400",
+              ].join(" ")}
+            >
+              {exchangeRateNote}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <MetricStrip>
-        <MetricItem
-          label={copy.lowest}
-          value={`${stats.minRegion.country} · ${formatDisplayPrice(stats.minRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
-          helper={stats.minRegion.localPrice}
-          tone="green"
-        />
-        <MetricItem
-          label={copy.highest}
-          value={`${stats.maxRegion.country} · ${formatDisplayPrice(stats.maxRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
-          helper={stats.maxRegion.localPrice}
-          tone="red"
-        />
-        <MetricItem
-          label={hasUsReference ? copy.usBase : referenceRegion.country}
-          value={`${referenceRegion.country} · ${formatDisplayPrice(referenceRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
-          helper={referenceRegion.code}
-        />
-        <MetricItem
-          label={copy.regions}
-          value={copy.regionCount(plan.regions.length)}
-          helper={platformLabel}
-        />
-      </MetricStrip>
+      <div className="grid grid-cols-2 gap-3 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800 md:px-6 lg:grid-cols-4">
+        {[
+          <MetricItem
+            key="lowest"
+            label={copy.lowest}
+            value={`${stats.minRegion.country} · ${formatDisplayPrice(stats.minRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
+            helper={stats.minRegion.localPrice}
+            tone="saving"
+          />,
+          <MetricItem
+            key="highest"
+            label={copy.highest}
+            value={`${stats.maxRegion.country} · ${formatDisplayPrice(stats.maxRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
+            helper={stats.maxRegion.localPrice}
+            tone="premium"
+          />,
+          <MetricItem
+            key="base"
+            label={hasUsReference ? copy.usBase : referenceRegion.country}
+            value={`${referenceRegion.country} · ${formatDisplayPrice(referenceRegion.priceUsd, displayCurrency, selectedRate, locale)}`}
+            helper={referenceRegion.code}
+          />,
+          <MetricItem
+            key="regions"
+            label={copy.regions}
+            value={copy.regionCount(plan.regions.length)}
+          />,
+        ].map((metric) => (
+          <div
+            key={metric.key}
+            className="rounded-lg bg-zinc-50 px-4 dark:bg-zinc-900"
+          >
+            {metric}
+          </div>
+        ))}
+      </div>
 
-      <div className="grid border-t border-zinc-100 text-xs dark:border-zinc-800 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-zinc-100 px-5 py-4 text-xs dark:border-zinc-800 sm:grid-cols-3 md:px-6 lg:grid-cols-5">
         {[
           [copy.source, plan.freshness?.sourceLabel || "App Store"],
           [copy.latestCollection, plan.freshness?.priceCollectedAt],
@@ -613,9 +623,11 @@ function PricingLead({
                 : copy.needsReview,
           ],
         ].map(([label, value]) => (
-          <div key={label} className="border-b border-zinc-100 px-5 py-3 last:border-b-0 sm:border-r lg:border-b-0 dark:border-zinc-800">
+          <div key={label} className="min-w-0">
             <div className="font-medium text-zinc-400">{label}</div>
-            <div className="mt-1 font-semibold text-zinc-700 dark:text-zinc-200">{value || copy.unavailable}</div>
+            <div className="mt-1 truncate font-semibold text-zinc-700 dark:text-zinc-200" title={value || copy.unavailable}>
+              {value || copy.unavailable}
+            </div>
           </div>
         ))}
       </div>
@@ -633,7 +645,7 @@ function RankingList({
   title: string;
   regions: RegionPrice[];
   referenceRegion: RegionPrice;
-  tone: "green" | "red";
+  tone: "saving" | "premium";
   formatPrice: (value: number) => string;
 }) {
   return (
@@ -641,9 +653,9 @@ function RankingList({
       <div
         className={[
           "mb-2 text-sm font-semibold",
-          tone === "green"
-            ? "text-lime-700 dark:text-lime-300"
-            : "text-rose-600 dark:text-rose-300",
+          tone === "saving"
+            ? "text-[#4f7f2a] dark:text-[#bef264]"
+            : "text-[#a24b3a] dark:text-[#f0a08f]",
         ].join(" ")}
       >
         {title}
@@ -670,9 +682,9 @@ function RankingList({
               <div
                 className={[
                   "min-w-12 text-right text-xs font-semibold tabular-nums",
-                  tone === "green"
-                    ? "text-lime-700 dark:text-lime-300"
-                    : "text-rose-600 dark:text-rose-300",
+                  tone === "saving"
+                    ? "text-[#4f7f2a] dark:text-[#bef264]"
+                    : "text-[#a24b3a] dark:text-[#f0a08f]",
                 ].join(" ")}
               >
                 {getSignedPercent(diff)}
@@ -733,14 +745,14 @@ function PriceDistribution({
           title={copy.lowerRegions}
           regions={cheapRegions}
           referenceRegion={referenceRegion}
-          tone="green"
+          tone="saving"
           formatPrice={formatPrice}
         />
         <RankingList
           title={copy.higherRegions}
           regions={expensiveRegions}
           referenceRegion={referenceRegion}
-          tone="red"
+          tone="premium"
           formatPrice={formatPrice}
         />
       </div>
@@ -756,7 +768,14 @@ export default function PricingPlatformView({
   exchangeRates,
   locale = "zh",
 }: PricingPlatformViewProps) {
-  const [platform] = useState<PlatformFilter>("ios");
+  const platform = useMemo<PlatformFilter>(() => {
+    const availablePlatforms = new Set(plan.regions.map(getPlatform));
+
+    if (availablePlatforms.has("ios")) return "ios";
+    if (availablePlatforms.has("web")) return "web";
+    if (availablePlatforms.has("android")) return "android";
+    return "all";
+  }, [plan]);
   const [currencyPreference, setCurrencyPreference] =
     useState<DisplayCurrency>(defaultCurrency);
   const preferredExchangeRate = exchangeRates[currencyPreference];

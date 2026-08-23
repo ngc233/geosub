@@ -1,4 +1,5 @@
 import AdminLink from "@/components/admin/AdminLink";
+import { ArrowLeft } from "lucide-react";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
 import {
   AdminCard,
@@ -551,8 +552,9 @@ export default function CollectorJobsView({
       </AdminCard>
 
       <div className="mt-6">
-        <AdminLink href="/admin" className="text-sm font-semibold text-slate-900 hover:text-blue-700">
-          ← 返回运营驾驶舱
+        <AdminLink href="/admin" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-900 hover:text-blue-700">
+          <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.8} />
+          返回运营驾驶舱
         </AdminLink>
       </div>
     </div>

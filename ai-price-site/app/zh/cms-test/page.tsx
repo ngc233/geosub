@@ -62,7 +62,14 @@ function statusLabel(value: string) {
 export default async function CmsTestPage() {
   guardUnreleasedPublicPage();
 
-  const data = await getCmsProductPricingPage('chatgpt', 'plus', 'zh');
+  let data = null;
+
+  try {
+    data = await getCmsProductPricingPage('chatgpt', 'plus', 'zh');
+  } catch {
+    // This route is development-only. Keep a missing local CMS dependency from
+    // replacing the diagnostic page with the framework error boundary.
+  }
 
   if (!data) {
     return (

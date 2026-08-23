@@ -1,5 +1,6 @@
 import AdminLink from "@/components/admin/AdminLink";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
+import { ArrowRight } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import SegmentedControl from "../../../components/ui/SegmentedControl";
 import {
@@ -528,8 +529,9 @@ export default async function AdminPricesPage({
               先从分类看价格库健康度：哪些业务线已有价格，哪些还只是产品占位。
             </p>
           </div>
-          <AdminLink href="/admin/products" className="text-sm font-black text-blue-700 hover:text-blue-900">
-            去产品库 →
+          <AdminLink href="/admin/products" className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900">
+            去产品库
+            <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
           </AdminLink>
         </div>
 
@@ -595,8 +597,9 @@ export default async function AdminPricesPage({
               每个产品独立展示分类、状态、套餐数、地区覆盖和价格范围，适合判断下一步补采对象。
             </p>
           </div>
-          <AdminLink href="/admin/review" className="text-sm font-black text-blue-700 hover:text-blue-900">
-            去审核中心 →
+          <AdminLink href="/admin/review" className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900">
+            去审核中心
+            <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
           </AdminLink>
         </div>
 

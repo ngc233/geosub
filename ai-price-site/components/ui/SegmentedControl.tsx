@@ -156,6 +156,7 @@ export default function SegmentedControl({
               className={className}
               role="tab"
               aria-selected={active}
+              aria-current={active ? "page" : undefined}
             >
               {content(item)}
             </Link>

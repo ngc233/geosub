@@ -21,5 +21,11 @@ export function getLanguageSwitchHref(
     return withSiteLocale("/guides", nextLocale);
   }
 
+  // The private ticket inbox is currently published in Simplified Chinese only.
+  // Never generate a localized contact URL that resolves to a 404 page.
+  if (relativePath === "/contact" && nextLocale !== "zh") {
+    return withSiteLocale("/", nextLocale);
+  }
+
   return replaceSiteLocaleInPath(pathname, nextLocale);
 }

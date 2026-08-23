@@ -5,174 +5,121 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
+const rootDir = resolve(appDir, "..");
 
 function readAppFile(...segments: string[]) {
   return readFileSync(resolve(appDir, ...segments), "utf8");
 }
 
-test("home pages only link to currently available public sections", () => {
-  const zhHome = [
-    readAppFile("zh", "page.tsx"),
-    readFileSync(resolve(appDir, "..", "components", "HomepageExperience.tsx"), "utf8"),
-  ].join("\n");
-  const enHome = readAppFile("en", "page.tsx");
-  const jaHome = readAppFile("ja", "page.tsx");
-  const koHome = readAppFile("ko", "page.tsx");
-  const esHome = readAppFile("es", "page.tsx");
-  const trHome = readAppFile("tr", "page.tsx");
-  const arHome = readAppFile("ar", "page.tsx");
-  const frHome = readAppFile("fr", "page.tsx");
-  const itHome = readAppFile("it", "page.tsx");
-  const deHome = readAppFile("de", "page.tsx");
-  const ptHome = readAppFile("pt", "page.tsx");
+function readRootFile(...segments: string[]) {
+  return readFileSync(resolve(rootDir, ...segments), "utf8");
+}
 
-  for (const source of [zhHome, enHome, jaHome, koHome, esHome, trHome, arHome]) {
-    assert.doesNotMatch(source, /software-subscriptions/);
-    assert.doesNotMatch(source, /gaming-steam/);
-    assert.doesNotMatch(source, /gift-cards/);
-    assert.doesNotMatch(source, /ai-rankings/);
-    assert.match(source, /ai-pricing/);
-    assert.match(source, /streaming-pricing/);
-    assert.match(source, /data-sources/);
-    assert.match(source, /guides/);
-  }
+const localizedLocales = ["zh-tw", "en", "ja", "ko", "es", "tr", "ar", "fr", "it", "de", "pt"] as const;
 
-  for (const source of [frHome, itHome, deHome, ptHome]) {
-    assert.doesNotMatch(source, /software-subscriptions/);
-    assert.doesNotMatch(source, /gaming-steam/);
-    assert.doesNotMatch(source, /gift-cards/);
-    assert.doesNotMatch(source, /ai-rankings/);
-    assert.match(source, /EuropeanHomePage/);
-  }
-});
-
-test("European home routes delegate to complete localized content", () => {
-  const shared = readFileSync(
-    resolve(appDir, "..", "components", "EuropeanLocalePages.tsx"),
-    "utf8",
-  );
-
-  for (const locale of ["fr", "it", "de", "pt"]) {
+test("all non-Chinese home routes use the shared localized homepage", () => {
+  for (const locale of localizedLocales) {
     const source = readAppFile(locale, "page.tsx");
-    assert.match(source, /EuropeanHomePage/);
+    assert.match(source, /LocalizedHomepagePage/);
     assert.match(source, new RegExp(`locale="${locale}"`));
-    assert.match(shared, new RegExp(`\\n  ${locale}:`));
+    assert.doesNotMatch(source, /EuropeanHomePage|TraditionalChineseHomePage/);
   }
-
-  assert.match(shared, /ai-pricing/);
-  assert.match(shared, /streaming-pricing/);
-  assert.match(shared, /data-sources/);
-  assert.match(shared, /guides/);
 });
 
-test("Arabic home page is complete and links only to localized routes", () => {
-  const arHome = readAppFile("ar", "page.tsx");
+test("the shared homepage links only to available locale-scoped sections", () => {
+  const source = [
+    readRootFile("components", "HomepageExperience.tsx"),
+    readRootFile("components", "LocalizedHomepagePage.tsx"),
+  ].join("\n");
 
-  assert.match(arHome, /أسعار الاشتراكات العالمية في مكان واحد/);
-  assert.match(arHome, /\/ar\/ai-pricing\//);
-  assert.match(arHome, /\/ar\/streaming-pricing\//);
-  assert.match(arHome, /\/ar\/data-sources\//);
-  assert.match(arHome, /\/ar\/guides\//);
+  for (const unavailable of ["software-subscriptions", "gaming-steam", "gift-cards", "ai-rankings"]) {
+    assert.doesNotMatch(source, new RegExp(unavailable));
+  }
+  for (const available of ["ai-pricing", "streaming-pricing", "data-sources", "guides"]) {
+    assert.match(source, new RegExp(available));
+  }
+  assert.match(source, /localeRoot/);
+  assert.match(source, /getDbAiPricingProducts/);
+  assert.match(source, /getDbHomepagePricingEvidence/);
+  assert.match(source, /productSlugs: FEATURED_PRODUCT_SLUGS/);
+  assert.match(source, /unstable_cache/);
 });
 
-test("Turkish home page is complete and links only to localized routes", () => {
-  const trHome = readAppFile("tr", "page.tsx");
+test("every launched locale has complete homepage copy", async () => {
+  const { getHomepageCopy } = await import("../lib/homepage-copy.ts");
+  const requiredLocales = ["zh", ...localizedLocales] as const;
 
-  assert.match(trHome, /Dünya genelindeki abonelik fiyatları tek yerde/);
-  assert.match(trHome, /\/tr\/ai-pricing\//);
-  assert.match(trHome, /\/tr\/streaming-pricing\//);
-  assert.match(trHome, /\/tr\/data-sources\//);
-  assert.match(trHome, /\/tr\/guides\//);
+  for (const locale of requiredLocales) {
+    const copy = getHomepageCopy(locale);
+    assert.ok(copy.title.length > 12, `${locale} title`);
+    assert.ok(copy.description.length > 20, `${locale} description`);
+    assert.ok(copy.categories.ai[0]);
+    assert.ok(copy.categories.streaming[0]);
+    assert.ok(copy.proof.sources[0]);
+    assert.ok(copy.map.lowest);
+    assert.ok(copy.map.highest);
+    assert.ok(copy.map.reference);
+    assert.ok(copy.map.noData);
+  }
 });
 
-test("Spanish home page is complete and links only to localized routes", () => {
-  const esHome = readAppFile("es", "page.tsx");
-
-  assert.match(esHome, /Precios de suscripción de todo el mundo/);
-  assert.match(esHome, /\/es\/ai-pricing\//);
-  assert.match(esHome, /\/es\/streaming-pricing\//);
-  assert.match(esHome, /\/es\/data-sources\//);
-  assert.match(esHome, /\/es\/guides\//);
-});
-
-test("Korean home page is complete and links only to localized routes", () => {
-  const koHome = readAppFile("ko", "page.tsx");
-
-  assert.match(koHome, /전 세계 구독 가격을 한눈에/);
-  assert.match(koHome, /\/ko\/ai-pricing\//);
-  assert.match(koHome, /\/ko\/streaming-pricing\//);
-  assert.match(koHome, /\/ko\/data-sources\//);
-  assert.match(koHome, /\/ko\/guides\//);
-});
-
-test("Japanese home page is complete and links only to localized routes", () => {
-  const jaHome = readAppFile("ja", "page.tsx");
-
-  assert.match(jaHome, /世界のサブスクリプション料金を、わかりやすく/);
-  assert.match(jaHome, /\/ja\/ai-pricing\//);
-  assert.match(jaHome, /\/ja\/streaming-pricing\//);
-  assert.match(jaHome, /\/ja\/data-sources\//);
-  assert.match(jaHome, /\/ja\/guides\//);
-});
-
-test("English home page is not the launch placeholder", () => {
-  const enHome = readAppFile("en", "page.tsx");
-
-  assert.doesNotMatch(enHome, /Page framework ready/);
-  assert.doesNotMatch(enHome, /basic English page framework/i);
-  assert.match(enHome, /Compare AI and streaming App Store prices by region/);
-  assert.match(enHome, /common display currencies/);
-  assert.match(enHome, /Data Sources/);
-});
-
-test("Chinese home page describes the current official scope", () => {
+test("Chinese homepage remains the visual baseline while visible copy is localized", () => {
   const zhRoute = readAppFile("zh", "page.tsx");
-  const zhHome = readFileSync(
-    resolve(appDir, "..", "components", "HomepageExperience.tsx"),
-    "utf8",
-  );
-  const zhMap = readFileSync(
-    resolve(appDir, "..", "components", "HomeHeroMap.tsx"),
-    "utf8",
-  );
+  const home = readRootFile("components", "HomepageExperience.tsx");
+  const map = readRootFile("components", "HomeHeroMap.tsx");
+  const copy = readRootFile("lib", "homepage-copy.ts");
+  const globalStyles = readAppFile("globals.css");
 
   assert.match(zhRoute, /getDbAiPricingProducts/);
-  assert.match(zhRoute, /getDbHomepagePricingEvidence/);
-  assert.match(zhRoute, /productSlugs: FEATURED_PRODUCT_SLUGS/);
-  assert.match(zhRoute, /unstable_cache/);
-  assert.match(zhHome, /别只看标价/);
-  assert.match(zhHome, /看清订阅在你所在地的真实成本/);
-  assert.match(zhHome, /数字订阅成本情报/);
-  assert.match(zhHome, /每个价格结论，都应该有证据可追溯/);
-  assert.doesNotMatch(zhHome, /Browse by need/);
-  assert.match(zhMap, /全球订阅价格分布图/);
-  assert.match(zhHome, /href=\{product\.href\}/);
-  assert.match(zhHome, /onMouseEnter=\{\(\) => setActiveIndex\(index\)\}/);
-  assert.doesNotMatch(zhHome, /查看完整地区价格/);
-  assert.match(zhHome, /ROTATION_INTERVAL/);
-  assert.match(zhHome, /数据来源/);
-  assert.match(zhHome, /订阅指南/);
-  assert.match(zhMap, /resolveLabelPositions/);
-  assert.match(zhMap, /data-home-map-label/);
-  assert.match(zhMap, /const LABEL_HEIGHT = 30/);
-  assert.match(zhMap, /function markerLabelWidth/);
-  assert.match(zhMap, /rx=\{LABEL_HEIGHT \/ 2\}/);
-  assert.match(zhHome, /rounded-lg border border-zinc-200/);
-  assert.doesNotMatch(zhHome, /grid gap-px border border-zinc-200 bg-zinc-200/);
+  assert.match(home, /locale === "zh"/);
+  assert.match(home, /别只看标价/);
+  assert.match(home, /getHomepageCopy\(locale\)/);
+  assert.match(copy, /开始比较价格/);
+  assert.match(copy, /数据如何核验/);
+  assert.match(copy, /每个价格结论，都应该有证据可追溯/);
+  assert.match(home, /bg-zinc-950/);
+  assert.match(home, /text-lime-700/);
+  assert.equal(
+    home.match(/bg-\[var\(--background\)\]/g)?.length,
+    4,
+    "homepage main and all three sections must share the global page background",
+  );
+  assert.match(globalStyles, /body\s*\{[\s\S]*?background:\s*var\(--background\)/);
+  assert.doesNotMatch(
+    globalStyles,
+    /body::before/,
+    "a route-visible body overlay must not create a second page background",
+  );
+  assert.doesNotMatch(home, /<section className="[^"]*bg-white[^"]*px-4 py-14/);
+  assert.doesNotMatch(home, /(?:text|bg|border)-(?:teal|blue|violet|orange|amber|rose|emerald)-/);
+  assert.match(home, /role="tablist"/);
+  assert.match(home, /aria-selected=\{selected\}/);
+  assert.match(home, /setActiveIndex\(index\)/);
+  assert.match(home, /scrollIntoView/);
+  assert.doesNotMatch(home, /ROTATION_INTERVAL|setInterval/);
+  assert.match(home, /gs-home-product-nav/);
+  assert.match(globalStyles, /\.gs-home-product-nav::?-webkit-scrollbar|\.gs-home-product-nav::-webkit-scrollbar/);
+  assert.match(home, /<HomeHeroMap/);
+  assert.match(home, /locale=\{locale\}/);
+  assert.match(map, /data-home-geo-pricing/);
+  assert.match(map, /grid overflow-hidden rounded-xl border border-zinc-200 bg-white/);
+  assert.match(map, /data-home-map-country/);
+  assert.match(map, /data-home-map-pin/);
+  assert.match(map, /data-home-mobile-map-pin/);
+  assert.match(map, /className="pointer-events-auto absolute flex size-11/);
+  assert.match(map, /fixed inset-x-3 bottom-3 z-50/);
+  assert.match(map, /getGeoPriceFill/);
+  assert.match(map, /text-lime-600/);
+  assert.match(map, /text-\[#a24b3a\]/);
+  assert.doesNotMatch(map, /pulse|strokeDasharray|route-/);
 });
 
 test("homepage evidence query uses the mapped PostgreSQL enum values", () => {
-  const source = readFileSync(
-    resolve(appDir, "..", "lib", "db-ai-pricing.ts"),
-    "utf8",
-  );
+  const source = readRootFile("lib", "db-ai-pricing.ts");
 
   assert.match(source, /rp\.status = 'published'::publish_status/);
   assert.match(source, /p\.status = 'published'::publish_status/);
   assert.match(source, /pl\.status = 'published'::publish_status/);
-  assert.match(
-    source,
-    /p\.category IN \('ai'::product_category, 'streaming'::product_category\)/,
-  );
+  assert.match(source, /p\.category IN \('ai'::product_category, 'streaming'::product_category\)/);
   assert.doesNotMatch(source, /status = 'PUBLISHED'/);
 });

@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import { startRouteProgress } from "../lib/route-progress";
 import {
   ArrowRight,
+  BadgeDollarSign,
   BookOpen,
-  Clapperboard,
+  Bot,
   LoaderCircle,
+  MonitorPlay,
   Search,
-  Sparkles,
   Wrench,
   X,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import {
   useEffect,
   useMemo,
@@ -353,9 +355,9 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
   const [popularLoaded, setPopularLoaded] = useState(false);
 
   const quickLinks = useMemo(() => [
-    { title: copy.ai, href: `/${locale}/ai-pricing`, icon: Sparkles },
-    { title: copy.streaming, href: `/${locale}/streaming-pricing`, icon: Clapperboard },
-    { title: copy.converter, href: `/${locale}/tools/currency-converter`, icon: Wrench },
+    { title: copy.ai, href: `/${locale}/ai-pricing`, icon: Bot },
+    { title: copy.streaming, href: `/${locale}/streaming-pricing`, icon: MonitorPlay },
+    { title: copy.converter, href: `/${locale}/tools/currency-converter`, icon: BadgeDollarSign },
   ], [copy, locale]);
   const availableKinds = useMemo(
     () => [...new Set(results.map((result) => result.kind))],
@@ -509,9 +511,10 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
         <span className="hidden xl:inline">{copy.button}</span>
       </button>
 
-      {open ? (
+      {open ? createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-start justify-center bg-zinc-950/45 p-0 backdrop-blur-sm sm:p-6 sm:pt-[10vh]"
+          data-global-search-overlay
+          className="fixed inset-0 z-[100] flex min-h-dvh items-start justify-center bg-zinc-950/45 p-0 backdrop-blur-sm sm:p-6 sm:pt-[10vh]"
           onClick={(event) => {
             if (event.target === event.currentTarget) closeSearch();
           }}
@@ -582,9 +585,11 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                           key={item.href}
                           href={item.href}
                           onClick={closeSearch}
-                          className="flex min-h-12 items-center gap-3 rounded-lg border border-zinc-200 px-3 py-2.5 text-sm font-bold text-zinc-700 transition hover:border-lime-300 hover:bg-lime-50 hover:text-zinc-950 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-lime-500/10 dark:hover:text-white"
+                          className="group flex min-h-14 items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:hover:text-white"
                         >
-                          <Icon className="h-4 w-4 text-lime-600" aria-hidden="true" />
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 transition group-hover:bg-white group-hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:bg-zinc-800 dark:group-hover:text-white">
+                            <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
+                          </span>
                           <span>{item.title}</span>
                         </Link>
                       );
@@ -665,7 +670,8 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
               )}
             </div>
           </section>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </>
   );

@@ -42,7 +42,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "{planName} 全球价格热力图",
       description:
-        "基于国家和地区的分级设色图，颜色越绿表示相对便宜，黄色接近基准，红色表示相对更贵；点击或悬停国家可查看具体价格。",
+        "使用低饱和橄榄灰色阶展示各国家和地区相对美国基准的价格梯队；点击或悬停国家可查看本地价格、美元折算与税费信息。",
     },
     priceTable: {
       title: "{planName} 地区价格明细表",
@@ -65,7 +65,7 @@ const detailCopyTemplates = {
     },
     priceHeatmap: {
         title: "{planName} 全球價格熱力圖",
-        description: "基於國家和地區的分級設色圖，顏色越綠表示相對便宜，黃色接近基準，紅色表示相對更貴；點選或懸停國家可檢視具體價格。",
+        description: "使用低飽和橄欖灰色階呈現各國家和地區相對美國基準的價格層級；點選或懸停國家可檢視當地價格、美元換算與稅費資訊。",
     },
     priceTable: {
         title: "{planName} 地區價格明細表",
@@ -89,7 +89,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "{planName} global price heatmap",
       description:
-        "A country-level choropleth map showing relative subscription prices. Green means cheaper, yellow is close to the benchmark, and red means more expensive.",
+        "A muted olive-to-neutral choropleth comparing each market with the US benchmark. Select or hover a country to inspect local price, USD conversion, and tax details.",
     },
     priceTable: {
       title: "{planName} regional price table",
@@ -115,7 +115,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "Mapa de calor global de precios de {planName}",
       description:
-        "Mapa coroplético por país y región. El verde indica precios más bajos, el amarillo precios cercanos a la referencia y el rojo precios más altos.",
+        "Mapa coroplético de tonos oliva y neutros que compara cada mercado con la referencia de EE. UU. Selecciona un país para ver el precio local, la conversión a USD y los impuestos.",
     },
     priceTable: {
       title: "Tabla de precios regionales de {planName}",
@@ -141,7 +141,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "{planName} 世界価格ヒートマップ",
       description:
-        "国や地域ごとの価格差を色で比較できます。緑は割安、黄色は基準に近い価格、赤は割高を示します。",
+        "落ち着いたオリーブとグレーの色階で、各国・地域の価格を米国基準と比較します。国を選ぶと現地価格、USD換算、税情報を確認できます。",
     },
     priceTable: {
       title: "{planName} 地域別価格表",
@@ -167,7 +167,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "{planName} 글로벌 가격 히트맵",
       description:
-        "국가와 지역별 가격 차이를 색상으로 보여주는 지도입니다. 초록색은 저렴함, 노란색은 기준에 가까움, 빨간색은 더 비쌈을 의미합니다.",
+        "차분한 올리브와 중성 회색 단계로 각 국가의 가격을 미국 기준과 비교합니다. 국가를 선택하면 현지 가격, USD 환산액, 세금 정보를 확인할 수 있습니다.",
     },
     priceTable: {
       title: "{planName} 지역별 가격 상세표",
@@ -193,7 +193,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "{planName} dünya geneli fiyat haritası",
       description:
-        "Ülke ve bölgelere göre göreli abonelik fiyatlarını gösterir. Yeşil daha uygun, sarı referansa yakın, kırmızı ise daha pahalı fiyatları belirtir.",
+        "Sakin zeytin ve nötr gri tonlarla her pazarı ABD referans fiyatıyla karşılaştırır. Yerel fiyatı, USD karşılığını ve vergi bilgisini görmek için bir ülke seçin.",
     },
     priceTable: {
       title: "{planName} bölgesel fiyat tablosu",
@@ -219,7 +219,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "{planName} globale Preis-Heatmap",
       description:
-        "Eine länderbasierte Choroplethenkarte für relative Abo-Preise. Grün steht für günstiger, Gelb für nahe am Referenzpreis und Rot für teurer.",
+        "Eine zurückhaltende olivgraue Choroplethenkarte, die jeden Markt mit der US-Referenz vergleicht. Wählen Sie ein Land für lokalen Preis, USD-Umrechnung und Steuerhinweise.",
     },
     priceTable: {
       title: "{planName} regionale Preistabelle",
@@ -245,7 +245,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "Carte thermique mondiale des prix {planName}",
       description:
-        "Une carte choroplèthe par pays et région. Le vert indique un prix plus bas, le jaune un prix proche de la référence et le rouge un prix plus élevé.",
+        "Une carte choroplèthe aux tons olive et neutres comparant chaque marché à la référence américaine. Sélectionnez un pays pour afficher le prix local, la conversion USD et les taxes.",
     },
     priceTable: {
       title: "Tableau des prix régionaux {planName}",
@@ -263,14 +263,14 @@ const detailCopyTemplates = {
   },
   it: {
     priceOverview: { title: "Panoramica mondiale dei prezzi di {planName}", description: "Un riepilogo dei prezzi minimi, massimi e delle differenze regionali per questo piano." },
-    priceHeatmap: { title: "Mappa mondiale dei prezzi di {planName}", description: "Una mappa per paese e regione: verde indica prezzi più bassi, giallo valori vicini al riferimento e rosso prezzi più alti." },
+    priceHeatmap: { title: "Mappa mondiale dei prezzi di {planName}", description: "Una mappa coropletica dai toni oliva e neutri che confronta ogni mercato con il riferimento USA. Seleziona un paese per prezzo locale, conversione USD e imposte." },
     priceTable: { title: "Tabella dei prezzi regionali di {planName}", description: "Dettagli per paese e regione con prezzo locale, equivalente in dollari, imposte e differenza dal riferimento." },
     affordability: { title: "Confronto del potere d’acquisto locale per {productName}", description: "Lo stesso prezzo può avere un peso diverso a seconda del livello di reddito locale." },
     faq: { title: "Domande frequenti" },
   },
   pt: {
     priceOverview: { title: "Visão global dos preços de {planName}", description: "Um resumo dos preços mínimo e máximo e das diferenças regionais deste plano." },
-    priceHeatmap: { title: "Mapa mundial dos preços de {planName}", description: "Um mapa por país e região: verde indica preços mais baixos, amarelo valores próximos da referência e vermelho preços mais altos." },
+    priceHeatmap: { title: "Mapa mundial dos preços de {planName}", description: "Um mapa coroplético em tons oliva e neutros que compara cada mercado com a referência dos EUA. Selecione um país para ver preço local, conversão em USD e impostos." },
     priceTable: { title: "Tabela de preços regionais de {planName}", description: "Detalhes por país e região com preço local, equivalente em dólares, impostos e diferença face à referência." },
     affordability: { title: "Comparação do poder de compra local para {productName}", description: "O mesmo preço pode representar um peso diferente consoante o nível de rendimento local." },
     faq: { title: "Perguntas frequentes" },
@@ -285,7 +285,7 @@ const detailCopyTemplates = {
     priceHeatmap: {
       title: "خريطة حرارية عالمية لأسعار {planName}",
       description:
-        "خريطة تلوين حسب الدولة والمنطقة لعرض فروقات الأسعار. الأخضر يعني أرخص، والأصفر قريب من السعر المرجعي، والأحمر أغلى.",
+        "خريطة متدرجة هادئة بدرجات الزيتوني والرمادي تقارن كل سوق بالسعر المرجعي الأمريكي. اختر دولة لعرض السعر المحلي والتحويل إلى الدولار ومعلومات الضرائب.",
     },
     priceTable: {
       title: "جدول الأسعار الإقليمية لخطة {planName}",

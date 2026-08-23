@@ -31,7 +31,7 @@ test("active public listing cards use the current compact radius system", () => 
   const dbPricingCard = readComponent("DbPricingCard.tsx");
   const brandIcon = readComponent("BrandIcon.tsx");
 
-  assert.match(dbPricingCard, /overflow-hidden rounded-xl border/);
+  assert.match(dbPricingCard, /overflow-hidden rounded-lg border/);
   assert.doesNotMatch(dbPricingCard, /rounded-2xl/);
   assert.doesNotMatch(dbPricingCard, /className="rounded-xl"/);
   assert.doesNotMatch(brandIcon, /rounded-2xl|rounded-3xl/);
@@ -58,6 +58,16 @@ test("the world map is deferred until the visitor approaches it", () => {
   assert.match(pricingView, /<DeferredPriceWorldMap/);
 });
 
+test("pricing detail selects an available billing platform instead of assuming App Store", () => {
+  const pricingView = readComponent("PricingPlatformView.tsx");
+
+  assert.match(pricingView, /const availablePlatforms = new Set\(plan\.regions\.map\(getPlatform\)\)/);
+  assert.match(pricingView, /availablePlatforms\.has\("ios"\)/);
+  assert.match(pricingView, /availablePlatforms\.has\("web"\)/);
+  assert.match(pricingView, /availablePlatforms\.has\("android"\)/);
+  assert.doesNotMatch(pricingView, /useState<PlatformFilter>\("ios"\)/);
+});
+
 test("public pricing interactions emit operational analytics events", () => {
   const dbPricingCard = readComponent("DbPricingCard.tsx");
   const sidebar = readComponent("ProductSidebar.tsx");
@@ -75,6 +85,22 @@ test("public pricing interactions emit operational analytics events", () => {
   assert.match(shareModal, /data-track-event="share_to_social"/);
 });
 
+test("desktop product sidebar scrolls independently inside the viewport", () => {
+  const sidebar = readComponent("ProductSidebar.tsx");
+  const globalStyles = readFileSync(
+    resolve(componentsDir, "../app/globals.css"),
+    "utf8",
+  );
+
+  assert.match(sidebar, /gs-product-sidebar-scroll/);
+  assert.match(sidebar, /max-h-\[calc\(100dvh-7rem\)\]/);
+  assert.match(sidebar, /overflow-y-auto/);
+  assert.match(sidebar, /overscroll-contain/);
+  assert.match(globalStyles, /\.gs-product-sidebar-scroll/);
+  assert.match(globalStyles, /scrollbar-gutter: stable/);
+  assert.match(globalStyles, /scrollbar-width: thin/);
+});
+
 test("mobile product navigation and hero actions remain coherent in dark mode", () => {
   const mobileSwitcher = readComponent("MobileProductSwitcher.tsx");
   const pricingDetail = readComponent("PricingDetailPage.tsx");
@@ -84,13 +110,14 @@ test("mobile product navigation and hero actions remain coherent in dark mode", 
   assert.match(mobileSwitcher, /dark:bg-lime-500\/10 dark:text-white dark:ring-lime-500\/25/);
   assert.match(mobileSwitcher, /dark:hover:bg-zinc-800 dark:hover:text-white/);
   assert.match(pricingDetail, /dark:bg-zinc-900 dark:text-zinc-300/);
-  assert.match(pricingDetail, /dark:hover:bg-lime-500\/10 dark:hover:text-lime-200/);
+  assert.match(pricingDetail, /hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md/);
 });
 
 test("English pricing details localize purchasing power and shared controls", () => {
   const affordability = readComponent("AffordabilityComparison.tsx");
   const affordabilityRows = readComponent("ExpandableAffordabilityRows.tsx");
   const pricingView = readComponent("PricingPlatformView.tsx");
+  const publicPage = readComponent("ui/PublicPage.tsx");
   const regionTable = readComponent("ExpandableRegionPriceTable.tsx");
   const worldMap = readComponent("PriceWorldMap.tsx");
   const pricingCopy = readFileSync(
@@ -107,6 +134,13 @@ test("English pricing details localize purchasing power and shared controls", ()
   assert.match(affordability, /setSortMode\(mode\)/);
   assert.doesNotMatch(affordability, /Price × local burden matrix/);
   assert.match(affordability, /showLabel=\{copy\.showMore\(hiddenRows\.length\)\}/);
+  assert.match(affordability, /embedded\?: boolean/);
+  assert.match(affordability, /className="md:hidden"/);
+  assert.match(affordability, /className="hidden md:block"/);
+  assert.match(affordability, /bg-\[#84cc16\]/);
+  assert.match(affordability, /bg-\[#c56550\]/);
+  assert.doesNotMatch(affordability, /bg-sky-500/);
+  assert.doesNotMatch(affordability, /bg-orange-500/);
   assert.match(affordabilityRows, /showLabel=\{showLabel\}/);
   assert.match(affordabilityRows, /hideLabel=\{hideLabel\}/);
 
@@ -118,7 +152,61 @@ test("English pricing details localize purchasing power and shared controls", ()
   assert.match(pricingCopy, /Unknown conditions are not inferred as available/);
   assert.doesNotMatch(pricingCopy, /Risk note:/);
   assert.match(pricingCopy, /LegacyPublicPricingLocale/);
-  assert.match(worldMap, /getMarkerMeta\(marker\.kind, mapCopy\)/);
+  assert.match(worldMap, /getGeoPriceFill/);
+  assert.match(worldMap, /data-detail-geo-pricing/);
+  assert.match(worldMap, /text-\[#a24b3a\]/);
+  assert.match(worldMap, /text-lime-600/);
+  assert.match(regionTable, /text-\[#3f7d20\]/);
+  assert.match(regionTable, /text-\[#a24b3a\]/);
+  assert.match(regionTable, /bg-\[#84cc16\]/);
+  assert.match(regionTable, /bg-\[#c56550\]/);
+  assert.match(regionTable, /data-region-price-converted/);
+  assert.match(publicPage, /tone === "premium"/);
+  assert.match(worldMap, /grid overflow-hidden rounded-xl border border-zinc-200 bg-white/);
+  assert.match(worldMap, /border-t border-zinc-200 bg-white p-4/);
+  assert.match(worldMap, /data-detail-map-pin/);
+  assert.doesNotMatch(worldMap, /geosub-map-pulse|from-green-600|to-red-600/);
+});
+
+test("public action controls use standard icons instead of arrow glyphs", () => {
+  const pricingDetail = readComponent("PricingDetailPage.tsx");
+  const traditionalPages = readComponent("TraditionalChinesePages.tsx");
+  const europeanPages = readComponent("EuropeanLocalePages.tsx");
+
+  assert.match(pricingDetail, /Download aria-hidden="true"/);
+  assert.match(pricingDetail, /ExternalLink aria-hidden="true"/);
+  assert.equal(
+    pricingDetail.match(/<ExternalLink aria-hidden="true"/g)?.length,
+    2,
+    "product overview and plan detail official links must use the same standard icon",
+  );
+  assert.match(pricingDetail, /ArrowLeft aria-hidden="true"/);
+  assert.match(pricingDetail, /ChevronDown/);
+  assert.doesNotMatch(pricingDetail, /<span aria-hidden="true">[↓←→↗]<\/span>/);
+  assert.match(traditionalPages, /<ArrowRight aria-hidden="true"/);
+  assert.match(europeanPages, /<ArrowRight aria-hidden="true"/);
+});
+
+test("public navigation and sharing controls use maintained icon sets", () => {
+  const header = readComponent("Header.tsx");
+  const rankings = readComponent("AiToolRankingsView.tsx");
+  const shareModal = readComponent("SharePriceModal.tsx");
+  const detailCopy = readFileSync(
+    resolve(componentsDir, "../lib/pricing-detail-page-copy.ts"),
+    "utf8",
+  );
+
+  assert.match(header, /import \{ ChevronDown, Menu, X \} from "lucide-react"/);
+  assert.doesNotMatch(header, /function ChevronIcon[\s\S]*?<svg/);
+  assert.match(rankings, /<ChevronDown/);
+  assert.doesNotMatch(rankings, /group-open:hidden">\+<\/span>/);
+  assert.match(shareModal, /siReddit, siTelegram/);
+  assert.match(shareModal, /<Download aria-hidden="true"/);
+  assert.match(shareModal, /<Share aria-hidden="true"/);
+  assert.match(shareModal, /data-share-price-trigger/);
+  assert.match(shareModal, /data-share-price-trigger[\s\S]*?className="inline-flex h-9[^\n]*border-zinc-200 bg-white/);
+  assert.doesNotMatch(shareModal, /<Share2|border-lime-300 bg-lime-50/);
+  assert.doesNotMatch(detailCopy, /visitOfficial: .*↗/);
 });
 
 test("product navigation uses the shared locale dictionary", () => {
@@ -157,7 +245,9 @@ test("public pricing lists prepare every v2.1 locale and keep exact update dates
   assert.doesNotMatch(listing, /locale === "en"/);
   assert.match(card, /locale: PreparedSiteLocale/);
   assert.match(card, /getPricingListCopy\(locale\)\.card/);
-  assert.match(card, /localizeTaxNote\(raw, locale/);
+  assert.match(card, /copy\.comparison/);
+  assert.match(card, /comparisonPercent\(region\.priceUsd, comparisonReference\.priceUsd\)/);
+  assert.doesNotMatch(card, /localizeTaxNote/);
   assert.doesNotMatch(card, /const copy =\s*locale === "en"/);
   assert.match(
     listingCopy,
@@ -194,10 +284,40 @@ test("purchasing power prepares every v2.1 locale while share cards cover active
     shareModal,
     /satisfies Record<SiteLocale, ShareCopy>/,
   );
-  assert.match(shareModal, /text\.comparisonLead/);
-  assert.match(shareModal, /\{text\.comparisonTrail\}/);
-  assert.match(shareModal, /text\.monthlySuffix/);
+  assert.match(shareModal, /text\.tiedCheapestRegion/);
+  assert.match(shareModal, /text\.highestRegion/);
+  assert.match(shareModal, /text\.maxSpread/);
+  assert.match(shareModal, /text\.priceSource/);
+  assert.match(shareModal, /text\.coverage/);
+  assert.match(shareModal, /text\.fxDate/);
   assert.doesNotMatch(shareModal, /locale === 'en'/);
+});
+
+test("pricing pressure views are shared and localized across prepared locales", () => {
+  const detailPage = readComponent("PricingDetailPage.tsx");
+  const switcher = readComponent("PricingPressureSwitcher.tsx");
+  const pressureCopy = readFileSync(resolve(componentsDir, "../lib/pricing-pressure-copy.ts"), "utf8");
+
+  assert.match(detailPage, /<PricingPressureSwitcher/);
+  assert.match(detailPage, /locale=\{locale\}/);
+  assert.match(detailPage, /priceView=\{\(/);
+  assert.match(detailPage, /burdenView=\{affordability\.rows\.length > 0/);
+  assert.match(detailPage, /matrixView=\{affordability\.rows\.length > 0/);
+  assert.match(detailPage, /function PriceBurdenMatrix/);
+  assert.match(detailPage, /getPricingPressureCopy\(locale\)/);
+  assert.match(detailPage, /referenceRow/);
+  assert.doesNotMatch(detailPage, /locale === "zh" \? \(\s*<PricingPressureSwitcher/);
+  assert.match(switcher, /role="tablist"/);
+  assert.match(switcher, /getPricingPressureCopy\(locale\)/);
+  assert.match(switcher, /copy\.tabs\.price/);
+  assert.match(switcher, /copy\.tabs\.burden/);
+  assert.match(switcher, /copy\.tabs\.matrix/);
+  assert.match(switcher, /disabled=\{!available\}/);
+  assert.match(pressureCopy, /satisfies Record<SiteLocale, PricingPressureCopy>/);
+  for (const locale of ["zh", "zh-tw", "en", "ja", "ko", "es", "tr", "ar", "fr", "it", "de", "pt"]) {
+    const localePattern = locale === "zh-tw" ? /\n  "zh-tw":/ : new RegExp(`\\n  ${locale}:`);
+    assert.match(pressureCopy, localePattern);
+  }
 });
 
 test("missing US prices use the actual fallback region instead of a false US label", () => {

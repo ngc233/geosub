@@ -4,70 +4,87 @@ import type { RegionPrice } from "./public-pricing-model";
 export type SubscriptionAccessEvidence = "confirmed" | "conditional" | "unknown";
 
 export type SubscriptionAccessFact = {
-  key: "store" | "account" | "payment" | "giftCard" | "source" | "checked";
+  key: "store" | "source" | "checked";
   evidence: SubscriptionAccessEvidence;
 };
 
 export type SubscriptionAccessAssessment = {
-  conclusion: "restrictions" | "incomplete";
   facts: SubscriptionAccessFact[];
 };
 
-const ACCOUNT_PATTERN = /apple\s*(?:id|account)|account\s*(?:country|region)|账号地区|帳號地區|アカウント.*地域|계정.*지역|pa[ií]s.*cuenta|regi[oó]n.*cuenta|hesap.*bölge|بلد.*الحساب|r[eé]gion.*compte|paese.*account|kontoland|regi[aã]o.*conta/i;
-const PAYMENT_PATTERN = /payment method|local payment|付款方式|支付方式|付款方法|支払い方法|결제 수단|m[eé]todo de pago|[oö]deme y[oö]ntemi|طريقة الدفع|moyen de paiement|metodo di pagamento|zahlungsmethode|m[eé]todo de pagamento/i;
+export function isOfficialSubscriptionSource(
+  sourceUrl: string | undefined,
+  billingPlatform: string | undefined,
+  countryCode: string | undefined,
+) {
+  if (!sourceUrl || !billingPlatform || !countryCode) return false;
+
+  try {
+    const url = new URL(sourceUrl);
+    const platform = billingPlatform.toLowerCase();
+    const country = countryCode.toLowerCase();
+
+    if (url.protocol !== "https:") return false;
+
+    if (platform === "ios") {
+      const storefront = url.pathname.split("/").filter(Boolean)[0]?.toLowerCase();
+      return url.hostname === "apps.apple.com" && storefront === country;
+    }
+
+    if (platform === "android" || platform === "google_play") {
+      return url.hostname === "play.google.com";
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
 
 export function assessSubscriptionAccess(
   region: Pick<
     RegionPrice,
     | "billingPlatform"
+    | "code"
     | "localPriceValue"
-    | "riskRequirements"
     | "sourceUrl"
     | "lastCheckedAt"
+    | "dataQuality"
   >,
 ): SubscriptionAccessAssessment {
-  const requirements = region.riskRequirements?.trim() || "";
-  const accountConditional = ACCOUNT_PATTERN.test(requirements);
-  const paymentConditional = PAYMENT_PATTERN.test(requirements);
+  const officialSource = isOfficialSubscriptionSource(
+    region.sourceUrl,
+    region.billingPlatform,
+    region.code,
+  );
+  const verifiedStorePrice =
+    region.billingPlatform === "ios" &&
+    Number(region.localPriceValue) > 0 &&
+    (region.dataQuality === "verified" || region.dataQuality === "estimated") &&
+    Boolean(region.lastCheckedAt);
 
-  const facts: SubscriptionAccessFact[] = [
-    {
-      key: "store",
-      evidence:
-        region.billingPlatform === "ios" && Number(region.localPriceValue) > 0
-          ? "confirmed"
-          : "unknown",
-    },
-    {
-      key: "account",
-      evidence: accountConditional ? "conditional" : "unknown",
-    },
-    {
-      key: "payment",
-      evidence: paymentConditional ? "conditional" : "unknown",
-    },
-    // A generic risk profile mentioning gift cards is not proof that Apple or
-    // the product officially supports gift-card payment in this country.
-    { key: "giftCard", evidence: "unknown" },
-    { key: "source", evidence: region.sourceUrl ? "confirmed" : "unknown" },
-    { key: "checked", evidence: region.lastCheckedAt ? "confirmed" : "unknown" },
-  ];
+  const facts: SubscriptionAccessFact[] = [];
 
-  return {
-    conclusion:
-      accountConditional || paymentConditional ? "restrictions" : "incomplete",
-    facts,
-  };
+  if (verifiedStorePrice) facts.push({ key: "store", evidence: "confirmed" });
+  if (officialSource) facts.push({ key: "source", evidence: "confirmed" });
+  if (verifiedStorePrice) facts.push({ key: "checked", evidence: "confirmed" });
+
+  return { facts };
 }
 
 type SubscriptionAccessCopy = {
-  conclusion: Record<SubscriptionAccessAssessment["conclusion"], string>;
-  facts: Record<SubscriptionAccessFact["key"], string>;
+  automaticTitle: string;
+  conclusion: Record<"restrictions" | "incomplete", string>;
+  facts: Record<
+    SubscriptionAccessFact["key"] | "account" | "payment" | "giftCard",
+    string
+  >;
   evidence: Record<SubscriptionAccessEvidence, string>;
   checkedValue: (date: string) => string;
 };
 
 const englishCopy: SubscriptionAccessCopy = {
+  automaticTitle: "Automatically verified",
   conclusion: {
     restrictions: "Conditions apply",
     incomplete: "Details incomplete",
@@ -90,6 +107,7 @@ const englishCopy: SubscriptionAccessCopy = {
 
 const copyByLocale = {
   zh: {
+    automaticTitle: "自动核验信息",
     conclusion: { restrictions: "存在限制", incomplete: "条件不完整" },
     facts: {
       store: "当地 App Store 已列出该套餐",
@@ -103,6 +121,7 @@ const copyByLocale = {
     checkedValue: (date) => `核验于 ${date}`,
   },
   "zh-tw": {
+    automaticTitle: "自動核驗資訊",
     conclusion: { restrictions: "存在限制", incomplete: "條件不完整" },
     facts: {
       store: "當地 App Store 已列出此方案",
@@ -117,6 +136,7 @@ const copyByLocale = {
   },
   en: englishCopy,
   ja: {
+    automaticTitle: "自動確認情報",
     conclusion: { restrictions: "条件あり", incomplete: "条件未確認" },
     facts: {
       store: "現地 App Store でのプラン掲載",
@@ -130,6 +150,7 @@ const copyByLocale = {
     checkedValue: (date) => `${date} に確認`,
   },
   ko: {
+    automaticTitle: "자동 확인 정보",
     conclusion: { restrictions: "조건 있음", incomplete: "조건 미확인" },
     facts: {
       store: "현지 App Store 요금제 등록",
@@ -143,6 +164,7 @@ const copyByLocale = {
     checkedValue: (date) => `${date} 확인`,
   },
   es: {
+    automaticTitle: "Verificación automática",
     conclusion: { restrictions: "Hay condiciones", incomplete: "Datos incompletos" },
     facts: {
       store: "Plan disponible en la App Store local",
@@ -156,6 +178,7 @@ const copyByLocale = {
     checkedValue: (date) => `Verificado el ${date}`,
   },
   tr: {
+    automaticTitle: "Otomatik doğrulama",
     conclusion: { restrictions: "Koşullar var", incomplete: "Koşullar eksik" },
     facts: {
       store: "Paket yerel App Store'da listeleniyor",
@@ -169,6 +192,7 @@ const copyByLocale = {
     checkedValue: (date) => `${date} tarihinde doğrulandı`,
   },
   ar: {
+    automaticTitle: "تحقق تلقائي",
     conclusion: { restrictions: "توجد شروط", incomplete: "الشروط غير مكتملة" },
     facts: {
       store: "الباقة مدرجة في App Store المحلي",
@@ -182,6 +206,7 @@ const copyByLocale = {
     checkedValue: (date) => `تم التحقق في ${date}`,
   },
   fr: {
+    automaticTitle: "Vérification automatique",
     conclusion: { restrictions: "Conditions applicables", incomplete: "Conditions incomplètes" },
     facts: {
       store: "Offre présente dans l’App Store local",
@@ -195,6 +220,7 @@ const copyByLocale = {
     checkedValue: (date) => `Vérifié le ${date}`,
   },
   it: {
+    automaticTitle: "Verifica automatica",
     conclusion: { restrictions: "Si applicano condizioni", incomplete: "Condizioni incomplete" },
     facts: {
       store: "Piano presente nell’App Store locale",
@@ -208,6 +234,7 @@ const copyByLocale = {
     checkedValue: (date) => `Verificato il ${date}`,
   },
   de: {
+    automaticTitle: "Automatisch geprüft",
     conclusion: { restrictions: "Bedingungen gelten", incomplete: "Bedingungen unvollständig" },
     facts: {
       store: "Tarif im lokalen App Store gelistet",
@@ -221,6 +248,7 @@ const copyByLocale = {
     checkedValue: (date) => `Geprüft am ${date}`,
   },
   pt: {
+    automaticTitle: "Verificação automática",
     conclusion: { restrictions: "Existem condições", incomplete: "Condições incompletas" },
     facts: {
       store: "Plano disponível na App Store local",

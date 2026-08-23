@@ -1,6 +1,6 @@
 import AdminLink from "@/components/admin/AdminLink";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { Prisma, type ProductCategory } from "@prisma/client";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
@@ -613,16 +613,18 @@ export default async function AdminProductsPage({
             <div className="flex flex-wrap items-center gap-3">
               <AdminLink
                 href="/admin/plans"
-                className="text-sm font-black text-blue-700 hover:text-blue-900"
+                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
               >
-                套餐库 →
+                套餐库
+                <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
               </AdminLink>
 
               <AdminLink
                 href="/admin/prices"
-                className="text-sm font-black text-blue-700 hover:text-blue-900"
+                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
               >
-                价格库 →
+                价格库
+                <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
               </AdminLink>
             </div>
           </div>

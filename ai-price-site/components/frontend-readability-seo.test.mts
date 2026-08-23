@@ -63,7 +63,9 @@ test("regional prices use a dedicated mobile reading order with touch-accessible
   const source = readComponent("ExpandableRegionPriceTable.tsx");
 
   assert.match(source, /className="border-b border-zinc-100 px-4 py-4 last:border-b-0 md:hidden/);
-  assert.match(source, /"hidden gap-3 border-b border-zinc-100 px-5 py-3 last:border-b-0 md:grid/);
+  assert.match(source, /"hidden gap-2 border-b border-zinc-100 px-5 py-3 last:border-b-0 md:grid/);
+  assert.match(source, /md:grid-cols-\[40px_minmax\(130px,1fr\)_110px_100px_112px_minmax\(116px,1fr\)_124px\]/);
+  assert.match(source, /const desktopFreshnessDate = region\.lastCheckedAt \|\| region\.fxRateDate/);
   assert.match(source, /const freshnessLabel = \[/);
   assert.match(source, /aria-expanded=\{open\}/);
   assert.match(source, /aria-describedby=\{tooltipId\}/);

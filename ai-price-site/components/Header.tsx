@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getLanguageSwitchHref } from "../lib/language-switch-route";
@@ -500,47 +501,20 @@ function isNavItemActive(item: NavItem, pathname: string) {
 
 function ChevronIcon({ open = false }: { open?: boolean }) {
   return (
-    <svg
+    <ChevronDown
+      aria-hidden="true"
       className={[
         "h-4 w-4 text-zinc-400 transition-transform duration-200 ease-out",
         open ? "rotate-180" : "",
       ].join(" ")}
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-        clipRule="evenodd"
-      />
-    </svg>
+      strokeWidth={1.8}
+    />
   );
 }
 
 function MenuIcon({ open }: { open: boolean }) {
-  return (
-    <span className="relative block h-4 w-5">
-      <span
-        className={[
-          "absolute left-0 top-0 h-0.5 w-5 rounded-full bg-current transition-all duration-200 ease-out",
-          open ? "top-1.5 rotate-45" : "",
-        ].join(" ")}
-      />
-      <span
-        className={[
-          "absolute left-0 top-1.5 h-0.5 w-5 rounded-full bg-current transition-all duration-200 ease-out",
-          open ? "opacity-0" : "opacity-100",
-        ].join(" ")}
-      />
-      <span
-        className={[
-          "absolute left-0 top-3 h-0.5 w-5 rounded-full bg-current transition-all duration-200 ease-out",
-          open ? "top-1.5 -rotate-45" : "",
-        ].join(" ")}
-      />
-    </span>
-  );
+  const Icon = open ? X : Menu;
+  return <Icon aria-hidden="true" className="size-5" strokeWidth={1.8} />;
 }
 
 export default function Header({
@@ -598,6 +572,7 @@ export default function Header({
       if (event.key === "Escape") {
         setDesktopDropdown(null);
         setLanguageMenuOpen(false);
+        setMobileOpen(false);
       }
     }
 

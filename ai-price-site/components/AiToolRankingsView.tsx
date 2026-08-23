@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BadgeDollarSign,
   CheckCircle2,
+  ChevronDown,
   Code2,
   ExternalLink,
   Image,
@@ -306,8 +307,11 @@ function ToolRow({
       <details className="group mt-4 rounded-xl border border-zinc-200 bg-zinc-50">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-black text-zinc-700">
           <span>{text.details}</span>
-          <span className="text-xs text-zinc-400 group-open:hidden">+</span>
-          <span className="hidden text-xs text-zinc-400 group-open:inline">-</span>
+          <ChevronDown
+            aria-hidden="true"
+            className="size-4 shrink-0 text-zinc-400 transition-transform group-open:rotate-180"
+            strokeWidth={1.8}
+          />
         </summary>
         <div className="border-t border-zinc-200 px-4 py-4">
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
