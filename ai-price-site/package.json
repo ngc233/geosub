@@ -30,6 +30,7 @@
         "check:sitemap": "node --conditions=react-server --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-sitemap-budget.mts",
         "check:content-uniqueness": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-plan-content-uniqueness.mts",
         "report:seo-products": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/report-product-seo-quality.mts",
+        "seo:indexnow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/submit-indexnow.mts",
         "db:up": "node scripts/local-db.cjs up",
         "db:status": "node scripts/local-db.cjs status",
         "db:doctor": "node scripts/local-db.cjs doctor",
