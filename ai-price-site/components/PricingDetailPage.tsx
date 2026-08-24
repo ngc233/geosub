@@ -26,6 +26,7 @@ import AffordabilityComparison from "./AffordabilityComparison";
 import PricingPressureSwitcher from "./PricingPressureSwitcher";
 import {
   formatUsd,
+  getDefaultPlanRegions,
   getPlanStats,
   getProductPlan,
   type ProductPlan,
@@ -809,6 +810,11 @@ export async function getPricingDetailMetadata({
     routePlan || getProductPlan(product, resolvedSearchParams.plan);
   const stats =
     activePlan.regions.length > 0 ? getPlanStats(activePlan) : null;
+  const metadataRegions = getDefaultPlanRegions(activePlan);
+  const metadataStats =
+    metadataRegions.length > 0
+      ? getPlanStats({ ...activePlan, regions: metadataRegions })
+      : null;
   const pageCopy = getPricingDetailPageCopy({
     locale,
     productName: product.name,
@@ -841,8 +847,8 @@ export async function getPricingDetailMetadata({
     productSlug: product.slug,
     planSlug: activePlan.slug,
     displayName: getPlanDisplayName(product.name, activePlan.name),
-    stats,
-    regionCount: activePlan.regions.length,
+    stats: metadataStats,
+    regionCount: metadataRegions.length,
   });
   const canonicalPath = getPricingPlanPath(
     locale,
@@ -1240,6 +1246,11 @@ export default async function PricingDetailPage({
     ]),
   ) as Record<DisplayCurrency, ExchangeRateSnapshot>;
   const stats = hasPublishedPrices ? getPlanStats(activePlan) : null;
+  const metadataRegions = getDefaultPlanRegions(activePlan);
+  const metadataStats =
+    metadataRegions.length > 0
+      ? getPlanStats({ ...activePlan, regions: metadataRegions })
+      : null;
   const pageCopy = getPricingDetailPageCopy({
     locale,
     productName: product.name,
@@ -1279,8 +1290,8 @@ export default async function PricingDetailPage({
     productSlug: product.slug,
     planSlug: activePlan.slug,
     displayName: getPlanDisplayName(product.name, activePlan.name),
-    stats,
-    regionCount: activePlan.regions.length,
+    stats: metadataStats,
+    regionCount: metadataRegions.length,
   });
   const heroDescription =
     metadataExperiment?.heroDescription ||

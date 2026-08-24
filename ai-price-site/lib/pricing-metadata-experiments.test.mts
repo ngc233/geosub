@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getPricingMetadataExperiment } from "./pricing-metadata-experiments.ts";
+import { getDefaultPlanRegions } from "./public-pricing-model.ts";
 
 const stats = {
   minRegion: { country: "Argentina", priceUsd: 100 },
@@ -102,5 +103,24 @@ test("targets the Chinese ChatGPT Plus Bing experiment with live price facts", (
       regionCount: 40,
     }),
     null,
+  );
+});
+
+test("uses the same default billing-platform scope as the visible price table", () => {
+  const regions = getDefaultPlanRegions({
+    slug: "plus",
+    name: "Plus",
+    billing: "monthly",
+    regions: [
+      { code: "US", billingPlatform: "web" },
+      { code: "GB", billingPlatform: "web" },
+      { code: "US", billingPlatform: "ios" },
+      { code: "ES", billingPlatform: "ios" },
+    ],
+  } as never);
+
+  assert.deepEqual(
+    regions.map((region) => region.code),
+    ["US", "ES"],
   );
 });

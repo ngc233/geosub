@@ -116,3 +116,19 @@ export function getPlanStats(plan: ProductPlan): PlanStats {
     savingPercent: Math.round(savingPercent),
   };
 }
+
+export function getDefaultPlanRegions(plan: ProductPlan) {
+  const normalizePlatform = (region: RegionPrice) => {
+    const platform = (region.billingPlatform || "unknown").toLowerCase();
+    return platform === "google_play" ? "android" : platform;
+  };
+
+  for (const platform of ["ios", "web", "android"]) {
+    const regions = plan.regions.filter(
+      (region) => normalizePlatform(region) === platform,
+    );
+    if (regions.length > 0) return regions;
+  }
+
+  return plan.regions;
+}
