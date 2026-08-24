@@ -46,6 +46,7 @@ import {
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
 import { getPricingPressureCopy } from "../lib/pricing-pressure-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
+import { getPricingMetadataExperiment } from "../lib/pricing-metadata-experiments";
 import {
   getPricingProductOverviewCopy,
   getProductOverviewDecisionPlans,
@@ -835,6 +836,14 @@ export async function getPricingDetailMetadata({
     lowestPrice: stats ? formatUsd(stats.minRegion.priceUsd) : null,
     content: editorialContent,
   });
+  const metadataExperiment = getPricingMetadataExperiment({
+    locale,
+    productSlug: product.slug,
+    planSlug: activePlan.slug,
+    displayName: getPlanDisplayName(product.name, activePlan.name),
+    stats,
+    regionCount: activePlan.regions.length,
+  });
   const canonicalPath = getPricingPlanPath(
     locale,
     product.category,
@@ -848,15 +857,17 @@ export async function getPricingDetailMetadata({
     product.plans.filter((plan) => plan.regions.length > 0).length === 1;
 
   const title =
-    locale === "zh" && configuredTitle && hasSinglePublishedPlan
+    metadataExperiment?.title ||
+    (locale === "zh" && configuredTitle && hasSinglePublishedPlan
       ? configuredTitle
-      : seoCopy.title;
+      : seoCopy.title);
   const description =
-    locale === "zh" &&
+    metadataExperiment?.description ||
+    (locale === "zh" &&
     hasChineseText(seoMeta?.description) &&
     hasSinglePublishedPlan
       ? seoMeta?.description || pageCopy.description
-      : searchIntentCopy?.description || seoCopy.description;
+      : searchIntentCopy?.description || seoCopy.description);
   const robots = getProductRobotsPolicy(
     locale,
     qualityAudit?.status ||
@@ -1263,6 +1274,18 @@ export default async function PricingDetailPage({
     lowestPrice: stats ? formatUsd(stats.minRegion.priceUsd) : null,
     content: editorialContent,
   });
+  const metadataExperiment = getPricingMetadataExperiment({
+    locale,
+    productSlug: product.slug,
+    planSlug: activePlan.slug,
+    displayName: getPlanDisplayName(product.name, activePlan.name),
+    stats,
+    regionCount: activePlan.regions.length,
+  });
+  const heroDescription =
+    metadataExperiment?.heroDescription ||
+    searchIntentCopy?.description ||
+    pageDescription;
   const effectiveFaqs = searchIntentCopy
     ? [...searchIntentCopy.faqs, ...pageCopy.faqs]
     : pageCopy.faqs;
@@ -1270,7 +1293,7 @@ export default async function PricingDetailPage({
     locale,
     path: canonicalDetailPath,
     title: pageTitle,
-    description: searchIntentCopy?.description || pageDescription,
+    description: heroDescription,
     product,
     plan: activePlan,
     faqs: effectiveFaqs,
@@ -1331,7 +1354,7 @@ export default async function PricingDetailPage({
                 </h1>
 
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
-                  {searchIntentCopy?.description || pageDescription}
+                  {heroDescription}
                 </p>
 
                 {product.officialUrl ? (

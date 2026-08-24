@@ -68,8 +68,11 @@ test("pricing detail metadata uses the dedicated SEO copy", () => {
   );
   assert.match(
     detailPage,
-    /searchIntentCopy\?\.description \|\| pageDescription/,
+    /metadataExperiment\?\.heroDescription \|\|\s*searchIntentCopy\?\.description \|\|\s*pageDescription/,
   );
+  assert.match(detailPage, /getPricingMetadataExperiment/);
+  assert.match(detailPage, /metadataExperiment\?\.title/);
+  assert.match(detailPage, /metadataExperiment\?\.description/);
 });
 
 test("priority Chinese product overviews are not overridden by stale database SEO", () => {
