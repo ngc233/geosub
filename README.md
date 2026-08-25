@@ -2,6 +2,10 @@
 
 GeoSub is a subscription price intelligence project. It includes a public pricing site, an internal admin system, backend SQL/scripts, and early-stage automated discovery and collection infrastructure.
 
+## Product Development Rules
+
+Current product, design, SEO, data, engineering, testing and release policies are indexed in [docs/README.md](docs/README.md). Contributors and coding agents must also follow the repository-level [AGENTS.md](AGENTS.md) before making changes.
+
 ## Repository Layout
 
 - `ai-price-site/` - Next.js frontend and self-hosted admin console.
@@ -90,4 +94,3 @@ reserved. See [LICENSE](LICENSE) for the repository terms,
 boundaries, and
 [docs/product-brand-asset-register.md](docs/product-brand-asset-register.md)
 for the logo and brand-asset publication policy.
-

@@ -1,5 +1,10 @@
 # GeoSub Project Handoff
 
+> Historical snapshot: this handoff records the verified state as of 2026-08-21
+> and contains paths, branches and deployment status that may now be outdated.
+> Current development policy is defined in `docs/README.md`; current Git and
+> production state must be verified directly before work begins.
+
 > 2026-08-22 更新：如需重装 Windows 或在全新机器继续，请优先阅读
 > `SYSTEM-REINSTALL-HANDOFF-2026-08-22.md`。该文件记录当前 GitHub/生产提交、
 > 私密资料备份清单、从零恢复步骤和可直接复制的新任务提示词。本文件保留更完整的
