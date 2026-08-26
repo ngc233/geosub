@@ -6,20 +6,23 @@ These rules apply to the whole repository. More specific nested `AGENTS.md` file
 
 Before changing any file, read:
 
-1. `docs/PRODUCT.md`
-2. `docs/ENGINEERING_RULES.md`
-3. The scope-specific documents listed in `docs/README.md`
+1. `docs/WORKFLOW.md`
+2. `docs/PRODUCT.md`
+3. `docs/ENGINEERING_RULES.md`
+4. The scope-specific documents listed in `docs/README.md`
 
 For Next.js work under `ai-price-site`, also follow `ai-price-site/AGENTS.md` and read the relevant installed Next.js documentation before relying on remembered APIs.
 
 ## Classify before implementation
 
-Classify the request as exactly one of: Bug, Improvement, Feature, or Architecture.
+Classify the request by both work type and risk level using `docs/WORKFLOW.md`.
+
+Work type is exactly one of: Bug, Improvement, Feature, or Architecture.
 
 - Bug: fix the confirmed defect only. Do not redesign adjacent UI.
 - Improvement: state the user problem, scope, invariants, and acceptance criteria.
-- Feature: require a PRD before implementation.
-- Architecture: require an RFC, migration plan, and rollback plan before implementation.
+- Feature: use a short task brief for L1, a lightweight PRD for L2, and a durable PRD for L3.
+- Architecture: use a lightweight RFC for L2; L3 also requires migration and rollback plans.
 
 If the request conflicts with an active policy or experiment, stop implementation and report the conflict. Do not silently override the policy.
 
@@ -67,6 +70,6 @@ Do not call code complete when the required browser, data, SEO, or production ac
 
 ## Minimum completion gate
 
-Follow `docs/TESTING.md`. At minimum, code changes require focused tests, typecheck, lint, `git diff --check`, and a production build when routing, rendering, metadata, data access, dependencies, or environment behavior is affected.
+Follow the risk-based gates in `docs/WORKFLOW.md` and `docs/TESTING.md`. Do not run production-scale ceremony for L0/L1 work, but do not skip the focused tests and affected-state checks that prove the requested change.
 
 One commit should solve one clearly described problem. Keep SEO experiments isolated and do not stack changes on their target pages during the observation window.

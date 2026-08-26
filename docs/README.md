@@ -1,9 +1,12 @@
 # GeoSub 产品开发规范索引
 
-本目录中的规范是 GeoSub v2.10 之后的开发基线。开始修改前，根据任务范围阅读相应文件。
+本目录中的规范是 GeoSub v2.11 小团队开发基线。开始修改前，根据任务风险和范围阅读相应文件。
+
+v2.11 更新的是团队工作流与核心治理规则，不要求为了统一编号而重写没有变化的领域规范。仍标记 v2.10 的设计、SEO、数据和信息架构文件代表其最后审阅版本，在被明确修订前继续有效。
 
 ## 核心规范
 
+- [WORKFLOW.md](WORKFLOW.md)：小团队角色、风险分级、文档要求、授权边界和默认工作流。
 - [PRODUCT.md](PRODUCT.md)：产品定位、用户、边界、工作分类和版本策略。
 - [INFORMATION_ARCHITECTURE.md](INFORMATION_ARCHITECTURE.md)：页面类型、区块职责、导航和响应式架构。
 - [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)：颜色、排版、组件、状态、移动端和暗色规则。
@@ -15,13 +18,13 @@
 
 ## 使用顺序
 
-所有任务先读 `PRODUCT.md` 和 `ENGINEERING_RULES.md`，再按范围补充：
+所有任务先读 `WORKFLOW.md`、`PRODUCT.md` 和 `ENGINEERING_RULES.md`，再按范围补充：
 
 - UI：`INFORMATION_ARCHITECTURE.md`、`DESIGN_SYSTEM.md`、`TESTING.md`。
 - SEO：`SEO_POLICY.md`、`DATA_POLICY.md`、`TESTING.md`。
 - 数据：`DATA_POLICY.md`、`TESTING.md`、`RELEASE.md`。
-- 新功能：先写 PRD，再读所有受影响规范。
-- 架构或发布：先写 RFC，并读 `ENGINEERING_RULES.md`、`TESTING.md`、`RELEASE.md`。
+- 新功能：L1 写简短任务说明，L2/L3 写与风险相称的 PRD，再读所有受影响规范。
+- 架构或发布：L2/L3 写与风险相称的 RFC，并读 `ENGINEERING_RULES.md`、`TESTING.md`、`RELEASE.md`。
 
 ## 文档层级
 
