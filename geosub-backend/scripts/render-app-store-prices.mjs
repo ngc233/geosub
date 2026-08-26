@@ -131,7 +131,7 @@ try {
     .waitForSelector(".text-pair, text=In-App Purchases", { timeout: 20000 })
     .catch(() => {});
 
-  const items = await page.evaluate(() => {
+  const pageEvidence = await page.evaluate(() => {
     const normalize = (value) => value.replace(/\s+/g, " ").trim();
     const pairs = [];
 
@@ -148,19 +148,76 @@ try {
     }
 
     if (pairs.length > 0) {
-      return pairs;
+      return {
+        items: pairs,
+        parserSource: "text-pair-dom",
+        hasInAppPurchasesSection: true,
+      };
     }
 
-    return [];
+    const visit = (value) => {
+      if (!value || typeof value !== "object") return null;
+      if (
+        value.title === "In-App Purchases" &&
+        Array.isArray(value.items)
+      ) {
+        const embeddedPairs = value.items.flatMap((item) =>
+          Array.isArray(item?.textPairs) ? item.textPairs : [],
+        );
+        const normalizedPairs = embeddedPairs
+          .filter((pair) => Array.isArray(pair) && pair.length >= 2)
+          .map((pair) => ({
+            name: normalize(String(pair[0] ?? "")),
+            priceText: normalize(String(pair[1] ?? "")),
+          }))
+          .filter((pair) => pair.name && pair.priceText);
+        if (normalizedPairs.length > 0) return normalizedPairs;
+      }
+
+      for (const child of Array.isArray(value) ? value : Object.values(value)) {
+        const found = visit(child);
+        if (found?.length) return found;
+      }
+      return null;
+    };
+
+    for (const script of document.querySelectorAll('script[type="application/json"], script:not([src])')) {
+      const text = script.textContent ?? "";
+      if (!text.includes("In-App Purchases") || !text.includes("textPairs")) continue;
+      try {
+        const embeddedPairs = visit(JSON.parse(text));
+        if (embeddedPairs?.length) {
+          return {
+            items: embeddedPairs,
+            parserSource: "embedded-json",
+            hasInAppPurchasesSection: true,
+          };
+        }
+      } catch {
+        // Non-JSON inline scripts are expected and are ignored.
+      }
+    }
+
+    const bodyText = normalize(document.body?.innerText ?? "");
+    return {
+      items: [],
+      parserSource: "no-purchases-found",
+      hasInAppPurchasesSection: /In[‐-‑–—\s]?App Purchases/i.test(bodyText),
+    };
   });
 
+  const items = pageEvidence.items;
+  const status = response?.status() ?? null;
+
   const result = {
-    ok: items.length > 0,
+    ok: status !== null && status >= 200 && status < 400,
     url,
     finalUrl: page.url(),
-    status: response?.status() ?? null,
+    status,
     country: country.toUpperCase(),
     items,
+    parserSource: pageEvidence.parserSource,
+    hasInAppPurchasesSection: pageEvidence.hasInAppPurchasesSection,
     capturedAt: new Date().toISOString()
   };
 

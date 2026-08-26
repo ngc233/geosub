@@ -146,7 +146,7 @@ WITH ranked_jobs AS (
   JOIN products product ON product.id = job.product_id
   LEFT JOIN price_sources source ON source.id = job.source_id
   WHERE job.status = 'active'
-    AND job.job_type = 'ai_pricing'
+    AND job.job_type IN ('ai_pricing', 'streaming_pricing')
     $jobFilterSql
     $collectorKindFilterSql
     AND (
@@ -210,11 +210,40 @@ function Get-ConfigValue {
 function Get-CountryCodes {
   param([object]$Config)
 
+  $operationalState = Get-ConfigValue -Config $Config -Name "operational_state"
+  if (
+    $operationalState -in @("app_store_partial_retry", "app_store_transient_retry") -and
+    $Config -and
+    $Config.PSObject.Properties.Name -contains "retry_country_codes" -and
+    $Config.retry_country_codes
+  ) {
+    return @($Config.retry_country_codes | ForEach-Object { [string]$_ })
+  }
+
   if ($Config -and $Config.PSObject.Properties.Name -contains "country_codes" -and $Config.country_codes) {
     return @($Config.country_codes | ForEach-Object { [string]$_ })
   }
 
   return @($DefaultCountryCodes)
+}
+
+function Get-CollectionResultFromText {
+  param([AllowNull()][string]$Text)
+
+  if ([string]::IsNullOrWhiteSpace($Text)) {
+    return $null
+  }
+
+  $match = [regex]::Match($Text, '(?m)^GEOSUB_COLLECTION_RESULT=(?<json>\{.+\})\s*$')
+  if (!$match.Success) {
+    return $null
+  }
+
+  try {
+    return $match.Groups["json"].Value | ConvertFrom-Json
+  } catch {
+    return $null
+  }
 }
 
 function Get-NextRunSql {
@@ -346,6 +375,46 @@ SELECT
   jsonb_build_object('reason', 'shared_product_plan_spec_validated')
 FROM repaired_count
 WHERE repaired_count.count > 0;
+"@
+}
+
+function Repair-RetryExhaustedAppStoreTransientFailures {
+  if ($DryRun) {
+    return
+  }
+
+  Invoke-Psql @"
+WITH recovered AS (
+  UPDATE collector_jobs
+  SET
+    status = 'active',
+    next_run_at = NOW(),
+    error_count = 0,
+    job_config = (COALESCE(job_config, '{}'::jsonb)
+      - 'retry_attempt')
+      || jsonb_build_object(
+        'operational_state', 'app_store_transient_retry',
+        'operational_note', 'Recovered after the App Store transient-failure policy was corrected.',
+        'last_recovered_at', NOW()
+      ),
+    updated_at = NOW()
+  WHERE status = 'failed'
+    AND job_config ->> 'collector_kind' = 'app_store'
+    AND job_config ->> 'operational_state' = 'retry_exhausted'
+    AND last_error ILIKE '%Temporary storefront failures must be retried%'
+  RETURNING id
+)
+INSERT INTO operational_recovery_cycles (
+  trigger_kind,
+  transient_jobs_requeued,
+  details
+)
+SELECT
+  'app_store_transient_policy_repaired',
+  COUNT(*)::int,
+  jsonb_build_object('reason', 'retry_exhausted_no_longer_quarantines_transient_storefront_failures')
+FROM recovered
+HAVING COUNT(*) > 0;
 "@
 }
 
@@ -696,12 +765,23 @@ function Invoke-CollectorScript {
     throw "Collector identity mismatch. Expected '$expectedIdentity' Output: $text"
   }
 
+  $collectionResult = Get-CollectionResultFromText -Text $text
+  $rawPayload = @{
+    collector_kind = $kind
+    script = [IO.Path]::GetFileName($scriptPath)
+  }
+  if ($null -ne $collectionResult) {
+    foreach ($property in $collectionResult.PSObject.Properties) {
+      $rawPayload[$property.Name] = $property.Value
+    }
+  }
+
   return [pscustomobject]@{
     Status = "succeeded"
     CollectorKind = $kind
     Output = $text
     Error = $null
-    RawPayload = @{ collector_kind = $kind; script = [IO.Path]::GetFileName($scriptPath) }
+    RawPayload = $rawPayload
   }
 }
 
@@ -821,11 +901,24 @@ function Complete-JobRun {
   $permanentFailure = Test-PermanentCollectorFailure -Job $Job -Result $Result
   $unsupportedFailure = $status -eq "skipped" -and $permanentFailure
   $failedAttempt = $status -eq "failed" -or $unsupportedFailure
+  $collectionOutcome = if ($Result.RawPayload) { [string]$Result.RawPayload.collection_outcome } else { "" }
+  $retryCountryCodes = if ($Result.RawPayload -and $Result.RawPayload.transient_country_codes) {
+    @($Result.RawPayload.transient_country_codes | ForEach-Object { [string]$_ } | Select-Object -Unique)
+  } else {
+    @()
+  }
+  $retryableAppStoreFailure = (
+    $failedAttempt -and
+    !$permanentFailure -and
+    [string]$Result.CollectorKind -eq "app_store" -and
+    $retryCountryCodes.Count -gt 0 -and
+    $collectionOutcome -in @("partial_success", "transient_failure")
+  )
 
   if ($status -eq "succeeded") {
     $errorCountSql = "0"
     $lastErrorSql = "NULL"
-    $jobConfigSql = "COALESCE(job_config, '{}'::jsonb) - 'operational_state' - 'operational_note' - 'retry_attempt' - 'last_failure_at' - 'last_recovered_at'"
+    $jobConfigSql = "COALESCE(job_config, '{}'::jsonb) - 'operational_state' - 'operational_note' - 'retry_attempt' - 'retry_country_codes' - 'last_failure_at' - 'last_recovered_at'"
   }
 
   if ($failedAttempt) {
@@ -834,6 +927,10 @@ function Complete-JobRun {
     $lastErrorSql = Quote-SqlString $jobLastError
     $operationalState = if ($permanentFailure) {
       "permanent_failure"
+    } elseif ($retryableAppStoreFailure -and $collectionOutcome -eq "partial_success") {
+      "app_store_partial_retry"
+    } elseif ($retryableAppStoreFailure) {
+      "app_store_transient_retry"
     } elseif ($failureAttempt -gt 3) {
       "retry_exhausted"
     } else {
@@ -841,26 +938,38 @@ function Complete-JobRun {
     }
     $operationalNote = if ($permanentFailure) {
       "Collector configuration is incomplete or unsupported."
+    } elseif ($retryableAppStoreFailure -and $collectionOutcome -eq "partial_success") {
+      "Some storefronts completed; only transient storefront failures will be retried."
+    } elseif ($retryableAppStoreFailure) {
+      "All requested storefronts failed transiently and remain scheduled for retry."
     } elseif ($failureAttempt -gt 3) {
       "Automatic retry attempts were exhausted."
     } else {
       "Transient collector failure scheduled for automatic retry."
     }
 
-    if ($permanentFailure -or $failureAttempt -gt 3) {
+    if ($permanentFailure -or (!$retryableAppStoreFailure -and $failureAttempt -gt 3)) {
       $nextRunSql = "NULL"
       $jobStatusSql = "'failed'"
+    } elseif ($retryableAppStoreFailure -and $failureAttempt -gt 3) {
+      $nextRunSql = Get-NextRunSql -Job $Job -Status "succeeded"
+      $jobStatusSql = "'active'"
     } else {
       $nextRunSql = Get-FailureNextRunSql -Attempt $failureAttempt
       $jobStatusSql = "'active'"
     }
 
+    $retryCountryCodesSql = if ($retryableAppStoreFailure) {
+      ",`n    'retry_country_codes', $(Quote-SqlJson $retryCountryCodes)"
+    } else {
+      ""
+    }
     $jobConfigSql = @"
 COALESCE(job_config, '{}'::jsonb) || jsonb_build_object(
     'operational_state', $(Quote-SqlString $operationalState),
     'operational_note', $(Quote-SqlString $operationalNote),
     'retry_attempt', $failureAttempt,
-    'last_failure_at', NOW()
+    'last_failure_at', NOW()$retryCountryCodesSql
   )
 "@
   }
@@ -1018,6 +1127,27 @@ FROM (
         AND availability.checked_at >= $startedAtSql::timestamptz
         AND availability.checked_at <= NOW() + INTERVAL '1 minute'
     ) AS storefront_count,
+    (
+      SELECT COALESCE(
+        json_agg(
+          json_build_object(
+            'country_code', country.code,
+            'status', availability.status,
+            'http_status', availability.http_status,
+            'final_url', availability.final_url,
+            'reason', availability.reason,
+            'checked_at', availability.checked_at
+          )
+          ORDER BY country.code
+        ),
+        '[]'::json
+      )
+      FROM app_store_availability_checks availability
+      JOIN countries country ON country.id = availability.country_id
+      WHERE availability.product_id = $(Quote-SqlString $Job.product_id)::uuid
+        AND availability.checked_at >= $startedAtSql::timestamptz
+        AND availability.checked_at <= NOW() + INTERVAL '1 minute'
+    ) AS storefront_evidence,
     NOW() AS captured_at
   FROM price_observations observation
   WHERE observation.product_id = $(Quote-SqlString $Job.product_id)::uuid
@@ -1027,7 +1157,7 @@ FROM (
 "@
 }
 
-function Add-AppStoreReviewOutcome {
+function Add-AppStoreRunEvidence {
   param(
     [object]$Job,
     [object]$Result,
@@ -1047,11 +1177,23 @@ function Add-AppStoreReviewOutcome {
     }
   }
 
-  $payload["auto_review_status"] = "succeeded"
-  $payload["review_outcome"] = $outcome
+  $payload["collection_evidence"] = $outcome
   $payload["country_codes"] = @(Get-CountryCodes -Config $Job.job_config)
   $payload["schedule"] = [string]$Job.schedule
   $Result.RawPayload = $payload
+  return $Result
+}
+
+function Add-AppStoreReviewOutcome {
+  param(
+    [object]$Job,
+    [object]$Result,
+    [datetime]$StartedAt
+  )
+
+  $Result = Add-AppStoreRunEvidence -Job $Job -Result $Result -StartedAt $StartedAt
+  $Result.RawPayload["auto_review_status"] = "succeeded"
+  $Result.RawPayload["review_outcome"] = $Result.RawPayload["collection_evidence"]
   return $Result
 }
 
@@ -1063,6 +1205,7 @@ FROM reconcile_stale_collector_runs(3, 20, 3);
 }
 
 Repair-ResolvedSharedSpecFailures
+Repair-RetryExhaustedAppStoreTransientFailures
 Invoke-OperationalRecovery
 Queue-AppStoreRechecks
 
@@ -1115,15 +1258,30 @@ foreach ($job in $jobs) {
     }
   } catch {
     $summary.failed += 1
+    $failureText = $_.Exception.Message
+    $collectionResult = Get-CollectionResultFromText -Text $failureText
+    $failurePayload = @{
+      error = $failureText
+      collector_kind = Get-ConfigValue -Config $job.job_config -Name "collector_kind" -Fallback "unknown"
+      requested_country_codes = @(Get-CountryCodes -Config $job.job_config)
+    }
+    if ($null -ne $collectionResult) {
+      foreach ($property in $collectionResult.PSObject.Properties) {
+        $failurePayload[$property.Name] = $property.Value
+      }
+    }
     $failedResult = [pscustomobject]@{
       Status = "failed"
       CollectorKind = Get-ConfigValue -Config $job.job_config -Name "collector_kind" -Fallback "unknown"
-      Output = $null
-      Error = $_.Exception.Message
-      RawPayload = @{ error = $_.Exception.Message }
+      Output = $failureText
+      Error = $failureText
+      RawPayload = $failurePayload
+    }
+    if ($failedResult.CollectorKind -eq "app_store") {
+      $failedResult = Add-AppStoreRunEvidence -Job $job -Result $failedResult -StartedAt $startedAt
     }
     Complete-JobRun -Job $job -Result $failedResult -StartedAt $startedAt -RunId $jobRunId
-    Write-Host "Failed: $($_.Exception.Message)"
+    Write-Host "Failed: $failureText"
   }
 }
 

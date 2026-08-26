@@ -191,7 +191,11 @@ test("visible but unmatched App Store items remain retryable coverage gaps", () 
     appStoreCollector,
     /\$items\.Count -eq 0[\s\S]*Falling back to browser rendering/,
   );
-  assert.match(appStoreCollector, /\$renderedPage\.Items\.Count -eq 0/);
+  assert.match(appStoreCollector, /\$availabilityStatus = "available_no_iap"/);
+  assert.doesNotMatch(
+    appStoreCollector,
+    /\$renderedPage\.Items\.Count -eq 0[\s\S]{0,160}throw/,
+  );
   assert.match(
     appStoreCollector,
     /\$availabilityStatus = "available_unmatched_items"/,

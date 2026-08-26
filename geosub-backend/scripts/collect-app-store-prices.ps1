@@ -896,7 +896,7 @@ function Get-AppStoreRenderedPage {
   if ($null -ne $resultJson) {
     try {
       $result = $resultJson | ConvertFrom-Json
-      if (![bool]$result.ok -or @($result.items).Count -eq 0) {
+      if (![bool]$result.ok) {
         $result = $null
       } else {
         Write-Host "Using fresh rendered App Store cache for $CountryCode."
@@ -940,8 +940,10 @@ function Get-AppStoreRenderedPage {
         }
 
         $result = $resultJson | ConvertFrom-Json
-        if (![bool]$result.ok -or @($result.items).Count -eq 0) {
-          throw "Browser-rendered App Store collection returned no subscription items."
+        if (![bool]$result.ok) {
+          $resultStatus = if ($null -ne $result.status) { [string]$result.status } else { "unknown" }
+          $resultFinalUrl = if ($result.finalUrl) { [string]$result.finalUrl } else { $url }
+          throw "Browser-rendered App Store page unavailable. HTTP $resultStatus. Final URL: $resultFinalUrl"
         }
 
         Set-AppStoreCacheContent -Path $cachePath -Content $resultJson
@@ -979,6 +981,8 @@ function Get-AppStoreRenderedPage {
     ParserVersion = "app-store-rendered-iap-v1"
     CollectorName = "collect-app-store-prices.ps1/render-app-store-prices.mjs"
     CapturedAt = [string]$result.capturedAt
+    ParserSource = [string]$result.parserSource
+    HasInAppPurchasesSection = [bool]$result.hasInAppPurchasesSection
   }
 }
 
@@ -1094,6 +1098,31 @@ function Get-InAppPurchases {
     $items += [pscustomobject]@{
       Name = [System.Net.WebUtility]::HtmlDecode($match.Groups["name"].Value.Trim())
       PriceText = [System.Net.WebUtility]::HtmlDecode($match.Groups["price"].Value.Trim())
+    }
+  }
+
+  if ($items.Count -eq 0) {
+    $embeddedPattern = '"title"\s*:\s*"In-App Purchases"[\s\S]*?"textPairs"\s*:\s*(?<pairs>\[\[[\s\S]*?\]\])'
+    $embeddedMatch = [regex]::Match(
+      $Html,
+      $embeddedPattern,
+      [Text.RegularExpressions.RegexOptions]::IgnoreCase
+    )
+
+    if ($embeddedMatch.Success) {
+      try {
+        $pairs = @($embeddedMatch.Groups["pairs"].Value | ConvertFrom-Json)
+        foreach ($pair in $pairs) {
+          if (@($pair).Count -ge 2 -and $pair[0] -and $pair[1]) {
+            $items += [pscustomobject]@{
+              Name = [string]$pair[0]
+              PriceText = [string]$pair[1]
+            }
+          }
+        }
+      } catch {
+        Write-Host "Embedded App Store purchase metadata could not be parsed."
+      }
     }
   }
 
@@ -1951,6 +1980,7 @@ $summary = @{
   availability = 0
   confirmedStorefronts = 0
   transientFailures = 0
+  transientCountryCodes = @()
 }
 
 foreach ($countryCode in $CountryCodes) {
@@ -1979,17 +2009,17 @@ foreach ($countryCode in $CountryCodes) {
     Write-Host $_.Exception.Message
     try {
       $renderedPage = Get-AppStoreRenderedPage -CountryCode $code -AppleAppId $AppId -ConfiguredUrl $AppStoreUrl
-      if ($renderedPage.Items.Count -eq 0) {
-        throw "No in-app purchases found in rendered App Store page."
-      }
-
       $page = [pscustomobject]@{
         Url = $renderedPage.Url
         FinalUrl = $renderedPage.FinalUrl
         Status = $renderedPage.Status
       }
       $items = @($renderedPage.Items)
-      $parserVersion = $renderedPage.ParserVersion
+      $parserVersion = if ($renderedPage.ParserSource) {
+        "$($renderedPage.ParserVersion)/$($renderedPage.ParserSource)"
+      } else {
+        $renderedPage.ParserVersion
+      }
       $collectorName = $renderedPage.CollectorName
     } catch {
       $message = $_.Exception.Message
@@ -2020,6 +2050,7 @@ foreach ($countryCode in $CountryCodes) {
         $summary.confirmedStorefronts += 1
       } else {
         $summary.transientFailures += 1
+        $summary.transientCountryCodes += $code
       }
       continue
     }
@@ -2307,6 +2338,25 @@ foreach ($countryCode in $CountryCodes) {
 }
 
 $summaryText = "Inserted: $($summary.inserted). Skipped: $($summary.skipped). Dry-run: $($summary.dryRun). Missing: $($summary.missing). Confirmed storefronts: $($summary.confirmedStorefronts). Transient failures: $($summary.transientFailures)."
+$collectionOutcome = if ($summary.transientFailures -eq 0) {
+  "complete"
+} elseif ($summary.confirmedStorefronts -gt 0) {
+  "partial_success"
+} else {
+  "transient_failure"
+}
+$machineSummary = @{
+  collection_outcome = $collectionOutcome
+  requested_country_codes = @($CountryCodes | ForEach-Object { $_.ToUpperInvariant() })
+  transient_country_codes = @($summary.transientCountryCodes | Select-Object -Unique)
+  inserted = [int]$summary.inserted
+  skipped = [int]$summary.skipped
+  dry_run = [int]$summary.dryRun
+  missing = [int]$summary.missing
+  confirmed_storefronts = [int]$summary.confirmedStorefronts
+  transient_failures = [int]$summary.transientFailures
+}
+Write-Host "GEOSUB_COLLECTION_RESULT=$($machineSummary | ConvertTo-Json -Depth 8 -Compress)"
 if ($summary.transientFailures -gt 0) {
   throw "App Store collection incomplete. $summaryText Temporary storefront failures must be retried."
 }
