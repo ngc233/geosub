@@ -259,8 +259,12 @@ async function getReviewPageDataUnmeasured({
           JOIN price_sources source ON source.id = job.source_id
           LEFT JOIN collector_job_runs run ON run.job_id = job.id
           WHERE product.slug IN (${Prisma.join(pendingProductSlugs)})
-            AND source.type = 'app_store'::price_source_type
-            AND job.job_type = 'ai_pricing'
+            AND COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
+            AND job.job_type IN ('ai_pricing', 'streaming_pricing')
             AND job.status <> 'archived'
           GROUP BY product.slug
         `
@@ -283,8 +287,12 @@ async function getReviewPageDataUnmeasured({
           FROM collector_jobs job
           JOIN price_sources source ON source.id = job.source_id
           WHERE job.product_id = product.id
-            AND source.type = 'app_store'::price_source_type
-            AND job.job_type = 'ai_pricing'
+            AND COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
+            AND job.job_type IN ('ai_pricing', 'streaming_pricing')
             AND job.status <> 'archived'
         ) job_stats ON TRUE
         LEFT JOIN LATERAL (
@@ -293,7 +301,13 @@ async function getReviewPageDataUnmeasured({
           JOIN price_sources scoped_source ON scoped_source.id = scoped_job.source_id
           JOIN collector_job_runs run ON run.job_id = scoped_job.id
           WHERE scoped_job.product_id = product.id
-            AND scoped_source.type = 'app_store'::price_source_type
+            AND COALESCE(
+              scoped_job.job_config ->> 'collector_kind',
+              run.collector_kind,
+              scoped_source.type::text,
+              'unknown'
+            ) = 'app_store'
+            AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
           ORDER BY run.started_at DESC
           LIMIT 1
         ) latest_run ON TRUE
@@ -303,7 +317,13 @@ async function getReviewPageDataUnmeasured({
           JOIN price_sources scoped_source ON scoped_source.id = scoped_job.source_id
           JOIN collector_job_runs run ON run.job_id = scoped_job.id
           WHERE scoped_job.product_id = product.id
-            AND scoped_source.type = 'app_store'::price_source_type
+            AND COALESCE(
+              scoped_job.job_config ->> 'collector_kind',
+              run.collector_kind,
+              scoped_source.type::text,
+              'unknown'
+            ) = 'app_store'
+            AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
             AND run.status = 'succeeded'
           ORDER BY run.started_at DESC
           LIMIT 1
@@ -505,7 +525,12 @@ async function getReviewPageDataUnmeasured({
       ORDER BY started_at DESC
       LIMIT 1
     ) latest ON TRUE
-    WHERE source.type = 'app_store'::price_source_type
+    WHERE COALESCE(
+      job.job_config ->> 'collector_kind',
+      source.type::text,
+      'unknown'
+    ) = 'app_store'
+      AND job.job_type IN ('ai_pricing', 'streaming_pricing')
       AND job.status <> 'archived'
     ORDER BY job.updated_at DESC
     LIMIT 1

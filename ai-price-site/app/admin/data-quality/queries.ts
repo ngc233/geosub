@@ -259,11 +259,11 @@ export async function getProductQualityRows() {
       SELECT
         job.product_id,
         COUNT(*) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status <> 'archived'
         )::int AS active_app_store_job_count,
         COUNT(*) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
             AND job.priority >= 100
             AND (
@@ -274,7 +274,7 @@ export async function getProductQualityRows() {
         )::int AS queued_job_count
         ,
         COUNT(*) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
             AND job.priority >= 100
             AND (
@@ -284,7 +284,7 @@ export async function getProductQualityRows() {
             AND job.updated_at <= NOW() - INTERVAL '15 minutes'
         )::int AS stale_queue_count,
         MAX(job.updated_at) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
             AND job.priority >= 100
             AND (
@@ -333,24 +333,24 @@ export async function getProductQualityRows() {
             AND job.status <> 'archived'
         )::int AS anomaly_refresh_success_count,
         MIN(job.next_run_at) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
             AND job.next_run_at > NOW()
         ) AS next_scheduled_run_at,
         MIN(job.next_run_at) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
             AND job.schedule = 'stale_refresh'
             AND job.next_run_at > NOW()
         ) AS stale_refresh_next_run_at,
         MIN(job.next_run_at) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
             AND job.schedule = 'coverage_refresh'
         ) AS coverage_refresh_next_run_at
         ,
         MIN(job.next_run_at) FILTER (
-          WHERE source.type::text = 'app_store'
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
             AND job.schedule = 'anomaly_watch'
         ) AS anomaly_refresh_next_run_at
@@ -370,7 +370,12 @@ export async function getProductQualityRows() {
       LEFT JOIN collector_jobs job ON job.id = run.job_id
       LEFT JOIN price_sources source ON source.id = COALESCE(run.source_id, job.source_id)
       WHERE COALESCE(run.product_id, job.product_id) IS NOT NULL
-        AND source.type::text = 'app_store'
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          run.collector_kind,
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
       GROUP BY COALESCE(run.product_id, job.product_id)
     ),
     latest_run AS (
@@ -389,7 +394,12 @@ export async function getProductQualityRows() {
       LEFT JOIN collector_jobs job ON job.id = run.job_id
       LEFT JOIN price_sources source ON source.id = COALESCE(run.source_id, job.source_id)
       WHERE COALESCE(run.product_id, job.product_id) IS NOT NULL
-        AND source.type::text = 'app_store'
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          run.collector_kind,
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
       ORDER BY COALESCE(run.product_id, job.product_id), run.started_at DESC
     )
     SELECT

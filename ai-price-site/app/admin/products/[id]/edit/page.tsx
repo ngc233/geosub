@@ -75,7 +75,11 @@ export default async function EditProductPage({
       FROM collector_jobs job
       JOIN price_sources source ON source.id = job.source_id
       WHERE job.product_id = ${product.id}::uuid
-        AND source.type = 'app_store'
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
         AND job.status <> 'archived'
       ORDER BY
         (job.status = 'active') DESC,
@@ -97,7 +101,11 @@ export default async function EditProductPage({
       FROM collector_jobs job
       JOIN price_sources source ON source.id = job.source_id
       WHERE job.product_id = ${product.id}::uuid
-        AND source.type = 'app_store'
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
         AND job.status <> 'archived'
       ORDER BY
         (job.status = 'active') DESC,
@@ -482,4 +490,3 @@ export default async function EditProductPage({
     </div>
   );
 }
-

@@ -46,17 +46,19 @@ export async function getProductSummary(slug: string) {
       SELECT
         COUNT(*) FILTER (
           WHERE job.status <> 'archived'
-            AND (
-              source.type = 'app_store'::price_source_type
-              OR job.job_config ->> 'collector_kind' = 'app_store'
-            )
+            AND COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
         )::int AS app_store_job_count,
         COUNT(*) FILTER (
           WHERE job.status = 'active'
-            AND (
-              source.type = 'app_store'::price_source_type
-              OR job.job_config ->> 'collector_kind' = 'app_store'
-            )
+            AND COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
             AND (
               job.next_run_at IS NULL
               OR job.next_run_at <= NOW()
@@ -76,10 +78,12 @@ export async function getProductSummary(slug: string) {
       LEFT JOIN collector_jobs job ON job.id = run.job_id
       LEFT JOIN price_sources source ON source.id = COALESCE(run.source_id, job.source_id)
       WHERE COALESCE(run.product_id, job.product_id) = product.id
-        AND (
-          source.type = 'app_store'::price_source_type
-          OR run.collector_kind = 'app_store'
-        )
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          run.collector_kind,
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
     ) running_state ON TRUE
     LEFT JOIN LATERAL (
       SELECT
@@ -95,10 +99,12 @@ export async function getProductSummary(slug: string) {
       LEFT JOIN collector_jobs job ON job.id = run.job_id
       LEFT JOIN price_sources source ON source.id = COALESCE(run.source_id, job.source_id)
       WHERE COALESCE(run.product_id, job.product_id) = product.id
-        AND (
-          source.type = 'app_store'::price_source_type
-          OR run.collector_kind = 'app_store'
-        )
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          run.collector_kind,
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
       ORDER BY run.started_at DESC
       LIMIT 1
     ) latest_run ON TRUE
@@ -375,4 +381,3 @@ export async function getAvailabilitySummaryRows(productId: string) {
     ORDER BY COUNT(*) DESC, availability.status ASC
   `;
 }
-

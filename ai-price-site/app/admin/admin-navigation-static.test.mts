@@ -132,6 +132,49 @@ test("product pipeline is the single lifecycle entry while specialist pages rema
   assert.match(growth, /getSearchDemandSummary\(30\)/);
   assert.match(growth, /getCachedProductSeoQualityAudits/);
 });
+
+test("admin workflows recognize canonical App Store jobs for AI and streaming products", () => {
+  const taskScopeFiles = [
+    "app/admin/pipeline/page.tsx",
+    "app/admin/products/page.tsx",
+    "app/admin/products/[id]/edit/page.tsx",
+    "app/admin/products/actions.ts",
+    "app/admin/collector-jobs/actions.ts",
+    "app/admin/discovery/actions.ts",
+    "app/admin/review/queries.ts",
+    "app/admin/review/collection-runner.ts",
+    "app/admin/data-quality/queries.ts",
+    "app/admin/data-quality/[slug]/queries.ts",
+    "lib/admin-daily-operations.ts",
+    "lib/system-health.ts",
+  ];
+  const sources = taskScopeFiles.map(readProjectFile);
+
+  for (const [index, source] of sources.entries()) {
+    assert.match(
+      source,
+      /COALESCE\(\s*(?:scoped_)?job\.job_config ->> 'collector_kind'/,
+      `${taskScopeFiles[index]} must prioritize the collector's canonical kind`,
+    );
+  }
+
+  const lifecycleSources = [
+    "app/admin/pipeline/page.tsx",
+    "app/admin/products/page.tsx",
+    "app/admin/collector-jobs/actions.ts",
+    "app/admin/review/queries.ts",
+    "app/admin/review/collection-runner.ts",
+    "lib/system-health.ts",
+  ]
+    .map(readProjectFile)
+    .join("\n");
+  assert.match(lifecycleSources, /job_type IN \('ai_pricing', 'streaming_pricing'\)/);
+  assert.doesNotMatch(lifecycleSources, /job_type = 'ai_pricing'/);
+
+  const onboarding = readProjectFile("app/admin/products/actions.ts");
+  assert.match(onboarding, /productCategory === "STREAMING" \? "streaming_pricing" : "ai_pricing"/);
+});
+
 test("admin navigation remains usable on mobile", () => {
   const source = readProjectFile("components/admin/AdminSidebar.tsx");
   const layout = readProjectFile("app/admin/layout.tsx");

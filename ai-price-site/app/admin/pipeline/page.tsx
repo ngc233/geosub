@@ -343,7 +343,13 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
     LEFT JOIN LATERAL (
       SELECT
         COUNT(*)::int AS total_job_count,
-        COUNT(*) FILTER (WHERE source.type = 'app_store'::price_source_type)::int AS app_store_job_count,
+        COUNT(*) FILTER (
+          WHERE COALESCE(
+            job.job_config ->> 'collector_kind',
+            source.type::text,
+            'unknown'
+          ) = 'app_store'
+        )::int AS app_store_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active')::int AS active_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count,
         COUNT(DISTINCT job.source_id)::int AS source_count,
@@ -351,7 +357,7 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       FROM collector_jobs job
       LEFT JOIN price_sources source ON source.id = job.source_id
       WHERE job.product_id = product.id
-        AND job.job_type = 'ai_pricing'
+        AND job.job_type IN ('ai_pricing', 'streaming_pricing')
         AND job.status <> 'archived'
     ) job_stats ON TRUE
     LEFT JOIN LATERAL (
@@ -359,7 +365,8 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       FROM collector_jobs scoped_job
       JOIN collector_job_runs run ON run.job_id = scoped_job.id
       WHERE scoped_job.product_id = product.id
-        AND scoped_job.job_type = 'ai_pricing'
+        AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
+        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
       ORDER BY run.started_at DESC
       LIMIT 1
     ) latest_run ON TRUE
@@ -373,7 +380,8 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       FROM collector_jobs scoped_job
       JOIN collector_job_runs run ON run.job_id = scoped_job.id
       WHERE scoped_job.product_id = product.id
-        AND scoped_job.job_type = 'ai_pricing'
+        AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
+        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
     ) latest_success ON TRUE
     LEFT JOIN LATERAL (
       SELECT
@@ -445,12 +453,18 @@ async function getPipelineStats() {
       FROM products product
       LEFT JOIN LATERAL (
         SELECT
-          COUNT(*) FILTER (WHERE source.type = 'app_store'::price_source_type)::int AS app_store_job_count,
+          COUNT(*) FILTER (
+            WHERE COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
+          )::int AS app_store_job_count,
           COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count
         FROM collector_jobs job
         LEFT JOIN price_sources source ON source.id = job.source_id
         WHERE job.product_id = product.id
-          AND job.job_type = 'ai_pricing'
+          AND job.job_type IN ('ai_pricing', 'streaming_pricing')
           AND job.status <> 'archived'
       ) job_stats ON TRUE
       LEFT JOIN LATERAL (
@@ -458,7 +472,8 @@ async function getPipelineStats() {
         FROM collector_jobs scoped_job
         JOIN collector_job_runs run ON run.job_id = scoped_job.id
         WHERE scoped_job.product_id = product.id
-          AND scoped_job.job_type = 'ai_pricing'
+          AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
+          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
         ORDER BY run.started_at DESC
         LIMIT 1
       ) latest_run ON TRUE
@@ -467,7 +482,8 @@ async function getPipelineStats() {
         FROM collector_jobs scoped_job
         JOIN collector_job_runs run ON run.job_id = scoped_job.id
         WHERE scoped_job.product_id = product.id
-          AND scoped_job.job_type = 'ai_pricing'
+          AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
+          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
       ) latest_success ON TRUE
       LEFT JOIN LATERAL (
         SELECT COUNT(*)::int AS pending_observation_count

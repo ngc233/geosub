@@ -833,7 +833,15 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
         sc.source_id,
         ${targetProductId}::uuid,
         ${id}::uuid,
-        'ai_pricing',
+        CASE
+          WHEN (
+            SELECT product.category::text
+            FROM products product
+            WHERE product.id = ${targetProductId}::uuid
+          ) = 'streaming'
+            THEN 'streaming_pricing'
+          ELSE 'ai_pricing'
+        END,
         'daily',
         'active',
         NOW(),
@@ -857,7 +865,7 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
         FROM collector_jobs existing
         WHERE existing.product_id = ${targetProductId}::uuid
           AND existing.source_id = sc.source_id
-          AND existing.job_type = 'ai_pricing'
+          AND existing.job_type IN ('ai_pricing', 'streaming_pricing')
           AND existing.status <> 'archived'
       )
     `;
@@ -870,7 +878,13 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
         SELECT
           product.slug,
           product.name,
-          COUNT(job.id) FILTER (WHERE source.type = 'app_store'::price_source_type)::int AS app_store_job_count
+          COUNT(job.id) FILTER (
+            WHERE COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
+          )::int AS app_store_job_count
         FROM products product
         LEFT JOIN collector_jobs job
           ON job.product_id = product.id

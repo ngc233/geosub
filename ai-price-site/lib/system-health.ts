@@ -58,7 +58,7 @@ type CollectorJobStatsRow = {
   paused_jobs: unknown;
   due_jobs: unknown;
   app_store_jobs: unknown;
-  ai_pricing_jobs: unknown;
+  pricing_jobs: unknown;
   latest_job_updated_at: Date | string | null;
 };
 
@@ -270,8 +270,18 @@ async function getCollectorSection(issues: string[]): Promise<HealthSection> {
           COUNT(*) FILTER (WHERE job.status = 'active')::int AS active_jobs,
           COUNT(*) FILTER (WHERE job.status = 'paused')::int AS paused_jobs,
           COUNT(*) FILTER (WHERE job.status = 'active' AND job.next_run_at IS NOT NULL AND job.next_run_at <= NOW())::int AS due_jobs,
-          COUNT(*) FILTER (WHERE source.type = 'app_store'::price_source_type AND job.status <> 'archived')::int AS app_store_jobs,
-          COUNT(*) FILTER (WHERE job.job_type = 'ai_pricing' AND job.status <> 'archived')::int AS ai_pricing_jobs,
+          COUNT(*) FILTER (
+            WHERE COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
+              AND job.status <> 'archived'
+          )::int AS app_store_jobs,
+          COUNT(*) FILTER (
+            WHERE job.job_type IN ('ai_pricing', 'streaming_pricing')
+              AND job.status <> 'archived'
+          )::int AS pricing_jobs,
           MAX(job.updated_at) AS latest_job_updated_at
         FROM collector_jobs job
         LEFT JOIN price_sources source ON source.id = job.source_id
@@ -334,7 +344,7 @@ async function getCollectorSection(issues: string[]): Promise<HealthSection> {
       {
         label: "App Store 任务",
         value: String(appStoreJobs),
-        helper: `AI 价格任务 ${toNumber(stats?.ai_pricing_jobs)} 个；到期待跑 ${dueJobs} 个`,
+        helper: `AI 与流媒体价格任务 ${toNumber(stats?.pricing_jobs)} 个；到期待跑 ${dueJobs} 个`,
         status: appStoreJobs > 0 ? "ok" : "warning",
       },
       {

@@ -80,9 +80,13 @@ export async function runProductCollectorJobsNow(formData: FormData) {
       updated_at = NOW()
     FROM price_sources source
     WHERE source.id = job.source_id
-      AND source.type = 'app_store'::price_source_type
+      AND COALESCE(
+        job.job_config ->> 'collector_kind',
+        source.type::text,
+        'unknown'
+      ) = 'app_store'
       AND job.product_id = ${productId}::uuid
-      AND job.job_type = 'ai_pricing'
+      AND job.job_type IN ('ai_pricing', 'streaming_pricing')
       AND job.status <> 'archived'
     RETURNING job.id::text
   `;

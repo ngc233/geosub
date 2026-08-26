@@ -194,10 +194,11 @@ async function getCollectorProductStates() {
         LIMIT 1
       ) latest ON TRUE
       WHERE job.product_id IS NOT NULL
-        AND (
-          source.type::text = 'app_store'
-          OR job.job_config ->> 'collector_kind' = 'app_store'
-        )
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
     ),
     product_job_state AS (
       SELECT

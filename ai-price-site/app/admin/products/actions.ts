@@ -202,12 +202,14 @@ async function lookupAppStoreArtwork(appStoreId: string | null) {
 async function configureAppStoreSourceForProduct({
   productId,
   productName,
+  productCategory,
   provider,
   appStoreUrl,
   appStoreId,
 }: {
   productId: string;
   productName: string;
+  productCategory: string;
   provider: string | null;
   appStoreUrl: string;
   appStoreId: string;
@@ -281,7 +283,7 @@ async function configureAppStoreSourceForProduct({
         gen_random_uuid(),
         id,
         ${productId}::uuid,
-        'ai_pricing',
+        ${productCategory === "STREAMING" ? "streaming_pricing" : "ai_pricing"},
         'daily',
         'active',
         NOW(),
@@ -302,7 +304,7 @@ async function configureAppStoreSourceForProduct({
         FROM collector_jobs existing
         WHERE existing.product_id = ${productId}::uuid
           AND existing.source_id = (SELECT id FROM upserted_source)
-          AND existing.job_type = 'ai_pricing'
+          AND existing.job_type IN ('ai_pricing', 'streaming_pricing')
           AND existing.status <> 'archived'
       )
       RETURNING id
@@ -413,6 +415,7 @@ export async function createProductAction(formData: FormData) {
     const rows = await configureAppStoreSourceForProduct({
       productId: product.id,
       productName: product.name,
+      productCategory: product.category,
       provider: product.provider,
       appStoreUrl: appStoreApp.appStoreUrl,
       appStoreId: appStoreApp.appStoreId,
@@ -580,6 +583,7 @@ export async function saveProductAppStoreSourceAction(formData: FormData) {
   const rows = await configureAppStoreSourceForProduct({
     productId: product.id,
     productName: product.name,
+    productCategory: product.category,
     provider: product.provider,
     appStoreUrl,
     appStoreId,
@@ -633,7 +637,11 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
     FROM collector_jobs job
     JOIN price_sources source ON source.id = job.source_id
     WHERE job.product_id = ${product.id}::uuid
-      AND source.type = 'app_store'
+      AND COALESCE(
+        job.job_config ->> 'collector_kind',
+        source.type::text,
+        'unknown'
+      ) = 'app_store'
       AND job.status <> 'archived'
     ORDER BY job.updated_at DESC, job.created_at DESC
     LIMIT 1

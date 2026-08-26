@@ -57,15 +57,19 @@ async function getProductCollectionReadiness(productSlug: string) {
   >`
     SELECT
       product.id::text AS product_id,
-      COUNT(job.id) FILTER (WHERE source.id IS NOT NULL)::int AS app_store_job_count
+      COUNT(job.id) FILTER (
+        WHERE COALESCE(
+          job.job_config ->> 'collector_kind',
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
+      )::int AS app_store_job_count
     FROM products product
     LEFT JOIN collector_jobs job
       ON job.product_id = product.id
-      AND job.job_type = 'ai_pricing'
+      AND job.job_type IN ('ai_pricing', 'streaming_pricing')
       AND job.status <> 'archived'
-    LEFT JOIN price_sources source
-      ON source.id = job.source_id
-      AND source.type = 'app_store'::price_source_type
+    LEFT JOIN price_sources source ON source.id = job.source_id
     WHERE product.slug = ${productSlug}
     GROUP BY product.id
     LIMIT 1
@@ -353,8 +357,12 @@ export async function queueBatchAppStoreCollections(
       JOIN products product ON product.id = job.product_id
       JOIN price_sources source ON source.id = job.source_id
       WHERE product.slug IN (${Prisma.join(uniqueSlugs)})
-        AND source.type = 'app_store'::price_source_type
-        AND job.job_type = 'ai_pricing'
+        AND COALESCE(
+          job.job_config ->> 'collector_kind',
+          source.type::text,
+          'unknown'
+        ) = 'app_store'
+        AND job.job_type IN ('ai_pricing', 'streaming_pricing')
         AND job.status <> 'archived'
     )
     SELECT
@@ -454,8 +462,12 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
           FROM collector_jobs job
           JOIN price_sources source ON source.id = job.source_id
           JOIN scoped_product product ON product.id = job.product_id
-          WHERE source.type = 'app_store'::price_source_type
-            AND job.job_type = 'ai_pricing'
+          WHERE COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
+            AND job.job_type IN ('ai_pricing', 'streaming_pricing')
             AND job.status <> 'archived'
         ),
         queued AS (
@@ -494,8 +506,12 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
             ) AS product_rank
           FROM collector_jobs job
           JOIN price_sources source ON source.id = job.source_id
-          WHERE source.type = 'app_store'::price_source_type
-            AND job.job_type = 'ai_pricing'
+          WHERE COALESCE(
+              job.job_config ->> 'collector_kind',
+              source.type::text,
+              'unknown'
+            ) = 'app_store'
+            AND job.job_type IN ('ai_pricing', 'streaming_pricing')
             AND job.status <> 'archived'
             AND (
               EXISTS (
