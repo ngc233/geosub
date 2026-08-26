@@ -101,6 +101,8 @@ sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/upgrade.sh
 - sitemap 数量、动态哨兵、正式路径和 HTTP 状态通过。
 - 定时器 active/enabled，后台服务没有失败状态。
 - 目标用户流程和数据样本正确。
+- 后台 `/admin/pipeline` 至少抽样一个 AI 产品和一个流媒体产品，核对采集任务数、最近运行、正式价格数与运营状态彼此一致；已有成功采集和正式价格的产品不得显示“未开始”或“缺采集任务”。
+- 后台手动采集入口只能选择与生产调度器相同的 canonical App Store 任务范围，即同时兼容 `ai_pricing`、`streaming_pricing` 与 `job_config.collector_kind=app_store`。
 
 CDN 可能保留短缓存。必须区分源站与公网响应，并在宣布完成前确认公网最终输出。
 
