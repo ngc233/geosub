@@ -28,7 +28,11 @@ test("App Store transient failures remain active and retry only failed countries
 test("collector emits a machine-readable country-level outcome", () => {
   assert.match(collector, /transientCountryCodes/);
   assert.match(collector, /collection_outcome/);
-  assert.match(collector, /GEOSUB_COLLECTION_RESULT=/);
+  assert.match(collector, /\$machineSummaryJson = \$machineSummary \| ConvertTo-Json/);
+  assert.match(
+    collector,
+    /throw "App Store collection incomplete\.[\s\S]*?`nGEOSUB_COLLECTION_RESULT=\$machineSummaryJson"/,
+  );
   assert.match(runner, /Get-CollectionResultFromText/);
   assert.match(runner, /storefront_evidence/);
 });

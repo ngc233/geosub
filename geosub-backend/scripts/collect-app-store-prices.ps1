@@ -2356,9 +2356,10 @@ $machineSummary = @{
   confirmed_storefronts = [int]$summary.confirmedStorefronts
   transient_failures = [int]$summary.transientFailures
 }
-Write-Host "GEOSUB_COLLECTION_RESULT=$($machineSummary | ConvertTo-Json -Depth 8 -Compress)"
+$machineSummaryJson = $machineSummary | ConvertTo-Json -Depth 8 -Compress
+Write-Host "GEOSUB_COLLECTION_RESULT=$machineSummaryJson"
 if ($summary.transientFailures -gt 0) {
-  throw "App Store collection incomplete. $summaryText Temporary storefront failures must be retried."
+  throw "App Store collection incomplete. $summaryText Temporary storefront failures must be retried.`nGEOSUB_COLLECTION_RESULT=$machineSummaryJson"
 }
 
 Write-Host "App Store collection complete. $summaryText"
