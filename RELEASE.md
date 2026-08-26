@@ -1,5 +1,8 @@
 # GeoSub release flow
 
+> This file is a concise operator entry point. The authoritative release,
+> production acceptance, and rollback policy is [`docs/RELEASE.md`](docs/RELEASE.md).
+
 This repository uses a simple project version in `VERSION`. The frontend and
 backend package versions should match it.
 

@@ -16,6 +16,10 @@ v2.11 更新的是团队工作流与核心治理规则，不要求为了统一�
 - [TESTING.md](TESTING.md)：自动化、浏览器、数据、SEO、可访问性和性能测试矩阵。
 - [RELEASE.md](RELEASE.md)：版本、推送、生产升级、线上核验和回退。
 
+## 支撑规范与登记表
+
+- [product-brand-asset-register.md](product-brand-asset-register.md)：品牌素材来源、授权证据、复审周期和发布门禁登记。
+
 ## 使用顺序
 
 所有任务先读 `WORKFLOW.md`、`PRODUCT.md` 和 `ENGINEERING_RULES.md`，再按范围补充：
