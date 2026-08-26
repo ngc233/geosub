@@ -37,6 +37,10 @@ const releaseCheck = readFileSync(
   resolve(appDir, "..", "..", "scripts", "release-check.ps1"),
   "utf8",
 );
+const ciWorkflow = readFileSync(
+  resolve(appDir, "..", "..", ".github", "workflows", "ci.yml"),
+  "utf8",
+);
 const packageJson = JSON.parse(
   readFileSync(resolve(appDir, "..", "package.json"), "utf8"),
 ) as {
@@ -68,6 +72,65 @@ const windowsExchangeRateTaskRunner = readFileSync(
   ),
   "utf8",
 );
+
+function getCiJob(jobName: string) {
+  const marker = `\n  ${jobName}:\n`;
+  const start = ciWorkflow.indexOf(marker);
+  assert.notEqual(start, -1, `Missing CI job: ${jobName}`);
+
+  const jobStart = start + marker.length;
+  const remainingWorkflow = ciWorkflow.slice(jobStart);
+  const nextJobOffset = remainingWorkflow.search(/\n  [a-z][a-z0-9_-]*:\n/);
+
+  return nextJobOffset === -1
+    ? remainingWorkflow
+    : remainingWorkflow.slice(0, nextJobOffset);
+}
+
+function assertCiStepOrder(jobName: string, stepNames: string[]) {
+  const job = getCiJob(jobName);
+  let previousIndex = -1;
+
+  for (const stepName of stepNames) {
+    const stepIndex = job.indexOf(`- name: ${stepName}`);
+    assert.notEqual(stepIndex, -1, `Missing ${stepName} in CI job ${jobName}`);
+    assert.ok(
+      stepIndex > previousIndex,
+      `${stepName} must run later in CI job ${jobName}`,
+    );
+    previousIndex = stepIndex;
+  }
+}
+
+test("clean CI jobs generate Prisma Client before Prisma-dependent checks", () => {
+  assert.equal(
+    ciWorkflow.match(/- name: Generate Prisma Client/g)?.length,
+    4,
+  );
+  assert.equal(ciWorkflow.match(/run: npx prisma generate/g)?.length, 4);
+
+  assertCiStepOrder("code", [
+    "Install dependencies",
+    "Generate Prisma Client",
+    "Typecheck",
+  ]);
+  assertCiStepOrder("content", [
+    "Install dependencies",
+    "Generate Prisma Client",
+    "Prepare schema for sitemap inspection",
+    "Check sitemap budget",
+  ]);
+  assertCiStepOrder("database", [
+    "Install dependencies",
+    "Generate Prisma Client",
+    "Apply migrations",
+  ]);
+  assertCiStepOrder("e2e", [
+    "Install dependencies",
+    "Generate Prisma Client",
+    "Run isolated browser tests",
+  ]);
+});
 
 test("ARM64 upgrades persist deployment evidence before changing runtime state", () => {
   assert.match(upgrade, /PREVIOUS_COMMIT="\$\(repo_commit\)"/);

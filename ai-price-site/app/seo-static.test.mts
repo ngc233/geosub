@@ -251,7 +251,12 @@ test("pricing details publish page-specific metadata and matching structured dat
   assert.match(chineseDetail, /locale: "zh"/);
   assert.match(sharedDetail, /buildPricingStructuredData/);
   assert.match(sharedDetail, /getPlanSearchIntentCopy/);
-  assert.match(sharedDetail, /description: searchIntentCopy\?\.description/);
+  assert.match(
+    sharedDetail,
+    /const heroDescription =[\s\S]*metadataExperiment\?\.heroDescription \|\|[\s\S]*searchIntentCopy\?\.description \|\|[\s\S]*pageDescription/,
+  );
+  assert.match(sharedDetail, /description: heroDescription/);
+  assert.match(sharedDetail, /\{heroDescription\}/);
   assert.match(sharedDetail, /faqs: effectiveFaqs/);
   assert.match(sharedDetail, /type="application\/ld\+json"/);
   assert.match(sharedDetail, /openGraph:/);
