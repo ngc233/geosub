@@ -6,6 +6,7 @@ import {
   getProductEditorialCoverage,
 } from "./product-editorial-content.ts";
 import { resolveLegacyPricingPlanSlug } from "./legacy-pricing-plan-routes.ts";
+import { supportedSiteLocales } from "./site-locale.ts";
 
 const priorityPlans = {
   chatgpt: ["go", "plus", "pro-5x", "pro"],
@@ -27,6 +28,7 @@ const priorityPlans = {
   poe: ["basic", "plus"],
   viki: ["standard", "plus"],
   "youtube-premium": ["lite", "individual", "family"],
+  kimi: ["moderato", "allegretto", "allegro", "vivace"],
 };
 
 const officialSourceHosts: Record<string, string[]> = {
@@ -49,6 +51,7 @@ const officialSourceHosts: Record<string, string[]> = {
   poe: ["help.poe.com"],
   viki: ["support.viki.com"],
   "youtube-premium": ["support.google.com"],
+  kimi: ["www.kimi.com", "apps.apple.com"],
 };
 
 const legacyRouteProducts = new Set([
@@ -115,6 +118,56 @@ test("Netflix Basic explains that renewal evidence is not new-user availability"
 
   assert.ok(copy?.plan.availabilityNote);
   assert.match(copy.plan.availabilityNote, /不等于当地新账号一定可以选择/);
+});
+
+test("Kimi keeps App Store channel differences explicit", () => {
+  for (const locale of supportedSiteLocales) {
+    const moderato = getProductEditorialContent(locale, "kimi", "moderato");
+    const vivace = getProductEditorialContent(locale, "kimi", "vivace");
+
+    assert.ok(moderato?.plan.availabilityNote);
+    assert.ok(vivace?.plan.availabilityNote);
+    assert.equal(
+      new URL(vivace.plan.sourceUrl).hostname,
+      "apps.apple.com",
+    );
+  }
+});
+
+test("Kimi has distinct localized guidance for every launched locale", () => {
+  const english = getProductEditorialContent("en", "kimi", "moderato");
+  assert.ok(english);
+
+  for (const locale of supportedSiteLocales) {
+    for (const planSlug of priorityPlans.kimi) {
+      const copy = getProductEditorialContent(locale, "kimi", planSlug);
+
+      assert.ok(copy, `${locale}/kimi/${planSlug}`);
+      assert.ok(copy.summary.length >= 80, `${locale} summary`);
+      assert.ok(copy.plan.bestFor.length >= 40, `${locale}/${planSlug} bestFor`);
+      assert.ok(
+        copy.plan.difference.length >= 50,
+        `${locale}/${planSlug} difference`,
+      );
+      assert.ok(copy.plan.availabilityNote);
+      assert.match(copy.plan.sourceUrl, /^https:\/\//);
+      assert.ok(
+        officialSourceHosts.kimi.includes(
+          new URL(copy.plan.sourceUrl).hostname,
+        ),
+        `${locale}/${planSlug} must use an official source`,
+      );
+    }
+
+    const localized = getProductEditorialContent(
+      locale,
+      "kimi",
+      "moderato",
+    );
+    if (locale !== "en") {
+      assert.notEqual(localized?.summary, english.summary, `${locale} fallback`);
+    }
+  }
 });
 
 test("legacy renewal tiers are explicit and current plans remain eligible", () => {

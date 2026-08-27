@@ -1,4 +1,5 @@
 import type { ProductEditorialContent } from "./product-editorial-content";
+import type { SiteLocale } from "./site-locale";
 
 type EditorialExpansion = Record<string, ProductEditorialContent>;
 
@@ -131,6 +132,54 @@ const zh: EditorialExpansion = {
         availabilityNote:
           "实际积分、模型和任务优先级会调整，请以登录后的会员页为准。",
         sourceUrl: "https://app.klingai.com/global/",
+      },
+    },
+  },
+  kimi: {
+    summary:
+      "Kimi 是月之暗面推出的 AI 助手，覆盖对话、文档处理、深度研究、演示文稿和编程等任务。GeoSub 在这里比较 Apple App Store 可核验的 Moderato、Allegretto、Allegro 与 Vivace 周期性月度订阅；Kimi 官网与 App Store 的套餐名单可能不同，因此不把 Web 端权益直接套用到应用内购。",
+    sectionTitle: "这个套餐适合谁",
+    bestForLabel: "适合",
+    differenceLabel: "与其他套餐的主要区别",
+    availabilityLabel: "订阅前注意",
+    sourceLabel: "查看 Kimi 官方套餐或 App Store 说明",
+    plans: {
+      moderato: {
+        bestFor:
+          "希望从 Kimi 较低价的周期性 App Store 会员开始，并主要用于日常对话、文档和轻量研究的个人用户。",
+        difference:
+          "在 GeoSub 当前 App Store 数据中，Moderato 是四个周期性月度档位的最低价层；Kimi 官网将同名档位定位为效率升级。",
+        availabilityNote:
+          "官网与 App Store 的套餐名单并不完全一致，实际额度和功能应以付款前的应用内权益页为准。",
+        sourceUrl: "https://www.kimi.com/help/membership/membership-pricing",
+      },
+      allegretto: {
+        bestFor:
+          "更频繁使用 Kimi 处理专业研究、并行 Agent 或编程任务，并愿意为更高使用容量付费的个人用户。",
+        difference:
+          "Kimi 官网将 Allegretto 定位为专业档，并公开说明其额度和 Agent 能力高于 Moderato；应用内购的具体权益仍需单独核对。",
+        availabilityNote:
+          "GeoSub 比较的是 App Store 标价，不保证官网与应用内同名套餐在每个地区都具备完全相同的权益。",
+        sourceUrl: "https://www.kimi.com/help/membership/membership-pricing",
+      },
+      allegro: {
+        bestFor:
+          "高频使用 Kimi 的研究、Agent、文档和编程能力，并需要更大额度或更强并行能力的重度个人用户。",
+        difference:
+          "Kimi 官网将 Allegro 定位为全能高阶档，公开权益高于 Allegretto；GeoSub 只确认 App Store 价格，不把动态额度写成固定承诺。",
+        availabilityNote:
+          "额度按实际用量消耗且可能调整，订阅前应在当前账号的应用内套餐页确认功能、限制和续费价格。",
+        sourceUrl: "https://www.kimi.com/help/membership/membership-pricing",
+      },
+      vivace: {
+        bestFor:
+          "仅适合在 App Store 订阅页仍能看到 Vivace，并已确认其当期权益确实符合高强度使用需求的用户。",
+        difference:
+          "Vivace 是 GeoSub 当前 App Store 周期性月度套餐中的最高价层，但 Kimi 现行公开帮助中心未提供它的权益对照，因此不能推断固定额度或功能。",
+        availabilityNote:
+          "Vivace 可能是渠道或历史差异套餐；若应用内没有清晰列出权益，不应只因价格更高就假定功能更多。",
+        sourceUrl:
+          "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
       },
     },
   },
@@ -431,6 +480,54 @@ const en: EditorialExpansion = {
       },
     },
   },
+  kimi: {
+    summary:
+      "Kimi is Moonshot AI's assistant for chat, document work, deep research, presentations and coding. GeoSub compares the recurring monthly Moderato, Allegretto, Allegro and Vivace subscriptions verifiable in Apple's App Store. Kimi's web and App Store line-ups can differ, so web-plan benefits are not automatically assigned to in-app purchases.",
+    sectionTitle: "Who this plan is for",
+    bestForLabel: "Best for",
+    differenceLabel: "Main difference",
+    availabilityLabel: "Before subscribing",
+    sourceLabel: "Kimi plan or App Store details",
+    plans: {
+      moderato: {
+        bestFor:
+          "Individuals starting with a lower-priced recurring Kimi App Store membership for everyday chat, documents and lighter research.",
+        difference:
+          "Moderato is the lowest-priced of the four recurring monthly tiers in GeoSub's current App Store dataset; Kimi's website positions the same-named tier as a productivity upgrade.",
+        availabilityNote:
+          "The website and App Store do not always show the same plan line-up. Confirm current allowances and features in the in-app benefit sheet before paying.",
+        sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+      },
+      allegretto: {
+        bestFor:
+          "Individuals using Kimi more frequently for professional research, parallel Agent work or coding and willing to pay for greater capacity.",
+        difference:
+          "Kimi positions Allegretto as a professional tier with more credits and Agent capability than Moderato, while the exact in-app entitlements still require channel-specific confirmation.",
+        availabilityNote:
+          "GeoSub compares App Store list prices and does not assume that web and in-app plans with the same name have identical benefits in every region.",
+        sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+      },
+      allegro: {
+        bestFor:
+          "Heavy individual users who need larger allowances or stronger parallel capacity across Kimi research, Agent, document and coding workflows.",
+        difference:
+          "Kimi positions Allegro as its all-in-one premium web tier above Allegretto. GeoSub verifies its App Store price but does not present changing credit allowances as permanent promises.",
+        availabilityNote:
+          "Usage is metered and can change. Confirm features, limits and renewal pricing on the current in-app subscription page before purchase.",
+        sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+      },
+      vivace: {
+        bestFor:
+          "Only users who still see Vivace in the App Store subscription sheet and have verified that its current benefits justify the high-intensity use case they need.",
+        difference:
+          "Vivace is the highest-priced recurring monthly tier in GeoSub's current App Store dataset, but Kimi's current public help center does not provide a Vivace benefit comparison, so fixed features or allowances cannot be inferred.",
+        availabilityNote:
+          "Vivace may reflect a channel or legacy difference. A higher price alone should not be treated as proof of additional benefits when the in-app sheet is unclear.",
+        sourceUrl:
+          "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+      },
+    },
+  },
   "leonardo-ai": {
     summary:
       "Leonardo AI is an image and video generation platform. Individual paid tiers mainly differ by Fast Tokens, concurrent generations, private creation and Relaxed Generation benefits, serving users from everyday visual creation to high-volume professional production.",
@@ -591,6 +688,514 @@ const en: EditorialExpansion = {
           "Members must meet local age and same-household requirements, which Google may verify periodically.",
         sourceUrl:
           "https://support.google.com/youtube/answer/7507349?hl=en-EN",
+      },
+    },
+  },
+};
+
+type AdditionalEditorialLocale = Exclude<SiteLocale, "zh" | "en">;
+
+export const localizedEditorialContent: Record<
+  AdditionalEditorialLocale,
+  Record<string, ProductEditorialContent>
+> = {
+  "zh-tw": {
+    kimi: {
+      summary:
+        "Kimi 是月之暗面推出的 AI 助手，涵蓋對話、文件處理、深度研究、簡報和程式設計等任務。GeoSub 在這裡比較 Apple App Store 可核驗的 Moderato、Allegretto、Allegro 與 Vivace 週期性月度訂閱；Kimi 官網與 App Store 的方案名單可能不同，因此不會把 Web 端權益直接套用到 App 內購買。",
+      sectionTitle: "這個方案適合誰",
+      bestForLabel: "適合",
+      differenceLabel: "與其他方案的主要差異",
+      availabilityLabel: "訂閱前注意",
+      sourceLabel: "Kimi 官方方案",
+      plans: {
+        moderato: {
+          bestFor:
+            "已超出免費版用量，希望更穩定地處理日常對話、文件和一般研究，又不需要最高額度的個人使用者。",
+          difference:
+            "Kimi 官網把 Moderato 定位為生產力升級層；App Store 內購的實際權益和動態額度仍須以目前帳號顯示為準。",
+          availabilityNote:
+            "Kimi 官網與 App Store 可能提供不同方案。訂閱前請確認 App 內購買頁的功能、限制和續訂價格。",
+          sourceUrl: "https://www.kimi.com/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "經常進行深度研究、長文件分析、簡報製作或程式設計，需要比 Moderato 更高使用量的專業使用者。",
+          difference:
+            "Kimi 官網把 Allegretto 定位為專業層，通常提供更高容量；App Store 內購的具體額度仍可能因帳號和渠道而異。",
+          availabilityNote:
+            "不要只依方案名稱推定 Web 與 App Store 權益完全一致；請以目前 App 內購買頁為準。",
+          sourceUrl: "https://www.kimi.com/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "把 Kimi 當作高強度核心工作工具，並已確認需要更高模型與任務容量的個人使用者。",
+          difference:
+            "Kimi 官網把 Allegro 定位為高階完整方案，容量高於 Allegretto；實際 App Store 權益和動態限制仍須個別核對。",
+          availabilityNote:
+            "用量按實際消耗計算且可能調整。訂閱前請在目前帳號的 App 內方案頁確認功能、限制和續訂價格。",
+          sourceUrl: "https://www.kimi.com/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "僅適合仍能在 App Store 訂閱頁看到 Vivace，並已確認當期權益確實符合高強度需求的使用者。",
+          difference:
+            "Vivace 是 GeoSub 目前 App Store 週期性月度資料中的最高價層，但 Kimi 現行公開說明沒有提供其權益對照，因此不能推定固定功能或額度。",
+          availabilityNote:
+            "Vivace 可能反映渠道或歷史差異；若 App 內頁面沒有清楚列出權益，不應只因價格較高就假定功能更多。",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  ja: {
+    kimi: {
+      summary:
+        "Kimi は Moonshot AI の AI アシスタントで、対話、文書処理、ディープリサーチ、プレゼンテーション、コーディングなどに対応します。GeoSub では Apple App Store で確認できる Moderato、Allegretto、Allegro、Vivace の月額サブスクリプションを比較します。Web 版と App Store 版ではプラン構成が異なる場合があるため、Web 版の特典をアプリ内課金に自動的には適用しません。",
+      sectionTitle: "このプランが向いている人",
+      bestForLabel: "おすすめの利用者",
+      differenceLabel: "他のプランとの主な違い",
+      availabilityLabel: "登録前の確認事項",
+      sourceLabel: "Kimi 公式プラン",
+      plans: {
+        moderato: {
+          bestFor:
+            "無料枠では足りず、日常の対話、文書処理、一般的な調査を安定して使いたいものの、最上位の容量までは不要な個人利用者。",
+          difference:
+            "Kimi の公式ヘルプでは Moderato を生産性向上向けの層と位置付けています。App Store 版の具体的な特典や動的上限は、現在のアカウント画面で確認する必要があります。",
+          availabilityNote:
+            "Web 版と App Store 版では提供プランが異なる場合があります。購入前にアプリ内の機能、制限、更新価格を確認してください。",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "ディープリサーチ、長文書の分析、スライド作成、コーディングを頻繁に行い、Moderato より高い使用量が必要な専門ユーザー。",
+          difference:
+            "公式ヘルプでは Allegretto をプロ向けの層と位置付けています。App Store 版の実際の容量は、アカウントや販売チャネルによって異なる場合があります。",
+          availabilityNote:
+            "プラン名だけで Web 版と App Store 版の特典が同一だと判断せず、現在のアプリ内課金画面を確認してください。",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Kimi を高頻度の中核業務ツールとして使い、より大きなモデル利用量やタスク容量が必要だと確認できている個人利用者。",
+          difference:
+            "公式ヘルプでは Allegro を上位の総合プランと位置付け、Allegretto より高い容量を提供しています。App Store 版の特典と動的制限は別途確認が必要です。",
+          availabilityNote:
+            "使用量は実際の消費に応じて計算され、変更される場合があります。購入前に現在のアプリ内プラン画面で機能、制限、更新価格を確認してください。",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "App Store の購入画面に Vivace が表示され、その時点の特典が高負荷の用途に見合うと確認できた利用者に限られます。",
+          difference:
+            "Vivace は GeoSub の現在の App Store 月額データで最も高価な層ですが、Kimi の現行公開ヘルプには特典比較がないため、固定機能や利用量を推測できません。",
+          availabilityNote:
+            "Vivace は販売チャネルまたは旧プランの違いを反映している可能性があります。アプリ内画面の説明が明確でない場合、価格だけで機能が多いと判断しないでください。",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  ko: {
+    kimi: {
+      summary:
+        "Kimi는 Moonshot AI의 AI 어시스턴트로 대화, 문서 처리, 심층 조사, 프레젠테이션 및 코딩 작업을 지원합니다. GeoSub는 Apple App Store에서 확인 가능한 Moderato, Allegretto, Allegro, Vivace 정기 월간 구독을 비교합니다. Kimi 웹사이트와 App Store의 요금제 구성은 다를 수 있으므로 웹 요금제 혜택을 앱 내 구독에 자동으로 적용하지 않습니다.",
+      sectionTitle: "이 요금제가 적합한 사용자",
+      bestForLabel: "적합한 사용자",
+      differenceLabel: "다른 요금제와의 주요 차이",
+      availabilityLabel: "구독 전 확인",
+      sourceLabel: "Kimi 공식 요금제",
+      plans: {
+        moderato: {
+          bestFor:
+            "무료 사용량을 넘어 일상 대화, 문서 작업과 일반 조사를 안정적으로 처리하고 싶지만 최고 수준의 용량은 필요하지 않은 개인 사용자.",
+          difference:
+            "Kimi 공식 도움말은 Moderato를 생산성 향상 단계로 설명합니다. App Store 구독의 실제 혜택과 동적 한도는 현재 계정 화면에서 확인해야 합니다.",
+          availabilityNote:
+            "웹과 App Store에서 제공하는 요금제가 다를 수 있습니다. 구독 전에 앱 내 구매 화면의 기능, 제한 및 갱신 가격을 확인하세요.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "심층 조사, 긴 문서 분석, 프레젠테이션 제작 또는 코딩을 자주 수행하며 Moderato보다 높은 사용량이 필요한 전문 사용자.",
+          difference:
+            "공식 도움말은 Allegretto를 전문 사용 단계로 설명합니다. App Store에서 제공되는 실제 용량은 계정과 판매 채널에 따라 달라질 수 있습니다.",
+          availabilityNote:
+            "요금제 이름만으로 웹과 App Store 혜택이 같다고 판단하지 말고 현재 앱 내 구매 화면을 확인하세요.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Kimi를 고강도 핵심 업무 도구로 사용하며 더 높은 모델 및 작업 용량이 필요하다고 확인한 개인 사용자.",
+          difference:
+            "공식 도움말은 Allegro를 Allegretto보다 용량이 높은 상위 종합 요금제로 설명합니다. App Store 혜택과 동적 제한은 별도로 확인해야 합니다.",
+          availabilityNote:
+            "사용량은 실제 소비에 따라 계산되며 변경될 수 있습니다. 구독 전 현재 계정의 앱 내 요금제 화면에서 기능, 제한 및 갱신 가격을 확인하세요.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "App Store 구독 화면에 Vivace가 계속 표시되고 현재 혜택이 실제 고강도 사용 목적에 적합하다고 확인한 사용자에게만 해당합니다.",
+          difference:
+            "Vivace는 GeoSub의 현재 App Store 정기 월간 데이터에서 가장 비싼 단계이지만 Kimi의 현재 공개 도움말에는 혜택 비교가 없어 고정 기능이나 사용량을 추정할 수 없습니다.",
+          availabilityNote:
+            "Vivace는 판매 채널 또는 이전 요금제의 차이를 반영할 수 있습니다. 앱 내 설명이 명확하지 않다면 가격이 높다는 이유만으로 기능이 더 많다고 판단하지 마세요.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  es: {
+    kimi: {
+      summary:
+        "Kimi es el asistente de IA de Moonshot AI para conversación, documentos, investigación profunda, presentaciones y programación. GeoSub compara las suscripciones mensuales recurrentes Moderato, Allegretto, Allegro y Vivace verificables en Apple App Store. La oferta de Kimi en la web y en App Store puede variar, por lo que las ventajas de los planes web no se asignan automáticamente a las compras dentro de la aplicación.",
+      sectionTitle: "Para quién es este plan",
+      bestForLabel: "Recomendado para",
+      differenceLabel: "Diferencia principal frente a otros planes",
+      availabilityLabel: "Antes de suscribirte",
+      sourceLabel: "Planes oficiales de Kimi",
+      plans: {
+        moderato: {
+          bestFor:
+            "Personas que han superado el nivel gratuito y necesitan una capacidad más estable para conversaciones, documentos e investigación habitual, sin requerir el nivel más alto.",
+          difference:
+            "La ayuda oficial de Kimi presenta Moderato como una mejora de productividad. Las ventajas y los límites dinámicos de la compra en App Store deben confirmarse en la cuenta actual.",
+          availabilityNote:
+            "Los planes disponibles en la web y en App Store pueden ser distintos. Comprueba las funciones, los límites y el precio de renovación dentro de la aplicación antes de suscribirte.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "Usuarios profesionales que realizan con frecuencia investigación profunda, análisis de documentos largos, presentaciones o programación y necesitan más capacidad que Moderato.",
+          difference:
+            "La ayuda oficial sitúa Allegretto como el nivel profesional, normalmente con más capacidad. La asignación concreta de App Store puede variar según la cuenta y el canal.",
+          availabilityNote:
+            "No supongas que las ventajas de la web y App Store son idénticas solo por compartir nombre; revisa la pantalla de compra actual dentro de la aplicación.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Personas que usan Kimi como herramienta central de trabajo intensivo y han confirmado que necesitan una mayor capacidad de modelos y tareas.",
+          difference:
+            "La ayuda oficial presenta Allegro como el nivel premium más completo y con más capacidad que Allegretto. Las ventajas y límites dinámicos de App Store requieren una comprobación independiente.",
+          availabilityNote:
+            "El consumo se mide según el uso real y puede cambiar. Confirma funciones, límites y precio de renovación en la pantalla actual del plan dentro de la aplicación.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "Solo para quienes todavía ven Vivace en la pantalla de suscripción de App Store y han confirmado que sus ventajas actuales justifican un uso intensivo.",
+          difference:
+            "Vivace es el nivel mensual recurrente más caro del conjunto actual de App Store de GeoSub, pero la ayuda pública vigente de Kimi no compara sus ventajas, por lo que no se pueden inferir funciones ni cuotas fijas.",
+          availabilityNote:
+            "Vivace puede reflejar una diferencia de canal o un plan anterior. Si la ficha dentro de la aplicación no es clara, un precio mayor no demuestra por sí solo que incluya más funciones.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  tr: {
+    kimi: {
+      summary:
+        "Kimi, Moonshot AI tarafından sunulan; sohbet, belge işleme, derin araştırma, sunum ve kodlama görevlerini destekleyen bir yapay zekâ asistanıdır. GeoSub, Apple App Store'da doğrulanabilen yinelenen aylık Moderato, Allegretto, Allegro ve Vivace aboneliklerini karşılaştırır. Kimi'nin web ve App Store paketleri farklı olabileceğinden web paketlerinin avantajları uygulama içi satın alımlara otomatik olarak aktarılmaz.",
+      sectionTitle: "Bu paket kimler için uygun",
+      bestForLabel: "Uygun olduğu kullanıcılar",
+      differenceLabel: "Diğer paketlerden temel farkı",
+      availabilityLabel: "Abone olmadan önce",
+      sourceLabel: "Kimi resmi paketleri",
+      plans: {
+        moderato: {
+          bestFor:
+            "Ücretsiz kullanım sınırını aşan; günlük sohbet, belge ve olağan araştırma işleri için daha istikrarlı kapasite isteyen ancak en yüksek seviyeye ihtiyaç duymayan bireysel kullanıcılar.",
+          difference:
+            "Kimi'nin resmi yardım sayfası Moderato'yu bir üretkenlik yükseltmesi olarak konumlandırır. App Store avantajları ve dinamik sınırlar mevcut hesap ekranından doğrulanmalıdır.",
+          availabilityNote:
+            "Web ve App Store'da sunulan paketler farklı olabilir. Abone olmadan önce uygulama içindeki özellikleri, sınırları ve yenileme fiyatını kontrol edin.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "Sık sık derin araştırma, uzun belge analizi, sunum veya kodlama yapan ve Moderato'dan daha yüksek kullanıma ihtiyaç duyan profesyonel kullanıcılar.",
+          difference:
+            "Resmi yardım sayfası Allegretto'yu profesyonel seviye olarak tanımlar ve genellikle daha yüksek kapasite sunar. App Store'daki kesin sınırlar hesaba ve kanala göre değişebilir.",
+          availabilityNote:
+            "Yalnızca paket adına bakarak web ve App Store avantajlarının aynı olduğunu varsaymayın; güncel uygulama içi satın alma ekranını kontrol edin.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Kimi'yi yoğun iş akışlarının merkezinde kullanan ve daha yüksek model ile görev kapasitesine ihtiyaç duyduğunu doğrulamış bireysel kullanıcılar.",
+          difference:
+            "Resmi yardım sayfası Allegro'yu Allegretto'dan daha yüksek kapasiteli kapsamlı üst seviye paket olarak konumlandırır. App Store avantajları ve dinamik sınırlar ayrıca doğrulanmalıdır.",
+          availabilityNote:
+            "Kullanım gerçek tüketime göre ölçülür ve değişebilir. Abone olmadan önce mevcut uygulama içi paket ekranında özellikleri, sınırları ve yenileme fiyatını doğrulayın.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "Yalnızca App Store abonelik ekranında Vivace'ı hâlâ gören ve mevcut avantajlarının yoğun kullanım ihtiyacını karşıladığını doğrulayan kullanıcılar.",
+          difference:
+            "Vivace, GeoSub'ın mevcut App Store yinelenen aylık veri setindeki en pahalı seviyedir; ancak Kimi'nin güncel açık yardım sayfası avantaj karşılaştırması sunmadığından sabit özellik veya kota çıkarılamaz.",
+          availabilityNote:
+            "Vivace kanal veya eski paket farkını yansıtabilir. Uygulama içi açıklama net değilse daha yüksek fiyat tek başına daha fazla özellik kanıtı değildir.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  ar: {
+    kimi: {
+      summary:
+        "Kimi هو مساعد ذكاء اصطناعي من Moonshot AI للمحادثة ومعالجة المستندات والبحث المتعمق والعروض التقديمية والبرمجة. تقارن GeoSub اشتراكات Moderato، Allegretto، Allegro وVivace الشهرية المتكررة التي يمكن التحقق منها في Apple App Store. قد تختلف باقات Kimi على الويب عن باقات App Store، لذلك لا تُنسب مزايا باقات الويب تلقائياً إلى عمليات الشراء داخل التطبيق.",
+      sectionTitle: "لمن تناسب هذه الباقة",
+      bestForLabel: "الأنسب لـ",
+      differenceLabel: "الفرق الرئيسي عن الباقات الأخرى",
+      availabilityLabel: "قبل الاشتراك",
+      sourceLabel: "باقات Kimi الرسمية",
+      plans: {
+        moderato: {
+          bestFor:
+            "المستخدمون الأفراد الذين تجاوزوا المستوى المجاني ويحتاجون إلى سعة أكثر استقراراً للمحادثات اليومية والمستندات والبحث المعتاد من دون الحاجة إلى أعلى مستوى.",
+          difference:
+            "يصف مركز مساعدة Kimi الرسمي Moderato بأنه ترقية للإنتاجية. يجب التحقق من المزايا والحدود المتغيرة لاشتراك App Store في شاشة الحساب الحالية.",
+          availabilityNote:
+            "قد تختلف الباقات المتاحة على الويب وفي App Store. تحقّق من الميزات والحدود وسعر التجديد داخل التطبيق قبل الاشتراك.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "المستخدمون المحترفون الذين يجرون أبحاثاً متعمقة أو يحللون مستندات طويلة أو ينشئون عروضاً أو يبرمجون بانتظام ويحتاجون إلى سعة أعلى من Moderato.",
+          difference:
+            "يضع الدليل الرسمي Allegretto في المستوى المهني بسعة أعلى عادةً. وقد تختلف السعة الفعلية في App Store باختلاف الحساب وقناة البيع.",
+          availabilityNote:
+            "لا تفترض تطابق مزايا الويب وApp Store اعتماداً على اسم الباقة فقط؛ راجع شاشة الشراء الحالية داخل التطبيق.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "الأفراد الذين يستخدمون Kimi أداة أساسية للعمل المكثف وتأكدوا من حاجتهم إلى سعة أكبر للنماذج والمهام.",
+          difference:
+            "يصف الدليل الرسمي Allegro بأنه المستوى المتكامل الأعلى وبسعة أكبر من Allegretto. ويجب التحقق بصورة مستقلة من مزايا App Store وحدوده المتغيرة.",
+          availabilityNote:
+            "يُقاس الاستخدام بحسب الاستهلاك الفعلي وقد يتغير. تحقّق من الميزات والحدود وسعر التجديد في شاشة الباقة الحالية داخل التطبيق قبل الاشتراك.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "فقط لمن ما زال يرى Vivace في شاشة اشتراك App Store وتحقق من أن مزاياه الحالية تبرر استخدامه المكثف المطلوب.",
+          difference:
+            "Vivace هو أعلى مستوى سعراً ضمن بيانات GeoSub الحالية للاشتراكات الشهرية المتكررة في App Store، لكن مركز مساعدة Kimi العام الحالي لا يقدم مقارنة لمزاياه، لذلك لا يمكن استنتاج ميزات أو حصص ثابتة.",
+          availabilityNote:
+            "قد يعكس Vivace اختلافاً في قناة البيع أو باقة قديمة. إذا لم تكن التفاصيل داخل التطبيق واضحة، فالسعر الأعلى وحده لا يثبت وجود مزايا إضافية.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  fr: {
+    kimi: {
+      summary:
+        "Kimi est l'assistant IA de Moonshot AI pour la conversation, le traitement de documents, la recherche approfondie, les présentations et le développement. GeoSub compare les abonnements mensuels récurrents Moderato, Allegretto, Allegro et Vivace vérifiables dans l'Apple App Store. Les offres web et App Store de Kimi peuvent différer ; les avantages des offres web ne sont donc pas attribués automatiquement aux achats intégrés.",
+      sectionTitle: "À qui s'adresse cette offre",
+      bestForLabel: "Recommandé pour",
+      differenceLabel: "Principale différence avec les autres offres",
+      availabilityLabel: "Avant de s'abonner",
+      sourceLabel: "Offres officielles Kimi",
+      plans: {
+        moderato: {
+          bestFor:
+            "Les personnes qui dépassent le niveau gratuit et souhaitent une capacité plus stable pour les conversations, les documents et la recherche courante, sans avoir besoin du niveau le plus élevé.",
+          difference:
+            "L'aide officielle de Kimi présente Moderato comme une amélioration de productivité. Les avantages et limites dynamiques de l'achat App Store doivent être vérifiés dans le compte actuel.",
+          availabilityNote:
+            "Les offres disponibles sur le web et dans l'App Store peuvent différer. Vérifiez les fonctions, les limites et le prix de renouvellement dans l'application avant de vous abonner.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "Les professionnels qui effectuent fréquemment des recherches approfondies, analysent de longs documents, créent des présentations ou programment et ont besoin de plus de capacité que Moderato.",
+          difference:
+            "L'aide officielle place Allegretto au niveau professionnel, généralement avec une capacité supérieure. L'allocation App Store exacte peut varier selon le compte et le canal.",
+          availabilityNote:
+            "Ne supposez pas que les avantages du web et de l'App Store sont identiques sur la seule base du nom ; consultez l'écran d'achat intégré actuel.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Les personnes qui utilisent Kimi comme outil central pour des tâches intensives et ont confirmé leur besoin d'une capacité supérieure pour les modèles et les tâches.",
+          difference:
+            "L'aide officielle présente Allegro comme l'offre premium complète, avec une capacité supérieure à Allegretto. Les avantages et limites dynamiques de l'App Store doivent être vérifiés séparément.",
+          availabilityNote:
+            "L'utilisation est mesurée selon la consommation réelle et peut évoluer. Vérifiez les fonctions, les limites et le prix de renouvellement dans l'écran actuel de l'offre intégrée.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "Uniquement les personnes qui voient encore Vivace dans l'écran d'abonnement App Store et ont confirmé que ses avantages actuels justifient leur usage intensif.",
+          difference:
+            "Vivace est le niveau mensuel récurrent le plus cher dans les données App Store actuelles de GeoSub, mais l'aide publique actuelle de Kimi ne compare pas ses avantages ; aucune fonction ni aucun quota fixe ne peut donc être déduit.",
+          availabilityNote:
+            "Vivace peut refléter une différence de canal ou une ancienne offre. Si la fiche intégrée manque de clarté, un prix supérieur ne prouve pas à lui seul l'existence d'avantages supplémentaires.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  it: {
+    kimi: {
+      summary:
+        "Kimi è l'assistente IA di Moonshot AI per conversazioni, documenti, ricerca approfondita, presentazioni e programmazione. GeoSub confronta gli abbonamenti mensili ricorrenti Moderato, Allegretto, Allegro e Vivace verificabili nell'Apple App Store. Le offerte Kimi sul web e nell'App Store possono differire, quindi i vantaggi dei piani web non vengono attribuiti automaticamente agli acquisti in-app.",
+      sectionTitle: "A chi è adatto questo piano",
+      bestForLabel: "Ideale per",
+      differenceLabel: "Differenza principale rispetto agli altri piani",
+      availabilityLabel: "Prima dell'abbonamento",
+      sourceLabel: "Piani ufficiali Kimi",
+      plans: {
+        moderato: {
+          bestFor:
+            "Chi ha superato il livello gratuito e desidera una capacità più stabile per conversazioni, documenti e ricerche ordinarie senza aver bisogno del livello più alto.",
+          difference:
+            "La guida ufficiale di Kimi presenta Moderato come un miglioramento della produttività. I vantaggi e i limiti dinamici dell'acquisto App Store devono essere verificati nell'account attuale.",
+          availabilityNote:
+            "I piani disponibili sul web e nell'App Store possono essere diversi. Prima di abbonarti, controlla funzioni, limiti e prezzo di rinnovo all'interno dell'app.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "Professionisti che svolgono spesso ricerche approfondite, analizzano documenti lunghi, creano presentazioni o programmano e necessitano di più capacità rispetto a Moderato.",
+          difference:
+            "La guida ufficiale colloca Allegretto nel livello professionale, in genere con capacità maggiore. La disponibilità effettiva nell'App Store può variare in base all'account e al canale.",
+          availabilityNote:
+            "Non presumere che i vantaggi web e App Store coincidano solo perché il nome del piano è uguale; verifica la schermata di acquisto in-app attuale.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Chi usa Kimi come strumento centrale per attività intensive e ha confermato la necessità di una capacità maggiore per modelli e attività.",
+          difference:
+            "La guida ufficiale presenta Allegro come il livello premium completo, con capacità superiore ad Allegretto. I vantaggi e i limiti dinamici dell'App Store richiedono una verifica separata.",
+          availabilityNote:
+            "L'utilizzo è misurato in base al consumo effettivo e può cambiare. Controlla funzioni, limiti e prezzo di rinnovo nella schermata del piano in-app prima dell'abbonamento.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "Solo per chi vede ancora Vivace nella schermata di abbonamento dell'App Store e ha verificato che i vantaggi attuali giustifichino l'uso intensivo richiesto.",
+          difference:
+            "Vivace è il livello mensile ricorrente più costoso nei dati App Store attuali di GeoSub, ma la guida pubblica attuale di Kimi non confronta i suoi vantaggi; non è quindi possibile dedurre funzioni o quote fisse.",
+          availabilityNote:
+            "Vivace può riflettere una differenza di canale o un piano precedente. Se la schermata in-app non è chiara, il prezzo più alto non dimostra da solo la presenza di vantaggi aggiuntivi.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  de: {
+    kimi: {
+      summary:
+        "Kimi ist der KI-Assistent von Moonshot AI für Gespräche, Dokumente, vertiefte Recherche, Präsentationen und Programmierung. GeoSub vergleicht die wiederkehrenden monatlichen Abonnements Moderato, Allegretto, Allegro und Vivace, die im Apple App Store überprüfbar sind. Das Web- und App-Store-Angebot von Kimi kann abweichen; Vorteile der Web-Tarife werden daher nicht automatisch In-App-Käufen zugeordnet.",
+      sectionTitle: "Für wen dieser Tarif geeignet ist",
+      bestForLabel: "Geeignet für",
+      differenceLabel: "Wichtigster Unterschied zu anderen Tarifen",
+      availabilityLabel: "Vor dem Abonnieren",
+      sourceLabel: "Kimi-Mitgliedschaft",
+      plans: {
+        moderato: {
+          bestFor:
+            "Personen, denen der kostenlose Umfang nicht mehr genügt und die stabilere Kapazität für tägliche Gespräche, Dokumente und allgemeine Recherche benötigen, aber keinen Höchsttarif brauchen.",
+          difference:
+            "Die offizielle Kimi-Hilfe beschreibt Moderato als Produktivitäts-Upgrade. Leistungen und dynamische Grenzen des App-Store-Kaufs müssen im aktuellen Konto geprüft werden.",
+          availabilityNote:
+            "Die verfügbaren Web- und App-Store-Tarife können sich unterscheiden. Prüfen Sie vor dem Abonnement Funktionen, Grenzen und Verlängerungspreis in der App.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "Professionelle Nutzer, die häufig vertieft recherchieren, lange Dokumente analysieren, Präsentationen erstellen oder programmieren und mehr Kapazität als bei Moderato benötigen.",
+          difference:
+            "Die offizielle Hilfe positioniert Allegretto als professionellen Tarif mit in der Regel höherer Kapazität. Die genaue App-Store-Zuteilung kann je nach Konto und Kanal variieren.",
+          availabilityNote:
+            "Gehen Sie nicht allein aufgrund des Namens von identischen Web- und App-Store-Leistungen aus; prüfen Sie die aktuelle In-App-Kaufansicht.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Personen, die Kimi intensiv als zentrales Arbeitswerkzeug einsetzen und bestätigt haben, dass sie höhere Modell- und Aufgabenkapazität benötigen.",
+          difference:
+            "Die offizielle Hilfe beschreibt Allegro als umfassenden Premium-Tarif mit höherer Kapazität als Allegretto. App-Store-Leistungen und dynamische Grenzen müssen separat geprüft werden.",
+          availabilityNote:
+            "Die Nutzung wird nach tatsächlichem Verbrauch gemessen und kann sich ändern. Prüfen Sie Funktionen, Grenzen und Verlängerungspreis vor dem Abonnement im aktuellen In-App-Tarifbildschirm.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "Nur für Personen, denen Vivace noch im App-Store-Abonnementbildschirm angezeigt wird und die geprüft haben, dass die aktuellen Leistungen ihren intensiven Einsatz rechtfertigen.",
+          difference:
+            "Vivace ist der teuerste wiederkehrende Monatstarif im aktuellen App-Store-Datensatz von GeoSub. Die derzeitige öffentliche Kimi-Hilfe vergleicht seine Leistungen jedoch nicht, sodass keine festen Funktionen oder Kontingente abgeleitet werden können.",
+          availabilityNote:
+            "Vivace kann einen Kanal- oder Altvertragsunterschied widerspiegeln. Sind die In-App-Angaben unklar, beweist ein höherer Preis allein keine zusätzlichen Leistungen.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
+      },
+    },
+  },
+  pt: {
+    kimi: {
+      summary:
+        "Kimi é o assistente de IA da Moonshot AI para conversação, documentos, pesquisa aprofundada, apresentações e programação. A GeoSub compara as subscrições mensais recorrentes Moderato, Allegretto, Allegro e Vivace verificáveis na Apple App Store. As ofertas web e App Store da Kimi podem ser diferentes, pelo que os benefícios dos planos web não são atribuídos automaticamente às compras na aplicação.",
+      sectionTitle: "A quem se destina este plano",
+      bestForLabel: "Indicado para",
+      differenceLabel: "Principal diferença face aos outros planos",
+      availabilityLabel: "Antes de subscrever",
+      sourceLabel: "Planos oficiais Kimi",
+      plans: {
+        moderato: {
+          bestFor:
+            "Pessoas que ultrapassaram o nível gratuito e precisam de capacidade mais estável para conversas, documentos e pesquisa corrente, sem necessitarem do nível mais elevado.",
+          difference:
+            "A ajuda oficial da Kimi apresenta o Moderato como uma melhoria de produtividade. Os benefícios e limites dinâmicos da compra na App Store devem ser confirmados na conta atual.",
+          availabilityNote:
+            "Os planos disponíveis na web e na App Store podem ser diferentes. Confirme as funcionalidades, os limites e o preço de renovação dentro da aplicação antes de subscrever.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegretto: {
+          bestFor:
+            "Profissionais que fazem frequentemente pesquisa aprofundada, analisam documentos longos, criam apresentações ou programam e precisam de mais capacidade do que o Moderato.",
+          difference:
+            "A ajuda oficial posiciona o Allegretto como nível profissional, geralmente com maior capacidade. A disponibilidade concreta na App Store pode variar conforme a conta e o canal.",
+          availabilityNote:
+            "Não pressuponha que os benefícios web e App Store são iguais apenas pelo nome do plano; consulte o ecrã atual de compra na aplicação.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        allegro: {
+          bestFor:
+            "Pessoas que utilizam o Kimi como ferramenta central em trabalho intensivo e confirmaram que precisam de maior capacidade para modelos e tarefas.",
+          difference:
+            "A ajuda oficial apresenta o Allegro como o nível premium completo, com capacidade superior ao Allegretto. Os benefícios e limites dinâmicos da App Store exigem confirmação separada.",
+          availabilityNote:
+            "A utilização é medida pelo consumo real e pode mudar. Confirme as funcionalidades, os limites e o preço de renovação no ecrã atual do plano dentro da aplicação.",
+          sourceUrl: "https://www.kimi.com/en/help/membership/membership-pricing",
+        },
+        vivace: {
+          bestFor:
+            "Apenas para quem ainda vê o Vivace no ecrã de subscrição da App Store e confirmou que os benefícios atuais justificam a utilização intensiva pretendida.",
+          difference:
+            "O Vivace é o nível mensal recorrente mais caro nos dados atuais da App Store da GeoSub, mas a ajuda pública atual da Kimi não compara os seus benefícios; por isso, não é possível inferir funcionalidades ou quotas fixas.",
+          availabilityNote:
+            "O Vivace pode refletir uma diferença de canal ou um plano antigo. Se a descrição na aplicação não for clara, um preço superior não prova, por si só, a existência de benefícios adicionais.",
+          sourceUrl:
+            "https://apps.apple.com/us/app/kimi-kimi-k3-is-live/id6474233312",
+        },
       },
     },
   },

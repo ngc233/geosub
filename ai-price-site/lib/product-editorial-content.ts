@@ -1,5 +1,8 @@
 import type { SiteLocale } from "./site-locale";
-import { expandedEditorialContent } from "./product-editorial-expansion.ts";
+import {
+  expandedEditorialContent,
+  localizedEditorialContent,
+} from "./product-editorial-expansion.ts";
 
 export type ProductPlanEditorialContent = {
   bestFor: string;
@@ -728,9 +731,10 @@ export function getProductEditorialContent(
   productSlug: string,
   planSlug: string,
 ) {
-  if (locale !== "zh" && locale !== "en") return null;
-
-  const product = editorialContent[locale][productSlug];
+  const product =
+    locale === "zh" || locale === "en"
+      ? editorialContent[locale][productSlug]
+      : localizedEditorialContent[locale][productSlug];
   if (!product) return null;
 
   const plan = product.plans[planSlug];
