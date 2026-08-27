@@ -41,13 +41,13 @@ production server.
 Continue only in this checkout:
 
 ```text
-C:\Users\lanad\Documents\Codex\2026-06-30\ngc233-geosub-https-github-com-ngc233\geosub-production-baseline
+<repository-root>
 ```
 
 Primary frontend directory:
 
 ```text
-C:\Users\lanad\Documents\Codex\2026-06-30\ngc233-geosub-https-github-com-ngc233\geosub-production-baseline\ai-price-site
+<repository-root>\ai-price-site
 ```
 
 Do not continue in the sibling `geosub` checkout. It contains older and dirty
