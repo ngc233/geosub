@@ -44,6 +44,11 @@ The values are generated from the same canonical plan dataset as the page. If st
 - Therefore Google recrawl is **not confirmed**, the seven-complete-day observation window has **not started**, and current Search Console performance cannot be used to judge this variant.
 - No indexing request was submitted during this checkpoint.
 
+### Subsequent indexing request
+
+- After explicit product-owner approval on 2026-08-27, Google Search Console accepted an indexing request for this URL and confirmed that it was added to the priority crawl queue.
+- The request does not prove that Google has recrawled the page. The experiment window still starts only after URL Inspection reports a post-deployment crawl time.
+
 ## Measurement
 
 Start date: 2026-08-25. Treat the deployment day as day zero rather than a complete observation day.
