@@ -88,7 +88,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
       data-track-name="Open digital service pricing"
       data-track-button={product.slug}
       data-track-placement="pricing_card"
-      className="group relative z-0 block overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900/50"
+      className="group relative z-0 block overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 dark:hover:border-zinc-700 dark:hover:shadow-black/35 dark:focus-visible:ring-offset-zinc-950"
     >
       <div className="p-5 md:p-6">
         <div className="flex items-start gap-4">
@@ -124,7 +124,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                   {copy.spread} {spread}%
                 </span>
 
-                <span className="text-xs font-medium text-zinc-500">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                   {regionCount} {copy.regions}
                 </span>
               </div>
@@ -136,7 +136,7 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-y border-zinc-100 text-xs font-medium text-zinc-400 dark:border-zinc-800">
+            <tr className="border-y border-zinc-100 text-xs font-medium text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
               <th className="w-14 py-3 pl-5 md:pl-6">#</th>
               <th className="min-w-[120px] py-3">{copy.region}</th>
               <th className="min-w-[150px] py-3">{copy.price}</th>
@@ -161,13 +161,13 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
               return (
                 <tr
                   key={`${product.slug}-${defaultPlan.slug}-${region.code}-${region.rank}`}
-                  className={`border-b border-zinc-100 transition-colors group-hover:bg-white dark:border-zinc-800/50 dark:group-hover:bg-zinc-900/40 ${
+                  className={`border-b border-zinc-100 transition-colors group-hover:bg-white dark:border-zinc-800/50 dark:group-hover:bg-zinc-800/40 ${
                     isSeparatedRow
                       ? "border-t border-dashed border-t-zinc-300 bg-zinc-50/40 dark:border-t-zinc-700 dark:bg-zinc-950/30"
                       : ""
                   }`}
                 >
-                  <td className="py-3.5 pl-5 font-mono text-xs text-zinc-400 md:pl-6">
+                  <td className="py-3.5 pl-5 font-mono text-xs text-zinc-400 md:pl-6 dark:text-zinc-500">
                     {region.rank}
                   </td>
 
@@ -182,19 +182,19 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                       </span>
 
                       {region.isReference ? (
-                        <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold text-zinc-400 dark:bg-zinc-800">
+                        <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold text-zinc-400 dark:bg-zinc-800 dark:text-zinc-400">
                           {copy.base}
                         </span>
                       ) : null}
 
                       {isLowestRow ? (
-                        <span className="rounded-md bg-lime-50 px-1.5 py-0.5 text-[10px] font-bold text-lime-700 ring-1 ring-lime-200">
+                        <span className="rounded-md bg-lime-50 px-1.5 py-0.5 text-[10px] font-bold text-lime-700 ring-1 ring-lime-200 dark:bg-lime-500/10 dark:text-lime-400 dark:ring-lime-500/20">
                           {copy.lowest}
                         </span>
                       ) : null}
 
                       {isCompareRow ? (
-                        <span className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-500 ring-1 ring-rose-100">
+                        <span className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-500 ring-1 ring-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/20">
                           {copy.highest}
                         </span>
                       ) : null}
@@ -217,22 +217,22 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                       {priceSuffix(copy, defaultPlan.billingCycle)}
                     </div>
 
-                    <div className="mt-1.5 font-mono text-[11px] text-zinc-400">
+                    <div className="mt-1.5 font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
                       ≈ {region.localPrice}
                     </div>
                   </td>
 
                   <td className="hidden py-4 pr-6 text-xs font-semibold md:table-cell">
                     {difference === null || difference === 0 ? (
-                      <span className={isLowestRow ? "text-lime-700" : "text-zinc-500"}>
+                      <span className={isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-zinc-500 dark:text-zinc-400"}>
                         {referenceRegion ? copy.base : copy.lowest}
                       </span>
                     ) : difference < 0 ? (
-                      <span className={isLowestRow ? "text-lime-700" : "text-emerald-700"}>
+                      <span className={isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-emerald-700 dark:text-emerald-400"}>
                         −{Math.abs(difference)}%
                       </span>
                     ) : (
-                      <span className="text-rose-600">+{difference}%</span>
+                      <span className="text-rose-600 dark:text-rose-400">+{difference}%</span>
                     )}
                   </td>
                 </tr>
@@ -243,16 +243,16 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
       </div>
 
       <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-950/40 md:px-6">
-        <span className="text-xs text-zinc-400">
+        <span className="text-xs text-zinc-400 dark:text-zinc-500">
           {copy.updated}: {product.updatedAt}
         </span>
 
         <div className="flex items-center gap-4">
-          <span className="text-xs font-semibold text-zinc-700 sm:hidden">
+          <span className="text-xs font-semibold text-zinc-700 sm:hidden dark:text-zinc-300">
             {copy.spread} {spread}%
           </span>
 
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 transition group-hover:border-zinc-300 group-hover:text-zinc-950">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 transition group-hover:border-zinc-300 group-hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:border-zinc-600 dark:group-hover:text-white">
             {copy.detail}
             <ArrowRight size={14} strokeWidth={2} />
           </span>

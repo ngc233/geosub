@@ -503,7 +503,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-600 shadow-sm transition-all duration-200 ease-out hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-600 shadow-sm transition-all duration-200 ease-out hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950 active:bg-zinc-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-white dark:active:bg-zinc-700 dark:focus-visible:ring-offset-zinc-950"
         aria-label={copy.button}
         title={copy.button}
       >
@@ -526,7 +526,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
             className="flex h-dvh w-full flex-col overflow-hidden bg-white shadow-2xl shadow-black/20 sm:h-auto sm:max-h-[76vh] sm:max-w-2xl sm:rounded-xl sm:border sm:border-zinc-200 dark:bg-zinc-950 sm:dark:border-zinc-800"
           >
             <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800 sm:px-5">
-              <Search className="h-5 w-5 shrink-0 text-zinc-400" aria-hidden="true" />
+              <Search className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
               <input
                 ref={inputRef}
                 value={query}
@@ -543,7 +543,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
               <button
                 type="button"
                 onClick={closeSearch}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-950 dark:hover:bg-zinc-800 dark:hover:text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-950 active:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-white dark:active:bg-zinc-700"
                 aria-label={copy.close}
                 title={copy.close}
               >
@@ -557,7 +557,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">{copy.hint}</p>
                   {popularTerms.length > 0 ? (
                     <div className="mt-7">
-                      <p className="mb-3 text-xs font-bold uppercase text-zinc-400">
+                      <p className="mb-3 text-xs font-bold uppercase text-zinc-400 dark:text-zinc-500">
                         {copy.popular}
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -566,7 +566,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                             key={term}
                             type="button"
                             onClick={() => updateQuery(term)}
-                            className="min-h-9 rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm font-semibold text-zinc-700 transition hover:border-lime-300 hover:bg-lime-50 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-lime-500/10 dark:hover:text-white"
+                            className="min-h-9 rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm font-semibold text-zinc-700 transition hover:border-lime-300 hover:bg-lime-50 hover:text-zinc-950 active:bg-lime-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-lime-500/10 dark:hover:text-white dark:active:bg-lime-500/15"
                           >
                             {term}
                           </button>
@@ -574,7 +574,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                       </div>
                     </div>
                   ) : null}
-                  <p className="mb-3 mt-7 text-xs font-bold uppercase text-zinc-400">
+                  <p className="mb-3 mt-7 text-xs font-bold uppercase text-zinc-400 dark:text-zinc-500">
                     {copy.suggestions}
                   </p>
                   <div className="grid gap-2 sm:grid-cols-3">
@@ -585,7 +585,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                           key={item.href}
                           href={item.href}
                           onClick={closeSearch}
-                          className="group flex min-h-14 items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:hover:text-white"
+                          className="group flex min-h-14 items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950 active:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-900 dark:hover:text-white dark:active:bg-zinc-800"
                         >
                           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 transition group-hover:bg-white group-hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:bg-zinc-800 dark:group-hover:text-white">
                             <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
@@ -597,11 +597,11 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                   </div>
                 </div>
               ) : unavailable ? (
-                <div className="py-14 text-center text-sm text-zinc-500">{copy.unavailable}</div>
+                <div className="py-14 text-center text-sm text-zinc-500 dark:text-zinc-400">{copy.unavailable}</div>
               ) : !loading && results.length === 0 ? (
                 <div className="py-14 text-center">
-                  <Search className="mx-auto h-7 w-7 text-zinc-300" aria-hidden="true" />
-                  <p className="mt-3 text-sm font-semibold text-zinc-500">{copy.empty}</p>
+                  <Search className="mx-auto h-7 w-7 text-zinc-300 dark:text-zinc-600" aria-hidden="true" />
+                  <p className="mt-3 text-sm font-semibold text-zinc-500 dark:text-zinc-400">{copy.empty}</p>
                 </div>
               ) : (
                 <div>
@@ -620,7 +620,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                           }}
                           aria-pressed={resultKind === kind}
                           className={[
-                            "min-h-8 shrink-0 rounded-md px-3 text-xs font-bold transition",
+                            "min-h-8 shrink-0 rounded-md px-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500",
                             resultKind === kind
                               ? "bg-white text-zinc-950 shadow-sm dark:bg-zinc-800 dark:text-white"
                               : "text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white",
@@ -642,7 +642,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                         closeSearch();
                       }}
                       className={[
-                        "group flex min-h-16 items-center gap-3 rounded-lg px-3 py-2.5 transition",
+                        "group flex min-h-16 items-center gap-3 rounded-lg px-3 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500",
                         activeIndex === index
                           ? "bg-lime-50 dark:bg-lime-500/10"
                           : "hover:bg-zinc-50 dark:hover:bg-zinc-900",
@@ -662,7 +662,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                           {result.subtitle}
                         </span>
                       </span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-zinc-300 transition group-hover:translate-x-0.5 group-hover:text-lime-600 rtl:rotate-180" aria-hidden="true" />
+                      <ArrowRight className="h-4 w-4 shrink-0 text-zinc-300 transition group-hover:translate-x-0.5 group-hover:text-lime-600 rtl:rotate-180 dark:text-zinc-600 dark:group-hover:text-lime-400" aria-hidden="true" />
                     </Link>
                   ))}
                   </div>

@@ -63,7 +63,7 @@ function formatDate(value: string, locale: SiteLocale) {
 }
 
 function spreadTone() {
-  return "text-zinc-700";
+  return "text-zinc-700 dark:text-zinc-300";
 }
 
 function ProductLogoStack({ products }: { products: HomepageProduct[] }) {
@@ -85,23 +85,23 @@ function CategoryPanel({ card, spreadPrefix }: { card: CategoryCard; spreadPrefi
   return (
     <Link
       href={card.href}
-      className="group flex min-h-[168px] flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2 sm:p-6"
+      className="group flex min-h-[168px] flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 dark:hover:border-zinc-700 dark:hover:shadow-black/35 dark:focus-visible:ring-offset-zinc-950 sm:p-6"
     >
       <div className="flex items-start justify-between gap-4">
         {card.products.length ? (
           <ProductLogoStack products={card.products} />
         ) : card.icon ? (
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             <card.icon className="h-4 w-4" aria-hidden="true" />
           </span>
         ) : null}
-        <ArrowRight className="h-4 w-4 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-zinc-700 rtl:rotate-180" />
+        <ArrowRight className="h-4 w-4 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-zinc-700 rtl:rotate-180 dark:text-zinc-500 dark:group-hover:text-zinc-200" />
       </div>
       <div>
-        <h3 className="text-[17px] font-semibold text-zinc-950">{card.title}</h3>
-        <p className="mt-1.5 text-[13px] leading-6 text-zinc-500">{card.description}</p>
+        <h3 className="text-[17px] font-semibold text-zinc-950 dark:text-white">{card.title}</h3>
+        <p className="mt-1.5 text-[13px] leading-6 text-zinc-500 dark:text-zinc-400">{card.description}</p>
         {card.spread !== null ? (
-          <p className="mt-2 text-xs font-bold text-zinc-500">
+          <p className="mt-2 text-xs font-bold text-zinc-500 dark:text-zinc-400">
             {spreadPrefix} <span className={spreadTone()}>{card.spread}%</span>
           </p>
         ) : null}
@@ -165,35 +165,35 @@ export default function HomepageExperience({
   }, [copy, localeRoot, products]);
 
   return (
-    <main className="min-h-screen bg-[var(--background)] text-zinc-950">
-      <section className="border-b border-zinc-200/80 bg-[var(--background)]">
+    <main className="min-h-screen bg-[var(--background)] text-zinc-950 dark:text-white">
+      <section className="border-b border-zinc-200/80 bg-[var(--background)] dark:border-zinc-800/80">
         <div className="mx-auto max-w-[1380px] px-4 pb-7 pt-8 sm:px-6 md:pt-10 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
               {copy.eyebrow}
             </p>
-            <h1 className="mt-3 text-[34px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#182230] sm:text-[40px] lg:text-[46px]">
+            <h1 className="mt-3 text-[34px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#182230] sm:text-[40px] lg:text-[46px] dark:text-white">
               {locale === "zh" ? (
                 <>
                   <span className="block sm:inline">别只看标价，</span>
-                  <span className="block text-zinc-950 sm:inline">看清数字订阅的</span>
-                  <span className="block text-zinc-950 sm:inline">真实地区成本</span>
+                  <span className="block text-zinc-950 sm:inline dark:text-white">看清数字订阅的</span>
+                  <span className="block text-zinc-950 sm:inline dark:text-white">真实地区成本</span>
                 </>
               ) : copy.title}
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-zinc-600 md:text-[15px]">
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-zinc-600 md:text-[15px] dark:text-zinc-300">
               {copy.description}
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={`${localeRoot}/ai-pricing/`}
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2"
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200 dark:focus-visible:ring-offset-zinc-950"
               >
                 {copy.start} <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
               </Link>
               <Link
                 href={`${localeRoot}/data-sources/`}
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white dark:focus-visible:ring-offset-zinc-950"
               >
                 <Database className="h-4 w-4 text-lime-700" aria-hidden="true" /> {copy.verify}
               </Link>
@@ -244,10 +244,10 @@ export default function HomepageExperience({
                         const tabs = event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
                         tabs?.[nextIndex]?.focus();
                       }}
-                      className={`gs-home-product-link group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-white px-2.5 text-[13px] font-semibold transition-[border-color,box-shadow,color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2 ${
+                      className={`gs-home-product-link group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-white px-2.5 text-[13px] font-semibold transition-[border-color,box-shadow,color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2 dark:bg-zinc-900 dark:focus-visible:ring-offset-zinc-950 ${
                         selected
-                          ? "border-zinc-300 text-zinc-950 shadow-md"
-                          : "border-zinc-200 text-zinc-500 shadow-sm hover:border-zinc-300 hover:text-zinc-950 hover:shadow-md"
+                          ? "border-zinc-300 text-zinc-950 shadow-md dark:border-zinc-700 dark:text-white dark:shadow-black/30"
+                          : "border-zinc-200 text-zinc-500 shadow-sm hover:border-zinc-300 hover:text-zinc-950 hover:shadow-md dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-white dark:hover:shadow-black/30"
                       }`}
                     >
                       <BrandIcon product={product} size="xs" className="border-0 shadow-none" />
@@ -280,9 +280,9 @@ export default function HomepageExperience({
                 />
               </div>
 
-              <div className="mx-auto mt-4 flex max-w-[1260px] flex-wrap items-center justify-center gap-x-2.5 gap-y-1 border-y border-zinc-200 py-2.5 text-[11px] font-semibold text-zinc-500 sm:text-xs">
+              <div className="mx-auto mt-4 flex max-w-[1260px] flex-wrap items-center justify-center gap-x-2.5 gap-y-1 border-y border-zinc-200 py-2.5 text-[11px] font-semibold text-zinc-500 sm:text-xs dark:border-zinc-800 dark:text-zinc-400">
                 <CheckCircle2 className="h-3.5 w-3.5 text-lime-600" />
-                <span><strong className="text-zinc-950">{evidence.prices}</strong> {copy.pricesVerified}</span>
+                <span><strong className="text-zinc-950 dark:text-white">{evidence.prices}</strong> {copy.pricesVerified}</span>
                 <span aria-hidden="true">·</span>
                 <span>{copy.source} App Store</span>
                 <span aria-hidden="true">·</span>
@@ -291,18 +291,18 @@ export default function HomepageExperience({
 
             </div>
           ) : (
-            <div className="mx-auto mt-12 max-w-2xl rounded-lg border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
+            <div className="mx-auto mt-12 max-w-2xl rounded-lg border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-400">
               {copy.unavailable}
             </div>
           )}
         </div>
       </section>
 
-      <section className="border-t border-zinc-200/80 bg-[var(--background)] px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+      <section className="border-t border-zinc-200/80 bg-[var(--background)] px-4 py-14 sm:px-6 sm:py-16 lg:px-8 dark:border-zinc-800/80">
         <div className="mx-auto max-w-[1120px]">
           <div className="text-center">
             <p className="text-xs font-semibold tracking-[0.14em] text-lime-700">{copy.categoryEyebrow}</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-[#182230] md:text-4xl">
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-[#182230] md:text-4xl dark:text-white">
               {copy.categoryTitle}
             </h2>
           </div>
@@ -314,9 +314,9 @@ export default function HomepageExperience({
         </div>
       </section>
 
-      <section className="border-t border-zinc-200 bg-[var(--background)] px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+      <section className="border-t border-zinc-200 bg-[var(--background)] px-4 py-14 sm:px-6 sm:py-16 lg:px-8 dark:border-zinc-800">
         <div className="mx-auto max-w-[1120px]">
-          <h2 className="text-center text-3xl font-semibold tracking-[-0.02em] text-[#182230] md:text-4xl">
+          <h2 className="text-center text-3xl font-semibold tracking-[-0.02em] text-[#182230] md:text-4xl dark:text-white">
             {copy.proofTitle}
           </h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -327,22 +327,22 @@ export default function HomepageExperience({
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <Link key={item.title} href={item.href} className="group flex min-h-[184px] flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2">
+                <Link key={item.title} href={item.href} className="group flex min-h-[184px] flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 dark:hover:border-zinc-700 dark:hover:shadow-black/35 dark:focus-visible:ring-offset-zinc-950">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                       <Icon className="h-4 w-4" />
                     </span>
-                    <h3 className="text-[17px] font-semibold text-zinc-950">{item.title}</h3>
+                    <h3 className="text-[17px] font-semibold text-zinc-950 dark:text-white">{item.title}</h3>
                   </div>
-                  <p className="mt-4 text-[13px] leading-6 text-zinc-500">{item.text}</p>
-                  <span className="mt-auto inline-flex items-center gap-1 pt-6 text-xs font-semibold text-zinc-800 group-hover:underline">
+                  <p className="mt-4 text-[13px] leading-6 text-zinc-500 dark:text-zinc-400">{item.text}</p>
+                  <span className="mt-auto inline-flex items-center gap-1 pt-6 text-xs font-semibold text-zinc-800 group-hover:underline dark:text-zinc-200">
                     {item.cta} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
                   </span>
                 </Link>
               );
             })}
           </div>
-          <div className="mt-8 flex items-center justify-center gap-2 border-t border-zinc-200 pt-5 text-xs text-zinc-500">
+          <div className="mt-8 flex items-center justify-center gap-2 border-t border-zinc-200 pt-5 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
             <ShieldCheck className="h-4 w-4" />
             {copy.disclaimer}
           </div>

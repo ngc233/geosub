@@ -123,3 +123,26 @@ test("homepage evidence query uses the mapped PostgreSQL enum values", () => {
   assert.match(source, /p\.category IN \('ai'::product_category, 'streaming'::product_category\)/);
   assert.doesNotMatch(source, /status = 'PUBLISHED'/);
 });
+
+test("shared homepage, category cards, and mobile header controls define dark surfaces", () => {
+  const home = readRootFile("components", "HomepageExperience.tsx");
+  const map = readRootFile("components", "HomeHeroMap.tsx");
+  const pricingCard = readRootFile("components", "DbPricingCard.tsx");
+  const header = readRootFile("components", "Header.tsx");
+  const search = readRootFile("components", "GlobalSearch.tsx");
+
+  for (const source of [home, map, pricingCard]) {
+    assert.match(source, /dark:bg-zinc-/);
+    assert.match(source, /dark:border-zinc-/);
+    assert.match(source, /dark:text-(?:white|zinc-)/);
+  }
+
+  assert.match(home, /dark:hover:shadow-black\/35/);
+  assert.match(map, /dark:hover:bg-zinc-700/);
+  assert.match(pricingCard, /dark:group-hover:bg-zinc-800\/40/);
+  assert.match(pricingCard, /dark:group-hover:text-white/);
+  assert.match(header, /dark:active:bg-zinc-700/);
+  assert.match(header, /dark:focus-visible:ring-offset-zinc-950/);
+  assert.match(search, /dark:hover:border-zinc-700/);
+  assert.match(search, /dark:active:bg-zinc-700/);
+});

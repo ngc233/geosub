@@ -780,10 +780,10 @@ export default function Header({
             type="button"
             onClick={() => setMobileOpen((value) => !value)}
             className={[
-              "inline-flex h-10 w-10 items-center justify-center rounded-xl border text-zinc-700 transition-all duration-200 ease-out md:hidden",
+              "inline-flex h-10 w-10 items-center justify-center rounded-xl border text-zinc-700 shadow-sm transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:text-zinc-300 dark:focus-visible:ring-offset-zinc-950 md:hidden",
               mobileOpen
-                ? "border-lime-300 bg-lime-50 text-lime-700 ring-4 ring-lime-500/10"
-                : "border-zinc-200 bg-white hover:bg-zinc-50",
+                ? "border-lime-300 bg-lime-50 text-lime-700 ring-4 ring-lime-500/10 dark:border-lime-500/40 dark:bg-lime-500/10 dark:text-lime-300"
+                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-white dark:active:bg-zinc-700",
             ].join(" ")}
             aria-label={mobileOpen ? copy.closeMenuLabel : copy.openMenuLabel}
             aria-expanded={mobileOpen}

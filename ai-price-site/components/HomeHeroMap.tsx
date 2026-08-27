@@ -100,10 +100,10 @@ function selectionLabel(
 }
 
 function diffTextColor(diffPercent?: number) {
-  if (typeof diffPercent !== "number") return "text-zinc-400";
-  if (diffPercent > 0) return "text-[#a24b3a]";
-  if (diffPercent < 0) return "text-[#4f7f2a]";
-  return "text-zinc-600";
+  if (typeof diffPercent !== "number") return "text-zinc-400 dark:text-zinc-500";
+  if (diffPercent > 0) return "text-[#a24b3a] dark:text-[#f0a08f]";
+  if (diffPercent < 0) return "text-[#4f7f2a] dark:text-[#bef264]";
+  return "text-zinc-600 dark:text-zinc-300";
 }
 
 export default function HomeHeroMap({
@@ -179,9 +179,9 @@ export default function HomeHeroMap({
   return (
     <div
       data-home-geo-pricing
-      className="grid overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] lg:grid-cols-[minmax(0,1fr)_280px]"
+      className="grid overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 lg:grid-cols-[minmax(0,1fr)_280px]"
     >
-      <div className="relative min-w-0 overflow-hidden bg-[#fafbfa]">
+      <div className="relative min-w-0 overflow-hidden bg-[#fafbfa] dark:bg-zinc-950">
         <div className="relative">
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -308,7 +308,7 @@ export default function HomeHeroMap({
                 key={`mobile-${marker.kind}-${marker.region.code}`}
                 type="button"
                 data-home-mobile-map-pin={marker.kind}
-                className="pointer-events-auto absolute flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-transform active:scale-95 focus-visible:outline-none focus-visible:[&>span]:ring-2 focus-visible:[&>span]:ring-zinc-500 focus-visible:[&>span]:ring-offset-1"
+                className="pointer-events-auto absolute flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-transform active:scale-95 focus-visible:outline-none focus-visible:[&>span]:ring-2 focus-visible:[&>span]:ring-zinc-500 focus-visible:[&>span]:ring-offset-1 dark:focus-visible:[&>span]:ring-zinc-300 dark:focus-visible:[&>span]:ring-offset-zinc-950"
                 style={{
                   left: `${(marker.x / WIDTH) * 100}%`,
                   top: `${(marker.y / HEIGHT) * 100}%`,
@@ -322,7 +322,7 @@ export default function HomeHeroMap({
                 })}
               >
                 <span
-                  className="size-5 rounded-full border-[3px] border-white shadow-[0_2px_7px_rgba(15,23,42,0.22)]"
+                  className="size-5 rounded-full border-[3px] border-white shadow-[0_2px_7px_rgba(15,23,42,0.22)] dark:border-zinc-950 dark:shadow-black/40"
                   style={{ backgroundColor: pinColor }}
                   aria-hidden="true"
                 />
@@ -335,14 +335,14 @@ export default function HomeHeroMap({
         {selection ? (
           <div
             data-home-map-selection
-            className={`${selection.locked ? "pointer-events-auto" : "pointer-events-none"} fixed inset-x-3 bottom-3 z-50 max-h-[calc(100dvh-1.5rem)] w-auto overflow-y-auto rounded-lg border border-zinc-200 bg-white p-4 shadow-xl shadow-zinc-900/10 sm:absolute sm:inset-x-auto sm:bottom-3 sm:start-3 sm:max-h-none sm:w-64 sm:max-w-[calc(100%-1.5rem)] sm:overflow-visible`}
+            className={`${selection.locked ? "pointer-events-auto" : "pointer-events-none"} fixed inset-x-3 bottom-3 z-50 max-h-[calc(100dvh-1.5rem)] w-auto overflow-y-auto rounded-lg border border-zinc-200 bg-white p-4 shadow-xl shadow-zinc-900/10 sm:absolute sm:inset-x-auto sm:bottom-3 sm:start-3 sm:max-h-none sm:w-64 sm:max-w-[calc(100%-1.5rem)] sm:overflow-visible dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30`}
             role="status"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-sm font-black text-zinc-900">{selection.region?.countryName || selection.name}</div>
+                <div className="text-sm font-black text-zinc-900 dark:text-white">{selection.region?.countryName || selection.name}</div>
                 {selection.region ? (
-                  <div className="mt-1 text-[11px] font-black text-zinc-400">
+                  <div className="mt-1 text-[11px] font-black text-zinc-400 dark:text-zinc-500">
                     {selectionLabel(selection.region, pricing.lowest, pricing.highest, pricing.reference, copy)}
                   </div>
                 ) : null}
@@ -351,7 +351,7 @@ export default function HomeHeroMap({
                 <button
                   type="button"
                   onClick={() => setSelection(null)}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-700"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
                   aria-label={copy.close}
                 >
                   <X size={14} strokeWidth={2.4} />
@@ -360,71 +360,71 @@ export default function HomeHeroMap({
             </div>
             {selection.region ? (
               <>
-                <div className="mt-3 text-2xl font-black text-zinc-900">
+                <div className="mt-3 text-2xl font-black text-zinc-900 dark:text-white">
                   {formatUsd(selection.region.priceUsd)}
-                  <span className="ms-1 text-xs font-bold text-zinc-400">{copy.perMonth}</span>
+                  <span className="ms-1 text-xs font-bold text-zinc-400 dark:text-zinc-500">{copy.perMonth}</span>
                 </div>
                 <div className={`mt-2 text-sm font-black ${diffTextColor(selection.diffPercent)}`}>
                   {diffLabel(selection.diffPercent || 0, locale, copy)}
                 </div>
-                <div className="mt-3 border-t border-zinc-100 pt-3 text-xs leading-5 text-zinc-500">
+                <div className="mt-3 border-t border-zinc-100 pt-3 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                   <div>{copy.localPrice}: {selection.region.localPrice}</div>
                   <div>{copy.tax}: {selection.region.tax}</div>
                 </div>
               </>
             ) : (
-              <div className="mt-2 text-sm text-zinc-500">{copy.noData}</div>
+              <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{copy.noData}</div>
             )}
           </div>
         ) : null}
       </div>
 
-      <aside className="flex flex-col border-t border-zinc-200 bg-white p-4 sm:p-5 lg:border-s lg:border-t-0">
-        <div className="border-b border-zinc-100 pb-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400">{copy.currentComparison}</p>
-          <h2 className="mt-1 text-lg font-semibold text-zinc-950">{productName}</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">{planName} · {copy.convertedMonthly}</p>
+      <aside className="flex flex-col border-t border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70 sm:p-5 lg:border-s lg:border-t-0">
+        <div className="border-b border-zinc-100 pb-4 dark:border-zinc-800">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-500">{copy.currentComparison}</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-950 dark:text-white">{productName}</h2>
+          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{planName} · {copy.convertedMonthly}</p>
         </div>
 
         <div className="py-4">
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold text-lime-600">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold text-lime-600 dark:text-lime-400">
             <span className="h-1.5 w-1.5 rounded-full bg-[#84cc16]" aria-hidden="true" />
             {copy.lowest}
           </p>
           <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
             <div>
-              <div className="text-[15px] font-semibold text-lime-600">{pricing.lowest?.countryName || copy.noData}</div>
-              <div className="mt-0.5 text-xs font-medium text-lime-700">{maximumSaving ? diffLabel(-maximumSaving, locale, copy) : copy.same}</div>
+              <div className="text-[15px] font-semibold text-lime-600 dark:text-lime-400">{pricing.lowest?.countryName || copy.noData}</div>
+              <div className="mt-0.5 text-xs font-medium text-lime-700 dark:text-lime-300">{maximumSaving ? diffLabel(-maximumSaving, locale, copy) : copy.same}</div>
             </div>
-            <div className="text-end text-2xl font-semibold leading-none tabular-nums text-lime-600">{pricing.lowest ? formatUsd(pricing.lowest.priceUsd) : "—"}</div>
+            <div className="text-end text-2xl font-semibold leading-none tabular-nums text-lime-600 dark:text-lime-400">{pricing.lowest ? formatUsd(pricing.lowest.priceUsd) : "—"}</div>
           </div>
         </div>
 
-        <dl className="divide-y divide-zinc-100 border-y border-zinc-100 text-xs">
+        <dl className="divide-y divide-zinc-100 border-y border-zinc-100 text-xs dark:divide-zinc-800 dark:border-zinc-800">
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-zinc-500">{copy.reference}</dt>
-            <dd className="font-semibold text-zinc-900">{pricing.reference ? `${pricing.reference.countryName} · ${formatUsd(pricing.reference.priceUsd)}` : "—"}</dd>
+            <dt className="text-zinc-500 dark:text-zinc-400">{copy.reference}</dt>
+            <dd className="font-semibold text-zinc-900 dark:text-zinc-100">{pricing.reference ? `${pricing.reference.countryName} · ${formatUsd(pricing.reference.priceUsd)}` : "—"}</dd>
           </div>
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="flex items-center gap-1.5 text-[#a24b3a]">
+            <dt className="flex items-center gap-1.5 text-[#a24b3a] dark:text-[#f0a08f]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#c56550]" aria-hidden="true" />
               {copy.highest}
             </dt>
-            <dd className="font-semibold text-[#a24b3a]">{pricing.highest ? `${pricing.highest.countryName} · ${formatUsd(pricing.highest.priceUsd)}` : "—"}</dd>
+            <dd className="font-semibold text-[#a24b3a] dark:text-[#f0a08f]">{pricing.highest ? `${pricing.highest.countryName} · ${formatUsd(pricing.highest.priceUsd)}` : "—"}</dd>
           </div>
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-zinc-500">{homepageCopy.maxSpread}</dt>
-            <dd className="font-semibold tabular-nums text-zinc-900">{crossRegionSpread}%</dd>
+            <dt className="text-zinc-500 dark:text-zinc-400">{homepageCopy.maxSpread}</dt>
+            <dd className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">{crossRegionSpread}%</dd>
           </div>
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-zinc-500">{copy.verifiedRegions}</dt>
-            <dd className="font-semibold text-zinc-900">{pricing.sorted.length}{copy.regionsSuffix ? ` ${copy.regionsSuffix}` : ""}</dd>
+            <dt className="text-zinc-500 dark:text-zinc-400">{copy.verifiedRegions}</dt>
+            <dd className="font-semibold text-zinc-900 dark:text-zinc-100">{pricing.sorted.length}{copy.regionsSuffix ? ` ${copy.regionsSuffix}` : ""}</dd>
           </div>
         </dl>
 
         <Link
           href={href}
-          className="mt-4 inline-flex min-h-10 items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm font-semibold text-zinc-800 transition-[background-color,border-color,color] hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500"
+          className="mt-4 inline-flex min-h-10 items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm font-semibold text-zinc-800 transition-[background-color,border-color,color] hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-white"
         >
           {locale === "zh" || locale === "zh-tw"
             ? `查看 ${productName} ${copy.viewDetails}`
