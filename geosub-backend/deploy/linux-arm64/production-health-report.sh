@@ -149,12 +149,19 @@ data_state="$(psql_scalar "SELECT
   (SELECT COUNT(*) FROM region_prices WHERE status = 'published' AND billing_platform = 'ios' AND price_usd IS NOT NULL AND price_usd < 1)::text;")"
 IFS='|' read -r published_products published_prices pending_observations stale_prices low_prices <<< "$data_state"
 
-fx_state="$(psql_scalar "SELECT
-  COUNT(DISTINCT quote_currency)::text || '|' ||
+fx_state="$(psql_scalar "WITH latest_by_quote AS (
+  SELECT DISTINCT ON (quote_currency)
+    quote_currency,
+    fetched_at
+  FROM latest_exchange_rates
+  WHERE base_currency = 'USD'
+  ORDER BY quote_currency, fetched_at DESC, rate_date DESC
+)
+SELECT
+  COUNT(*)::text || '|' ||
   COALESCE(MAX(fetched_at)::text, 'missing') || '|' ||
   COUNT(*) FILTER (WHERE fetched_at < NOW() - ('${MAX_FX_AGE_HOURS} hours')::interval)::text
-FROM latest_exchange_rates
-WHERE base_currency = 'USD';")"
+FROM latest_by_quote;")"
 IFS='|' read -r fx_currencies fx_latest fx_stale <<< "$fx_state"
 
 collector_state="$(psql_scalar "SELECT
@@ -223,7 +230,7 @@ IFS='|' read -r _ public_status public_code public_ttfb public_average public_ma
 overall="healthy"
 if [[ "$service_state" != "active" || "$local_status" != "ok" || "$public_status" != "ok" || "$post_check_failures" != "0" || "$timer_failed" != "0" ]]; then
   overall="unhealthy"
-elif [[ "$post_check_warnings" != "0" || "$collector_failed_24h" != "0" || "$system_failed_24h" != "0" || "$stale_prices" != "0" ]]; then
+elif [[ "$post_check_warnings" != "0" || "$collector_failed_24h" != "0" || "$system_failed_24h" != "0" || "$stale_prices" != "0" || "$fx_stale" != "0" ]]; then
   overall="attention"
 fi
 
@@ -263,7 +270,7 @@ Each row uses $SAMPLE_COUNT sequential requests. These timings establish an appl
 - Published App Store prices below USD 1: $low_prices
 - USD exchange-rate currencies: $fx_currencies
 - Latest exchange-rate fetch: $fx_latest
-- Exchange-rate rows older than $MAX_FX_AGE_HOURS hours: $fx_stale
+- Current USD exchange rates older than $MAX_FX_AGE_HOURS hours: $fx_stale
 
 ## Automation
 
