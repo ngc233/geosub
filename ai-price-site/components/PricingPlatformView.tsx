@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { ChevronDown, Map } from "lucide-react";
 import {
@@ -348,6 +349,8 @@ function CurrencySelect({
   compact?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+  const desktopMenuRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const activeItem =
     options.find((item) => item === value) || options[0];
@@ -357,7 +360,9 @@ function CurrencySelect({
       if (
         event.target instanceof Node &&
         containerRef.current &&
-        !containerRef.current.contains(event.target)
+        !containerRef.current.contains(event.target) &&
+        !mobileMenuRef.current?.contains(event.target) &&
+        !desktopMenuRef.current?.contains(event.target)
       ) {
         setOpen(false);
       }
@@ -377,6 +382,47 @@ function CurrencySelect({
       document.removeEventListener("keydown", handleKeyDown, true);
     };
   }, []);
+
+  const menuItems = options.map((item) => {
+    const disabled = disabledCurrencies.includes(item);
+    const active = item === value;
+
+    return (
+      <button
+        key={item}
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) {
+            onChange(item);
+            setOpen(false);
+          }
+        }}
+        className={[
+          "grid h-10 w-full grid-cols-[42px_minmax(0,1fr)_8px] items-center gap-2 rounded-lg px-2.5 text-left text-[13px] font-semibold transition-colors duration-200 ease-out",
+          active
+            ? "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
+            : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
+          disabled ? "cursor-not-allowed opacity-40" : "",
+        ].join(" ")}
+        role="menuitemradio"
+        aria-checked={active}
+      >
+        <span className="text-[11px] font-medium tabular-nums text-zinc-400">
+          {item}
+        </span>
+        <span className="truncate whitespace-nowrap">
+          {getCurrencyName(item, locale)}
+        </span>
+        <span
+          className={[
+            "h-1.5 w-1.5 rounded-full",
+            active ? "bg-lime-500" : "bg-transparent",
+          ].join(" ")}
+        />
+      </button>
+    );
+  });
 
   return (
     <div
@@ -417,53 +463,29 @@ function CurrencySelect({
       </button>
 
       {open ? (
-        <div
-          className="absolute start-0 top-11 z-[70] max-h-[360px] w-[500px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30"
-          role="menu"
-        >
-          <div className="grid grid-cols-1 gap-0.5 min-[420px]:grid-cols-2">
-            {options.map((item) => {
-              const disabled = disabledCurrencies.includes(item);
-              const active = item === value;
-
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => {
-                    if (!disabled) {
-                      onChange(item);
-                      setOpen(false);
-                    }
-                  }}
-                  className={[
-                    "grid h-10 w-full grid-cols-[42px_minmax(0,1fr)_8px] items-center gap-2 rounded-lg px-2.5 text-left text-[13px] font-semibold transition-colors duration-200 ease-out",
-                    active
-                      ? "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
-                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
-                    disabled ? "cursor-not-allowed opacity-40" : "",
-                  ].join(" ")}
-                  role="menuitemradio"
-                  aria-checked={active}
-                >
-                  <span className="text-[11px] font-medium tabular-nums text-zinc-400">
-                    {item}
-                  </span>
-                  <span className="truncate whitespace-nowrap">
-                    {getCurrencyName(item, locale)}
-                  </span>
-                  <span
-                    className={[
-                      "h-1.5 w-1.5 rounded-full",
-                      active ? "bg-lime-500" : "bg-transparent",
-                    ].join(" ")}
-                  />
-                </button>
-              );
-            })}
+        <>
+          {createPortal(
+            <div
+              ref={mobileMenuRef}
+              className="fixed inset-x-4 bottom-4 z-[70] max-h-[min(65dvh,32rem)] w-auto overflow-y-auto overscroll-contain rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30 sm:hidden"
+              role="menu"
+            >
+              <div className="grid grid-cols-1 gap-0.5 min-[420px]:grid-cols-2">
+                {menuItems}
+              </div>
+            </div>,
+            document.body,
+          )}
+          <div
+            ref={desktopMenuRef}
+            className="absolute start-0 top-11 z-[70] hidden max-h-[360px] w-[500px] max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30 sm:block"
+            role="menu"
+          >
+            <div className="grid grid-cols-1 gap-0.5 min-[420px]:grid-cols-2">
+              {menuItems}
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
     </div>
   );

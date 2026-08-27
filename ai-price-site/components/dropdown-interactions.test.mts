@@ -46,6 +46,24 @@ test("currency selector avoids repeating symbol, name and code", () => {
   assert.match(currencySelectSource, /\{activeItem\}/);
 });
 
+test("currency selector stays viewport-bound on mobile and anchored on desktop", () => {
+  const pricingPlatformView = readComponent("PricingPlatformView.tsx");
+  const currencySelectSource = pricingPlatformView.slice(
+    pricingPlatformView.indexOf("function CurrencySelect"),
+    pricingPlatformView.indexOf("function PricingLead"),
+  );
+
+  assert.match(currencySelectSource, /fixed inset-x-4 bottom-4/);
+  assert.match(currencySelectSource, /max-h-\[min\(65dvh,32rem\)\]/);
+  assert.match(currencySelectSource, /overflow-y-auto overscroll-contain/);
+  assert.match(currencySelectSource, /createPortal\(/);
+  assert.match(currencySelectSource, /document\.body/);
+  assert.match(currencySelectSource, /sm:hidden/);
+  assert.match(currencySelectSource, /absolute start-0 top-11/);
+  assert.match(currencySelectSource, /max-h-\[360px\] w-\[500px\]/);
+  assert.match(currencySelectSource, /sm:block/);
+});
+
 test("mobile product switcher closes outside and uses current dropdown radius", () => {
   const source = readComponent("MobileProductSwitcher.tsx");
 
