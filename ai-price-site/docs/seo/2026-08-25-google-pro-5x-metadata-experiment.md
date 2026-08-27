@@ -1,6 +1,6 @@
 # Google English ChatGPT Pro 5x metadata experiment
 
-Status: deployed on 2026-08-25; awaiting Google recrawl
+Status: deployed on 2026-08-25; Google recrawl confirmed on 2026-08-27; observation in progress
 
 ## Why this page
 
@@ -48,6 +48,16 @@ The values are generated from the same canonical plan dataset as the page. If st
 
 - After explicit product-owner approval on 2026-08-27, Google Search Console accepted an indexing request for this URL and confirmed that it was added to the priority crawl queue.
 - The request does not prove that Google has recrawled the page. The experiment window still starts only after URL Inspection reports a post-deployment crawl time.
+
+## Observation checkpoint: 2026-08-28
+
+- Google URL Inspection now reports the last crawl at `2026-08-27 23:09:43`, after the experiment deployment.
+- The page was fetched successfully by Googlebot Smartphone, remained indexable, and Google selected the inspected URL as canonical.
+- Google recrawl is therefore confirmed. The recrawl day is day zero; `2026-08-28` is the first complete observation day.
+- Search Console performance data was settled only through `2026-08-25` at this checkpoint. Across the displayed three-month window, the exact page had 195 impressions, 0 clicks, 0% CTR, and an average position of 2.5.
+- Those performance rows predate the confirmed recrawl and cannot be used to judge the metadata variant.
+- The earliest initial decision requires settled data through `2026-09-03`, covering seven complete days from `2026-08-28` through `2026-09-03`.
+- No additional indexing request was submitted during this checkpoint.
 
 ## Measurement
 
