@@ -1,6 +1,6 @@
 # Google English ChatGPT Pro 5x metadata experiment
 
-Status: scheduled for production deployment on 2026-08-25
+Status: deployed on 2026-08-25; awaiting Google recrawl
 
 ## Why this page
 
@@ -32,11 +32,23 @@ Only `locale=en`, `product=chatgpt`, `plan=pro-5x` is eligible.
 
 The values are generated from the same canonical plan dataset as the page. If statistics are unavailable, the experiment is disabled and the normal metadata template is used.
 
+## Observation checkpoint: 2026-08-27
+
+- Production currently renders the expected variant:
+  - Title: `ChatGPT Pro 5x Prices: $100–$127 in 39 Regions - GeoSub`
+  - Description: `ChatGPT Pro 5x App Store prices range from $100.00 in Argentina to $126.57 in Norway. Compare 39 reviewed regions, tax, FX and affordability.`
+  - Canonical: `https://geosub.org/en/ai-pricing/chatgpt/pro-5x`
+  - H1 remains unchanged: `ChatGPT Pro 5x Price by Country`
+- Google URL Inspection reports that the page is indexed and crawlable.
+- Google URL Inspection reports the last crawl at `2026-07-29 18:10:23`, before the experiment deployment.
+- Therefore Google recrawl is **not confirmed**, the seven-complete-day observation window has **not started**, and current Search Console performance cannot be used to judge this variant.
+- No indexing request was submitted during this checkpoint.
+
 ## Measurement
 
 Start date: 2026-08-25. Treat the deployment day as day zero rather than a complete observation day.
 
-Earliest decision date: seven complete settled-data days after Google first recrawls the variant. Do not use the deployment day as a full observation day.
+Earliest decision date: seven complete settled-data days after Google first recrawls the variant. Do not use the deployment or recrawl day as a full observation day.
 
 Primary metric:
 
