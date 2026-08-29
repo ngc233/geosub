@@ -1,5 +1,8 @@
 import { chromium } from "playwright-core";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
+
+import { parseOfficialWebPriceText } from "./lib/official-web-price-parsers.mjs";
 
 const args = new Map();
 for (let index = 2; index < process.argv.length; index += 1) {
@@ -13,6 +16,11 @@ for (let index = 2; index < process.argv.length; index += 1) {
 const url = args.get("url");
 const executablePath = resolveBrowserPath(args.get("chrome-path") ?? process.env.CHROME_PATH);
 const locale = args.get("locale") ?? "en-US";
+const parserKey = args.get("parser-key") ?? null;
+const currency = args.get("currency") ?? null;
+const countryCode = args.get("country-code") ?? null;
+const userAgent =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 
 if (!url) {
   throw new Error("Missing --url.");
@@ -109,8 +117,7 @@ const browser = await chromium.launch({
 try {
   const context = await browser.newContext({
     locale,
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+    userAgent,
     viewport: { width: 1365, height: 900 }
   });
 
@@ -144,7 +151,12 @@ try {
   const priceHints = priceHintsFromText(text);
   const finalUrl = page.url();
   const title = snapshot.title;
-  const diagnosis = diagnose({ title, finalUrl, text, priceHints });
+  const parserResult = parserKey
+    ? parseOfficialWebPriceText({ parserKey, text, countryCode, currency })
+    : null;
+  const diagnosis = parserResult?.complete
+    ? "structured_prices_found"
+    : diagnose({ title, finalUrl, text, priceHints });
 
   const result = {
     ok: true,
@@ -156,8 +168,11 @@ try {
     description: snapshot.description || null,
     diagnosis,
     price_hints: priceHints,
+    parser_result: parserResult,
+    content_hash: createHash("sha256").update(text, "utf8").digest("hex"),
     text_snippet: text.slice(0, 360),
     text_length: text.length,
+    user_agent: userAgent,
     captured_at: new Date().toISOString()
   };
 

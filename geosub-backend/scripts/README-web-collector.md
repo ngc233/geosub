@@ -18,6 +18,12 @@ New products should be added through collector jobs and `job_config`, not throug
 
 The generic `pricing_page` and `official_site` collectors intentionally do not publish prices directly. They record the fetched page title, final URL, text snippet, and price hints into `collector_job_runs.raw_payload`. A later parser/review step should decide whether the hints are trustworthy enough to become `price_observations`.
 
+`pricing_page` jobs may opt into a maintained source-specific parser through
+`job_config.official_web_source_key`. The source definition lives in
+`data/official-web-price-sources.json`; the scheduler still has no product-specific
+branch. A parser-complete result writes only `pending` Web observations and source
+evidence. It never updates `region_prices` and does not use App Store auto-review.
+
 This avoids a separate collector implementation for every product such as ChatGPT, Gemini, Claude, or DeepSeek.
 
 ### Browser rendering fallback
@@ -90,3 +96,26 @@ Use it explicitly when you want to collect evidence:
 
 Do not mix Web observations into the public ranking unless the source-specific
 parser and review rules are stable.
+
+## Apple Music five-market pilot
+
+The first maintained source-specific parser is `apple-music`. It covers US, BR,
+TR, JP and DE and accepts only the Individual, Family and Student monthly list
+prices. Apple One and trial text are excluded by the parser boundary.
+
+Run a live parse without a database write:
+
+```powershell
+node .\scripts\collect-official-web-prices.mjs --source-key apple-music --dry-run
+```
+
+Write parser-complete observations to a local database only after the draft
+`apple-music` product, the three canonical plan slugs and all five countries
+exist:
+
+```powershell
+node .\scripts\collect-official-web-prices.mjs --source-key apple-music
+```
+
+The write path leaves `converted_usd` null until an approved FX/review step and
+stores `status=pending`, `billing_platform=web`, page hash and evidence metadata.

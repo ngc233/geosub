@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "sources": {
+    "apple-music": {
+      "product_slug": "apple-music",
+      "parser_key": "apple_music",
+      "parser_version": "apple-music-official-web-v1",
+      "source_key": "apple-music-official-web",
+      "source_name": "Apple Music Official Web Pricing",
+      "provider": "Apple",
+      "base_url": "https://www.apple.com/apple-music/",
+      "source_level": "A",
+      "reliability_score": 90,
+      "pilot": true,
+      "billing_cycle": "monthly",
+      "evidence_note": "Official localized Apple Music pricing page. Parser-complete observation remains pending and is not published.",
+      "required_plan_slugs": ["individual", "family", "student"],
+      "markets": [
+        {
+          "country_code": "US",
+          "locale": "en-US",
+          "currency": "USD",
+          "url": "https://www.apple.com/apple-music/"
+        },
+        {
+          "country_code": "BR",
+          "locale": "pt-BR",
+          "currency": "BRL",
+          "url": "https://www.apple.com/br/apple-music/"
+        },
+        {
+          "country_code": "TR",
+          "locale": "tr-TR",
+          "currency": "TRY",
+          "url": "https://www.apple.com/tr/apple-music/"
+        },
+        {
+          "country_code": "JP",
+          "locale": "ja-JP",
+          "currency": "JPY",
+          "url": "https://www.apple.com/jp/apple-music/"
+        },
+        {
+          "country_code": "DE",
+          "locale": "de-DE",
+          "currency": "EUR",
+          "url": "https://www.apple.com/de/apple-music/"
+        }
+      ]
+    }
+  }
+}

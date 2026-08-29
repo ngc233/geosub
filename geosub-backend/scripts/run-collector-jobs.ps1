@@ -306,7 +306,7 @@ function Test-PermanentCollectorFailure {
     return $true
   }
 
-  return $errorText -match "missing (app_store_id|google_play_package|url/base_url)|Collector identity mismatch|No collector is implemented"
+  return $errorText -match "missing (app_store_id|google_play_package|url/base_url)|missing_canonical_(product|plans|countries)|canonical_(country_currency|plan_billing_cycle)_mismatch|Collector identity mismatch|No collector is implemented"
 }
 
 function Invoke-OperationalRecovery {
@@ -690,6 +690,7 @@ function Invoke-CollectorScript {
 
   $scriptPath = $null
   $scriptParameters = @{}
+  $nodeArguments = $null
   $expectedIdentity = $null
 
   switch ($kind) {
@@ -735,6 +736,23 @@ function Invoke-CollectorScript {
       }
     }
     "pricing_page" {
+      $officialWebSourceKey = Get-ConfigValue -Config $config -Name "official_web_source_key"
+      if (![string]::IsNullOrWhiteSpace($officialWebSourceKey)) {
+        $scriptPath = Join-Path $PSScriptRoot "collect-official-web-prices.mjs"
+        $nodeArguments = @(
+          $scriptPath,
+          "--source-key", $officialWebSourceKey,
+          "--product-slug", $productSlug,
+          "--country-codes", ($countryCodes -join ",")
+        )
+        $expectedIdentity = "Using official Web source $officialWebSourceKey for $productSlug."
+
+        if (![string]::IsNullOrWhiteSpace($ChromePath)) {
+          $nodeArguments += @("--chrome-path", $ChromePath)
+        }
+        break
+      }
+
       $genericUrl = Get-ConfigValue -Config $config -Name "url" -Fallback $Job.source_url
       return Invoke-GenericWebSnapshot -Job $Job -Kind $kind -Url $genericUrl -AttemptPriceHints $true
     }
@@ -753,7 +771,11 @@ function Invoke-CollectorScript {
     }
   }
 
-  $output = & $scriptPath @scriptParameters *>&1
+  $output = if ($null -ne $nodeArguments) {
+    & node @nodeArguments *>&1
+  } else {
+    & $scriptPath @scriptParameters *>&1
+  }
   $exitCode = if ($?) { 0 } else { 1 }
   $text = ($output | ForEach-Object { [string]$_ }) -join "`n"
 
