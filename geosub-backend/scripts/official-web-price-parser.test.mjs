@@ -94,3 +94,25 @@ test("official Web source config contains only the five approved pilot markets",
   assert.equal(new Set(source.markets.map((market) => market.url)).size, 5);
   assert.ok(source.markets.every((market) => !Object.hasOwn(market, "price")));
 });
+
+test("Apple Music onboarding stays review-only and paused", async () => {
+  const migrationPath = path.join(
+    import.meta.dirname,
+    "..",
+    "sql",
+    "backfill",
+    "053_seed_apple_music_official_web_pilot.sql"
+  );
+  const migration = await readFile(migrationPath, "utf8");
+
+  assert.match(migration, /'apple-music'/);
+  assert.match(migration, /'individual'[\s\S]*'family'[\s\S]*'student'/);
+  assert.match(migration, /'apple-music-official-web'/);
+  assert.match(migration, /'official_web_source_key', 'apple-music'/);
+  assert.match(migration, /jsonb_build_array\('US', 'BR', 'TR', 'JP', 'DE'\)/);
+  assert.match(migration, /'streaming_pricing'/);
+  assert.match(migration, /'paused'/);
+  assert.doesNotMatch(migration, /INSERT\s+INTO\s+region_prices/i);
+  assert.doesNotMatch(migration, /INSERT\s+INTO\s+price_observations/i);
+  assert.doesNotMatch(migration, /'published'/);
+});

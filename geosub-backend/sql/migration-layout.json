@@ -1187,6 +1187,15 @@
         "dd3cd16997955a7ba9404fe006853a2977cbdd0fca247bf3a2e6ec66461c97ee"
       ],
       "legacyBaseline": false
+    },
+    {
+      "id": "backfill:053",
+      "file": "sql/backfill/053_seed_apple_music_official_web_pilot.sql",
+      "legacyFile": "seed_apple_music_official_web_pilot.sql",
+      "legacyChecksums": [
+        "69e97d6efce77dd54cab302036f0d53188ab20a08b120da6357df388d401b118"
+      ],
+      "legacyBaseline": false
     }
   ],
   "retired": [
