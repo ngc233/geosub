@@ -181,6 +181,14 @@ export async function getProductQualityRows() {
         )::int AS pending_app_store_count,
         COUNT(*) FILTER (
           WHERE observation.status::text = 'pending'
+            AND observation.billing_platform::text = 'web'
+        )::int AS pending_web_observation_count,
+        COUNT(DISTINCT observation.country_id) FILTER (
+          WHERE observation.status::text = 'pending'
+            AND observation.billing_platform::text = 'web'
+        )::int AS pending_web_country_count,
+        COUNT(*) FILTER (
+          WHERE observation.status::text = 'pending'
             AND observation.billing_platform::text = 'ios'
             AND observation.anomaly_flag
         )::int AS pending_anomaly_count,
@@ -219,9 +227,26 @@ export async function getProductQualityRows() {
             AND COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '')
               = 'automated_anomaly_rechecks_exhausted'
         )::int AS auto_closed_observation_count,
-        MAX(observation.observed_at) AS latest_observed_at
+        MAX(observation.observed_at) AS latest_observed_at,
+        MAX(observation.observed_at) FILTER (
+          WHERE observation.billing_platform::text = 'web'
+        ) AS latest_web_observed_at
       FROM price_observations observation
       GROUP BY observation.product_id
+    ),
+    source_profile_state AS (
+      SELECT
+        COALESCE(profile.product_id, profile_product.id) AS product_id,
+        MAX(NULLIF(profile.config ->> 'integration_status', '')) FILTER (
+          WHERE profile.is_active
+        ) AS source_integration_status,
+        MAX(NULLIF(profile.config ->> 'integration_note', '')) FILTER (
+          WHERE profile.is_active
+        ) AS source_integration_note
+      FROM product_source_profiles profile
+      LEFT JOIN products profile_product ON profile_product.slug = profile.product_slug
+      WHERE COALESCE(profile.product_id, profile_product.id) IS NOT NULL
+      GROUP BY COALESCE(profile.product_id, profile_product.id)
     ),
     observation_reason AS (
       SELECT DISTINCT
@@ -261,7 +286,61 @@ export async function getProductQualityRows() {
         COUNT(*) FILTER (
           WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status <> 'archived'
+        )::int AS app_store_job_count,
+        COUNT(*) FILTER (
+          WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
+            AND job.status = 'active'
         )::int AS active_app_store_job_count,
+        COUNT(*) FILTER (
+          WHERE (
+            COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') IN (
+              'official_page',
+              'official_site',
+              'pricing_page'
+            )
+            OR source.type::text = 'official_page'
+          )
+            AND job.status <> 'archived'
+        )::int AS official_web_job_count,
+        COUNT(*) FILTER (
+          WHERE (
+            COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') IN (
+              'official_page',
+              'official_site',
+              'pricing_page'
+            )
+            OR source.type::text = 'official_page'
+          )
+            AND job.status = 'active'
+        )::int AS active_official_web_job_count,
+        COUNT(*) FILTER (
+          WHERE (
+            COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') IN (
+              'official_page',
+              'official_site',
+              'pricing_page'
+            )
+            OR source.type::text = 'official_page'
+          )
+            AND job.status = 'paused'
+        )::int AS paused_official_web_job_count,
+        MAX(
+          CASE
+            WHEN jsonb_typeof(job.job_config -> 'country_codes') = 'array'
+              THEN jsonb_array_length(job.job_config -> 'country_codes')
+            ELSE 0
+          END
+        ) FILTER (
+          WHERE (
+            COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') IN (
+              'official_page',
+              'official_site',
+              'pricing_page'
+            )
+            OR source.type::text = 'official_page'
+          )
+            AND job.status <> 'archived'
+        )::int AS official_web_target_country_count,
         COUNT(*) FILTER (
           WHERE COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
             AND job.status = 'active'
@@ -417,7 +496,12 @@ export async function getProductQualityRows() {
       COALESCE(coverage_state.missing_pair_count, 0)::int AS missing_pair_count,
       COALESCE(coverage_state.missing_country_count, 0)::int AS missing_country_count,
       coverage_state.missing_country_codes,
+      COALESCE(job_state.app_store_job_count, 0)::int AS app_store_job_count,
       COALESCE(job_state.active_app_store_job_count, 0)::int AS active_app_store_job_count,
+      COALESCE(job_state.official_web_job_count, 0)::int AS official_web_job_count,
+      COALESCE(job_state.active_official_web_job_count, 0)::int AS active_official_web_job_count,
+      COALESCE(job_state.paused_official_web_job_count, 0)::int AS paused_official_web_job_count,
+      COALESCE(job_state.official_web_target_country_count, 0)::int AS official_web_target_country_count,
       COALESCE(job_state.queued_job_count, 0)::int AS queued_job_count,
       COALESCE(job_state.stale_queue_count, 0)::int AS stale_queue_count,
       job_state.latest_queued_at,
@@ -452,6 +536,8 @@ export async function getProductQualityRows() {
       price_state.latest_price_checked_at,
       COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
       COALESCE(observation_state.pending_app_store_count, 0)::int AS pending_app_store_count,
+      COALESCE(observation_state.pending_web_observation_count, 0)::int AS pending_web_observation_count,
+      COALESCE(observation_state.pending_web_country_count, 0)::int AS pending_web_country_count,
       COALESCE(observation_state.pending_anomaly_count, 0)::int AS pending_anomaly_count,
       COALESCE(observation_state.pending_stability_count, 0)::int AS pending_stability_count,
       COALESCE(observation_state.hard_anomaly_count, 0)::int AS hard_anomaly_count,
@@ -459,7 +545,10 @@ export async function getProductQualityRows() {
       COALESCE(observation_state.auto_closed_observation_count, 0)::int AS auto_closed_observation_count,
       observation_reason_state.ignored_reason_codes,
       observation_state.latest_observed_at,
-      observation_reason_state.review_reason_codes
+      observation_state.latest_web_observed_at,
+      observation_reason_state.review_reason_codes,
+      source_profile_state.source_integration_status,
+      source_profile_state.source_integration_note
     FROM product_base product
     LEFT JOIN plan_state ON plan_state.product_id = product.id
     LEFT JOIN coverage_state ON coverage_state.product_id = product.id
@@ -469,13 +558,20 @@ export async function getProductQualityRows() {
     LEFT JOIN tax_state ON tax_state.product_id = product.id
     LEFT JOIN observation_state ON observation_state.product_id = product.id
     LEFT JOIN observation_reason_state ON observation_reason_state.product_id = product.id
+    LEFT JOIN source_profile_state ON source_profile_state.product_id = product.id
     LEFT JOIN job_state ON job_state.product_id = product.id
     LEFT JOIN running_state ON running_state.product_id = product.id
     LEFT JOIN latest_run ON latest_run.product_id = product.id
     ORDER BY
       CASE
         WHEN COALESCE(running_state.running_run_count, 0) > 0 THEN 1
-        WHEN COALESCE(job_state.active_app_store_job_count, 0) <= 0 THEN 2
+        WHEN COALESCE(job_state.app_store_job_count, 0) <= 0
+          AND COALESCE(job_state.official_web_job_count, 0) <= 0
+          AND COALESCE(observation_state.pending_web_observation_count, 0) <= 0
+          AND COALESCE(source_profile_state.source_integration_status, '') NOT IN (
+            'official_page_only',
+            'one_time_only'
+          ) THEN 2
         WHEN latest_run.latest_run_status = 'failed' THEN 3
         WHEN COALESCE(observation_state.hard_anomaly_count, 0) > 0 THEN 4
         WHEN COALESCE(price_state.published_price_count, 0) <= 0 THEN 5

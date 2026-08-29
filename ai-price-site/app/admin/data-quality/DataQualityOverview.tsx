@@ -17,9 +17,8 @@ import {
   formatDate,
   formatDuration,
   formatIgnoredReasons,
-  formatNextCollection,
   formatRelative,
-  getCoverage,
+  getProductCollectionPresentation,
   getProductHealth,
   getProductOperationalAssessment,
   hasUnconsumedQueue,
@@ -75,7 +74,7 @@ export function DataQualityOverview({
               产品更新判断
               </h2>
               <p className="mt-1 max-w-4xl text-sm leading-6 text-blue-800">
-                系统按所有已上线 AI 与流媒体产品统一检查覆盖、价格时效、极端值、重复套餐和税务资料。每个产品会说明是否需要更新、更新原因以及任务是否已经进入队列。
+                系统按 App Store、官网和一次性商品等来源分别判断采集状态，再检查覆盖、价格时效、极端值、重复套餐和税务资料。
               </p>
             </div>
           </div>
@@ -138,7 +137,10 @@ export function DataQualityOverview({
               const operationalStatus = operationalAssessment?.status ?? "not_started";
               const classes = healthClasses(health.level);
               const unconsumedQueue = hasUnconsumedQueue(row);
-              const coverage = getCoverage(row);
+              const collection = getProductCollectionPresentation(row);
+              const isAppStoreCollection =
+                collection.state === "app_store_active" ||
+                collection.state === "app_store_paused";
 
               return (
                 <div
@@ -164,30 +166,41 @@ export function DataQualityOverview({
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 lg:hidden">地区覆盖</p>
                     <p className="font-bold text-slate-950">
-                      {row.covered_pair_count} / {coverage.effectiveTarget} 套餐地区
+                      {collection.coverageTitle}
                     </p>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
                       <div
-                        className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${coverage.percent}%` }}
+                        className={[
+                          "h-full rounded-full",
+                          collection.coveragePercent === null
+                            ? "w-full bg-slate-300"
+                            : "bg-emerald-500",
+                        ].join(" ")}
+                        style={
+                          collection.coveragePercent === null
+                            ? undefined
+                            : { width: `${collection.coveragePercent}%` }
+                        }
                       />
                     </div>
                     <p className="mt-1 text-xs text-slate-500" title={row.missing_country_codes || undefined}>
-                      {coverage.percent}% · 缺 {row.missing_country_count} 地区 · 不可售 {row.confirmed_unavailable_country_count}
+                      {collection.coverageDetail}
                     </p>
                   </div>
 
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 lg:hidden">自动审核</p>
                     <p className="font-bold text-slate-950">
-                      {row.pending_stability_count} 等稳定 · {row.pending_anomaly_count} 异常
+                      {collection.reviewTitle}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      近 30 天自动忽略 {row.ignored_observation_count}
+                      {collection.reviewDetail}
                     </p>
-                    <p className="mt-1 line-clamp-2 text-xs text-slate-400" title={formatIgnoredReasons(row.ignored_reason_codes)}>
-                      {formatIgnoredReasons(row.ignored_reason_codes)}
-                    </p>
+                    {isAppStoreCollection ? (
+                      <p className="mt-1 line-clamp-2 text-xs text-slate-400" title={formatIgnoredReasons(row.ignored_reason_codes)}>
+                        {formatIgnoredReasons(row.ignored_reason_codes)}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div>
@@ -198,17 +211,17 @@ export function DataQualityOverview({
                     />
                     <p className="mt-1 text-xs font-semibold text-slate-600">{health.label}</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      App Store 任务 {row.active_app_store_job_count}
-                      {row.stale_queue_count > 0 && unconsumedQueue
+                      {collection.taskSummary}
+                      {isAppStoreCollection && row.stale_queue_count > 0 && unconsumedQueue
                         ? ` · 未消费 ${row.stale_queue_count}`
                         : ""}
-                      {row.stale_refresh_retry_count > 0
+                      {isAppStoreCollection && row.stale_refresh_retry_count > 0
                         ? ` · 复采 ${row.stale_refresh_success_count}/3`
                         : ""}
-                      {row.coverage_refresh_retry_count > 0
+                      {isAppStoreCollection && row.coverage_refresh_retry_count > 0
                         ? ` · 补采 ${Math.min(row.coverage_refresh_success_count, 3)}/3`
                         : ""}
-                      {row.anomaly_refresh_retry_count > 0
+                      {isAppStoreCollection && row.anomaly_refresh_retry_count > 0
                         ? ` · 异常复核 ${Math.min(row.anomaly_refresh_success_count, 3)}/3`
                         : ""}
                     </p>
@@ -217,10 +230,10 @@ export function DataQualityOverview({
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 lg:hidden">下次采集</p>
                     <p className="font-semibold text-slate-700">
-                      {formatNextCollection(row)}
+                      {collection.nextCollection}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      上次采集 {formatRelative(row.latest_run_started_at)}
+                      {collection.lastCollectionLabel} {formatRelative(collection.lastCollectionAt)}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       价格确认 {formatRelative(row.latest_price_checked_at)}
@@ -236,16 +249,17 @@ export function DataQualityOverview({
                   </div>
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
-                    <ManualCollectionProgressForm
-                      productSlug={row.slug}
-                      buttonLabel="采集"
-                      pendingLabel="正在采集"
-                      disabled={
-                        row.active_app_store_job_count <= 0 ||
-                        row.running_run_count > 0 ||
-                        row.latest_run_status === "running"
-                      }
-                    />
+                    {collection.supportsManualCollection ? (
+                      <ManualCollectionProgressForm
+                        productSlug={row.slug}
+                        buttonLabel="采集"
+                        pendingLabel="正在采集"
+                        disabled={
+                          row.running_run_count > 0 ||
+                          row.latest_run_status === "running"
+                        }
+                      />
+                    ) : null}
                     <AdminLink
                       href={`/admin/review?q=${encodeURIComponent(row.slug)}`}
                       className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"

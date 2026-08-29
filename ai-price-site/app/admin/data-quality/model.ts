@@ -8,6 +8,11 @@ import {
   assessProductOperationalStatus,
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
+import {
+  classifyProductCollectionSource,
+  isAppStoreCollectionState,
+  type ProductCollectionSourceState,
+} from "../../../lib/admin-product-collection-source";
 import { reviewReasonLabel } from "../review/review-reason-copy";
 export type ProductQualityRow = {
   id: string;
@@ -24,7 +29,12 @@ export type ProductQualityRow = {
   missing_pair_count: number;
   missing_country_count: number;
   missing_country_codes: string | null;
+  app_store_job_count: number;
   active_app_store_job_count: number;
+  official_web_job_count: number;
+  active_official_web_job_count: number;
+  paused_official_web_job_count: number;
+  official_web_target_country_count: number;
   queued_job_count: number;
   stale_queue_count: number;
   latest_queued_at: Date | string | null;
@@ -59,6 +69,8 @@ export type ProductQualityRow = {
   latest_price_checked_at: Date | string | null;
   pending_observation_count: number;
   pending_app_store_count: number;
+  pending_web_observation_count: number;
+  pending_web_country_count: number;
   pending_anomaly_count: number;
   pending_stability_count: number;
   hard_anomaly_count: number;
@@ -66,7 +78,10 @@ export type ProductQualityRow = {
   auto_closed_observation_count: number;
   ignored_reason_codes: string | null;
   latest_observed_at: Date | string | null;
+  latest_web_observed_at: Date | string | null;
   review_reason_codes: string | null;
+  source_integration_status: string | null;
+  source_integration_note: string | null;
 };
 
 export type RepairCycleRow = {
@@ -88,6 +103,20 @@ export type ProductHealth = {
   label: string;
   reason: string;
   nextAction: string;
+};
+
+export type ProductCollectionPresentation = {
+  state: ProductCollectionSourceState;
+  taskSummary: string;
+  coverageTitle: string;
+  coverageDetail: string;
+  coveragePercent: number | null;
+  reviewTitle: string;
+  reviewDetail: string;
+  nextCollection: string;
+  lastCollectionLabel: string;
+  lastCollectionAt: Date | string | null;
+  supportsManualCollection: boolean;
 };
 
 export function toDate(value: Date | string | null) {
@@ -179,6 +208,114 @@ export function getCoverage(row: ProductQualityRow) {
   return { effectiveTarget, percent };
 }
 
+export function getProductCollectionState(row: ProductQualityRow) {
+  return classifyProductCollectionSource({
+    integrationStatus: row.source_integration_status,
+    appStoreJobCount: row.app_store_job_count,
+    activeAppStoreJobCount: row.active_app_store_job_count,
+    officialWebJobCount: row.official_web_job_count,
+    activeOfficialWebJobCount: row.active_official_web_job_count,
+    pausedOfficialWebJobCount: row.paused_official_web_job_count,
+    pendingWebObservationCount: row.pending_web_observation_count,
+  });
+}
+
+export function getProductCollectionPresentation(
+  row: ProductQualityRow,
+): ProductCollectionPresentation {
+  const state = getProductCollectionState(row);
+  const coverage = getCoverage(row);
+
+  if (isAppStoreCollectionState(state)) {
+    return {
+      state,
+      taskSummary:
+        state === "app_store_active"
+          ? `App Store 任务 ${row.active_app_store_job_count}`
+          : `App Store 任务已暂停 ${row.app_store_job_count}`,
+      coverageTitle: `${row.covered_pair_count} / ${coverage.effectiveTarget} 套餐地区`,
+      coverageDetail: `${coverage.percent}% · 缺 ${row.missing_country_count} 地区 · 不可售 ${row.confirmed_unavailable_country_count}`,
+      coveragePercent: coverage.percent,
+      reviewTitle: `${row.pending_stability_count} 等稳定 · ${row.pending_anomaly_count} 异常`,
+      reviewDetail: `近 30 天自动忽略 ${row.ignored_observation_count}`,
+      nextCollection: formatNextCollection(row),
+      lastCollectionLabel: "上次采集",
+      lastCollectionAt: row.latest_run_started_at,
+      supportsManualCollection: state === "app_store_active",
+    };
+  }
+
+  if (state.startsWith("official_web_")) {
+    const hasSamples = row.pending_web_observation_count > 0;
+    const taskSummary =
+      state === "official_web_active"
+        ? `官网任务 ${row.active_official_web_job_count}`
+        : state === "official_web_paused"
+          ? `官网任务已暂停 ${row.paused_official_web_job_count}`
+          : state === "official_web_observed"
+            ? `官网样本 ${row.pending_web_observation_count} 条`
+            : "官网采集器待接入";
+    const nextCollection =
+      state === "official_web_active"
+        ? "按官网任务调度"
+        : state === "official_web_paused" || row.paused_official_web_job_count > 0
+          ? "官网任务已暂停"
+          : "尚未配置官网任务";
+
+    return {
+      state,
+      taskSummary,
+      coverageTitle: hasSamples
+        ? `${row.pending_web_country_count} 个 Web 地区`
+        : "官网来源 · 尚未采集",
+      coverageDetail: hasSamples
+        ? `${row.pending_web_observation_count} 条待审官网样本 · 不计 App Store 覆盖`
+        : "暂不计算 App Store 覆盖",
+      coveragePercent: null,
+      reviewTitle: hasSamples
+        ? `${row.pending_web_observation_count} 条 Web 待审`
+        : "暂无 Web 样本",
+      reviewDetail: hasSamples
+        ? "等待 Web 专属稳定性规则"
+        : "等待专用网页采集器",
+      nextCollection,
+      lastCollectionLabel: "最近官网样本",
+      lastCollectionAt: row.latest_web_observed_at,
+      supportsManualCollection: false,
+    };
+  }
+
+  if (state === "one_time") {
+    return {
+      state,
+      taskSummary: "无需订阅采集任务",
+      coverageTitle: "不适用订阅覆盖",
+      coverageDetail: "一次性商品 · 不纳入地区订阅任务",
+      coveragePercent: null,
+      reviewTitle: "不适用订阅审核",
+      reviewDetail: "按一次性商品独立处理",
+      nextCollection: "无需订阅采集",
+      lastCollectionLabel: "最近来源核验",
+      lastCollectionAt: row.latest_observed_at,
+      supportsManualCollection: false,
+    };
+  }
+
+  return {
+    state,
+    taskSummary: "尚未配置采集来源",
+    coverageTitle: "尚无可计算覆盖",
+    coverageDetail: "等待确认采集来源与目标地区",
+    coveragePercent: null,
+    reviewTitle: "尚无待审样本",
+    reviewDetail: "采集任务建立后进入自动审核",
+    nextCollection: "无可用任务",
+    lastCollectionLabel: "上次采集",
+    lastCollectionAt: row.latest_run_started_at,
+    supportsManualCollection: false,
+  };
+}
+
 export function hasUnconsumedQueue(row: ProductQualityRow) {
   const latestRunAt = toDate(row.latest_run_started_at);
   const latestQueuedAt = toDate(row.latest_queued_at);
@@ -211,12 +348,62 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
-  if (row.active_app_store_job_count <= 0) {
+  const collectionState = getProductCollectionState(row);
+
+  if (collectionState === "one_time") {
+    return {
+      level: "info",
+      label: "一次性商品",
+      reason: "该产品不是周期订阅，不适用订阅采集任务和地区覆盖指标。",
+      nextAction: "按一次性商品独立处理",
+    };
+  }
+
+  if (collectionState === "official_web_observed") {
+    return {
+      level: "info",
+      label: "Web 样本待审",
+      reason: `已有 ${row.pending_web_observation_count} 条官网样本，等待 Web 专属稳定性规则后再形成正式价格。`,
+      nextAction:
+        row.paused_official_web_job_count > 0
+          ? "完善 Web 审核规则"
+          : "等待 Web 自动审核",
+    };
+  }
+
+  if (collectionState === "official_web_active") {
+    return {
+      level: "info",
+      label: "官网采集中",
+      reason: "该产品采用官网价格口径，专用 Web 采集任务正在运行。",
+      nextAction: "等待官网采集结果",
+    };
+  }
+
+  if (collectionState === "official_web_paused") {
+    return {
+      level: "warning",
+      label: "官网任务已暂停",
+      reason: "该产品采用官网价格口径，但专用 Web 采集任务目前处于暂停状态。",
+      nextAction: "确认后恢复官网任务",
+    };
+  }
+
+  if (collectionState === "official_web_unconfigured") {
+    return {
+      level: "warning",
+      label: "等待官网采集器",
+      reason: "该产品已明确采用官网价格口径，尚未接入可自动运行的专用采集器。",
+      nextAction: "接入官网采集器",
+    };
+  }
+
+  if (collectionState === "unconfigured") {
     return {
       level: "danger",
       label: "缺少采集任务",
-      reason: "没有可运行的 App Store 采集任务，新增产品会卡在服务库里。",
-      nextAction: "补充采集任务",
+      reason: "尚未声明可用的数据来源，也没有可运行的采集任务。",
+      nextAction: "确认来源并补充采集任务",
     };
   }
 
@@ -426,6 +613,15 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
+  if (collectionState === "app_store_paused") {
+    return {
+      level: "warning",
+      label: "App Store 任务已暂停",
+      reason: "产品已有 App Store 采集配置，但当前没有处于启用状态的任务。",
+      nextAction: "确认后恢复采集任务",
+    };
+  }
+
   if (!row.latest_run_started_at) {
     return {
       level: "warning",
@@ -444,6 +640,44 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
 }
 
 export function getProductOperationalAssessment(row: ProductQualityRow) {
+  const collectionState = getProductCollectionState(row);
+
+  if (collectionState === "app_store_paused") {
+    const issueAssessment = assessProductOperationalStatus({
+      publishStatus: row.status,
+      planCount: row.plan_count,
+      latestRunStatus: row.latest_run_status,
+      pendingWorkCount: row.pending_app_store_count,
+      blockedCount: row.pending_anomaly_count,
+      publishedPriceCount: row.published_price_count,
+      stalePriceCount: row.stale_published_count,
+    });
+
+    if (issueAssessment?.status === "exception") return issueAssessment;
+  }
+
+  if (collectionState === "one_time") {
+    return { status: "pending" as const, reason: "一次性商品不进入订阅采集流程。" };
+  }
+  if (collectionState === "official_web_observed") {
+    return {
+      status: "pending" as const,
+      reason: `${row.pending_web_observation_count} 条官网样本等待 Web 专属审核规则。`,
+    };
+  }
+  if (collectionState === "official_web_active") {
+    return { status: "pending" as const, reason: "官网采集任务正在运行。" };
+  }
+  if (collectionState === "official_web_paused") {
+    return { status: "pending" as const, reason: "官网采集任务目前已暂停。" };
+  }
+  if (collectionState === "official_web_unconfigured") {
+    return { status: "pending" as const, reason: "等待接入专用官网采集器。" };
+  }
+  if (collectionState === "app_store_paused") {
+    return { status: "pending" as const, reason: "App Store 采集任务目前已暂停。" };
+  }
+
   return assessProductOperationalStatus({
     publishStatus: row.status,
     planCount: row.plan_count,
@@ -511,4 +745,3 @@ export function healthIcon(level: HealthLevel) {
 export function countByHealth(rows: ProductQualityRow[], level: HealthLevel) {
   return rows.filter((row) => getProductHealth(row).level === level).length;
 }
-

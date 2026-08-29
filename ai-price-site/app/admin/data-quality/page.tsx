@@ -4,6 +4,7 @@ import { countAdminOperationalAssessments } from "../../../lib/admin-operational
 import { DataQualityOverview } from "./DataQualityOverview";
 import {
   getProductHealth,
+  getProductCollectionState,
   getProductOperationalAssessment,
   healthPriority,
 } from "./model";
@@ -40,9 +41,14 @@ export default async function AdminDataQualityPage() {
   const operationalCounts = countAdminOperationalAssessments(
     rows.map(getProductOperationalAssessment),
   );
-  const coverageGapProductCount = rows.filter(
-    (row) => row.missing_pair_count > 0,
-  ).length;
+  const coverageGapProductCount = rows.filter((row) => {
+    const collectionState = getProductCollectionState(row);
+    return (
+      (collectionState === "app_store_active" ||
+        collectionState === "app_store_paused") &&
+      row.missing_pair_count > 0
+    );
+  }).length;
 
   return (
     <DataQualityOverview
