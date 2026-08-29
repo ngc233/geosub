@@ -89,21 +89,21 @@ export function AuthorityCoverageSection({
     <AdminBadge variant={priority.variant}>
     {priority.label}
     </AdminBadge>
-    <span className="mt-2 block text-xs font-bold tabular-nums text-slate-500">
+    <span className="mt-2 block text-xs font-bold tabular-nums text-slate-500 dark:text-slate-400">
     {item.priorityScore}/100
     </span>
     </AdminTd>
     <AdminTd>
-    <span className="font-bold text-slate-950">
+    <span className="font-bold text-slate-950 dark:text-slate-50">
     {item.productName}
     </span>
-    <span className="mt-1 block text-xs text-slate-500">
+    <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
     页面质量 {item.qualityScore}/100
     </span>
     </AdminTd>
     <AdminTd>
     {item.demandScore > 0 ? (
-    <div className="text-xs leading-5 text-slate-600">
+    <div className="text-xs leading-5 text-slate-600 dark:text-slate-300">
     <div>
     结果点击 {item.resultClickCount} · 套餐意向 {item.planEngagementCount}
     </div>
@@ -111,13 +111,13 @@ export function AuthorityCoverageSection({
     商业点击 {item.commercialConversionCount} · 访客 {item.visitorCount}
     </div>
     {item.demandQueries.length > 0 ? (
-    <div className="mt-1 max-w-xs truncate text-slate-400">
+    <div className="mt-1 max-w-xs truncate text-slate-400 dark:text-slate-400">
     搜索：{item.demandQueries.join("、")}
     </div>
     ) : null}
     </div>
     ) : (
-    <span className="text-xs text-slate-400">
+    <span className="text-xs text-slate-400 dark:text-slate-400">
     暂无站内搜索样本，按产品质量排队
     </span>
     )}
@@ -127,40 +127,40 @@ export function AuthorityCoverageSection({
     {item.gaps.length > 0 ? item.gaps.map((gap) => (
     <span
     key={gap}
-    className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600"
+    className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
     >
     {gap}
     </span>
     )) : (
-    <span className="text-xs font-semibold text-green-700">
+    <span className="text-xs font-semibold text-green-700 dark:text-green-300">
     当前核心资料完整
     </span>
     )}
     </div>
     </AdminTd>
     <AdminTd>
-    <span className="text-sm font-bold text-slate-800">
+    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
     {item.recommendedAction}
     </span>
-    <span className="mt-1 block text-xs text-slate-400">
+    <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
     需求 {item.demandScore}/40 · 缺口 {item.authorityGapScore}/60
     </span>
-    <span className="mt-1 block max-w-xs text-xs leading-5 text-slate-500">
+    <span className="mt-1 block max-w-xs text-xs leading-5 text-slate-500 dark:text-slate-400">
     {item.actionEvidence}
     </span>
     {taskState ? (
     <div className="mt-2 space-y-2">
     <div>
     <AdminBadge variant={taskState.variant}>{taskState.label}</AdminBadge>
-    <span className="ml-2 text-xs text-slate-400">数据状态 · {taskState.helper}</span>
+    <span className="ml-2 text-xs text-slate-400 dark:text-slate-400">数据状态 · {taskState.helper}</span>
     </div>
     {businessState && task ? (
     <div>
     <AdminBadge variant={businessState.variant}>{businessState.label}</AdminBadge>
-    <span className="ml-2 text-xs text-slate-400">
+    <span className="ml-2 text-xs text-slate-400 dark:text-slate-400">
     业务效果 · {businessState.helper}
     </span>
-    <span className="mt-1 block text-xs tabular-nums text-slate-400">
+    <span className="mt-1 block text-xs tabular-nums text-slate-400 dark:text-slate-400">
     搜索点击 {task.businessMetrics.resultClicks} · 套餐意向 {task.businessMetrics.planEngagements} · 商业点击 {task.businessMetrics.commercialConversions}
     </span>
     </div>
@@ -244,4 +244,3 @@ export function AuthorityCoverageSection({
     </div>
   );
 }
-

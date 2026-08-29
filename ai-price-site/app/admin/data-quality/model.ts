@@ -14,6 +14,7 @@ import {
   type ProductCollectionSourceState,
 } from "../../../lib/admin-product-collection-source";
 import { reviewReasonLabel } from "../review/review-reason-copy";
+import { summarizeCollectorRunError } from "./collector-run-error-copy";
 export type ProductQualityRow = {
   id: string;
   slug: string;
@@ -102,6 +103,7 @@ export type ProductHealth = {
   level: HealthLevel;
   label: string;
   reason: string;
+  reasonDetail?: string | null;
   nextAction: string;
 };
 
@@ -408,10 +410,13 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
   }
 
   if (row.latest_run_status === "failed") {
+    const runError = summarizeCollectorRunError(row.latest_run_error);
+
     return {
       level: "danger",
       label: "采集失败",
-      reason: row.latest_run_error || "最近一次采集失败，需要先看失败原因。",
+      reason: runError.summary,
+      reasonDetail: runError.detail,
       nextAction: "查看采集任务",
     };
   }
@@ -706,32 +711,32 @@ export function healthPriority(level: HealthLevel) {
 export function healthClasses(level: HealthLevel) {
   if (level === "good") {
     return {
-      badge: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+      badge: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800",
       dot: "bg-emerald-500",
-      row: "border-emerald-100 bg-emerald-50/30",
+      row: "border-emerald-100 bg-emerald-50/30 dark:border-emerald-900/60 dark:bg-emerald-950/20",
     };
   }
 
   if (level === "info") {
     return {
-      badge: "bg-blue-50 text-blue-700 ring-blue-200",
+      badge: "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:ring-blue-800",
       dot: "bg-blue-500",
-      row: "border-blue-100 bg-blue-50/30",
+      row: "border-blue-100 bg-blue-50/30 dark:border-blue-900/60 dark:bg-blue-950/20",
     };
   }
 
   if (level === "warning") {
     return {
-      badge: "bg-amber-50 text-amber-700 ring-amber-200",
+      badge: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800",
       dot: "bg-amber-500",
-      row: "border-amber-100 bg-amber-50/30",
+      row: "border-amber-100 bg-amber-50/30 dark:border-amber-900/60 dark:bg-amber-950/20",
     };
   }
 
   return {
-    badge: "bg-red-50 text-red-700 ring-red-200",
+    badge: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/60 dark:text-red-300 dark:ring-red-800",
     dot: "bg-red-500",
-    row: "border-red-100 bg-red-50/30",
+    row: "border-red-100 bg-red-50/30 dark:border-red-900/60 dark:bg-red-950/20",
   };
 }
 

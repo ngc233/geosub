@@ -66,16 +66,16 @@ export function SearchConversionSections({
                   return (
                     <AdminTr key={`conversion:${term.locale}:${term.query}`}>
                       <AdminTd>
-                        <span className="font-bold text-slate-950">
+                        <span className="font-bold text-slate-950 dark:text-slate-50">
                           {term.query}
                         </span>
-                        <span className="mt-1 block text-xs text-slate-400">
+                        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
                           {term.visitorCount} 位访客 · 最近{" "}
                           {formatDate(term.lastClickedAt)} UTC
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="text-xs font-semibold uppercase text-slate-500">
+                        <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                           {term.locale}
                         </span>
                       </AdminTd>
@@ -98,7 +98,7 @@ export function SearchConversionSections({
               ) : (
                 <AdminTr>
                   <AdminTd>
-                    <span className="text-sm text-slate-400">
+                    <span className="text-sm text-slate-400 dark:text-slate-400">
                       所选时段还没有搜索结果点击，暂时无法判断后续转化。
                     </span>
                   </AdminTd>
@@ -147,10 +147,10 @@ export function SearchConversionSections({
                   return (
                     <AdminTr key={`effect:${record.id}`}>
                       <AdminTd>
-                        <span className="font-bold text-slate-950">
+                        <span className="font-bold text-slate-950 dark:text-slate-50">
                           {record.query}
                         </span>
-                        <span className="mt-1 block text-xs text-slate-400">
+                        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
                           {gapKindLabel(record.kind)}
                         </span>
                       </AdminTd>
@@ -170,23 +170,23 @@ export function SearchConversionSections({
                           <AdminBadge variant={effect.variant}>
                             {effect.label}
                           </AdminBadge>
-                          <span className="max-w-xs text-xs leading-5 text-slate-500">
+                          <span className="max-w-xs text-xs leading-5 text-slate-500 dark:text-slate-400">
                             {effect.helper}
                           </span>
                         </div>
                       </AdminTd>
                       <AdminTd>
-                        <span className="block text-xs text-slate-600">
+                        <span className="block text-xs text-slate-600 dark:text-slate-300">
                           搜索 {record.effectSearchCount} 次 · 无结果{" "}
                           {record.effectNoResultCount} 次
                         </span>
-                        <span className="mt-1 block text-xs text-slate-400">
+                        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
                           点击 {record.effectClickCount} 次 ·{" "}
                           {record.effectVisitorCount} 位访客
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
                           {formatDate(record.evaluationStartedAt!)} UTC
                         </span>
                       </AdminTd>
@@ -218,7 +218,7 @@ export function SearchConversionSections({
                             </AdminButton>
                           </form>
                         ) : (
-                          <span className="text-xs font-semibold text-slate-400">
+                          <span className="text-xs font-semibold text-slate-400 dark:text-slate-400">
                             继续观察
                           </span>
                         )}

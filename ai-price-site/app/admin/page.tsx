@@ -237,10 +237,10 @@ export default async function AdminDashboardPage({
     },
   ] as const;
   const taskTone = {
-    blue: "bg-blue-50 text-blue-700 ring-blue-100",
-    red: "bg-red-50 text-red-700 ring-red-100",
-    amber: "bg-amber-50 text-amber-700 ring-amber-100",
-    slate: "bg-slate-100 text-slate-700 ring-slate-200",
+    blue: "bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:ring-blue-800",
+    red: "bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/60 dark:text-red-300 dark:ring-red-800",
+    amber: "bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800",
+    slate: "bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
   } as const;
 
   return (
@@ -271,10 +271,10 @@ export default async function AdminDashboardPage({
       <section className="mb-10" aria-labelledby="admin-tasks-title">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h2 id="admin-tasks-title" className="text-lg font-bold text-slate-950">今日待办</h2>
-            <p className="mt-1 text-sm text-slate-500">按影响范围从左到右处理。</p>
+            <h2 id="admin-tasks-title" className="text-lg font-bold text-slate-950 dark:text-slate-50">今日待办</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">按影响范围从左到右处理。</p>
           </div>
-          <AdminLink href="/admin/pipeline" className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 hover:text-blue-800">
+          <AdminLink href="/admin/pipeline" className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:text-blue-400 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60">
             查看产品全流程
             <ArrowRight size={15} strokeWidth={2} />
           </AdminLink>
@@ -287,17 +287,17 @@ export default async function AdminDashboardPage({
               <AdminLink
                 key={task.label}
                 href={task.href}
-                className="group min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                className="group min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 dark:hover:border-blue-700 dark:hover:bg-slate-800 dark:focus-visible:ring-blue-400/60"
               >
                 <div className="flex items-start justify-between gap-4">
                   <span className={`flex h-10 w-10 items-center justify-center rounded-lg ring-1 ${taskTone[task.tone]}`}>
                     <Icon size={18} strokeWidth={2} />
                   </span>
-                  <ArrowRight size={17} className="mt-1 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-700" />
+                  <ArrowRight size={17} className="mt-1 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-700 dark:text-slate-600 dark:group-hover:text-blue-300" />
                 </div>
-                <p className="mt-5 text-3xl font-bold tracking-tight text-slate-950">{formatNumber(task.value)}</p>
-                <p className="mt-1 text-sm font-bold text-slate-800">{task.label}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{task.helper}</p>
+                <p className="mt-5 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">{formatNumber(task.value)}</p>
+                <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-200">{task.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{task.helper}</p>
               </AdminLink>
             );
           })}
@@ -307,22 +307,22 @@ export default async function AdminDashboardPage({
       <section className="mb-10" aria-labelledby="daily-operations-title">
         <div className={`mb-4 flex flex-col gap-4 rounded-lg border p-5 sm:flex-row sm:items-center sm:justify-between ${
           dailyBrief.level === "critical"
-            ? "border-red-200 bg-red-50"
+            ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40"
             : dailyBrief.level === "attention"
-              ? "border-amber-200 bg-amber-50"
+              ? "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40"
               : dailyBrief.level === "progress"
-                ? "border-blue-200 bg-blue-50"
-                : "border-emerald-200 bg-emerald-50"
+                ? "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40"
+                : "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40"
         }`}>
           <div>
-            <p className="text-base font-bold text-slate-950">{dailyBrief.title}</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">{dailyBrief.summary}</p>
+            <p className="text-base font-bold text-slate-950 dark:text-slate-50">{dailyBrief.title}</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{dailyBrief.summary}</p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs font-bold tabular-nums">
-            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-red-700 ring-1 ring-inset ring-red-200">失败 {dailyBrief.counts.failed}</span>
-            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-amber-700 ring-1 ring-inset ring-amber-200">待处理 {dailyBrief.counts.action}</span>
-            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-blue-700 ring-1 ring-inset ring-blue-200">执行中 {dailyBrief.counts.running + dailyBrief.counts.queued}</span>
-            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-emerald-700 ring-1 ring-inset ring-emerald-200">健康 {dailyBrief.counts.healthy}</span>
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-red-700 ring-1 ring-inset ring-red-200 dark:bg-red-950/60 dark:text-red-300 dark:ring-red-800">失败 {dailyBrief.counts.failed}</span>
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800">待处理 {dailyBrief.counts.action}</span>
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:ring-blue-800">执行中 {dailyBrief.counts.running + dailyBrief.counts.queued}</span>
+            <span className="rounded-md bg-white/80 px-2.5 py-1.5 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800">健康 {dailyBrief.counts.healthy}</span>
           </div>
         </div>
         <AdminTableShell
@@ -358,28 +358,28 @@ export default async function AdminDashboardPage({
                       </span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="font-bold text-slate-950">{item.productName}</span>
-                      <span className="mt-1 block text-xs tabular-nums text-slate-400">
+                      <span className="font-bold text-slate-950 dark:text-slate-50">{item.productName}</span>
+                      <span className="mt-1 block text-xs tabular-nums text-slate-400 dark:text-slate-400">
                         页面质量 {item.qualityScore}/100
                       </span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="block max-w-sm text-sm leading-6 text-slate-700">
+                      <span className="block max-w-sm text-sm leading-6 text-slate-700 dark:text-slate-300">
                         {item.reason}
                       </span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="block max-w-xs text-xs leading-5 text-slate-600">
+                      <span className="block max-w-xs text-xs leading-5 text-slate-600 dark:text-slate-400">
                         {item.systemSummary}
                       </span>
                     </AdminTd>
                     <AdminTd>
                       {item.businessSummary ? (
-                        <span className="block max-w-xs text-xs leading-5 text-slate-600">
+                        <span className="block max-w-xs text-xs leading-5 text-slate-600 dark:text-slate-400">
                           {item.businessSummary}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-400">尚未开始可追踪的补强任务</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-400">尚未开始可追踪的补强任务</span>
                       )}
                     </AdminTd>
                     <AdminTd align="right">
@@ -397,8 +397,8 @@ export default async function AdminDashboardPage({
       </section>
 
       <div className="mb-4">
-        <h2 className="text-lg font-bold text-slate-950">今日运营</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">今日运营</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           访问与商业点击按 UTC 当日实时统计，仅包含明确允许统计的访客。
         </p>
       </div>
@@ -460,30 +460,30 @@ export default async function AdminDashboardPage({
           actionHref={eventLogHref}
           actionLabel="核对事件"
         >
-          <div className="overflow-hidden rounded-xl border border-slate-200 sm:grid sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+          <div className="overflow-hidden rounded-xl border border-slate-200 sm:grid sm:grid-cols-4 sm:divide-x sm:divide-y-0 dark:border-slate-700 dark:divide-slate-700">
             {funnelStages.map((stage, index) => (
               <div
                 key={stage.label}
-                className="border-b border-slate-200 px-4 py-4 last:border-b-0 sm:border-b-0"
+                className="border-b border-slate-200 px-4 py-4 last:border-b-0 sm:border-b-0 dark:border-slate-700"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[11px] font-bold text-blue-700">
+                  <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">
                     第 {index + 1} 步
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-400">
+                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400">
                     {stage.conversionLabel}
                   </span>
                 </div>
-                <p className="mt-3 text-2xl font-bold text-slate-950">
+                <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-slate-50">
                   {formatNumber(stage.value)}
                 </p>
-                <p className="mt-1 text-sm font-bold text-slate-800">
+                <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-200">
                   {stage.label}
                 </p>
-                <p className="mt-1 min-h-8 text-xs leading-4 text-slate-400">
+                <p className="mt-1 min-h-8 text-xs leading-4 text-slate-400 dark:text-slate-400">
                   {stage.description}
                 </p>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
                   <div
                     className="h-full rounded-full bg-blue-600"
                     style={{ width: `${stage.conversion}%` }}
@@ -492,7 +492,7 @@ export default async function AdminDashboardPage({
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs leading-5 text-slate-400">
+          <p className="mt-3 text-xs leading-5 text-slate-400 dark:text-slate-400">
             新埋点直接使用会话 ID；历史事件缺少会话 ID 时，按匿名访客 30 分钟无活动间隔回算，不跨会话拼接路径。
           </p>
         </DashboardPanel>
@@ -503,22 +503,22 @@ export default async function AdminDashboardPage({
           actionHref={eventLogHref}
           actionLabel="查看明细"
         >
-          <div className="divide-y divide-slate-100 border-y border-slate-100">
+          <div className="divide-y divide-slate-100 border-y border-slate-100 dark:divide-slate-700 dark:border-slate-700">
             {trafficChecks.map((item) => (
               <AdminLink
                 key={item.label}
                 href={item.href}
-                className="flex items-center justify-between gap-4 py-3 transition hover:bg-blue-50/60"
+                className="flex items-center justify-between gap-4 py-3 transition hover:bg-blue-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:hover:bg-blue-950/40 dark:focus-visible:ring-blue-400/60"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-800">{item.label}</p>
-                  <p className="mt-0.5 truncate text-xs text-slate-400">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.label}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-400">
                     {item.description}
                   </p>
                 </div>
                 <span
                   className={`shrink-0 text-base font-bold ${
-                    item.value > 0 ? "text-amber-700" : "text-emerald-700"
+                    item.value > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"
                   }`}
                 >
                   {formatNumber(item.value)}
@@ -536,7 +536,7 @@ export default async function AdminDashboardPage({
           actionHref={eventLogHref}
           actionLabel="查看原始事件"
         >
-          <div className="grid gap-6 lg:grid-cols-3 lg:divide-x lg:divide-slate-100">
+          <div className="grid gap-6 lg:grid-cols-3 lg:divide-x lg:divide-slate-100 dark:lg:divide-slate-800">
             <FunnelSegmentList
               title="按产品"
               items={data.funnelSegments.products}
@@ -581,22 +581,22 @@ export default async function AdminDashboardPage({
               ["官方", data.commercialTotals.official],
               ["广告", data.commercialTotals.ads],
             ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-lg bg-slate-50 px-3 py-3 text-center">
-                <div className="text-lg font-bold text-slate-950">{value}</div>
-                <div className="mt-1 text-[11px] font-semibold text-slate-400">{label}</div>
+              <div key={String(label)} className="rounded-lg bg-slate-50 px-3 py-3 text-center dark:bg-slate-800/70">
+                <div className="text-lg font-bold text-slate-950 dark:text-slate-50">{value}</div>
+                <div className="mt-1 text-[11px] font-semibold text-slate-400 dark:text-slate-400">{label}</div>
               </div>
             ))}
           </div>
 
-          <div className="mt-4 border-t border-slate-100 pt-4">
+          <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-xs font-bold text-slate-500">热门商业产品</p>
-              <p className="text-xs text-slate-400">合计 {data.commercialTotals.all}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">热门商业产品</p>
+              <p className="text-xs text-slate-400 dark:text-slate-400">合计 {data.commercialTotals.all}</p>
             </div>
             <RankingList items={data.commercialProducts} emptyText="所选时段暂无商业点击。" />
           </div>
 
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-800">
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-800 dark:bg-blue-950/60 dark:text-blue-200">
             <MousePointerClick size={15} className="shrink-0" />
             <span className="truncate">
               主要入口：{data.commercialEntries[0]
@@ -613,38 +613,38 @@ export default async function AdminDashboardPage({
           actionLabel="查看 SEO"
         >
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
               <div className="flex items-center gap-3">
-                <Search className="text-blue-700" size={18} strokeWidth={2} />
-                <span className="text-sm font-semibold text-slate-700">
+                <Search className="text-blue-700 dark:text-blue-300" size={18} strokeWidth={2} />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   缺 SEO 的服务
                 </span>
               </div>
-              <span className="text-sm font-bold text-slate-950">
+              <span className="text-sm font-bold text-slate-950 dark:text-slate-50">
                 {data.missingSeoServices}
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="text-blue-700" size={18} strokeWidth={2} />
-                <span className="text-sm font-semibold text-slate-700">
+                <CheckCircle2 className="text-blue-700 dark:text-blue-300" size={18} strokeWidth={2} />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   缺 FAQ 的服务
                 </span>
               </div>
-              <span className="text-sm font-bold text-slate-950">
+              <span className="text-sm font-bold text-slate-950 dark:text-slate-50">
                 {data.missingFaqServices}
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
               <div className="flex items-center gap-3">
-                <FileText className="text-blue-700" size={18} strokeWidth={2} />
-                <span className="text-sm font-semibold text-slate-700">
+                <FileText className="text-blue-700 dark:text-blue-300" size={18} strokeWidth={2} />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   草稿文章
                 </span>
               </div>
-              <span className="text-sm font-bold text-slate-950">
+              <span className="text-sm font-bold text-slate-950 dark:text-slate-50">
                 {data.draftArticles}
               </span>
             </div>
@@ -660,38 +660,38 @@ export default async function AdminDashboardPage({
           actionLabel="进入审核"
         >
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3 dark:bg-amber-950/50">
               <div className="flex items-center gap-3">
-                <AlertTriangle className="text-amber-700" size={18} strokeWidth={2} />
-                <span className="text-sm font-semibold text-amber-900">
+                <AlertTriangle className="text-amber-700 dark:text-amber-300" size={18} strokeWidth={2} />
+                <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">
                   长期未更新价格
                 </span>
               </div>
-              <span className="text-sm font-bold text-amber-950">
+              <span className="text-sm font-bold text-amber-950 dark:text-amber-100">
                 {data.stalePrices}
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-red-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-red-50 px-4 py-3 dark:bg-red-950/50">
               <div className="flex items-center gap-3">
-                <AlertTriangle className="text-red-700" size={18} strokeWidth={2} />
-                <span className="text-sm font-semibold text-red-900">
+                <AlertTriangle className="text-red-700 dark:text-red-300" size={18} strokeWidth={2} />
+                <span className="text-sm font-semibold text-red-900 dark:text-red-200">
                   低置信度价格
                 </span>
               </div>
-              <span className="text-sm font-bold text-red-950">
+              <span className="text-sm font-bold text-red-950 dark:text-red-100">
                 {data.lowConfidencePrices}
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
               <div className="flex items-center gap-3">
-                <Globe2 className="text-slate-600" size={18} strokeWidth={2} />
-                <span className="text-sm font-semibold text-slate-700">
+                <Globe2 className="text-slate-600 dark:text-slate-300" size={18} strokeWidth={2} />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   缺少来源的价格
                 </span>
               </div>
-              <span className="text-sm font-bold text-slate-950">
+              <span className="text-sm font-bold text-slate-950 dark:text-slate-50">
                 {data.missingSourcePrices}
               </span>
             </div>
@@ -726,9 +726,9 @@ export default async function AdminDashboardPage({
           {data.recentEvents.map((event, index) => (
             <div
               key={`${event.eventKey}-${event.createdAt.toISOString()}-${index}`}
-              className="flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-4"
+              className="flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-4 dark:bg-slate-800/70"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
                 {event.eventKey === "page_view" ? (
                   <Eye size={16} strokeWidth={2} />
                 ) : (
@@ -737,14 +737,14 @@ export default async function AdminDashboardPage({
               </div>
 
               <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-950">
+                <p className="text-sm font-bold text-slate-950 dark:text-slate-50">
                   {eventNameZh(event.eventKey)}
                 </p>
-                <p className="mt-1 truncate text-xs text-slate-500">
+                <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
                   {pageNameZh(event.pagePath)} · {deviceNameZh(event.deviceType)} ·{" "}
                   {timeAgo(event.createdAt)}
                 </p>
-                <p className="mt-1 truncate text-xs text-slate-400">
+                <p className="mt-1 truncate text-xs text-slate-400 dark:text-slate-400">
                   {sourceNameZh(event.source)}
                   {event.buttonKey ? ` · ${event.buttonKey}` : ""}
                 </p>
@@ -753,7 +753,7 @@ export default async function AdminDashboardPage({
           ))}
 
           {data.recentEvents.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
               暂无可展示的正式事件。
             </div>
           ) : null}

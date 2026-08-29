@@ -120,3 +120,79 @@ test("primary admin actions use the shared button system", () => {
   assert.match(settings, /<AdminButton type="submit">/);
   assert.match(pipeline, /<AdminButton type="submit">/);
 });
+
+test("affected admin surfaces provide complete dark-mode counterparts", () => {
+  const files = [
+    "app/admin/layout.tsx",
+    "app/admin/page.tsx",
+    "app/admin/DashboardComponents.tsx",
+    "app/admin/TrendChart.tsx",
+    "app/admin/dashboard-formatters.ts",
+    "app/admin/data-quality/DataQualityOverview.tsx",
+    "app/admin/data-quality/model.ts",
+    "app/admin/review/ManualCollectionProgressForm.tsx",
+    "components/admin/AdminBadge.tsx",
+    "components/admin/AdminButton.tsx",
+    "components/admin/AdminMetricCard.tsx",
+    "components/admin/AdminSidebar.tsx",
+    "components/admin/AdminTable.tsx",
+    "app/admin/search-demand/AuthorityCoverageSection.tsx",
+    "app/admin/search-demand/ConversionRepairSections.tsx",
+    "app/admin/search-demand/SearchConversionSections.tsx",
+    "app/admin/search-demand/SearchEvidenceSections.tsx",
+    "app/admin/search-demand/SearchGrowthPrioritySection.tsx",
+    "app/admin/search-demand/SearchOpportunityWorkflowSections.tsx",
+    "lib/admin-operational-status.ts",
+  ];
+  const neutralLightTokens =
+    /(?:bg-white(?:\/\d+)?|bg-slate-(?:50|100|200|300)|text-slate-(?:400|500|600|700|800|900|950)|border-slate-(?:100|200|300)|ring-slate-(?:100|200|300))/;
+
+  for (const fileName of files) {
+    const source = readProjectFile(fileName);
+    assert.match(source, /dark:/, `${fileName} should include dark-mode styling`);
+
+    for (const [index, line] of source.split("\n").entries()) {
+      if (!neutralLightTokens.test(line)) continue;
+      assert.match(
+        line,
+        /dark:/,
+        `${fileName}:${index + 1} needs a dark-mode counterpart`,
+      );
+    }
+  }
+
+  const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
+  const overview = readProjectFile("app/admin/data-quality/DataQualityOverview.tsx");
+  const dashboard = readAdminDashboardSource();
+  const dashboardComponents = readProjectFile("app/admin/DashboardComponents.tsx");
+  const adminCard = readProjectFile("components/admin/AdminCard.tsx");
+  const adminButton = readProjectFile("components/admin/AdminButton.tsx");
+  const trendChart = readProjectFile("app/admin/TrendChart.tsx");
+
+  assert.doesNotMatch(
+    adminCard,
+    /"min-w-0 rounded-xl[^"\n]*dark:bg-slate-900/,
+    "generic AdminCard must stay light until all legacy consumers are migrated",
+  );
+  assert.match(dashboardComponents, /<AdminCard className="[^"]*dark:bg-slate-900/);
+  assert.match(overview, /<AdminCard className="[^"]*dark:bg-slate-900/);
+  assert.match(dashboardComponents, /text-blue-700 dark:text-blue-300/);
+  assert.match(adminButton, /focus:ring-blue-600/);
+  assert.match(adminButton, /dark:focus:ring-blue-400\/60/);
+  assert.equal(
+    trendChart.match(/dark:focus-within:ring-blue-400\/60/g)?.length,
+    2,
+    "both dashboard trend controls need a visible dark focus ring",
+  );
+  assert.doesNotMatch(trendChart, /dark:fill-slate-500/);
+  assert.doesNotMatch(sidebar, /focus-visible:ring-blue-500\/60/);
+  assert.doesNotMatch(dashboard, /dark:text-slate-500/);
+  assert.doesNotMatch(overview, /dark:text-slate-500/);
+  assert.doesNotMatch(sidebar, /dark:text-slate-500/);
+  assert.match(overview, /health\.reasonDetail \? "line-clamp-3" : ""/);
+  assert.match(sidebar, /dark:hover:bg-slate-800/);
+  assert.match(sidebar, /focus-visible:ring-2/);
+  assert.match(sidebar, /mobileMenuButtonRef\.current\?\.focus\(\)/);
+  assert.match(overview, /dark:hover:bg-blue-950\/60/);
+  assert.match(overview, /focus-visible:ring-2/);
+});

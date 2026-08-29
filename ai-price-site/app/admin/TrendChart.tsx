@@ -27,15 +27,15 @@ function TrendDelta({ current, previous }: { current: number; previous: number }
   const change = getTrendChangePercent(current, previous);
 
   if (change === null) {
-    return <span className="text-xs font-semibold text-slate-500">前期无基数</span>;
+    return <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">前期无基数</span>;
   }
 
   const className =
     change > 0
-      ? "text-emerald-700"
+      ? "text-emerald-700 dark:text-emerald-300"
       : change < 0
-        ? "text-red-600"
-        : "text-slate-500";
+        ? "text-red-600 dark:text-red-300"
+        : "text-slate-500 dark:text-slate-400";
   const value = change > 0 ? `+${change}%` : `${change}%`;
 
   return (
@@ -64,20 +64,20 @@ function SeriesCard({
 }) {
   const toneClasses = {
     emerald: {
-      active: "border-emerald-200 bg-emerald-50 text-emerald-950",
-      label: "text-emerald-700",
+      active: "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100",
+      label: "text-emerald-700 dark:text-emerald-300",
       check: "border-emerald-600 bg-emerald-600",
       line: "bg-emerald-600",
     },
     blue: {
-      active: "border-blue-200 bg-blue-50 text-blue-950",
-      label: "text-blue-700",
+      active: "border-blue-200 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-100",
+      label: "text-blue-700 dark:text-blue-300",
       check: "border-blue-600 bg-blue-600",
       line: "bg-blue-600",
     },
     indigo: {
-      active: "border-indigo-200 bg-indigo-50 text-indigo-950",
-      label: "text-indigo-700",
+      active: "border-indigo-200 bg-indigo-50 text-indigo-950 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-100",
+      label: "text-indigo-700 dark:text-indigo-300",
       check: "border-indigo-500 bg-indigo-500",
       line: "bg-indigo-500",
     },
@@ -85,10 +85,10 @@ function SeriesCard({
 
   return (
     <label
-      className={`cursor-pointer rounded-xl border px-4 py-3 transition focus-within:ring-4 focus-within:ring-blue-500/10 ${
+      className={`cursor-pointer rounded-xl border px-4 py-3 transition focus-within:ring-4 focus-within:ring-blue-600 dark:focus-within:ring-blue-400/60 ${
         checked
           ? toneClasses.active
-          : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
+          : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400 dark:hover:bg-slate-800"
       }`}
     >
       <input
@@ -99,19 +99,19 @@ function SeriesCard({
         onChange={(event) => onChange(event.target.checked)}
       />
       <div className="flex items-center justify-between gap-3">
-        <span className={`inline-flex items-center gap-2 text-xs font-semibold ${checked ? toneClasses.label : "text-slate-500"}`}>
+        <span className={`inline-flex items-center gap-2 text-xs font-semibold ${checked ? toneClasses.label : "text-slate-500 dark:text-slate-400"}`}>
           <span
             className={`inline-flex h-4 w-4 items-center justify-center rounded border ${
-              checked ? toneClasses.check : "border-slate-300 bg-white"
+              checked ? toneClasses.check : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
             }`}
             aria-hidden="true"
           >
             {checked ? <Check size={11} strokeWidth={3} className="text-white" /> : null}
           </span>
-          <span className={`h-0.5 w-5 ${checked ? toneClasses.line : "bg-slate-300"}`} aria-hidden="true" />
+          <span className={`h-0.5 w-5 ${checked ? toneClasses.line : "bg-slate-300 dark:bg-slate-600"}`} aria-hidden="true" />
           {label}
         </span>
-        <span className="hidden text-[11px] font-medium text-slate-500 sm:inline">点击切换</span>
+        <span className="hidden text-[11px] font-medium text-slate-500 sm:inline dark:text-slate-400">点击切换</span>
       </div>
       <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-2xl font-bold tabular-nums">{formatNumber(total)}</span>
@@ -212,12 +212,12 @@ export function TrendChart({
   return (
     <div
       id="traffic-trend"
-      className="scroll-mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 sm:p-6"
+      className="scroll-mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 sm:p-6 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20"
     >
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="text-base font-bold text-slate-950">全站浏览与同意行为趋势</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-base font-bold text-slate-950 dark:text-slate-50">全站浏览与同意行为趋势</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             全站浏览是无 Cookie、无访客 ID 的 UTC 每日页面汇总；访问与点击仅包含明确允许统计的访客。趋势只显示已经结束的自然日，今天的实时数据单独显示在上方卡片中。Cookie 同意机制于 2026-08-12 上线，两套指标口径不同，不应互相替代或直接同比。
           </p>
         </div>
@@ -249,7 +249,7 @@ export function TrendChart({
               />
             </div>
 
-            <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-within:ring-4 focus-within:ring-blue-500/10">
+            <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-within:ring-4 focus-within:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-within:ring-blue-400/60">
               <input
                 type="checkbox"
                 className="sr-only"
@@ -258,11 +258,11 @@ export function TrendChart({
                 onChange={(event) => setCompare(event.target.checked)}
               />
               <span
-                className={`relative h-5 w-9 rounded-full transition ${compare ? "bg-blue-600" : "bg-slate-300"}`}
+                className={`relative h-5 w-9 rounded-full transition ${compare ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}
                 aria-hidden="true"
               >
                 <span
-                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${compare ? "left-[18px]" : "left-0.5"}`}
+                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition dark:bg-slate-200 ${compare ? "left-[18px]" : "left-0.5"}`}
                 />
               </span>
               对比
@@ -279,11 +279,11 @@ export function TrendChart({
             method="get"
             className={`flex flex-wrap items-end gap-2 rounded-xl border px-3 py-2 ${
               period.isCustom
-                ? "border-blue-200 bg-blue-50"
-                : "border-slate-200 bg-slate-50"
+                ? "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40"
+                : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60"
             }`}
           >
-            <label className="grid gap-1 text-[11px] font-semibold text-slate-500">
+            <label className="grid gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               开始日期
               <input
                 type="text"
@@ -293,10 +293,10 @@ export function TrendChart({
                 pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
                 placeholder="YYYY-MM-DD"
                 aria-label="开始日期，格式为年-月-日"
-                className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400"
+                className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:ring-blue-400/60"
               />
             </label>
-            <label className="grid gap-1 text-[11px] font-semibold text-slate-500">
+            <label className="grid gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               结束日期
               <input
                 type="text"
@@ -306,7 +306,7 @@ export function TrendChart({
                 pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
                 placeholder="YYYY-MM-DD"
                 aria-label={`结束日期，最晚 ${latestCompleteDate}`}
-                className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400"
+                className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:ring-blue-400/60"
               />
             </label>
             <AdminButton type="submit" size="sm">
@@ -314,7 +314,7 @@ export function TrendChart({
             </AdminButton>
           </form>
 
-          {period.error ? <p className="text-xs font-medium text-red-600">{period.error}</p> : null}
+          {period.error ? <p className="text-xs font-medium text-red-600 dark:text-red-300">{period.error}</p> : null}
         </div>
       </div>
 
@@ -349,12 +349,12 @@ export function TrendChart({
       </div>
 
       {compare ? (
-        <p className="mb-3 text-xs font-medium text-slate-500">
+        <p className="mb-3 text-xs font-medium text-slate-500 dark:text-slate-400">
           虚线为上一周期：{comparison.previousFrom} 至 {comparison.previousTo}
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl bg-slate-50 px-3 py-4 sm:px-5">
+      <div className="overflow-hidden rounded-xl bg-slate-50 px-3 py-4 sm:px-5 dark:bg-slate-950/60">
         {hasVisibleSeries && hasVisibleData ? (
           <div className="overflow-x-auto">
             <svg
@@ -374,14 +374,14 @@ export function TrendChart({
                       x2={chartWidth - chartRight}
                       y2={y}
                       stroke="currentColor"
-                      className="text-slate-200"
+                      className="text-slate-200 dark:text-slate-700"
                       strokeWidth="1"
                     />
                     <text
                       x={chartLeft - 9}
                       y={y + 4}
                       textAnchor="end"
-                      className="fill-slate-400 text-[11px] font-semibold"
+                      className="fill-slate-400 text-[11px] font-semibold dark:fill-slate-400"
                     >
                       {value}
                     </text>
@@ -514,7 +514,7 @@ export function TrendChart({
                         x={x}
                         y={chartHeight - 13}
                         textAnchor="middle"
-                        className="fill-slate-400 text-[11px] font-semibold"
+                        className="fill-slate-400 text-[11px] font-semibold dark:fill-slate-400"
                       >
                         {item.label}
                       </text>
@@ -525,7 +525,7 @@ export function TrendChart({
             </svg>
           </div>
         ) : (
-          <div className="flex h-64 items-center justify-center px-6 text-center text-sm text-slate-500">
+          <div className="flex h-64 items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">
             {hasVisibleSeries
               ? "所选时段还没有页面汇总或已同意行为数据，产生新访问后会自动绘制趋势线。"
               : "请至少选择一个指标以显示趋势线。"}

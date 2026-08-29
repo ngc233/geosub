@@ -85,18 +85,18 @@ export function ConversionRepairSections({
                         </AdminBadge>
                       </AdminTd>
                       <AdminTd>
-                        <span className="font-bold text-slate-950">
+                        <span className="font-bold text-slate-950 dark:text-slate-50">
                           {diagnostic.query}
                         </span>
-                        <span className="mt-1 block text-xs text-slate-500">
+                        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                           主要目标：{diagnostic.targetTitle}
                         </span>
-                        <span className="mt-1 block text-xs font-semibold uppercase text-slate-400">
+                        <span className="mt-1 block text-xs font-semibold uppercase text-slate-400 dark:text-slate-400">
                           {diagnostic.locale}
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="block max-w-md text-sm leading-6 text-slate-700">
+                        <span className="block max-w-md text-sm leading-6 text-slate-700 dark:text-slate-300">
                           {diagnostic.summary}
                         </span>
                       </AdminTd>
@@ -105,7 +105,7 @@ export function ConversionRepairSections({
                           {diagnostic.evidence.map((item) => (
                             <span
                               key={item}
-                              className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                              className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                             >
                               {item}
                             </span>
@@ -150,7 +150,7 @@ export function ConversionRepairSections({
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-6 py-10 text-center text-sm text-slate-400"
+                    className="px-6 py-10 text-center text-sm text-slate-400 dark:text-slate-400"
                   >
                     当前时段没有“已查看套餐但未继续点击购买入口”的搜索记录。
                   </td>
@@ -185,34 +185,34 @@ export function ConversionRepairSections({
                   return (
                     <AdminTr key={record.id}>
                       <AdminTd>
-                        <span className="font-bold text-slate-950">
+                        <span className="font-bold text-slate-950 dark:text-slate-50">
                           {record.query}
                         </span>
-                        <span className="mt-1 block text-xs uppercase text-slate-400">
+                        <span className="mt-1 block text-xs uppercase text-slate-400 dark:text-slate-400">
                           {record.locale} · {repairBlockerLabel(record.blockerCode)}
                         </span>
                       </AdminTd>
                       <AdminTd>
                         <AdminBadge variant={status.variant}>{status.label}</AdminBadge>
-                        <span className="mt-1 block text-xs text-slate-500">
+                        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                           {formatDate(record.evaluationStartedAt)} UTC
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="block text-xs leading-5 text-slate-600">
+                        <span className="block text-xs leading-5 text-slate-600 dark:text-slate-300">
                           结果 {record.baselineResultClicks} · 套餐 {record.baselinePlanEngagements}
                           <br />商业 {record.baselineCommercialConversions} · {record.baselineWindowDays} 天窗口
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="block text-xs leading-5 text-slate-600">
+                        <span className="block text-xs leading-5 text-slate-600 dark:text-slate-300">
                           结果 {record.currentResultClicks} · 套餐 {record.currentPlanEngagements}
                           <br />商业 {record.currentCommercialConversions}
                         </span>
                       </AdminTd>
                       <AdminTd>
                         <AdminBadge variant={effect.variant}>{effect.label}</AdminBadge>
-                        <span className="mt-1 block max-w-xs text-xs text-slate-500">
+                        <span className="mt-1 block max-w-xs text-xs text-slate-500 dark:text-slate-400">
                           {effect.helper}
                         </span>
                       </AdminTd>

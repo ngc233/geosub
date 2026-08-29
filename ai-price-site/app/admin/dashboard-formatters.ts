@@ -18,23 +18,23 @@ export function dailyOperationPresentation(state: DailyOperationState) {
   return {
     failed: {
       label: "运行失败",
-      className: "bg-red-50 text-red-700 ring-red-200",
+      className: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/60 dark:text-red-300 dark:ring-red-800",
     },
     action: {
       label: "需要处理",
-      className: "bg-amber-50 text-amber-700 ring-amber-200",
+      className: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800",
     },
     running: {
       label: "正在运行",
-      className: "bg-blue-50 text-blue-700 ring-blue-200",
+      className: "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:ring-blue-800",
     },
     queued: {
       label: "已排队",
-      className: "bg-blue-50 text-blue-700 ring-blue-200",
+      className: "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:ring-blue-800",
     },
     healthy: {
       label: "当前健康",
-      className: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+      className: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800",
     },
   }[state];
 }

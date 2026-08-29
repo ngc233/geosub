@@ -39,29 +39,29 @@ export function AdminStatCard({
   const card = (
     <div
       className={joinClasses(
-        "h-full min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition",
+        "h-full min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20",
         href
-          ? "cursor-pointer hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80"
+          ? "cursor-pointer hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80 dark:hover:border-blue-700 dark:hover:shadow-black/30"
           : ""
       )}
     >
       <div className="flex h-full items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-slate-500">{label}</p>
-          <p className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
             {value}
           </p>
           {helper ? (
-            <p className="mt-2 text-xs leading-5 text-slate-400">{helper}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-400 dark:text-slate-400">{helper}</p>
           ) : null}
         </div>
 
         {href ? (
-          <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
+          <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white dark:bg-blue-950/60 dark:text-blue-300 dark:group-hover:bg-blue-600 dark:group-hover:text-white">
             <ArrowRight size={16} strokeWidth={2} />
           </span>
         ) : (
-          <span className="mt-1 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">
+          <span className="mt-1 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-400">
             统计
           </span>
         )}
@@ -92,20 +92,20 @@ export function AdminPageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-7 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-7 lg:flex-row lg:items-end lg:justify-between dark:border-slate-800">
       <div>
         {eyebrow ? (
-          <p className="text-sm font-bold tracking-tight text-blue-700">
+          <p className="text-sm font-bold tracking-tight text-blue-700 dark:text-blue-400">
             {eyebrow}
           </p>
         ) : null}
 
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
           {title}
         </h1>
 
         {description ? (
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
             {description}
           </p>
         ) : null}

@@ -68,33 +68,33 @@ function ProgressContent({
       <button
         type="submit"
         disabled={active || disabled}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-wait disabled:border-blue-100 disabled:bg-blue-50 disabled:text-blue-400"
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-700 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-wait disabled:border-blue-100 disabled:bg-blue-50 disabled:text-blue-400 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/70 dark:disabled:border-blue-900 dark:disabled:bg-blue-950/40 dark:disabled:text-blue-600 dark:focus-visible:ring-blue-400/60"
       >
         {active ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : null}
         {active ? pendingLabel : buttonLabel}
       </button>
 
       {errorMessage ? (
-        <div className="w-80 max-w-[80vw] rounded-xl border border-red-100 bg-red-50 p-3 text-xs leading-5 text-red-700">
+        <div className="w-80 max-w-[80vw] rounded-xl border border-red-100 bg-red-50 p-3 text-xs leading-5 text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300">
           {errorMessage}
         </div>
       ) : null}
 
       {active ? (
-        <div className="w-80 max-w-[80vw] rounded-xl border border-blue-100 bg-white/90 p-4 text-xs text-blue-950 shadow-sm shadow-blue-200/40">
+        <div className="w-80 max-w-[80vw] rounded-xl border border-blue-100 bg-white/90 p-4 text-xs text-blue-950 shadow-sm shadow-blue-200/40 dark:border-blue-900 dark:bg-slate-900/95 dark:text-blue-100 dark:shadow-black/30">
           <div className="flex items-center justify-between gap-3">
             <span className="font-bold">{stage.label}</span>
-            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 font-mono font-bold tabular-nums text-blue-600">
+            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 font-mono font-bold tabular-nums text-blue-600 dark:bg-blue-950 dark:text-blue-300">
               {formatElapsed(elapsedSeconds)}
             </span>
           </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-blue-100">
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-blue-100 dark:bg-blue-950">
             <div
               className="h-full rounded-full bg-blue-600 transition-all duration-500"
               style={{ width: `${stage.progress}%` }}
             />
           </div>
-          <p className="mt-3 leading-5 text-blue-600">
+          <p className="mt-3 leading-5 text-blue-600 dark:text-blue-300">
             请求会先唤起后台脚本，再跳转到最近采集运行记录。若脚本还没完成，运行记录会继续自动显示最新状态。
           </p>
         </div>
