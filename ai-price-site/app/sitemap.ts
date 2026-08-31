@@ -20,6 +20,7 @@ import { getFeaturedCurrencyPairs } from "../lib/currency-pairs";
 import {
   isPlanSitemapPromotedProduct,
   seoIndexableLocales,
+  seoSitemapBudgets,
 } from "../lib/seo-indexing-policy";
 import {
   getPlanSitemapDecision,
@@ -35,6 +36,11 @@ import {
   getCountryPagePilotPath,
   getIndexApprovedCountryPagePilots,
 } from "../lib/country-page-pilot";
+import { latestSitemapDate } from "../lib/sitemap-lastmod";
+import {
+  resolveSitemapWithLastKnownGood,
+  SITEMAP_LKG_DYNAMIC_SENTINELS,
+} from "../lib/sitemap-lkg";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
@@ -44,20 +50,6 @@ type SitemapEntry = MetadataRoute.Sitemap[number];
 
 function absoluteUrl(path: string) {
   return new URL(path, siteUrl).toString();
-}
-
-function asDate(value: Date | string | null | undefined) {
-  if (!value) return null;
-
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function latestDate(values: Array<Date | string | null | undefined>, fallback: Date) {
-  return values.reduce<Date>((latest, value) => {
-    const date = asDate(value);
-    return date && date.getTime() > latest.getTime() ? date : latest;
-  }, fallback);
 }
 
 function route(
@@ -100,7 +92,7 @@ function getSitemapFallbackReason(error: unknown) {
   return error instanceof Error ? error.message : "unknown error";
 }
 
-async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
+async function getProductRoutes(): Promise<MetadataRoute.Sitemap> {
   const gateMode = getProductSeoGateMode();
   const [qualityAudits, promotedProductSlugs] = await Promise.all([
     gateMode === "enforce" ? getProductSeoQualityAudits() : Promise.resolve([]),
@@ -205,7 +197,7 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
       const isStreaming = product.category === ProductCategory.STREAMING;
       const section = isStreaming ? "streaming-pricing" : "ai-pricing";
       const productPriority = product.featured ? 0.9 : isStreaming ? 0.76 : 0.86;
-      const productLastModified = latestDate(
+      const productLastModified = latestSitemapDate(
         [
           product.updatedAt,
           ...product.plans.flatMap((plan) => [
@@ -215,7 +207,6 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
             plan.regionPrices[0]?.updatedAt,
           ]),
         ],
-        now,
       );
       const productRoutes = seoIndexableLocales.map((locale, index) =>
         route(
@@ -240,7 +231,7 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
         if (!planDecision.included) return [];
 
         const newestPrice = plan.regionPrices[0];
-        const lastModified = latestDate(
+        const lastModified = latestSitemapDate(
           [
             newestPrice?.lastCheckedAt,
             newestPrice?.publishedAt,
@@ -248,7 +239,6 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
             plan.updatedAt,
             product.updatedAt,
           ],
-          now,
         );
         const planPath = `${product.slug}/${plan.slug}`;
 
@@ -267,7 +257,6 @@ async function getProductRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
 }
 
 async function getArticleRoutesForLocale(
-  now: Date,
   locale: Locale,
   pathLocale: "zh" | "en",
 ): Promise<MetadataRoute.Sitemap> {
@@ -283,7 +272,7 @@ async function getArticleRoutesForLocale(
         `/${pathLocale}/guides/${article.slug}`,
         "weekly",
         article.isFeatured ? 0.78 : 0.64,
-        latestDate([article.updatedAt, article.publishedAt], now),
+        latestSitemapDate([article.updatedAt, article.publishedAt]),
       ),
     ),
     ...categories.map((category) =>
@@ -291,7 +280,7 @@ async function getArticleRoutesForLocale(
         `/${pathLocale}/guides/category/${category.slug}`,
         "weekly",
         0.58,
-        latestDate([category.updatedAt], now),
+        latestSitemapDate([category.updatedAt]),
       ),
     ),
     ...tags.map((tag) =>
@@ -299,22 +288,22 @@ async function getArticleRoutesForLocale(
         `/${pathLocale}/guides/tag/${tag.slug}`,
         "weekly",
         0.5,
-        latestDate([tag.updatedAt], now),
+        latestSitemapDate([tag.updatedAt]),
       ),
     ),
   ];
 }
 
-async function getArticleRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
+async function getArticleRoutes(): Promise<MetadataRoute.Sitemap> {
   const [chineseRoutes, englishRoutes] = await Promise.all([
-    getArticleRoutesForLocale(now, Locale.ZH, "zh"),
-    getArticleRoutesForLocale(now, Locale.EN, "en"),
+    getArticleRoutesForLocale(Locale.ZH, "zh"),
+    getArticleRoutesForLocale(Locale.EN, "en"),
   ]);
 
   return [...chineseRoutes, ...englishRoutes];
 }
 
-async function getCountryPageRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
+async function getCountryPageRoutes(): Promise<MetadataRoute.Sitemap> {
   const pilots = getIndexApprovedCountryPagePilots();
   const productSlugs = [...new Set(pilots.map((pilot) => pilot.productSlug))];
   const countryCodes = [...new Set(pilots.map((pilot) => pilot.countryCode))];
@@ -378,10 +367,11 @@ async function getCountryPageRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
     if (matchingPrices.length === 0) return [];
 
     const approval = getCountryPageIndexApproval(pilot);
-    const approvalDate = approval ? new Date(approval.approvedAt) : now;
-    const lastModified = latestDate(
+    const approvalDate = approval ? new Date(approval.approvedAt) : undefined;
+    const lastModified = latestSitemapDate(
       [
         product.updatedAt,
+        approvalDate,
         ...matchingPlans.map((plan) => plan.updatedAt),
         ...matchingPrices.flatMap((price) => [
           price.lastCheckedAt,
@@ -389,7 +379,6 @@ async function getCountryPageRoutes(now: Date): Promise<MetadataRoute.Sitemap> {
           price.updatedAt,
         ]),
       ],
-      approvalDate,
     );
 
     return seoIndexableLocales.map((locale, index) =>
@@ -449,11 +438,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     route("/en/terms", "yearly", 0.2),
   ];
 
-  try {
+  const generateCompleteSitemap = async () => {
     const [productRoutes, articleRoutes, countryPageRoutes] = await Promise.all([
-      getProductRoutes(now),
-      getArticleRoutes(now),
-      getCountryPageRoutes(now),
+      getProductRoutes(),
+      getArticleRoutes(),
+      getCountryPageRoutes(),
     ]);
 
     return dedupeRoutes([
@@ -462,6 +451,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...articleRoutes,
       ...countryPageRoutes,
     ]);
+  };
+
+  try {
+    if (process.env.NODE_ENV === "production") {
+      const result = await resolveSitemapWithLastKnownGood({
+        generate: generateCompleteSitemap,
+        snapshotPath: process.env.GEOSUB_SITEMAP_LKG_PATH?.trim() || undefined,
+        siteOrigin: new URL(siteUrl).origin,
+        now,
+        totalBudget: seoSitemapBudgets.total,
+        requiredSentinelPaths: SITEMAP_LKG_DYNAMIC_SENTINELS,
+        onSnapshotWriteError: (error) => {
+          console.error(
+            `Fresh sitemap was served but its LKG snapshot could not be persisted (${getSitemapFallbackReason(error)}).`,
+          );
+        },
+      });
+
+      if (result.source === "last_known_good") {
+        console.error(
+          `Sitemap last-known-good snapshot accepted after live generation failed (${getSitemapFallbackReason(result.liveError)}).`,
+        );
+      }
+
+      return result.entries;
+    }
+
+    return await generateCompleteSitemap();
   } catch (error) {
     if (process.env.NODE_ENV === "production") {
       console.error(

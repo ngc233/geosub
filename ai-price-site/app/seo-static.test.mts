@@ -161,8 +161,9 @@ test("sitemap includes public subscription and article routes only", () => {
   assert.deepEqual(seoIndexableLocales, ["zh", "en"]);
   assert.match(source, /seoIndexableLocales\.map/);
   assert.match(source, /seoIndexableLocales\.flatMap/);
-  assert.match(source, /getArticleRoutesForLocale\(now, Locale\.ZH, "zh"\)/);
-  assert.match(source, /getArticleRoutesForLocale\(now, Locale\.EN, "en"\)/);
+  assert.match(source, /getArticleRoutesForLocale\(Locale\.ZH, "zh"\)/);
+  assert.match(source, /getArticleRoutesForLocale\(Locale\.EN, "en"\)/);
+  assert.doesNotMatch(source, /getArticleRoutesForLocale\(now,/);
   assert.match(source, /\/zh\/ai-pricing/);
   assert.match(source, /\/en\/ai-pricing/);
   assert.match(source, /\/zh\/streaming-pricing/);

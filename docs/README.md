@@ -19,6 +19,7 @@ v2.11 更新的是团队工作流与核心治理规则，不要求为了统一�
 ## 支撑规范与登记表
 
 - [product-brand-asset-register.md](product-brand-asset-register.md)：品牌素材来源、授权证据、复审周期和发布门禁登记。
+- [rfc-seo-index-lifecycle-and-sitemap-resilience-2026-08-31.md](rfc-seo-index-lifecycle-and-sitemap-resilience-2026-08-31.md)：页面级 SEO 状态、observe-only 历史、sitemap LKG 例外、实验冻结与分阶段上线边界。
 
 ## 使用顺序
 

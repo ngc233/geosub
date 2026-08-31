@@ -15,14 +15,28 @@ const deployCheckPath = resolve(
   "post-deploy-check.sh",
 );
 
-test("production sitemap fails closed when dynamic routes cannot be generated", () => {
+test("production sitemap allows only a validated complete LKG before failing closed", () => {
   const source = readFileSync(resolve(appDir, "sitemap.ts"), "utf8");
+  const policy = readFileSync(resolve(siteDir, "..", "docs", "SEO_POLICY.md"), "utf8");
 
   assert.match(source, /export const dynamic = "force-dynamic"/);
   assert.match(source, /process\.env\.NODE_ENV === "production"/);
   assert.match(source, /Sitemap generation failed/);
+  assert.match(source, /Sitemap last-known-good snapshot accepted/);
+  assert.match(source, /GEOSUB_SITEMAP_LKG_PATH/);
   assert.match(source, /throw error/);
   assert.match(source, /Development sitemap is using static routes only/);
+
+  assert.match(policy, /Last Known Good/);
+  assert.match(policy, /generatedAt/);
+  assert.match(policy, /urlCount/);
+  assert.match(policy, /policyVersion/);
+  assert.match(policy, /contentHash/);
+  assert.match(policy, /SHA-256/);
+  assert.match(policy, /siteOrigin/);
+  assert.match(policy, /schemaVersion/);
+  assert.match(policy, /24 小时/);
+  assert.match(policy, /不得用静态路由子集冒充完整快照/);
 });
 
 test("post-deploy checks enforce sitemap range and dynamic sentinels", () => {

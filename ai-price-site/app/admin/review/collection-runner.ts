@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../lib/prisma";
 import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
+import { requestSuccessfulCollectorRevalidation } from "../../../lib/internal-collector-revalidation";
 import {
   type CollectionRunResult,
   type CollectionRunStatus,
@@ -190,7 +191,14 @@ export function startCollectorJobInBackground(
     void markCollectorRunProcessExit(runId, "spawn_failed", error.message);
   });
   child.once("exit", (code, signal) => {
-    if ((code !== null && code !== 0) || signal) {
+    if (code === 0 && !signal) {
+      void requestSuccessfulCollectorRevalidation(jobId).catch((error) => {
+        console.error(
+          `Collector cache invalidation failed after successful job ${jobId}.`,
+          error,
+        );
+      });
+    } else {
       const message = signal
         ? `Collector process exited${code === null ? "" : ` with code ${code}`} and signal ${signal}.`
         : `Collector process exited with code ${code}.`;

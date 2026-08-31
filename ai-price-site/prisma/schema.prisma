@@ -444,6 +444,7 @@ model Product {
   articleBlocks     ArticleBlock[]
   articleRelations  ArticleRelation[]
   authorityCoverageTasks AuthorityCoverageTask[]
+  seoPageStates     SeoPageState[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -470,6 +471,7 @@ model Plan {
   faqs              Faq[]
   articleBlocks     ArticleBlock[]
   articleRelations  ArticleRelation[]
+  seoPageStates     SeoPageState[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -683,6 +685,66 @@ model SeoMeta {
   @@index([productId])
   @@index([articleId])
   @@map("seo_meta")
+}
+
+model SeoPageState {
+  id String @id @default(uuid()) @db.Uuid
+
+  locale        Locale
+  pageType      String @map("page_type")
+  canonicalPath String @unique @map("canonical_path")
+
+  productId   String?  @map("product_id") @db.Uuid
+  productSlug String?  @map("product_slug")
+  planId      String?  @map("plan_id") @db.Uuid
+  planSlug    String?  @map("plan_slug")
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  plan        Plan?    @relation(fields: [planId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  eligibilityState String   @map("eligibility_state")
+  indexingDecision String   @map("indexing_decision")
+  decisionSource   String   @map("decision_source")
+  effectiveAt      DateTime @map("effective_at") @db.Timestamptz(6)
+  reason           String?
+  policyVersion    String   @map("policy_version")
+
+  history SeoPageStateHistory[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([locale, pageType, indexingDecision], map: "seo_page_states_decision_idx")
+  @@index([productId, planId], map: "seo_page_states_product_plan_idx")
+  @@map("seo_page_states")
+}
+
+model SeoPageStateHistory {
+  id String @id @default(uuid()) @db.Uuid
+
+  seoPageStateId String       @map("seo_page_state_id") @db.Uuid
+  seoPageState   SeoPageState @relation(fields: [seoPageStateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  locale        Locale
+  pageType      String @map("page_type")
+  canonicalPath String @map("canonical_path")
+
+  finalRobotsIndex  Boolean @map("final_robots_index")
+  finalRobotsFollow Boolean @map("final_robots_follow")
+  canonicalUrl      String  @map("canonical_url")
+  qualityScore      Int?    @map("quality_score")
+  qualityStatus     String? @map("quality_status")
+  sitemapIncluded   Boolean @map("sitemap_included")
+  indexingDecision  String  @map("indexing_decision")
+  triggerSource     String  @map("trigger_source")
+  policyVersion     String  @map("policy_version")
+  experimentLockId  String? @map("experiment_lock_id")
+  experimentLocked  Boolean @default(false) @map("experiment_locked")
+
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+
+  @@index([seoPageStateId, recordedAt(sort: Desc)], map: "seo_page_state_history_state_recorded_idx")
+  @@index([canonicalPath, recordedAt(sort: Desc)], map: "seo_page_state_history_path_recorded_idx")
+  @@map("seo_page_state_history")
 }
 
 model Faq {

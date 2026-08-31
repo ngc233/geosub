@@ -1,8 +1,12 @@
 const publicPricingSections = ["ai-pricing", "streaming-pricing"] as const;
 const publicPricingLocales = ["zh", "en"] as const;
 
-export function getCollectionRevalidationPaths(productSlug?: string | null) {
+export function getCollectionRevalidationPaths(
+  productSlug?: string | null,
+  planSlugs: readonly string[] = [],
+) {
   const paths = [
+    "/sitemap.xml",
     "/admin/review",
     "/admin/pipeline",
     "/admin/collector-jobs",
@@ -19,6 +23,20 @@ export function getCollectionRevalidationPaths(productSlug?: string | null) {
         publicPricingLocales.map((locale) => `/${locale}/${section}/${slug}`),
       ),
     );
+
+    for (const planSlug of planSlugs) {
+      const normalizedPlanSlug = String(planSlug).trim();
+      if (!normalizedPlanSlug) continue;
+
+      paths.push(
+        ...publicPricingSections.flatMap((section) =>
+          publicPricingLocales.map(
+            (locale) =>
+              `/${locale}/${section}/${slug}/${normalizedPlanSlug}`,
+          ),
+        ),
+      );
+    }
   }
 
   return [...new Set(paths)];

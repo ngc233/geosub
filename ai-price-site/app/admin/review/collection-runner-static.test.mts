@@ -35,3 +35,9 @@ test("scheduled collector maintenance reconciles stale runs without mutating dry
       collectorRunnerSource.indexOf("$jobs = @(Get-DueJobs)"),
   );
 });
+
+test("successful collector completion performs a second public cache invalidation", () => {
+  assert.match(source, /code === 0 && !signal/);
+  assert.match(source, /requestSuccessfulCollectorRevalidation\(jobId\)/);
+  assert.match(source, /Collector cache invalidation failed after successful job/);
+});
