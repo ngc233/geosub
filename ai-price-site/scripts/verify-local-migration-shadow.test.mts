@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { createRequire } from "node:module";
 import test from "node:test";
 
@@ -44,4 +45,16 @@ test("dump normalization removes only volatile pg_dump metadata", () => {
     ].join("\r\n"),
   );
   assert.equal(normalized, "CREATE TABLE public.products ();\n");
+});
+
+test("large data snapshots are hashed inside the container", () => {
+  const source = fs.readFileSync(
+    new URL("./verify-local-migration-shadow.cjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /`--file=\$\{temporaryDump\}`/);
+  assert.match(source, /"sha256sum",\s*temporaryDump/);
+  assert.match(source, /"sed",\s*"-E",\s*"-i"/);
+  assert.doesNotMatch(source, /scope === "data"/);
 });

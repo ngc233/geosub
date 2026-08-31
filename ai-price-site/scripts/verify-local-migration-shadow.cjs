@@ -70,12 +70,67 @@ function readDump({ container, user, database, scope }) {
     args.push("--schema-only", "--exclude-table=public.directus_*");
   } else if (scope === "directus") {
     args.push("--schema-only", "--table=public.directus_*");
-  } else if (scope === "data") {
-    args.push("--data-only");
   } else {
     throw new Error(`Unknown dump scope: ${scope}`);
   }
   return normalizeDump(runDocker(args));
+}
+
+function dataHash({ container, user, database }) {
+  const temporaryDump =
+    `/tmp/geosub-b1-shadow-data-${process.pid}-${crypto.randomUUID()}.sql`;
+
+  try {
+    runDocker([
+      "exec",
+      container,
+      "pg_dump",
+      "-U",
+      user,
+      "-d",
+      database,
+      "--data-only",
+      "--no-owner",
+      "--no-privileges",
+      `--file=${temporaryDump}`,
+    ]);
+    runDocker([
+      "exec",
+      container,
+      "sed",
+      "-E",
+      "-i",
+      "-e",
+      "/^-- Dumped from database version /d",
+      "-e",
+      "/^-- Dumped by pg_dump version /d",
+      "-e",
+      "/^-- Started on /d",
+      "-e",
+      "/^-- Completed on /d",
+      "-e",
+      "/^\\\\(un)?restrict /d",
+      temporaryDump,
+    ]);
+    const output = runDocker([
+      "exec",
+      container,
+      "sha256sum",
+      temporaryDump,
+    ]).trim();
+    const match = output.match(/^([0-9a-f]{64})\s/);
+    if (!match) throw new Error("Unable to parse the shadow data SHA-256 hash.");
+    return match[1];
+  } finally {
+    const cleanup = spawnSync(
+      "docker",
+      ["exec", container, "rm", "-f", temporaryDump],
+      { cwd: appDir, encoding: "utf8", shell: false },
+    );
+    if (cleanup.status !== 0) {
+      console.warn(`Unable to remove temporary shadow dump: ${temporaryDump}`);
+    }
+  }
 }
 
 function directusTableCount({ container, user, database }) {
@@ -99,15 +154,13 @@ function snapshot(options) {
     directusTableCount(options) > 0
       ? readDump({ ...options, scope: "directus" })
       : "NO_DIRECTUS_TABLES\n";
-  const data = readDump({ ...options, scope: "data" });
   return {
     geosub,
     directus,
-    data,
     hashes: {
       geosub: hash(geosub),
       directus: hash(directus),
-      data: hash(data),
+      data: dataHash(options),
     },
   };
 }
