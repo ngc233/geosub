@@ -1,6 +1,6 @@
 # RFC：SEO 页面生命周期与 Sitemap 韧性
 
-状态：已批准本地实现；生产 robots 行为变更与部署未获批准
+状态：已批准生产部署、additive observe-only migration 与 Sitemap LKG；生产 robots 行为变更仍未获批准
 
 日期：2026-08-31
 
@@ -169,5 +169,5 @@ policy_version
 - `lastmod` 和失效修复可通过代码回退，不需要数据恢复。
 - 删除或不配置 `GEOSUB_SITEMAP_LKG_PATH` 会恢复原生产 fail-closed 行为；保留的快照文件不影响运行时。
 - LKG schema/policy 版本升级后，旧快照自动不兼容并失败关闭，不进行宽松读取。
-- observe-only 表为 additive；代码回退后可保留，不删除历史。生产 migration 未获批准前不进入生产。
+- observe-only 表为 additive；代码回退后可保留，不删除历史。本次已批准应用 additive migration，但不得接入生产 robots、canonical 或 sitemap eligibility 控制路径。
 - 任何未来 robots 生命周期切换必须另写 rollout/rollback，不能复用本 RFC 的本地实现批准。
