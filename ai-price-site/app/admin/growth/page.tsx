@@ -39,6 +39,7 @@ function statusClass(status: "complete" | "partial" | "unavailable") {
 }
 
 function sourceModeLabel(source: GrowthIntelligenceOverview["sources"]["bingWebmaster"]) {
+  if (source.mode === "server_snapshot") return "自动采集 · 最新成功快照";
   if (source.evidence?.method === "server_api") return "服务器 API 快照";
   if (source.mode === "manual_import") return "手动导入";
   return "历史基线";
@@ -64,21 +65,30 @@ function SourceCard({
           {statusLabel(source.status)}
         </span>
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-4">
+      <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">
+        {source.totalsScope === "observed_property_days" ? "来源逐日总量（仅返回日期）" : "已捕获页面子集总量"}
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-4">
         <div>
           <p className="text-xs font-semibold text-slate-400">点击</p>
-          <p className="mt-1 text-2xl font-black tabular-nums text-slate-950 dark:text-slate-50">{formatNumber(source.totals.clicks)}</p>
+          <p className="mt-1 text-2xl font-black tabular-nums text-slate-950 dark:text-slate-50">{source.status === "unavailable" ? "—" : formatNumber(source.totals.clicks)}</p>
         </div>
         <div>
           <p className="text-xs font-semibold text-slate-400">展示</p>
-          <p className="mt-1 text-2xl font-black tabular-nums text-slate-950 dark:text-slate-50">{formatNumber(source.totals.impressions)}</p>
+          <p className="mt-1 text-2xl font-black tabular-nums text-slate-950 dark:text-slate-50">{source.status === "unavailable" ? "—" : formatNumber(source.totals.impressions)}</p>
         </div>
       </div>
       <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">
         {source.periodStart && source.periodEnd ? `${source.periodStart} 至 ${source.periodEnd}` : "暂无有效观察期"}
       </p>
+      <p className="mt-1 break-words text-xs leading-5 text-slate-500 dark:text-slate-400">
+        最近采集：{source.collection.collectedAt ? new Date(source.collection.collectedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }) + "（北京时间）" : "暂无可用自动快照"}
+      </p>
+      {source.collection.sourceTimezone && <p className="mt-1 break-words text-xs leading-5 text-slate-500 dark:text-slate-400">
+        来源时区：{source.collection.sourceTimezone === "unknown" ? "待确认" : source.collection.sourceTimezone} · {source.collection.searchType === "web_and_chat" ? "Web + Chat" : "Web"}
+      </p>}
       <ul className="mt-3 space-y-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-        {source.limitations.slice(0, 2).map((limitation) => <li key={limitation}>· {limitation}</li>)}
+        {source.limitations.slice(0, 3).map((limitation) => <li key={limitation}>· {limitation}</li>)}
       </ul>
     </AdminCard>
   );

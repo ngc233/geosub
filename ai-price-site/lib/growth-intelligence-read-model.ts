@@ -3,6 +3,7 @@ import "server-only";
 import { AGGREGATE_PAGE_VIEW_METRIC } from "./aggregate-page-views.ts";
 import { getSearchDemandSummary } from "./admin-search-demand.ts";
 import { getSeoTrafficConversionOverview } from "./admin-seo-conversion.ts";
+import { readGrowthShadowSource, summarizeGrowthShadow } from "./growth-shadow-source.ts";
 import { prisma } from "./prisma.ts";
 import { classifyGrowthQuery } from "./growth-intelligence.ts";
 import {
@@ -190,6 +191,8 @@ export async function getGrowthIntelligenceOverview(
     topPageViews,
     conversion,
     searchDemand,
+    googleShadow,
+    bingShadow,
   ] = await Promise.all([
     getSeoSearchPageObservationState(),
     prisma.dailyStat.findMany({
@@ -215,10 +218,24 @@ export async function getGrowthIntelligenceOverview(
     }),
     getSeoTrafficConversionOverview(days),
     getSearchDemandSummary(days),
+    readGrowthShadowSource("google", now),
+    readGrowthShadowSource("bing", now),
   ]);
 
-  const google = summarizeSearchSource(observationState, "google", now);
-  const bing = summarizeSearchSource(observationState, "bing", now);
+  const source = (engine: SeoSearchEngine, shadow: Awaited<ReturnType<typeof readGrowthShadowSource>>) => {
+    const live = summarizeGrowthShadow(shadow, now);
+    if (live) return live;
+    const legacy = summarizeSearchSource(observationState, engine, now);
+    return { ...legacy, collection: {
+      state: shadow.state, collectedAt: null, sourceTimezone: null, searchType: null,
+      property: null, observedDays: null, expectedDays: null, missingDays: null,
+    }, limitations: [
+      shadow.state === "missing" ? "尚无自动采集快照；以下数字来自明确标注的旧记录。" : "自动快照读取或校验失败；以下数字来自明确标注的旧记录。",
+      ...legacy.limitations,
+    ] };
+  };
+  const google = source("google", googleShadow);
+  const bing = source("bing", bingShadow);
   const onsiteOpportunities = buildSearchGrowthQueue(
     searchDemand.terms,
     searchDemand.conversionTerms.map((term) => ({
@@ -333,9 +350,9 @@ export async function getGrowthIntelligenceOverview(
       externalActionsAvailable: false,
     },
     limitations: [
-      "Google and Bing are still sourced from validated manual imports or historical baselines; automated provider collection is not enabled.",
-      "This transitional endpoint is evidence for analysis, not proof that a recommendation should be executed.",
-      "Google and Bing metrics retain separate source semantics and must not be treated as directly interchangeable.",
+      "优先读取通过校验的 Google/Bing 自动快照；不可用时明确标注手动导入或历史基线，不会将旧记录冒充实时数据。",
+      "采集成功不等于数据结算或增长改善；本页不会自动解锁实验。",
+      "站内天数筛选只影响站内数据；Google/Bing 保留各自日期窗口、时区和统计范围，不能直接相加或比较。",
     ],
   };
 }

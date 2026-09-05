@@ -8,6 +8,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { parseSeoSearchPageObservationRows } from "../lib/seo-search-observation-import.ts";
 import type { SeoSearchPageImportState } from "../lib/seo-search-observation-import.ts";
+import { summarizeGrowthShadow, type GrowthShadowRead } from "../lib/growth-shadow-source.ts";
 import type { SearchDemandTerm } from "../lib/search-opportunity.ts";
 
 const require = createRequire(import.meta.url);
@@ -45,12 +46,13 @@ function importedState(periodEnd = "2026-09-02"): SeoSearchPageImportState {
 }
 
 function createApi({
-  terms = [], state = importedState(), enabled = "true", failReads = false,
+  terms = [], state = importedState(), enabled = "true", failReads = false, shadow,
 }: {
   terms?: SearchDemandTerm[];
   state?: SeoSearchPageImportState;
   enabled?: string;
   failReads?: boolean;
+  shadow?: GrowthShadowRead;
 } = {}) {
   const reads: string[] = [];
   const logs: string[] = [];
@@ -60,6 +62,10 @@ function createApi({
     return value;
   };
   const stubs = new Map<string, Record<string, unknown>>([
+    [resolve(appDir, "lib/growth-shadow-source.ts"), {
+      readGrowthShadowSource: async () => shadow ?? ({ state: "missing", evidence: null, property: null }),
+      summarizeGrowthShadow,
+    }],
     [resolve(appDir, "lib/aggregate-page-views.ts"), { AGGREGATE_PAGE_VIEW_METRIC: "page_views" }],
     [resolve(appDir, "lib/prisma.ts"), {
       prisma: { dailyStat: { findMany: read("daily", []), groupBy: read("pages", []) } },
@@ -227,4 +233,33 @@ test("GET invalid windows and unavailable data fail without leaking private erro
   const text = await response.text();
   assert.equal(text.includes("synthetic-private-database-error"), false);
   assert.equal(failed.logs.join(" ").includes("synthetic-private-database-error"), false);
+});
+
+
+test("GET prefers validated live daily totals over imported page subsets", async () => {
+  const api = createApi({ shadow: { state: "available", property: "sc-domain:geosub.org", evidence: {
+    schemaVersion: "growth-search-evidence.v1", site: "https://geosub.org", engine: "google", searchType: "web",
+    sourceTimezone: "America/Los_Angeles", method: "server_api", collectedAt: now,
+    periodStart: "2026-08-31", periodEnd: "2026-09-01", settledThrough: null,
+    days: [{ date: "2026-08-31", clicks: 30, impressions: 300 }],
+    pages: { searchType: "web", coverage: "selected_rows", availableRows: 0, rows: [] },
+  } } });
+  const body = await (await api.request()).json();
+  const source = body.data.sources.googleSearchConsole;
+  assert.equal(source.mode, "server_snapshot");
+  assert.equal(source.totalsScope, "observed_property_days");
+  assert.equal(source.totals.clicks, 30);
+  assert.equal(source.collection.missingDays, 1);
+  assert.equal(source.status, "partial");
+  assert.equal(source.settledThrough, null);
+});
+
+test("GET explicitly marks invalid auto data while retaining labelled legacy evidence", async () => {
+  const api = createApi({ shadow: { state: "invalid", property: null, evidence: null } });
+  const body = await (await api.request()).json();
+  const source = body.data.sources.googleSearchConsole;
+  assert.equal(source.mode, "manual_import");
+  assert.equal(source.collection.state, "invalid");
+  assert.equal(source.totalsScope, "captured_page_rows");
+  assert.match(source.limitations[0], /校验失败/);
 });
