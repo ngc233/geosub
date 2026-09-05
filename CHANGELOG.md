@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.10.0 - Unreleased
+## 2.10.0 - 2026-09-05
 
 - Separate eligible, internal, automated and unclassified page views into
   versioned daily counters, while preserving existing aggregate PV totals.
