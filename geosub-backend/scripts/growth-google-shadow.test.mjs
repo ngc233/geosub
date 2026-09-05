@@ -64,3 +64,15 @@ test("Google refresh token exchange validates the access token response", async 
   assert.equal(seen.url, "https://oauth2.googleapis.com/token");
   assert.match(String(seen.init.body), /grant_type=refresh_token/);
 });
+
+test("domain property requests preserve the property and filter unrelated hosts", async () => {
+  let seen;
+  await fetchGoogleSearchAnalytics({accessToken:"test", siteUrl:"sc-domain:geosub.org", startDate:"2026-08-30", endDate:"2026-08-31", dimensions:["date"], fetchImpl:async url=>{seen=url;return {ok:true,json:async()=>dailyPayload};}});
+  assert.match(seen, /sites\/sc-domain%3Ageosub.org\/searchAnalytics/);
+  const snapshot = buildGoogleGrowthSnapshot({dailyPayload,pagePayload:{rows:[...pagePayload.rows,{keys:["https://private.geosub.org/en/private"],clicks:1,impressions:2}]},siteUrl:"sc-domain:geosub.org",startDate:"2026-08-30",endDate:"2026-08-31"});
+  assert.equal(snapshot.site,"sc-domain:geosub.org");
+  assert.equal(snapshot.pages.rows.length,1);
+  assert.equal(snapshot.settledThrough,null);
+  assert.ok(snapshot.limitations.some(x=>x.includes("subdomains")));
+  await assert.rejects(fetchGoogleSearchAnalytics({accessToken:"test",siteUrl:"sc-domain:other.example",startDate:"2026-08-30",endDate:"2026-08-31",dimensions:["date"],fetchImpl:()=>assert.fail("must not fetch")}),/GeoSub property/);
+});

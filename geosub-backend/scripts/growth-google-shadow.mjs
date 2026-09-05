@@ -80,7 +80,7 @@ export async function fetchGoogleSearchAnalytics({
   fetchImpl = globalThis.fetch,
 }) {
   assertString(accessToken, "Google access token");
-  assertString(siteUrl, "Google site URL");
+  if (!["https://geosub.org/", "sc-domain:geosub.org"].includes(siteUrl)) throw new Error("Google site must be a GeoSub property.");
   const start = date(startDate, "Google start date");
   const end = date(endDate, "Google end date");
   if (start > end) throw new Error("Google start date must not exceed end date.");
@@ -98,8 +98,10 @@ export async function fetchGoogleSearchAnalytics({
 
 function publicPath(value, siteUrl) {
   try {
-    const url = new URL(String(value || ""), siteUrl);
-    const site = new URL(siteUrl);
+    const base = siteUrl === "sc-domain:geosub.org" ? "https://geosub.org/" : siteUrl;
+    const url = new URL(String(value || ""), base);
+    const site = new URL(base);
+    if (!["https:", "http:"].includes(url.protocol)) return null;
     if (url.hostname.toLowerCase().replace(/^www\./, "") !== site.hostname.toLowerCase().replace(/^www\./, "")) return null;
     if (!/^\/(?:zh-tw|zh|en|ja|ko|es|tr|ar|fr|it|de|pt)(?:\/|$)/.test(url.pathname)) return null;
     return url.pathname.replace(/\/$/, "") || "/zh";
@@ -154,7 +156,7 @@ export function buildGoogleGrowthSnapshot({
   collectedAt = new Date().toISOString(),
 }) {
   const site = assertString(siteUrl, "Google site URL");
-  if (site !== "https://geosub.org/") throw new Error("Google site URL must be the GeoSub URL-prefix property.");
+  if (!["https://geosub.org/", "sc-domain:geosub.org"].includes(site)) throw new Error("Google site must be a GeoSub property.");
   const start = date(startDate, "Google start date");
   const end = date(endDate, "Google end date");
   const daily = buildDailyRows(parseEnvelope(dailyPayload, ["date"]), start, end);
@@ -180,6 +182,7 @@ export function buildGoogleGrowthSnapshot({
       "Google Search Console dataState=final is used, but this adapter does not assert provider settlement through a separate watermark.",
       "Search Analytics may omit days without data and is bounded to top rows; page rows are not a site-total substitute.",
       "Raw query dimensions are not requested or stored.",
+      ...(site.startsWith("sc-domain:") ? ["Site totals cover the domain property including subdomains and protocols; selected page rows retain only GeoSub public locale paths on the main or www host."] : []),
     ],
   };
 }

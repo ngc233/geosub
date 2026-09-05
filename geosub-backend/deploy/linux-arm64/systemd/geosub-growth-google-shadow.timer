@@ -1,0 +1,11 @@
+[Unit]
+Description=Run GeoSub Google growth shadow collector daily
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 UTC
+RandomizedDelaySec=20min
+Persistent=true
+Unit=geosub-growth-google-shadow.service
+
+[Install]
+WantedBy=timers.target

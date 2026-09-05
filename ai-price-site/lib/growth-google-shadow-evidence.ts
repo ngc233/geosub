@@ -29,7 +29,7 @@ export function googleShadowSnapshotToGrowthEvidence(input: unknown): GrowthSear
     "daily", "pages", "querySummary", "limitations",
   ], "Google shadow snapshot");
   if (snapshot.schemaVersion !== "growth-metrics.v1" || snapshot.contractVersion !== "growth-metrics.v1"
-    || snapshot.source !== "google_search_console" || snapshot.site !== "https://geosub.org/"
+    || snapshot.source !== "google_search_console" || !["https://geosub.org/", "sc-domain:geosub.org"].includes(String(snapshot.site))
     || snapshot.settledThrough !== null || snapshot.status !== "partial"
     || snapshot.endpointKind !== "search_analytics") {
     throw new TypeError("Unsupported Google shadow snapshot contract.");

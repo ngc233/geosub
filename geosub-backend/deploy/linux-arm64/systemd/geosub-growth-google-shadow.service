@@ -1,0 +1,19 @@
+[Unit]
+Description=GeoSub Google growth shadow collector
+Wants=network-online.target
+After=network-online.target geosub-web.service
+
+[Service]
+Type=oneshot
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+WorkingDirectory=/opt/geosub/geosub-backend
+ExecStart=/opt/geosub/geosub-backend/deploy/linux-arm64/run-system-task.sh growth_google_shadow -- /opt/geosub/geosub-backend/deploy/linux-arm64/run-growth-google-shadow.sh
+TimeoutStartSec=5m
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

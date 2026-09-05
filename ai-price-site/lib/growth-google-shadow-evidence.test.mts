@@ -40,6 +40,13 @@ test("Google shadow snapshots become server API growth evidence", () => {
 test("Google shadow conversion rejects query-bearing contract drift", () => {
   const leaked = { ...snapshot(), querySummary: { availableRows: 3, rows: [{ query: "private" }] } };
   assert.throws(() => googleShadowSnapshotToGrowthEvidence(leaked), /unsupported field/);
-  const wrongSite = { ...snapshot(), site: "sc-domain:geosub.org" };
+  const wrongSite = { ...snapshot(), site: "sc-domain:other.example" };
   assert.throws(() => googleShadowSnapshotToGrowthEvidence(wrongSite), /Unsupported Google/);
+});
+
+test("Google domain property retains final-data boundaries in report evidence", () => {
+  const evidence = googleShadowSnapshotToGrowthEvidence({ ...snapshot(), site: "sc-domain:geosub.org" });
+  assert.equal(evidence.engine, "google");
+  assert.equal(evidence.settledThrough, null);
+  assert.equal(evidence.pages?.coverage, "selected_rows");
 });
