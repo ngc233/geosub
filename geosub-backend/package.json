@@ -5,7 +5,9 @@
     "type": "module",
     "scripts": {
         "render:app-store": "node scripts/render-app-store-prices.mjs",
-        "render:web-snapshot": "node scripts/render-web-snapshot.mjs"
+        "render:web-snapshot": "node scripts/render-web-snapshot.mjs",
+        "collect:growth:bing": "node scripts/growth-bing-shadow.mjs",
+        "collect:growth:google": "node scripts/growth-google-shadow.mjs"
     },
     "dependencies": {
         "playwright-core": "^1.57.0"

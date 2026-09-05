@@ -165,21 +165,34 @@ The timer refreshes the latest three UTC days every 15 minutes. The admin
 dashboard overlays the current UTC day directly from `event_logs`, so its
 today totals remain live between aggregation runs.
 
-12. Install the verified daily database backup timer:
+12. Install the read-only Bing growth shadow timer after setting the Bing OAuth
+values and `GEOSUB_GROWTH_BING_ENABLED=true` in `/etc/geosub/geosub.env`:
+
+```bash
+sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-growth-bing-shadow.sh
+sudo systemctl start geosub-growth-bing-shadow.service
+sudo systemctl start geosub-growth-bing-shadow.timer
+```
+
+The collector writes immutable provider snapshots under
+`/var/lib/geosub/growth`. It keeps the source status `partial` until Bing's
+settlement and REST endpoint contracts are verified.
+
+13. Install the verified daily database backup timer:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-db-backup.sh
 sudo systemctl start geosub-db-backup.service
 ```
 
-13. Install raw analytics retention. Raw events default to 180 days and are
+14. Install raw analytics retention. Raw events default to 180 days and are
 deleted only when their UTC day has already been aggregated into `daily_stats`:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/install-systemd-event-retention.sh
 ```
 
-14. Run the production post-deploy check:
+15. Run the production post-deploy check:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/post-deploy-check.sh

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run GeoSub Bing growth shadow collector daily
+
+[Timer]
+OnBootSec=8min
+OnUnitActiveSec=24h
+RandomizedDelaySec=20min
+Persistent=true
+Unit=geosub-growth-bing-shadow.service
+
+[Install]
+WantedBy=timers.target

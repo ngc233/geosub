@@ -18,6 +18,7 @@ import {
   Route,
   Search,
   SearchCheck,
+  LineChart,
   Settings,
   X,
   type LucideIcon,
@@ -58,6 +59,7 @@ const navGroups: Array<{
     items: [
       { label: "文章发布", href: "/admin/articles", icon: FileText },
       { label: "搜索需求", href: "/admin/search-demand", icon: SearchCheck },
+      { label: "增长周报", href: "/admin/growth", icon: LineChart },
       { label: "SEO 体检", href: "/admin/seo", icon: Search },
       { label: "导航菜单", href: "/admin/navigation", icon: Menu },
     ],

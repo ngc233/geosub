@@ -91,6 +91,7 @@ test("admin sidebar exposes only operational modules", () => {
     "/admin/plans",
     "/admin/articles",
     "/admin/seo",
+    "/admin/growth",
     "/admin/navigation",
   ]) {
     assert.match(source, new RegExp(href.replaceAll("/", "\\/")));

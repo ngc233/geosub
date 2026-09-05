@@ -9,6 +9,17 @@ export const SEO_SEARCH_PAGE_IMPORT_SETTING_KEY =
 export const SEO_SEARCH_PAGE_IMPORT_HISTORY_LIMIT = 8;
 export const SEO_SEARCH_PAGE_IMPORT_ROW_LIMIT = 500;
 
+export type SeoSearchImportEvidence = {
+  evidenceHash: string;
+  method: "browser_observation" | "server_api";
+  searchType: "web";
+  sourceTimezone: string;
+  coverage: "selected_rows";
+  availableRows: number;
+  capturedRows: number;
+  excludedRoundedRows: number;
+};
+
 export type SeoSearchPageImportBatch = {
   id: string;
   engine: SeoSearchEngine;
@@ -17,6 +28,7 @@ export type SeoSearchPageImportBatch = {
   importedAt: string;
   actorLabel: string;
   observations: SeoSearchPageObservation[];
+  evidence?: SeoSearchImportEvidence;
 };
 
 export type SeoSearchPageImportState = {
@@ -293,7 +305,19 @@ function parseBatch(value: unknown): SeoSearchPageImportBatch | null {
     || !actorLabel
     || observations.length === 0
   ) return null;
-  return { id, engine, periodStart, periodEnd, importedAt, actorLabel, observations };
+  const e = value.evidence;
+  const evidence: SeoSearchImportEvidence | undefined = isRecord(e)
+    && typeof e.evidenceHash === "string" && /^sha256:[a-f0-9]{64}$/.test(e.evidenceHash)
+    && ["browser_observation", "server_api"].includes(String(e.method)) && e.searchType === "web" && e.coverage === "selected_rows"
+    && typeof e.sourceTimezone === "string" && /^[a-zA-Z0-9_+:/-]{1,80}$/.test(e.sourceTimezone)
+    && [e.availableRows, e.capturedRows, e.excludedRoundedRows].every((n) => typeof n === "number" && Number.isSafeInteger(n) && n >= 0)
+    && Number(e.availableRows) >= Number(e.capturedRows)
+    && Number(e.capturedRows) - Number(e.excludedRoundedRows) === observations.length
+    ? { evidenceHash: e.evidenceHash, method: e.method as "browser_observation" | "server_api", searchType: "web",
+      sourceTimezone: e.sourceTimezone, coverage: "selected_rows", availableRows: Number(e.availableRows),
+      capturedRows: Number(e.capturedRows), excludedRoundedRows: Number(e.excludedRoundedRows) }
+    : undefined;
+  return { id, engine, periodStart, periodEnd, importedAt, actorLabel, observations, ...(evidence ? { evidence } : {}) };
 }
 
 export function parseSeoSearchPageImportState(
