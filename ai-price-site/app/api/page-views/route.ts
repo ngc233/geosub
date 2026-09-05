@@ -6,6 +6,7 @@ import {
   normalizeAggregatePagePath,
 } from "../../../lib/aggregate-page-views";
 import { prisma } from "../../../lib/prisma";
+import { classifyPageViewPopulation, PAGE_VIEW_MEASUREMENT_VERSION, PAGE_VIEW_POPULATION_METRICS } from "../../../lib/page-view-measurement";
 
 const MAX_REQUEST_BYTES = 1024;
 
@@ -60,10 +61,11 @@ function buildDailyStatInput(
   statDate: Date,
   dimensionType: "global" | "page",
   dimensionKey: string,
+  metricKey = AGGREGATE_PAGE_VIEW_METRIC,
 ) {
   return {
     statDate,
-    metricKey: AGGREGATE_PAGE_VIEW_METRIC,
+    metricKey,
     dimensionType,
     dimensionKey,
   };
@@ -108,6 +110,15 @@ export async function POST(request: NextRequest) {
     timezone: "UTC",
   };
 
+  const population = classifyPageViewPopulation(payload, request.headers.get("x-geosub-measurement-traffic"));
+  const populationMetric = PAGE_VIEW_POPULATION_METRICS[population];
+  const populationMetadata = {
+    ...metadata,
+    contractVersion: PAGE_VIEW_MEASUREMENT_VERSION,
+    population,
+    classification: "client_exclusion_signals_not_verified_humans",
+  };
+
   await prisma.$transaction([
     prisma.dailyStat.upsert({
       where: {
@@ -140,6 +151,15 @@ export async function POST(request: NextRequest) {
         label: pagePath,
         metadata,
       },
+    }),
+    ...(["global", "page"] as const).map((dimensionType) => {
+      const dimensionKey = dimensionType === "global" ? "global" : pagePath;
+      const identity = buildDailyStatInput(statDate, dimensionType, dimensionKey, populationMetric);
+      return prisma.dailyStat.upsert({
+        where: { statDate_metricKey_dimensionType_dimensionKey: identity },
+        update: { metricValue: { increment: 1 } },
+        create: { ...identity, metricValue: 1, label: dimensionKey, metadata: populationMetadata },
+      });
     }),
   ]);
 
