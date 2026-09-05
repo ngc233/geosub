@@ -3,6 +3,7 @@ param(
   [string]$NpmPath = "npm.cmd",
   [string]$GitPath = "git",
   [string]$BashPath = "",
+  [string]$BaselineRef = "",
   [switch]$SkipBuild
 )
 
@@ -36,19 +37,19 @@ function Invoke-Step {
 }
 
 function Assert-VersionSync {
-  $version = (Get-Content -LiteralPath (Join-Path $Root "VERSION") -Raw).Trim()
-  $frontend = (Get-Content -LiteralPath (Join-Path $Root "ai-price-site\package.json") -Raw | ConvertFrom-Json).version
-  $backend = (Get-Content -LiteralPath (Join-Path $Root "geosub-backend\package.json") -Raw | ConvertFrom-Json).version
-
-  if ($version -ne $frontend -or $version -ne $backend) {
-    throw "Version mismatch. VERSION=$version frontend=$frontend backend=$backend"
+  $arguments = @((Join-Path $Root "scripts/check-release-version.mjs"), "--root", $Root, "--git", $GitPath)
+  if (![string]::IsNullOrWhiteSpace($BaselineRef)) {
+    $arguments += @("--baseline-ref", $BaselineRef)
   }
-
-  Write-Host "Version synchronized: $version"
+  & node @arguments
+  if ($LASTEXITCODE -ne 0) { throw "Release version check failed." }
 }
 
 function Test-PowerShellSyntax {
   $files = @(
+    "scripts\prepare-release.ps1",
+    "scripts\publish-release.ps1",
+    "scripts\release-check.ps1",
     "geosub-backend\scripts\collect-app-store-prices.ps1",
     "geosub-backend\scripts\run-collector-jobs.ps1",
     "geosub-backend\scripts\run-price-accuracy-maintenance.ps1",
@@ -74,6 +75,7 @@ function Test-PowerShellSyntax {
 
 function Test-NodeSyntax {
   $files = @(
+    "scripts\check-release-version.mjs",
     "geosub-backend\scripts\render-app-store-prices.mjs",
     "geosub-backend\scripts\probe-opentherank-price-diffs.mjs"
   )

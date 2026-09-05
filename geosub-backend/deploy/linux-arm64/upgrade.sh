@@ -41,6 +41,7 @@ PREVIOUS_FRONTEND_COMMIT="unknown"
 TARGET_BACKEND_COMMIT="unknown"
 TARGET_FRONTEND_COMMIT="unknown"
 BACKUP_PATH=""
+PINNED_COMMIT=""
 
 log() {
   printf '\n==> %s\n' "$1"
@@ -148,7 +149,33 @@ git_update() {
     return
   fi
 
-  run_as_geosub "cd '$dir' && git fetch --all --prune && git checkout '$BRANCH' && git pull --ff-only origin '$BRANCH'"
+  run_as_geosub "cd '$dir' && git checkout '$BRANCH' && git merge --ff-only '$PINNED_COMMIT'"
+}
+
+preflight_release_version() {
+  # Fail before stopping services, taking a backup, or mutating the checkout.
+  # Separate legacy repositories cannot prove a synchronized release identity.
+  if [[ -z "$REPO_DIR" ]]; then
+    echo "Version gate requires GEOSUB_REPO_DIR pointing to the monorepo."
+    return 1
+  fi
+  if [[ ! -f "$RELEASE_DIR/current.env" ]]; then
+    echo "Successful release record missing: $RELEASE_DIR/current.env. Reconcile it before upgrading."
+    return 1
+  fi
+  if [[ -n "$(sudo -u geosub git -C "$REPO_DIR" status --porcelain --untracked-files=normal)" ]]; then
+    echo "Release checkout must be clean before upgrading."
+    return 1
+  fi
+  if [[ "$SKIP_GIT_PULL" != "true" ]]; then
+    sudo -u geosub git -C "$REPO_DIR" fetch origin "$BRANCH"
+    PINNED_COMMIT="$(sudo -u geosub git -C "$REPO_DIR" rev-parse FETCH_HEAD)"
+    sudo -u geosub git -C "$REPO_DIR" merge-base --is-ancestor HEAD "$PINNED_COMMIT"
+  else
+    PINNED_COMMIT="$(sudo -u geosub git -C "$REPO_DIR" rev-parse HEAD)"
+  fi
+  node "$REPO_DIR/scripts/check-release-version.mjs" --root "$REPO_DIR" \
+    --ref "$PINNED_COMMIT" --current "$RELEASE_DIR/current.env"
 }
 
 record_release() {
@@ -198,6 +225,9 @@ else
   ensure_repo "$BACKEND_DIR"
   ensure_repo "$FRONTEND_DIR"
 fi
+
+log "Checking release version before downtime"
+preflight_release_version
 
 mkdir -p "$RELEASE_DIR"
 PREVIOUS_COMMIT="$(repo_commit)"
@@ -259,6 +289,11 @@ else
   git_update "$FRONTEND_DIR"
 fi
 TARGET_COMMIT="$(repo_commit)"
+if [[ "$TARGET_COMMIT" != "$PINNED_COMMIT" ]]; then
+  echo "Checkout differs from the version-checked release commit."
+  false
+fi
+node "$REPO_DIR/scripts/check-release-version.mjs" --root "$REPO_DIR" --current "$RELEASE_DIR/current.env"
 if [[ -n "$REPO_DIR" ]]; then
   TARGET_BACKEND_COMMIT="$TARGET_COMMIT"
   TARGET_FRONTEND_COMMIT="$TARGET_COMMIT"

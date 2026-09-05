@@ -93,12 +93,14 @@ function Set-PackageLockVersion {
 const fs = require("fs");
 const path = process.argv[2];
 const version = process.argv[3];
-const lock = JSON.parse(fs.readFileSync(path, "utf8"));
+const source = fs.readFileSync(path, "utf8");
+const lock = JSON.parse(source);
+const indent = source.match(/\n([ \t]+)"/)?.[1] ?? "  ";
 if (Object.prototype.hasOwnProperty.call(lock, "version")) lock.version = version;
 if (lock.packages && lock.packages[""] && Object.prototype.hasOwnProperty.call(lock.packages[""], "version")) {
   lock.packages[""].version = version;
 }
-fs.writeFileSync(path, `${JSON.stringify(lock, null, 2)}\n`);
+fs.writeFileSync(path, `${JSON.stringify(lock, null, indent)}\n`);
 '@
   $tempScript = New-TemporaryFile
   $tempJsPath = [IO.Path]::ChangeExtension($tempScript.FullName, ".js")

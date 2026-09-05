@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.10.0 - Unreleased
+
+- Separate eligible, internal, automated and unclassified page views into
+  versioned daily counters, while preserving existing aggregate PV totals.
+  Admin browser exclusion lasts 30 days; it does not establish verified human
+  traffic or retroactively clean historical reports.
+- Synchronize the application version and both package/lock files. Refuse
+  release publishing and production upgrades when the candidate version does
+  not advance; check the deployed baseline before stopping services.
+- Restore a visible release identity after multiple deployments shared 2.9.0.
+  The admin sidebar reads the package version and will show v2.10.0 after this
+  candidate is built and deployed. See `docs/release-versioning-2.10.md`.
+
+### Deployment history correction — still 2.9.0
+
+These successful deployments really used **2.9.0**. They were missing their
+own application version bumps; no retrospective 2.9.x tags are fabricated.
+Times below are Asia/Shanghai, verified against the server release history on
+2026-09-05. The last row remains production until a new release succeeds.
+
+| Deployment time | Commit | Scope |
+| --- | --- | --- |
+| 2026-09-05 15:41:56 | `5b86b21` | Dependency security patches |
+| 2026-09-05 17:04:44 | `efe7669` | Google growth collector connection |
+| 2026-09-05 17:36:26 | `fc9a3dd` | Growth dashboard |
+| 2026-09-05 17:57:34 | `9f4ed33` | 056 release |
+
 ## 2.9.0 - 2026-08-20
 
 - Reworked regional price details for clearer desktop and mobile reading,
