@@ -670,6 +670,15 @@
         "1dcd9bba202b2d9c8c811c12ff7258b94f06e3e58e885bb741aacf2250f38d7d"
       ],
       "legacyBaseline": false
+    },
+    {
+      "id": "schema:056",
+      "file": "sql/schema/056_quarantine_confirmed_absent_stale_app_store_prices.sql",
+      "legacyFile": "sql/079_quarantine_confirmed_absent_stale_app_store_prices.sql",
+      "legacyChecksums": [
+        "810d5d205680f8ae23f44f82c8eb0981bdf1087f1c68f2ae38029e36656a3046"
+      ],
+      "legacyBaseline": false
     }
   ],
   "backfill": [

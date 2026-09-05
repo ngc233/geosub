@@ -84,6 +84,9 @@ test("scheduled App Store maintenance keeps daily, weekly and anomaly recheck la
 
 test("stale published prices get a focused retry lifecycle", () => {
   const lifecycle = readSqlMigration("sql/059_stale_app_store_price_lifecycle.sql");
+  const confirmedAbsentRepair = readSqlMigration(
+    "sql/079_quarantine_confirmed_absent_stale_app_store_prices.sql",
+  );
   const runner = readRepoFile("geosub-backend/scripts/run-collector-jobs.ps1");
   const maintenance = readRepoFile("geosub-backend/scripts/run-price-accuracy-maintenance.ps1");
   const deployCheck = readRepoFile("geosub-backend/deploy/linux-arm64/post-deploy-check.sh");
@@ -96,6 +99,41 @@ test("stale published prices get a focused retry lifecycle", () => {
   assert.match(lifecycle, /status = 'review'/);
   assert.match(lifecycle, /UPPER\(country\.code\) = ANY\(stale_job\.country_codes\)/);
   assert.match(lifecycle, /availability\.status IN \('not_available', 'available_no_iap'\)/);
+  assert.match(
+    confirmedAbsentRepair,
+    /LEFT JOIN app_store_plan_availability_checks plan_availability/,
+  );
+  assert.match(
+    confirmedAbsentRepair,
+    /plan_availability\.product_id = price\.product_id[\s\S]*?plan_availability\.plan_id = price\.plan_id[\s\S]*?plan_availability\.country_id = price\.country_id[\s\S]*?plan_availability\.billing_platform = price\.billing_platform/,
+  );
+  assert.match(
+    confirmedAbsentRepair,
+    /plan_availability\.status = 'confirmed_absent'[\s\S]*?plan_availability\.checked_at > COALESCE\(price\.last_checked_at, price\.created_at\)/,
+  );
+  assert.match(confirmedAbsentRepair, /price\.status = 'published'/);
+  assert.match(confirmedAbsentRepair, /price\.billing_platform = 'ios'/);
+  assert.match(
+    confirmedAbsentRepair,
+    /price\.last_checked_at < NOW\(\) - MAKE_INTERVAL\(days => GREATEST\(1, p_stale_days\)\)/,
+  );
+  assert.match(
+    confirmedAbsentRepair,
+    /OR stale_job\.successful_rechecks >= GREATEST\(1, p_min_successful_rechecks\)/,
+  );
+  assert.match(
+    confirmedAbsentRepair,
+    /this plan is no longer offered in the region/,
+  );
+  for (const [alias, status] of [
+    ["availability", "not_available"],
+    ["availability", "available_no_iap"],
+    ["plan_availability", "confirmed_absent"],
+  ]) {
+    assert.ok(confirmedAbsentRepair.includes(
+      `WHEN ${alias}.status = '${status}'\n          AND ${alias}.checked_at > COALESCE(price.last_checked_at, price.created_at)`,
+    ), "quarantine reasons must use evidence newer than the price");
+  }
   assert.match(runner, /Queue-AppStoreRechecks/);
   assert.match(runner, /run_data_quality_repair_cycle\('collector_runner'\)/);
   assert.match(runner, /quarantine_unconfirmed_stale_app_store_prices\(14, 3\)/);
@@ -108,6 +146,12 @@ test("stale published prices get a focused retry lifecycle", () => {
   assert.match(maintenance, /run_data_quality_repair_cycle\('price_accuracy_maintenance'\)/);
   assert.equal(
     migrationEntriesForLegacyFile("sql/059_stale_app_store_price_lifecycle.sql").length,
+    1,
+  );
+  assert.equal(
+    migrationEntriesForLegacyFile(
+      "sql/079_quarantine_confirmed_absent_stale_app_store_prices.sql",
+    ).length,
     1,
   );
   assert.match(deployCheck, /entries schema/);
