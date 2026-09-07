@@ -7,6 +7,7 @@ import {
 import TrackedLink from "./analytics/TrackedLink";
 import type { getProductEditorialContent } from "../lib/product-editorial-content";
 import type { SiteLocale } from "../lib/site-locale";
+import type { PlanBillingContent } from "../lib/plan-billing-content";
 
 type EditorialContent = NonNullable<
   ReturnType<typeof getProductEditorialContent>
@@ -120,11 +121,13 @@ export function ProductEditorialSection({
   planName,
   locale,
   content,
+  billingContent,
 }: {
   productSlug: string;
   planName: string;
   locale: SiteLocale;
   content: EditorialContent;
+  billingContent?: PlanBillingContent | null;
 }) {
   const copy = sectionCopy[locale];
   const title = copy.title(planName);
@@ -171,6 +174,35 @@ export function ProductEditorialSection({
           </p>
         </div>
       </div>
+
+      {billingContent ? (
+        <div className="mt-5 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <h3 className="text-sm font-semibold text-zinc-950 dark:text-white">
+            {billingContent.title}
+          </h3>
+          <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
+            {billingContent.body}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
+            {billingContent.sources.map((source, index) => (
+              <TrackedLink
+                key={source.href}
+                href={source.href}
+                eventKey="click_official"
+                eventName="Open official billing guide"
+                buttonKey={`${productSlug}-billing-guide-${index + 1}`}
+                placement="plan_editorial"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 max-w-full items-center gap-2 rounded text-sm font-medium text-zinc-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-700 dark:text-zinc-200 dark:focus-visible:outline-zinc-200"
+              >
+                {source.label}
+                <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
+              </TrackedLink>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {content.plan.availabilityNote ? (
         <div className="mt-3 flex gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/70">

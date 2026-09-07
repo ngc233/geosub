@@ -45,6 +45,7 @@ import {
   type ExchangeRateSnapshot,
 } from "../lib/exchange-rates";
 import { getPricingDetailPageCopy } from "../lib/pricing-detail-page-copy";
+import { getPlanBillingContent } from "../lib/plan-billing-content";
 import { getPricingPressureCopy } from "../lib/pricing-pressure-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
 import { getPricingMetadataExperiment } from "../lib/pricing-metadata-experiments";
@@ -1297,9 +1298,16 @@ export default async function PricingDetailPage({
     metadataExperiment?.heroDescription ||
     searchIntentCopy?.description ||
     pageDescription;
-  const effectiveFaqs = searchIntentCopy
-    ? [...searchIntentCopy.faqs, ...pageCopy.faqs]
-    : pageCopy.faqs;
+  const billingContent = getPlanBillingContent({
+    locale,
+    productSlug: product.slug,
+    plan: activePlan,
+  });
+  const effectiveFaqs = [
+    ...(searchIntentCopy?.faqs ?? []),
+    ...(billingContent?.faqs ?? []),
+    ...pageCopy.faqs,
+  ];
   const structuredData = buildPricingStructuredData({
     locale,
     path: canonicalDetailPath,
@@ -1445,6 +1453,7 @@ export default async function PricingDetailPage({
                 planName={activePlan.name}
                 locale={locale}
                 content={editorialContent}
+                billingContent={billingContent}
               />
             ) : null}
 

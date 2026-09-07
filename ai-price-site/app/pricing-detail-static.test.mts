@@ -575,7 +575,7 @@ test("pricing FAQs answer customer questions instead of explaining internal sour
   assert.match(pageCopy, /How often are.*regional prices updated/);
   assert.doesNotMatch(pageCopy, /Does this page rank App Store/);
   assert.match(detailPage, /getPlanSearchIntentCopy/);
-  assert.match(detailPage, /const effectiveFaqs = searchIntentCopy/);
+  assert.match(detailPage, /const effectiveFaqs = \[\s*\.\.\.\(searchIntentCopy\?\.faqs \?\? \[\]\),\s*\.\.\.\(billingContent\?\.faqs \?\? \[\]\),\s*\.\.\.pageCopy\.faqs,/);
   assert.match(detailPage, /faqs: effectiveFaqs/);
   assert.match(detailPage, /faqs=\{effectiveFaqs\}/);
 });

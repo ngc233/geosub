@@ -187,7 +187,7 @@ test("SEO indexing policy keeps accessible locales separate from promoted locale
   assert.deepEqual(seoIndexableLocales, ["zh", "en"]);
   assert.deepEqual(seoSitemapBudgets, {
     total: 148,
-    productPlanPages: 96,
+    productPlanPages: 98,
     countryPages: 6,
     guideDetailPages: 24,
     currencyPairPages: 16,

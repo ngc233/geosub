@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.10.1 - Unreleased
+
+- Explain monthly versus annual billing and separate API costs on the Chinese
+  and English Claude Pro pages, with official sources and matching visible FAQ
+  and JSON-LD content. Preserve existing prices, metadata and frozen experiments.
+- Align the approved product/plan sitemap budget with the existing 98 URLs;
+  retain the 148-URL total limit and the existing promotion list.
+
 ## 2.10.0 - 2026-09-05
 
 - Separate eligible, internal, automated and unclassified page views into

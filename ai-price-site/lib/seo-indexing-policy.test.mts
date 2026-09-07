@@ -54,7 +54,7 @@ test("robots keeps staged translations accessible without indexing them", () => 
 test("sitemap budgets stay bounded by the total release budget", () => {
   assert.deepEqual(seoSitemapBudgets, {
     total: 148,
-    productPlanPages: 96,
+    productPlanPages: 98,
     countryPages: 6,
     guideDetailPages: 24,
     currencyPairPages: 16,
