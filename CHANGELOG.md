@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.10.2 - Unreleased
+## 2.10.2 - 2026-09-08
 
 - Clarify X Premium tier differences, subscription channels and benefits in
   Chinese and English, with official sources and matching FAQ structured data.
