@@ -775,6 +775,7 @@ export async function getPricingDetailMetadata({
         (productSeoGateMode === "enforce" ? "hold" : "indexable"),
       productSeoGateMode,
       "current",
+      product.slug,
     );
 
     return {
@@ -881,6 +882,7 @@ export async function getPricingDetailMetadata({
       (productSeoGateMode === "enforce" ? "hold" : "indexable"),
     productSeoGateMode,
     getPlanEditorialIndexingStatus(product.slug, activePlan.slug),
+    product.slug,
   );
 
   return {

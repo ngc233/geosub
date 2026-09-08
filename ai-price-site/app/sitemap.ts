@@ -26,6 +26,7 @@ import {
   getPlanSitemapDecision,
   getProductSeoGateMode,
   getProductSitemapDecision,
+  isProductIndexReleaseHeld,
 } from "../lib/product-seo-indexing-policy";
 import { getProductSeoQualityAudits } from "../lib/product-seo-quality-data";
 import { getPlanEditorialIndexingStatus } from "../lib/product-editorial-content";
@@ -102,7 +103,7 @@ async function getProductRoutes(): Promise<MetadataRoute.Sitemap> {
     qualityAudits
       .filter(
         (audit) =>
-          getProductSitemapDecision(audit.status, gateMode).included,
+          getProductSitemapDecision(audit.status, gateMode, audit.slug).included,
       )
       .map((audit) => audit.id),
   );
@@ -191,7 +192,8 @@ async function getProductRoutes(): Promise<MetadataRoute.Sitemap> {
   return products
     .filter(
       (product) =>
-        gateMode === "observe" || sitemapEligibleProducts.has(product.id),
+        !isProductIndexReleaseHeld(product.slug) &&
+        (gateMode === "observe" || sitemapEligibleProducts.has(product.id)),
     )
     .flatMap((product) => {
       const isStreaming = product.category === ProductCategory.STREAMING;

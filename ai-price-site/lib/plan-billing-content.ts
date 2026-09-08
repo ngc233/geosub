@@ -1,3 +1,4 @@
+import { xPremiumBilling } from "./x-premium-editorial.ts";
 import type { ProductPlan } from "./public-pricing-model";
 import type { PricingFaq } from "./pricing-seo";
 import type { SiteLocale } from "./site-locale";
@@ -64,13 +65,14 @@ export function getPlanBillingContent({
   // becomes empty, changes billing period, or gains another platform's prices.
   if (
     (locale !== "zh" && locale !== "en") ||
-    productSlug !== "claude" ||
-    plan.slug !== "pro" ||
     plan.billing !== "monthly" ||
     plan.regions.length === 0 ||
     !plan.regions.every((region) => region.billingPlatform?.toLowerCase() === "ios")
   ) {
     return null;
   }
-  return claudeProBilling[locale];
+  if (productSlug === "x-premium" && ["basic", "premium", "premium-plus"].includes(plan.slug)) {
+    return xPremiumBilling[locale];
+  }
+  return productSlug === "claude" && plan.slug === "pro" ? claudeProBilling[locale] : null;
 }

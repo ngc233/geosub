@@ -11,12 +11,13 @@ import { getEffectivePlanSitemapProductSlugs } from "../lib/seo-plan-promotion-d
 const audits = await getProductSeoQualityAudits();
 const promotedProductSlugs = await getEffectivePlanSitemapProductSlugs();
 const report = audits.map((audit) => {
-  const decision = getProductSitemapDecision(audit.status, "enforce");
+  const decision = getProductSitemapDecision(audit.status, "enforce", audit.slug);
 
   return {
     product: audit.title,
     score: audit.score,
     recommendation: audit.statusLabel,
+    indexAction: decision.currentAction,
     sitemapPlanPages:
       decision.included
       && isPlanSitemapPromotedProduct(audit.slug, promotedProductSlugs)

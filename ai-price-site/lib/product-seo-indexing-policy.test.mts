@@ -112,3 +112,25 @@ test("legacy renewal plans stay accessible but never enter search promotion", ()
   assert.equal(getPlanSitemapDecision("current", "observe").included, true);
   assert.equal(getPlanSitemapDecision("current", "enforce").included, true);
 });
+
+// Approved content-only release: editorial quality must not publish indexing.
+test("X Premium remains unindexed after quality improvement in either mode", () => {
+  for (const mode of ["observe", "enforce"] as const) {
+    for (const status of ["hold", "needs_work", "indexable"] as const) {
+      for (const locale of ["zh", "en", "ja"] as const) {
+        assert.deepEqual(getProductRobotsPolicy(locale, status, mode, "current", "x-premium"), { index: false, follow: true });
+      }
+      const decision = getProductSitemapDecision(status, mode, "x-premium");
+      assert.equal(decision.included, false);
+      assert.equal(decision.eligible, status === "indexable");
+      const promotion = getProductPlanSitemapPromotion({productSlug:"x-premium", qualityStatus:status, gateMode:mode, currentPlanCount:3, promotedProductSlugs:["x-premium"]});
+      assert.equal(promotion.includedPlanPages, 0);
+      assert.equal(promotion.productOverviewPages, 0);
+      assert.match(promotion.reason, /索引待审核/);
+    }
+  }
+  for (const slug of ["chatgpt", "claude", "gemini"]) {
+    assert.deepEqual(getProductRobotsPolicy("zh", "indexable", "enforce", "current", slug), {index:true,follow:true});
+    assert.equal(getProductSitemapDecision("indexable", "enforce", slug).included,true);
+  }
+});

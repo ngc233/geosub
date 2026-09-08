@@ -10,6 +10,7 @@ import {
   getPlanSitemapDecision,
   getProductSeoGateMode,
   getProductSitemapDecision,
+  isProductIndexReleaseHeld,
 } from "../lib/product-seo-indexing-policy.ts";
 import { getProductSeoQualityAudits } from "../lib/product-seo-quality-data.ts";
 import { indexableStaticGuidePaths } from "../lib/public-launch-routes.ts";
@@ -59,7 +60,7 @@ async function getProductPaths() {
   ]);
   const eligibleProducts = new Set(
     qualityAudits
-      .filter((audit) => getProductSitemapDecision(audit.status, gateMode).included)
+      .filter((audit) => getProductSitemapDecision(audit.status, gateMode, audit.slug).included)
       .map((audit) => audit.id),
   );
   const products = await prisma.product.findMany({
@@ -97,7 +98,8 @@ async function getProductPaths() {
   return products
     .filter(
       (product) =>
-        gateMode === "observe" || eligibleProducts.has(product.id),
+        !isProductIndexReleaseHeld(product.slug) &&
+        (gateMode === "observe" || eligibleProducts.has(product.id)),
     )
     .flatMap((product) => {
       const section =

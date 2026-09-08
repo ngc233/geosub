@@ -20,19 +20,26 @@ export function getProductSeoGateMode(
   return value?.trim().toLowerCase() === "observe" ? "observe" : "enforce";
 }
 
+// Explicit approval state is separate from content quality. See SEO_POLICY.md.
+export function isProductIndexReleaseHeld(productSlug?: string) {
+  return productSlug === "x-premium";
+}
+
 export function getProductSitemapDecision(
   status: ProductSeoQualityStatus,
   mode: ProductSeoGateMode,
+  productSlug?: string,
 ) {
   const eligible = status === "indexable";
-  const included = mode === "observe" || eligible;
+  const held = isProductIndexReleaseHeld(productSlug);
+  const included = !held && (mode === "observe" || eligible);
 
   return {
     eligible,
     included,
-    label: eligible ? "建议提交" : "建议暂缓",
+    label: held ? "索引待审核" : eligible ? "建议提交" : "建议暂缓",
     currentAction:
-      mode === "enforce"
+      held ? "内容可完善，索引待审核" : mode === "enforce"
         ? included
           ? "进入 sitemap"
           : "暂不进入 sitemap"
@@ -55,7 +62,7 @@ export function getProductPlanSitemapPromotion({
   currentPlanCount: number;
   promotedProductSlugs?: readonly string[];
 }) {
-  const qualityDecision = getProductSitemapDecision(qualityStatus, gateMode);
+  const qualityDecision = getProductSitemapDecision(qualityStatus, gateMode, productSlug);
   const productOverviewPages = qualityDecision.included
     ? seoIndexableLocales.length
     : 0;
@@ -69,7 +76,9 @@ export function getProductPlanSitemapPromotion({
       productOverviewPages,
       includedPlanPages: 0,
       potentialPlanPages,
-      reason: "页面质量尚未达到收录门槛，产品概览与套餐页都不会主动提交。",
+      reason: isProductIndexReleaseHeld(productSlug)
+        ? "索引待审核：内容质量独立计算，产品概览与套餐页暂不提交。"
+        : "页面质量尚未达到收录门槛，产品概览与套餐页都不会主动提交。",
     };
   }
 
@@ -101,8 +110,9 @@ export function getProductRobotsPolicy(
   status: ProductSeoQualityStatus,
   mode: ProductSeoGateMode,
   planStatus: PlanEditorialIndexingStatus = "current",
+  productSlug?: string,
 ) {
-  if (planStatus === "legacy") {
+  if (isProductIndexReleaseHeld(productSlug) || planStatus === "legacy") {
     return {
       index: false,
       follow: true,

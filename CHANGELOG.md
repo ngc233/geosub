@@ -1,6 +1,13 @@
 # Changelog
 
-## 2.10.1 - Unreleased
+## 2.10.2 - Unreleased
+
+- Clarify X Premium tier differences, subscription channels and benefits in
+  Chinese and English, with official sources and matching FAQ structured data.
+- Keep X Premium explicitly pending index review regardless of content quality
+  or promotion membership. Preserve sitemap paths and existing budgets.
+
+## 2.10.1 - 2026-09-07
 
 - Explain monthly versus annual billing and separate API costs on the Chinese
   and English Claude Pro pages, with official sources and matching visible FAQ

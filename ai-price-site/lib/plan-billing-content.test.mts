@@ -37,3 +37,17 @@ test("monthly App Store claims are suppressed for absent, unknown, annual and mi
     assert.equal(getPlanBillingContent({ locale: "en", productSlug: "claude", plan: candidate }), null);
   }
 });
+
+test("X guidance covers three approved tiers and suppresses wrong billing scopes", () => {
+  for (const locale of ["zh", "en"] as const) {
+    for (const slug of ["basic", "premium", "premium-plus"]) {
+      const candidate = {...plan, slug};
+      assert.equal(getPlanBillingContent({locale, productSlug:"x-premium", plan:candidate})?.faqs.length,4);
+      for (const invalid of [{...candidate,billing:"yearly" as const},{...candidate,regions:[]},{...candidate,regions:[{...plan.regions[0],billingPlatform:"web"}]}]) {
+        assert.equal(getPlanBillingContent({locale,productSlug:"x-premium",plan:invalid}),null);
+      }
+    }
+  }
+  assert.equal(getPlanBillingContent({locale:"ja",productSlug:"x-premium",plan:{...plan,slug:"basic"}}),null);
+  assert.equal(getPlanBillingContent({locale:"zh",productSlug:"x-premium",plan:{...plan,slug:"unknown"}}),null);
+});
