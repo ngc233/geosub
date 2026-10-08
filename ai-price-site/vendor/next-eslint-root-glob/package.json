@@ -1,0 +1,9 @@
+{
+  "name": "@geosub/next-eslint-root-glob",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.mjs",
+  "dependencies": {
+    "tinyglobby": "0.2.17"
+  }
+}

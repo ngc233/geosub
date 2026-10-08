@@ -51,3 +51,30 @@ test("X guidance covers three approved tiers and suppresses wrong billing scopes
   assert.equal(getPlanBillingContent({locale:"ja",productSlug:"x-premium",plan:{...plan,slug:"basic"}}),null);
   assert.equal(getPlanBillingContent({locale:"zh",productSlug:"x-premium",plan:{...plan,slug:"unknown"}}),null);
 });
+
+
+test("Heavy guidance cannot leak into other tiers, products, locales or unsupported price scopes", () => {
+  const heavy = { ...plan, slug: "super-heavy", name: "SuperGrok Heavy" };
+  for (const locale of ["zh", "en"] as const) {
+    const content = getPlanBillingContent({ locale, productSlug: "grok", plan: heavy });
+    assert.ok(content);
+    assert.equal(content.faqs.length, 2);
+    assert.deepEqual(content.sources.map(source => new URL(source.href).hostname), ["x.ai", "help.x.com"]);
+    for (const slug of ["super", "super-lite", "plus", "super-plus"]) {
+      assert.equal(getPlanBillingContent({ locale, productSlug: "grok", plan: { ...heavy, slug } }), null);
+    }
+    for (const candidate of [
+      { ...heavy, regions: [] },
+      { ...heavy, billing: "yearly" as const },
+      { ...heavy, billing: "unknown" as const },
+      { ...heavy, regions: [{ ...plan.regions[0], billingPlatform: undefined }] },
+      { ...heavy, regions: [{ ...plan.regions[0], billingPlatform: "web" }] },
+      { ...heavy, regions: [plan.regions[0], { ...plan.regions[0], billingPlatform: "web" }] },
+    ]) {
+      assert.equal(getPlanBillingContent({ locale, productSlug: "grok", plan: candidate }), null);
+    }
+  }
+  assert.equal(getPlanBillingContent({ locale: "ja", productSlug: "grok", plan: heavy }), null);
+  assert.equal(getPlanBillingContent({ locale: "zh-tw", productSlug: "grok", plan: heavy }), null);
+  assert.equal(getPlanBillingContent({ locale: "en", productSlug: "other", plan: heavy }), null);
+});

@@ -52,6 +52,59 @@ const claudeProBilling: Record<"zh" | "en", PlanBillingContent> = {
   },
 };
 
+// Official plan and X benefit descriptions reviewed on 2026-09-13.
+// This date is separate from the live price collection timestamp.
+const grokHeavyBilling: Record<"zh" | "en", PlanBillingContent> = {
+  "zh": {
+    "title": "比较 Heavy 前，先核对套餐名称",
+    "body": "官方比较列表包含 SuperGrok Lite、SuperGrok、SuperGrok Plus 和 SuperGrok Heavy。本站这张价格表对应 Heavy；其他层级的价格和权益不能直接套用到这里。比较时请同时核对套餐、计费周期和付款平台。",
+    "faqs": [
+      {
+        "q": "SuperGrok Plus 和 SuperGrok Heavy 是同一个套餐吗？",
+        "a": "官方将 Plus 与 Heavy 分列。不要把 Plus 的报价当成 Heavy 的价格；请在官方订阅页面核对所选层级。"
+      },
+      {
+        "q": "X Premium+ 附带的 SuperGrok 是否就是 Heavy？",
+        "a": "X 的官方说明列出 SuperGrok 访问权益，但该条说明没有明确写为 Heavy。订阅前请核对账号显示的套餐名称和权益，不能仅凭 Premium+ 名称认定已包含 Heavy。"
+      }
+    ],
+    "sources": [
+      {
+        "label": "Grok 官方套餐比较",
+        "href": "https://x.ai/pricing"
+      },
+      {
+        "label": "X Premium 官方权益说明",
+        "href": "https://help.x.com/en/using-x/x-premium"
+      }
+    ]
+  },
+  "en": {
+    "title": "Check the tier before comparing Heavy",
+    "body": "The official comparison lists SuperGrok Lite, SuperGrok, SuperGrok Plus and SuperGrok Heavy. This price table is for Heavy. Match the tier, billing period and payment platform before comparing another offer.",
+    "faqs": [
+      {
+        "q": "Are SuperGrok Plus and SuperGrok Heavy the same plan?",
+        "a": "The official comparison lists them separately. A Plus quote is not a Heavy price; check the selected tier on the official subscription page."
+      },
+      {
+        "q": "Does the SuperGrok benefit in X Premium+ mean Heavy?",
+        "a": "X lists SuperGrok access as a Premium+ benefit, but that description does not explicitly name Heavy. Check the tier and benefits shown in your account before treating Premium+ as Heavy access."
+      }
+    ],
+    "sources": [
+      {
+        "label": "Official Grok plan comparison",
+        "href": "https://x.ai/pricing"
+      },
+      {
+        "label": "Official X Premium benefits",
+        "href": "https://help.x.com/en/using-x/x-premium"
+      }
+    ]
+  }
+};
+
 export function getPlanBillingContent({
   locale,
   productSlug,
@@ -73,6 +126,9 @@ export function getPlanBillingContent({
   }
   if (productSlug === "x-premium" && ["basic", "premium", "premium-plus"].includes(plan.slug)) {
     return xPremiumBilling[locale];
+  }
+  if (productSlug === "grok" && plan.slug === "super-heavy") {
+    return grokHeavyBilling[locale];
   }
   return productSlug === "claude" && plan.slug === "pro" ? claudeProBilling[locale] : null;
 }

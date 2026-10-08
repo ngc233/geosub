@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.10.3 - Unreleased
+
+- Clarify SuperGrok Heavy versus Plus and the SuperGrok benefit in X Premium+,
+  with official sources and matching Chinese/English FAQ structured data.
+- Update vulnerable framework/image/YAML dependencies required by the release
+  security gate. No index expansion, price changes or database migrations.
+
 ## 2.10.2 - 2026-09-08
 
 - Clarify X Premium tier differences, subscription channels and benefits in
