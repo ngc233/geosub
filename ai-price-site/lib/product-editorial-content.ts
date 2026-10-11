@@ -65,7 +65,7 @@ const editorialContent: Record<
         },
         pro: {
           bestFor:
-            "每天高强度使用高级模型、长上下文或 Codex，并希望获得个人套餐最高额度的用户。",
+            "每天高强度使用高级模型、长上下文或 Codex，并需要比 Pro 100 更多包含用量的用户。",
           difference:
             "当前官方名称为 Pro 200，包含用量高于 Pro 100。Pro 500 是另一个更高档位并包含 Ultrafast；旧 20x 名称不代表当前固定倍数。",
           sourceUrl:
@@ -420,7 +420,7 @@ const editorialContent: Record<
         },
         pro: {
           bestFor:
-            "Heavy daily users of advanced models, long context or Codex who need the highest individual allowance.",
+            "Heavy daily users of advanced models, long context or Codex who need more included usage than Pro 100.",
           difference:
             "Now officially named Pro 200, with more included usage than Pro 100. Pro 500 is a separate higher tier with Ultrafast; the older 20x label is not a guaranteed current multiplier.",
           sourceUrl:
