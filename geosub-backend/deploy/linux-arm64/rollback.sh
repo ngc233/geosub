@@ -191,6 +191,12 @@ checkout_commit() {
 write_rollback_state "started" "confirmation and backup checksum verified"
 trap 'rollback_failed "$?" "$LINENO"' ERR
 
+# Persistently pause hot publication before changing the running application.
+# Never reopen automatically: candidate/public readback must pass first.
+if [[ -f "$FRONTEND_DIR/scripts/content-deploy-fence.cjs" ]]; then
+  node "$FRONTEND_DIR/scripts/content-deploy-fence.cjs" rollback
+fi
+
 ROLLBACK_STEP="stop_runtime"
 write_rollback_state "running"
 stop_runtime_services

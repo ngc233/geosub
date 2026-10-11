@@ -22,5 +22,8 @@ export function shouldCachePublicPricingResponse(request: NextRequest) {
     return false;
   }
 
+  // Managed-content HTML has one CDN key. RSC/prefetch variants must not share it.
+  if (request.nextUrl.pathname === "/en/ai-pricing/chatgpt" &&
+      (request.headers.has("rsc") || request.headers.has("next-router-state-tree") || request.headers.has("next-router-prefetch"))) return false;
   return publicPricingPathPattern.test(request.nextUrl.pathname);
 }

@@ -8,6 +8,7 @@ import {
 function request(method: string, pathname: string, search = "") {
   return {
     method,
+    headers: new Headers(),
     nextUrl: {
       pathname,
       search,
@@ -53,4 +54,14 @@ test("shared pricing cache keeps browsers fresh and bounds shared staleness", ()
     PUBLIC_PRICING_SHARED_CACHE_CONTROL,
     /stale-while-revalidate=600/,
   );
+});
+
+
+test("managed content RSC and prefetch requests never share the HTML cache key", () => {
+  for (const header of ["rsc", "next-router-state-tree", "next-router-prefetch"]) {
+    const input = {method:"GET",nextUrl:{pathname:"/en/ai-pricing/chatgpt",search:""},headers:new Headers({[header]:"1"})};
+    assert.equal(shouldCachePublicPricingResponse(input as never),false);
+  }
+  assert.equal(shouldCachePublicPricingResponse(request("GET","/en/ai-pricing/chatgpt")),true);
+  assert.equal(shouldCachePublicPricingResponse(request("GET","/en/ai-pricing/chatgpt","?_rsc=test")),false);
 });

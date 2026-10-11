@@ -1,0 +1,16 @@
+.scope {
+  --color-bg-surface: var(--color-white);
+  --color-border-default: var(--color-zinc-200);
+  --color-text-primary: var(--color-zinc-950);
+  --color-text-secondary: var(--color-zinc-600);
+  --color-focus: var(--color-blue-600);
+}
+@media (prefers-color-scheme: dark) {
+  .scope {
+    --color-bg-surface: var(--color-zinc-900);
+    --color-border-default: var(--color-zinc-700);
+    --color-text-primary: var(--color-zinc-100);
+    --color-text-secondary: var(--color-zinc-300);
+    --color-focus: var(--color-blue-400);
+  }
+}

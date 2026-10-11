@@ -251,6 +251,12 @@ install -d -m 0755 -o geosub -g geosub "$LOGO_STORAGE_DIR"
 log "Preparing rate-limited App Store response cache"
 install -d -m 0750 -o geosub -g geosub "$APP_STORE_CACHE_DIR"
 
+# Persistently pause hot publication before changing the running application.
+# Never reopen automatically: candidate/public readback must pass first.
+if [[ -f "$FRONTEND_DIR/scripts/content-deploy-fence.cjs" ]]; then
+  node "$FRONTEND_DIR/scripts/content-deploy-fence.cjs" upgrade
+fi
+
 CURRENT_STEP="stop_runtime"
 write_attempt_state "running"
 log "Stopping timers and web service"

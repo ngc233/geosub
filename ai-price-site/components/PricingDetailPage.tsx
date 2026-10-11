@@ -1,3 +1,7 @@
+import { getPublishedContent } from "../lib/managed-content-store";
+import { isContentTarget, type OverviewContent } from "../lib/managed-content";
+import { requireAdmin } from "../lib/admin-auth";
+import OverviewEditorialSections from "./OverviewEditorialSections";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
@@ -601,9 +605,11 @@ function getAffordabilityUnavailableReason(quality: AffordabilityQuality, locale
 function FaqSection({
   title,
   faqs,
+  managed = false,
 }: {
   title: string;
   faqs: PricingFaq[];
+  managed?: boolean;
 }) {
   return (
     <section className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -620,7 +626,7 @@ function FaqSection({
             className="group px-5 py-4 md:px-6"
             open={index === 0}
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-zinc-950 dark:text-white">
+            <summary data-managed-faq-question={managed ? "true" : undefined} className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-zinc-950 dark:text-white">
               {faq.q}
               <ChevronDown
                 aria-hidden="true"
@@ -629,7 +635,7 @@ function FaqSection({
               />
             </summary>
 
-            <p className="mt-3 max-w-4xl text-sm leading-7 text-zinc-500 dark:text-zinc-400">
+            <p data-managed-faq-answer={managed ? "true" : undefined} className="mt-3 max-w-4xl text-sm leading-7 text-zinc-500 dark:text-zinc-400">
               {faq.a}
             </p>
           </details>
@@ -739,6 +745,7 @@ export async function getPricingDetailMetadata({
   const isProductOverview = !routePlanSlug;
 
   if (isProductOverview) {
+    const managed = (await getPublishedContent(locale, product.slug))?.content;
     const publishedPlans = product.plans.filter(
       (plan) => plan.regions.length > 0,
     );
@@ -756,16 +763,16 @@ export async function getPricingDetailMetadata({
     const configuredTitle = hasChineseText(seoMeta?.title)
       ? stripGeoSubTitleSuffix(seoMeta?.title || "")
       : "";
-    const title =
+    const title = managed?.title || (
       locale === "zh" && configuredTitle && !hasOverviewEditorial
         ? configuredTitle
-        : overviewCopy.metadataTitle;
-    const description =
+        : overviewCopy.metadataTitle);
+    const description = managed?.description || (
       locale === "zh" &&
       hasChineseText(seoMeta?.description) &&
       !hasOverviewEditorial
         ? seoMeta?.description || overviewCopy.description
-        : overviewCopy.description;
+        : overviewCopy.description);
     const robots = getProductRobotsPolicy(
       locale,
       qualityAudit?.status ||
@@ -993,9 +1000,11 @@ export default async function PricingDetailPage({
   searchParams,
   locale,
   routeCategory,
+  contentPreview,
 }: PricingDetailPageProps & {
   locale: SiteLocale;
   routeCategory: "ai" | "streaming";
+  contentPreview?: OverviewContent | null;
 }) {
   const { slug, plan: routePlanSlug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
@@ -1045,6 +1054,11 @@ export default async function PricingDetailPage({
   const sidebarProducts = await getProductNavItems(product.category);
 
   if (!routePlanSlug) {
+    if (contentPreview !== undefined) await requireAdmin();
+    const revision = await getPublishedContent(locale, product.slug);
+    const managed = isContentTarget(locale, product.slug)
+      ? contentPreview !== undefined ? contentPreview : revision?.content
+      : null;
     const publishedPlans = product.plans.filter(
       (plan) => plan.regions.length > 0,
     );
@@ -1059,19 +1073,19 @@ export default async function PricingDetailPage({
     const hasOverviewEditorial = publishedPlans.some((plan) =>
       Boolean(getProductEditorialContent(locale, product.slug, plan.slug)),
     );
-    const pageTitle =
+    const pageTitle = managed?.heading || (
       locale === "zh" &&
       hasChineseText(seoMeta?.h1) &&
       !hasOverviewEditorial
         ? seoMeta?.h1 || overviewCopy.pageTitle
-        : overviewCopy.pageTitle;
-    const pageDescription =
+        : overviewCopy.pageTitle);
+    const pageDescription = managed?.description || (
       locale === "zh" &&
       hasChineseText(seoMeta?.description) &&
       !hasOverviewEditorial
         ? seoMeta?.description || overviewCopy.description
-        : overviewCopy.description;
-    const overviewFaqs = getProductOverviewSearchFaqs({ locale, product });
+        : overviewCopy.description);
+    const overviewFaqs = managed ? managed.faqs : getProductOverviewSearchFaqs({ locale, product });
     const structuredData = buildProductOverviewStructuredData({
       locale,
       path: productCanonicalPath,
@@ -1088,7 +1102,7 @@ export default async function PricingDetailPage({
     });
 
     return (
-      <main className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
+      <main data-content-kind={managed ? "managed" : "fallback"} data-content-mode-generation={revision?.modeGeneration} data-content-version={contentPreview !== undefined ? "preview" : revision?.version || "baseline"} className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
@@ -1160,6 +1174,7 @@ export default async function PricingDetailPage({
           </section>
 
           <ProductPlanOverview product={product} locale={locale} />
+          {managed ? <OverviewEditorialSections content={managed} /> : null}
 
           <CountryAnalysisLinks
             locale={locale}
@@ -1176,7 +1191,7 @@ export default async function PricingDetailPage({
           />
 
           {overviewFaqs.length > 0 ? (
-            <FaqSection title={pageCopy.faqTitle} faqs={overviewFaqs} />
+            <FaqSection title={pageCopy.faqTitle} faqs={overviewFaqs} managed={Boolean(managed)} />
           ) : null}
         </div>
       </main>

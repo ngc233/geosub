@@ -57,6 +57,7 @@ const navGroups: Array<{
   {
     label: "内容增长",
     items: [
+      { label: "内容发布试点", href: "/admin/content", icon: FileText },
       { label: "文章发布", href: "/admin/articles", icon: FileText },
       { label: "搜索需求", href: "/admin/search-demand", icon: SearchCheck },
       { label: "增长周报", href: "/admin/growth", icon: LineChart },
