@@ -105,10 +105,11 @@ function validateSpecs(specs) {
         failures.push(`${productSlug}/${plan.slug} has invalid billing cycle ${billingCycle}.`);
       }
       if (
+        plan.review_only !== true && (
         !Number.isFinite(plan.expected_monthly_usd_min) ||
         !Number.isFinite(plan.expected_monthly_usd_max) ||
         plan.expected_monthly_usd_min <= 0 ||
-        plan.expected_monthly_usd_max <= plan.expected_monthly_usd_min
+        plan.expected_monthly_usd_max <= plan.expected_monthly_usd_min)
       ) {
         failures.push(`${productSlug}/${plan.slug} has an invalid expected monthly USD range.`);
       }
@@ -219,6 +220,9 @@ async function validateDatabase(specs) {
         if (!actual) {
           failures.push(`${productSlug}/${plan.slug} is missing from active database plans.`);
           continue;
+        }
+        if (plan.review_only === true && actual.plan_status !== "review" && actual.plan_status !== "draft") {
+          failures.push(`${productSlug}/${plan.slug} must remain unpublished while review_only is set.`);
         }
         if (actual.plan_name !== plan.name) {
           failures.push(

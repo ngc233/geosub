@@ -9,7 +9,7 @@ const stats = {
   referenceRegion: { country: "United States", priceUsd: 120 },
 } as never;
 
-test("targets only the English ChatGPT Pro 5x metadata experiment", () => {
+test("does not apply the interrupted English Pro experiment", () => {
   const experiment = getPricingMetadataExperiment({
     locale: "en",
     productSlug: "chatgpt",
@@ -19,14 +19,7 @@ test("targets only the English ChatGPT Pro 5x metadata experiment", () => {
     regionCount: 39,
   });
 
-  assert.deepEqual(experiment, {
-    id: "en-chatgpt-pro-5x-2026-08-25",
-    title: "ChatGPT Pro 5x Prices: $100–$127 in 39 Regions",
-    description:
-      "ChatGPT Pro 5x App Store prices range from $100.00 in Argentina to $126.57 in Norway. Compare 39 reviewed regions, tax, FX and affordability.",
-  });
-  assert.ok(`${experiment?.title} - GeoSub`.length <= 60);
-  assert.ok((experiment?.description.length || 0) <= 160);
+  assert.equal(experiment, null);
 
   assert.equal(
     getPricingMetadataExperiment({

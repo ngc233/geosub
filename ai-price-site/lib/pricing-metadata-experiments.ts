@@ -13,10 +13,6 @@ type PricingMetadataExperiment = {
   heroDescription?: string;
 };
 
-function formatRoundedUsd(value: number) {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
-}
-
 function formatExactUsd(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -60,17 +56,6 @@ export function getPricingMetadataExperiment({
     };
   }
 
-  if (
-    locale === "en" &&
-    productSlug === "chatgpt" &&
-    planSlug === "pro-5x"
-  ) {
-    return {
-      id: CHATGPT_PRO_5X_METADATA_EXPERIMENT_ID,
-      title: `${displayName} Prices: ${formatRoundedUsd(stats.minRegion.priceUsd)}–${formatRoundedUsd(stats.maxRegion.priceUsd)} in ${regionCount} Regions`,
-      description: `${displayName} App Store prices range from ${formatExactUsd(stats.minRegion.priceUsd)} in ${stats.minRegion.country} to ${formatExactUsd(stats.maxRegion.priceUsd)} in ${stats.maxRegion.country}. Compare ${regionCount} reviewed regions, tax, FX and affordability.`,
-    };
-  }
 
   return null;
 }

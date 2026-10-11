@@ -107,7 +107,7 @@ async function main() {
         `
           INSERT INTO plans (
             id, product_id, slug, name, billing_cycle, status, sort_order
-          ) VALUES ($1, $2, $3, $4, 'monthly', 'published', $5)
+          ) VALUES ($1, $2, $3, $4, 'monthly', $6::publish_status, $5)
           ON CONFLICT (product_id, slug) DO UPDATE SET
             name = EXCLUDED.name,
             billing_cycle = EXCLUDED.billing_cycle,
@@ -120,6 +120,7 @@ async function main() {
           plan.slug,
           plan.name,
           plan.sort_order,
+          plan.review_only === true ? "review" : "published",
         ],
       );
       const planRow = await client.query(

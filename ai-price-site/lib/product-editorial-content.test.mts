@@ -204,3 +204,16 @@ test("SEO coverage counts only content that is actually rendered", () => {
   assert.ok(geminiCoverage.summary);
   assert.equal(geminiCoverage.describedPlanCount, 3);
 });
+
+
+test("ChatGPT Pro 500 has distinct bilingual content and preserves existing routes", () => {
+  for (const locale of ["zh", "en"] as const) {
+    const content = getProductEditorialContent(locale, "chatgpt", "pro-500");
+    assert.ok(content);
+    assert.match(content.plan.difference, /Pro 100/);
+    assert.match(content.plan.difference, /Pro 200/);
+  }
+  for (const slug of ["go", "plus", "pro-5x", "pro", "pro-500"]) {
+    assert.equal(resolveLegacyPricingPlanSlug("chatgpt", slug), slug);
+  }
+});

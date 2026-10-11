@@ -59,17 +59,23 @@ const editorialContent: Record<
           bestFor:
             "使用频率明显高于 Plus，但暂时不需要最高额度的专业个人用户。",
           difference:
-            "与 20x 层共享 Pro 核心能力，主要区别是使用额度约为 Plus 的 5 倍；实际限额以账号套餐页为准。",
+            "当前官方名称为 Pro 100。旧 5x 名称用于识别历史套餐，不代表当前固定倍数；包含用量以官方套餐页为准。",
           sourceUrl:
-            "https://help.openai.com/en/articles/9793128-what-is-chatgpt-pro",
+            "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
         },
         pro: {
           bestFor:
             "每天高强度使用高级模型、长上下文或 Codex，并希望获得个人套餐最高额度的用户。",
           difference:
-            "这是更高额度的 Pro 层，官方说明为约 Plus 的 20 倍使用容量；功能和动态限额仍以账号套餐页为准。",
+            "当前官方名称为 Pro 200，包含用量高于 Pro 100。Pro 500 是另一个更高档位并包含 Ultrafast；旧 20x 名称不代表当前固定倍数。",
           sourceUrl:
-            "https://help.openai.com/en/articles/9793128-what-is-chatgpt-pro",
+            "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
+        },
+        "pro-500": {
+          bestFor: "需要个人 Pro 档位最高包含用量及 Ultrafast 的高频专业用户。",
+          difference: "Pro 500 是独立于 Pro 100 和 Pro 200 的按月计费档位。美国网页月费为 500 美元；各地区 App Store 价格须分别核验。",
+          availabilityNote: "地区价格仍在审核，不以网页报价代替 App Store 标价。",
+          sourceUrl: "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
         },
       },
     },
@@ -408,17 +414,23 @@ const editorialContent: Record<
           bestFor:
             "Professional individuals whose usage frequently exceeds Plus but who do not need the highest allowance.",
           difference:
-            "Shares the Pro capability set with the 20x tier, with an allowance positioned at roughly five times Plus. Account-level limits remain authoritative.",
+            "Now officially named Pro 100. The older 5x label identifies the historical tier rather than a guaranteed current multiplier. Check the official plan page for included usage.",
           sourceUrl:
-            "https://help.openai.com/en/articles/9793128-what-is-chatgpt-pro",
+            "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
         },
         pro: {
           bestFor:
             "Heavy daily users of advanced models, long context or Codex who need the highest individual allowance.",
           difference:
-            "The higher-capacity Pro tier, described as roughly twenty times the Plus allowance. Features and dynamic limits remain subject to the account plan page.",
+            "Now officially named Pro 200, with more included usage than Pro 100. Pro 500 is a separate higher tier with Ultrafast; the older 20x label is not a guaranteed current multiplier.",
           sourceUrl:
-            "https://help.openai.com/en/articles/9793128-what-is-chatgpt-pro",
+            "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
+        },
+        "pro-500": {
+          bestFor: "Frequent professional users who need the highest included Pro usage and Ultrafast.",
+          difference: "Pro 500 is a separate monthly tier from Pro 100 and Pro 200. US web pricing is $500 per month; regional App Store prices require separate verification.",
+          availabilityNote: "Regional prices are under review. Web pricing does not replace App Store evidence.",
+          sourceUrl: "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
         },
       },
     },

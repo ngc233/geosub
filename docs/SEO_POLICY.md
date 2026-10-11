@@ -108,7 +108,7 @@ GeoSub 的 SEO 目标是让完整、可信、具有独立搜索价值的页面�
 - 观察期间不改目标页 URL、canonical、robots、H1、核心正文或内部链接结构。
 - 不把一个页面的结果直接扩展到全站；先在第二个相近页面复制验证。
 - Google 与 Bing 分开看，不用一个搜索引擎的结果替代另一个。
-- `/en/ai-pricing/chatgpt/pro-5x` 与 `/zh/ai-pricing/chatgpt/plus` 当前处于实验变量冻结期；生命周期工程不得改变其 robots、canonical、URL、H1、核心内容结构或其他锁定变量。
+- `/zh/ai-pricing/chatgpt/plus` 当前处于实验变量冻结期；生命周期工程不得改变其 robots、canonical、URL、H1、核心内容结构或其他锁定变量。
 - `2026-09-03` 只是最早数据覆盖边界，不是自动解冻日期。仅当 GSC/Bing settled data 至少覆盖该日且形成七个完整观察日，并完成实验结算后，才可另行批准解冻。
 
 ## 10. 发布门禁
@@ -133,3 +133,11 @@ SEO 相关变更至少通过：
 ## 2026-09-08 X Premium 内容与索引分离
 
 用户批准先完善 X Premium 内容并保持当前索引状态。代码级显式索引待审核登记仅覆盖 x-premium，优先于质量分数和 observe/enforce 模式：所有语言的该产品概览和套餐保持 noindex/follow，所有该产品 sitemap 路由排除；即便人为加入套餐推广名单也不能绕过。质量评分照常计算，不伪造低分。其他产品、预算与推广名单不变。解除待审核必须另行批准并核对容量及真实页面，不启用数据库 observe-only 生命周期决策。
+
+## 2026-10-09 ChatGPT Pro 实验中止
+
+用户明确批准将 en-chatgpt-pro-5x-2026-08-25 标记为 interrupted：官方套餐身份变化和采集错配干扰观察，不判定胜负。停止该页实验元数据覆盖与活动锁，允许必要套餐事实纠正，保留原URL、canonical及索引策略。中文Plus实验继续冻结；本次不得改变其共享正文或相关链接。中止不是统计验收成功，也不授权生产价格批量提升。
+
+## 2026-10-09 ChatGPT 套餐URL登记
+
+经用户批准，Go/Plus/Pro100/Pro200分别保持go/plus/pro-5x/pro路径；Pro500使用pro-500新身份。新增套餐最初为review，不创建发布价格，不加入推广名单或sitemap。已有URL和canonical不迁移。Pro100/200的数据库显示名称更新须单独执行受控数据步骤；中文Plus的实验标题、摘要、核心正文及链接路径继续冻结。

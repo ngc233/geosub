@@ -3,6 +3,7 @@ const legacyPricingPlanAliases: Record<string, Record<string, string>> = {
     go: "go",
     plus: "plus",
     "pro-5x": "pro-5x",
+    "pro-500": "pro-500",
     "pro-20x": "pro",
     pro: "pro",
   },

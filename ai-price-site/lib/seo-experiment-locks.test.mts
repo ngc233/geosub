@@ -5,11 +5,10 @@ import {
   getActiveSeoExperimentLock,
 } from "./seo-experiment-locks.ts";
 
-test("both active metadata experiments remain explicitly locked", () => {
-  assert.equal(activeSeoExperimentLocks.length, 2);
+test("Chinese Plus remains explicitly locked after Pro interruption", () => {
+  assert.equal(activeSeoExperimentLocks.length, 1);
 
   for (const path of [
-    "/en/ai-pricing/chatgpt/pro-5x",
     "/zh/ai-pricing/chatgpt/plus",
   ]) {
     const lock = getActiveSeoExperimentLock(`${path}/`);
@@ -29,4 +28,8 @@ test("experiment lock matching is exact-page only", () => {
     getActiveSeoExperimentLock("/zh/ai-pricing/chatgpt/pro-5x"),
     null,
   );
+});
+
+test("interrupted Pro experiment no longer locks factual corrections", () => {
+  assert.equal(getActiveSeoExperimentLock("/en/ai-pricing/chatgpt/pro-5x"), null);
 });

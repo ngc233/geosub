@@ -33,8 +33,8 @@ test("observation normalizes page identity and records experiment lock without c
   const normalized = normalizeSeoPageObservation(observation());
 
   assert.equal(normalized.canonicalPath, "/en/ai-pricing/chatgpt/pro-5x");
-  assert.equal(normalized.experimentLocked, true);
-  assert.equal(normalized.experimentLockId, "en-chatgpt-pro-5x-2026-08-25");
+  assert.equal(normalized.experimentLocked, false);
+  assert.equal(normalized.experimentLockId, null);
   assert.equal(normalized.finalRobotsIndex, true);
   assert.equal(normalized.indexingDecision, "observe_existing_output");
 });

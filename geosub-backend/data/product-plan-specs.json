@@ -1,6 +1,7 @@
 {
   "chatgpt": {
     "name": "ChatGPT",
+    "exact_plan_aliases": true,
     "app_store_id": "6448311069",
     "plans": [
       {
@@ -21,19 +22,27 @@
       },
       {
         "slug": "pro-5x",
-        "name": "ChatGPT Pro 5x",
-        "aliases": ["chatgpt pro 5x", "pro 5x", "pro-5x"],
+        "name": "ChatGPT Pro 100",
+        "aliases": ["chatgpt pro 5x", "pro 5x", "pro-5x", "chatgpt pro 100", "pro 100"],
         "sort_order": 30,
         "expected_monthly_usd_min": 40.0,
         "expected_monthly_usd_max": 160.0
       },
       {
         "slug": "pro",
-        "name": "ChatGPT Pro 20x",
-        "aliases": ["chatgpt pro 20x", "pro 20x", "pro-20x"],
+        "name": "ChatGPT Pro 200",
+        "aliases": ["chatgpt pro 20x", "pro 20x", "pro-20x", "chatgpt pro 200", "pro 200"],
         "sort_order": 40,
         "expected_monthly_usd_min": 80.0,
         "expected_monthly_usd_max": 330.0
+      },
+      {
+        "slug": "pro-500",
+        "name": "ChatGPT Pro 500",
+        "aliases": ["chatgpt pro 500", "pro 500"],
+        "sort_order": 50,
+        "billing_cycle": "monthly",
+        "review_only": true
       }
     ]
   },

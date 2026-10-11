@@ -360,10 +360,12 @@ function Resolve-PlanSpec {
     $itemText = [regex]::Replace($itemText, "\s+", " ").Trim()
   }
 
+  # Explicit labels prevent generic slugs such as pro from swallowing new tiers.
+  $exactAliases = $ProductSpec.PSObject.Properties.Name -contains "exact_plan_aliases" -and $ProductSpec.exact_plan_aliases -eq $true
   $planMatches = @()
   foreach ($plan in @($ProductSpec.plans)) {
     $aliases = @($plan.aliases)
-    $aliases += @($plan.slug, $plan.name)
+    if (!$exactAliases) { $aliases += @($plan.slug, $plan.name) }
 
     foreach ($alias in $aliases) {
       $aliasText = Normalize-PlanMatchText -Value ([string]$alias)
@@ -371,7 +373,11 @@ function Resolve-PlanSpec {
         continue
       }
 
-      if ($itemText -eq $aliasText -or $itemText -match "\b$([regex]::Escape($aliasText))\b") {
+      if ($exactAliases -and ![string]::IsNullOrWhiteSpace($productText)) {
+        $aliasText = [regex]::Replace($aliasText, "\b$([regex]::Escape($productText))\b", "").Trim()
+        $aliasText = [regex]::Replace($aliasText, "\s+", " ").Trim()
+      }
+      if ($itemText -eq $aliasText -or (!$exactAliases -and $itemText -match "\b$([regex]::Escape($aliasText))\b")) {
         $planMatches += [pscustomobject]@{
           Plan = $plan
           AliasLength = $aliasText.Length
@@ -1291,6 +1297,14 @@ SELECT row_to_json(upserted) FROM upserted;
   return [string]$source.id
 }
 
+function Get-PlanPublishStatus {
+  param([AllowNull()][object]$PlanSpec = $null)
+  if ($null -ne $PlanSpec -and $PlanSpec.PSObject.Properties.Name -contains "review_only" -and $PlanSpec.review_only -eq $true) {
+    return "review"
+  }
+  return "published"
+}
+
 function Ensure-Plan {
   param(
     [string]$ProductId,
@@ -1303,6 +1317,7 @@ function Ensure-Plan {
 
   $planSpec = Resolve-PlanSpec -ProductSpec $ProductSpec -ItemName $ItemName -ProductName $ProductName
   $planSlug = Get-PlanSlugFromItemName -ItemName $ItemName -ProductName $ProductName -ProductSpec $ProductSpec
+  $publishStatus = Get-PlanPublishStatus -PlanSpec $planSpec
   $planName = if ($null -ne $planSpec -and ![string]::IsNullOrWhiteSpace([string]$planSpec.name)) {
     [string]$planSpec.name
   } else {
@@ -1335,7 +1350,7 @@ UPDATE plans
 SET
   name = $(Quote-SqlString $planName),
   billing_cycle = $(Quote-SqlString $billingCycle)::billing_cycle,
-  status = 'published'::publish_status,
+  status = $(Quote-SqlString $publishStatus)::publish_status,
   sort_order = $effectiveSortOrder,
   updated_at = NOW()
 WHERE id = $(Quote-SqlString $plan.id)::uuid;
@@ -1372,7 +1387,7 @@ upserted AS (
     $(Quote-SqlString $planSlug),
     $(Quote-SqlString $planName),
     $(Quote-SqlString $billingCycle)::billing_cycle,
-    'published'::publish_status,
+    $(Quote-SqlString $publishStatus)::publish_status,
     $effectiveSortOrder,
     NOW(),
     NOW()
@@ -1381,7 +1396,7 @@ upserted AS (
   DO UPDATE SET
     name = EXCLUDED.name,
     billing_cycle = EXCLUDED.billing_cycle,
-    status = 'published'::publish_status,
+    status = $(Quote-SqlString $publishStatus)::publish_status,
     sort_order = EXCLUDED.sort_order,
     updated_at = NOW()
   RETURNING id, slug, name, billing_cycle, sort_order
@@ -1506,6 +1521,10 @@ function Get-AppStoreObservationAnomaly {
   )
 
   $reasons = @()
+  if ((Get-PlanPublishStatus -PlanSpec $PlanSpec) -eq "review") {
+    $reasons += "This new plan requires manual identity and regional price review before publication."
+  }
+
   $normalizedText = ""
   if (![string]::IsNullOrWhiteSpace($OriginalObservedPriceText)) {
     $normalizedText = [System.Net.WebUtility]::HtmlDecode($OriginalObservedPriceText).ToUpperInvariant()

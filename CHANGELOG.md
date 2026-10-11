@@ -1,6 +1,12 @@
 # Changelog
 
-## 2.10.3 - Unreleased
+## 2.10.4 - Unreleased
+
+- Correct ChatGPT Pro 100/200 identity mapping while preserving existing URLs.
+- Register Pro 500 separately with mandatory review before price publication.
+- End the confounded English Pro experiment without declaring a winner; retain the Chinese Plus experiment.
+
+## 2.10.3 - 2026-10-09
 
 - Clarify SuperGrok Heavy versus Plus and the SuperGrok benefit in X Premium+,
   with official sources and matching Chinese/English FAQ structured data.

@@ -12,6 +12,7 @@ type PlanSpec = {
   sort_order: number;
   price_selection_strategy?: string;
   expected_range_tolerance_percent?: number;
+  review_only?: boolean;
   expected_monthly_usd_min: number;
   expected_monthly_usd_max: number;
 };
@@ -260,6 +261,12 @@ test("tracked products and plans keep explicit sanity ranges", () => {
       assert.ok(plan.name, `${label} should have a plan name`);
       assert.ok(Array.isArray(plan.aliases) && plan.aliases.length > 0, `${label} should have aliases`);
       assert.ok(Number.isFinite(plan.sort_order), `${label} should have a sort order`);
+      if (plan.review_only === true) {
+        assert.equal(label, "chatgpt/pro-500", "review-only exception must remain explicitly scoped");
+        assert.equal(plan.expected_monthly_usd_min, undefined);
+        assert.equal(plan.expected_monthly_usd_max, undefined);
+        continue;
+      }
       assert.ok(
         Number.isFinite(plan.expected_monthly_usd_min) && plan.expected_monthly_usd_min >= 0,
         `${label} should have a valid minimum USD sanity range`,
