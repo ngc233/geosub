@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   getPricingProductOverviewCopy,
   getProductOverviewDecisionPlans,
+  getProductOverviewRegionCount,
   getProductOverviewPriceFact,
 } from "./pricing-product-overview-copy.ts";
 import type { SubscriptionProduct } from "./public-pricing-model.ts";
@@ -153,4 +154,18 @@ test("legacy renewal tiers cannot become the product overview recommendation", (
     getProductOverviewDecisionPlans(netflix).map((plan) => plan.slug),
     ["standard"],
   );
+});
+
+test("overview cards and price facts exclude other platforms when iOS is available", () => {
+  const mixed: SubscriptionProduct = { ...product, plans: [{ ...product.plans[0], regions: [
+    { ...product.plans[0].regions[0], code: 'US', country: 'United States', priceUsd: 20, billingPlatform: 'ios' },
+    { ...product.plans[0].regions[0], code: 'US', country: 'United States', priceUsd: 1, billingPlatform: 'web' },
+    { ...product.plans[0].regions[0], code: 'CA', country: 'Canada', priceUsd: 2, billingPlatform: 'web' },
+  ] }] };
+  const plans = getProductOverviewDecisionPlans(mixed);
+  assert.equal(plans[0].regions.length, 1);
+  assert.equal(getProductOverviewRegionCount(mixed), 1);
+  assert.equal(plans[0].regions[0].billingPlatform, 'ios');
+  assert.equal(getProductOverviewPriceFact(mixed)?.price, '$20.00');
+  assert.equal(mixed.plans[0].regions.length, 3, 'Detail page retains all platforms');
 });

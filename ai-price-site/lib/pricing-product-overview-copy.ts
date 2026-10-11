@@ -2,6 +2,7 @@ import type { SiteLocale } from "./site-locale.ts";
 import {
   formatUsd,
   getPlanStats,
+  getDefaultPlanRegions,
   type SubscriptionProduct,
 } from "./public-pricing-model.ts";
 import { getPlanDisplayName } from "./pricing-labels.ts";
@@ -38,15 +39,19 @@ export type ProductOverviewPriceFact = {
 export function getProductOverviewDecisionPlans(
   product: SubscriptionProduct,
 ) {
-  const publishedPlans = product.plans.filter(
-    (plan) => plan.regions.length > 0,
-  );
+  const publishedPlans = product.plans
+    .map((plan) => ({ ...plan, regions: getDefaultPlanRegions(plan) }))
+    .filter((plan) => plan.regions.length > 0);
   const currentPlans = publishedPlans.filter(
     (plan) =>
       getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
   );
 
   return currentPlans.length > 0 ? currentPlans : publishedPlans;
+}
+
+export function getProductOverviewRegionCount(product: SubscriptionProduct) {
+  return new Set(getProductOverviewDecisionPlans(product).flatMap((plan) => plan.regions.map((region) => region.code))).size;
 }
 
 export function getProductOverviewPriceFact(

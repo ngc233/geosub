@@ -52,6 +52,7 @@ import { getPricingMetadataExperiment } from "../lib/pricing-metadata-experiment
 import {
   getPricingProductOverviewCopy,
   getProductOverviewDecisionPlans,
+  getProductOverviewRegionCount,
   getProductOverviewPriceFact,
 } from "../lib/pricing-product-overview-copy";
 import { getPlanDisplayName } from "../lib/pricing-labels";
@@ -741,11 +742,7 @@ export async function getPricingDetailMetadata({
     const publishedPlans = product.plans.filter(
       (plan) => plan.regions.length > 0,
     );
-    const regionCount = new Set(
-      publishedPlans.flatMap((plan) =>
-        plan.regions.map((region) => region.code),
-      ),
-    ).size;
+    const regionCount = getProductOverviewRegionCount(product);
     const overviewCopy = getPricingProductOverviewCopy({
       locale,
       productName: product.name,
@@ -1051,11 +1048,7 @@ export default async function PricingDetailPage({
     const publishedPlans = product.plans.filter(
       (plan) => plan.regions.length > 0,
     );
-    const regionCount = new Set(
-      publishedPlans.flatMap((plan) =>
-        plan.regions.map((region) => region.code),
-      ),
-    ).size;
+    const regionCount = getProductOverviewRegionCount(product);
     const overviewCopy = getPricingProductOverviewCopy({
       locale,
       productName: product.name,

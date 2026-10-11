@@ -5,6 +5,7 @@ import { getPricingPlanPath } from "../lib/pricing-routes";
 import {
   getPricingProductOverviewCopy,
   getProductOverviewDecisionPlans,
+  getProductOverviewRegionCount,
   getProductOverviewPriceFact,
 } from "../lib/pricing-product-overview-copy";
 import type { SiteLocale } from "../lib/site-locale";
@@ -22,9 +23,7 @@ export default function ProductPlanOverview({
     (plan) => plan.regions.length > 0,
   );
   const singlePlan = decisionPlans.length === 1;
-  const regionCount = new Set(
-    decisionPlans.flatMap((plan) => plan.regions.map((region) => region.code)),
-  ).size;
+  const regionCount = getProductOverviewRegionCount(product);
   const copy = getPricingProductOverviewCopy({
     locale,
     productName: product.name,
@@ -107,13 +106,13 @@ export default function ProductPlanOverview({
                     <div>
                       <div className="text-xs text-zinc-400">{copy.coverage}</div>
                       <div className="mt-1 font-semibold text-zinc-950 dark:text-white">
-                        {copy.regions(plan.regions.length)}
+                        {copy.regions(new Set(plan.regions.map((region) => region.code)).size)}
                       </div>
                     </div>
                     <div>
                       <div className="text-xs text-zinc-400">{copy.channel}</div>
                       <div className="mt-1 font-semibold text-zinc-950 dark:text-white">
-                        App Store
+                        {plan.regions[0]?.billingPlatform === "web" ? "Web" : ["android", "google_play"].includes(plan.regions[0]?.billingPlatform || "") ? "Google Play" : "App Store"}
                       </div>
                     </div>
                   </div>

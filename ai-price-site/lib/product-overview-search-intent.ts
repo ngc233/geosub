@@ -1,20 +1,13 @@
 import { getProductEditorialContent } from "./product-editorial-content.ts";
 import {
   getProductOverviewDecisionPlans,
+  getProductOverviewRegionCount,
   getProductOverviewPriceFact,
 } from "./pricing-product-overview-copy.ts";
 import { getPlanDisplayName } from "./pricing-labels.ts";
 import type { PricingFaq } from "./pricing-seo.ts";
 import type { SubscriptionProduct } from "./public-pricing-model.ts";
 import type { SiteLocale } from "./site-locale.ts";
-
-function getReviewedRegionCount(product: SubscriptionProduct) {
-  return new Set(
-    product.plans.flatMap((plan) =>
-      plan.regions.map((region) => region.code),
-    ),
-  ).size;
-}
 
 function getPlanChoiceSummary(
   locale: SiteLocale,
@@ -52,7 +45,7 @@ export function getProductOverviewSearchFaqs({
 
   const lowest = getProductOverviewPriceFact(product);
   const planCount = getProductOverviewDecisionPlans(product).length;
-  const regionCount = getReviewedRegionCount(product);
+  const regionCount = getProductOverviewRegionCount(product);
   const planChoiceSummary = getPlanChoiceSummary(locale, product);
 
   if (locale === "zh") {

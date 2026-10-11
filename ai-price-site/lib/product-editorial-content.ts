@@ -398,9 +398,9 @@ const editorialContent: Record<
       plans: {
         go: {
           bestFor:
-            "Budget-conscious everyday users who want more messages, uploads and image generation than the free tier.",
+            "Budget-conscious users who need higher limits for image generation, file uploads and data analysis than the Free plan.",
           difference:
-            "An affordable consumer entry tier. It expands common free-tier limits, while deeper reasoning and longer workflows are better suited to Plus or Pro.",
+            "Free and Go both include unlimited everyday text chats, subject to abuse-prevention safeguards. Go raises limits for eligible tools; check current feature availability before subscribing.",
           sourceUrl: "https://openai.com/index/introducing-chatgpt-go/",
         },
         plus: {

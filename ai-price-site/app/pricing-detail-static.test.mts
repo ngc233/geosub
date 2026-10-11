@@ -275,7 +275,7 @@ test("product overview and related pricing links expose clear next actions", () 
   assert.match(planOverview, /border-zinc-200 bg-white/);
   assert.doesNotMatch(planOverview, /border-lime-300 bg-lime-50/);
   assert.match(planOverview, /copy\.viewPlan/);
-  assert.match(planOverview, /copy\.regions\(plan\.regions\.length\)/);
+  assert.match(planOverview, /copy\.regions\(new Set\(plan\.regions\.map\(\(region\) => region\.code\)\)\.size\)/);
   assert.match(topicLinks, /productAction/);
   assert.match(topicLinks, /min-h-16/);
   assert.match(topicLinks, /hover:shadow-md/);
