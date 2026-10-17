@@ -7,6 +7,9 @@ import {
   getAdminPasswordPolicyError,
   requireAdmin,
 } from "../../../lib/admin-auth";
+import type { Prisma } from "@prisma/client";
+import { attemptAdminSave } from "../../../lib/admin-save";
+import { ANALYTICS_KEYS, NOTIFICATION_KEYS, settingsVersion, assertSettingsVersion } from "../../../lib/admin-settings-version";
 import { prisma } from "../../../lib/prisma";
 import { getOperationsNotificationConfig } from "../../../lib/operations-notification";
 import { PUBLIC_SITE_SETTINGS_CACHE_TAG } from "../../../lib/public-site-settings-cache";
@@ -41,7 +44,7 @@ function analyticsErrorCode(ga4Invalid: boolean, gtmInvalid: boolean) {
   return "";
 }
 
-async function upsertSetting({
+async function upsertSetting(tx: Prisma.TransactionClient, {
   settingKey,
   groupName,
   label,
@@ -54,7 +57,7 @@ async function upsertSetting({
   valueText: string;
   note: string;
 }) {
-  await prisma.siteSetting.upsert({
+  await tx.siteSetting.upsert({
     where: {
       settingKey,
     },
@@ -77,24 +80,28 @@ async function upsertSetting({
 }
 
 export async function updateAnalyticsSettings(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin("manage");
   const ga4 = extractTrackingId(formData.get("ga4_id"), /\bG-[A-Z0-9]{4,}\b/);
   const gtm = extractTrackingId(formData.get("gtm_id"), /\bGTM-[A-Z0-9]{4,}\b/);
   const errorCode = analyticsErrorCode(ga4.invalid, gtm.invalid);
 
   if (errorCode) {
-    redirect(`/admin/settings?analyticsError=${errorCode}`);
+    return {error:"统计 ID 格式无效，请填写有效的 G- 或 GTM- ID。输入仍保留。"};
   }
 
-  await Promise.all([
-    upsertSetting({
+  const result=await attemptAdminSave(prisma,async tx=>{
+   await tx.$executeRaw`SELECT pg_advisory_xact_lock(721091121)`;
+   const rows=await tx.siteSetting.findMany({where:{settingKey:{in:ANALYTICS_KEYS}}});
+   assertSettingsVersion(rows,ANALYTICS_KEYS,formData.get('recordVersion'));
+   await Promise.all([
+    upsertSetting(tx, {
       settingKey: "ga4_id",
       groupName: "analytics",
       label: "Google Analytics 4 Measurement ID",
       valueText: ga4.id,
       note: "填写 Measurement ID（例如 G-XXXXXXXXXX），或粘贴包含该 ID 的 Google 代码。",
     }),
-    upsertSetting({
+    upsertSetting(tx, {
       settingKey: "gtm_id",
       groupName: "analytics",
       label: "Google Tag Manager Container ID",
@@ -102,26 +109,33 @@ export async function updateAnalyticsSettings(formData: FormData) {
       note: "填写 Container ID（例如 GTM-XXXXXXX），或粘贴包含该 ID 的 Google 代码。若填写 GTM，前台优先加载 GTM。",
     }),
   ]);
-
+   await tx.auditLog.create({data:{actorId:admin.id,action:'settings_analytics_update',targetType:'site_settings',newValue:{keys:ANALYTICS_KEYS}}});
+   return settingsVersion(await tx.siteSetting.findMany({where:{settingKey:{in:ANALYTICS_KEYS}}}),ANALYTICS_KEYS);
+  });
+  if(!result.ok)return {error:result.error};
   updateTag(PUBLIC_SITE_SETTINGS_CACHE_TAG);
 
   revalidatePath("/");
   revalidatePath("/zh");
   revalidatePath("/en");
   revalidatePath("/admin/settings");
-  redirect("/admin/settings?saved=1");
+  return {recordVersion:result.value};
 }
 
 export async function updateOperationsNotificationSettings(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin("manage");
   const enabled = formData.get("operations_brief_enabled") === "on";
   const config = await getOperationsNotificationConfig();
 
   if (enabled && !config.channelConfigured) {
-    redirect("/admin/settings?notificationError=channel");
+    return {error:"通知渠道尚未配置，本次设置未保存。"};
   }
 
-  await upsertSetting({
+  const result=await attemptAdminSave(prisma,async tx=>{
+   await tx.$executeRaw`SELECT pg_advisory_xact_lock(721091122)`;
+   const rows=await tx.siteSetting.findMany({where:{settingKey:{in:NOTIFICATION_KEYS}}});
+   assertSettingsVersion(rows,NOTIFICATION_KEYS,formData.get('recordVersion'));
+   await upsertSetting(tx, {
     settingKey: "operations_brief_enabled",
     groupName: "notifications",
     label: "Daily operations brief",
@@ -129,13 +143,17 @@ export async function updateOperationsNotificationSettings(formData: FormData) {
     note: "仅在产品采集失败或需要人工处理时，通过服务器配置的安全 Webhook 发送。",
   });
 
+   await tx.auditLog.create({data:{actorId:admin.id,action:'settings_notifications_update',targetType:'site_settings',newValue:{enabled}}});
+   return settingsVersion(await tx.siteSetting.findMany({where:{settingKey:{in:NOTIFICATION_KEYS}}}),NOTIFICATION_KEYS);
+  });
+  if(!result.ok)return {error:result.error};
   revalidatePath("/admin");
   revalidatePath("/admin/settings");
-  redirect("/admin/settings?notificationSaved=1");
+  return {recordVersion:result.value};
 }
 
 export async function updateAdminPassword(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("account");
   const currentPassword = String(formData.get("current_password") || "");
   const newPassword = String(formData.get("new_password") || "");
   const confirmPassword = String(formData.get("confirm_password") || "");

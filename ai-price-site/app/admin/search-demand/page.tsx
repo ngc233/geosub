@@ -160,7 +160,7 @@ export default async function AdminSearchDemandPage({
         title="搜索需求"
         description="查看访客真正想找的产品、套餐和问题。优先处理反复出现的无结果关键词，再观察搜索后是否进入了对应页面。"
         action={(
-          <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+          <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
             {SEARCH_DEMAND_RANGES.map((range) => (
               <AdminLink
                 key={range}
@@ -170,7 +170,7 @@ export default async function AdminSearchDemandPage({
                   "rounded-md px-3 py-2 text-sm font-bold transition",
                   days === range
                     ? "bg-blue-700 text-white"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                 ].join(" ")}
               >
                 {range} 天
@@ -185,7 +185,7 @@ export default async function AdminSearchDemandPage({
           className={[
             "mb-6 rounded-lg border px-4 py-3 text-sm font-semibold",
             params.aliasResult === "insufficient"
-              ? "border-amber-200 bg-amber-50 text-amber-800"
+              ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
               : "border-green-200 bg-green-50 text-green-800",
           ].join(" ")}
         >
@@ -200,7 +200,7 @@ export default async function AdminSearchDemandPage({
       ) : null}
 
       {params.repairResult ? (
-        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
           {params.repairResult === "started"
             ? "转化修复任务已开始，系统已保存当前数据作为比较基线。"
             : params.repairResult === "resolved"
@@ -210,7 +210,7 @@ export default async function AdminSearchDemandPage({
       ) : null}
 
       {params.authorityResult ? (
-        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
           {params.authorityResult === "queued"
             ? "该产品的定向复采已进入后台运行，后续结果会回到价格审核与数据质量页面。"
             : params.authorityResult === "fresh"

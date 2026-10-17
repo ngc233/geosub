@@ -1,6 +1,7 @@
 "use client";
 
 import AdminLink from "@/components/admin/AdminLink";
+import { AdminActionForm } from "./AdminPermissions";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -35,7 +36,8 @@ const navGroups: Array<{
   {
     label: "今日工作",
     items: [
-      { label: "总览", href: "/admin", icon: LayoutDashboard },
+      { label: "工作台", href: "/admin", icon: LayoutDashboard },
+      { label: "流量数据", href: "/admin/analytics", icon: LineChart },
       { label: "产品流水线", href: "/admin/pipeline", icon: Route },
       { label: "数据质量", href: "/admin/data-quality", icon: Activity },
     ],
@@ -57,6 +59,7 @@ const navGroups: Array<{
   {
     label: "内容增长",
     items: [
+      { label: "自营推广", href: "/admin/promotions", icon: BadgeDollarSign },
       { label: "内容发布试点", href: "/admin/content", icon: FileText },
       { label: "文章发布", href: "/admin/articles", icon: FileText },
       { label: "搜索需求", href: "/admin/search-demand", icon: SearchCheck },
@@ -200,12 +203,12 @@ export default function AdminSidebar({
             v{version}
           </span>
         </div>
-        <form action="/admin/logout" method="post">
+        <AdminActionForm capability="account" action="/admin/logout" method="post">
           <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-red-800 dark:hover:bg-red-950/60 dark:hover:text-red-300 dark:focus-visible:ring-red-400/60">
             <LogOut size={16} strokeWidth={2} />
             退出登录
           </button>
-        </form>
+        </AdminActionForm>
       </div>
     </>
   );

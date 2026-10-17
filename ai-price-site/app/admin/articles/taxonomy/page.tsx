@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import type { Locale } from "@prisma/client";
 import { AdminButton } from "../../../../components/admin/AdminButton";
@@ -11,7 +12,7 @@ import {
 } from "../actions";
 
 const inputClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100";
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50";
 
 function StatusBadge({ status }: { status: string }) {
   const published = status === "PUBLISHED";
@@ -22,7 +23,7 @@ function StatusBadge({ status }: { status: string }) {
         "inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1",
         published
           ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-          : "bg-slate-100 text-slate-500 ring-slate-200",
+          : "bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400",
       ].join(" ")}
     >
       {published ? "启用" : "停用"}
@@ -38,15 +39,15 @@ function ToggleButton({
   action: (formData: FormData) => Promise<void>;
 }) {
   return (
-    <form action={action}>
+    <AdminActionForm action={action}>
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"
-        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
       >
         切换
       </button>
-    </form>
+    </AdminActionForm>
   );
 }
 
@@ -104,16 +105,16 @@ export default async function ArticleTaxonomyPage({
         description="维护文章内容的基础信息架构。分类负责栏目归属，标签负责主题聚合和后续内链。"
         action={
           <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
               <AdminLink
                 href="/admin/articles/taxonomy?locale=ZH"
-                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "ZH" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "ZH" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"}`}
               >
                 中文
               </AdminLink>
               <AdminLink
                 href="/admin/articles/taxonomy?locale=EN"
-                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "EN" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "EN" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"}`}
               >
                 English
               </AdminLink>
@@ -140,13 +141,13 @@ export default async function ArticleTaxonomyPage({
       <div className="grid gap-6 xl:grid-cols-2">
         <AdminCard>
           <div className="mb-5">
-            <h2 className="text-lg font-black text-slate-950">新建分类</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">新建分类</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               适合“价格指南”“支付与账号”“方法论”这类栏目。
             </p>
           </div>
 
-          <form action={createArticleCategoryAction} className="grid gap-4">
+          <AdminActionForm action={createArticleCategoryAction} className="grid gap-4">
             <input type="hidden" name="locale" value={locale} />
             <input className={inputClass} name="name" placeholder="分类名称" required />
             <input className={inputClass} name="slug" placeholder="URL 标识，例如 price-guides" />
@@ -156,18 +157,18 @@ export default async function ArticleTaxonomyPage({
             <AdminButton type="submit">
               创建分类
             </AdminButton>
-          </form>
+          </AdminActionForm>
         </AdminCard>
 
         <AdminCard>
           <div className="mb-5">
-            <h2 className="text-lg font-black text-slate-950">新建标签</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">新建标签</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               适合“ChatGPT”“App Store”“汇率”“土耳其区”这类主题。
             </p>
           </div>
 
-          <form action={createArticleTagAction} className="grid gap-4">
+          <AdminActionForm action={createArticleTagAction} className="grid gap-4">
             <input type="hidden" name="locale" value={locale} />
             <input className={inputClass} name="name" placeholder="标签名称" required />
             <input className={inputClass} name="slug" placeholder="URL 标识，例如 app-store" />
@@ -175,21 +176,21 @@ export default async function ArticleTaxonomyPage({
             <AdminButton type="submit">
               创建标签
             </AdminButton>
-          </form>
+          </AdminActionForm>
         </AdminCard>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <AdminCard>
-          <h2 className="text-lg font-black text-slate-950">分类列表</h2>
-          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">分类列表</h2>
+          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:border-slate-700">
             {categories.map((category) => (
               <div key={category.id} className="grid grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
                 <div>
-                  <div className="font-black text-slate-950">{category.name}</div>
+                  <div className="font-black text-slate-950 dark:text-slate-50">{category.name}</div>
                   <div className="mt-1 font-mono text-xs text-slate-400">{category.slug}</div>
                 </div>
-                <div className="text-xs font-bold text-slate-500">{category._count.articles} 篇</div>
+                <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{category._count.articles} 篇</div>
                 <StatusBadge status={category.status} />
                 <ToggleButton id={category.id} action={toggleArticleCategoryStatusAction} />
               </div>
@@ -201,15 +202,15 @@ export default async function ArticleTaxonomyPage({
         </AdminCard>
 
         <AdminCard>
-          <h2 className="text-lg font-black text-slate-950">标签列表</h2>
-          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">标签列表</h2>
+          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:border-slate-700">
             {tags.map((tag) => (
               <div key={tag.id} className="grid grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
                 <div>
-                  <div className="font-black text-slate-950">{tag.name}</div>
+                  <div className="font-black text-slate-950 dark:text-slate-50">{tag.name}</div>
                   <div className="mt-1 font-mono text-xs text-slate-400">{tag.slug}</div>
                 </div>
-                <div className="text-xs font-bold text-slate-500">{tag._count.articleLinks} 篇</div>
+                <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{tag._count.articleLinks} 篇</div>
                 <StatusBadge status={tag.status} />
                 <ToggleButton id={tag.id} action={toggleArticleTagStatusAction} />
               </div>

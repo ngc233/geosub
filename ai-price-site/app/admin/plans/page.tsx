@@ -1,3 +1,5 @@
+import { preproductionRuntime } from "../../../lib/first-party-promotion";
+import AdminProductContext from "../../../components/admin/AdminProductContext";
 import AdminLink from "@/components/admin/AdminLink";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { ArrowRight } from "lucide-react";
@@ -35,7 +37,7 @@ function formatUsd(value?: number | null) {
 export default async function AdminPlansPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ state?: string }>;
+  searchParams?: Promise<{ state?: string; product?: string }>;
 }) {
   const params = searchParams ? await searchParams : {};
   const selectedState = ["not_started", "pending", "exception", "published"].includes(
@@ -43,7 +45,10 @@ export default async function AdminPlansPage({
   )
     ? (String(params.state) as AdminOperationalStatus)
     : "all";
+  const productSlug = String(params.product || "").trim();
+  const selectedProduct = productSlug ? await prisma.product.findUnique({ where: { slug: productSlug } }) : null;
   const plans = await prisma.plan.findMany({
+    where: productSlug ? { product: { slug: productSlug } } : undefined,
     orderBy: [
       {
         product: {
@@ -118,72 +123,75 @@ export default async function AdminPlansPage({
   const plansWithPrices = activePlans.filter((plan) => plan.regionPrices.length > 0);
   const plansWithoutPrices = activePlans.filter((plan) => plan.regionPrices.length === 0);
   const stateHref = (state: "all" | AdminOperationalStatus) =>
-    state === "all" ? "/admin/plans" : `/admin/plans?state=${state}`;
+    `/admin/plans?${new URLSearchParams({...(productSlug ? {product:productSlug} : {}),...(state === "all" ? {} : {state})})}`;
 
   return (
     <div>
+      {selectedProduct ? <AdminProductContext id={selectedProduct.id} slug={selectedProduct.slug} name={selectedProduct.name} /> : null}
+      {productSlug ? <p className="mb-4 text-sm">{selectedProduct ? `仅显示 ${selectedProduct.name} 的套餐。` : "未找到指定产品，没有显示其他产品的数据。"} <AdminLink href="/admin/plans" className="underline">清除产品筛选</AdminLink></p> : null}
+      {preproductionRuntime() ? <p className="mb-4 rounded-lg border border-slate-200 p-4 text-sm dark:border-slate-700">本地公开数据快照未导入来源和采集记录。下方来源缺失只描述当前本地库，不能据此判断生产数据异常。</p> : null}
       <AdminPageHeader
         eyebrow="Plans"
         title="套餐库"
-        description="查看每个产品下的套餐、计费周期、价格覆盖数量、最低价和最高价。当前页面先做只读总览。"
+        description="查看套餐发布状态与数据质量。价格数和极值包含全部平台，仅作后台诊断，不作为公开价格结论。"
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
-        <AdminCard>
-          <div className="text-sm font-bold text-slate-500">套餐总数</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">套餐总数</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {activeTotal}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             活跃套餐数量；归档 {archivedCount} 个另计。
           </div>
         </AdminCard>
 
-        <AdminCard>
-          <div className="text-sm font-bold text-slate-500">已发布</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
-            {operationalCounts.published}
+        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">已发布</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+            {activePlans.filter(plan => plan.status === "PUBLISHED").length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
-            可用于前台展示的套餐。
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            套餐发布状态；不代表价格或来源质量已通过。
           </div>
         </AdminCard>
 
-        <AdminCard>
-          <div className="text-sm font-bold text-slate-500">价格覆盖</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">价格覆盖</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {totalPrices}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             套餐下的区域价格数量。
           </div>
         </AdminCard>
 
-        <AdminCard>
-          <div className="text-sm font-bold text-slate-500">有价 / 无价</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">有价 / 无价</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {plansWithPrices.length} / {plansWithoutPrices.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             无价格套餐后续优先补齐。
           </div>
         </AdminCard>
       </div>
 
-      <AdminCard>
+      <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-lg font-black text-slate-950">
+            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
               套餐列表
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               套餐是产品和区域价格之间的中间层，例如 ChatGPT Plus、ChatGPT Pro。
             </p>
           </div>
 
           <div className="flex gap-4">
             <AdminLink
-              href="/admin/products"
+              href={selectedProduct ? `/admin/products/${selectedProduct.id}/edit` : "/admin/products"}
               className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
             >
               产品库
@@ -191,7 +199,7 @@ export default async function AdminPlansPage({
             </AdminLink>
 
             <AdminLink
-              href="/admin/prices"
+              href={selectedProduct ? `/admin/data-quality/${encodeURIComponent(selectedProduct.slug)}` : "/admin/prices"}
               className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
             >
               价格库
@@ -202,7 +210,7 @@ export default async function AdminPlansPage({
 
         <div className="mb-5 max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <SegmentedControl
-            ariaLabel="套餐运营状态"
+            ariaLabel="套餐数据质量"
             value={selectedState}
             tone="blue"
             className="min-w-[520px]"
@@ -210,7 +218,7 @@ export default async function AdminPlansPage({
               { label: `全部 ${activeTotal}`, value: "all", href: stateHref("all") },
               ...(["exception", "pending", "not_started", "published"] as AdminOperationalStatus[]).map(
                 (status) => ({
-                  label: `${adminOperationalStatusMeta[status].label} ${operationalCounts[status]}`,
+                  label: `${status === "published" ? "数据就绪" : adminOperationalStatusMeta[status].label} ${operationalCounts[status]}`,
                   value: status,
                   href: stateHref(status),
                 }),
@@ -219,18 +227,18 @@ export default async function AdminPlansPage({
           />
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <div className="grid grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="grid grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px] gap-0 bg-slate-50 dark:bg-slate-800 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
             <div>产品</div>
             <div>套餐</div>
             <div>周期</div>
             <div>价格数</div>
-            <div>状态</div>
+            <div>发布 / 数据质量</div>
             <div>最低价</div>
             <div>最高价</div>
           </div>
 
-          <div className="divide-y divide-slate-100 bg-white">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
             {visiblePlans.map((plan) => {
               const assessment = assessPlan(plan);
               const prices = plan.regionPrices
@@ -246,7 +254,7 @@ export default async function AdminPlansPage({
                   className="grid grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px] items-center gap-0 px-5 py-4 text-sm"
                 >
                   <div>
-                    <div className="font-black text-slate-950">
+                    <div className="font-black text-slate-950 dark:text-slate-50">
                       {plan.product.name}
                     </div>
                     <div className="mt-1 font-mono text-xs text-slate-400">
@@ -255,7 +263,7 @@ export default async function AdminPlansPage({
                   </div>
 
                   <div>
-                    <div className="font-black text-slate-800">
+                    <div className="font-black text-slate-800 dark:text-slate-200">
                       {plan.name}
                     </div>
                     <div className="mt-1 font-mono text-xs text-slate-400">
@@ -263,20 +271,22 @@ export default async function AdminPlansPage({
                     </div>
                   </div>
 
-                  <div className="text-slate-600">
+                  <div className="text-slate-600 dark:text-slate-300">
                     {cycleLabel(String(plan.billingCycle))}
                   </div>
 
-                  <div className="font-bold text-slate-700">
+                  <div className="font-bold text-slate-700 dark:text-slate-200">
                     {plan.regionPrices.length}
                   </div>
 
                   <div>
+                    <p className="mb-2 text-xs">{{PUBLISHED:"已发布",REVIEW:"审核中",DRAFT:"草稿",ARCHIVED:"已归档"}[plan.status] || "未知状态"}</p>
                     <AdminStatusBadge
                       status={assessment?.status ?? "not_started"}
                       title={assessment?.reason}
+                      dimension="quality"
                     />
-                    <div className="mt-1 max-w-[180px] text-xs leading-5 text-slate-500">
+                    <div className="mt-1 max-w-[180px] text-xs leading-5 text-slate-500 dark:text-slate-400">
                       {assessment?.reason}
                     </div>
                   </div>
@@ -285,7 +295,7 @@ export default async function AdminPlansPage({
                     {formatUsd(minPrice)}
                   </div>
 
-                  <div className="font-black text-slate-700">
+                  <div className="font-black text-slate-700 dark:text-slate-200">
                     {formatUsd(maxPrice)}
                   </div>
                 </div>

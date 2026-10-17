@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { notFound } from "next/navigation";
 import { AdminCard, AdminPageHeader } from "../../../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../../../components/admin/AdminButton";
@@ -67,12 +68,12 @@ export default async function EditNavigationItemPage({
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <AdminCard>
-          <form action={updateNavigationItem.bind(null, item.id)} className="space-y-6">
+          <AdminActionForm action={updateNavigationItem.bind(null, item.id)} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label
                   htmlFor="localeDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700"
+                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
                 >
                   当前语言
                 </label>
@@ -81,14 +82,14 @@ export default async function EditNavigationItemPage({
                   type="text"
                   value={selectedLocale.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="positionDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700"
+                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
                 >
                   当前位置
                 </label>
@@ -97,7 +98,7 @@ export default async function EditNavigationItemPage({
                   type="text"
                   value={selectedPosition.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
               </div>
             </div>
@@ -105,7 +106,7 @@ export default async function EditNavigationItemPage({
             <div>
               <label
                 htmlFor="label"
-                className="mb-2 block text-sm font-black text-slate-700"
+                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
               >
                 菜单名称
               </label>
@@ -115,14 +116,14 @@ export default async function EditNavigationItemPage({
                 type="text"
                 defaultValue={item.label}
                 required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
               />
             </div>
 
             <div>
               <label
                 htmlFor="href"
-                className="mb-2 block text-sm font-black text-slate-700"
+                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
               >
                 链接
               </label>
@@ -134,37 +135,37 @@ export default async function EditNavigationItemPage({
                 readOnly={lockedHome}
                 required
                 className={[
-                  "w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm font-bold outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100",
+                  "w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm font-bold outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:focus:border-blue-800 dark:focus:ring-blue-800",
                   lockedHome
-                    ? "bg-slate-50 text-slate-400"
-                    : "bg-white text-slate-950",
+                    ? "bg-slate-50 text-slate-400 dark:bg-slate-800"
+                    : "bg-white text-slate-950 dark:bg-slate-900 dark:text-slate-50",
                 ].join(" ")}
               />
-              <p className="mt-2 text-xs leading-5 text-slate-500">
+              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                 首页链接固定。其他内部链接必须使用当前语言路径，例如 /zh/ 或 /en/。
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                 <input
                   name="external"
                   type="checkbox"
                   defaultChecked={item.external}
                   disabled={lockedHome}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-700 dark:text-blue-300"
                 />
-                <span className="text-sm font-bold text-slate-700">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
                   外部链接
                 </span>
               </label>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
                 当前状态：{statusLabel(String(item.status))}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row">
+            <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row dark:border-slate-700">
               <AdminButton type="submit">
                 保存修改
               </AdminButton>
@@ -173,13 +174,13 @@ export default async function EditNavigationItemPage({
                 取消
               </AdminLinkButton>
             </div>
-          </form>
+          </AdminActionForm>
         </AdminCard>
 
         <AdminCard>
-          <h2 className="text-base font-black text-slate-950">菜单信息</h2>
+          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">菜单信息</h2>
 
-          <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
+          <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
             <p>
               所属语言：{selectedLocale.label}
             </p>
@@ -197,7 +198,7 @@ export default async function EditNavigationItemPage({
             </p>
           </div>
 
-          <div className="mt-6 rounded-xl bg-blue-50 p-4 text-xs leading-6 text-blue-900">
+          <div className="mt-6 rounded-xl bg-blue-50 p-4 text-xs leading-6 text-blue-900 dark:bg-blue-950 dark:text-blue-200">
             保存和取消都会返回当前菜单所属的语言与导航位置。
           </div>
         </AdminCard>

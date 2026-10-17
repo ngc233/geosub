@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import { ArrowUpRight, SearchCheck } from "lucide-react";
 import { AdminBadge } from "../../../components/admin/AdminBadge";
@@ -234,7 +235,7 @@ export function SearchEvidenceSections({
       <AdminTd align="right">
       <div className="flex justify-end gap-2">
       {existing && sameTarget ? (
-      <form action={updateSearchAliasAction}>
+      <AdminActionForm action={updateSearchAliasAction}>
       <input type="hidden" name="id" value={existing.id} />
       <input
       type="hidden"
@@ -247,9 +248,9 @@ export function SearchEvidenceSections({
       <AdminButton type="submit" size="sm" variant="secondary">
       {existing.status === "active" ? "停用" : "重新启用"}
       </AdminButton>
-      </form>
+      </AdminActionForm>
       ) : !existing && ready ? (
-      <form action={approveSearchAliasAction}>
+      <AdminActionForm action={approveSearchAliasAction}>
       <input
       type="hidden"
       name="alias"
@@ -289,7 +290,7 @@ export function SearchEvidenceSections({
       <AdminButton type="submit" size="sm" variant="primary">
       启用别名
       </AdminButton>
-      </form>
+      </AdminActionForm>
       ) : null}
       <AdminLink
       href={suggestion.resultHref}

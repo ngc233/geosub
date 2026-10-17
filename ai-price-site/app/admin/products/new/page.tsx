@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminButton, AdminLinkButton } from "../../../../components/admin/AdminButton";
 import {
   AdminCard,
@@ -63,7 +64,7 @@ export default async function NewProductPage({
 
       <ProductOnboardingSteps currentStep="product" />
 
-      <form action={createProductAction} className="space-y-6">
+      <AdminActionForm action={createProductAction} className="space-y-6">
         <AdminCard>
           <AdminSectionHeader
             title="基础信息"
@@ -165,7 +166,7 @@ export default async function NewProductPage({
             取消
           </AdminLinkButton>
         </div>
-      </form>
+      </AdminActionForm>
     </div>
   );
 }

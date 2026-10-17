@@ -1,4 +1,5 @@
-﻿import "server-only";
+import { canAdmin, type AdminCapability } from "./admin-permissions";
+import "server-only";
 
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
@@ -289,13 +290,14 @@ export async function getCurrentAdmin() {
   return session.user;
 }
 
-export async function requireAdmin() {
+export async function requireAdmin(capability: AdminCapability = "read") {
   const admin = await getCurrentAdmin();
 
   if (!admin) {
     redirect("/admin-login");
   }
 
+  if (!canAdmin(admin.role, capability)) redirect("/admin?permission=denied");
   return admin;
 }
 

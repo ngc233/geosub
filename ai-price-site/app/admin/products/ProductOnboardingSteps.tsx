@@ -4,6 +4,7 @@ import { AdminCard } from "../../../components/admin/AdminCard";
 type Props = {
   currentStep?: "product" | "plans" | "prices" | "review";
   productId?: string;
+  productSlug?: string;
 };
 
 const steps = [
@@ -32,22 +33,23 @@ const steps = [
 export default function ProductOnboardingSteps({
   currentStep = "product",
   productId,
+  productSlug,
 }: Props) {
   return (
     <AdminCard className="mb-6">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h2 className="text-base font-bold text-slate-950">上架流程</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <h2 className="text-base font-bold text-slate-950 dark:text-slate-50">上架流程</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
             V1 先围绕 App Store 正式价格源做闭环。产品保存后，继续补套餐、价格和审核。
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <AdminLinkButton href="/admin/plans" variant="secondary" size="sm">
+          <AdminLinkButton href={productSlug ? `/admin/plans?product=${encodeURIComponent(productSlug)}` : "/admin/plans"} variant="secondary" size="sm">
             去套餐库
           </AdminLinkButton>
-          <AdminLinkButton href="/admin/review" variant="secondary" size="sm">
+          <AdminLinkButton href={productSlug ? `/admin/review?q=${encodeURIComponent(productSlug)}` : "/admin/review"} variant="secondary" size="sm">
             去价格采集审核
           </AdminLinkButton>
         </div>
@@ -63,19 +65,19 @@ export default function ProductOnboardingSteps({
               className={[
                 "rounded-xl border px-4 py-3",
                 active
-                  ? "border-blue-200 bg-blue-50"
-                  : "border-slate-200 bg-slate-50/70",
+                  ? "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950"
+                  : "border-slate-200 bg-slate-50/70 dark:border-slate-700 dark:bg-slate-800",
               ].join(" ")}
             >
               <div
                 className={[
                   "text-sm font-bold",
-                  active ? "text-blue-800" : "text-slate-800",
+                  active ? "text-blue-800 dark:text-blue-200" : "text-slate-800 dark:text-slate-200",
                 ].join(" ")}
               >
                 {step.title}
               </div>
-              <div className="mt-1 text-xs leading-5 text-slate-500">
+              <div className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
                 {step.description}
               </div>
             </div>

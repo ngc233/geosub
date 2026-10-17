@@ -46,31 +46,31 @@ import {
 export const dynamic = "force-dynamic";
 
 function scoreClassName(score: number) {
-  if (score >= 85) return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (score >= 60) return "bg-amber-50 text-amber-700 ring-amber-200";
-  return "bg-red-50 text-red-700 ring-red-200";
+  if (score >= 85) return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
+  if (score >= 60) return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
+  return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
 }
 
 function statusClassName(status: ProductSeoQualityStatus) {
   if (status === "indexable") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
   }
   if (status === "needs_work") {
-    return "bg-amber-50 text-amber-700 ring-amber-200";
+    return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
   }
-  return "bg-red-50 text-red-700 ring-red-200";
+  return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
 }
 
 function promotionClassName(
   state: ReturnType<typeof getProductPlanSitemapPromotion>["state"],
 ) {
   if (state === "promoted") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
   }
   if (state === "waiting") {
-    return "bg-blue-50 text-blue-700 ring-blue-200";
+    return "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800";
   }
-  return "bg-amber-50 text-amber-700 ring-amber-200";
+  return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
 }
 
 export default async function AdminSeoPage({
@@ -260,35 +260,35 @@ export default async function AdminSeoPage({
         description="判断价格页是否真正值得进入搜索结果。评分同时检查搜索信息、地区价格覆盖、数据新鲜度、税务与异常，以及帮助用户做购买判断的内容。"
       />
 
-      <AdminCard className="mb-6 border-blue-200 bg-blue-50/70">
+      <AdminCard className="mb-6 border-blue-200 bg-blue-50/70 dark:border-blue-800 dark:bg-blue-950/70">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <div className="text-sm font-black text-blue-950">
+            <div className="text-sm font-black text-blue-950 dark:text-blue-200">
               产品级收录门禁：{gateMode === "observe" ? "观察模式" : "执行模式"}
             </div>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-blue-800">
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-blue-800 dark:text-blue-200">
               {gateMode === "observe"
                 ? "当前只预演结果，不会从 sitemap 移除页面，也不会改变页面 robots。确认评分稳定后，再切换为执行模式。"
                 : "产品概览按质量门槛提交；套餐页再按搜索优先级分批进入 sitemap，避免一次发布过多相似网址。"}
             </p>
           </div>
           <div className="grid shrink-0 gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm text-blue-950">
+            <div className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm text-blue-950 dark:bg-slate-900 dark:border-blue-800 dark:text-blue-200">
               <div className="font-black">当前主动推广</div>
               <div className="mt-1 text-2xl font-black">
                 {promotionSummary.productOverviewPages
                   + promotionSummary.promotedPlanPages} 个价格页
               </div>
-              <div className="mt-1 text-xs leading-5 text-blue-700">
+              <div className="mt-1 text-xs leading-5 text-blue-700 dark:text-blue-300">
                 {promotionSummary.productOverviewPages} 个产品概览 · {promotionSummary.promotedPlanPages} 个套餐页
               </div>
             </div>
-            <div className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm text-blue-950">
+            <div className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm text-blue-950 dark:bg-slate-900 dark:border-blue-800 dark:text-blue-200">
               <div className="font-black">等待下一批</div>
               <div className="mt-1 text-2xl font-black">
                 {promotionSummary.waitingProducts} 个产品
               </div>
-              <div className="mt-1 text-xs leading-5 text-blue-700">
+              <div className="mt-1 text-xs leading-5 text-blue-700 dark:text-blue-300">
                 共 {promotionSummary.waitingPlanPages} 个双语套餐页待排期
               </div>
             </div>
@@ -298,36 +298,36 @@ export default async function AdminSeoPage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">已上线产品</div>
-          <div className="mt-2 text-3xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">已上线产品</div>
+          <div className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">
             {productAudits.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             当前纳入搜索质量检查的产品。
           </div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">可收录</div>
-          <div className="mt-2 text-3xl font-black text-emerald-700">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">可收录</div>
+          <div className="mt-2 text-3xl font-black text-emerald-700 dark:text-emerald-300">
             {indexable}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             数据和内容达标，不代表所有套餐页已进入 sitemap。
           </div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">待完善</div>
-          <div className="mt-2 text-3xl font-black text-amber-700">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">待完善</div>
+          <div className="mt-2 text-3xl font-black text-amber-700 dark:text-amber-300">
             {needsWork}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             可以访问，但应先补强再重点推广。
           </div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">建议暂缓收录</div>
-          <div className="mt-2 text-3xl font-black text-red-700">{hold}</div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">建议暂缓收录</div>
+          <div className="mt-2 text-3xl font-black text-red-700 dark:text-red-300">{hold}</div>
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             存在覆盖、过期、极端价或重复套餐问题。
           </div>
         </AdminCard>
@@ -371,17 +371,17 @@ export default async function AdminSeoPage({
 
       <AdminCard>
         <div className="mb-5">
-          <h2 className="text-lg font-black text-slate-950">
+          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
             产品价格页质量队列
           </h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
             分数低的产品排在前面。先处理第一条原因，通常就是当前最值得做的改进。
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
           <div className="min-w-[1280px]">
-            <div className="grid grid-cols-[90px_130px_240px_minmax(220px,1fr)_230px_280px_140px] bg-slate-50 px-5 py-3 text-xs font-black uppercase text-slate-400">
+            <div className="grid grid-cols-[90px_130px_240px_minmax(220px,1fr)_230px_280px_140px] bg-slate-50 px-5 py-3 text-xs font-black uppercase text-slate-400 dark:bg-slate-800">
               <div>分数</div>
               <div>质量状态</div>
               <div>搜索推广</div>
@@ -391,7 +391,7 @@ export default async function AdminSeoPage({
               <div>操作</div>
             </div>
 
-            <div className="divide-y divide-slate-100 bg-white">
+            <div className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
               {productAudits.map((item) => {
                 const promotion = promotionByProduct.get(item.id)!;
 
@@ -414,13 +414,13 @@ export default async function AdminSeoPage({
                       {item.statusLabel}
                     </span>
                   </div>
-                  <div className="pr-4 text-xs leading-5 text-slate-600">
+                  <div className="pr-4 text-xs leading-5 text-slate-600 dark:text-slate-300">
                     <span
                       className={`inline-flex rounded-md px-2 py-1 font-black ring-1 ${promotionClassName(promotion.state)}`}
                     >
                       {promotion.label}
                     </span>
-                    <div className="mt-2 font-bold text-slate-700">
+                    <div className="mt-2 font-bold text-slate-700 dark:text-slate-200">
                       {promotion.productOverviewPages} 个概览已提交
                       {promotion.state === "promoted"
                         ? ` · ${promotion.includedPlanPages} 个套餐页已提交`
@@ -433,7 +433,7 @@ export default async function AdminSeoPage({
                     </div>
                   </div>
                   <div>
-                    <div className="font-black text-slate-950">{item.title}</div>
+                    <div className="font-black text-slate-950 dark:text-slate-50">{item.title}</div>
                     <div className="mt-1 font-mono text-xs text-slate-400">
                       {item.path}
                     </div>
@@ -443,7 +443,7 @@ export default async function AdminSeoPage({
                       决策 {item.sections.decision}/15
                     </div>
                   </div>
-                  <div className="text-xs leading-6 text-slate-600">
+                  <div className="text-xs leading-6 text-slate-600 dark:text-slate-300">
                     <div>
                       基础 SEO {item.completeSeoLocaleCount}/
                       {item.requiredSeoLocaleCount}
@@ -452,7 +452,7 @@ export default async function AdminSeoPage({
                       {item.planCount} 个套餐 · {item.countryCount} 个地区
                     </div>
                     {item.legacyPlanCount > 0 ? (
-                      <div className="font-bold text-amber-700">
+                      <div className="font-bold text-amber-700 dark:text-amber-300">
                         {item.legacyPlanCount} 个历史续订层
                       </div>
                     ) : null}
@@ -462,7 +462,7 @@ export default async function AdminSeoPage({
                     <div>{item.taxGapCount} 个地区缺税务资料</div>
                   </div>
                   <div>
-                    <div className="text-xs font-bold leading-5 text-slate-700">
+                    <div className="text-xs font-bold leading-5 text-slate-700 dark:text-slate-200">
                       {item.nextAction}
                     </div>
                     {item.issues.length > 1 ? (
@@ -474,14 +474,14 @@ export default async function AdminSeoPage({
                   <div className="flex gap-3">
                     <AdminLink
                       href={item.editPath}
-                      className="text-xs font-black text-blue-700 hover:text-blue-900"
+                      className="text-xs font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
                     >
                       编辑
                     </AdminLink>
                     <AdminLink
                       href={item.path}
                       target="_blank"
-                      className="text-xs font-black text-slate-600 hover:text-slate-950"
+                      className="text-xs font-black text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
                     >
                       查看
                     </AdminLink>
@@ -491,7 +491,7 @@ export default async function AdminSeoPage({
               })}
 
               {productAudits.length === 0 ? (
-                <div className="px-5 py-12 text-center text-sm font-bold text-slate-500">
+                <div className="px-5 py-12 text-center text-sm font-bold text-slate-500 dark:text-slate-400">
                   还没有已上线的产品价格页。
                 </div>
               ) : null}
@@ -502,22 +502,22 @@ export default async function AdminSeoPage({
 
       <AdminCard className="mt-6">
         <div className="mb-5">
-          <h2 className="text-lg font-black text-slate-950">文章内容质量</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">文章内容质量</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             按搜索表达、正文深度、内链路径和技术信息综合判断。先处理分数最低的文章，并按“下一步”补齐最影响收录与转化的内容。
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
           <div className="min-w-[900px]">
-            <div className="grid grid-cols-[90px_minmax(230px,1fr)_230px_260px_140px] bg-slate-50 px-5 py-3 text-xs font-black uppercase text-slate-400">
+            <div className="grid grid-cols-[90px_minmax(230px,1fr)_230px_260px_140px] bg-slate-50 px-5 py-3 text-xs font-black uppercase text-slate-400 dark:bg-slate-800">
               <div>分数</div>
               <div>文章</div>
               <div>四项得分</div>
               <div>问题</div>
               <div>操作</div>
             </div>
-            <div className="divide-y divide-slate-100 bg-white">
+            <div className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
               {articleAudits.map((item) => (
                 <div
                   key={item.id}
@@ -531,25 +531,25 @@ export default async function AdminSeoPage({
                     </span>
                   </div>
                   <div>
-                    <div className="font-black text-slate-950">{item.title}</div>
+                    <div className="font-black text-slate-950 dark:text-slate-50">{item.title}</div>
                     <div className="mt-1 font-mono text-xs text-slate-400">
                       {item.path}
                     </div>
-                    <div className="mt-2 text-xs font-bold text-slate-500">
+                    <div className="mt-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                       {item.statusLabel}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs font-bold text-slate-500">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs font-bold text-slate-500 dark:text-slate-400">
                     <span>搜索 {item.dimensions.search}/25</span>
                     <span>正文 {item.dimensions.content}/35</span>
                     <span>内链 {item.dimensions.links}/20</span>
                     <span>技术 {item.dimensions.technical}/20</span>
                   </div>
-                  <div className="text-xs leading-5 text-slate-500">
+                  <div className="text-xs leading-5 text-slate-500 dark:text-slate-400">
                     {item.issues.length > 0
                       ? (
                           <>
-                            <div className="font-bold text-slate-700">{item.issues[0].label}</div>
+                            <div className="font-bold text-slate-700 dark:text-slate-200">{item.issues[0].label}</div>
                             <div className="mt-1">下一步：{item.nextAction}</div>
                             {item.issues.length > 1 ? (
                               <div className="mt-1 text-slate-400">另有 {item.issues.length - 1} 项待完善</div>
@@ -561,14 +561,14 @@ export default async function AdminSeoPage({
                   <div className="flex gap-3">
                     <AdminLink
                       href={item.editPath}
-                      className="text-xs font-black text-blue-700 hover:text-blue-900"
+                      className="text-xs font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
                     >
                       编辑
                     </AdminLink>
                     <AdminLink
                       href={item.path}
                       target="_blank"
-                      className="text-xs font-black text-slate-600 hover:text-slate-950"
+                      className="text-xs font-black text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
                     >
                       查看
                     </AdminLink>
@@ -576,7 +576,7 @@ export default async function AdminSeoPage({
                 </div>
               ))}
               {articleAudits.length === 0 ? (
-                <div className="px-5 py-10 text-center text-sm font-bold text-slate-500">
+                <div className="px-5 py-10 text-center text-sm font-bold text-slate-500 dark:text-slate-400">
                   还没有可检测的文章。
                 </div>
               ) : null}

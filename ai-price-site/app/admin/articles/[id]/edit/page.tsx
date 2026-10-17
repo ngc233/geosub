@@ -1,3 +1,5 @@
+import { adminRecordVersion } from "../../../../../lib/admin-save";
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import { notFound } from "next/navigation";
 import { AdminButton, AdminLinkButton } from "../../../../../components/admin/AdminButton";
@@ -200,12 +202,12 @@ export default async function EditArticlePage({
               <AdminLink
                 href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                 target="_blank"
-                className="text-sm font-black text-slate-700 hover:text-slate-950"
+                className="text-sm font-black text-slate-700 hover:text-slate-950 dark:text-slate-200 dark:hover:text-slate-100"
               >
                 查看前台
               </AdminLink>
             ) : null}
-            <AdminLink href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
+            <AdminLink href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200">
               返回列表
             </AdminLink>
           </div>
@@ -213,28 +215,28 @@ export default async function EditArticlePage({
       />
 
       {query?.saved === "1" || query?.created === "1" ? (
-        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
           已保存。
         </div>
       ) : null}
 
       {query?.seoDrafted === "1" ? (
-        <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">
+        <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
           已应用 SEO 草稿。
         </div>
       ) : null}
 
       {query?.error === "slug" ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
           这个 URL 标识已经存在，请换一个。
         </div>
       ) : null}
 
-      <div className="mb-5 rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
+      <div className="mb-5 rounded-xl border border-blue-100 bg-white p-4 shadow-sm dark:border-blue-800 dark:bg-slate-900">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-sm font-black text-slate-950">SEO 草稿助手</div>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <div className="text-sm font-black text-slate-950 dark:text-slate-100">SEO 草稿助手</div>
+            <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
               根据已保存的标题、摘要、正文、分类、标签和内链关系生成 SEO 建议。现在会先预览评分，不会直接覆盖。
             </p>
           </div>
@@ -247,26 +249,27 @@ export default async function EditArticlePage({
       </div>
 
       {seoDraft ? (
-        <div className="mb-5 rounded-xl border border-blue-100 bg-white p-5 shadow-sm">
+        <div className="mb-5 rounded-xl border border-blue-100 bg-white p-5 shadow-sm dark:border-blue-800 dark:bg-slate-900">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-base font-black text-slate-950">SEO 草稿预览</h2>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                <h2 className="text-base font-black text-slate-950 dark:text-slate-100">SEO 草稿预览</h2>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                   评分 {seoDraft.score}/100
                 </span>
               </div>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 先核对标题、描述和问题提示，确认后再写入文章 SEO 字段。
               </p>
             </div>
             <div className="flex gap-2">
-              <form action={generateArticleSeoDraftAction}>
+              <AdminActionForm action={generateArticleSeoDraftAction}>
                 <input type="hidden" name="id" value={article.id} />
+                <input type="hidden" name="recordVersion" value={adminRecordVersion(article)} />
                 <AdminButton type="submit" variant="success">
                   应用草稿
                 </AdminButton>
-              </form>
+              </AdminActionForm>
               <AdminLinkButton
                 href={`/admin/articles/${article.id}/edit`}
                 variant="secondary"
@@ -277,48 +280,48 @@ export default async function EditArticlePage({
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl bg-slate-50 p-4">
+            <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
               <div className="text-xs font-black uppercase text-slate-400">SEO 标题</div>
-              <div className="mt-2 text-sm font-bold text-slate-900">{seoDraft.seoTitle}</div>
+              <div className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100">{seoDraft.seoTitle}</div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4">
+            <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
               <div className="text-xs font-black uppercase text-slate-400">Canonical</div>
-              <div className="mt-2 break-all text-sm font-bold text-slate-900">
+              <div className="mt-2 break-all text-sm font-bold text-slate-900 dark:text-slate-100">
                 {seoDraft.canonicalUrl}
               </div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4 md:col-span-2">
+            <div className="rounded-xl bg-slate-50 p-4 md:col-span-2 dark:bg-slate-900">
               <div className="text-xs font-black uppercase text-slate-400">SEO 描述</div>
-              <div className="mt-2 text-sm leading-6 text-slate-700">{seoDraft.seoDescription}</div>
+              <div className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200">{seoDraft.seoDescription}</div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4">
+            <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
               <div className="text-xs font-black uppercase text-slate-400">关键词</div>
-              <div className="mt-2 text-sm leading-6 text-slate-700">{seoDraft.seoKeywords}</div>
+              <div className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200">{seoDraft.seoKeywords}</div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4">
+            <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
               <div className="text-xs font-black uppercase text-slate-400">结构化数据</div>
-              <div className="mt-2 text-sm font-bold text-slate-900">
+              <div className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100">
                 {seoDraft.structuredDataType}
               </div>
             </div>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
-              <div className="text-sm font-black text-amber-800">需要留意</div>
+            <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
+              <div className="text-sm font-black text-amber-800 dark:text-amber-200">需要留意</div>
               {seoDraft.issues.length > 0 ? (
-                <ul className="mt-2 space-y-2 text-sm leading-6 text-amber-800">
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-amber-800 dark:text-amber-200">
                   {seoDraft.issues.map((issue) => (
                     <li key={issue}>{issue}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm text-amber-800">暂未发现明显问题。</p>
+                <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">暂未发现明显问题。</p>
               )}
             </div>
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-              <div className="text-sm font-black text-emerald-800">已满足</div>
-              <ul className="mt-2 space-y-2 text-sm leading-6 text-emerald-800">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950">
+              <div className="text-sm font-black text-emerald-800 dark:text-emerald-200">已满足</div>
+              <ul className="mt-2 space-y-2 text-sm leading-6 text-emerald-800 dark:text-emerald-200">
                 {seoDraft.strengths.map((strength) => (
                   <li key={strength}>{strength}</li>
                 ))}

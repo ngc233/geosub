@@ -92,7 +92,7 @@ test("admin SEO page explains index recommendations in operator language", () =>
   assert.match(promotionPanel, /AdminSelect/);
   assert.match(observationActions, /applyPlanSitemapPromotionAction/);
   assert.match(observationActions, /rollbackPlanSitemapPromotionAction/);
-  assert.match(observationActions, /requireAdmin\(\)/);
+  assert.match(observationActions, /requireAdmin\("manage"\)/);
   assert.match(observationActions, /seoSitemapBudgets\.productPlanPages/);
   assert.match(observationActions, /prisma\.\$transaction/);
   assert.match(promotionState, /previousActiveSlugs/);
@@ -130,7 +130,7 @@ test("admin SEO page keeps bounded read-only Google and Bing observation baselin
   assert.match(observationPanel, /最多保留最近 24 次/);
   assert.match(observationPanel, /保存 Google 快照/);
   assert.match(observationPanel, /保存 Bing 快照/);
-  assert.match(observationActions, /requireAdmin\(\)/);
+  assert.match(observationActions, /requireAdmin\("manage"\)/);
   assert.match(observationActions, /save_seo_observation_snapshot/);
   assert.match(observationActions, /save_bing_observation_snapshot/);
   assert.match(observationActions, /prisma\.\$transaction/);

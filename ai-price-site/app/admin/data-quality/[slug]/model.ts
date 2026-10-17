@@ -238,31 +238,31 @@ export function missingPlanCountryDetail(row: MissingCountryRow) {
 export function levelClasses(level: DiagnosisLevel) {
   if (level === "good") {
     return {
-      card: "border-emerald-200 bg-emerald-50",
-      badge: "bg-emerald-100 text-emerald-700 ring-emerald-200",
+      card: "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950",
+      badge: "bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800",
       icon: CheckCircle2,
     };
   }
 
   if (level === "info") {
     return {
-      card: "border-blue-200 bg-blue-50",
-      badge: "bg-blue-100 text-blue-700 ring-blue-200",
+      card: "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950",
+      badge: "bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800",
       icon: DatabaseZap,
     };
   }
 
   if (level === "warning") {
     return {
-      card: "border-amber-200 bg-amber-50",
-      badge: "bg-amber-100 text-amber-700 ring-amber-200",
+      card: "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950",
+      badge: "bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800",
       icon: AlertTriangle,
     };
   }
 
   return {
-    card: "border-red-200 bg-red-50",
-    badge: "bg-red-100 text-red-700 ring-red-200",
+    card: "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950",
+    badge: "bg-red-100 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800",
     icon: ShieldAlert,
   };
 }

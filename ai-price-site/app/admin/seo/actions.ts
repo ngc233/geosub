@@ -161,7 +161,7 @@ async function persistSeoSearchPageImportState({
 }
 
 export async function importSeoSearchPageObservationsAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   let engine: SeoSearchEngine;
   let observations;
 
@@ -203,7 +203,7 @@ export async function importSeoSearchPageObservationsAction(formData: FormData) 
 }
 
 export async function rollbackSeoSearchPageObservationsAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   let engine: SeoSearchEngine;
   try {
     engine = parseSearchEngine(formData.get("engine"));
@@ -298,7 +298,7 @@ async function persistPlanPromotionState({
 }
 
 export async function saveSeoObservationSnapshotAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   let snapshot;
 
   try {
@@ -360,7 +360,7 @@ export async function saveSeoObservationSnapshotAction(formData: FormData) {
 }
 
 export async function saveBingObservationSnapshotAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   let snapshot;
 
   try {
@@ -419,7 +419,7 @@ export async function saveBingObservationSnapshotAction(formData: FormData) {
 }
 
 export async function applyPlanSitemapPromotionAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const targetSlug = cleanPromotionValue(formData.get("targetSlug"), 100);
   const removeSlug = cleanPromotionValue(formData.get("removeSlug"), 100);
   const operatorNote = cleanPromotionValue(formData.get("operatorNote"), 240);
@@ -477,7 +477,7 @@ export async function applyPlanSitemapPromotionAction(formData: FormData) {
 }
 
 export async function rollbackPlanSitemapPromotionAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const revisionId = cleanPromotionValue(formData.get("revisionId"), 100);
   const context = await getPlanPromotionDecisionContext();
   let nextState;

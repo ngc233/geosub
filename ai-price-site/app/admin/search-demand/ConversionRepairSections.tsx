@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { ArrowUpRight } from "lucide-react";
 import { AdminBadge } from "../../../components/admin/AdminBadge";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
@@ -117,7 +118,7 @@ export function ConversionRepairSections({
                           {repair?.status === "in_progress" ? (
                             <AdminBadge variant="review">修复中</AdminBadge>
                           ) : term ? (
-                            <form action={startSearchConversionRepairAction}>
+                            <AdminActionForm action={startSearchConversionRepairAction}>
                               <input type="hidden" name="days" value={days} />
                               <input type="hidden" name="query" value={diagnostic.query} />
                               <input type="hidden" name="locale" value={diagnostic.locale} />
@@ -131,7 +132,7 @@ export function ConversionRepairSections({
                               <AdminButton type="submit" size="sm" variant="primary">
                                 {repair ? "重新开始" : "开始修复"}
                               </AdminButton>
-                            </form>
+                            </AdminActionForm>
                           ) : null}
                           <AdminLinkButton
                             href={diagnostic.actionHref}
@@ -223,24 +224,24 @@ export function ConversionRepairSections({
                             <ArrowUpRight size={14} />
                           </AdminLinkButton>
                           {record.status === "in_progress" && record.effect === "converted" ? (
-                            <form action={updateSearchConversionRepairAction}>
+                            <AdminActionForm action={updateSearchConversionRepairAction}>
                               <input type="hidden" name="id" value={record.id} />
                               <input type="hidden" name="status" value="resolved" />
                               <input type="hidden" name="days" value={days} />
                               <AdminButton type="submit" size="sm" variant="primary">
                                 确认解决
                               </AdminButton>
-                            </form>
+                            </AdminActionForm>
                           ) : null}
                           {record.status === "in_progress" ? (
-                            <form action={updateSearchConversionRepairAction}>
+                            <AdminActionForm action={updateSearchConversionRepairAction}>
                               <input type="hidden" name="id" value={record.id} />
                               <input type="hidden" name="status" value="ignored" />
                               <input type="hidden" name="days" value={days} />
                               <AdminButton type="submit" size="sm" variant="ghost">
                                 停止观察
                               </AdminButton>
-                            </form>
+                            </AdminActionForm>
                           ) : null}
                         </div>
                       </AdminTd>

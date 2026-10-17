@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminButton } from "../../../components/admin/AdminButton";
 import { AdminCard } from "../../../components/admin/AdminCard";
 import { AdminInput, AdminTextarea } from "../../../components/admin/AdminInput";
@@ -44,28 +45,28 @@ function ImportSource({
   ).length;
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
-          <h3 className="font-black text-slate-950">{engineLabel(engine)}</h3>
+          <h3 className="font-black text-slate-950 dark:text-slate-50">{engineLabel(engine)}</h3>
           {latest ? (
-            <p className="mt-1 text-xs leading-5 text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
               当前使用数据库导入 · {latest.observations.length} 个页面 · {latest.periodStart} 至 {latest.periodEnd}
               <br />导入于 {formatImportedAt(latest.importedAt)} · {latest.actorLabel}
             </p>
           ) : (
-            <p className="mt-1 text-xs leading-5 text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
               当前使用 {SEO_SEARCH_BASELINE_OBSERVED_AT} 随代码核验的基线，共 {baselineCount} 个页面。
             </p>
           )}
         </div>
         {latest ? (
-          <form action={rollbackSeoSearchPageObservationsAction}>
+          <AdminActionForm action={rollbackSeoSearchPageObservationsAction}>
             <input type="hidden" name="engine" value={engine} />
             <AdminButton type="submit" size="sm" variant="secondary">
               撤销最近导入
             </AdminButton>
-          </form>
+          </AdminActionForm>
         ) : null}
       </div>
 
@@ -77,11 +78,11 @@ function ImportSource({
         </div>
       ) : null}
 
-      <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 open:bg-white">
+      <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 open:bg-white dark:border-slate-700 dark:bg-slate-800 dark:open:bg-slate-900">
         <summary className="cursor-pointer list-none px-3 py-3 text-sm font-black text-blue-700">
           导入新的完整页面报表
         </summary>
-        <form action={importSeoSearchPageObservationsAction} className="border-t border-slate-200 p-3">
+        <AdminActionForm action={importSeoSearchPageObservationsAction} className="border-t border-slate-200 p-3 dark:border-slate-700">
           <input type="hidden" name="engine" value={engine} />
           <div className="grid gap-3 sm:grid-cols-2">
             <AdminInput label="报表开始日期" name="periodStart" type="date" required />
@@ -98,12 +99,12 @@ function ImportSource({
             />
           </div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-slate-500">
+            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
               新导入会替代该搜索引擎当前评分数据，不与旧周期相加，也不会向搜索平台提交网址。
             </p>
             <AdminButton type="submit" size="sm">导入并重新计算</AdminButton>
           </div>
-        </form>
+        </AdminActionForm>
       </details>
     </section>
   );
@@ -123,8 +124,8 @@ export default function SeoPageObservationImportPanel({
   return (
     <AdminCard className="mb-6">
       <div>
-        <h2 className="text-lg font-black text-slate-950">页面级搜索信号</h2>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
+        <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">页面级搜索信号</h2>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
           全站快照用于判断整体趋势；这里的页面报表用于判断具体产品是否值得推广套餐页。所有数据均来自人工核验的 Google/Bing 导出，不会自动连接站长平台。
         </p>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { AdminActionForm, useAdminActionState } from "@/components/admin/AdminPermissions";
+import { useState } from "react";
 import { PackagePlus, Radar } from "lucide-react";
 import { AdminButton } from "../../../components/admin/AdminButton";
 import {
@@ -17,26 +18,9 @@ const initialState: DiscoveryActionState = {
 };
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
+  "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:focus:ring-blue-800";
 
-const labelClassName = "text-xs font-semibold text-slate-500";
-
-function ActionMessage({ state }: { state: DiscoveryActionState }) {
-  if (!state.message) return null;
-
-  return (
-    <div
-      className={[
-        "rounded-lg border px-3 py-2 text-sm",
-        state.ok
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-red-200 bg-red-50 text-red-700",
-      ].join(" ")}
-    >
-      {state.message}
-    </div>
-  );
-}
+const labelClassName = "text-xs font-semibold text-slate-500 dark:text-slate-400";
 
 function ModeButton({
   active,
@@ -58,21 +42,21 @@ function ModeButton({
       className={[
         "flex min-h-[92px] items-start gap-3 rounded-lg border p-4 text-left transition",
         active
-          ? "border-blue-200 bg-blue-50 text-blue-950 ring-1 ring-blue-100"
-          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
+          ? "border-blue-200 bg-blue-50 text-blue-950 ring-1 ring-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200 dark:ring-blue-800"
+          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900",
       ].join(" ")}
     >
       <span
         className={[
           "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-          active ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-500",
+          active ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
         ].join(" ")}
       >
         {icon}
       </span>
       <span>
         <span className="block text-sm font-bold">{title}</span>
-        <span className="mt-1 block text-xs leading-5 text-slate-500">
+        <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">
           {description}
         </span>
       </span>
@@ -89,13 +73,13 @@ function ProductCandidateForm({
   initialReason?: string;
   searchOpportunityQuery?: string;
 }) {
-  const [state, formAction, pending] = useActionState(
+  const [, formAction, pending] = useAdminActionState(
     createManualCandidate,
     initialState
   );
 
   return (
-    <form action={formAction} className="grid gap-4 md:grid-cols-2">
+    <AdminActionForm action={formAction} className="grid gap-4 md:grid-cols-2">
       {searchOpportunityQuery ? (
         <input
           type="hidden"
@@ -103,9 +87,7 @@ function ProductCandidateForm({
           value={searchOpportunityQuery}
         />
       ) : null}
-      <div className="md:col-span-2">
-        <ActionMessage state={state} />
-      </div>
+
 
       <label className="block">
         <span className={labelClassName}>产品名</span>
@@ -219,21 +201,19 @@ function ProductCandidateForm({
           {pending ? "正在添加..." : "添加到候选池"}
         </AdminButton>
       </div>
-    </form>
+    </AdminActionForm>
   );
 }
 
 function DiscoverySourceForm() {
-  const [state, formAction, pending] = useActionState(
+  const [, formAction, pending] = useAdminActionState(
     createDiscoverySource,
     initialState
   );
 
   return (
-    <form action={formAction} className="grid gap-4 md:grid-cols-2">
-      <div className="md:col-span-2">
-        <ActionMessage state={state} />
-      </div>
+    <AdminActionForm action={formAction} className="grid gap-4 md:grid-cols-2">
+
 
       <label className="block">
         <span className={labelClassName}>来源名称</span>
@@ -369,7 +349,7 @@ function DiscoverySourceForm() {
           {pending ? "正在保存..." : "保存来源配置"}
         </AdminButton>
       </div>
-    </form>
+    </AdminActionForm>
   );
 }
 
@@ -385,15 +365,15 @@ export default function DiscoveryIntakeForms({
   const [mode, setMode] = useState<IntakeMode>("candidate");
 
   return (
-    <section className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
+    <section className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 dark:border-slate-700 dark:bg-slate-900">
       <div className="mb-5">
-        <p className="text-sm font-bold tracking-tight text-blue-700">
+        <p className="text-sm font-bold tracking-tight text-blue-700 dark:text-blue-300">
           线索入口
         </p>
-        <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
+        <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950 dark:text-slate-100">
           添加发现线索
         </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
           已经明确是某个产品时，先放进候选池；点击加入后会创建产品、匹配 App Store，并进入这个产品的采集工作台。如果只是一个值得长期监控的网站、频道或应用市场入口，就保存为发现来源，后续由扫描器定期检查。
         </p>
       </div>

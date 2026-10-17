@@ -9,7 +9,7 @@ function tierClassName(tier: SeoSearchPagePriority["tier"]) {
   if (tier === "继续放大") {
     return "bg-amber-50 text-amber-700 ring-amber-200";
   }
-  return "bg-slate-100 text-slate-600 ring-slate-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300";
 }
 
 export default function SeoSearchPriorityPanel({
@@ -21,21 +21,21 @@ export default function SeoSearchPriorityPanel({
 }) {
   return (
     <AdminCard className="mb-6">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 lg:flex-row lg:items-start lg:justify-between dark:border-slate-700">
         <div>
-          <h2 className="text-lg font-black text-slate-950">双引擎页面优先级</h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
+          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">双引擎页面优先级</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
             把 Google 与 Bing 已核验的页面数据归并到稳定地址。优先处理已有曝光但点击率低、或旧查询地址仍在获得曝光的页面。
           </p>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           观察截止 {observedAt}<br />手工核验快照，非实时 API
         </div>
       </div>
 
       <div className="overflow-x-auto">
         <div className="min-w-[980px]">
-          <div className="grid grid-cols-[100px_minmax(280px,1fr)_100px_110px_110px_140px_220px] bg-slate-50 px-4 py-3 text-xs font-black text-slate-400">
+          <div className="grid grid-cols-[100px_minmax(280px,1fr)_100px_110px_110px_140px_220px] bg-slate-50 px-4 py-3 text-xs font-black text-slate-400 dark:bg-slate-800">
             <div>优先级</div>
             <div>稳定页面</div>
             <div>来源</div>
@@ -67,19 +67,19 @@ export default function SeoSearchPriorityPanel({
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {item.engines.map((engine) => (
-                    <span key={engine} className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
+                    <span key={engine} className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                       {engine === "google" ? "Google" : "Bing"}
                     </span>
                   ))}
                 </div>
-                <div className="font-black text-slate-950">{item.impressions.toLocaleString()}</div>
-                <div className={item.impressions >= 100 && item.ctr < 2 ? "font-black text-red-700" : "font-bold text-slate-700"}>
+                <div className="font-black text-slate-950 dark:text-slate-50">{item.impressions.toLocaleString()}</div>
+                <div className={item.impressions >= 100 && item.ctr < 2 ? "font-black text-red-700" : "font-bold text-slate-700 dark:text-slate-200"}>
                   {item.ctr}%
                 </div>
                 <div className={item.legacyImpressions > 0 ? "font-black text-amber-700" : "text-slate-400"}>
                   {item.legacyImpressions.toLocaleString()}
                 </div>
-                <div className="text-xs leading-5 text-slate-600">{item.reasons.join("；")}</div>
+                <div className="text-xs leading-5 text-slate-600 dark:text-slate-300">{item.reasons.join("；")}</div>
               </div>
             ))}
           </div>

@@ -13,7 +13,7 @@ function readProjectFile(fileName: string) {
 
 function readAdminDashboardSource() {
   return [
-    "app/admin/page.tsx",
+    "app/admin/LegacyDashboard.tsx",
     "app/admin/queries.ts",
     "app/admin/DashboardComponents.tsx",
     "app/admin/TrendChart.tsx",
@@ -549,7 +549,7 @@ test("admin actions preserve scroll while consented analytics stays clearly labe
   const scrollRestoration = readProjectFile(
     "components/admin/AdminScrollRestoration.tsx",
   );
-  const dashboard = readProjectFile("app/admin/page.tsx");
+  const dashboard = readProjectFile("app/admin/LegacyDashboard.tsx");
   const trend = readProjectFile("app/admin/TrendChart.tsx");
 
   assert.match(layout, /<AdminScrollRestoration\s*\/>/);
@@ -599,4 +599,12 @@ test("all admin asset views share one four-level operational status model", () =
   assert.match(planPage, /activeTotal = getAdminOperationalTotal\(operationalCounts\)/);
   assert.match(productPage, /activeTotal = getAdminOperationalTotal\(operationalCounts\)/);
   assert.match(pricePage, /activeTotal = getAdminOperationalTotal\(operationalCounts\)/);
+});
+
+test("plan publication count is independent of operational quality and product filter survives", () => {
+ const page=readProjectFile("app/admin/plans/page.tsx");
+ assert.match(page,/activePlans\.filter\(plan => plan\.status === "PUBLISHED"\)\.length/);
+ assert.match(page,/where: productSlug \? \{ product: \{ slug: productSlug \} \}/);
+ assert.match(page,/dimension="quality"/);
+ assert.match(page,/product:productSlug/);
 });

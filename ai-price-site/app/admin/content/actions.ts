@@ -6,7 +6,7 @@ import { claimContentDistribution, mutateContent, retryContentDistribution } fro
 import { contentDistributionConfig, distributeContentAttempt } from "../../../lib/content-distribution";
 export type ContentActionState = { message: string; ok: boolean };
 export async function contentAction(_: ContentActionState, form: FormData): Promise<ContentActionState> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin(form.get("operation") === "draft" ? "draft" : "manage");
   try {
     assertContentRuntime();
     const expected = Number(form.get("generation"));

@@ -77,47 +77,47 @@ export default async function ArticlePreviewPage({
       <div className="mb-6 grid gap-3 md:grid-cols-[1fr_1fr_1fr_2fr]">
         <AdminCard className="p-4">
           <div className="text-xs font-bold text-slate-400">发布状态</div>
-          <div className="mt-2 text-sm font-black text-slate-950">
+          <div className="mt-2 text-sm font-black text-slate-950 dark:text-slate-50">
             {articleStatusLabels[article.status]}
           </div>
         </AdminCard>
         <AdminCard className="p-4">
           <div className="text-xs font-bold text-slate-400">内容质量</div>
-          <div className="mt-2 text-sm font-black text-slate-950">
+          <div className="mt-2 text-sm font-black text-slate-950 dark:text-slate-50">
             {quality.score}/100 · {quality.statusLabel}
           </div>
         </AdminCard>
         <AdminCard className="p-4">
           <div className="text-xs font-bold text-slate-400">搜索收录</div>
-          <div className="mt-2 text-sm font-black text-slate-950">
+          <div className="mt-2 text-sm font-black text-slate-950 dark:text-slate-50">
             {article.noindex ? "暂不收录" : "允许收录"}
           </div>
         </AdminCard>
         <AdminCard className="p-4">
           <div className="text-xs font-bold text-slate-400">下一步</div>
-          <div className="mt-2 text-sm font-black text-slate-950">{quality.nextAction}</div>
+          <div className="mt-2 text-sm font-black text-slate-950 dark:text-slate-50">{quality.nextAction}</div>
         </AdminCard>
       </div>
 
-      <article className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-[#faf8f2] p-5 shadow-sm sm:p-8">
-        <header className="border-b border-slate-200 pb-7">
-          <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+      <article className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-[#faf8f2] dark:bg-slate-900 p-5 shadow-sm sm:p-8 dark:border-slate-700">
+        <header className="border-b border-slate-200 pb-7 dark:border-slate-700">
+          <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
             <span>{article.locale === "EN" ? "English" : "简体中文"}</span>
             <span>·</span>
             <span>{article.category?.name || "未分类"}</span>
             <span>·</span>
             <span>{publicPath}</span>
           </div>
-          <h1 className="mt-4 text-3xl font-black text-slate-950 sm:text-4xl">{article.title}</h1>
+          <h1 className="mt-4 text-3xl font-black text-slate-950 sm:text-4xl dark:text-slate-50">{article.title}</h1>
           {article.subtitle || article.excerpt ? (
-            <p className="mt-4 text-base leading-7 text-slate-600">
+            <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
               {article.subtitle || article.excerpt}
             </p>
           ) : null}
         </header>
 
         <div
-          className="article-body mt-7 rounded-xl border border-slate-200 bg-white p-5 text-slate-700 sm:p-8"
+          className="article-body dark:[&_p]:text-slate-200! dark:[&_ul]:text-slate-200! dark:[&_h2]:text-slate-50! dark:[&_h3]:text-slate-50! dark:[&_h4]:text-slate-50! dark:[&_strong]:text-slate-50! dark:[&_a]:text-blue-300! dark:[&_code]:bg-slate-800! dark:[&_code]:text-slate-100! mt-7 rounded-xl border border-slate-200 bg-white p-5 text-slate-700 sm:p-8 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </article>

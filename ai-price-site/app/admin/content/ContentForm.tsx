@@ -1,13 +1,14 @@
 "use client";
+import { AdminActionForm, useAdminActionState } from "@/components/admin/AdminPermissions";
 import styles from "../../../components/ManagedContent.module.css";
-import { useActionState } from "react";
+
 import { AdminButton } from "../../../components/admin/AdminButton";
 import { contentAction } from "./actions";
 import type { OverviewContent } from "../../../lib/managed-content";
 const input = "mt-1 block w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-3 text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]";
 export default function ContentForm({ generation, draft, versions, mode }: { generation: number; draft: OverviewContent; versions: number[]; mode: "draft" | "publish" | "rollback" | "retry" }) {
-  const [state, action, pending] = useActionState(contentAction, { message: "", ok: false });
-  return <form action={action} className={`${styles.scope} space-y-4`}>
+  const [, action, pending] = useAdminActionState(contentAction, { message: "", ok: false });
+  return <AdminActionForm capability={mode === "draft" ? "draft" : "manage"} action={action} className={`${styles.scope} space-y-4`}>
     <input type="hidden" name="generation" value={generation} />
     <input type="hidden" name="operation" value={mode} />
     {mode === "draft" ? <>
@@ -22,6 +23,5 @@ export default function ContentForm({ generation, draft, versions, mode }: { gen
       <label className="flex items-start gap-3 text-sm"><input className="mt-1 size-5 shrink-0" type="checkbox" name="reviewed" required />已预览此版本，核对来源、套餐事实和计费平台口径</label>
     </> : null}
     <AdminButton type="submit" disabled={pending}>{pending ? "正在处理…" : { draft: "保存草稿", publish: "发布已审核内容", rollback: "创建回退版本", retry: "重试分发" }[mode]}</AdminButton>
-    <p role="status" aria-live="polite" className="text-sm">{state.message}</p>
-  </form>;
+  </AdminActionForm>;
 }

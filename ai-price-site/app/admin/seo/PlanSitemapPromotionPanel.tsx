@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import type { PlanPromotionRecommendation } from "../../../lib/plan-sitemap-promotion-recommendation";
 import type { PlanSitemapPromotionRevision } from "../../../lib/seo-plan-promotion-state";
 import { AdminCard } from "../../../components/admin/AdminCard";
@@ -12,7 +13,7 @@ function stateClassName(state: PlanPromotionRecommendation["state"]) {
   if (state === "add") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
   if (state === "swap") return "bg-blue-50 text-blue-700 ring-blue-200";
   if (state === "blocked") return "bg-amber-50 text-amber-700 ring-amber-200";
-  return "bg-slate-100 text-slate-600 ring-slate-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300";
 }
 
 function errorMessage(error: string | null) {
@@ -66,15 +67,15 @@ export default function PlanSitemapPromotionPanel({
     <AdminCard className="mb-6">
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
         <div>
-          <h2 className="text-lg font-black text-slate-950">
+          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
             下一批套餐推广建议
           </h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
             综合 Google/Bing 曝光、站内搜索和搜索落地后的套餐意向。这里只给出只读建议，不会自动修改 sitemap，也不会操作站长平台。
           </p>
         </div>
-        <div className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-right text-xs text-slate-500">
-          <div className="font-black text-slate-800">
+        <div className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-right text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+          <div className="font-black text-slate-800 dark:text-slate-200">
             产品与套餐页预算 {activePages}/{pageBudget}
           </div>
           <div className="mt-1">
@@ -98,7 +99,7 @@ export default function PlanSitemapPromotionPanel({
         </div>
       ) : null}
 
-      <div className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
+      <div className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
         {waiting.map((item) => {
           const donors = current.filter(
             (candidate) => candidate.requiredPages >= item.requiredPages,
@@ -107,10 +108,10 @@ export default function PlanSitemapPromotionPanel({
             item.state === "add" || (item.state === "swap" && donors.length > 0);
 
           return (
-            <div key={item.productId} className="bg-white px-4 py-4">
+            <div key={item.productId} className="bg-white px-4 py-4 dark:bg-slate-900">
               <div className="grid gap-3 md:grid-cols-[minmax(180px,0.8fr)_170px_110px_minmax(280px,1.7fr)] md:items-center">
                 <div>
-                  <div className="font-black text-slate-950">{item.productName}</div>
+                  <div className="font-black text-slate-950 dark:text-slate-50">{item.productName}</div>
                   <div className="mt-1 font-mono text-xs text-slate-400">
                     {item.publicPath}
                   </div>
@@ -121,28 +122,28 @@ export default function PlanSitemapPromotionPanel({
                   >
                     {item.label}
                   </span>
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     推广信号 {item.signalScore}/100
                   </div>
                 </div>
-                <div className="text-xs leading-5 text-slate-500">
-                  <div className="font-bold text-slate-700">
+                <div className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  <div className="font-bold text-slate-700 dark:text-slate-200">
                     需要 {item.requiredPages} 页
                   </div>
                   <div>中英文套餐页</div>
                 </div>
-                <div className="text-xs leading-5 text-slate-600">
+                <div className="text-xs leading-5 text-slate-600 dark:text-slate-300">
                   {item.reason}
                 </div>
               </div>
 
               {(item.state === "add" || item.state === "swap") ? (
-                <form
+                <AdminActionForm
                   action={applyPlanSitemapPromotionAction}
                   className="mt-4 grid gap-3 rounded-lg border border-blue-100 bg-blue-50/60 p-3 md:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)_auto] md:items-end"
                 >
                   <input type="hidden" name="targetSlug" value={item.productSlug} />
-                  <div className="text-xs font-bold text-slate-700">
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200">
                     {item.state === "swap" ? (
                       <AdminSelect
                         name="removeSlug"
@@ -160,19 +161,19 @@ export default function PlanSitemapPromotionPanel({
                     ) : (
                       <>
                         <span className="block">预算处理</span>
-                        <div className="mt-2 flex h-10 items-center rounded-lg border border-emerald-200 bg-white px-3 text-sm text-emerald-700">
+                        <div className="mt-2 flex h-10 items-center rounded-lg border border-emerald-200 bg-white px-3 text-sm text-emerald-700 dark:bg-slate-900">
                           使用当前剩余预算
                         </div>
                       </>
                     )}
                   </div>
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
                     审批备注（选填）
                     <input
                       name="operatorNote"
                       maxLength={240}
                       placeholder="记录本次判断依据"
-                      className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                     />
                   </label>
                   <AdminButton type="submit" size="sm" disabled={!canApprove}>
@@ -183,37 +184,37 @@ export default function PlanSitemapPromotionPanel({
                       当前没有单个产品能释放足够预算，本轮不能提交。
                     </p>
                   ) : null}
-                </form>
+                </AdminActionForm>
               ) : null}
             </div>
           );
         })}
       </div>
 
-      <div className="mt-6 border-t border-slate-200 pt-5">
+      <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-700">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
           <div>
-            <h3 className="text-sm font-black text-slate-950">审批与回退记录</h3>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
+            <h3 className="text-sm font-black text-slate-950 dark:text-slate-50">审批与回退记录</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
               只记录 GeoSub 内部推广名单变化，不会向 Google 或 Bing 自动提交网址。
             </p>
           </div>
           {latestRevision ? (
-            <form action={rollbackPlanSitemapPromotionAction}>
+            <AdminActionForm action={rollbackPlanSitemapPromotionAction}>
               <input type="hidden" name="revisionId" value={latestRevision.id} />
               <AdminButton type="submit" size="sm" variant="secondary">
                 撤销上一次调整
               </AdminButton>
-            </form>
+            </AdminActionForm>
           ) : null}
         </div>
 
         {history.length > 0 ? (
-          <div className="mt-4 divide-y divide-slate-100 rounded-lg border border-slate-200">
+          <div className="mt-4 divide-y divide-slate-100 rounded-lg border border-slate-200 dark:border-slate-700">
             {[...history].reverse().slice(0, 5).map((revision) => (
-              <div key={revision.id} className="grid gap-2 px-3 py-3 text-xs text-slate-600 md:grid-cols-[160px_1fr]">
+              <div key={revision.id} className="grid gap-2 px-3 py-3 text-xs text-slate-600 md:grid-cols-[160px_1fr] dark:text-slate-300">
                 <div>
-                  <div className="font-bold text-slate-800">
+                  <div className="font-bold text-slate-800 dark:text-slate-200">
                     {formatRevisionTime(revision.changedAt)}
                   </div>
                   <div className="mt-1">{revision.actorLabel}</div>
@@ -227,13 +228,13 @@ export default function PlanSitemapPromotionPanel({
                       ? `；暂停：${revision.removedSlugs.join("、")}`
                       : ""}
                   </div>
-                  <div className="mt-1 text-slate-500">{revision.reason}</div>
+                  <div className="mt-1 text-slate-500 dark:text-slate-400">{revision.reason}</div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="mt-4 rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">
+          <div className="mt-4 rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
             尚无人工推广调整，当前使用代码内的默认推广名单。
           </div>
         )}

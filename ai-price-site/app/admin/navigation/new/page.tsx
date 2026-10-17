@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../../components/admin/AdminButton";
 import { prisma } from "../../../../lib/prisma";
@@ -50,7 +51,7 @@ export default async function NewNavigationItemPage({
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <AdminCard>
-          <form action={createNavigationItem} className="space-y-6">
+          <AdminActionForm action={createNavigationItem} className="space-y-6">
             <input type="hidden" name="locale" value={selectedLocale.value} />
             <input type="hidden" name="position" value={selectedPosition.value} />
 
@@ -58,7 +59,7 @@ export default async function NewNavigationItemPage({
               <div>
                 <label
                   htmlFor="localeDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700"
+                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
                 >
                   当前语言
                 </label>
@@ -67,14 +68,14 @@ export default async function NewNavigationItemPage({
                   type="text"
                   value={selectedLocale.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="positionDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700"
+                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
                 >
                   当前位置
                 </label>
@@ -83,7 +84,7 @@ export default async function NewNavigationItemPage({
                   type="text"
                   value={selectedPosition.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
               </div>
             </div>
@@ -91,7 +92,7 @@ export default async function NewNavigationItemPage({
             <div>
               <label
                 htmlFor="label"
-                className="mb-2 block text-sm font-black text-slate-700"
+                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
               >
                 菜单名称
               </label>
@@ -101,14 +102,14 @@ export default async function NewNavigationItemPage({
                 type="text"
                 placeholder={selectedLocale.value === "en" ? "For example: AI Pricing" : "例如：AI 定价"}
                 required
-                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
               />
             </div>
 
             <div>
               <label
                 htmlFor="href"
-                className="mb-2 block text-sm font-black text-slate-700"
+                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
               >
                 链接
               </label>
@@ -118,9 +119,9 @@ export default async function NewNavigationItemPage({
                 type="text"
                 placeholder={`${selectedLocale.prefix}ai-pricing/`}
                 required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
               />
-              <p className="mt-2 text-xs leading-5 text-slate-500">
+              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                 当前语言内部链接必须以 {selectedLocale.prefix} 开头。外部链接必须以 https:// 或 http:// 开头。
               </p>
             </div>
@@ -128,7 +129,7 @@ export default async function NewNavigationItemPage({
             <div>
               <label
                 htmlFor="parentId"
-                className="mb-2 block text-sm font-black text-slate-700"
+                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
               >
                 菜单层级
               </label>
@@ -137,7 +138,7 @@ export default async function NewNavigationItemPage({
                 id="parentId"
                 name="parentId"
                 defaultValue=""
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
               >
                 <option value="">
                   {selectedPosition.value === "footer" ? "一级分组" : "一级菜单"}
@@ -149,37 +150,37 @@ export default async function NewNavigationItemPage({
                 ))}
               </select>
 
-              <p className="mt-2 text-xs leading-5 text-slate-500">
+              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                 顶部导航的一级菜单会显示在 Header；底部导航的一级菜单会作为 Footer 分组标题。
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                 <input
                   name="external"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-700 dark:text-blue-300"
                 />
-                <span className="text-sm font-bold text-slate-700">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
                   外部链接
                 </span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                 <input
                   name="publishNow"
                   type="checkbox"
                   defaultChecked
-                  className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-700 dark:text-blue-300"
                 />
-                <span className="text-sm font-bold text-slate-700">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
                   创建后立即启用
                 </span>
               </label>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row">
+            <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row dark:border-slate-700">
               <AdminButton type="submit">
                 创建菜单
               </AdminButton>
@@ -191,13 +192,13 @@ export default async function NewNavigationItemPage({
                 取消
               </AdminLinkButton>
             </div>
-          </form>
+          </AdminActionForm>
         </AdminCard>
 
         <AdminCard>
-          <h2 className="text-base font-black text-slate-950">新增规则</h2>
+          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">新增规则</h2>
 
-          <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
+          <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
             <p>
               当前正在新增：{selectedLocale.label} · {selectedPosition.label}。
             </p>
@@ -211,7 +212,7 @@ export default async function NewNavigationItemPage({
             </p>
           </div>
 
-          <div className="mt-6 rounded-xl bg-amber-50 p-4 text-xs leading-6 text-amber-900">
+          <div className="mt-6 rounded-xl bg-amber-50 p-4 text-xs leading-6 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
             删除功能暂不开放。站点主导航属于长期结构，先用停用代替删除更安全。
           </div>
         </AdminCard>

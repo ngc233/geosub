@@ -20,7 +20,7 @@ function getJobId(formData: FormData) {
 }
 
 export async function runCollectorJobNow(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = getJobId(formData);
 
   await prisma.$queryRaw`
@@ -63,7 +63,7 @@ export async function runCollectorJobNow(formData: FormData) {
 }
 
 export async function runProductCollectorJobsNow(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const productId = cleanText(formData.get("productId"));
 
   if (!productId) {
@@ -123,7 +123,7 @@ export async function runProductCollectorJobsNow(formData: FormData) {
 }
 
 export async function pauseCollectorJob(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = getJobId(formData);
 
   await prisma.$queryRaw`

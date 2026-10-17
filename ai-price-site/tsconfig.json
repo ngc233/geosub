@@ -37,7 +37,19 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     ".next-e2e/types/**/*.ts",
-    ".next-e2e/dev/types/**/*.ts"
+    ".next-e2e/dev/types/**/*.ts",
+    ".next-admin-save/types/**/*.ts",
+    ".next-admin-save/dev/types/**/*.ts",
+    ".next-admin-nav/types/**/*.ts",
+    ".next-admin-nav/dev/types/**/*.ts",
+    ".next-legacy-acceptance/types/**/*.ts",
+    ".next-legacy-acceptance/dev/types/**/*.ts",
+    ".next-release-acceptance/types/**/*.ts",
+    ".next-release-acceptance/dev/types/**/*.ts",
+    ".next-admin-reliability/types/**/*.ts",
+    ".next-admin-reliability/dev/types/**/*.ts",
+    ".next-preflight-acceptance/types/**/*.ts",
+    ".next-preflight-acceptance/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

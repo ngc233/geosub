@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import { ArrowLeft } from "lucide-react";
 import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
@@ -59,7 +60,7 @@ export default function CollectorJobsView({
 
       <AdminPipelineSteps currentStep="collector" />
 
-      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-800">
+      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
         主流程是：线索入库 → 生成产品采集任务 → 按产品触发采集 → 自动审核稳定价格 → 写入正式价格库。
         价格审核入口仍在{" "}
         <AdminLink href="/admin/review" className="font-bold underline underline-offset-4">
@@ -94,8 +95,8 @@ export default function CollectorJobsView({
       <AdminCard>
         <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-950">产品采集列表</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">产品采集列表</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
               一个产品只保留一个主要按钮。系统会汇总它下面的 App Store、官网或定价页任务，不再把几十页底层记录直接摊开。
             </p>
           </div>
@@ -104,9 +105,9 @@ export default function CollectorJobsView({
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">产品</th>
                 <th className="px-4 py-3 font-medium">任务来源</th>
@@ -116,25 +117,25 @@ export default function CollectorJobsView({
                 <th className="px-4 py-3 font-medium">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
               {productGroups.map((group) => (
-                <tr key={group.productId} className="align-top hover:bg-slate-50">
+                <tr key={group.productId} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800">
                   <td className="px-4 py-4">
-                    <div className="font-semibold text-slate-950">{group.productName}</div>
-                    <div className="mt-1 text-xs text-slate-500">{group.productSlug}</div>
+                    <div className="font-semibold text-slate-950 dark:text-slate-50">{group.productName}</div>
+                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{group.productSlug}</div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {group.hasRunningJob ? (
-                        <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
+                        <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
                           运行中
                         </span>
                       ) : null}
                       {group.hasQueuedJob ? (
-                        <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
+                        <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
                           已排队
                         </span>
                       ) : null}
                       {group.hasFailedJob ? (
-                        <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-200">
+                        <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800">
                           有异常
                         </span>
                       ) : null}
@@ -145,7 +146,7 @@ export default function CollectorJobsView({
                       {group.sourceLabels.map((label) => (
                         <span
                           key={label}
-                          className="inline-flex rounded-full bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200"
+                          className="inline-flex rounded-full bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700"
                         >
                           {label}
                         </span>
@@ -154,19 +155,19 @@ export default function CollectorJobsView({
                     <div className="mt-2 text-xs text-slate-400">
                       共 {group.jobs.length} 个底层任务，启用 {group.activeJobCount} 个
                     </div>
-                    <details className="mt-3 text-xs text-slate-500">
-                      <summary className="cursor-pointer font-semibold text-slate-700">
+                    <details className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      <summary className="cursor-pointer font-semibold text-slate-700 dark:text-slate-200">
                         查看底层任务
                       </summary>
-                      <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3">
+                      <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
                         {group.jobs.map((job) => (
                           <div
                             key={job.id}
-                            className="rounded-lg border border-slate-200 bg-white p-3"
+                            className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <div>
-                                <div className="font-semibold text-slate-800">
+                                <div className="font-semibold text-slate-800 dark:text-slate-200">
                                   {collectorLabel(job.collector_kind)}
                                 </div>
                                 <div className="mt-1 text-slate-400">
@@ -179,15 +180,15 @@ export default function CollectorJobsView({
                                 {statusLabel(job.status)}
                               </span>
                             </div>
-                            <div className="mt-2 grid gap-1 text-slate-500 md:grid-cols-2">
+                            <div className="mt-2 grid gap-1 text-slate-500 md:grid-cols-2 dark:text-slate-400">
                               <span>下次：{formatDate(job.next_run_at)}</span>
                               <span>上次：{formatDate(job.last_run_at)}</span>
                             </div>
                             {job.last_error ? (
-                              <p className="mt-2 leading-5 text-red-600">{job.last_error}</p>
+                              <p className="mt-2 leading-5 text-red-600 dark:text-red-300">{job.last_error}</p>
                             ) : null}
                             <div className="mt-3 flex flex-wrap gap-2">
-                              <form action={runCollectorJobNow}>
+                              <AdminActionForm action={runCollectorJobNow}>
                                 <input type="hidden" name="id" value={job.id} />
                                 <AdminButton
                                   type="submit"
@@ -196,14 +197,14 @@ export default function CollectorJobsView({
                                 >
                                   {isManuallyQueued(job) ? "已排队" : "加入下一轮"}
                                 </AdminButton>
-                              </form>
+                              </AdminActionForm>
                               {job.status !== "paused" ? (
-                                <form action={pauseCollectorJob}>
+                                <AdminActionForm action={pauseCollectorJob}>
                                   <input type="hidden" name="id" value={job.id} />
                                   <AdminButton type="submit" size="sm" variant="secondary">
                                     暂停
                                   </AdminButton>
-                                </form>
+                                </AdminActionForm>
                               ) : null}
                             </div>
                           </div>
@@ -217,7 +218,7 @@ export default function CollectorJobsView({
                     >
                       {productPublishLabel(group)}
                     </span>
-                    <div className="mt-2 text-xs leading-5 text-slate-500">
+                    <div className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                       正式价格 {group.publishedPriceCount} 条
                       <br />
                       待审核 {group.pendingObservationCount} 条
@@ -236,7 +237,7 @@ export default function CollectorJobsView({
                         <div className="mt-1 text-xs text-slate-400">
                           {formatDate(group.latestJob.latest_run_started_at)}
                         </div>
-                        <div className="mt-2 text-xs text-slate-500">
+                        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                           成功 {group.successCount} / 失败 {group.errorCount}
                         </div>
                         {diagnosisLabel(group.latestJob.latest_run_diagnosis) ? (
@@ -310,7 +311,7 @@ export default function CollectorJobsView({
                     )}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="max-w-[300px] text-xs leading-5 text-slate-600">
+                    <div className="max-w-[300px] text-xs leading-5 text-slate-600 dark:text-slate-300">
                       {autoReviewSummary(group)}
                     </div>
                     <div className="mt-2 text-xs text-slate-400">
@@ -327,13 +328,13 @@ export default function CollectorJobsView({
                       />
                       <AdminLink
                         href={`/admin/data-quality/${encodeURIComponent(group.productSlug)}`}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950 dark:hover:text-blue-300"
                       >
                         数据诊断
                       </AdminLink>
                       <AdminLink
                         href={`/admin/products/${group.productId}/edit`}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                       >
                         编辑
                       </AdminLink>
@@ -346,10 +347,10 @@ export default function CollectorJobsView({
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center">
                     <div className="mx-auto max-w-lg">
-                      <h3 className="text-base font-bold text-slate-950">
+                      <h3 className="text-base font-bold text-slate-950 dark:text-slate-50">
                         还没有可采集任务
                       </h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                      <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
                         先在线索入口把候选服务加入服务库，系统会自动生成对应采集任务。
                       </p>
                       <div className="mt-5 flex justify-center">
@@ -371,22 +372,22 @@ export default function CollectorJobsView({
       <AdminCard className="mt-6">
         <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-950">最近采集运行</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">最近采集运行</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
               这里显示脚本是否真的跑过。运行中的任务会先出现，完成后会补上耗时和输出摘要。
             </p>
           </div>
           <AdminLink
             href="/admin/review"
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             去审核中心
           </AdminLink>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">产品</th>
                 <th className="px-4 py-3 font-medium">来源</th>
@@ -396,25 +397,25 @@ export default function CollectorJobsView({
                 <th className="px-4 py-3 font-medium">输出</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
               {runs.map((run) => (
-                <tr key={run.id} className="align-top hover:bg-slate-50">
+                <tr key={run.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800">
                   <td className="px-4 py-4">
-                    <div className="font-semibold text-slate-950">
+                    <div className="font-semibold text-slate-950 dark:text-slate-50">
                       {run.product_name || "未知产品"}
                     </div>
                     <div className="mt-1 text-xs text-slate-400">{run.product_slug || run.job_id}</div>
                     {run.product_slug ? (
                       <AdminLink
                         href={`/admin/data-quality/${encodeURIComponent(run.product_slug)}`}
-                        className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                        className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950 dark:hover:text-blue-300"
                       >
                         数据诊断
                       </AdminLink>
                     ) : null}
                   </td>
                   <td className="px-4 py-4">
-                    <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                    <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                       {collectorLabel(run.collector_kind)}
                     </span>
                     {run.source_name ? (
@@ -437,14 +438,14 @@ export default function CollectorJobsView({
                       </div>
                     ) : null}
                   </td>
-                  <td className="px-4 py-4 text-xs text-slate-500">
+                  <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">
                     {formatDate(run.started_at)}
                   </td>
-                  <td className="px-4 py-4 text-xs text-slate-500">
+                  <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">
                     {formatRunDuration(run)}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="max-w-[520px] text-xs leading-5 text-slate-500">
+                    <div className="max-w-[520px] text-xs leading-5 text-slate-500 dark:text-slate-400">
                       {collectorRunOutput({
                         status: run.status,
                         error: run.error_message,
@@ -465,7 +466,7 @@ export default function CollectorJobsView({
 
               {runs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
                     暂无采集运行记录。
                   </td>
                 </tr>
@@ -477,15 +478,15 @@ export default function CollectorJobsView({
 
       <AdminCard className="mt-6">
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-slate-950">App Store 地区可用性</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">App Store 地区可用性</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
             这里不是价格审核，而是解释每个国家为什么有价格、无价格或采集失败。
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">时间</th>
                 <th className="px-4 py-3 font-medium">产品</th>
@@ -495,24 +496,24 @@ export default function CollectorJobsView({
                 <th className="px-4 py-3 font-medium">说明</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
               {availabilityChecks.map((check) => (
-                <tr key={check.id} className="align-top hover:bg-slate-50">
-                  <td className="px-4 py-4 text-xs text-slate-500">
+                <tr key={check.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">
                     {formatDate(check.checked_at)}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-semibold text-slate-950">{check.product_name}</div>
+                    <div className="font-semibold text-slate-950 dark:text-slate-50">{check.product_name}</div>
                     <div className="mt-1 text-xs text-slate-400">{check.product_slug}</div>
                     <AdminLink
                       href={`/admin/data-quality/${encodeURIComponent(check.product_slug)}`}
-                      className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                      className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950 dark:hover:text-blue-300"
                     >
                       数据诊断
                     </AdminLink>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-semibold text-slate-700">
+                    <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {check.country_name_zh || check.country_code}
                     </div>
                     <div className="mt-1 text-xs text-slate-400">{check.country_code}</div>
@@ -524,7 +525,7 @@ export default function CollectorJobsView({
                       {availabilityLabel(check.status)}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-xs leading-5 text-slate-500">
+                  <td className="px-4 py-4 text-xs leading-5 text-slate-500 dark:text-slate-400">
                     总项 {check.item_count}
                     <br />
                     订阅 {check.subscription_item_count}
@@ -532,7 +533,7 @@ export default function CollectorJobsView({
                     忽略 {check.ignored_item_count}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="max-w-[420px] text-xs leading-5 text-slate-500">
+                    <div className="max-w-[420px] text-xs leading-5 text-slate-500 dark:text-slate-400">
                       {shortText(check.reason, "暂无说明")}
                     </div>
                   </td>
@@ -541,7 +542,7 @@ export default function CollectorJobsView({
 
               {availabilityChecks.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
                     暂无 App Store 可用性检查记录。
                   </td>
                 </tr>
@@ -552,7 +553,7 @@ export default function CollectorJobsView({
       </AdminCard>
 
       <div className="mt-6">
-        <AdminLink href="/admin" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-900 hover:text-blue-700">
+        <AdminLink href="/admin" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-900 hover:text-blue-700 dark:text-slate-100 dark:hover:text-blue-300">
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.8} />
           返回运营驾驶舱
         </AdminLink>

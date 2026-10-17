@@ -483,41 +483,41 @@ export default async function AdminProductsPage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">当前分类</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">当前分类</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {selectedCategory.shortLabel}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             {selectedCategory.description}
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">产品 / 套餐</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">产品 / 套餐</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {activeTotal} / {totalPlans}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             当前筛选范围内的产品与套餐数量。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">价格 / 国家</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">价格 / 国家</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {totalPrices} / {countryCoverage}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             当前分类的区域价格和国家覆盖。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">需处理服务</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">需处理服务</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {issueProducts.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             当前分类需要补资料、采集、审核或修复的服务；归档 {archivedCount} 个另计。
           </div>
         </AdminCard>
@@ -525,10 +525,10 @@ export default async function AdminProductsPage({
 
       <AdminCard className="mb-6">
         <div className="mb-5 flex flex-col gap-2">
-          <h2 className="text-lg font-black text-slate-950">
+          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
             分类总览
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             产品库后期不按大表平铺，而是先看分类资产健康度。点击卡片可快速进入对应分类。
           </p>
         </div>
@@ -544,34 +544,34 @@ export default async function AdminProductsPage({
                 className={[
                   "rounded-xl border p-5 transition",
                   active
-                    ? "border-blue-200 bg-blue-50 shadow-sm ring-1 ring-blue-100"
-                    : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50",
+                    ? "border-blue-200 bg-blue-50 shadow-sm ring-1 ring-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:ring-blue-800"
+                    : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-800 dark:hover:bg-blue-950/50",
                 ].join(" ")}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-base font-black text-slate-950">
+                    <div className="text-base font-black text-slate-950 dark:text-slate-50">
                       {category.label}
                     </div>
-                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                       {category.description}
                     </div>
                   </div>
 
                   {category.issueCount > 0 ? (
-                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800">
                       问题 {category.issueCount}
                     </span>
                   ) : (
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-200">
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
                       正常
                     </span>
                   )}
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
-                    <div className="text-lg font-black text-slate-950">
+                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-slate-700">
+                    <div className="text-lg font-black text-slate-950 dark:text-slate-50">
                       {category.productCount}
                     </div>
                     <div className="mt-1 text-[11px] font-bold text-slate-400">
@@ -579,8 +579,8 @@ export default async function AdminProductsPage({
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
-                    <div className="text-lg font-black text-slate-950">
+                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-slate-700">
+                    <div className="text-lg font-black text-slate-950 dark:text-slate-50">
                       {category.planCount}
                     </div>
                     <div className="mt-1 text-[11px] font-bold text-slate-400">
@@ -588,8 +588,8 @@ export default async function AdminProductsPage({
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100">
-                    <div className="text-lg font-black text-slate-950">
+                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-slate-700">
+                    <div className="text-lg font-black text-slate-950 dark:text-slate-50">
                       {category.priceCount}
                     </div>
                     <div className="mt-1 text-[11px] font-bold text-slate-400">
@@ -607,10 +607,10 @@ export default async function AdminProductsPage({
         <div className="mb-5 flex flex-col gap-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-lg font-black text-slate-950">
+              <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
                 产品资产列表
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 这里重点不是最低价，而是判断每个产品是否有套餐、是否有国家覆盖、是否缺来源、是否可以进入前台展示。
               </p>
             </div>
@@ -618,7 +618,7 @@ export default async function AdminProductsPage({
             <div className="flex flex-wrap items-center gap-3">
               <AdminLink
                 href="/admin/plans"
-                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
+                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
               >
                 套餐库
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
@@ -626,7 +626,7 @@ export default async function AdminProductsPage({
 
               <AdminLink
                 href="/admin/prices"
-                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
+                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
               >
                 价格库
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
@@ -668,9 +668,9 @@ export default async function AdminProductsPage({
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
           <div className="min-w-[1120px]">
-          <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+          <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 dark:bg-slate-800">
             <div>服务</div>
             <div>分类</div>
             <div>服务商</div>
@@ -683,7 +683,7 @@ export default async function AdminProductsPage({
             <div>操作</div>
           </div>
 
-          <div className="divide-y divide-slate-100 bg-white">
+          <div className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
             {products.map((product) => {
               const assessment = assessProduct(product);
               const category = categoryConfigs.find(
@@ -698,7 +698,7 @@ export default async function AdminProductsPage({
                   <div>
                     <AdminLink
                       href={`/admin/products/${product.id}/edit`}
-                      className="font-black text-slate-950 transition hover:text-blue-700"
+                      className="font-black text-slate-950 transition hover:text-blue-700 dark:text-slate-50 dark:hover:text-blue-300"
                     >
                       {product.name}
                     </AdminLink>
@@ -712,31 +712,31 @@ export default async function AdminProductsPage({
                     ) : null}
                   </div>
 
-                  <div className="text-slate-600">
+                  <div className="text-slate-600 dark:text-slate-300">
                     {category?.shortLabel || String(product.category)}
                   </div>
 
-                  <div className="text-slate-500">
+                  <div className="text-slate-500 dark:text-slate-400">
                     {product.provider || "—"}
                   </div>
 
-                  <div className="font-bold text-slate-700">
+                  <div className="font-bold text-slate-700 dark:text-slate-200">
                     {product.planCount}
                   </div>
 
-                  <div className="font-bold text-slate-700">
+                  <div className="font-bold text-slate-700 dark:text-slate-200">
                     {product.countryCount}
                   </div>
 
-                  <div className="font-bold text-slate-700">
+                  <div className="font-bold text-slate-700 dark:text-slate-200">
                     {product.priceCount}
                   </div>
 
-                  <div className="text-xs leading-5 text-slate-500">
+                  <div className="text-xs leading-5 text-slate-500 dark:text-slate-400">
                     {assessment?.reason}
                   </div>
 
-                  <div className="text-xs font-bold text-slate-500">
+                  <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
                     {formatDate(product.lastCheckedAt)}
                   </div>
 
@@ -750,7 +750,7 @@ export default async function AdminProductsPage({
                   <div>
                     <AdminLink
                       href={`/admin/products/${product.id}/edit`}
-                      className="text-xs font-black text-blue-700 transition hover:text-blue-900"
+                      className="text-xs font-black text-blue-700 transition hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
                     >
                       编辑
                     </AdminLink>
@@ -761,7 +761,7 @@ export default async function AdminProductsPage({
 
             {products.length === 0 ? (
               <div className="px-5 py-12 text-center">
-                <div className="text-sm font-bold text-slate-500">
+                <div className="text-sm font-bold text-slate-500 dark:text-slate-400">
                   当前分类暂无产品。
                 </div>
                 <div className="mt-2 text-sm text-slate-400">

@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminBadge } from "../../../components/admin/AdminBadge";
 import { AdminButton } from "../../../components/admin/AdminButton";
 import {
@@ -192,7 +193,7 @@ export function SearchConversionSections({
                       </AdminTd>
                       <AdminTd align="right">
                         {canResolve || shouldReopen ? (
-                          <form action={updateSearchOpportunityAction}>
+                          <AdminActionForm action={updateSearchOpportunityAction}>
                             <input
                               type="hidden"
                               name="query"
@@ -216,7 +217,7 @@ export function SearchConversionSections({
                             >
                               {canResolve ? "标记已解决" : "重新处理"}
                             </AdminButton>
-                          </form>
+                          </AdminActionForm>
                         ) : (
                           <span className="text-xs font-semibold text-slate-400 dark:text-slate-400">
                             继续观察

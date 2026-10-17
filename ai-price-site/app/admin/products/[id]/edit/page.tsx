@@ -1,3 +1,7 @@
+import { adminRecordVersion } from "../../../../../lib/admin-save";
+import AdminProductContext from "../../../../../components/admin/AdminProductContext";
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
+import { requireAdmin } from "../../../../../lib/admin-auth";
 import { notFound } from "next/navigation";
 import { AdminButton, AdminLinkButton } from "../../../../../components/admin/AdminButton";
 import {
@@ -56,6 +60,7 @@ export default async function EditProductPage({
     evidence?: string;
   }>;
 }) {
+  const admin = await requireAdmin();
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
 
@@ -127,10 +132,11 @@ export default async function EditProductPage({
   const latestAppStoreJob = appStoreJob[0] || null;
 
   return (
-    <div>
+    <fieldset disabled={admin.role !== "OWNER"} className="min-w-0">
+      <AdminProductContext id={product.id} slug={product.slug} name={product.name} />
       <AdminPageHeader
         eyebrow="Products"
-        title={`编辑数字服务：${product.name}`}
+        title={`${admin.role === "OWNER" ? "编辑" : "查看"}数字服务：${product.name}`}
         description="维护产品基础资料，并继续补齐套餐、价格和审核发布流程。"
         action={
           <AdminLinkButton href="/admin/products" variant="secondary">
@@ -213,10 +219,10 @@ export default async function EditProductPage({
         </div>
       ) : null}
 
-      <ProductOnboardingSteps currentStep="product" productId={product.id} />
+      <ProductOnboardingSteps currentStep="product" productId={product.id} productSlug={product.slug} />
 
-      <form action={updateProductAction} className="space-y-6">
-        <input type="hidden" name="id" value={product.id} />
+      <AdminActionForm action={updateProductAction} className="space-y-6">
+        <input type="hidden" name="id" value={product.id} /><input type="hidden" name="recordVersion" value={adminRecordVersion(product)} />
 
         <AdminCard>
           <AdminSectionHeader
@@ -321,7 +327,7 @@ export default async function EditProductPage({
             取消
           </AdminLinkButton>
         </div>
-      </form>
+      </AdminActionForm>
 
       <AdminCard className="mt-6">
         <AdminSectionHeader
@@ -329,38 +335,41 @@ export default async function EditProductPage({
           description="可缓存官网或 App Store 候选图用于内部核验，但只有已登记许可的本地资产才能公开展示。"
         />
 
-        <div className="flex flex-col gap-4 rounded-xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 rounded-xl border border-lime-200 bg-lime-50/60 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-lime-900 dark:bg-lime-950/40">
           <div className="flex items-center gap-4">
             <BrandIcon product={product} size="md" />
             <div>
-              <div className="text-sm font-bold text-slate-950">
+              <div className="text-sm font-bold text-slate-950 dark:text-slate-50">
                 当前前台：合规本地资产 / Simple Icons / 中性首字母
               </div>
-              <div className="mt-1 max-w-2xl text-xs leading-6 text-slate-600">
+              <div className="mt-1 max-w-2xl text-xs leading-6 text-slate-600 dark:text-slate-300">
                 候选图只用于确认品牌身份和后续申请许可，不会因缓存成功而自动发布。
                 没有合规品牌图标时，前台显示稳定的中性首字母，不会加载第三方图片或仿制图形。
               </div>
             </div>
           </div>
 
-          <form action={syncProductOfficialLogoAction} className="flex shrink-0 flex-wrap gap-3">
+          <AdminActionForm action={syncProductOfficialLogoAction} className="flex shrink-0 flex-wrap gap-3">
             <input type="hidden" name="productId" value={product.id} />
+            <input type="hidden" name="recordVersion" value={adminRecordVersion(product)} />
             <input type="hidden" name="appStoreId" value={latestAppStoreJob?.app_store_id || ""} />
             <AdminButton type="submit" variant="secondary">
               缓存候选图标（不发布）
             </AdminButton>
-          </form>
+          </AdminActionForm>
         </div>
       </AdminCard>
 
       <AdminCard className="mt-6">
+        <div id="product-seo" />
         <AdminSectionHeader
           title="价格页 SEO"
           description="维护该产品价格详情页的搜索标题、描述、H1、canonical 和结构化数据。"
         />
 
-        <form action={saveProductSeoAction} className="space-y-5">
+        <AdminActionForm action={saveProductSeoAction} className="space-y-5">
           <input type="hidden" name="productId" value={product.id} />
+            <input type="hidden" name="recordVersion" value={adminRecordVersion(productSeoMeta)} />
 
           <div className="grid gap-5 lg:grid-cols-2">
             <AdminInput
@@ -422,11 +431,11 @@ export default async function EditProductPage({
             <AdminButton type="submit" variant="primary">
               保存 SEO 信息
             </AdminButton>
-            <AdminLinkButton href="/admin/seo" variant="secondary">
+            <AdminLinkButton href={`/admin/seo?product=${encodeURIComponent(product.slug)}`} variant="secondary">
               查看 SEO 体检
             </AdminLinkButton>
           </div>
-        </form>
+        </AdminActionForm>
       </AdminCard>
 
       <AdminCard className="mt-6">
@@ -436,28 +445,29 @@ export default async function EditProductPage({
         />
 
         <div className="mb-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100 dark:bg-slate-800">
             <div className="text-xs font-semibold text-slate-400">来源状态</div>
-            <div className="mt-1 text-sm font-bold text-slate-900">
+            <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
               {appStoreSource ? "已配置" : "未配置"}
             </div>
           </div>
-          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100 dark:bg-slate-800">
             <div className="text-xs font-semibold text-slate-400">采集任务</div>
-            <div className="mt-1 text-sm font-bold text-slate-900">
+            <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
               {latestAppStoreJob ? latestAppStoreJob.status : "未生成"}
             </div>
           </div>
-          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100 dark:bg-slate-800">
             <div className="text-xs font-semibold text-slate-400">App ID</div>
-            <div className="mt-1 text-sm font-bold text-slate-900">
+            <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
               {latestAppStoreJob?.app_store_id || "待填写"}
             </div>
           </div>
         </div>
 
-        <form action={saveProductAppStoreSourceAction} className="space-y-5">
+        <AdminActionForm action={saveProductAppStoreSourceAction} className="space-y-5">
           <input type="hidden" name="productId" value={product.id} />
+            <input type="hidden" name="recordVersion" value={adminRecordVersion(product)} />
 
           <div className="grid gap-5 lg:grid-cols-2">
             <AdminInput
@@ -481,12 +491,12 @@ export default async function EditProductPage({
             <AdminButton type="submit" variant="primary">
               保存来源并准备采集
             </AdminButton>
-            <AdminLinkButton href="/admin/review" variant="secondary">
+            <AdminLinkButton href={`/admin/review?q=${encodeURIComponent(product.slug)}`} variant="secondary">
               去价格采集审核
             </AdminLinkButton>
           </div>
-        </form>
+        </AdminActionForm>
       </AdminCard>
-    </div>
+    </fieldset>
   );
 }

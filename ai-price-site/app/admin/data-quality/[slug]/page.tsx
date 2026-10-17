@@ -1,3 +1,4 @@
+import AdminProductContext from "../../../../components/admin/AdminProductContext";
 import { notFound } from "next/navigation";
 import { measureAdminWorkload } from "../../../../lib/admin-performance";
 import { getCollectorRunHistoryRows } from "../../review/collector-run-history-query";
@@ -38,6 +39,8 @@ export default async function ProductDataQualityPage({
     );
 
   return (
+    <>
+    <AdminProductContext id={product.id} slug={product.slug} name={product.name} />
     <ProductDataQualityView
       product={product}
       plans={plans}
@@ -46,5 +49,6 @@ export default async function ProductDataQualityPage({
       availabilityRows={availabilityRows}
       collectorRuns={collectorRuns}
     />
+    </>
   );
 }

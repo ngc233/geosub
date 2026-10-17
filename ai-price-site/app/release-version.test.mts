@@ -106,7 +106,7 @@ test("candidate Git blobs are checked instead of the running checkout version", 
   assert.equal(f.run("--ref", candidate, "--current", f.current).status, 0);
 });
 
-test("actual upgrade rejects a repeated version before any service or backup operation", (t) => {
+test("maintenance upgrade rejects a repeated version before any service or backup operation", (t) => {
   const f = fixture(t);
   const bin = join(f.root, "bin");
   mkdirSync(bin);
@@ -133,7 +133,7 @@ test("actual upgrade rejects a repeated version before any service or backup ope
     ...process.env, PATH: `${bin}:${dirname(process.execPath)}:${process.env.PATH}`,
     GEOSUB_ENV_FILE: join(f.root, "absent.env"), GEOSUB_REPO_DIR: f.root,
     GEOSUB_BACKEND_DIR: join(f.root, "geosub-backend"), GEOSUB_FRONTEND_DIR: join(f.root, "ai-price-site"),
-    GEOSUB_RELEASE_DIR: f.root, GEOSUB_SKIP_GIT_PULL: skipPull, GEOSUB_GIT_BRANCH: "main",
+    GEOSUB_DEPLOY_MODE: "maintenance-v1", GEOSUB_RELEASE_DIR: f.root, GEOSUB_SKIP_GIT_PULL: skipPull, GEOSUB_GIT_BRANCH: "main",
     } });
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stderr, /Release version must increase/);

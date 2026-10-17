@@ -53,15 +53,15 @@ export default function AdminPipelineSteps({
   const activeStep = currentStep === "collector" ? "review" : currentStep;
 
   return (
-    <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
+    <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 dark:border-slate-700 dark:bg-slate-900">
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-base font-bold text-slate-950">价格采集流水线</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <h2 className="text-base font-bold text-slate-950 dark:text-slate-100">价格采集流水线</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
             先看产品卡在哪一步，再补产品线索、执行采集审核，最后确认正式价格结果。
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+        <div className="inline-flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
           <CheckCircle2 size={14} strokeWidth={2} />
           V1 主线：App Store 优先
         </div>
@@ -79,8 +79,8 @@ export default function AdminPipelineSteps({
               className={[
                 "group rounded-lg border p-4 transition",
                 active
-                  ? "border-blue-200 bg-blue-50 ring-1 ring-blue-100"
-                  : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white",
+                  ? "border-blue-200 bg-blue-50 ring-1 ring-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:ring-blue-800"
+                  : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:bg-slate-900",
               ].join(" ")}
             >
               <div className="flex items-start gap-3">
@@ -89,7 +89,7 @@ export default function AdminPipelineSteps({
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
                     active
                       ? "bg-blue-700 text-white"
-                      : "bg-white text-slate-500 ring-1 ring-slate-200 group-hover:text-slate-900",
+                      : "bg-white text-slate-500 ring-1 ring-slate-200 group-hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:ring-slate-700",
                   ].join(" ")}
                 >
                   {step.number}
@@ -99,11 +99,11 @@ export default function AdminPipelineSteps({
                     <Icon
                       size={16}
                       strokeWidth={2}
-                      className={active ? "text-blue-700" : "text-slate-400"}
+                      className={active ? "text-blue-700 dark:text-blue-300" : "text-slate-400"}
                     />
-                    <h3 className="text-sm font-bold text-slate-950">{step.title}</h3>
+                    <h3 className="text-sm font-bold text-slate-950 dark:text-slate-100">{step.title}</h3>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">{step.description}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{step.description}</p>
                 </div>
               </div>
             </AdminLink>

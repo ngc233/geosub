@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import { Archive, Eye, FileText, Plus, Trash2 } from "lucide-react";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
@@ -15,7 +16,7 @@ function statusClassName(status: string) {
   if (status === "PUBLISHED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
   if (status === "SCHEDULED") return "bg-blue-50 text-blue-700 ring-blue-200";
   if (status === "REVIEW") return "bg-amber-50 text-amber-700 ring-amber-200";
-  if (status === "ARCHIVED") return "bg-slate-100 text-slate-500 ring-slate-200";
+  if (status === "ARCHIVED") return "bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400";
   return "bg-zinc-50 text-zinc-600 ring-zinc-200";
 }
 
@@ -118,29 +119,29 @@ export default async function AdminArticlesPage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-5">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">全部文章</div>
-          <div className="mt-2 text-3xl font-black text-slate-950">{articles.length}</div>
-          <div className="mt-2 text-sm text-slate-500">后台已创建的内容总数。</div>
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">全部文章</div>
+          <div className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{articles.length}</div>
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">后台已创建的内容总数。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">已发布</div>
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">已发布</div>
           <div className="mt-2 text-3xl font-black text-emerald-700">{publishedCount}</div>
-          <div className="mt-2 text-sm text-slate-500">可在前台展示的文章。</div>
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">可在前台展示的文章。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">草稿</div>
-          <div className="mt-2 text-3xl font-black text-slate-950">{draftCount}</div>
-          <div className="mt-2 text-sm text-slate-500">仍在编辑中的内容。</div>
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">草稿</div>
+          <div className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{draftCount}</div>
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">仍在编辑中的内容。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">已下架</div>
-          <div className="mt-2 text-3xl font-black text-slate-600">{archivedCount}</div>
-          <div className="mt-2 text-sm text-slate-500">不会在前台展示。</div>
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">已下架</div>
+          <div className="mt-2 text-3xl font-black text-slate-600 dark:text-slate-300">{archivedCount}</div>
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">不会在前台展示。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">内容待完善</div>
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">内容待完善</div>
           <div className="mt-2 text-3xl font-black text-amber-700">{needsWorkCount}</div>
-          <div className="mt-2 text-sm text-slate-500">正文、内链、搜索表达或技术信息仍有缺口。</div>
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">正文、内链、搜索表达或技术信息仍有缺口。</div>
         </AdminCard>
       </div>
 
@@ -163,7 +164,7 @@ export default async function AdminArticlesPage({
                 className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-black transition ${
                   active
                     ? "border-blue-600 bg-blue-600 text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 }`}
               >
                 {label}
@@ -175,8 +176,8 @@ export default async function AdminArticlesPage({
 
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-lg font-black text-slate-950">内容列表</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">内容列表</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               当前有 {indexableCount} 篇已发布且允许收录的文章会进入搜索入口。
             </p>
           </div>
@@ -189,9 +190,9 @@ export default async function AdminArticlesPage({
           </AdminLink>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
           <div className="min-w-[980px]">
-            <div className="grid grid-cols-[minmax(220px,1.4fr)_100px_100px_170px_120px_110px_200px] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+            <div className="grid grid-cols-[minmax(220px,1.4fr)_100px_100px_170px_120px_110px_200px] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 dark:bg-slate-800">
               <div>标题</div>
               <div>类型</div>
               <div>状态</div>
@@ -201,7 +202,7 @@ export default async function AdminArticlesPage({
               <div>操作</div>
             </div>
 
-            <div className="divide-y divide-slate-100 bg-white">
+            <div className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
               {visibleRows.map(({ article, quality }) => (
                 <div
                   key={article.id}
@@ -210,22 +211,22 @@ export default async function AdminArticlesPage({
                   <div>
                     <AdminLink
                       href={`/admin/articles/${article.id}/edit`}
-                      className="font-black text-slate-950 transition hover:text-blue-700"
+                      className="font-black text-slate-950 transition hover:text-blue-700 dark:text-slate-50"
                     >
                       {article.title}
                     </AdminLink>
                     <div className="mt-1 font-mono text-xs text-slate-400">
                       /{article.locale === "EN" ? "en" : "zh"}/guides/{article.slug}
                     </div>
-                    <span className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-600">
+                    <span className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                       {article.locale === "EN" ? "English" : "简体中文"}
                     </span>
                     {article.excerpt ? (
-                      <div className="mt-2 line-clamp-1 text-xs text-slate-500">{article.excerpt}</div>
+                      <div className="mt-2 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{article.excerpt}</div>
                     ) : null}
                   </div>
 
-                  <div className="font-bold text-slate-600">
+                  <div className="font-bold text-slate-600 dark:text-slate-300">
                     {getArticleTypeLabel(article.articleType, article.locale === "EN" ? "en" : "zh")}
                   </div>
 
@@ -245,16 +246,16 @@ export default async function AdminArticlesPage({
                     }`}>
                       {quality.score} · {quality.statusLabel}
                     </span>
-                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                       {quality.nextAction}
                     </div>
                   </div>
 
-                  <div className="text-xs font-bold text-slate-500">
+                  <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
                     {formatArticleDate(article.publishedAt, article.locale === "EN" ? "en" : "zh")}
                   </div>
 
-                  <div className="text-xs font-bold text-slate-500">
+                  <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
                     {formatArticleDate(article.updatedAt, article.locale === "EN" ? "en" : "zh")}
                   </div>
 
@@ -268,7 +269,7 @@ export default async function AdminArticlesPage({
                     <AdminLink
                       href={`/admin/articles/${article.id}/preview`}
                       target="_blank"
-                      className="inline-flex items-center gap-1 text-xs font-black text-slate-600 hover:text-slate-950"
+                      className="inline-flex items-center gap-1 text-xs font-black text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
                     >
                       <Eye size={13} />
                       预览
@@ -277,24 +278,24 @@ export default async function AdminArticlesPage({
                       <AdminLink
                         href={`/${article.locale === "EN" ? "en" : "zh"}/guides/${article.slug}`}
                         target="_blank"
-                        className="text-xs font-black text-slate-600 hover:text-slate-950"
+                        className="text-xs font-black text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
                       >
                         查看
                       </AdminLink>
                     ) : null}
                     {article.status !== "ARCHIVED" ? (
-                      <form action={archiveArticleAction}>
+                      <AdminActionForm action={archiveArticleAction}>
                         <input type="hidden" name="id" value={article.id} />
                         <button
                           type="submit"
-                          className="inline-flex items-center gap-1 text-xs font-black text-slate-600 hover:text-slate-950"
+                          className="inline-flex items-center gap-1 text-xs font-black text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
                         >
                           <Archive size={13} />
                           下架
                         </button>
-                      </form>
+                      </AdminActionForm>
                     ) : null}
-                    <form action={moveArticleToTrashAction}>
+                    <AdminActionForm action={moveArticleToTrashAction}>
                       <input type="hidden" name="id" value={article.id} />
                       <button
                         type="submit"
@@ -303,7 +304,7 @@ export default async function AdminArticlesPage({
                         <Trash2 size={13} />
                         删除
                       </button>
-                    </form>
+                    </AdminActionForm>
                   </div>
                 </div>
               ))}
@@ -311,7 +312,7 @@ export default async function AdminArticlesPage({
               {visibleRows.length === 0 ? (
                 <div className="px-5 py-16 text-center">
                   <FileText className="mx-auto text-slate-300" size={36} />
-                  <div className="mt-4 text-sm font-bold text-slate-500">
+                  <div className="mt-4 text-sm font-bold text-slate-500 dark:text-slate-400">
                     {articles.length === 0 ? "还没有文章。" : "当前筛选下没有文章。"}
                   </div>
                   {articles.length === 0 ? (

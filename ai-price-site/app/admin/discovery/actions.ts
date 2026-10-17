@@ -195,7 +195,7 @@ function getReviewNote(formData: FormData) {
 
 export async function queueDiscoverySourceScan(formData: FormData): Promise<void> {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("manage");
     const id = getSourceId(formData);
 
     await prisma.$queryRaw`
@@ -241,7 +241,7 @@ export async function createManualCandidate(
 ): Promise<DiscoveryActionState> {
   try {
     const formData = getFormData(stateOrFormData, maybeFormData);
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("manage");
 
     const name = cleanText(formData.get("name"));
     const suggestedSlug = normalizeSlug(cleanText(formData.get("suggestedSlug")) || name);
@@ -368,7 +368,7 @@ export async function createDiscoverySource(
 ): Promise<DiscoveryActionState> {
   try {
     const formData = getFormData(stateOrFormData, maybeFormData);
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("manage");
 
     const name = cleanText(formData.get("name"));
     const url = cleanText(formData.get("url"));
@@ -487,7 +487,7 @@ export async function createDiscoverySource(
 
 export async function watchCandidate(formData: FormData): Promise<void> {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("manage");
     const id = getCandidateId(formData);
     const reviewNote = getReviewNote(formData);
 
@@ -531,7 +531,7 @@ export async function watchCandidate(formData: FormData): Promise<void> {
 
 export async function ignoreCandidate(formData: FormData): Promise<void> {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("manage");
     const id = getCandidateId(formData);
     const reviewNote = getReviewNote(formData);
 
@@ -577,7 +577,7 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
   let redirectTo = "/admin/discovery?promotionError=1";
 
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("manage");
     const id = getCandidateId(formData);
     const reviewNote = getReviewNote(formData);
 

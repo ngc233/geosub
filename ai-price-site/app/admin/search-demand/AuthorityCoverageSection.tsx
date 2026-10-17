@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { ArrowUpRight } from "lucide-react";
 import { AdminBadge } from "../../../components/admin/AdminBadge";
 import {
@@ -171,14 +172,14 @@ export function AuthorityCoverageSection({
     <AdminTd align="right">
     <div className="flex max-w-xs flex-wrap justify-end gap-2">
     {taskCanResolve && task ? (
-    <form action={updateAuthorityCoverageTaskAction}>
+    <AdminActionForm action={updateAuthorityCoverageTaskAction}>
     <input type="hidden" name="id" value={task.id} />
     <input type="hidden" name="status" value="resolved" />
     <input type="hidden" name="days" value={days} />
     <AdminButton type="submit" size="sm" variant="success">
     确认恢复
     </AdminButton>
-    </form>
+    </AdminActionForm>
     ) : item.actionKind === "collect" && (!taskActive || taskNeedsRestart) ? (
     <ManualCollectionProgressForm
     productSlug={item.productSlug}
@@ -187,7 +188,7 @@ export function AuthorityCoverageSection({
     submitUrl="/admin/search-demand/authority-collect"
     />
     ) : item.actionKind !== "collect" && item.actionKind !== "monitor" && (!taskActive || taskNeedsRestart) ? (
-    <form action={startAuthorityCoverageTaskAction}>
+    <AdminActionForm action={startAuthorityCoverageTaskAction}>
     <input type="hidden" name="productId" value={item.productId} />
     <input type="hidden" name="days" value={days} />
     <AdminButton
@@ -198,7 +199,7 @@ export function AuthorityCoverageSection({
     {taskNeedsRestart ? "重新处理" : "开始处理"}
     <ArrowUpRight size={14} />
     </AdminButton>
-    </form>
+    </AdminActionForm>
     ) : taskActive && task ? (
     <AdminLinkButton
     href={task.actionKind === "collect"
@@ -217,14 +218,14 @@ export function AuthorityCoverageSection({
     </AdminLinkButton>
     )}
     {taskActive && task && !taskCanResolve ? (
-    <form action={updateAuthorityCoverageTaskAction}>
+    <AdminActionForm action={updateAuthorityCoverageTaskAction}>
     <input type="hidden" name="id" value={task.id} />
     <input type="hidden" name="status" value="ignored" />
     <input type="hidden" name="days" value={days} />
     <AdminButton type="submit" size="sm" variant="ghost">
     暂停
     </AdminButton>
-    </form>
+    </AdminActionForm>
     ) : null}
     <AdminLinkButton
     href={item.publicPath}

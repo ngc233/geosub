@@ -15,10 +15,10 @@ type Props = {
 };
 
 function statusClassName(status: string) {
-  if (status === "succeeded") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "failed") return "bg-red-50 text-red-700 ring-red-200";
-  if (status === "skipped") return "bg-slate-50 text-slate-600 ring-slate-200";
-  return "bg-blue-50 text-blue-700 ring-blue-200";
+  if (status === "succeeded") return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
+  if (status === "failed") return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
+  if (status === "skipped") return "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700";
+  return "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800";
 }
 
 function statusLabel(status: string) {
@@ -82,7 +82,7 @@ function runOutput(row: CollectorRunHistoryRow) {
   if (row.error_message) {
     return {
       text: shortText(row.error_message),
-      className: "font-medium text-red-700",
+      className: "font-medium text-red-700 dark:text-red-300",
     };
   }
 
@@ -90,7 +90,7 @@ function runOutput(row: CollectorRunHistoryRow) {
   if (output) {
     return {
       text: output,
-      className: "text-slate-500",
+      className: "text-slate-500 dark:text-slate-400",
     };
   }
 
@@ -98,7 +98,7 @@ function runOutput(row: CollectorRunHistoryRow) {
     if (row.process_id) {
       return {
         text: `脚本进程 ${row.process_id} 正在运行，完成后会写回成功、失败和输出摘要。`,
-        className: "text-blue-700",
+        className: "text-blue-700 dark:text-blue-300",
       };
     }
 
@@ -107,7 +107,7 @@ function runOutput(row: CollectorRunHistoryRow) {
         row.runner_state === "queued_from_admin"
           ? "已创建运行记录，正在唤起后台脚本；如果 3 分钟内没有接管，系统会自动标记为失败。"
           : "后台脚本已启动，正在等待采集结果写回。",
-      className: "text-blue-700",
+      className: "text-blue-700 dark:text-blue-300",
     };
   }
 
@@ -140,40 +140,40 @@ function runSummary(row: CollectorRunHistoryRow) {
 function progressToneClassName(tone: CollectionProgressState["tone"]) {
   if (tone === "success") {
     return {
-      wrapper: "border-emerald-100 bg-emerald-50 text-emerald-950",
+      wrapper: "border-emerald-100 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
       bar: "bg-emerald-600",
-      pill: "bg-white text-emerald-700 ring-emerald-200",
+      pill: "bg-white text-emerald-700 ring-emerald-200 dark:bg-slate-900 dark:text-emerald-300 dark:ring-emerald-800",
     };
   }
 
   if (tone === "danger") {
     return {
-      wrapper: "border-red-100 bg-red-50 text-red-950",
+      wrapper: "border-red-100 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
       bar: "bg-red-600",
-      pill: "bg-white text-red-700 ring-red-200",
+      pill: "bg-white text-red-700 ring-red-200 dark:bg-slate-900 dark:text-red-300 dark:ring-red-800",
     };
   }
 
   if (tone === "warning") {
     return {
-      wrapper: "border-amber-100 bg-amber-50 text-amber-950",
+      wrapper: "border-amber-100 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200",
       bar: "bg-amber-500",
-      pill: "bg-white text-amber-700 ring-amber-200",
+      pill: "bg-white text-amber-700 ring-amber-200 dark:bg-slate-900 dark:text-amber-300 dark:ring-amber-800",
     };
   }
 
   if (tone === "neutral") {
     return {
-      wrapper: "border-slate-100 bg-slate-50 text-slate-900",
+      wrapper: "border-slate-100 bg-slate-50 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100",
       bar: "bg-slate-500",
-      pill: "bg-white text-slate-600 ring-slate-200",
+      pill: "bg-white text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700",
     };
   }
 
   return {
-    wrapper: "border-blue-100 bg-blue-50 text-blue-950",
+    wrapper: "border-blue-100 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200",
     bar: "bg-blue-600",
-    pill: "bg-white text-blue-700 ring-blue-200",
+    pill: "bg-white text-blue-700 ring-blue-200 dark:bg-slate-900 dark:text-blue-300 dark:ring-blue-800",
   };
 }
 
@@ -205,7 +205,7 @@ function CollectionProgressPanel({ progress }: { progress: CollectionProgressSta
             <span>采集进度</span>
             <span className="font-mono tabular-nums">{progress.progress}%</span>
           </div>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/80 ring-1 ring-inset ring-black/5">
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/80 ring-1 ring-inset ring-black/5 dark:bg-slate-900/80">
             <div
               className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
               style={{ width: `${progress.progress}%` }}
@@ -307,18 +307,18 @@ export default function CollectionRunHistorySection({
   }, [autoRefreshActive, productQuery]);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 md:flex-row md:items-center md:justify-between">
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 md:flex-row md:items-center md:justify-between dark:border-slate-700">
         <div>
-          <p className="text-xs font-bold text-blue-700">第 2 步结果</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-950">本轮采集状态</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
+          <p className="text-xs font-bold text-blue-700 dark:text-blue-300">第 2 步结果</p>
+          <h2 className="mt-1 text-base font-semibold text-slate-950 dark:text-slate-100">本轮采集状态</h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
             点击采集后在这里看进度和结果。页面会自动更新，不需要重复点击。
           </p>
         </div>
         <AdminLink
           href="/admin/collector-jobs"
-          className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-900"
         >
           全部采集记录
         </AdminLink>
@@ -327,7 +327,7 @@ export default function CollectionRunHistorySection({
       <CollectionProgressPanel progress={progressState} />
 
       {visibleRows.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-slate-500">
+        <div className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
           还没有采集记录。先在上方选择产品并开始采集。
         </div>
       ) : (
@@ -340,7 +340,7 @@ export default function CollectionRunHistorySection({
                 <summary className="flex cursor-pointer list-none flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-slate-950">
+                      <span className="font-semibold text-slate-950 dark:text-slate-100">
                         {row.product_name || row.product_slug || "未知产品"}
                       </span>
                       <span
@@ -349,19 +349,19 @@ export default function CollectionRunHistorySection({
                         {statusLabel(row.status)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{runSummary(row)}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{runSummary(row)}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-4 text-xs text-slate-500">
+                  <div className="flex shrink-0 items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                     <span>{formatDate(row.started_at)}</span>
                     <span>{formatDuration(row)}</span>
-                    <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 group-open:bg-slate-100">
+                    <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 group-open:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                       技术详情
                     </span>
                   </div>
                 </summary>
 
-                <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-500">
+                <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-500 dark:text-slate-400">
                     <span>来源：{sourceLabel(row.source_type)}</span>
                     <span>产品标识：{row.product_slug || "未知"}</span>
                     {row.diagnosis ? <span>系统诊断：{row.diagnosis}</span> : null}
@@ -376,7 +376,7 @@ export default function CollectionRunHistorySection({
                   {row.product_slug ? (
                     <AdminLink
                       href={`/admin/data-quality/${encodeURIComponent(row.product_slug)}`}
-                      className="mt-3 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                      className="mt-3 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950 dark:hover:text-blue-300"
                     >
                       打开数据诊断
                     </AdminLink>
@@ -386,7 +386,7 @@ export default function CollectionRunHistorySection({
             );
           })}
           {visibleRows.length > recentRows.length ? (
-            <div className="px-4 py-3 text-center text-xs text-slate-500">
+            <div className="px-4 py-3 text-center text-xs text-slate-500 dark:text-slate-400">
               这里只显示最近 {recentRows.length} 次，更多记录请打开“全部采集记录”。
             </div>
           ) : null}

@@ -25,7 +25,7 @@ test("settings page exposes a resilient Google analytics entry", () => {
   assert.match(source, /保存设置/);
 });
 
-test("analytics settings extract IDs and redirect invalid input without throwing", () => {
+test("analytics settings return inline errors and committed versions without discarding input", () => {
   const source = readSettingsFile("actions.ts");
   const scripts = readFileSync(
     resolve(currentDir, "../../../components/analytics/GoogleAnalyticsScripts.tsx"),
@@ -35,11 +35,13 @@ test("analytics settings extract IDs and redirect invalid input without throwing
   assert.match(source, /\\bG-\[A-Z0-9\]\{4,\}\\b/);
   assert.match(source, /\\bGTM-\[A-Z0-9\]\{4,\}\\b/);
   assert.match(source, /extractTrackingId/);
-  assert.match(source, /analyticsError=/);
+  assert.match(source, /return \{error:"统计 ID 格式无效/);
   assert.match(source, /ga4_id/);
   assert.match(source, /gtm_id/);
   assert.match(source, /updateTag\(PUBLIC_SITE_SETTINGS_CACHE_TAG\)/);
-  assert.match(source, /redirect\("\/admin\/settings\?saved=1"\)/);
+  assert.match(source, /return \{recordVersion:result\.value\}/);
+  assert.match(source, /assertSettingsVersion/);
+  assert.match(source, /attemptAdminSave/);
   assert.doesNotMatch(source, /throw new Error\("GA4/);
   assert.match(scripts, /unstable_cache/);
   assert.match(scripts, /PUBLIC_SITE_SETTINGS_CACHE_TAG/);
@@ -80,7 +82,7 @@ test("settings page keeps external operations notifications explicit and disable
   assert.match(page, /安全通知渠道/);
   assert.match(page, /disabled=\{!notification\.channelConfigured\}/);
   assert.match(actions, /operations_brief_enabled/);
-  assert.match(actions, /notificationError=channel/);
+  assert.match(actions, /return \{error:"通知渠道尚未配置/);
   assert.match(notification, /GEOSUB_OPERATIONS_WEBHOOK_URL/);
   assert.match(notification, /GEOSUB_OPERATIONS_WEBHOOK_ALLOWED_HOSTS/);
   assert.match(notification, /url\.protocol !== "https:"/);

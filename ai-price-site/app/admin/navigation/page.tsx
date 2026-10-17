@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import { ArrowDown, ArrowLeft, ArrowUp, Pencil } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
@@ -30,14 +31,14 @@ function statusLabel(status: string) {
 
 function statusClassName(status: string) {
   if (status === "PUBLISHED") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
   }
 
   if (status === "DRAFT") {
-    return "bg-amber-50 text-amber-700 ring-amber-200";
+    return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
   }
 
-  return "bg-slate-100 text-slate-600 ring-slate-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700";
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -54,11 +55,11 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function linkHealthClassName(tone: string) {
-  if (tone === "success") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (tone === "danger") return "bg-red-50 text-red-700 ring-red-200";
-  if (tone === "warning") return "bg-amber-50 text-amber-700 ring-amber-200";
-  if (tone === "info") return "bg-blue-50 text-blue-700 ring-blue-200";
-  return "bg-slate-100 text-slate-500 ring-slate-200";
+  if (tone === "success") return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
+  if (tone === "danger") return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
+  if (tone === "warning") return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
+  if (tone === "info") return "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800";
+  return "bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700";
 }
 
 function LinkHealthBadge({
@@ -105,7 +106,7 @@ function ToggleStatusButton({
 
   if (homeHref && published) {
     return (
-      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-400">
+      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-400 dark:bg-slate-800">
         已锁定
       </span>
     );
@@ -121,7 +122,7 @@ function ToggleStatusButton({
     return (
       <span
         title={publishHealth.detail}
-        className="inline-flex rounded-full bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 ring-1 ring-red-200"
+        className="inline-flex rounded-full bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800"
       >
         不可启用
       </span>
@@ -129,7 +130,7 @@ function ToggleStatusButton({
   }
 
   return (
-    <form action={toggleNavigationItemStatus.bind(null, id)}>
+    <AdminActionForm action={toggleNavigationItemStatus.bind(null, id)}>
       <AdminButton
         type="submit"
         size="sm"
@@ -137,14 +138,14 @@ function ToggleStatusButton({
       >
         {published ? "停用" : "启用"}
       </AdminButton>
-    </form>
+    </AdminActionForm>
   );
 }
 
 function SortButtons({ id, href }: { id: string; href: string }) {
   if (isNavigationHomeHref(href)) {
     return (
-      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-400">
+      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-400 dark:bg-slate-800">
         固定
       </span>
     );
@@ -152,7 +153,7 @@ function SortButtons({ id, href }: { id: string; href: string }) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <form action={moveNavigationItem.bind(null, id, "up")}>
+      <AdminActionForm action={moveNavigationItem.bind(null, id, "up")}>
         <AdminButton
           type="submit"
           variant="secondary"
@@ -163,9 +164,9 @@ function SortButtons({ id, href }: { id: string; href: string }) {
         >
           <ArrowUp className="h-4 w-4" aria-hidden="true" />
         </AdminButton>
-      </form>
+      </AdminActionForm>
 
-      <form action={moveNavigationItem.bind(null, id, "down")}>
+      <AdminActionForm action={moveNavigationItem.bind(null, id, "down")}>
         <AdminButton
           type="submit"
           variant="secondary"
@@ -176,7 +177,7 @@ function SortButtons({ id, href }: { id: string; href: string }) {
         >
           <ArrowDown className="h-4 w-4" aria-hidden="true" />
         </AdminButton>
-      </form>
+      </AdminActionForm>
     </div>
   );
 }
@@ -259,13 +260,13 @@ export default async function AdminNavigationPage({
         description="统一管理 GeoSub 前台顶部导航、底部导航、子菜单、链接、语言、状态和排序。底部导航可以一键补齐推荐结构，再按运营需要微调。"
         action={
           <div className="flex flex-wrap gap-3">
-            <form action={seedDefaultNavigation}>
+            <AdminActionForm action={seedDefaultNavigation}>
               <input type="hidden" name="locale" value={selectedLocale.value} />
               <input type="hidden" name="position" value={selectedPosition.value} />
               <AdminButton type="submit" variant="success">
                 补齐推荐结构
               </AdminButton>
-            </form>
+            </AdminActionForm>
             <AdminLinkButton
               href={`/admin/navigation/new?locale=${selectedLocale.value}&position=${selectedPosition.value}`}
             >
@@ -276,7 +277,7 @@ export default async function AdminNavigationPage({
       />
 
       {params?.seeded === "1" ? (
-        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
           已补齐当前语言和位置的推荐导航结构。已有菜单不会被覆盖。
         </div>
       ) : null}
@@ -315,7 +316,7 @@ export default async function AdminNavigationPage({
               }))}
             />
 
-            <div className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-700 ring-1 ring-blue-100">
+            <div className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
               当前管理：{selectedLocale.label} · {selectedPosition.label}
             </div>
           </div>
@@ -324,41 +325,41 @@ export default async function AdminNavigationPage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">一级菜单</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">一级菜单</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {parentItems.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             当前语言和位置的顶层项目数量。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">子菜单</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">子菜单</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {childItems.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Footer 分组通常需要更多子菜单。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">启用 / 停用</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">启用 / 停用</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {publishedItems.length} / {draftItems.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             当前菜单发布状态概览。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">链接风险</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">链接风险</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {dangerCount}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             404 风险或格式异常的菜单数。
           </div>
         </AdminCard>
@@ -367,21 +368,21 @@ export default async function AdminNavigationPage({
       <AdminCard>
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-lg font-black text-slate-950">
+            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
               {selectedLocale.label} · {selectedPosition.label}结构
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               排序只在同一级菜单内生效。系统会检查内部链接是否有对应页面，避免发布后出现死链。
             </p>
           </div>
 
-          <div className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-700 ring-1 ring-blue-100">
+          <div className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
             推荐结构：{recommendedGroups.length} 个分组
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <div className="grid grid-cols-[72px_minmax(130px,1.1fr)_minmax(160px,1.5fr)_92px_92px_90px_90px_90px_90px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="grid grid-cols-[72px_minmax(130px,1.1fr)_minmax(160px,1.5fr)_92px_92px_90px_90px_90px_90px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 dark:bg-slate-800">
             <div>排序</div>
             <div>名称</div>
             <div>链接</div>
@@ -393,7 +394,7 @@ export default async function AdminNavigationPage({
             <div>编辑</div>
           </div>
 
-          <div className="divide-y divide-slate-100 bg-white">
+          <div className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
             {parentItems.map((item) => {
               const children = childrenByParentId.get(item.id) ?? [];
 
@@ -403,9 +404,9 @@ export default async function AdminNavigationPage({
                     <div className="font-black text-slate-400">
                       {item.sortOrder}
                     </div>
-                    <div className="font-black text-slate-950">{item.label}</div>
+                    <div className="font-black text-slate-950 dark:text-slate-50">{item.label}</div>
                     <div className="min-w-0">
-                      <div className="truncate font-mono text-xs text-slate-500">
+                      <div className="truncate font-mono text-xs text-slate-500 dark:text-slate-400">
                         {item.href}
                       </div>
                       <LinkHealthBadge
@@ -414,10 +415,10 @@ export default async function AdminNavigationPage({
                         status={String(item.status)}
                       />
                     </div>
-                    <div className="text-slate-500">
+                    <div className="text-slate-500 dark:text-slate-400">
                       {getNavigationPositionByDbValue(item.position).label}
                     </div>
-                    <div className="text-slate-500">
+                    <div className="text-slate-500 dark:text-slate-400">
                       {getNavigationLocaleByDbValue(item.locale).label}
                     </div>
                     <div>
@@ -440,18 +441,18 @@ export default async function AdminNavigationPage({
                   </div>
 
                   {children.length > 0 ? (
-                    <div className="bg-slate-50/70 px-5 pb-4">
-                      <div className="ml-[72px] rounded-xl border border-slate-200 bg-white">
+                    <div className="bg-slate-50/70 px-5 pb-4 dark:bg-slate-900/70">
+                      <div className="ml-[72px] rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
                         {children.map((child) => (
                           <div
                             key={child.id}
-                            className="grid grid-cols-[minmax(130px,1.1fr)_minmax(160px,1.5fr)_92px_92px_90px_90px_90px_90px] items-center gap-0 border-b border-slate-100 px-4 py-3 text-sm last:border-b-0"
+                            className="grid grid-cols-[minmax(130px,1.1fr)_minmax(160px,1.5fr)_92px_92px_90px_90px_90px_90px] items-center gap-0 border-b border-slate-100 px-4 py-3 text-sm last:border-b-0 dark:border-slate-800"
                           >
-                            <div className="font-bold text-slate-800">
+                            <div className="font-bold text-slate-800 dark:text-slate-200">
                               └ {child.label}
                             </div>
                             <div className="min-w-0">
-                              <div className="truncate font-mono text-xs text-slate-500">
+                              <div className="truncate font-mono text-xs text-slate-500 dark:text-slate-400">
                                 {child.href}
                               </div>
                               <LinkHealthBadge
@@ -460,8 +461,8 @@ export default async function AdminNavigationPage({
                                 status={String(child.status)}
                               />
                             </div>
-                            <div className="text-slate-500">子菜单</div>
-                            <div className="text-slate-500">
+                            <div className="text-slate-500 dark:text-slate-400">子菜单</div>
+                            <div className="text-slate-500 dark:text-slate-400">
                               {getNavigationLocaleByDbValue(child.locale).label}
                             </div>
                             <div>
@@ -492,7 +493,7 @@ export default async function AdminNavigationPage({
 
             {parentItems.length === 0 ? (
               <div className="px-5 py-12 text-center">
-                <div className="text-sm font-black text-slate-600">
+                <div className="text-sm font-black text-slate-600 dark:text-slate-300">
                   当前语言和导航位置暂无数据
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
@@ -504,7 +505,7 @@ export default async function AdminNavigationPage({
         </div>
       </AdminCard>
 
-      <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-7 text-blue-900">
+      <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-7 text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
         <div className="font-black">导航升级说明</div>
         <p className="mt-1">
           前台 Footer 现在即使数据库为空，也会显示推荐兜底结构；后台补齐后会优先使用数据库菜单。后续可以继续扩展为拖拽排序、批量复制语言和导航版本预览。
@@ -514,7 +515,7 @@ export default async function AdminNavigationPage({
       <div className="mt-6">
         <AdminLink
           href="/admin"
-          className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
+          className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
         >
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.8} />
           返回运营驾驶舱

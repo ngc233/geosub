@@ -1,11 +1,11 @@
-﻿import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 function joinClasses(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
 const inputBase =
-  "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10";
+  "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-50";
 
 export function AdminInput({
   label,
@@ -17,19 +17,19 @@ export function AdminInput({
   helperText?: string;
 }) {
   return (
-    <div>
+    <label className="block">
       {label ? (
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+        <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           {label}
-        </label>
+        </span>
       ) : null}
 
       <input {...props} className={joinClasses(inputBase, className)} />
 
       {helperText ? (
-        <p className="mt-2 text-xs leading-5 text-slate-500">{helperText}</p>
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{helperText}</p>
       ) : null}
-    </div>
+    </label>
   );
 }
 
@@ -43,11 +43,11 @@ export function AdminTextarea({
   helperText?: string;
 }) {
   return (
-    <div>
+    <label className="block">
       {label ? (
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+        <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           {label}
-        </label>
+        </span>
       ) : null}
 
       <textarea
@@ -60,8 +60,8 @@ export function AdminTextarea({
       />
 
       {helperText ? (
-        <p className="mt-2 text-xs leading-5 text-slate-500">{helperText}</p>
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{helperText}</p>
       ) : null}
-    </div>
+    </label>
   );
 }

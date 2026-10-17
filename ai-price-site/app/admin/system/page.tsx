@@ -32,15 +32,15 @@ function joinClasses(...classes: Array<string | false | null | undefined>) {
 
 function getStatusStyle(status: HealthStatus) {
   if (status === "ok") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
   }
   if (status === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300";
   }
   if (status === "critical") {
-    return "border-red-200 bg-red-50 text-red-700";
+    return "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300";
   }
-  return "border-slate-200 bg-slate-50 text-slate-500";
+  return "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400";
 }
 
 function getStatusDot(status: HealthStatus) {
@@ -80,11 +80,11 @@ function StatusPill({ status, label }: { status: HealthStatus; label?: string })
 
 function MetricTile({ metric }: { metric: HealthMetric }) {
   return (
-    <div className="min-w-0 rounded-lg bg-slate-50/80 p-4">
+    <div className="min-w-0 rounded-lg bg-slate-50/80 p-4 dark:bg-slate-900/80">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-bold text-slate-400">{metric.label}</p>
-          <p className="mt-2 truncate text-lg font-black tracking-tight text-slate-950">
+          <p className="mt-2 truncate text-lg font-black tracking-tight text-slate-950 dark:text-slate-50">
             {metric.value}
           </p>
         </div>
@@ -92,7 +92,7 @@ function MetricTile({ metric }: { metric: HealthMetric }) {
       </div>
 
       {metric.helper ? (
-        <p className="mt-3 line-clamp-3 break-words text-xs leading-5 text-slate-500">
+        <p className="mt-3 line-clamp-3 break-words text-xs leading-5 text-slate-500 dark:text-slate-400">
           {metric.helper}
         </p>
       ) : null}
@@ -114,11 +114,11 @@ function HealthSectionCard({ section }: { section: HealthSection }) {
             >
               <SectionIcon status={section.status} />
             </span>
-            <h2 className="truncate text-base font-black text-slate-950">
+            <h2 className="truncate text-base font-black text-slate-950 dark:text-slate-50">
               {section.title}
             </h2>
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-500">
+          <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
             {section.description}
           </p>
         </div>
@@ -158,16 +158,16 @@ function AutomationTaskRow({ task }: { task: AutomationTask }) {
   return (
     <div
       id={task.key.replaceAll("_", "-")}
-      className="grid gap-4 border-t border-slate-100 px-5 py-4 first:border-t-0 xl:grid-cols-[minmax(210px,1.3fr)_130px_140px_minmax(180px,1fr)_104px] xl:items-center"
+      className="grid gap-4 border-t border-slate-100 px-5 py-4 first:border-t-0 xl:grid-cols-[minmax(210px,1.3fr)_130px_140px_minmax(180px,1fr)_104px] xl:items-center dark:border-slate-800"
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-black text-slate-950">{task.title}</h3>
+          <h3 className="text-sm font-black text-slate-950 dark:text-slate-50">{task.title}</h3>
           <StatusPill status={task.status} label={task.stateLabel} />
         </div>
-        <p className="mt-1 text-xs leading-5 text-slate-500">{task.description}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{task.description}</p>
         {task.errorMessage ? (
-          <p className="mt-2 line-clamp-2 text-xs font-bold text-red-700">
+          <p className="mt-2 line-clamp-2 text-xs font-bold text-red-700 dark:text-red-300">
             {task.errorMessage}
           </p>
         ) : null}
@@ -175,7 +175,7 @@ function AutomationTaskRow({ task }: { task: AutomationTask }) {
 
       <div>
         <p className="text-[11px] font-bold text-slate-400">最近成功</p>
-        <p className="mt-1 text-sm font-black text-slate-800">
+        <p className="mt-1 text-sm font-black text-slate-800 dark:text-slate-200">
           {formatTaskDate(task.latestSuccessAt)}
         </p>
         {task.durationSeconds !== null ? (
@@ -185,7 +185,7 @@ function AutomationTaskRow({ task }: { task: AutomationTask }) {
 
       <div>
         <p className="text-[11px] font-bold text-slate-400">执行频率</p>
-        <p className="mt-1 text-sm font-black text-slate-800">{task.cadence}</p>
+        <p className="mt-1 text-sm font-black text-slate-800 dark:text-slate-200">{task.cadence}</p>
         <p className="mt-1 text-xs text-slate-400">
           预计 {formatTaskDate(task.nextExpectedAt)}
         </p>
@@ -193,7 +193,7 @@ function AutomationTaskRow({ task }: { task: AutomationTask }) {
 
       <div>
         <p className="text-[11px] font-bold text-slate-400">当前队列</p>
-        <p className="mt-1 text-sm font-semibold leading-5 text-slate-700">{task.backlog}</p>
+        <p className="mt-1 text-sm font-semibold leading-5 text-slate-700 dark:text-slate-200">{task.backlog}</p>
         <p className="mt-1 text-xs text-slate-400">
           最近触发 {formatTaskDate(task.latestRunAt)}
         </p>
@@ -201,7 +201,7 @@ function AutomationTaskRow({ task }: { task: AutomationTask }) {
 
       <AdminLink
         href={task.actionHref}
-        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-800 dark:hover:bg-blue-950 dark:hover:text-blue-300"
       >
         {task.actionLabel}
         <ArrowRight size={14} strokeWidth={2.3} />
@@ -217,14 +217,14 @@ function OperationalRecoveryPanel({
 }) {
   return (
     <AdminCard className="mb-6 overflow-hidden !p-0">
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
             <RefreshCw size={18} strokeWidth={2.3} />
           </span>
           <div>
-            <h2 className="text-base font-black text-slate-950">采集任务自动恢复</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <h2 className="text-base font-black text-slate-950 dark:text-slate-50">采集任务自动恢复</h2>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               卡死任务会自动关闭，临时故障有限重试，配置错误和重试耗尽会停止并汇总。
             </p>
           </div>
@@ -241,21 +241,21 @@ function OperationalRecoveryPanel({
         />
       </div>
 
-      <div className="grid border-b border-slate-100 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid border-b border-slate-100 sm:grid-cols-2 xl:grid-cols-4 dark:border-slate-800">
         {[
           ["最近恢复周期", formatTaskDate(recovery.latestCycleAt)],
           ["正在自动重试", `${recovery.retryingJobs} 个任务`],
           ["已停止并隔离", `${recovery.quarantinedJobs} 个任务`],
           ["仍处于超时", `${recovery.staleRunningRuns} 次运行`],
         ].map(([label, value]) => (
-          <div key={label} className="min-w-0 border-t border-slate-100 px-5 py-4 first:border-t-0 sm:[&:nth-child(-n+2)]:border-t-0 xl:border-l xl:border-t-0 xl:first:border-l-0">
+          <div key={label} className="min-w-0 border-t border-slate-100 px-5 py-4 first:border-t-0 sm:[&:nth-child(-n+2)]:border-t-0 xl:border-l xl:border-t-0 xl:first:border-l-0 dark:border-slate-800">
             <p className="text-[11px] font-bold text-slate-400">{label}</p>
-            <p className="mt-1 truncate text-sm font-black text-slate-900">{value}</p>
+            <p className="mt-1 truncate text-sm font-black text-slate-900 dark:text-slate-100">{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3 text-xs font-semibold text-slate-600">
+      <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:text-slate-300 dark:bg-slate-900/70">
         最近一轮自动关闭 {recovery.staleRunsRecovered} 次超时运行，重新排队 {recovery.jobsRequeued} 个任务，新增隔离 {recovery.jobsQuarantined} 个任务。
       </div>
 
@@ -264,11 +264,11 @@ function OperationalRecoveryPanel({
           {recovery.incidents.map((incident) => (
             <div
               key={incident.key}
-              className="grid gap-3 border-t border-slate-100 px-5 py-4 first:border-t-0 md:grid-cols-[minmax(150px,0.8fr)_minmax(240px,2fr)_104px] md:items-center"
+              className="grid gap-3 border-t border-slate-100 px-5 py-4 first:border-t-0 md:grid-cols-[minmax(150px,0.8fr)_minmax(240px,2fr)_104px] md:items-center dark:border-slate-800"
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-black text-slate-950">
+                  <p className="truncate text-sm font-black text-slate-950 dark:text-slate-50">
                     {incident.productName}
                   </p>
                   <StatusPill status={incident.status} label={incident.label} />
@@ -277,12 +277,12 @@ function OperationalRecoveryPanel({
                   {incident.jobCount} 个任务停止自动执行
                 </p>
               </div>
-              <p className="line-clamp-2 break-words text-xs leading-5 text-slate-600">
+              <p className="line-clamp-2 break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
                 {incident.detail}
               </p>
               <AdminLink
                 href={incident.actionHref}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-red-800 dark:hover:bg-red-950 dark:hover:text-red-300"
               >
                 查看任务
                 <ArrowRight size={14} strokeWidth={2.3} />
@@ -291,7 +291,7 @@ function OperationalRecoveryPanel({
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-3 px-5 py-5 text-sm font-semibold text-emerald-800">
+        <div className="flex items-center gap-3 px-5 py-5 text-sm font-semibold text-emerald-800 dark:text-emerald-200">
           <ShieldAlert size={18} strokeWidth={2.3} />
           没有需要人工介入的采集故障。
         </div>
@@ -320,24 +320,24 @@ export default async function AdminSystemPage() {
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <AdminCard>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
               <Activity size={20} strokeWidth={2.4} />
             </span>
             <div>
-              <p className="text-sm font-bold text-slate-500">总体状态</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">{health.summary.label}</p>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">总体状态</p>
+              <p className="mt-1 text-2xl font-black text-slate-950 dark:text-slate-50">{health.summary.label}</p>
             </div>
           </div>
         </AdminCard>
 
         <AdminCard>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
               <Database size={20} strokeWidth={2.4} />
             </span>
             <div>
-              <p className="text-sm font-bold text-slate-500">待处理项</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">待处理项</p>
+              <p className="mt-1 text-2xl font-black text-slate-950 dark:text-slate-50">
                 {health.summary.issueCount}
               </p>
             </div>
@@ -346,12 +346,12 @@ export default async function AdminSystemPage() {
 
         <AdminCard>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               <Clock3 size={20} strokeWidth={2.4} />
             </span>
             <div>
-              <p className="text-sm font-bold text-slate-500">检查时间</p>
-              <p className="mt-1 text-lg font-black text-slate-950">
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">检查时间</p>
+              <p className="mt-1 text-lg font-black text-slate-950 dark:text-slate-50">
                 {formatTaskDate(health.checkedAt)}
               </p>
             </div>
@@ -360,17 +360,17 @@ export default async function AdminSystemPage() {
       </div>
 
       <AdminCard className="mb-6 overflow-hidden !p-0">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
               <ServerCog size={18} strokeWidth={2.3} />
             </span>
             <div>
-              <h2 className="text-base font-black text-slate-950">服务器自动任务</h2>
-              <p className="mt-0.5 text-xs text-slate-500">七类任务统一记录，页面每分钟自动刷新。</p>
+              <h2 className="text-base font-black text-slate-950 dark:text-slate-50">服务器自动任务</h2>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">七类任务统一记录，页面每分钟自动刷新。</p>
             </div>
           </div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-slate-500">
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
             <CalendarClock size={15} strokeWidth={2.2} />
             最近检查 {formatTaskDate(health.checkedAt)}
           </div>
@@ -384,8 +384,8 @@ export default async function AdminSystemPage() {
           </div>
         ) : (
           <div className="px-5 py-10 text-center">
-            <p className="text-sm font-black text-slate-800">尚未读取到自动任务记录</p>
-            <p className="mt-2 text-xs text-slate-500">执行最新数据库迁移后，任务状态会在这里出现。</p>
+            <p className="text-sm font-black text-slate-800 dark:text-slate-200">尚未读取到自动任务记录</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">执行最新数据库迁移后，任务状态会在这里出现。</p>
           </div>
         )}
       </AdminCard>
@@ -395,8 +395,8 @@ export default async function AdminSystemPage() {
       ) : null}
 
       {health.issues.length > 0 ? (
-        <AdminCard className="mb-6 border-amber-200 bg-amber-50">
-          <div className="mb-3 flex items-center gap-2 text-amber-800">
+        <AdminCard className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+          <div className="mb-3 flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <AlertTriangle size={18} strokeWidth={2.4} />
             <h2 className="text-base font-black">需要先看的问题</h2>
           </div>
@@ -404,7 +404,7 @@ export default async function AdminSystemPage() {
             {health.issues.map((issue) => (
               <div
                 key={issue}
-                className="rounded-lg border border-amber-200 bg-white/70 px-4 py-3 text-sm font-semibold leading-6 text-amber-900"
+                className="rounded-lg border border-amber-200 bg-white/70 px-4 py-3 text-sm font-semibold leading-6 text-amber-900 dark:border-amber-800 dark:bg-slate-900/70 dark:text-amber-200"
               >
                 {issue}
               </div>

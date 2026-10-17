@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Admin overrides are scoped; public pages retain the system preference. */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-admin-theme="light"], [data-admin-theme="light"] *)) { @slot; }
+  }
+  &:where([data-admin-theme="dark"], [data-admin-theme="dark"] *) { @slot; }
+}
+
 :root {
   --background: #f7f8fa;
   --foreground: #18181b;
@@ -425,3 +433,5 @@ textarea {
   color: #0f172a;
   font-size: 0.9em;
 }
+
+[data-admin-permission-denied] :is(button,input,textarea,select){cursor:not-allowed;opacity:.6}

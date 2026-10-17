@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import BrandIcon from "./BrandIcon";
+import HomePromotion from "./HomePromotion";
 import HomeHeroMap, { type HomeMapRegion } from "./HomeHeroMap";
 import { getHomepageCopy } from "../lib/homepage-copy";
 import { siteLocaleDefinitions, type SiteLocale } from "../lib/site-locale";
@@ -313,6 +314,8 @@ export default function HomepageExperience({
           </div>
         </div>
       </section>
+
+      {locale === "zh" ? <HomePromotion /> : null}
 
       <section className="border-t border-zinc-200 bg-[var(--background)] px-4 py-14 sm:px-6 sm:py-16 lg:px-8 dark:border-zinc-800">
         <div className="mx-auto max-w-[1120px]">

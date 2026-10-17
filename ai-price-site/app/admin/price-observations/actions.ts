@@ -30,7 +30,7 @@ async function getObservationProductSlug(id: string) {
 }
 
 export async function approveObservation(formData: FormData) {
-  await requireAdmin();
+  await requireAdmin("manage");
   const id = getObservationId(formData);
   const productSlug = await getObservationProductSlug(id);
 
@@ -42,7 +42,7 @@ export async function approveObservation(formData: FormData) {
 }
 
 export async function ignoreObservation(formData: FormData) {
-  await requireAdmin();
+  await requireAdmin("manage");
   const id = getObservationId(formData);
 
   await ignorePriceObservation(id, "Ignored from admin review page");
@@ -51,7 +51,7 @@ export async function ignoreObservation(formData: FormData) {
 }
 
 export async function rejectObservation(formData: FormData) {
-  await requireAdmin();
+  await requireAdmin("manage");
   const id = getObservationId(formData);
 
   await rejectPriceObservation(id, "Rejected from admin review page");

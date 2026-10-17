@@ -1,3 +1,5 @@
+import AdminLink from "../../../components/admin/AdminLink";
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { ArrowUpRight } from "lucide-react";
 import { AdminBadge } from "../../../components/admin/AdminBadge";
 import { AdminButton } from "../../../components/admin/AdminButton";
@@ -36,8 +38,9 @@ export function SearchOpportunityActions({
 }) {
   return (
     <div className="flex min-w-40 flex-col items-end gap-2">
+      {workflow && gap.kind === "content" ? <AdminLink href="/admin/content/effects" className="text-sm underline">关联内容版本与效果</AdminLink> : null}
       {gap.actionHref ? (
-        <form action={startSearchOpportunityAction}>
+        <AdminActionForm action={startSearchOpportunityAction}>
           <input type="hidden" name="query" value={gap.query} />
           <input type="hidden" name="kind" value={gap.kind} />
           <input type="hidden" name="destination" value={gap.actionHref} />
@@ -51,7 +54,7 @@ export function SearchOpportunityActions({
               : gapActionLabel(gap.kind)}
             <ArrowUpRight size={14} />
           </AdminButton>
-        </form>
+        </AdminActionForm>
       ) : (
         <span className="text-xs font-semibold text-slate-400 dark:text-slate-400">
           暂不创建
@@ -60,7 +63,7 @@ export function SearchOpportunityActions({
 
       <div className="flex flex-wrap justify-end gap-1">
         {workflow?.status === "in_progress" ? (
-          <form action={updateSearchOpportunityAction}>
+          <AdminActionForm action={updateSearchOpportunityAction}>
             <input type="hidden" name="query" value={gap.query} />
             <input type="hidden" name="kind" value={gap.kind} />
             <input type="hidden" name="status" value="resolved" />
@@ -68,9 +71,9 @@ export function SearchOpportunityActions({
             <AdminButton type="submit" size="sm" variant="success">
               标记已解决
             </AdminButton>
-          </form>
+          </AdminActionForm>
         ) : null}
-        <form action={updateSearchOpportunityAction}>
+        <AdminActionForm action={updateSearchOpportunityAction}>
           <input type="hidden" name="query" value={gap.query} />
           <input type="hidden" name="kind" value={gap.kind} />
           <input type="hidden" name="status" value="ignored" />
@@ -78,7 +81,7 @@ export function SearchOpportunityActions({
           <AdminButton type="submit" size="sm" variant="ghost">
             忽略
           </AdminButton>
-        </form>
+        </AdminActionForm>
       </div>
     </div>
   );
@@ -237,7 +240,7 @@ export function SearchOpportunityWorkflowSections({
                       </span>
                     </AdminTd>
                     <AdminTd align="right">
-                      <form action={updateSearchOpportunityAction}>
+                      <AdminActionForm action={updateSearchOpportunityAction}>
                         <input type="hidden" name="query" value={record.query} />
                         <input type="hidden" name="kind" value={record.kind} />
                         <input type="hidden" name="status" value="open" />
@@ -245,7 +248,7 @@ export function SearchOpportunityWorkflowSections({
                         <AdminButton type="submit" size="sm" variant="secondary">
                           恢复
                         </AdminButton>
-                      </form>
+                      </AdminActionForm>
                     </AdminTd>
                   </AdminTr>
                 ))}

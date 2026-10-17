@@ -237,7 +237,7 @@ export function TrendChart({
                     label: item.label,
                     shortLabel: item.label.replace("个月", "月"),
                     value: String(item.value),
-                    href: `/admin?range=${item.value}`,
+                    href: `/admin/analytics/details?range=${item.value}`,
                   })),
                   {
                     label: "自定义",
@@ -275,7 +275,7 @@ export function TrendChart({
           </div>
 
           <form
-            action="/admin"
+            action="/admin/analytics/details"
             method="get"
             className={`flex flex-wrap items-end gap-2 rounded-xl border px-3 py-2 ${
               period.isCustom

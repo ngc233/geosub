@@ -1,3 +1,5 @@
+import { ANALYTICS_KEYS, NOTIFICATION_KEYS, settingsVersion } from "../../../lib/admin-settings-version";
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
 import { AdminButton } from "../../../components/admin/AdminButton";
 import AdminAlert from "../../../components/admin/AdminAlert";
@@ -43,8 +45,8 @@ const notificationStatusCopy: Record<OperationsNotificationStatus, {
 }> = {
   sent: { label: "已发送", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
   suppressed: { label: "重复已抑制", className: "bg-blue-50 text-blue-700 ring-blue-200" },
-  no_action: { label: "无需通知", className: "bg-slate-100 text-slate-600 ring-slate-200" },
-  disabled: { label: "外发已关闭", className: "bg-slate-100 text-slate-600 ring-slate-200" },
+  no_action: { label: "无需通知", className: "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300" },
+  disabled: { label: "外发已关闭", className: "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300" },
   misconfigured: { label: "渠道未就绪", className: "bg-amber-50 text-amber-700 ring-amber-200" },
   failed: { label: "发送失败", className: "bg-red-50 text-red-700 ring-red-200" },
 };
@@ -77,6 +79,7 @@ async function getAnalyticsSettings() {
   const byKey = new Map(rows.map((row) => [row.settingKey, row]));
 
   return {
+    recordVersion: settingsVersion(rows,ANALYTICS_KEYS),
     ga4Id: byKey.get("ga4_id")?.valueText || "",
     gtmId: byKey.get("gtm_id")?.valueText || "",
   };
@@ -87,12 +90,14 @@ export default async function AdminSettingsPage({
 }: {
   searchParams?: Promise<SettingsSearchParams>;
 }) {
-  const [settings, notification, notificationHistory, query] = await Promise.all([
+  const [settings, notificationConfig, notificationHistory, query] = await Promise.all([
     getAnalyticsSettings(),
     getOperationsNotificationConfig(),
     getOperationsNotificationHistory(),
     searchParams ?? Promise.resolve<SettingsSearchParams>({}),
   ]);
+  const notificationRows=await prisma.siteSetting.findMany({where:{settingKey:{in:NOTIFICATION_KEYS}}});
+  const notification = {...notificationConfig, enabled: notificationRows.find(row => row.settingKey === "operations_brief_enabled")?.valueText === "true"};
   const saved = query.saved === "1";
   const analyticsError = query.analyticsError
     ? analyticsErrorCopy[query.analyticsError] || "Google 统计设置未保存，请检查后重试。"
@@ -159,12 +164,12 @@ export default async function AdminSettingsPage({
           description="填写 Google 后台给出的 ID 即可；直接粘贴包含 ID 的 Google 代码也能自动识别。前台会安全注入统计脚本。"
         />
 
-        <div className="mt-5 flex flex-wrap gap-2 border-y border-slate-100 py-4 text-xs font-bold">
+        <div className="mt-5 flex flex-wrap gap-2 border-y border-slate-100 py-4 text-xs font-bold dark:border-slate-800">
           <span
             className={
               settings.ga4Id
                 ? "rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-700"
-                : "rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-500"
+                : "rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
             }
           >
             GA4 {settings.ga4Id ? "已配置" : "未配置"}
@@ -173,53 +178,53 @@ export default async function AdminSettingsPage({
             className={
               settings.gtmId
                 ? "rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-700"
-                : "rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-500"
+                : "rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
             }
           >
             GTM {settings.gtmId ? "已配置" : "未配置"}
           </span>
         </div>
 
-        <form action={updateAnalyticsSettings} className="mt-6 space-y-6">
+        <AdminActionForm action={updateAnalyticsSettings} className="mt-6 space-y-6"><input type="hidden" name="recordVersion" value={settings.recordVersion} />
           <label className="block">
-            <span className="text-sm font-bold text-slate-700">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
               GA4 Measurement ID
             </span>
             <input
               name="ga4_id"
               defaultValue={settings.ga4Id}
               placeholder="G-XXXXXXXXXX"
-              className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
             />
-            <span className="mt-2 block text-xs leading-5 text-slate-500">
+            <span className="mt-2 block text-xs leading-5 text-slate-500 dark:text-slate-400">
               在 Google Analytics 的网站数据流中可找到以 G- 开头的 Measurement ID。若同时填写 GTM，前台优先加载 GTM，避免重复统计。
             </span>
           </label>
 
           <label className="block">
-            <span className="text-sm font-bold text-slate-700">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
               GTM Container ID
             </span>
             <input
               name="gtm_id"
               defaultValue={settings.gtmId}
               placeholder="GTM-XXXXXXX"
-              className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
             />
-            <span className="mt-2 block text-xs leading-5 text-slate-500">
+            <span className="mt-2 block text-xs leading-5 text-slate-500 dark:text-slate-400">
               如果你使用 Google Tag Manager 统一管理 GA4、Ads 和事件，请填写以 GTM- 开头的 Container ID。
             </span>
           </label>
 
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3">
-            <p className="text-xs leading-5 text-slate-500">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800">
+            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
               保存后新页面访问会自动加载。后台、登录页和 API 不会被本站内置事件统计记录。
             </p>
             <AdminButton type="submit">
               保存设置
             </AdminButton>
           </div>
-        </form>
+        </AdminActionForm>
       </AdminCard>
 
       <AdminCard className="mt-5">
@@ -229,32 +234,32 @@ export default async function AdminSettingsPage({
         />
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-bold text-slate-500">站内简报</p>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">站内简报</p>
             <p className="mt-1 text-sm font-bold text-emerald-700">始终启用</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">进入后台首页即可查看，无需配置。</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">进入后台首页即可查看，无需配置。</p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-bold text-slate-500">安全通知渠道</p>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">安全通知渠道</p>
             <p className={`mt-1 text-sm font-bold ${notification.channelConfigured ? "text-emerald-700" : "text-amber-700"}`}>
               {notification.channelConfigured ? `已配置 · ${notification.endpointHost}` : "服务器未配置"}
             </p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">地址和密钥仅保存在服务器环境中，后台不会显示敏感信息。</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">地址和密钥仅保存在服务器环境中，后台不会显示敏感信息。</p>
           </div>
         </div>
 
-        <form action={updateOperationsNotificationSettings} className="mt-5">
-          <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4">
+        <AdminActionForm action={updateOperationsNotificationSettings} className="mt-5"><input type="hidden" name="recordVersion" value={settingsVersion(notificationRows,NOTIFICATION_KEYS)} />
+          <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
             <input
               name="operations_brief_enabled"
               type="checkbox"
               defaultChecked={notification.enabled}
               disabled={!notification.channelConfigured}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed dark:border-slate-700"
             />
             <span>
-              <span className="block text-sm font-bold text-slate-800">启用外部异常简报</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-500">
+              <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">启用外部异常简报</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">
                 每次运行只汇总需要人工处理的产品；全部健康、运行中或已排队时不会打扰你。
               </span>
             </span>
@@ -262,23 +267,23 @@ export default async function AdminSettingsPage({
           <div className="mt-4 flex justify-end">
             <AdminButton type="submit">保存通知设置</AdminButton>
           </div>
-        </form>
+        </AdminActionForm>
 
-        <div className="mt-6 border-t border-slate-100 pt-5">
+        <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">最近通知记录</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-500">时间按新加坡时间显示；重复异常只记录，不再次外发。</p>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">最近通知记录</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">时间按新加坡时间显示；重复异常只记录，不再次外发。</p>
             </div>
             <span className="text-xs font-semibold text-slate-400">最近 {notificationHistory.length} 次</span>
           </div>
 
           {notificationHistory.length > 0 ? (
-            <div className="mt-4 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
+            <div className="mt-4 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
               {notificationHistory.map((delivery) => {
                 const status = notificationStatusCopy[delivery.status];
                 return (
-                  <div key={delivery.id} className="grid gap-3 bg-white p-4 sm:grid-cols-[150px_minmax(0,1fr)_110px] sm:items-center">
+                  <div key={delivery.id} className="grid gap-3 bg-white p-4 sm:grid-cols-[150px_minmax(0,1fr)_110px] sm:items-center dark:bg-slate-900">
                     <div>
                       <span className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset ${status.className}`}>
                         {status.label}
@@ -288,12 +293,12 @@ export default async function AdminSettingsPage({
                       </p>
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-slate-900">{delivery.title}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                      <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{delivery.title}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
                         {delivery.errorMessage || delivery.summary}
                       </p>
                     </div>
-                    <p className="text-xs font-semibold tabular-nums text-slate-500 sm:text-right">
+                    <p className="text-xs font-semibold tabular-nums text-slate-500 sm:text-right dark:text-slate-400">
                       涉及 {delivery.interventionCount} 个产品
                     </p>
                   </div>
@@ -301,7 +306,7 @@ export default async function AdminSettingsPage({
               })}
             </div>
           ) : (
-            <p className="mt-4 rounded-lg border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+            <p className="mt-4 rounded-lg border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
               定时简报首次运行后，这里会显示送达结果。
             </p>
           )}
@@ -314,22 +319,22 @@ export default async function AdminSettingsPage({
           description="单管理员模式下可在这里主动更换密码。修改后当前设备保持登录，其他设备上的后台会话会全部注销。"
         />
 
-        <form action={updateAdminPassword} className="mt-6 space-y-5">
+        <AdminActionForm capability="account" action={updateAdminPassword} className="mt-6 space-y-5">
           <div className="grid gap-5 lg:grid-cols-3">
             <label className="block">
-              <span className="text-sm font-bold text-slate-700">当前密码</span>
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">当前密码</span>
               <input
                 name="current_password"
                 type="password"
                 autoComplete="current-password"
                 required
                 maxLength={128}
-                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
               />
             </label>
 
             <label className="block">
-              <span className="text-sm font-bold text-slate-700">新密码</span>
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">新密码</span>
               <input
                 name="new_password"
                 type="password"
@@ -337,12 +342,12 @@ export default async function AdminSettingsPage({
                 required
                 minLength={14}
                 maxLength={128}
-                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
               />
             </label>
 
             <label className="block">
-              <span className="text-sm font-bold text-slate-700">确认新密码</span>
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">确认新密码</span>
               <input
                 name="confirm_password"
                 type="password"
@@ -350,20 +355,20 @@ export default async function AdminSettingsPage({
                 required
                 minLength={14}
                 maxLength={128}
-                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
               />
             </label>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="max-w-3xl text-xs leading-5 text-slate-500">
+          <div className="flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+            <p className="max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">
               至少 14 个字符，并同时包含大小写字母、数字和符号。系统不会通过网页展示或发送现有密码。
             </p>
             <AdminButton type="submit">
               更新密码
             </AdminButton>
           </div>
-        </form>
+        </AdminActionForm>
       </AdminCard>
     </>
   );

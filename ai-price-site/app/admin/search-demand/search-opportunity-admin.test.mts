@@ -184,7 +184,7 @@ test("conversion repair workflow is authenticated audited and reversible", async
   assert.match(migration, /'in_progress', 'resolved', 'ignored'/);
   assert.match(actions, /startSearchConversionRepairAction/);
   assert.match(actions, /updateSearchConversionRepairAction/);
-  assert.match(actions, /await requireAdmin\(\)/);
+  assert.match(actions, /await requireAdmin\("manage"\)/);
   assert.match(actions, /start_search_conversion_repair/);
   assert.match(page, /转化修复任务/);
   assert.match(page, /只有新增商业点击才算完成转化/);
@@ -576,7 +576,7 @@ test("search opportunity actions require admin and restrict redirects", async ()
     "utf8",
   );
 
-  assert.match(source, /await requireAdmin\(\)/);
+  assert.match(source, /await requireAdmin\("manage"\)/);
   assert.match(source, /ALLOWED_DESTINATIONS/);
   assert.match(source, /\/admin\/discovery\?/);
   assert.match(source, /\/admin\/articles\/new\?/);

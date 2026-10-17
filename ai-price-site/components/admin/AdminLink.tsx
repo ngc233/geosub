@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAdminPermission } from "./AdminPermissions";
 import type { ComponentProps } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -22,6 +23,7 @@ export default function AdminLink({
   scroll,
   ...props
 }: AdminLinkProps) {
+  const canManage = useAdminPermission("manage");
   const router = useRouter();
   const pathname = usePathname();
   const hrefValue = typeof href === "string" ? href : href.pathname || "";
@@ -33,6 +35,8 @@ export default function AdminLink({
     if (!prefetchOnIntent) return;
     if (hrefValue?.startsWith("/admin")) router.prefetch(hrefValue);
   };
+
+  if (!canManage && /\/admin\/[^?#]+\/new$/.test(destinationPathname)) return <span className={props.className} aria-disabled="true" title="仅管理员可新增">{children}</span>;
 
   return (
     <Link
@@ -50,7 +54,7 @@ export default function AdminLink({
       }}
       onClick={onClick}
     >
-      {children}
+      {!canManage && destinationPathname.endsWith("/edit") && children === "编辑" ? "查看" : children}
     </Link>
   );
 }

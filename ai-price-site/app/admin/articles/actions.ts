@@ -1,6 +1,6 @@
 "use server";
 
-import { ArticleStatus, ArticleType, Locale, StructuredDataType } from "@prisma/client";
+import { type Prisma, ArticleStatus, ArticleType, Locale, StructuredDataType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
@@ -8,6 +8,8 @@ import { linkSearchOpportunity } from "../../../lib/admin-search-opportunities";
 import { getArticleSeoDraft } from "../../../lib/article-seo-draft";
 import { estimateReadingTime, normalizeArticleSlug } from "../../../lib/articles";
 import { prisma } from "../../../lib/prisma";
+
+import { attemptAdminSave, assertAdminVersion, adminRecordVersion, AdminSaveConflict } from "../../../lib/admin-save";
 
 function cleanText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
@@ -83,23 +85,6 @@ function revalidateArticlePaths(slug?: string | null) {
   }
 }
 
-async function getArticleForAdminAction(id: string) {
-  if (!id) return null;
-
-  return prisma.article.findUnique({
-    where: {
-      id,
-    },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      status: true,
-      deletedAt: true,
-    },
-  });
-}
-
 function parseTagIds(formData: FormData) {
   return formData
     .getAll("tagIds")
@@ -114,7 +99,7 @@ function parseIds(formData: FormData, key: string) {
     .filter(Boolean);
 }
 
-async function syncArticleTags(articleId: string, tagIds: string[]) {
+async function syncArticleTags(prisma: Prisma.TransactionClient, articleId: string, tagIds: string[]) {
   await prisma.articleTagLink.deleteMany({
     where: {
       articleId,
@@ -134,7 +119,7 @@ async function syncArticleTags(articleId: string, tagIds: string[]) {
   });
 }
 
-async function syncArticleRelations({
+async function syncArticleRelations(prisma: Prisma.TransactionClient, {
   articleId,
   productIds,
   relatedArticleIds,
@@ -219,14 +204,14 @@ function getArticleData(formData: FormData) {
 }
 
 export async function createArticleAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const data = getArticleData(formData);
   const tagIds = parseTagIds(formData);
   const productIds = parseIds(formData, "relatedProductIds");
   const relatedArticleIds = parseIds(formData, "relatedArticleIds");
 
   if (!data.title || !data.slug) {
-    redirect(`/admin/articles/new?locale=${data.locale}&error=missing`);
+    return { error: "请填写标题和网址标识。输入仍保留。" };
   }
 
   const exists = await prisma.article.findUnique({
@@ -239,15 +224,16 @@ export async function createArticleAction(formData: FormData) {
   });
 
   if (exists) {
-    redirect(`/admin/articles/new?locale=${data.locale}&error=slug`);
+    return { error: "此语言下的网址标识已存在，请更换。输入仍保留。" };
   }
 
+  const result = await attemptAdminSave(prisma, async (prisma) => {
   const article = await prisma.article.create({
     data,
   });
 
-  await syncArticleTags(article.id, tagIds);
-  await syncArticleRelations({
+  await syncArticleTags(prisma, article.id, tagIds);
+  await syncArticleRelations(prisma, {
     articleId: article.id,
     productIds,
     relatedArticleIds: relatedArticleIds.filter((id) => id !== article.id),
@@ -272,7 +258,12 @@ export async function createArticleAction(formData: FormData) {
     query: cleanText(formData.get("searchOpportunityQuery")),
     articleId: article.id,
     adminId: admin.id,
+  }, prisma);
+
+    return article;
   });
+  if (!result.ok) return { error: result.error };
+  const article = result.value;
 
   revalidateArticlePaths(article.slug);
   revalidatePath("/admin/search-demand");
@@ -280,7 +271,7 @@ export async function createArticleAction(formData: FormData) {
 }
 
 export async function updateArticleAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
   const data = getArticleData(formData);
   const tagIds = parseTagIds(formData);
@@ -290,9 +281,11 @@ export async function updateArticleAction(formData: FormData) {
   );
 
   if (!id || !data.title || !data.slug) {
-    redirect("/admin/articles?error=missing");
+    return { error: "必填资料不完整，请检查后重试。输入仍保留。" };
   }
 
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+    await prisma.$queryRaw`SELECT id FROM articles WHERE id = ${id}::uuid FOR UPDATE`;
   const current = await prisma.article.findUnique({
     where: {
       id,
@@ -300,8 +293,11 @@ export async function updateArticleAction(formData: FormData) {
   });
 
   if (!current) {
-    redirect("/admin/articles?error=not-found");
+    throw new AdminSaveConflict("文章已不存在，请保留输入并返回文章列表核对。");
   }
+
+  assertAdminVersion(current, formData.get("recordVersion"));
+  if (current.deletedAt) throw new AdminSaveConflict("文章已移入回收站，请先核对状态。");
 
   const slugOwner = await prisma.article.findUnique({
     where: {
@@ -313,7 +309,7 @@ export async function updateArticleAction(formData: FormData) {
   });
 
   if (slugOwner && slugOwner.id !== id) {
-    redirect(`/admin/articles/${id}/edit?error=slug`);
+    throw new AdminSaveConflict("此语言下的网址标识已存在，请更换后保存。");
   }
 
   const updated = await prisma.article.update({
@@ -323,8 +319,8 @@ export async function updateArticleAction(formData: FormData) {
     data,
   });
 
-  await syncArticleTags(updated.id, tagIds);
-  await syncArticleRelations({
+  await syncArticleTags(prisma, updated.id, tagIds);
+  await syncArticleRelations(prisma, {
     articleId: updated.id,
     productIds,
     relatedArticleIds,
@@ -350,18 +346,25 @@ export async function updateArticleAction(formData: FormData) {
     },
   });
 
+    return { current, updated };
+  });
+  if (!result.ok) return { error: result.error };
+  const { current, updated } = result.value;
+
   revalidateArticlePaths(current.slug);
   revalidateArticlePaths(updated.slug);
-  redirect(`/admin/articles/${updated.id}/edit?saved=1`);
+  return { recordVersion: adminRecordVersion(updated) };
 }
 
 export async function archiveArticleAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
-  const article = await getArticleForAdminAction(id);
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+    await prisma.$queryRaw`SELECT id FROM articles WHERE id = ${id}::uuid FOR UPDATE`;
+  const article = await prisma.article.findUnique({ where: { id } });
 
   if (!article || article.deletedAt) {
-    redirect("/admin/articles?error=not-found");
+    throw new AdminSaveConflict("文章已不存在或状态已变化，请刷新列表核对。");
   }
 
   const updated = await prisma.article.update({
@@ -395,17 +398,24 @@ export async function archiveArticleAction(formData: FormData) {
     },
   });
 
+    return article;
+  });
+  if (!result.ok) return { error: result.error };
+  const article = result.value;
+
   revalidateArticlePaths(article.slug);
   redirect("/admin/articles?archived=1");
 }
 
 export async function moveArticleToTrashAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
-  const article = await getArticleForAdminAction(id);
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+    await prisma.$queryRaw`SELECT id FROM articles WHERE id = ${id}::uuid FOR UPDATE`;
+  const article = await prisma.article.findUnique({ where: { id } });
 
   if (!article || article.deletedAt) {
-    redirect("/admin/articles?error=not-found");
+    throw new AdminSaveConflict("文章已不存在或状态已变化，请刷新列表核对。");
   }
 
   const updated = await prisma.article.update({
@@ -441,17 +451,24 @@ export async function moveArticleToTrashAction(formData: FormData) {
     },
   });
 
+    return article;
+  });
+  if (!result.ok) return { error: result.error };
+  const article = result.value;
+
   revalidateArticlePaths(article.slug);
   redirect("/admin/articles?trashed=1");
 }
 
 export async function restoreArticleFromTrashAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
-  const article = await getArticleForAdminAction(id);
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+    await prisma.$queryRaw`SELECT id FROM articles WHERE id = ${id}::uuid FOR UPDATE`;
+  const article = await prisma.article.findUnique({ where: { id } });
 
   if (!article || !article.deletedAt) {
-    redirect("/admin/articles/trash?error=not-found");
+    throw new AdminSaveConflict("文章已不存在或状态已变化，请刷新列表核对。");
   }
 
   const updated = await prisma.article.update({
@@ -487,17 +504,25 @@ export async function restoreArticleFromTrashAction(formData: FormData) {
     },
   });
 
+    return article;
+  });
+  if (!result.ok) return { error: result.error };
+  const article = result.value;
+
   revalidateArticlePaths(article.slug);
   redirect("/admin/articles/trash?restored=1");
 }
 
 export async function permanentlyDeleteArticleAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
-  const article = await getArticleForAdminAction(id);
+  if (formData.get("confirmDelete") !== "on") return { error: "请先确认永久删除，此操作不可恢复。" };
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+    await prisma.$queryRaw`SELECT id FROM articles WHERE id = ${id}::uuid FOR UPDATE`;
+  const article = await prisma.article.findUnique({ where: { id } });
 
   if (!article || !article.deletedAt) {
-    redirect("/admin/articles/trash?error=not-found");
+    throw new AdminSaveConflict("文章已恢复或删除，请刷新回收站核对。");
   }
 
   await prisma.auditLog.create({
@@ -522,24 +547,33 @@ export async function permanentlyDeleteArticleAction(formData: FormData) {
     },
   });
 
+    return article;
+  });
+  if (!result.ok) return { error: result.error };
+  const article = result.value;
+
   revalidateArticlePaths(article.slug);
   redirect("/admin/articles/trash?deleted=1");
 }
 
 export async function generateArticleSeoDraftAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
 
   if (!id) {
-    redirect("/admin/articles?error=missing");
+    return { error: "必填资料不完整，请检查后重试。输入仍保留。" };
   }
 
+  const before = await prisma.article.findUnique({where:{id}});
+  if (!before || before.deletedAt || adminRecordVersion(before) !== String(formData.get("recordVersion") || "")) return {error:"文章已改变，请重新打开页面核对后再应用草稿。"};
   const draft = await getArticleSeoDraft(id);
 
   if (!draft) {
-    redirect("/admin/articles?error=not-found");
+    return {error:"文章草稿不可用，请重新打开页面核对。"};
   }
 
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+  await prisma.$queryRaw`SELECT id FROM articles WHERE id = ${id}::uuid FOR UPDATE`;
   const draftArticle = await prisma.article.findUnique({
     where: {
       id,
@@ -547,9 +581,10 @@ export async function generateArticleSeoDraftAction(formData: FormData) {
   });
 
   if (!draftArticle || draftArticle.deletedAt) {
-    redirect("/admin/articles?error=not-found");
+    throw new AdminSaveConflict("文章已不存在或已移入回收站。");
   }
 
+  assertAdminVersion(draftArticle, formData.get("recordVersion"));
   const draftUpdated = await prisma.article.update({
     where: {
       id,
@@ -584,12 +619,16 @@ export async function generateArticleSeoDraftAction(formData: FormData) {
     },
   });
 
+  return draftUpdated;
+  });
+  if (!result.ok) return {error:result.error};
+  const draftUpdated = result.value;
   revalidateArticlePaths(draftUpdated.slug);
   redirect(`/admin/articles/${draftUpdated.id}/edit?seoDrafted=1`);
 }
 
 export async function createArticleCategoryAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const name = cleanText(formData.get("name"));
   const slug = normalizeArticleSlug(cleanText(formData.get("slug")) || name);
   const locale = parseLocale(formData.get("locale"));
@@ -643,7 +682,7 @@ export async function createArticleCategoryAction(formData: FormData) {
 }
 
 export async function createArticleTagAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const name = cleanText(formData.get("name"));
   const slug = normalizeArticleSlug(cleanText(formData.get("slug")) || name);
   const locale = parseLocale(formData.get("locale"));
@@ -695,7 +734,7 @@ export async function createArticleTagAction(formData: FormData) {
 }
 
 export async function toggleArticleCategoryStatusAction(formData: FormData) {
-  await requireAdmin();
+  await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
 
   const category = await prisma.articleCategory.findUnique({
@@ -723,7 +762,7 @@ export async function toggleArticleCategoryStatusAction(formData: FormData) {
 }
 
 export async function toggleArticleTagStatusAction(formData: FormData) {
-  await requireAdmin();
+  await requireAdmin("manage");
   const id = cleanText(formData.get("id"));
 
   const tag = await prisma.articleTag.findUnique({

@@ -123,7 +123,7 @@ export default async function AdminGrowthPage({
                 key={range}
                 href={`/admin/growth?days=${range}`}
                 aria-current={days === range ? "page" : undefined}
-                className={`rounded-md px-3 py-2 text-sm font-bold transition ${days === range ? "bg-blue-700 text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"}`}
+                className={`rounded-md px-3 py-2 text-sm font-bold transition ${days === range ? "bg-blue-700 text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white dark:hover:text-slate-100"}`}
               >
                 {range} 天
               </AdminLink>

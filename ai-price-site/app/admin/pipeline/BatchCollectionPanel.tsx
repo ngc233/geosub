@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { CheckSquare2, Loader2, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { adminButtonClassName } from "../../../components/admin/AdminButton";
@@ -61,7 +62,7 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
         <span className="shrink-0 text-xs font-bold text-blue-700">展开选择</span>
       </summary>
 
-      <form
+      <AdminActionForm
         action="/admin/pipeline/collect"
         method="post"
         className="border-t border-slate-200 px-5 py-5"
@@ -166,7 +167,7 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
             {errorMessage}
           </p>
         ) : null}
-      </form>
+      </AdminActionForm>
     </details>
   );
 }

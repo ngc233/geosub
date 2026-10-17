@@ -48,13 +48,13 @@ export function platformLabel(platform: string) {
 
 export function statusBadge(status: string) {
   const map: Record<string, string> = {
-    approved: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-    ignored: "bg-slate-50 text-slate-600 ring-slate-200",
-    rejected: "bg-red-50 text-red-700 ring-red-200",
-    pending: "bg-amber-50 text-amber-700 ring-amber-200",
+    approved: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800",
+    ignored: "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700",
+    rejected: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800",
+    pending: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800",
   };
 
-  return map[status] ?? "bg-slate-50 text-slate-600 ring-slate-200";
+  return map[status] ?? "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700";
 }
 
 export function statusLabel(status: string) {
@@ -147,15 +147,15 @@ function publishedComparisonLabel(value: string | null) {
 
 export function evidenceBadgeClass(status: string | null) {
   if (status === "modal_price_consensus" || status === "strong_official_sample") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
   }
   if (status === "blocked_anomaly") {
-    return "bg-red-50 text-red-700 ring-red-200";
+    return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
   }
   if (status === "old_sample") {
-    return "bg-slate-50 text-slate-600 ring-slate-200";
+    return "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700";
   }
-  return "bg-blue-50 text-blue-700 ring-blue-200";
+  return "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800";
 }
 
 export function PriceEvidencePanel({ row }: { row: PendingRow }) {
@@ -165,7 +165,7 @@ export function PriceEvidencePanel({ row }: { row: PendingRow }) {
       : formatLocal(row.published_local_price, row.published_currency);
 
   return (
-    <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] leading-4 text-slate-600">
+    <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] leading-4 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
       <div className="flex flex-wrap items-center gap-1.5">
         <span
           className={[
@@ -179,7 +179,7 @@ export function PriceEvidencePanel({ row }: { row: PendingRow }) {
         <span>{evidenceTierLabel(row.evidence_tier)}</span>
       </div>
 
-      <div className="mt-1 grid gap-1 text-slate-500">
+      <div className="mt-1 grid gap-1 text-slate-500 dark:text-slate-400">
         {row.has_modal_consensus ? (
           <div>
             页面多数票：{row.modal_selected_count ?? "-"} : {row.modal_runner_up_count ?? 0}

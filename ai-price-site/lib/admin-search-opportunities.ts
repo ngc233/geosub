@@ -258,11 +258,11 @@ export async function linkSearchOpportunity({
   candidateId?: string | null;
   articleId?: string | null;
   adminId: string;
-}) {
+}, db: Prisma.TransactionClient = prisma) {
   const normalizedQuery = normalizeSearchOpportunityQuery(query);
   if (!normalizedQuery || (!candidateId && !articleId)) return;
 
-  await prisma.$executeRaw(Prisma.sql`
+  await db.$executeRaw(Prisma.sql`
     UPDATE search_opportunities
     SET
       linked_candidate_id = COALESCE(

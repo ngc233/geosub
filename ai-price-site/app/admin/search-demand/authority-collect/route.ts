@@ -1,3 +1,4 @@
+import { canAdmin } from "../../../../lib/admin-permissions";
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { prisma } from "../../../../lib/prisma";
 import { getProductSeoQualityAudit } from "../../../../lib/product-seo-quality-data";
@@ -16,6 +17,7 @@ function validProductSlug(value: FormDataEntryValue | null) {
 
 export async function POST(request: Request) {
   const admin = await requireAdmin();
+  if (!canAdmin(admin.role, "manage")) return Response.json({ok:false,message:"当前账号没有采集权限。"},{status:403});
   const wantsJson = request.headers.get("accept")?.includes("application/json");
   let redirectPath = "/admin/search-demand?authorityResult=failed";
   let status = 500;

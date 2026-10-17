@@ -119,14 +119,14 @@ function levelClassName(level: string) {
   }
 
   if (level === "MODERATE") {
-    return "bg-amber-100 text-amber-700";
+    return "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300";
   }
 
   if (level === "MODERATE_LOW") {
-    return "bg-lime-100 text-lime-700";
+    return "bg-lime-100 text-lime-700 dark:bg-lime-950 dark:text-lime-300";
   }
 
-  return "bg-zinc-100 text-zinc-700";
+  return "bg-zinc-100 text-zinc-700 dark:bg-slate-800 dark:text-slate-200";
 }
 
 export default async function AffordabilityPreviewPage() {
@@ -169,48 +169,48 @@ export default async function AffordabilityPreviewPage() {
   const latestDetail = detailRows[0];
 
   return (
-    <main className="min-h-screen bg-zinc-50 px-6 py-8 text-zinc-950">
+    <main className="min-h-screen bg-zinc-50 px-6 py-8 text-zinc-950 dark:bg-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-7xl space-y-8">
         <div>
-          <p className="text-sm font-black text-lime-700">GeoSub Admin</p>
+          <p className="text-sm font-black text-lime-700 dark:text-lime-300">GeoSub Admin</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight">
             本地订阅负担指数预览
           </h1>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-zinc-500">
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-zinc-500 dark:text-slate-400">
             基于 World Bank 当前最新可用收入指标，将订阅月费折算为当地月均收入占比，并计算相对美国的负担倍数。
             收入指标通常会滞后于实时价格数据，因此需要单独标注“收入数据年份”。
           </p>
 
           <div className="mt-5 grid gap-3 md:grid-cols-5">
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="text-xs font-black text-zinc-400">收入指标</div>
               <div className="mt-1 text-sm font-black">
                 {metricLabel(latestSummary?.income_metric_type)}
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="text-xs font-black text-zinc-400">指标代码</div>
               <div className="mt-1 text-sm font-black">
                 {latestSummary?.income_indicator_code || "-"}
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="text-xs font-black text-zinc-400">收入数据年份</div>
               <div className="mt-1 text-sm font-black">
                 {latestSummary?.income_data_year || "-"}，最新可用值
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="text-xs font-black text-zinc-400">收入同步时间</div>
               <div className="mt-1 text-sm font-black">
                 {formatDate(latestSummary?.income_synced_at)}
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="text-xs font-black text-zinc-400">价格检查时间</div>
               <div className="mt-1 text-sm font-black">
                 {formatDate(latestDetail?.price_last_checked_at)}
@@ -219,19 +219,19 @@ export default async function AffordabilityPreviewPage() {
           </div>
         </div>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-xl font-black">套餐汇总</h2>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-zinc-500 dark:text-slate-400">
                 用于判断每个套餐的最低负担、最高负担和平均负担。
               </p>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-slate-700">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400">
+              <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400 dark:bg-slate-900">
                 <tr>
                   <th className="px-4 py-3">产品</th>
                   <th className="px-4 py-3">套餐</th>
@@ -263,17 +263,17 @@ export default async function AffordabilityPreviewPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-5">
             <h2 className="text-xl font-black">ChatGPT 地区负担明细</h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-zinc-500 dark:text-slate-400">
               收入占比越高，表示该订阅对当地平均收入的负担越高。收入数据年份表示 World Bank 当前最新可用年份，不代表价格数据年份。
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-slate-700">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400">
+              <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400 dark:bg-slate-900">
                 <tr>
                   <th className="px-4 py-3">套餐</th>
                   <th className="px-4 py-3">地区</th>
@@ -315,7 +315,7 @@ export default async function AffordabilityPreviewPage() {
                         {levelLabel(row.affordability_level)}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-xs font-bold text-zinc-500">
+                    <td className="px-4 py-4 text-xs font-bold text-zinc-500 dark:text-slate-400">
                       {row.income_data_year} 最新可用
                     </td>
                   </tr>

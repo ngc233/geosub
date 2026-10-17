@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -115,7 +116,7 @@ export default function ManualCollectionProgressForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <form
+    <AdminActionForm
       ref={formRef}
       action={submitUrl}
       method="post"
@@ -175,6 +176,6 @@ export default function ManualCollectionProgressForm({
         disabled={disabled}
         errorMessage={errorMessage}
       />
-    </form>
+    </AdminActionForm>
   );
 }

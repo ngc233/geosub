@@ -40,24 +40,24 @@ export function ReviewHistorySection({
   };
 
   return (
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+      <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
           <div>
-            <h2 className="text-sm font-semibold text-slate-950">最近审核历史</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-950 dark:text-slate-100">最近审核历史</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               按时间倒序分页显示已通过、已忽略或已拒绝记录。当前第 {historyPage} / {historyTotalPages} 页，每页 {historyPageSize} 条。
             </p>
           </div>
         </div>
 
         {historyRows.length === 0 ? (
-          <div className="px-4 py-10 text-center text-sm text-slate-500">
+          <div className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
             暂无审核历史。
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3 font-medium">产品</th>
                   <th className="px-4 py-3 font-medium">套餐</th>
@@ -72,33 +72,33 @@ export function ReviewHistorySection({
 
               <tbody className="divide-y divide-slate-100">
                 {historyRows.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50">
+                  <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-900">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-950">{row.product_name ?? row.product_slug}</div>
-                      <div className="text-xs text-slate-500">{row.product_slug}</div>
+                      <div className="font-medium text-slate-950 dark:text-slate-100">{row.product_name ?? row.product_slug}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{row.product_slug}</div>
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-950">{row.plan_name ?? row.plan_slug}</div>
-                      <div className="text-xs text-slate-500">{row.plan_slug}</div>
+                      <div className="font-medium text-slate-950 dark:text-slate-100">{row.plan_name ?? row.plan_slug}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{row.plan_slug}</div>
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-950">{row.country_name_zh ?? row.country_name_en ?? row.country_code}</div>
-                      <div className="text-xs text-slate-500">{row.country_code}</div>
+                      <div className="font-medium text-slate-950 dark:text-slate-100">{row.country_name_zh ?? row.country_name_en ?? row.country_code}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{row.country_code}</div>
                     </td>
 
                     <td className="px-4 py-3">
-                      <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                      <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                         {platformLabel(row.platform)}
                       </span>
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-950">
+                      <div className="font-medium text-slate-950 dark:text-slate-100">
                         {row.observed_price_text ?? formatLocal(row.observed_local_price, row.observed_currency)}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         {formatUsd(row.observed_price_usd)}
                       </div>
                     </td>
@@ -109,10 +109,10 @@ export function ReviewHistorySection({
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
                       {row.region_price_status ? (
                         <div>
-                          <div className="font-medium text-slate-900">{row.region_price_status}</div>
+                          <div className="font-medium text-slate-900 dark:text-slate-100">{row.region_price_status}</div>
                           <div>{row.promoted_platform ?? "—"} · {row.promoted_data_quality ?? "—"}</div>
                         </div>
                       ) : (
@@ -120,7 +120,7 @@ export function ReviewHistorySection({
                       )}
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-slate-500">
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
                       {formatDate(row.updated_at)}
                     </td>
                   </tr>
@@ -131,21 +131,21 @@ export function ReviewHistorySection({
         )}
 
         {historyTotalPages > 1 ? (
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm">
-            <div className="text-slate-500">共 {historyTotal} 条审核历史</div>
+          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm dark:border-slate-700">
+            <div className="text-slate-500 dark:text-slate-400">共 {historyTotal} 条审核历史</div>
             <div className="flex items-center gap-2">
               <AdminLink
                 href={buildHistoryPageHref(Math.max(1, historyPage - 1))}
                 aria-disabled={historyPage <= 1}
                 className={`rounded-lg border px-3 py-1.5 font-medium ${
                   historyPage <= 1
-                    ? "pointer-events-none border-slate-100 text-slate-300"
-                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                    ? "pointer-events-none border-slate-100 text-slate-300 dark:border-slate-700"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
                 }`}
               >
                 上一页
               </AdminLink>
-              <span className="text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">
                 {historyPage} / {historyTotalPages}
               </span>
               <AdminLink
@@ -153,8 +153,8 @@ export function ReviewHistorySection({
                 aria-disabled={historyPage >= historyTotalPages}
                 className={`rounded-lg border px-3 py-1.5 font-medium ${
                   historyPage >= historyTotalPages
-                    ? "pointer-events-none border-slate-100 text-slate-300"
-                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                    ? "pointer-events-none border-slate-100 text-slate-300 dark:border-slate-700"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
                 }`}
               >
                 下一页

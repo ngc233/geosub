@@ -1,3 +1,5 @@
+import AdminProductContext from "../../../components/admin/AdminProductContext";
+import { prisma } from "../../../lib/prisma";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import { getReviewPageData } from "./queries";
 import { ReviewOverviewSections } from "./ReviewOverviewSections";
@@ -69,8 +71,10 @@ export default async function ReviewPage({
     historyPage,
   });
 
+  const contextProduct = selectedProductSlug ? await prisma.product.findUnique({where:{slug:selectedProductSlug},select:{id:true,slug:true,name:true}}) : null;
   return (
     <div className="space-y-6">
+      {contextProduct ? <AdminProductContext {...contextProduct} /> : null}
       <AdminPipelineSteps currentStep="review" />
       <ReviewOverviewSections
         productQuery={productQuery}
@@ -118,7 +122,7 @@ export default async function ReviewPage({
       />
 
       <details className="group">
-        <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-900">
           <span>查看以前的审核记录</span>
           <span className="text-xs font-medium text-slate-400">共 {historyTotal} 条</span>
         </summary>

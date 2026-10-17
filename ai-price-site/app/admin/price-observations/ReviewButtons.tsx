@@ -1,3 +1,4 @@
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import {
   approveObservation,
   ignoreObservation,
@@ -11,7 +12,7 @@ type Props = {
 export default function ReviewButtons({ observationId }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <form action={approveObservation}>
+      <AdminActionForm action={approveObservation}>
         <input type="hidden" name="id" value={observationId} />
         <button
           type="submit"
@@ -19,9 +20,9 @@ export default function ReviewButtons({ observationId }: Props) {
         >
           通过
         </button>
-      </form>
+      </AdminActionForm>
 
-      <form action={ignoreObservation}>
+      <AdminActionForm action={ignoreObservation}>
         <input type="hidden" name="id" value={observationId} />
         <button
           type="submit"
@@ -29,9 +30,9 @@ export default function ReviewButtons({ observationId }: Props) {
         >
           忽略
         </button>
-      </form>
+      </AdminActionForm>
 
-      <form action={rejectObservation}>
+      <AdminActionForm action={rejectObservation}>
         <input type="hidden" name="id" value={observationId} />
         <button
           type="submit"
@@ -39,7 +40,7 @@ export default function ReviewButtons({ observationId }: Props) {
         >
           拒绝
         </button>
-      </form>
+      </AdminActionForm>
     </div>
   );
 }

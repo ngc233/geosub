@@ -101,41 +101,41 @@ export default async function AdminPricingPreviewPage() {
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">可展示产品</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">可展示产品</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {visibleProducts.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             已发布且有价格数据的产品。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">套餐数量</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">套餐数量</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {totalPlans}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             已发布产品下的套餐。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">价格记录</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">价格记录</div>
+          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
             {totalPrices}
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             已发布区域价格。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500">下一步</div>
-          <div className="mt-2 text-base font-black text-slate-950">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">下一步</div>
+          <div className="mt-2 text-base font-black text-slate-950 dark:text-slate-50">
             前台迁移
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             确认本页正常后，再替换 /zh/ai-pricing。
           </div>
         </AdminCard>
@@ -147,7 +147,7 @@ export default async function AdminPricingPreviewPage() {
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-black text-slate-950">
+                  <h2 className="text-xl font-black text-slate-950 dark:text-slate-50">
                     {product.name}
                   </h2>
 
@@ -155,12 +155,12 @@ export default async function AdminPricingPreviewPage() {
                     {categoryLabel(String(product.category))}
                   </span>
 
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-500 ring-1 ring-slate-200">
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-400">
                     {product.provider || "未知服务商"}
                   </span>
                 </div>
 
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
                   {product.description || "暂无产品描述。"}
                 </p>
 
@@ -187,11 +187,11 @@ export default async function AdminPricingPreviewPage() {
                 return (
                   <div
                     key={plan.id}
-                    className="overflow-hidden rounded-xl border border-slate-200"
+                    className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
                   >
-                    <div className="flex flex-col gap-2 bg-slate-50 px-5 py-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex flex-col gap-2 bg-slate-50 px-5 py-4 md:flex-row md:items-center md:justify-between dark:bg-slate-800">
                       <div>
-                        <h3 className="text-base font-black text-slate-950">
+                        <h3 className="text-base font-black text-slate-950 dark:text-slate-50">
                           {plan.name}
                         </h3>
                         <p className="mt-1 font-mono text-xs text-slate-400">
@@ -199,7 +199,7 @@ export default async function AdminPricingPreviewPage() {
                         </p>
                       </div>
 
-                      <div className="text-sm font-bold text-slate-500">
+                      <div className="text-sm font-bold text-slate-500 dark:text-slate-400">
                         {prices.length} 个地区
                         {minPrice && maxPrice ? (
                           <span className="ml-2 text-emerald-700">
@@ -212,7 +212,7 @@ export default async function AdminPricingPreviewPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="border-y border-slate-100 bg-white text-xs font-black uppercase tracking-wide text-slate-400">
+                          <tr className="border-y border-slate-100 bg-white text-xs font-black uppercase tracking-wide text-slate-400 dark:border-slate-800 dark:bg-slate-900">
                             <th className="w-16 px-5 py-3">#</th>
                             <th className="min-w-[120px] px-5 py-3">国家</th>
                             <th className="min-w-[140px] px-5 py-3">本地价格</th>
@@ -222,7 +222,7 @@ export default async function AdminPricingPreviewPage() {
                           </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100 bg-white">
+                        <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
                           {prices.map((price, index) => (
                             <tr key={price.id}>
                               <td className="px-5 py-4 font-mono text-xs text-slate-400">
@@ -230,7 +230,7 @@ export default async function AdminPricingPreviewPage() {
                               </td>
 
                               <td className="px-5 py-4">
-                                <div className="font-black text-slate-900">
+                                <div className="font-black text-slate-900 dark:text-slate-100">
                                   {price.country.code}
                                 </div>
                                 <div className="mt-1 text-xs text-slate-400">
@@ -238,7 +238,7 @@ export default async function AdminPricingPreviewPage() {
                                 </div>
                               </td>
 
-                              <td className="px-5 py-4 font-bold text-slate-700">
+                              <td className="px-5 py-4 font-bold text-slate-700 dark:text-slate-200">
                                 {formatLocalPrice(price.localPrice, price.currency)}
                               </td>
 
@@ -252,7 +252,7 @@ export default async function AdminPricingPreviewPage() {
                                 </span>
                               </td>
 
-                              <td className="px-5 py-4 text-xs font-bold text-slate-500">
+                              <td className="px-5 py-4 text-xs font-bold text-slate-500 dark:text-slate-400">
                                 {price.primarySource?.name || "无来源"}
                               </td>
                             </tr>

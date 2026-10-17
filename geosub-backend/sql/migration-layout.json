@@ -679,6 +679,15 @@
         "810d5d205680f8ae23f44f82c8eb0981bdf1087f1c68f2ae38029e36656a3046"
       ],
       "legacyBaseline": false
+    },
+    {
+      "id": "schema:057",
+      "file": "sql/schema/057_first_party_promotion_foundation.sql",
+      "legacyBaseline": false,
+      "legacyFile": "sql/080_first_party_promotion_foundation.sql",
+      "legacyChecksums": [
+        "9b65043d26d8eeceb4f278b0a6eb6356b7224b46c8e0892c02b10a79223942c7"
+      ]
     }
   ],
   "backfill": [

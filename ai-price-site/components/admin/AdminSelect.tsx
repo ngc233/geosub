@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 
 type AdminSelectOption = {
   value: string;
@@ -26,6 +26,8 @@ export default function AdminSelect({
   const initialValue = value || options[0]?.value || "";
   const [currentValue, setCurrentValue] = useState(initialValue);
   const [open, setOpen] = useState(false);
+  const controlId = useId();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   const selected =
@@ -42,6 +44,7 @@ export default function AdminSelect({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        if (wrapperRef.current?.contains(document.activeElement)) triggerRef.current?.focus();
         setOpen(false);
       }
     }
@@ -57,18 +60,22 @@ export default function AdminSelect({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label htmlFor={controlId} className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
         {label}
       </label>
 
       <input type="hidden" name={name} value={currentValue} />
 
       <button
+        id={controlId}
+        ref={triggerRef}
+        aria-expanded={open}
+        aria-controls={`${controlId}-options`}
         type="button"
         onClick={() => setOpen((state) => !state)}
         className={[
           "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition",
-          "border-slate-300 bg-white text-slate-950 shadow-sm",
+          "border-slate-300 bg-white text-slate-950 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-50",
           "hover:border-slate-400",
           "focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10",
         ].join(" ")}
@@ -76,7 +83,7 @@ export default function AdminSelect({
         <span className="flex min-w-0 flex-col">
           <span className="truncate font-medium">{selected?.label}</span>
           {selected?.description ? (
-            <span className="mt-1 truncate text-xs text-slate-500">
+            <span className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
               {selected.description}
             </span>
           ) : null}
@@ -102,11 +109,11 @@ export default function AdminSelect({
       </button>
 
       {helperText ? (
-        <p className="mt-2 text-xs leading-5 text-slate-500">{helperText}</p>
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{helperText}</p>
       ) : null}
 
       {open ? (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5">
+        <div id={`${controlId}-options`} className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5 dark:bg-slate-900 dark:border-slate-800">
           <div className="admin-scrollbar max-h-[360px] overflow-y-auto">
             {options.map((option) => {
               const active = option.value === currentValue;
@@ -118,12 +125,13 @@ export default function AdminSelect({
                   onClick={() => {
                     setCurrentValue(option.value);
                     setOpen(false);
+                    triggerRef.current?.focus();
                   }}
                   className={[
                     "flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm transition",
                     active
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-950",
+                      ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-slate-50",
                   ].join(" ")}
                 >
                   <span className="min-w-0">
@@ -134,7 +142,7 @@ export default function AdminSelect({
                       <span
                         className={[
                           "mt-1 block truncate text-xs",
-                          active ? "text-blue-500" : "text-slate-500",
+                          active ? "text-blue-500 dark:text-blue-300" : "text-slate-500 dark:text-slate-400",
                         ].join(" ")}
                       >
                         {option.description}

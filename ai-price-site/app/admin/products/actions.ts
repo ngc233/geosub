@@ -1,12 +1,14 @@
-﻿"use server";
+"use server";
 
-import { ProductCategory, PublishStatus, StructuredDataType } from "@prisma/client";
+import { type Prisma, ProductCategory, PublishStatus, StructuredDataType } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { fetchOfficialSiteIcon } from "../../../lib/official-site-logo";
 import { prisma } from "../../../lib/prisma";
 import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
 import { cacheRemoteProductLogo } from "../../../lib/product-logo-storage";
+
+import { attemptAdminSave, assertAdminVersion, adminRecordVersion, AdminSaveConflict } from "../../../lib/admin-save";
 
 function cleanText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
@@ -213,8 +215,8 @@ async function configureAppStoreSourceForProduct({
   provider: string | null;
   appStoreUrl: string;
   appStoreId: string;
-}) {
-  return prisma.$queryRaw<Array<{ source_id: string }>>`
+}, db: Prisma.TransactionClient = prisma) {
+  return db.$queryRaw<Array<{ source_id: string }>>`
     WITH upserted_source AS (
       INSERT INTO price_sources (
         id,
@@ -263,6 +265,15 @@ async function configureAppStoreSourceForProduct({
         reliability_score = EXCLUDED.reliability_score,
         status = 'active'::source_status,
         updated_at = NOW()
+      RETURNING id
+    ),
+    updated_jobs AS (
+      UPDATE collector_jobs SET
+        job_config = job_config || jsonb_build_object('url', ${appStoreUrl}::text, 'app_store_id', ${appStoreId}::text),
+        updated_at = NOW()
+      WHERE product_id = ${productId}::uuid
+        AND source_id = (SELECT id FROM upserted_source)
+        AND job_type IN ('ai_pricing', 'streaming_pricing') AND status <> 'archived'
       RETURNING id
     ),
     upserted_job AS (
@@ -314,148 +325,46 @@ async function configureAppStoreSourceForProduct({
 }
 
 export async function createProductAction(formData: FormData) {
-  const admin = await requireAdmin();
-
+  const admin = await requireAdmin("manage");
   const name = cleanText(formData.get("name"));
   const slug = normalizeSlug(cleanText(formData.get("slug")));
-  const category = parseCategory(formData.get("category"));
-  const status = parseStatus(formData.get("status"));
-
-  if (!name || !slug) {
-    redirect("/admin/products/new?error=missing");
-  }
-
-  const exists = await prisma.product.findUnique({
-    where: {
-      slug,
-    },
-  });
-
-  if (exists) {
-    redirect("/admin/products/new?error=slug");
-  }
-
-  let product = await prisma.product.create({
-    data: {
-      name,
-      slug,
-      category,
-      provider: cleanOptionalText(formData.get("provider")),
-      logoUrl: cleanOptionalText(formData.get("logoUrl")),
-      description: cleanOptionalText(formData.get("description")),
-      officialUrl: cleanOptionalText(formData.get("officialUrl")),
-      status,
-      featured: formData.get("featured") === "on",
-      sortOrder: parseSortOrder(formData.get("sortOrder")),
-    },
-  });
-
-  if (product.logoUrl) {
-    await cacheRemoteProductLogo({
-      productSlug: product.slug,
-      sourceUrl: product.logoUrl,
-    }).catch(() => null);
-  }
-
-  const initialOfficialLogoUrl = product.logoUrl
-    ? null
-    : await fetchOfficialSiteIcon(product.officialUrl).catch(() => null);
-  if (initialOfficialLogoUrl) {
-    await cacheRemoteProductLogo({
-      productSlug: product.slug,
-      sourceUrl: initialOfficialLogoUrl,
-    }).catch(() => null);
-  }
-
-  await prisma.auditLog.create({
-    data: {
-      actorId: admin.id,
-      action: "create",
-      targetType: "product",
-      targetId: product.id,
-      newValue: {
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        category: product.category,
-        status: product.status,
-      },
-      note: "Created product from GeoSub Admin.",
-    },
-  });
-
-  const appStoreApp = await findAppStoreApp(product.name).catch(() => null);
-  if (appStoreApp) {
-    const officialUrl = product.officialUrl || appStoreApp.sellerUrl || null;
-    const officialLogoUrl =
-      !product.logoUrl && officialUrl
-        ? await fetchOfficialSiteIcon(officialUrl).catch(() => null)
-        : null;
-    const selectedLogoUrl =
-      officialLogoUrl || (!product.logoUrl ? appStoreApp.artworkUrl : null);
-    const cachedOfficialLogo = selectedLogoUrl
-      ? await cacheRemoteProductLogo({
-          productSlug: product.slug,
-          sourceUrl: selectedLogoUrl,
-        }).catch(() => null)
-      : null;
-    const verifiedOfficialLogoUrl = cachedOfficialLogo ? selectedLogoUrl : null;
-
-    if (!product.officialUrl && appStoreApp.sellerUrl) {
-      product = await prisma.product.update({
-        where: {
-          id: product.id,
-        },
-        data: {
-          officialUrl: appStoreApp.sellerUrl,
-        },
-      });
+  if (!name || !slug) return {error:"请填写名称和网址标识，输入仍保留。"};
+  if (await prisma.product.findUnique({where:{slug}})) return {error:"网址标识已存在，请更换后保存。"};
+  // Network discovery is optional and stays outside the database transaction.
+  const appStoreApp = await findAppStoreApp(name).catch(() => null);
+  const officialUrl = cleanOptionalText(formData.get("officialUrl")) || appStoreApp?.sellerUrl || null;
+  const logoUrl = cleanOptionalText(formData.get("logoUrl"));
+  const candidate = logoUrl || await fetchOfficialSiteIcon(officialUrl).catch(() => null) || appStoreApp?.artworkUrl || null;
+  const result = await attemptAdminSave(prisma, async (db) => {
+    const product = await db.product.create({data:{
+      name, slug, category:parseCategory(formData.get("category")), status:parseStatus(formData.get("status")),
+      provider:cleanOptionalText(formData.get("provider")), logoUrl, officialUrl,
+      description:cleanOptionalText(formData.get("description")), featured:formData.get("featured")==="on",
+      sortOrder:parseSortOrder(formData.get("sortOrder")),
+    }});
+    await db.auditLog.create({data:{actorId:admin.id,action:"create",targetType:"product",targetId:product.id,
+      newValue:{id:product.id,name:product.name,slug:product.slug,category:product.category,status:product.status},
+      note:"Created product from GeoSub Admin."}});
+    if (appStoreApp) {
+      const rows = await configureAppStoreSourceForProduct({productId:product.id,productName:product.name,
+        productCategory:product.category,provider:product.provider,appStoreUrl:appStoreApp.appStoreUrl,
+        appStoreId:appStoreApp.appStoreId}, db);
+      await db.auditLog.create({data:{actorId:admin.id,action:"auto_configure",targetType:"product_app_store_source",
+        targetId:rows[0]?.source_id || product.id,newValue:{productId:product.id,appStoreId:appStoreApp.appStoreId,
+          appStoreUrl:appStoreApp.appStoreUrl,logoUsage:"diagnostic-only-not-public"},
+        note:"Automatically configured App Store source from product onboarding."}});
     }
-
-    const rows = await configureAppStoreSourceForProduct({
-      productId: product.id,
-      productName: product.name,
-      productCategory: product.category,
-      provider: product.provider,
-      appStoreUrl: appStoreApp.appStoreUrl,
-      appStoreId: appStoreApp.appStoreId,
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        actorId: admin.id,
-        action: "auto_configure",
-        targetType: "product_app_store_source",
-        targetId: rows[0]?.source_id || product.id,
-        newValue: {
-          productId: product.id,
-          appStoreId: appStoreApp.appStoreId,
-          appStoreUrl: appStoreApp.appStoreUrl,
-          appStoreName: appStoreApp.appStoreName,
-          sellerName: appStoreApp.sellerName,
-          sellerUrl: appStoreApp.sellerUrl,
-          logoCandidateUrl: verifiedOfficialLogoUrl,
-          logoSourceDiagnostic: verifiedOfficialLogoUrl
-            ? officialLogoUrl
-              ? "official-site-diagnostic"
-              : "app-store-restricted-diagnostic"
-            : null,
-          logoUsage: "diagnostic-only-not-public",
-        },
-        note: "Automatically configured App Store source from product onboarding.",
-      },
-    });
-
-    invalidatePublicPricing(product.slug);
-    redirect(`/admin/products/${product.id}/edit?created=1&appStoreAuto=found`);
-  }
-
+    return product;
+  });
+  if (!result.ok) return {error:result.error};
+  const product=result.value;
+  if(candidate) await cacheRemoteProductLogo({productSlug:product.slug,sourceUrl:candidate}).catch(()=>null);
   invalidatePublicPricing(product.slug);
-  redirect(`/admin/products/${product.id}/edit?created=1&appStoreAuto=not-found`);
+  redirect(`/admin/products/${product.id}/edit?created=1&appStoreAuto=${appStoreApp ? "found" : "not-found"}`);
 }
 
 export async function updateProductAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
 
   const id = cleanText(formData.get("id"));
   const name = cleanText(formData.get("name"));
@@ -464,9 +373,11 @@ export async function updateProductAction(formData: FormData) {
   const status = parseStatus(formData.get("status"));
 
   if (!id || !name || !slug) {
-    redirect("/admin/products?error=missing");
+    return { error: "请填写名称和网址标识。输入仍保留。" };
   }
 
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+    await prisma.$queryRaw`SELECT id FROM products WHERE id = ${id}::uuid FOR UPDATE`;
   const current = await prisma.product.findUnique({
     where: {
       id,
@@ -474,8 +385,10 @@ export async function updateProductAction(formData: FormData) {
   });
 
   if (!current) {
-    redirect("/admin/products?error=not-found");
+    throw new AdminSaveConflict("产品已不存在，请保留输入并返回列表核对。");
   }
+
+  assertAdminVersion(current, formData.get("recordVersion"));
 
   const slugOwner = await prisma.product.findUnique({
     where: {
@@ -484,7 +397,7 @@ export async function updateProductAction(formData: FormData) {
   });
 
   if (slugOwner && slugOwner.id !== id) {
-    redirect(`/admin/products/${id}/edit?error=slug`);
+    throw new AdminSaveConflict("网址标识已存在，请更换后保存。");
   }
 
   const updated = await prisma.product.update({
@@ -504,13 +417,6 @@ export async function updateProductAction(formData: FormData) {
       sortOrder: parseSortOrder(formData.get("sortOrder")),
     },
   });
-
-  if (updated.logoUrl) {
-    await cacheRemoteProductLogo({
-      productSlug: updated.slug,
-      sourceUrl: updated.logoUrl,
-    }).catch(() => null);
-  }
 
   await prisma.auditLog.create({
     data: {
@@ -540,6 +446,17 @@ export async function updateProductAction(formData: FormData) {
     },
   });
 
+    return { current, updated };
+  });
+  if (!result.ok) return { error: result.error };
+  const { current, updated } = result.value;
+  if (updated.logoUrl) {
+    await cacheRemoteProductLogo({
+      productSlug: updated.slug,
+      sourceUrl: updated.logoUrl,
+    }).catch(() => null);
+  }
+
   invalidatePublicPricing(current.slug);
   if (updated.slug !== current.slug) {
     invalidatePublicPricing(updated.slug);
@@ -555,7 +472,7 @@ function extractAppStoreId(value: string | null) {
 }
 
 export async function saveProductAppStoreSourceAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
 
   const productId = cleanText(formData.get("productId"));
   const appStoreUrl = cleanOptionalText(formData.get("appStoreUrl"));
@@ -563,13 +480,15 @@ export async function saveProductAppStoreSourceAction(formData: FormData) {
     cleanOptionalText(formData.get("appStoreId")) || extractAppStoreId(appStoreUrl);
 
   if (!productId) {
-    redirect("/admin/products?error=missing");
+    return {error: "缺少产品信息，请重新打开页面。"};
   }
 
   if (!appStoreUrl || !appStoreId) {
-    redirect(`/admin/products/${productId}/edit?sourceError=app-store`);
+    return {error: "请填写有效的 App Store 地址和 App ID，输入仍保留。"};
   }
 
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+  await prisma.$queryRaw`SELECT id FROM products WHERE id = ${productId}::uuid FOR UPDATE`;
   const product = await prisma.product.findUnique({
     where: {
       id: productId,
@@ -577,9 +496,10 @@ export async function saveProductAppStoreSourceAction(formData: FormData) {
   });
 
   if (!product) {
-    redirect("/admin/products?error=not-found");
+    throw new AdminSaveConflict("产品已不存在，请重新核对。");
   }
 
+  assertAdminVersion(product, formData.get("recordVersion"));
   const rows = await configureAppStoreSourceForProduct({
     productId: product.id,
     productName: product.name,
@@ -587,7 +507,7 @@ export async function saveProductAppStoreSourceAction(formData: FormData) {
     provider: product.provider,
     appStoreUrl,
     appStoreId,
-  });
+  }, prisma);
 
   await prisma.auditLog.create({
     data: {
@@ -604,17 +524,21 @@ export async function saveProductAppStoreSourceAction(formData: FormData) {
     },
   });
 
-  redirect(`/admin/products/${product.id}/edit?sourceSaved=1`);
+  await prisma.product.update({where:{id:productId},data:{updatedAt:new Date()}});
+  return product;
+  });
+  if (!result.ok) return {error:result.error};
+  redirect(`/admin/products/${result.value.id}/edit?sourceSaved=1`);
 }
 
 export async function syncProductOfficialLogoAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
 
   const productId = cleanText(formData.get("productId"));
   const formAppStoreId = cleanOptionalText(formData.get("appStoreId"));
 
   if (!productId) {
-    redirect("/admin/products?error=missing");
+    return {error:"缺少产品信息，请重新打开页面。"};
   }
 
   const product = await prisma.product.findUnique({
@@ -624,9 +548,10 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
   });
 
   if (!product) {
-    redirect("/admin/products?error=not-found");
+    return {error:"产品已不存在，请重新核对。"};
   }
 
+  if (adminRecordVersion(product) !== String(formData.get("recordVersion") || "")) return {error:"产品已被修改，请重新打开页面核对。"};
   const appStoreRows = await prisma.$queryRaw<Array<{
     app_store_id: string | null;
     app_store_url: string | null;
@@ -660,7 +585,7 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
     : "app-store-restricted-diagnostic";
 
   if (!selectedLogoUrl) {
-    redirect(`/admin/products/${product.id}/edit?logoError=official-not-found`);
+    return {error:"未找到可核验的候选图标，未更改产品资料。"};
   }
 
   const cachedOfficialSiteLogo = await cacheRemoteProductLogo({
@@ -669,9 +594,13 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
   }).catch(() => null);
 
   if (!cachedOfficialSiteLogo) {
-    redirect(`/admin/products/${product.id}/edit?logoError=download-failed`);
+    return {error:"候选图标下载失败，请稍后重试。"};
   }
 
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+  await prisma.$queryRaw`SELECT id FROM products WHERE id = ${productId}::uuid FOR UPDATE`;
+  const current = await prisma.product.findUnique({where:{id:productId}});
+  assertAdminVersion(current, formData.get("recordVersion"));
   if (!product.officialUrl && officialUrl) {
     await prisma.product.update({
       where: { id: product.id },
@@ -705,21 +634,26 @@ export async function syncProductOfficialLogoAction(formData: FormData) {
     },
   });
 
+  return product;
+  });
+  if (!result.ok) return {error:result.error};
   redirect(
     `/admin/products/${product.id}/edit?logoSynced=diagnostic`,
   );
 }
 
 export async function saveProductSeoAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
 
   const productId = cleanText(formData.get("productId"));
   const title = cleanText(formData.get("title"));
 
   if (!productId || !title) {
-    redirect("/admin/products?error=missing");
+    return { error: "请填写 SEO 标题。输入仍保留。" };
   }
 
+  const result = await attemptAdminSave(prisma, async (prisma) => {
+    await prisma.$queryRaw`SELECT id FROM products WHERE id = ${productId}::uuid FOR UPDATE`;
   const product = await prisma.product.findUnique({
     where: {
       id: productId,
@@ -727,7 +661,7 @@ export async function saveProductSeoAction(formData: FormData) {
   });
 
   if (!product) {
-    redirect("/admin/products?error=not-found");
+    throw new AdminSaveConflict("产品已不存在，请保留输入后返回列表核对。");
   }
 
   const existing = await prisma.seoMeta.findFirst({
@@ -739,6 +673,8 @@ export async function saveProductSeoAction(formData: FormData) {
       locale: "ZH",
     },
   });
+
+  if (String(formData.get("recordVersion") || "") !== adminRecordVersion(existing)) throw new AdminSaveConflict("SEO 信息已被修改，本次输入仍保留，请在新标签页核对最新版本。");
 
   const data = {
     productId,
@@ -780,6 +716,11 @@ export async function saveProductSeoAction(formData: FormData) {
     },
   });
 
+    return {product, seo};
+  });
+  if (!result.ok) return { error: result.error };
+  const {product, seo} = result.value;
+
   invalidatePublicPricing(product.slug);
-  redirect(`/admin/products/${product.id}/edit?seoSaved=1`);
+  return { recordVersion: adminRecordVersion(seo) };
 }

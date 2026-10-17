@@ -75,12 +75,17 @@ export async function readContentState(): Promise<ContentState> {
   const row = await prisma.siteSetting.findUnique({ where: { settingKey: PREFIX + "state" } });
   return row ? row.valueJson as unknown as ContentState : { ...empty };
 }
-export async function readRevision(version: number): Promise<Revision | null> {
+async function requireRevision(db: Pick<Prisma.TransactionClient, "siteSetting">, version: number): Promise<Revision | null> {
+  if (!Number.isSafeInteger(version) || version < 0) throw new Error("内容修订版本无效。");
   if (!version) return null;
-  const row = await prisma.siteSetting.findUnique({ where: { settingKey: PREFIX + "revision:" + version } });
+  const row = await db.siteSetting.findUnique({ where: { settingKey: PREFIX + "revision:" + version } });
   if (!row) throw new Error("内容修订不存在。");
   const revision = row.valueJson as unknown as Revision;
+  if (revision.version !== version) throw new Error("内容修订校验失败，请检查历史记录。");
   return verifyRevision(revision);
+}
+export async function readRevision(version: number): Promise<Revision | null> {
+  return requireRevision(prisma, version);
 }
 export async function readContentHistory() {
   const rows = await prisma.siteSetting.findMany({ where: { groupName: "content-pilot-revision" }, orderBy: { createdAt: "desc" }, take: 30 });
@@ -110,6 +115,7 @@ export async function mutateContent(expected: number, actor: string, command: Mu
     const row = await tx.siteSetting.findUnique({ where: { settingKey: PREFIX + "state" } });
     const state = row ? row.valueJson as unknown as ContentState : { ...empty };
     requireGeneration(state.generation, expected);
+    await requireRevision(tx, state.version);
     let next: ContentState = { ...state, generation: state.generation + 1 };
     if (command.type === "draft") next.draft = parseOverviewContent(command.content);
     else {
@@ -160,6 +166,7 @@ export async function claimContentDistribution(version: number, id: string) {
     if (!row) throw new Error("没有待分发的内容。");
     const state = row.valueJson as unknown as ContentState;
     if (state.version !== version || state.attemptId !== id) throw new Error("内容版本已更新，请刷新。");
+    await requireRevision(tx, state.version);
     const record = await tx.siteSetting.findUnique({ where: { settingKey: PREFIX + "attempt:" + id } });
     if (!record) throw new Error("分发记录不存在。");
     const attempt = record.valueJson as unknown as DistributionAttempt;
@@ -202,6 +209,7 @@ export async function retryContentDistribution(expected: number, actor: string) 
     if (!row) throw new Error("没有待分发的内容。");
     const state = row.valueJson as unknown as ContentState;
     requireGeneration(state.generation, expected);
+    await requireRevision(tx, state.version);
     await requireOpenFence(tx);
     if (!state.version || state.receipt !== "pending") throw new Error("当前内容无需重试。");
     const record = state.attemptId ? await tx.siteSetting.findUnique({ where: { settingKey: PREFIX + "attempt:" + state.attemptId } }) : null;

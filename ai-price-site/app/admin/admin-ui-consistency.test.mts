@@ -13,7 +13,7 @@ function readProjectFile(fileName: string) {
 
 function readAdminDashboardSource() {
   return [
-    "app/admin/page.tsx",
+    "app/admin/LegacyDashboard.tsx",
     "app/admin/queries.ts",
     "app/admin/DashboardComponents.tsx",
     "app/admin/TrendChart.tsx",
@@ -124,7 +124,7 @@ test("primary admin actions use the shared button system", () => {
 test("affected admin surfaces provide complete dark-mode counterparts", () => {
   const files = [
     "app/admin/layout.tsx",
-    "app/admin/page.tsx",
+    "app/admin/LegacyDashboard.tsx",
     "app/admin/DashboardComponents.tsx",
     "app/admin/TrendChart.tsx",
     "app/admin/dashboard-formatters.ts",
@@ -169,10 +169,10 @@ test("affected admin surfaces provide complete dark-mode counterparts", () => {
   const adminButton = readProjectFile("components/admin/AdminButton.tsx");
   const trendChart = readProjectFile("app/admin/TrendChart.tsx");
 
-  assert.doesNotMatch(
+  assert.match(
     adminCard,
     /"min-w-0 rounded-xl[^"\n]*dark:bg-slate-900/,
-    "generic AdminCard must stay light until all legacy consumers are migrated",
+    "shared cards now provide dark surfaces alongside migrated legacy neutral text",
   );
   assert.match(dashboardComponents, /<AdminCard className="[^"]*dark:bg-slate-900/);
   assert.match(overview, /<AdminCard className="[^"]*dark:bg-slate-900/);

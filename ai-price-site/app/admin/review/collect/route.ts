@@ -1,9 +1,11 @@
+import { canAdmin } from "../../../../lib/admin-permissions";
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { buildCollectionRedirectPath } from "../collection-status";
 import { queueAndRunAppStoreCollection } from "../collection-runner";
 
 export async function POST(request: Request) {
-  await requireAdmin();
+  const admin = await requireAdmin();
+  if (!canAdmin(admin.role, "manage")) return Response.json({ok:false,message:"当前账号没有采集权限。"},{status:403});
 
   const formData = await request.formData();
   const productSlug = String(formData.get("productSlug") ?? "").trim();

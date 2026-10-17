@@ -1,4 +1,4 @@
-﻿import AdminLink from "@/components/admin/AdminLink";
+import AdminLink from "@/components/admin/AdminLink";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 
@@ -16,7 +16,7 @@ export function AdminCard({
   return (
     <div
       className={joinClasses(
-        "min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60",
+        "min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 dark:bg-slate-900 dark:border-slate-800 dark:shadow-black/20",
         className
       )}
     >
@@ -125,9 +125,9 @@ export function AdminSectionHeader({
 }) {
   return (
     <div className="mb-4">
-      <h2 className="text-base font-bold text-slate-950">{title}</h2>
+      <h2 className="text-base font-bold text-slate-950 dark:text-slate-50">{title}</h2>
       {description ? (
-        <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+        <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{description}</p>
       ) : null}
     </div>
   );

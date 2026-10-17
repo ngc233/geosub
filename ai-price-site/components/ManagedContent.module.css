@@ -14,3 +14,19 @@
     --color-focus: var(--color-blue-400);
   }
 }
+
+/* Admin's explicit theme takes precedence over the OS theme. */
+:global([data-admin-theme="light"]) .scope {
+  --color-bg-surface: var(--color-white);
+  --color-border-default: var(--color-zinc-200);
+  --color-text-primary: var(--color-zinc-950);
+  --color-text-secondary: var(--color-zinc-600);
+  --color-focus: var(--color-blue-600);
+}
+:global([data-admin-theme="dark"]) .scope {
+  --color-bg-surface: var(--color-slate-900);
+  --color-border-default: var(--color-slate-700);
+  --color-text-primary: var(--color-slate-100);
+  --color-text-secondary: var(--color-slate-300);
+  --color-focus: var(--color-blue-400);
+}

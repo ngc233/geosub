@@ -147,7 +147,7 @@ async function writeAuditLog({
 }
 
 export async function startSearchOpportunityAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const query = cleanText(formData.get("query"), 240);
   const kind = getKind(formData.get("kind"));
   const destination = getDestination(formData.get("destination"));
@@ -169,7 +169,7 @@ export async function startSearchOpportunityAction(formData: FormData) {
 }
 
 export async function updateSearchOpportunityAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const query = cleanText(formData.get("query"), 240);
   const kind = getKind(formData.get("kind"));
   const status = cleanText(formData.get("status"), 20);
@@ -198,7 +198,7 @@ export async function updateSearchOpportunityAction(formData: FormData) {
 }
 
 export async function startSearchConversionRepairAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const days = getDays(formData.get("days"));
   const query = cleanText(formData.get("query"), 240);
   const locale = cleanText(formData.get("locale"), 10) || "zh";
@@ -240,7 +240,7 @@ export async function startSearchConversionRepairAction(formData: FormData) {
 }
 
 export async function updateSearchConversionRepairAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const days = getDays(formData.get("days"));
   const id = getOptionalUuid(formData.get("id"));
   const status = cleanText(formData.get("status"), 20);
@@ -269,7 +269,7 @@ export async function updateSearchConversionRepairAction(formData: FormData) {
 }
 
 export async function approveSearchAliasAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const days = getDays(formData.get("days"));
   const alias = cleanText(formData.get("alias"), 120);
   const locale = cleanText(formData.get("locale"), 10) || "zh";
@@ -306,7 +306,7 @@ export async function approveSearchAliasAction(formData: FormData) {
 }
 
 export async function updateSearchAliasAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const days = getDays(formData.get("days"));
   const id = getOptionalUuid(formData.get("id"));
   const status = cleanText(formData.get("status"), 20);
@@ -330,7 +330,7 @@ export async function updateSearchAliasAction(formData: FormData) {
 }
 
 export async function startAuthorityCoverageTaskAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const productId = getOptionalUuid(formData.get("productId"));
   if (!productId) throw new Error("Authority coverage product is required.");
 
@@ -373,7 +373,7 @@ export async function startAuthorityCoverageTaskAction(formData: FormData) {
 }
 
 export async function updateAuthorityCoverageTaskAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("manage");
   const days = getDays(formData.get("days"));
   const id = getOptionalUuid(formData.get("id"));
   const requestedStatus = cleanText(formData.get("status"), 20);
