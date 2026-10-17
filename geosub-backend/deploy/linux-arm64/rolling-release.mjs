@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges } from './rolling-release-lib.mjs';
+import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible } from './rolling-release-lib.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const run = (bin, args = [], options = {}) => execFileSync(bin, args, {
   stdio: 'inherit',
@@ -187,6 +187,15 @@ function installWeb(release) {
 function identity(release) {
   if (fs.readFileSync(path.join(release.app, release.dist, 'BUILD_ID'), 'utf8').trim() !== release.buildId) throw Error('Retained build identity changed');
   for (const a of release.assets) if (digest(path.join(assets, a.file)) !== a.hash) throw Error('Retained static asset changed');
+}
+function rollbackFence(from, to) {
+  const policy = json(path.join(here, 'rolling-content-compatibility.json'));
+  const compatible = contentRollbackCompatible(from.dir, to.dir, policy);
+  // Both operations close admission under the same DB lock. Only an exact reviewed
+  // reader/schema pair may retain non-default content when switching application code.
+  attempt.contentRollbackPolicy = compatible ? 'audited-compatible-readers' : 'code-default-required';
+  evidence('content_fence');
+  user(from, 'node', ['scripts/content-deploy-fence.cjs', compatible ? 'upgrade' : 'rollback']);
 }
 function record(release) {
   atomic(path.join(root, 'current.env'), `GEOSUB_VERSION=${release.version}\nGEOSUB_COMMIT=${release.commit}\nGEOSUB_BRANCH=rolling-v1\nGEOSUB_DEPLOYED_AT=${new Date().toISOString()}\n`);
@@ -383,7 +392,7 @@ try {
       attempt.backup = prior.backup;
       identity(attempt.target);
       evidence('content_fence');
-      user(old, 'node', ['scripts/content-deploy-fence.cjs', 'rollback']);
+      rollbackFence(old, attempt.target);
       await pauseTimers();
       run('systemctl', ['start', attempt.target.unit]);
       await health(attempt.target);
@@ -414,7 +423,7 @@ try {
     let recovered = true;
     try {
       if (switched) {
-        user(attempt.target, 'node', ['scripts/content-deploy-fence.cjs', 'rollback']);
+        rollbackFence(attempt.target, old);
         proxySwitch(old);
         await proxyHealth(old);
         point(old.dir);

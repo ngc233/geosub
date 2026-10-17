@@ -1,0 +1,20 @@
+{
+  "files": [
+    "VERSION",
+    "ai-price-site/lib/managed-content.ts",
+    "ai-price-site/lib/managed-content-store.ts",
+    "ai-price-site/lib/content-readback.ts",
+    "ai-price-site/lib/content-distribution.ts",
+    "ai-price-site/components/PricingDetailPage.tsx",
+    "ai-price-site/components/OverviewEditorialSections.tsx",
+    "ai-price-site/prisma/schema.prisma",
+    "ai-price-site/scripts/content-deploy-fence.cjs"
+  ],
+  "approvedPairs": [
+    {
+      "from": "cdc407abac5487616eead63f13b71374ee8e13c9cee0959f33db7b0455461203",
+      "to": "c6b3407f8a8f7ba6f480fe31531e7a4d397212d0649c5960e7485a5ec9bc783c",
+      "reason": "2.12.0 to 2.11.0: same published content schema, validator and renderer; store changes only strengthen revision integrity checks."
+    }
+  ]
+}

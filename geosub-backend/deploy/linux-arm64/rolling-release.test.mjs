@@ -1,9 +1,10 @@
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, symlinkSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { retainAssets, route, checkMigrationChanges, safePath } from './rolling-release-lib.mjs';
+import { retainAssets, route, checkMigrationChanges, safePath, contentRollbackCompatible } from './rolling-release-lib.mjs';
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'geosub-release-'));
   t.after(() => rmSync(root, {
@@ -74,4 +75,18 @@ test('proxy uses retained static files and does not cache application responses'
   assert.throws(() => route(80, '/srv/assets'));
   assert.throws(() => safePath('/tmp/../etc'));
   assert.throws(() => safePath('/srv/assets;evil'));
+});
+
+test('content rollback keeps default-only restriction for unknown, reversed or modified readers', t => {
+  const r = fixture(t);
+  writeFileSync(join(r, 'old', 'reader'), 'old');
+  writeFileSync(join(r, 'next', 'reader'), 'new');
+  const fp = text => createHash('sha256').update('reader:' + createHash('sha256').update(text).digest('hex')).digest('hex');
+  const policy = {files:['reader'], approvedPairs:[{from:fp('new'), to:fp('old')}]};
+  assert.equal(contentRollbackCompatible(join(r,'next'), join(r,'old'), policy), true);
+  assert.equal(contentRollbackCompatible(join(r,'old'), join(r,'next'), policy), false);
+  writeFileSync(join(r,'old','reader'), 'changed');
+  assert.equal(contentRollbackCompatible(join(r,'next'), join(r,'old'), policy), false);
+  assert.equal(contentRollbackCompatible('/missing', join(r,'old'), policy), false);
+  assert.equal(contentRollbackCompatible(join(r,'next'), join(r,'old'), {files:[],approvedPairs:[]}), false);
 });
