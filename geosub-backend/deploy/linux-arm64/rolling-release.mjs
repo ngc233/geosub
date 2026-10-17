@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible } from './rolling-release-lib.mjs';
+import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible, taskUnitText, taskLaunch } from './rolling-release-lib.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const run = (bin, args = [], options = {}) => execFileSync(bin, args, {
   stdio: 'inherit',
@@ -167,11 +167,19 @@ function restoreTimers() {
   }
   paused = false;
 }
+function validateTaskUnits(release) {
+  for (const timer of timers) {
+    const source = path.join(release.dir, 'geosub-backend/deploy/linux-arm64/systemd', timer.replace('.timer', '.service'));
+    const launch = taskLaunch(taskUnitText(fs.readFileSync(source, 'utf8'), release.dir, root));
+    run('sudo', ['-u', launch.user, 'test', '-x', launch.executable]);
+    for (const script of launch.scripts) run('sudo', ['-u', launch.user, '/bin/bash', '-n', script]);
+  }
+}
 function taskUnits(release) {
   for (const timer of timers) {
     const unit = timer.replace('.timer', '.service');
     const source = path.join(release.dir, 'geosub-backend/deploy/linux-arm64/systemd', unit);
-    let text = fs.readFileSync(source, 'utf8').replaceAll('/opt/geosub/geosub-backend', `${live}/geosub-backend`).replaceAll('/opt/geosub/ai-price-site', `${live}/ai-price-site`).replace('[Service]', '[Service]\nEnvironment=GEOSUB_ENV_FILE=' + root + '/task.env');
+    const text = taskUnitText(fs.readFileSync(source, 'utf8'), live, root);
     atomic(`/etc/systemd/system/${unit}`, text, 0o644);
   }
   atomic(path.join(root, 'task.env'), `source '${envFile}'\nexport GEOSUB_BACKEND_DIR='${live}/geosub-backend'\nexport GEOSUB_FRONTEND_DIR='${live}/ai-price-site'\n`, 0o640);
@@ -358,6 +366,7 @@ try {
         recursive: true
       });
       run('chown', ['-R', 'geosub:geosub', path.join(release.app, '.next/cache')]);
+      validateTaskUnits(release);
       evidence('content_fence');
       user(old, 'node', ['scripts/content-deploy-fence.cjs', 'upgrade']);
       await pauseTimers();
@@ -391,6 +400,7 @@ try {
       attempt.target = prior.previous;
       attempt.backup = prior.backup;
       identity(attempt.target);
+      validateTaskUnits(attempt.target);
       evidence('content_fence');
       rollbackFence(old, attempt.target);
       await pauseTimers();

@@ -500,6 +500,14 @@ else
   fail "published product logo cache is incomplete"
 fi
 
+if node "$(dirname "$0")/check-task-launch.mjs" --check; then
+  pass "scheduled task launch interpreters and service-user readability"
+else
+  fail "scheduled task launch validation"
+fi
+for task in exchange-rate-sync price-pipeline collector-jobs discovery-scan analytics-aggregation operations-brief db-backup event-retention; do
+  check_unit_not_failed "geosub-$task.service"
+done
 check_unit_active "${GEOSUB_WEB_SERVICE:-geosub-web.service}"
 check_timer_enabled_active "geosub-exchange-rate-sync.timer"
 check_timer_enabled_active "geosub-price-pipeline.timer"

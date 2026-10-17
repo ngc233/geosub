@@ -95,3 +95,29 @@ export function contentRollbackCompatible(from, to, policy) {
     return policy.approvedPairs.some(pair => pair.from === source && pair.to === target);
   } catch { return false; }
 }
+
+/** Normalize both new templates and retained legacy units during rollback. */
+export function taskUnitText(source, releaseRoot, controlRoot) {
+  safePath(releaseRoot); safePath(controlRoot);
+  return normalizeTaskLaunch(source).replaceAll('/opt/geosub/geosub-backend', `${releaseRoot}/geosub-backend`)
+    .replaceAll('/opt/geosub/ai-price-site', `${releaseRoot}/ai-price-site`)
+    .replace('[Service]', '[Service]\nEnvironment=GEOSUB_ENV_FILE=' + controlRoot + '/task.env');
+}
+export function normalizeTaskLaunch(source) {
+  return source.replace(/^ExecStart=(\/\S+\.sh)(?=\s|$)/gm, 'ExecStart=/bin/bash $1')
+    .replace(/ -- (\/\S+\.sh)(?=\s|$)/g, ' -- /bin/bash $1')
+;
+}
+export function taskLaunch(text) {
+  const commands = [...text.matchAll(/^ExecStart=(.+)$/gm)];
+  if (commands.length !== 1) throw Error('Exactly one task ExecStart required');
+  const args = commands[0][1].trim().split(/\s+/);
+  const scripts = args.filter((arg, i) => {
+    if (!arg.endsWith('.sh')) return false;
+    safePath(arg);
+    if (!['/bin/bash', 'bash'].includes(args[i-1])) throw Error('Task shell script must use explicit Bash');
+    return true;
+  });
+  if (!scripts.length) throw Error('Task audit wrapper missing');
+  return {user: text.match(/^User=(.+)$/m)?.[1] || 'root', executable: args[0], scripts};
+}
