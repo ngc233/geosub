@@ -1433,7 +1433,7 @@ SELECT json_build_object(
   'product', (
     SELECT row_to_json(p)
     FROM (
-      SELECT id, slug, name
+      SELECT id, slug, name, category, status
       FROM products
       WHERE slug = $(Quote-SqlString $Slug)
       LIMIT 1
@@ -1962,6 +1962,9 @@ $productPlanSpec = Get-ProductPlanSpec -Specs $productPlanSpecs -ProductSlug $Pr
 if ($null -ne $productPlanSpec) {
   Write-Host "Product plan spec loaded for $ProductSlug. Plans: $(@($productPlanSpec.plans).Count)."
 } else {
+  if ([string]$context.product.category -eq "software") {
+    throw "Software product '$ProductSlug' requires a maintained subscription plan specification before App Store collection. No plan or price observation was created."
+  }
   Write-Host "No product plan spec found for $ProductSlug. Falling back to name-based plan matching."
 }
 

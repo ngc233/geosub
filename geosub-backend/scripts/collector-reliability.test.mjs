@@ -48,6 +48,14 @@ test("App Store parsing has DOM and embedded metadata paths", () => {
   assert.match(renderer, /hasInAppPurchasesSection/);
 });
 
+test("software without a canonical plan spec stops before creating App Store plans", () => {
+  assert.match(collector, /SELECT id, slug, name, category, status\s+FROM products/);
+  const guard = collector.indexOf("Software product '$ProductSlug' requires a maintained subscription plan specification");
+  const sourceWrite = collector.indexOf("$sourceId = Ensure-AppStoreSource", guard);
+  const planWrite = collector.indexOf("$plan = Ensure-Plan `", guard);
+  assert.ok(guard > 0 && sourceWrite > guard && planWrite > guard);
+});
+
 test("official Web parsing remains generic and pending-only", () => {
   assert.match(runner, /official_web_source_key/);
   assert.match(runner, /collect-official-web-prices\.mjs/);

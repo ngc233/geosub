@@ -1,6 +1,7 @@
 import { preproductionRuntime } from "../../../lib/first-party-promotion";
 import AdminProductContext from "../../../components/admin/AdminProductContext";
 import AdminLink from "@/components/admin/AdminLink";
+import { AdminLinkButton } from "@/components/admin/AdminButton";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { ArrowRight } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
@@ -40,10 +41,10 @@ export default async function AdminPlansPage({
   searchParams?: Promise<{ state?: string; product?: string }>;
 }) {
   const params = searchParams ? await searchParams : {};
-  const selectedState = ["not_started", "pending", "exception", "published"].includes(
+  const selectedState = ["not_started", "pending", "exception", "published", "archived"].includes(
     String(params.state),
   )
-    ? (String(params.state) as AdminOperationalStatus)
+    ? (String(params.state) as AdminOperationalStatus | "archived")
     : "all";
   const productSlug = String(params.product || "").trim();
   const selectedProduct = productSlug ? await prisma.product.findUnique({ where: { slug: productSlug } }) : null;
@@ -75,8 +76,8 @@ export default async function AdminPlansPage({
 
   const archivedCount = plans.filter(
     (plan) =>
-      isArchivedPublishStatus(String(plan.status)) ||
-      isArchivedPublishStatus(String(plan.product.status)),
+      isArchivedPublishStatus(String(plan.status)) &&
+      !isArchivedPublishStatus(String(plan.product.status)),
   ).length;
   const activePlans = plans.filter(
     (plan) =>
@@ -112,7 +113,9 @@ export default async function AdminPlansPage({
   };
   const operationalCounts = countAdminOperationalAssessments(activePlans.map(assessPlan));
   const activeTotal = getAdminOperationalTotal(operationalCounts);
-  const visiblePlans = selectedState === "all"
+  const visiblePlans = selectedState === "archived"
+    ? plans.filter((plan) => isArchivedPublishStatus(String(plan.status)) && !isArchivedPublishStatus(String(plan.product.status)))
+    : selectedState === "all"
     ? activePlans
     : activePlans.filter((plan) => assessPlan(plan)?.status === selectedState);
   const totalPrices = activePlans.reduce(
@@ -122,7 +125,7 @@ export default async function AdminPlansPage({
 
   const plansWithPrices = activePlans.filter((plan) => plan.regionPrices.length > 0);
   const plansWithoutPrices = activePlans.filter((plan) => plan.regionPrices.length === 0);
-  const stateHref = (state: "all" | AdminOperationalStatus) =>
+  const stateHref = (state: "all" | "archived" | AdminOperationalStatus) =>
     `/admin/plans?${new URLSearchParams({...(productSlug ? {product:productSlug} : {}),...(state === "all" ? {} : {state})})}`;
 
   return (
@@ -134,6 +137,7 @@ export default async function AdminPlansPage({
         eyebrow="Plans"
         title="套餐库"
         description="查看套餐发布状态与数据质量。价格数和极值包含全部平台，仅作后台诊断，不作为公开价格结论。"
+        action={<AdminLinkButton href={`/admin/plans/new${productSlug ? `?product=${encodeURIComponent(productSlug)}` : ""}`}>新增套餐</AdminLinkButton>}
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
@@ -223,12 +227,13 @@ export default async function AdminPlansPage({
                   href: stateHref(status),
                 }),
               ),
+              { label: `已归档 ${archivedCount}`, value: "archived", href: stateHref("archived") },
             ]}
           />
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <div className="grid grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px] gap-0 bg-slate-50 dark:bg-slate-800 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+          <div className="grid min-w-[860px] grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px_70px] gap-0 bg-slate-50 dark:bg-slate-800 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
             <div>产品</div>
             <div>套餐</div>
             <div>周期</div>
@@ -236,6 +241,7 @@ export default async function AdminPlansPage({
             <div>发布 / 数据质量</div>
             <div>最低价</div>
             <div>最高价</div>
+            <div>操作</div>
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
@@ -251,7 +257,7 @@ export default async function AdminPlansPage({
               return (
                 <div
                   key={plan.id}
-                  className="grid grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px] items-center gap-0 px-5 py-4 text-sm"
+                  className="grid min-w-[860px] grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px_70px] items-center gap-0 px-5 py-4 text-sm"
                 >
                   <div>
                     <div className="font-black text-slate-950 dark:text-slate-50">
@@ -298,6 +304,7 @@ export default async function AdminPlansPage({
                   <div className="font-black text-slate-700 dark:text-slate-200">
                     {formatUsd(maxPrice)}
                   </div>
+                  <AdminLink href={`/admin/plans/${plan.id}/edit`} className="font-bold text-blue-700 underline-offset-2 hover:underline dark:text-blue-300">编辑</AdminLink>
                 </div>
               );
             })}

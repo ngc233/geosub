@@ -41,8 +41,10 @@ Default scope:
 - Countries: `DEFAULT`, a curated common-storefront set. Mainland China (`CN`)
   and Hong Kong (`HK`) are excluded by default.
 - Plans are matched through `geosub-backend/data/product-plan-specs.json` when
-  the product has a spec. Unknown products still fall back to App Store
-  in-app purchase names and price-ascending sort order.
+  the product has a spec. AI and streaming products without a spec retain the
+  legacy name-based fallback. Software products require a maintained spec and
+  stop before writing plans or price observations when it is absent; App Store
+  lists may contain one-time assets and localized names that are not new tiers.
 
 ## Dry run
 
