@@ -90,8 +90,8 @@ test("admin can log in and approve a pending observation", async ({ page }) => {
   await overrideDetails.locator("summary").click();
   await observationInput
     .last()
-    .locator("xpath=parent::form")
-    .locator('button[type="submit"]')
+    .locator("xpath=ancestor::form[1]")
+    .getByRole("button", { name: "覆盖入库", exact: true })
     .click();
 
   await expect.poll(readFixtureState).toEqual({
