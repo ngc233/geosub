@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, symlinkSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { retainAssets, route, checkMigrationChanges, safePath, contentRollbackCompatible, taskUnitText, taskLaunch } from './rolling-release-lib.mjs';
+import { retainAssets, route, checkMigrationChanges, safePath, contentRollbackCompatible, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'geosub-release-'));
   t.after(() => rmSync(root, {
@@ -114,4 +114,9 @@ test('all shipped scheduled task templates have explicit interpreters and readab
       assert.equal(spawnSync('/bin/bash',['-n',source.pathname]).status,0,file+': '+script);
     }
   }
+});
+
+test('oneshot activating and stopping states block migration until the task terminates', () => {
+  for(const state of ['activating','active','deactivating','reloading','unknown','']) assert.equal(taskIsBusy(state),true,state);
+  for(const state of ['inactive','failed']) assert.equal(taskIsBusy(state),false,state);
 });

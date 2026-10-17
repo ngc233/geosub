@@ -121,3 +121,7 @@ export function taskLaunch(text) {
   if (!scripts.length) throw Error('Task audit wrapper missing');
   return {user: text.match(/^User=(.+)$/m)?.[1] || 'root', executable: args[0], scripts};
 }
+
+// systemctl is-active exits nonzero for an executing Type=oneshot service.
+// Only terminal states are safe; unknown states fail closed.
+export const taskIsBusy = state => !['inactive', 'failed'].includes(state);

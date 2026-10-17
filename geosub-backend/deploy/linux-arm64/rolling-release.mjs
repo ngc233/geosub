@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible, taskUnitText, taskLaunch } from './rolling-release-lib.mjs';
+import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const run = (bin, args = [], options = {}) => execFileSync(bin, args, {
   stdio: 'inherit',
@@ -155,7 +155,7 @@ async function pauseTimers() {
   evidence('pause_timers');
   for (const timer of timers) if (snapshot[timer].active) run('systemctl', ['stop', timer]);
   for (let i = 0; i < 120; i++) {
-    if (timers.every(t => !serviceActive(t.replace('.timer', '.service')))) return;
+    if (timers.every(t => !taskIsBusy(read('systemctl', ['show', t.replace('.timer', '.service'), '--property=ActiveState', '--value'])))) return;
     await sleep(1000);
   }
   throw Error('Scheduled task still running; migration was not started');
