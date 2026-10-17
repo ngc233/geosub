@@ -10,6 +10,8 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
+source "$(dirname "$0")/db-transport.sh"
+
 DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
@@ -45,13 +47,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+if ! geosub_db_ready; then
   echo "Database container '$DB_CONTAINER' is not running."
   exit 1
 fi
 
 echo "Creating backup: $backup_file"
-docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" -d "$DB_NAME" -Fc > "$partial_file"
+geosub_db_exec pg_dump -U "$DB_USER" -d "$DB_NAME" -Fc > "$partial_file"
 
 if [[ ! -s "$partial_file" ]]; then
   echo "Backup is empty: $partial_file"
@@ -59,7 +61,7 @@ if [[ ! -s "$partial_file" ]]; then
 fi
 
 echo "Verifying backup catalog"
-docker exec -i "$DB_CONTAINER" pg_restore --list < "$partial_file" > "$catalog_file"
+geosub_db_exec pg_restore --list < "$partial_file" > "$catalog_file"
 
 for required_entry in \
   'TABLE public products' \
@@ -75,7 +77,7 @@ for required_entry in \
 done
 
 echo "Recording key table row counts"
-docker exec -i "$DB_CONTAINER" psql \
+geosub_db_exec psql \
   -U "$DB_USER" \
   -d "$DB_NAME" \
   -X \

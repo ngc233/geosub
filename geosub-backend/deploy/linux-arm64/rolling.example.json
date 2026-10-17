@@ -1,0 +1,9 @@
+{
+  "routeFile": "/opt/1panel/www/sites/geosub.org/proxy/geosub-rolling.conf",
+  "proxyRouteFile": "/www/sites/geosub.org/proxy/geosub-rolling.conf",
+  "proxyAssets": "/www/sites/geosub.org/retained-static",
+  "proxyBin": "/usr/local/openresty/nginx/sbin/nginx",
+  "proxyContainer": "REPLACE_WITH_VERIFIED_OPENRESTY_CONTAINER_NAME",
+  "proxyArgs": [],
+  "origin": "http://127.0.0.1:3080"
+}

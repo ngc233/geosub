@@ -15,6 +15,18 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
+# rolling-v1 keeps the serving checkout and build intact. No silent downgrade.
+case "${GEOSUB_DEPLOY_MODE:-rolling-v1}" in
+  rolling-v1) exec node "$(dirname "$0")/rolling-release.mjs" rollback "$@" ;;
+  maintenance-v1)
+    if [[ -f "${GEOSUB_RELEASE_DIR:-/opt/geosub/releases}/rolling-state.json" ]]; then
+      echo "Rolling deployment is already adopted; maintenance mode would target the wrong runtime. Refusing." >&2
+      exit 1
+    fi
+    ;;
+  *) echo "Unknown GEOSUB_DEPLOY_MODE" >&2; exit 1 ;;
+esac
+
 REPO_DIR="${GEOSUB_REPO_DIR:-}"
 if [[ -n "$REPO_DIR" ]]; then
   BACKEND_DIR="${GEOSUB_BACKEND_DIR:-$REPO_DIR/geosub-backend}"

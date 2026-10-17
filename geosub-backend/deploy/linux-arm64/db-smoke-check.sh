@@ -9,16 +9,18 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
+source "$(dirname "$0")/db-transport.sh"
+
 DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 
-if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+if ! geosub_db_ready; then
   echo "Database container '$DB_CONTAINER' is not running."
   exit 1
 fi
 
-docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
+geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
 SELECT current_database() AS database_name;
 
 SELECT

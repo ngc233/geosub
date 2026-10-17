@@ -11,6 +11,8 @@ fi
 
 BACKEND_DIR="${GEOSUB_BACKEND_DIR:-/opt/geosub/geosub-backend}"
 FRONTEND_DIR="${GEOSUB_FRONTEND_DIR:-/opt/geosub/ai-price-site}"
+source "$(dirname "$0")/db-transport.sh"
+
 DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
@@ -40,16 +42,16 @@ if (( ${#entries[@]} == 0 )); then
   exit 1
 fi
 
-if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+if ! geosub_db_ready; then
   echo "Database container '$DB_CONTAINER' is not running."
   exit 1
 fi
 
-docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d postgres -v ON_ERROR_STOP=1 -tc \
+geosub_db_exec psql -U "$DB_USER" -d postgres -v ON_ERROR_STOP=1 -tc \
   "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" | grep -q 1 ||
-  docker exec "$DB_CONTAINER" createdb -U "$DB_USER" "$DB_NAME"
+  geosub_db_exec createdb -U "$DB_USER" "$DB_NAME"
 
-docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
+geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE IF NOT EXISTS geosub_schema_migrations (
   id BIGSERIAL PRIMARY KEY,
   filename TEXT NOT NULL UNIQUE,
@@ -59,7 +61,7 @@ CREATE TABLE IF NOT EXISTS geosub_schema_migrations (
 SQL
 
 if [[ "$MODE" == "backfill" || "$MODE" == "all" ]]; then
-  docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
+  geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE IF NOT EXISTS geosub_backfill_migrations (
   id BIGSERIAL PRIMARY KEY,
   filename TEXT NOT NULL UNIQUE,
@@ -92,7 +94,7 @@ registry_for_file() {
 registered_checksum() {
   local registry="$1"
   local filename="$2"
-  docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
+  geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
     "SELECT checksum FROM $registry WHERE filename = '$filename';"
 }
 
@@ -106,7 +108,7 @@ register_canonical() {
   local registry="$1"
   local filename="$2"
   local checksum="$3"
-  docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
+  geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c \
     "INSERT INTO $registry (filename, checksum) VALUES ('$filename', '$checksum') ON CONFLICT (filename) DO NOTHING;" >/dev/null
 }
 
@@ -120,7 +122,7 @@ check_legacy_baseline() {
   fi
 
   local schema_ready
-  schema_ready="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
+  schema_ready="$(geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c \
     "SELECT to_regclass('public.products') IS NOT NULL
        AND to_regclass('public.collector_jobs') IS NOT NULL
        AND to_regprocedure('queue_app_store_coverage_gap_rechecks(integer,integer,integer)') IS NOT NULL;")"
@@ -171,7 +173,7 @@ for entry in "${entries[@]}"; do
 
   compatibility_sql="$(node "$MANIFEST_SCRIPT" compatibility-sql "$file" --frontend-dir="$FRONTEND_DIR")"
   if [[ -n "$compatibility_sql" ]]; then
-    structure_compatible="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c "$compatibility_sql")"
+    structure_compatible="$(geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -qtAX -c "$compatibility_sql")"
     if [[ "$structure_compatible" == "t" ]]; then
       echo "Structure-compatible: $file"
       continue
@@ -179,7 +181,7 @@ for entry in "${entries[@]}"; do
   fi
 
   echo "Applying: $file"
-  docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < "$file"
+  geosub_db_exec psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < "$file"
   register_canonical "$registry" "$file" "$checksum"
 done
 

@@ -35,3 +35,24 @@ pnpm-workspace.yaml
 # TypeScript / generated files
 *.tsbuildinfo
 ai-price-site/lib/generated/prisma/
+
+# Isolated promotion acceptance builds
+ai-price-site/.next-promotion/
+ai-price-site/.next-promotion-build/
+ai-price-site/.next-promotion-preprod/
+
+ai-price-site/.next-admin-followup/
+
+ai-price-site/.next-admin-effects/
+
+ai-price-site/.next-admin-acceptance/
+ai-price-site/.next-admin-save/
+ai-price-site/.next-admin-nav/
+ai-price-site/.next-legacy-acceptance/
+
+ai-price-site/.next-release-acceptance/
+
+ai-price-site/.next-preflight-acceptance/
+
+# Local reliability browser acceptance build/cache
+ai-price-site/.next-admin-reliability/

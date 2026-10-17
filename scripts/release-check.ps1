@@ -36,6 +36,11 @@ function Invoke-Step {
   }
 }
 
+function Test-RollingRelease {
+  & node --test (Join-Path $Root "geosub-backend/deploy/linux-arm64/rolling-release.test.mjs")
+  if ($LASTEXITCODE -ne 0) { throw "Rolling release tests failed." }
+}
+
 function Assert-VersionSync {
   $arguments = @((Join-Path $Root "scripts/check-release-version.mjs"), "--root", $Root, "--git", $GitPath)
   if (![string]::IsNullOrWhiteSpace($BaselineRef)) {
@@ -304,4 +309,5 @@ Invoke-Step -Name "Git status" -Block {
 }
 
 Write-Host ""
+Invoke-Step "Rolling release safety" { Test-RollingRelease }
 Write-Host "Release checks complete."

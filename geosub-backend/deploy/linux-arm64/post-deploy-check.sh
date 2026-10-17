@@ -11,12 +11,15 @@ fi
 
 BACKEND_DIR="${GEOSUB_BACKEND_DIR:-/opt/geosub/geosub-backend}"
 FRONTEND_DIR="${GEOSUB_FRONTEND_DIR:-/opt/geosub/ai-price-site}"
+source "$(dirname "$0")/db-transport.sh"
+
 DB_CONTAINER="${GEOSUB_DB_CONTAINER:-geosub-postgres}"
 DB_NAME="${GEOSUB_DB_NAME:-geosub_app}"
 DB_USER="${GEOSUB_DB_USER:-geosub_admin}"
 WEB_HEALTH_URL="${GEOSUB_WEB_HEALTH_URL:-http://127.0.0.1:3000/api/health}"
 PUBLIC_SITE_URL="${GEOSUB_PUBLIC_SITE_URL:-https://geosub.org}"
 PUBLIC_WWW_URL="${GEOSUB_PUBLIC_WWW_URL:-https://www.geosub.org/}"
+CANONICAL_SITE_URL="${GEOSUB_CANONICAL_SITE_URL:-$PUBLIC_SITE_URL}"
 MAX_SITEMAP_URLS="${GEOSUB_MAX_SITEMAP_URLS:-148}"
 MIN_SITEMAP_URLS="${GEOSUB_MIN_SITEMAP_URLS:-80}"
 MAX_EXCHANGE_RATE_AGE_HOURS="${GEOSUB_MAX_EXCHANGE_RATE_AGE_HOURS:-18}"
@@ -47,7 +50,7 @@ fail() {
 
 psql_scalar() {
   local sql="$1"
-  docker exec "$DB_CONTAINER" psql \
+  geosub_db_exec psql \
     -U "$DB_USER" \
     -d "$DB_NAME" \
     -v ON_ERROR_STOP=1 \
@@ -183,6 +186,20 @@ check_unit_active() {
 check_timer_enabled_active() {
   local timer="$1"
 
+  # Rolling releases preserve the operator's prior active/enabled state.
+  if [[ -n "${GEOSUB_TIMER_STATE_FILE:-}" ]]; then
+    if node - "$GEOSUB_TIMER_STATE_FILE" "$timer" <<'JS'
+const fs=require('fs'),{spawnSync}=require('child_process');
+const [file,timer]=process.argv.slice(2), expected=JSON.parse(fs.readFileSync(file))[timer];
+if(!expected)process.exit(1);
+const active=spawnSync('systemctl',['is-active','--quiet',timer]).status===0;
+const enabled=spawnSync('systemctl',['is-enabled',timer],{encoding:'utf8'}).stdout.trim();
+process.exit(active===expected.active&&enabled===expected.enabled?0:1);
+JS
+    then pass "timer state preserved: $timer"; else fail "timer state differs: $timer"; fi
+    return
+  fi
+
   if ! command -v systemctl >/dev/null 2>&1; then
     warn "systemctl not available; skipped $timer"
     return
@@ -237,19 +254,12 @@ else
   fail "product logo storage is not writable by geosub: $LOGO_STORAGE_DIR"
 fi
 
-if ! command -v docker >/dev/null 2>&1; then
-  fail "docker command not found"
+if geosub_db_ready; then
+  pass "database transport ready"
 else
-  pass "docker command available"
+  fail "database transport unavailable"
 fi
 
-if command -v docker >/dev/null 2>&1; then
-  if docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
-    pass "database container running"
-  else
-    fail "database container not running: $DB_CONTAINER"
-  fi
-fi
 
 if (( failures == 0 )); then
   db_name="$(psql_scalar "SELECT current_database();")"
@@ -490,7 +500,7 @@ else
   fail "published product logo cache is incomplete"
 fi
 
-check_unit_active "geosub-web.service"
+check_unit_active "${GEOSUB_WEB_SERVICE:-geosub-web.service}"
 check_timer_enabled_active "geosub-exchange-rate-sync.timer"
 check_timer_enabled_active "geosub-price-pipeline.timer"
 check_timer_enabled_active "geosub-collector-jobs.timer"
@@ -596,9 +606,9 @@ if command -v curl >/dev/null 2>&1; then
     fi
 
     required_sitemap_urls=(
-      "$PUBLIC_SITE_URL/zh/ai-pricing/chatgpt"
-      "$PUBLIC_SITE_URL/en/ai-pricing/chatgpt"
-      "$PUBLIC_SITE_URL/zh/streaming-pricing/netflix"
+      "$CANONICAL_SITE_URL/zh/ai-pricing/chatgpt"
+      "$CANONICAL_SITE_URL/en/ai-pricing/chatgpt"
+      "$CANONICAL_SITE_URL/zh/streaming-pricing/netflix"
     )
     for required_sitemap_url in "${required_sitemap_urls[@]}"; do
       if printf '%s' "$sitemap_content" | grep -Fq "<loc>${required_sitemap_url}</loc>"; then
@@ -626,8 +636,18 @@ if command -v curl >/dev/null 2>&1; then
         grep -oE '<loc>[^<]+</loc>' |
         sed -e 's#<loc>##' -e 's#</loc>##' || true
     )"
+    # Probe the candidate origin, never the production host embedded in its sitemap.
+    probe_urls=""
+    while IFS= read -r sitemap_url; do
+      [[ -z "$sitemap_url" ]] && continue
+      if [[ "$sitemap_url" != "$CANONICAL_SITE_URL/"* ]]; then
+        fail "sitemap URL is outside configured canonical origin"
+      else
+        probe_urls+="$PUBLIC_SITE_URL${sitemap_url#"$CANONICAL_SITE_URL"}"$'\n'
+      fi
+    done <<< "$sitemap_urls"
     sitemap_route_failures="$(
-      printf '%s\n' "$sitemap_urls" |
+      printf '%s\n' "$probe_urls" |
         sed '/^[[:space:]]*$/d' |
         xargs -r -n 1 -P 8 sh -c '
           status="$(curl -sS --retry 2 --retry-all-errors --retry-delay 1 --max-time 15 -o /dev/null -w "%{http_code}" "$1" || true)"

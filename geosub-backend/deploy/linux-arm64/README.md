@@ -1,3 +1,5 @@
+> 2.12 发布入口更新：默认 rolling-v1，先阅读 [滚动发布手册](../../../docs/rolling-release-runbook.md)。下文旧原地停站升级只适用于显式 maintenance-v1，不代表滚动路径。
+
 # GeoSub Linux ARM64 deployment plan
 
 Target server: ARM64 Linux, 8 GB RAM, 6 vCPU.
