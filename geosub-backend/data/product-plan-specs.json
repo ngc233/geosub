@@ -543,5 +543,51 @@
         "expected_monthly_usd_max": 38.0
       }
     ]
+  },
+  "canva": {
+    "name": "Canva",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/us/app/id897446215",
+    "evidence_checked_at": "2026-10-18",
+    "plans": [
+      {
+        "slug": "pro",
+        "name": "Canva Pro",
+        "aliases": [
+          "Canva Pro - Monthly"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 10,
+        "review_only": true
+      },
+      {
+        "slug": "business",
+        "name": "Canva Business",
+        "aliases": [
+          "Canva Business - Monthly"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 20,
+        "review_only": true
+      }
+    ]
+  },
+  "notion": {
+    "name": "Notion",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/us/app/id1232780281",
+    "evidence_checked_at": "2026-10-18",
+    "plans": [
+      {
+        "slug": "plus",
+        "name": "Notion Plus",
+        "aliases": [
+          "Notion – Plus Monthly"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 10,
+        "review_only": true
+      }
+    ]
   }
 }

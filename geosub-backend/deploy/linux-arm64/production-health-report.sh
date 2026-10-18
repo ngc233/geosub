@@ -105,9 +105,29 @@ read_commit() {
   fi
 }
 
+# Rolling builds are archived directories, not the old repository checkout.
+POST_CHECK_ENV_FILE="$ENV_FILE"
+rolling_state="${GEOSUB_RELEASE_DIR:-/opt/geosub/releases}/rolling-state.json"
+if [[ -f "$rolling_state" ]]; then
+  rolling_identity="$(node - "$rolling_state" <<'NODE'
+const fs = require('node:fs');
+const a = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')).active;
+if (!a || !/^[a-f0-9]{40}$/.test(a.commit) || !/^geosub-web-[a-zA-Z0-9-]+\.service$/.test(a.unit)
+    || !Number.isInteger(a.port) || a.port < 1 || a.port > 65535 || !/^\d+\.\d+\.\d+$/.test(a.version)
+    || [a.dir, a.envFile].some(p => typeof p !== 'string' || !p.startsWith('/') || /[\r\n|]/.test(p))) {
+  throw Error('Invalid active rolling release identity');
+}
+console.log([a.dir, a.unit, a.port, a.version, a.commit, a.envFile].join('|'));
+NODE
+)"
+  IFS='|' read -r REPO_DIR WEB_SERVICE rolling_port rolling_version rolling_commit POST_CHECK_ENV_FILE <<< "$rolling_identity"
+  BACKEND_DIR="$REPO_DIR/geosub-backend"
+  LOCAL_URL="http://127.0.0.1:$rolling_port/api/health"
+fi
+
 generated_at="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-version="$(read_version)"
-commit="$(read_commit)"
+version="${rolling_version:-$(read_version)}"
+commit="${rolling_commit:-$(read_commit)}"
 git_changes="unknown"
 if git -C "$REPO_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git_changes="$(git -C "$REPO_DIR" status --short | wc -l | tr -d ' ')"
@@ -131,7 +151,7 @@ post_check_warnings="unknown"
 post_check_script="$BACKEND_DIR/deploy/linux-arm64/post-deploy-check.sh"
 if [[ -x "$post_check_script" || -f "$post_check_script" ]]; then
   post_check_output="$(mktemp)"
-  if bash "$post_check_script" > "$post_check_output" 2>&1; then
+  if GEOSUB_ENV_FILE="$POST_CHECK_ENV_FILE" bash "$post_check_script" > "$post_check_output" 2>&1; then
     post_check_status="passed"
   else
     post_check_status="failed"
@@ -201,6 +221,24 @@ task_state="$(psql_scalar "SELECT
 FROM system_task_runs;")"
 IFS='|' read -r system_failed_24h system_stale_running <<< "$task_state"
 
+# Keep task execution freshness separate from process/timer liveness.
+missing_task_success="$(psql_scalar "WITH expected(task_key, max_age_hours) AS (VALUES
+  ('analytics_aggregation', 1), ('collector_runner', 2), ('discovery_scan', 3),
+  ('exchange_rate_sync', 18), ('price_pipeline', 30), ('operations_brief', 30),
+  ('database_backup', 30), ('event_retention', 30), ('growth_bing_shadow', 30),
+  ('growth_google_shadow', 30)
+) SELECT COUNT(*) FROM expected WHERE NOT EXISTS (
+  SELECT 1 FROM system_task_runs run WHERE run.task_key = expected.task_key
+  AND run.status = 'succeeded' AND run.finished_at >= NOW() - make_interval(hours => expected.max_age_hours)
+);")"
+overdue_collector_jobs="$(psql_scalar "SELECT COUNT(*) FROM collector_jobs job
+WHERE job.status = 'active' AND job.next_run_at < NOW() - INTERVAL '2 hours'
+AND NOT EXISTS (SELECT 1 FROM collector_job_runs run WHERE run.job_id = job.id
+AND run.status = 'running' AND run.started_at >= NOW() - INTERVAL '20 minutes');")"
+unrecovered_collector_jobs="$(psql_scalar "SELECT COUNT(*) FROM (
+SELECT DISTINCT ON (run.job_id) run.status FROM collector_job_runs run JOIN collector_jobs job ON job.id = run.job_id WHERE job.status <> 'archived' ORDER BY run.job_id, run.started_at DESC, run.id DESC
+) latest WHERE status = 'failed';")"
+
 timers=(
   geosub-exchange-rate-sync.timer
   geosub-price-pipeline.timer
@@ -209,6 +247,9 @@ timers=(
   geosub-analytics-aggregation.timer
   geosub-db-backup.timer
   geosub-event-retention.timer
+  geosub-operations-brief.timer
+  geosub-growth-bing-shadow.timer
+  geosub-growth-google-shadow.timer
 )
 timer_active=0
 timer_failed=0
@@ -230,7 +271,7 @@ IFS='|' read -r _ public_status public_code public_ttfb public_average public_ma
 overall="healthy"
 if [[ "$service_state" != "active" || "$local_status" != "ok" || "$public_status" != "ok" || "$post_check_failures" != "0" || "$timer_failed" != "0" ]]; then
   overall="unhealthy"
-elif [[ "$post_check_warnings" != "0" || "$collector_failed_24h" != "0" || "$system_failed_24h" != "0" || "$stale_prices" != "0" || "$fx_stale" != "0" ]]; then
+elif [[ "$post_check_warnings" != "0" || "$collector_failed_24h" != "0" || "$system_failed_24h" != "0" || "$stale_prices" != "0" || "$fx_stale" != "0" || "$collector_stale_running" != "0" || "$system_stale_running" != "0" || "$missing_task_success" != "0" || "$overdue_collector_jobs" != "0" || "$unrecovered_collector_jobs" != "0" ]]; then
   overall="attention"
 fi
 
@@ -279,6 +320,9 @@ Each row uses $SAMPLE_COUNT sequential requests. These timings establish an appl
 - Stale collector runs: $collector_stale_running
 - Failed system tasks in 24 hours: $system_failed_24h
 - Stale system tasks: $system_stale_running
+- Tasks without success within their expected window: $missing_task_success
+- Active collector jobs overdue by more than two hours (excluding running jobs): $overdue_collector_jobs
+- Collector jobs whose latest result is still failed: $unrecovered_collector_jobs
 
 ### Collector failure groups in 24 hours
 

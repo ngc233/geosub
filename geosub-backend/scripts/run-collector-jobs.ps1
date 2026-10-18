@@ -146,7 +146,13 @@ WITH ranked_jobs AS (
   JOIN products product ON product.id = job.product_id
   LEFT JOIN price_sources source ON source.id = job.source_id
   WHERE job.status = 'active'
-    AND job.job_type IN ('ai_pricing', 'streaming_pricing')
+    AND (
+      job.job_type IN ('ai_pricing', 'streaming_pricing')
+      OR (
+        job.job_type = 'price_check'
+        AND COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'official_site'
+      )
+    )
     $jobFilterSql
     $collectorKindFilterSql
     AND (
@@ -1369,3 +1375,8 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
 }
 
 Write-Host "Collector jobs complete. Checked: $($summary.checked). Succeeded: $($summary.succeeded). Skipped: $($summary.skipped). Failed: $($summary.failed)."
+
+# A successful scheduler process must not hide failed child collections.
+if ($summary.failed -gt 0) {
+  throw "Collector batch completed with $($summary.failed) failed job(s). See collector_job_runs for per-job results."
+}

@@ -20,6 +20,11 @@
       "from": "662177a95712b713591b3115a0ad0be18f1f8cc88070458a0aa2c9087ef46ebc",
       "to": "cdc407abac5487616eead63f13b71374ee8e13c9cee0959f33db7b0455461203",
       "reason": "2.12.1 to 2.12.0: published content implementation and schema unchanged; operational task launch repair only."
+    },
+    {
+      "from": "44c7ea5c7c977fcb7a1331896a9b331ba9ff8a1554c1ae7a878a47e9b0a808cd",
+      "to": "8fa65997d432b1a217e836e1bfffccef195fa6de76447704b8fa6cc996262b3f",
+      "reason": "2.13.1 to 2.13.0: published content reader, renderer and schema unchanged; collector and monitoring reliability patch."
     }
   ]
 }

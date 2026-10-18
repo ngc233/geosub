@@ -54,6 +54,8 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Test collector scheduling and monitoring
+        run: node --test ../geosub-backend/scripts/collector-reliability.test.mjs ../geosub-backend/scripts/collector-monitor-database.test.mjs
       - name: Test rolling release safety
         run: node --test ../geosub-backend/deploy/linux-arm64/rolling-release.test.mjs
       - name: Prepare build database

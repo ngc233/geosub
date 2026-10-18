@@ -261,8 +261,11 @@ test("tracked products and plans keep explicit sanity ranges", () => {
       assert.ok(plan.name, `${label} should have a plan name`);
       assert.ok(Array.isArray(plan.aliases) && plan.aliases.length > 0, `${label} should have aliases`);
       assert.ok(Number.isFinite(plan.sort_order), `${label} should have a sort order`);
+      if (["canva/pro", "canva/business", "notion/plus"].includes(label)) {
+        assert.equal(plan.review_only, true, "approved software mappings must not publish");
+      }
       if (plan.review_only === true) {
-        assert.equal(label, "chatgpt/pro-500", "review-only exception must remain explicitly scoped");
+        assert.ok(["chatgpt/pro-500", "canva/pro", "canva/business", "notion/plus"].includes(label), "review-only exception must remain explicitly scoped");
         assert.equal(plan.expected_monthly_usd_min, undefined);
         assert.equal(plan.expected_monthly_usd_max, undefined);
         continue;
