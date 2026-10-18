@@ -91,3 +91,28 @@ test("software monthly identities exclude annual, consumable and ambiguous items
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.match(result.stdout, /PASS: 14 software identity/);
 });
+
+test("manual rolling collection explicitly binds task.env instead of the retained checkout", { skip: process.platform === "win32" }, async () => {
+  const fs = await import("node:fs/promises");
+  const os = await import("node:os");
+  const { spawnSync } = await import("node:child_process");
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "geosub-collector-env-"));
+  const quote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
+  try {
+    const live = path.join(dir, "live");
+    const old = path.join(dir, "old");
+    const bin = path.join(dir, "bin");
+    await Promise.all([fs.mkdir(live), fs.mkdir(old), fs.mkdir(bin)]);
+    await fs.writeFile(path.join(dir, "legacy.env"), `export GEOSUB_BACKEND_DIR=${quote(old)}\n`);
+    await fs.writeFile(path.join(dir, "task.env"), `source ${quote(path.join(dir, "legacy.env"))}\nexport GEOSUB_BACKEND_DIR=${quote(live)}\n`);
+    await fs.writeFile(path.join(bin, "flock"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    await fs.writeFile(path.join(bin, "pwsh"), "#!/bin/sh\nprintf '%s\\n' \"$@\"\n", { mode: 0o755 });
+    const r = spawnSync("bash", [path.join(scriptsDir, "../deploy/linux-arm64/run-collector-jobs.sh"), "-JobId", "test-job"], {
+      encoding: "utf8", env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, GEOSUB_ENV_FILE: path.join(dir, "task.env"), GEOSUB_COLLECTOR_LOCK_DIR: path.join(dir, "locks") },
+    });
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(r.stdout.includes(path.join(live, "scripts/run-collector-jobs.ps1")));
+    assert.ok(!r.stdout.includes(old));
+    assert.match(r.stdout, /-JobId\ntest-job/);
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});

@@ -47,3 +47,15 @@
 ## 2026-10-17 生产前兼容修正
 
 生产当前已有已验证的非默认热内容，原脚本一律要求先恢复代码默认内容会阻止应用回退。本版本登记 2.12.0 → 2.11.0 的精确内容读取契约（版本、校验器、存储读取、分发/回读、页面渲染、Prisma 模型、围栏脚本的 SHA-256 组合）。仅组合完整匹配审核清单时允许保留现有热内容并关闭发布围栏后切回；未知、反向、缺文件或字节变化仍走原代码默认限制。手动回退和失败自动恢复使用同一检查，并将策略写入操作账本。此例外不开放发布、不更改内容版本或回执、不允许数据库回退。
+
+### 滚动发布后的手动采集环境
+
+手动验收必须显式设置 `GEOSUB_ENV_FILE=/opt/geosub/releases/task.env`，再调用 live 目录下的正式入口。仅在 shell 中 source task.env 后调用入口是不够的：入口仍可能按默认 GEOSUB_ENV_FILE 重新读取旧配置，回到保留 checkout。
+
+```bash
+sudo -u geosub env GEOSUB_ENV_FILE=/opt/geosub/releases/task.env \
+  /bin/bash /opt/geosub/releases/live/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh \
+  -JobId APPROVED_JOB_UUID -Force -DefaultCountryCodes US -SkipAutoReview
+```
+
+此例仅用于已授权的单任务美国区待审核验收。不得将退出0当成采集成功；必须确认实际运行记录、来源、套餐身份、观测审核状态和正式价格数量。没有选中任务也可能退出0。普通定时任务继续使用已安装 systemd 单元中的 task.env，不改调度范围。
