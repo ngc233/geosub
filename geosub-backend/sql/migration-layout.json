@@ -688,6 +688,15 @@
       "legacyChecksums": [
         "9b65043d26d8eeceb4f278b0a6eb6356b7224b46c8e0892c02b10a79223942c7"
       ]
+    },
+    {
+      "id": "schema:058",
+      "file": "sql/schema/058_automatic_identity_ambiguity_lifecycle.sql",
+      "legacyBaseline": false,
+      "legacyFile": "sql/schema/058_automatic_identity_ambiguity_lifecycle.sql",
+      "legacyChecksums": [
+        "e5c9c4354eb1e7ba3f60423c991115f36a31f150c13e48d4e00c03188f06a27f"
+      ]
     }
   ],
   "backfill": [

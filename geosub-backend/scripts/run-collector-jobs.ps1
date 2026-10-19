@@ -1315,12 +1315,20 @@ foreach ($job in $jobs) {
 
 if (!$SkipAutoReview -and $pendingAppStoreCompletions.Count -gt 0) {
   Write-Host "Running App Store stability auto-review after collection."
+  # Restrict lifecycle changes to products completed by this batch so the
+  # existing completion notifications invalidate every affected product cache.
+  $completedIdentityProductsSql = (@($pendingAppStoreCompletions | ForEach-Object {
+    Quote-SqlString ([string]$_.Job.product_slug)
+  } | Select-Object -Unique)) -join ", "
   try {
     Invoke-Psql @"
 SELECT refresh_matching_app_store_prices() AS revalidated_prices;
 
 SELECT *
 FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14);
+
+SELECT reconcile_app_store_identity_ambiguities(completed.product_slug) AS identity_quarantined
+FROM unnest(ARRAY[$completedIdentityProductsSql]::TEXT[]) AS completed(product_slug);
 
 SELECT quarantine_published_app_store_price_outliers() AS quarantined_published_outliers;
 

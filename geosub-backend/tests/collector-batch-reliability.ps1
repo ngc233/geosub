@@ -24,3 +24,27 @@ try { . ([scriptblock]::Create($tail)) } catch {
 }
 if (!$didThrow) { throw 'Failed children were hidden by a successful batch result' }
 Write-Output 'PASS: legacy official-site scope and actual batch failure propagation'
+
+# Execute the actual batch scope expression and interpolated SQL with a capture
+# double; no collector or database connection is opened by this harness.
+$pendingAppStoreCompletions = @(
+  @{ Job = @{ product_slug = 'reelshort' } },
+  @{ Job = @{ product_slug = 'viki' } },
+  @{ Job = @{ product_slug = 'reelshort' } }
+)
+$scopeAssignment = $ast.Find({ param($node)
+  $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+  $node.Left.Extent.Text -eq '$completedIdentityProductsSql'
+}, $true)
+. ([scriptblock]::Create($scopeAssignment.Extent.Text))
+if ($completedIdentityProductsSql -ne "'reelshort', 'viki'") { throw 'Identity lifecycle product scope is incorrect' }
+function Invoke-Psql { param([string]$Sql) $script:identitySql = $Sql }
+$reviewCommand = $ast.Find({ param($node)
+  $node -is [System.Management.Automation.Language.CommandAst] -and
+  $node.GetCommandName() -eq 'Invoke-Psql' -and
+  $node.Extent.Text -match 'reconcile_app_store_identity_ambiguities'
+}, $true)
+. ([scriptblock]::Create($reviewCommand.Extent.Text))
+if (!$identitySql.Contains("unnest(ARRAY['reelshort', 'viki']::TEXT[])")) { throw 'Identity lifecycle SQL lost its completed-product scope' }
+if ($identitySql.IndexOf('reconcile_app_store_identity_ambiguities') -lt $identitySql.IndexOf('run_app_store_stability_auto_review')) { throw 'Identity lifecycle must follow automatic approval' }
+Write-Output 'PASS: completed-product identity lifecycle scope and actual SQL interpolation'

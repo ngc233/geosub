@@ -324,7 +324,11 @@ function validateManifest({ frontendDir } = {}) {
     throw new Error("SQL files must live under sql/schema or sql/backfill after B1.");
   }
 
-  const legacyInventory = new Set(allEntries.map((entry) => entry.legacyFile));
+  // New canonical migrations self-reference for registry compatibility; they
+  // do not add files to the frozen 100-file pre-B1 historical inventory.
+  const legacyInventory = new Set(allEntries
+    .filter((entry) => entry.legacyFile !== entry.file)
+    .map((entry) => entry.legacyFile));
   if (legacyInventory.size !== 100) {
     throw new Error(`Expected 100 classified legacy SQL files, found ${legacyInventory.size}.`);
   }

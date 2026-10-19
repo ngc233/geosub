@@ -35,6 +35,11 @@
       "from": "b19265f94a363885cf12f3e984ebc50b9eb888824ee00010ca02b23a7c46625f",
       "to": "9090301ed04533a13a72c2e07770ccf3989a79d2d5e21dae2f208880879538a7",
       "reason": "2.13.3 to 2.13.2: content reader, renderer, validator and schema byte-identical; HeyGen collector identity matching only."
+    },
+    {
+      "from": "1aa40246fb9f19cbe9402219b974116d300b4c923bc8d2f186f8fdb4afbcbe42",
+      "to": "b19265f94a363885cf12f3e984ebc50b9eb888824ee00010ca02b23a7c46625f",
+      "reason": "2.13.4 to 2.13.3: content reader, validator, renderer and content schema unchanged; automatic identity lifecycle adds functions and a collector completion step only."
     }
   ]
 }

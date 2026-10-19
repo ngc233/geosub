@@ -76,16 +76,16 @@ test("one migration layout classifies every schema, backfill and Prisma migratio
   assert.equal(summary.retired, manifest.retiredFiles.size);
   assert.equal(summary.legacy, 100);
   assert.equal(summary.prisma, manifest.prismaMigrations.length);
-  assert.equal(summary.schema, 57);
-  assert.equal(summary.activeSchema, 53);
+  assert.equal(summary.schema, 58);
+  assert.equal(summary.activeSchema, 54);
   assert.equal(summary.postCutoverSchema, 4);
   assert.equal(summary.backfill, 53);
   assert.equal(manifest.baselineCutoverFile, "sql/063_system_task_runs.sql");
   assert.ok(manifest.legacyBaselineFiles.includes("sql/062_app_store_coverage_gap_rechecks.sql"));
   assert.ok(!manifest.legacyBaselineFiles.includes(manifest.baselineCutoverFile));
   assert.equal(summary.prisma, 17);
-  assert.equal(manifest.entriesForMode("schema").length, 53);
-  assert.equal(manifest.entriesForMode("complete-schema").length, 57);
+  assert.equal(manifest.entriesForMode("schema").length, 54);
+  assert.equal(manifest.entriesForMode("complete-schema").length, 58);
   assert.deepEqual(
     manifest.entriesForMode("post-cutover").map((entry: { file: string }) => entry.file),
     [
@@ -215,4 +215,13 @@ test("B1 empty database verification rebuilds once and proves idempotency", () =
   assert.match(emptySchemaVerifier, /0 applied/);
   assert.match(emptySchemaVerifier, /No pending migrations to apply/);
   assert.match(emptySchemaVerifier, /empty-final\.sql/);
+});
+
+
+test("new canonical lifecycle migration preserves the historical baseline", () => {
+  const entry = manifest.schemaEntries.find((item: {id: string}) => item.id === "schema:058");
+  assert.equal(entry.file, entry.legacyFile);
+  assert.equal(entry.legacyBaseline, false);
+  assert.ok(!manifest.legacyBaselineFiles.includes(entry.file));
+  assert.equal(manifest.validateManifest({frontendDir}).legacy, 100);
 });

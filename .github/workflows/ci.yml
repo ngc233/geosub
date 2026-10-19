@@ -159,6 +159,13 @@ jobs:
         run: npx prisma generate
       - name: Apply migrations
         run: npm run db:migrate
+      - name: Test automatic identity quarantine and recovery
+        env:
+          PGPASSWORD: geosub_ci_password
+          GEOSUB_IDENTITY_TEST_DATABASE_URL: postgresql://geosub:geosub_ci_password@localhost:5432/geosub_identity_test_ci
+        run: |
+          createdb --host=localhost --username=geosub geosub_identity_test_ci
+          node --test ../geosub-backend/scripts/automatic-identity-lifecycle.test.mjs
       - name: Seed deterministic quality fixture
         run: npm run seed:ci-quality
       - name: Audit migrations
