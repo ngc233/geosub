@@ -1,0 +1,23 @@
+# Production overlay. Enroll a verified existing cluster before using this file.
+services:
+  postgres:
+    entrypoint: ["/bin/sh", "/usr/local/lib/geosub/postgres-existing-cluster-entrypoint.sh"]
+    command: ["postgres"]
+    volumes:
+      - type: bind
+        source: ${GEOSUB_POSTGRES_DATA_DIR:?Set the verified absolute existing PGDATA path}
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${GEOSUB_POSTGRES_GUARD_FILE:?Set the installed guard script path}
+        target: /usr/local/lib/geosub/postgres-existing-cluster-entrypoint.sh
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${GEOSUB_POSTGRES_IDENTITY_FILE:?Set the independent cluster identity file path}
+        target: /run/geosub-postgres-system-id
+        read_only: true
+        bind:
+          create_host_path: false

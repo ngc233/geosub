@@ -261,6 +261,9 @@ Invoke-Step -Name "Version sync" -Block { Assert-VersionSync }
 Invoke-Step -Name "PowerShell syntax" -Block { Test-PowerShellSyntax }
 Invoke-Step -Name "Node script syntax" -Block { Test-NodeSyntax }
 Invoke-Step -Name "Bash deployment syntax" -Block { Test-BashSyntax -Executable $BashPath }
+Invoke-Step -Name "PostgreSQL existing-cluster guard" -Block {
+  & node --test (Join-Path $Root "scripts/tests/postgres-existing-cluster.test.mjs")
+}
 Invoke-Step -Name "Repository hygiene" -Block { Test-RepositoryHygiene }
 Invoke-Step -Name "Repository secrets" -Block { Test-RepositorySecrets }
 
