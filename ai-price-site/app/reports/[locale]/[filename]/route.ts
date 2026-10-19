@@ -6,7 +6,7 @@ import { renderPricingReportPdf } from "../../../../lib/pricing-report-pdf";
 import { isSiteLocale } from "../../../../lib/site-locale";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+export const revalidate = 300;
 
 const REPORT_SUFFIX = "-global-pricing.pdf";
 
@@ -38,7 +38,9 @@ export async function GET(
 
   return new NextResponse(Buffer.from(pdf), {
     headers: {
-      "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      "Cache-Control": "no-cache, max-age=0, must-revalidate",
+      "CDN-Cache-Control": "public, max-age=300, must-revalidate",
+      "Cloudflare-CDN-Cache-Control": "public, max-age=300, must-revalidate",
       "Content-Disposition": `inline; filename="${productSlug}-${locale}-global-pricing.pdf"`,
       "Content-Type": "application/pdf",
       "Content-Language": locale,

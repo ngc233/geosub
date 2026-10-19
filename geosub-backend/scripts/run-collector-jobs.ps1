@@ -1313,10 +1313,12 @@ foreach ($job in $jobs) {
   }
 }
 
+$reportRefreshProducts = @()
 if (!$SkipAutoReview -and $pendingAppStoreCompletions.Count -gt 0) {
   Write-Host "Running App Store stability auto-review after collection."
   # Restrict lifecycle changes to products completed by this batch so the
-  # existing completion notifications invalidate every affected product cache.
+  # Existing manual completion revalidation and the report refresh below
+  # operate on the completed product scope.
   $completedIdentityProductsSql = (@($pendingAppStoreCompletions | ForEach-Object {
     Quote-SqlString ([string]$_.Job.product_slug)
   } | Select-Object -Unique)) -join ", "
@@ -1353,6 +1355,7 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
         -StartedAt $completion.StartedAt `
         -RunId $completion.RunId
     }
+    $reportRefreshProducts = @($pendingAppStoreCompletions | ForEach-Object { [string]$_.Job.product_slug } | Select-Object -Unique)
   } catch {
     $reviewError = $_.Exception.Message
     $summary.succeeded -= $pendingAppStoreCompletions.Count
@@ -1380,6 +1383,13 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
 
     Write-Host "App Store auto-review failed. Affected jobs were scheduled for retry: $reviewError"
   }
+}
+
+# Scheduled runs also refresh report origin/edge caches, with no human queue.
+# A cache failure is a system-task failure; successful collection rows stay true.
+if ($reportRefreshProducts.Count -gt 0 -and $env:GEOSUB_CONTENT_DISTRIBUTION -eq "cloudflare") {
+  & node (Join-Path $PSScriptRoot "refresh-collected-reports.mjs") --products-json (ConvertTo-Json -InputObject @($reportRefreshProducts) -Compress)
+  if ($LASTEXITCODE -ne 0) { throw "Automatic report cache refresh failed after successful collection." }
 }
 
 Write-Host "Collector jobs complete. Checked: $($summary.checked). Succeeded: $($summary.succeeded). Skipped: $($summary.skipped). Failed: $($summary.failed)."

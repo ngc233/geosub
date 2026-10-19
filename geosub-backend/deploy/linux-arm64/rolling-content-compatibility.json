@@ -40,6 +40,11 @@
       "from": "1aa40246fb9f19cbe9402219b974116d300b4c923bc8d2f186f8fdb4afbcbe42",
       "to": "b19265f94a363885cf12f3e984ebc50b9eb888824ee00010ca02b23a7c46625f",
       "reason": "2.13.4 to 2.13.3: content reader, validator, renderer and content schema unchanged; automatic identity lifecycle adds functions and a collector completion step only."
+    },
+    {
+      "from": "e00146a764f9320a42929cf25ae51cc6a4aae9fe2a1106e3d3c7510caf17f29e",
+      "to": "1aa40246fb9f19cbe9402219b974116d300b4c923bc8d2f186f8fdb4afbcbe42",
+      "reason": "2.13.5 to 2.13.4: content contract unchanged; completed-product PDF cache refresh and bounded report cache lifetime only."
     }
   ]
 }

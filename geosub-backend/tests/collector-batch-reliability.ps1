@@ -48,3 +48,24 @@ $reviewCommand = $ast.Find({ param($node)
 if (!$identitySql.Contains("unnest(ARRAY['reelshort', 'viki']::TEXT[])")) { throw 'Identity lifecycle SQL lost its completed-product scope' }
 if ($identitySql.IndexOf('reconcile_app_store_identity_ambiguities') -lt $identitySql.IndexOf('run_app_store_stability_auto_review')) { throw 'Identity lifecycle must follow automatic approval' }
 Write-Output 'PASS: completed-product identity lifecycle scope and actual SQL interpolation'
+
+$reportAssignment = $ast.Find({param($node)
+  $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+  $node.Left.Extent.Text -eq '$reportRefreshProducts' -and $node.Right.Extent.Text -match 'pendingAppStoreCompletions'
+}, $true)
+. ([scriptblock]::Create($reportAssignment.Extent.Text))
+$reportBlock = $ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.IfStatementAst] -and $_.Extent.Text.Contains('refresh-collected-reports.mjs') }
+function node { $script:reportArgs = @($args); $global:LASTEXITCODE = $script:reportExit }
+$priorDistribution = $env:GEOSUB_CONTENT_DISTRIBUTION
+try {
+  $env:GEOSUB_CONTENT_DISTRIBUTION = 'cloudflare'
+  $script:reportExit = 0
+  . ([scriptblock]::Create($reportBlock.Extent.Text.Replace('$PSScriptRoot', "'/isolated/scripts'")))
+  $parsedProducts = @($script:reportArgs[2] | ConvertFrom-Json)
+  if ($script:reportArgs[1] -ne '--products-json' -or ($parsedProducts -join ',') -ne 'reelshort,viki') { throw 'Actual report refresh arguments lost completed-product scope' }
+  $script:reportExit = 1
+  $cacheFailureVisible = $false
+  try { . ([scriptblock]::Create($reportBlock.Extent.Text.Replace('$PSScriptRoot', "'/isolated/scripts'"))) } catch { $cacheFailureVisible = $_.Exception.Message -match 'report cache refresh failed' }
+  if (!$cacheFailureVisible) { throw 'Report cache refresh failure was hidden' }
+} finally { $env:GEOSUB_CONTENT_DISTRIBUTION = $priorDistribution }
+Write-Output 'PASS: actual report refresh command arguments and failure propagation'
