@@ -116,3 +116,13 @@ test("manual rolling collection explicitly binds task.env instead of the retaine
     assert.match(r.stdout, /-JobId\ntest-job/);
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
+
+test("HeyGen Creator excludes weekly and Credit SKUs from the monthly identity", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const result = spawnSync(process.platform === "win32" ? "powershell.exe" : "pwsh", [
+    "-NoProfile", "-NonInteractive", "-File", path.join(scriptsDir, "../tests/heygen-plan-identity.ps1"),
+  ], { encoding: "utf8", timeout: 20_000 });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /PASS: 12 HeyGen identity cases/);
+});

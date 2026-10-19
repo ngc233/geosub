@@ -589,5 +589,59 @@
         "review_only": true
       }
     ]
+  },
+  "heygen": {
+    "name": "HeyGen",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/br/app/id6711356409",
+    "evidence_checked_at": "2026-10-20",
+    "plans": [
+      {
+        "slug": "starter",
+        "name": "HeyGen Starter",
+        "billing_cycle": "monthly",
+        "aliases": [
+          "starter monthly"
+        ],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 4,
+        "expected_monthly_usd_max": 22
+      },
+      {
+        "slug": "creator",
+        "name": "HeyGen Creator",
+        "billing_cycle": "monthly",
+        "aliases": [
+          "creator monthly"
+        ],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 12,
+        "expected_monthly_usd_max": 50
+      },
+      {
+        "slug": "pro-1000",
+        "name": "HeyGen Pro 1000",
+        "billing_cycle": "monthly",
+        "aliases": [
+          "pro 1000 credit monthly"
+        ],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 25,
+        "expected_monthly_usd_max": 80,
+        "allow_recurring_consumable_terms": true
+      },
+      {
+        "slug": "pro-1500",
+        "name": "HeyGen Pro 1500",
+        "billing_cycle": "monthly",
+        "aliases": [
+          "pro 1500 credit monthly"
+        ],
+        "sort_order": 40,
+        "expected_monthly_usd_min": 40,
+        "expected_monthly_usd_max": 110,
+        "allow_recurring_consumable_terms": true
+      }
+    ]
   }
 }
