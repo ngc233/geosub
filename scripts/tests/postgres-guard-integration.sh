@@ -40,4 +40,13 @@ sleep 3
 [[ "$(docker exec "$GEOSUB_GUARD_CONTAINER" psql -U postgres -Atc 'SELECT * FROM guard_sentinel')" = 42 ]]
 bash "$ROOT/geosub-backend/deploy/linux-arm64/install-postgres-guard.sh" rollback "$T/state" "$ID" ROLLBACK_EXISTING_CLUSTER_GUARD
 [[ "$(docker exec "$GEOSUB_GUARD_CONTAINER" psql -U postgres -Atc 'SELECT * FROM guard_sentinel')" = 42 ]]
-echo 'Guard install, restart, and rollback preserved sentinel'
+docker compose -f "$T/docker-compose.yml" stop postgres
+a=$(stat -c %i "$T/data")
+mv "$T/data" "$T/preserved-data"
+if docker compose -f "$T/docker-compose.yml" -f "$T/state/override.json" run --rm --no-deps postgres --check-only > "$T/missing-path.log" 2>&1; then
+  echo 'Missing data path incorrectly accepted' >&2; exit 1
+fi
+[[ ! -e "$T/data" ]]
+mv "$T/preserved-data" "$T/data"
+[[ "$(stat -c %i "$T/data")" = "$a" ]]
+echo 'Guard install, restart, rollback, and missing-bind refusal passed'

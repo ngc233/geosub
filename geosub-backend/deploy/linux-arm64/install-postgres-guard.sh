@@ -69,7 +69,7 @@ x=a['services']['postgres'].copy(); y=b['services']['postgres'].copy()
 for key in ['image','entrypoint','command','volumes']: x.pop(key,None); y.pop(key,None)
 if x!=y: raise SystemExit('Unapproved postgres configuration change')
 v=[v for v in b['services']['postgres']['volumes'] if v['target']=='/var/lib/postgresql/data']
-if len(v)!=1 or v[0]['bind']['create_host_path']!=False: raise SystemExit('Unsafe data mount')
+if len(v)!=1 or v[0].get('bind',{}).get('create_host_path',False)!=False: raise SystemExit('Unsafe data mount')
 PY
   # Persist as the default override, including the pinned existing image ID.
   install -m 0600 "$STATE/override.json" "$OVERLAY"

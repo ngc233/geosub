@@ -56,3 +56,6 @@ ai-price-site/.next-preflight-acceptance/
 
 # Local reliability browser acceptance build/cache
 ai-price-site/.next-admin-reliability/
+
+# Root-managed production database override (installed from verified release)
+geosub-backend/docker-compose.override.yml
