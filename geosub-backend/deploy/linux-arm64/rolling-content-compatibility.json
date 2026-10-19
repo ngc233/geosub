@@ -25,6 +25,11 @@
       "from": "44c7ea5c7c977fcb7a1331896a9b331ba9ff8a1554c1ae7a878a47e9b0a808cd",
       "to": "8fa65997d432b1a217e836e1bfffccef195fa6de76447704b8fa6cc996262b3f",
       "reason": "2.13.1 to 2.13.0: published content reader, renderer and schema unchanged; collector and monitoring reliability patch."
+    },
+    {
+      "from": "9090301ed04533a13a72c2e07770ccf3989a79d2d5e21dae2f208880879538a7",
+      "to": "44c7ea5c7c977fcb7a1331896a9b331ba9ff8a1554c1ae7a878a47e9b0a808cd",
+      "reason": "2.13.2 to 2.13.1: all content reader, renderer, validator and schema files byte-identical; PostgreSQL startup protection only."
     }
   ]
 }
