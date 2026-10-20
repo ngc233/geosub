@@ -182,7 +182,7 @@ function taskUnits(release) {
     const text = taskUnitText(fs.readFileSync(source, 'utf8'), live, root);
     atomic(`/etc/systemd/system/${unit}`, text, 0o644);
   }
-  atomic(path.join(root, 'task.env'), `source '${envFile}'\nexport GEOSUB_BACKEND_DIR='${live}/geosub-backend'\nexport GEOSUB_FRONTEND_DIR='${live}/ai-price-site'\n`, 0o640);
+  atomic(path.join(root, 'task.env'), `source '${envFile}'\nexport GEOSUB_BACKEND_DIR='${live}/geosub-backend'\nexport GEOSUB_FRONTEND_DIR='${live}/ai-price-site'\nexport GEOSUB_NEXT_DIST_DIR='${release.dist}'\nexport GEOSUB_WEB_HEALTH_URL='http://127.0.0.1:${release.port}/api/health'\n`, 0o640);
   run('chown', ['root:geosub', path.join(root, 'task.env')]);
   run('systemctl', ['daemon-reload']);
 }

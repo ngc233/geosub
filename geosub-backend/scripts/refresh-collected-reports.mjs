@@ -47,7 +47,7 @@ export async function refreshCollectedReports(products, env = process.env, http 
   return {mode:'refreshed',products:unique.length,reports};
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
   try {
     if (process.argv[2] !== '--products-json') throw Error('Completed products required');
     console.log('Automatic report cache refresh: '+JSON.stringify(await refreshCollectedReports(JSON.parse(process.argv[3] || '[]'))));

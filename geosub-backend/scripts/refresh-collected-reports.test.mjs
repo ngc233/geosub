@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
 import {refreshCollectedReports,reportPaths,reportLocales} from './refresh-collected-reports.mjs';
 const env={GEOSUB_CONTENT_DISTRIBUTION:'cloudflare',GEOSUB_WEB_HEALTH_URL:'http://127.0.0.1:3001/api/health',GEOSUB_CONTENT_CF_ZONE_ID:'a'.repeat(32),GEOSUB_CONTENT_CF_API_TOKEN:'test-token',GEOSUB_CONTENT_CACHE_POLICY:'audited-single-url',GEOSUB_FRONTEND_DIR:'/isolated/app'};
 const read=()=>JSON.stringify({preview:{previewModeId:'b'.repeat(32)}});
@@ -31,4 +35,17 @@ test('scheduler hook follows successful review and full locale inventory matches
  assert.deepEqual(reportLocales,launched);
  const route=fs.readFileSync(new URL('../../ai-price-site/app/reports/[locale]/[filename]/route.ts',import.meta.url),'utf8');
  assert.doesNotMatch(route,/stale-while-revalidate/);assert.match(route,/Cloudflare-CDN-Cache-Control.*max-age=300/);
+});
+
+test('CLI executes through deployment symlink and propagates invalid-configuration failure',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'geosub-report-cli-'));
+ try {
+  const linked=path.join(dir,'live');
+  fs.symlinkSync(path.dirname(fileURLToPath(import.meta.url)),linked,'dir');
+  const entry=path.join(linked,'refresh-collected-reports.mjs');
+  const inactive=spawnSync(process.execPath,[entry,'--products-json','["viki"]'],{encoding:'utf8',env:{...process.env,GEOSUB_CONTENT_DISTRIBUTION:'local'}});
+  assert.equal(inactive.status,0);assert.match(inactive.stdout,/"mode":"inactive"/);
+  const invalid=spawnSync(process.execPath,[entry,'--products-json','["viki"]'],{encoding:'utf8',env:{...process.env,GEOSUB_CONTENT_DISTRIBUTION:'cloudflare',GEOSUB_WEB_HEALTH_URL:'not-a-url'}});
+  assert.equal(invalid.status,1);assert.match(invalid.stderr,/Automatic report cache refresh failed/);
+ } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });

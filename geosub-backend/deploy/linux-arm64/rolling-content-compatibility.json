@@ -45,6 +45,11 @@
       "from": "e00146a764f9320a42929cf25ae51cc6a4aae9fe2a1106e3d3c7510caf17f29e",
       "to": "1aa40246fb9f19cbe9402219b974116d300b4c923bc8d2f186f8fdb4afbcbe42",
       "reason": "2.13.5 to 2.13.4: content contract unchanged; completed-product PDF cache refresh and bounded report cache lifetime only."
+    },
+    {
+      "from": "963d0947112c9ca37bae5e452559d548ea98cce8bf29bb68655caa2763f77aa5",
+      "to": "e00146a764f9320a42929cf25ae51cc6a4aae9fe2a1106e3d3c7510caf17f29e",
+      "reason": "2.13.6 to 2.13.5: content contract unchanged; fix report refresh CLI symlink entry and scheduled active-slot environment only."
     }
   ]
 }

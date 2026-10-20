@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
+import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, symlinkSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -119,4 +120,18 @@ test('all shipped scheduled task templates have explicit interpreters and readab
 test('oneshot activating and stopping states block migration until the task terminates', () => {
   for(const state of ['activating','active','deactivating','reloading','unknown','']) assert.equal(taskIsBusy(state),true,state);
   for(const state of ['inactive','failed']) assert.equal(taskIsBusy(state),false,state);
+});
+
+test('scheduled task environment targets the active slot after upgrade and rollback', t => {
+  const root=fixture(t), envFile=join(root,'base.env'), live=join(root,'live');
+  writeFileSync(envFile,'export GEOSUB_WEB_HEALTH_URL=http://127.0.0.1:3000/api/health\n');
+  const source=readFileSync(new URL('./rolling-release.mjs',import.meta.url),'utf8');
+  const body=source.slice(source.indexOf('function taskUnits(release) {'),source.indexOf('function installWeb(release) {'));
+  let wrapper;
+  const taskUnits=runInNewContext(body+'; taskUnits',{root,envFile,live,timers:[],path:{join},atomic:(file,text)=>{assert.equal(file,join(root,'task.env'));wrapper=text;},run:()=>{}});
+  for(const port of [3001,3002,3001]) {
+    taskUnits({port,dist:'.next'});writeFileSync(join(root,'task.env'),wrapper);
+    const result=spawnSync('/bin/bash',['-c','source "$1"; printf "%s|%s|%s" "$GEOSUB_WEB_HEALTH_URL" "$GEOSUB_NEXT_DIST_DIR" "$GEOSUB_FRONTEND_DIR"','test',join(root,'task.env')],{encoding:'utf8'});
+    assert.equal(result.status,0);assert.equal(result.stdout,`http://127.0.0.1:${port}/api/health|.next|${live}/ai-price-site`);
+  }
 });
