@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';
+import {webRuntime,webRuntimeEnv,ownedTaskTimers} from './component-release-lib.mjs';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, symlinkSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -128,10 +129,10 @@ test('scheduled task environment targets the active slot after upgrade and rollb
   const source=readFileSync(new URL('./rolling-release.mjs',import.meta.url),'utf8');
   const body=source.slice(source.indexOf('function taskUnits(release) {'),source.indexOf('function installWeb(release) {'));
   let wrapper;
-  const taskUnits=runInNewContext(body+'; taskUnits',{root,envFile,live,timers:[],path:{join},atomic:(file,text)=>{assert.equal(file,join(root,'task.env'));wrapper=text;},run:()=>{}});
+  const taskUnits=runInNewContext(body+'; taskUnits',{root,envFile,live,timers:[],path:{join},webRuntime,webRuntimeEnv,ownedTaskTimers,fs:{existsSync:()=>true},atomic:(file,text)=>{if(file===join(root,'task.env'))wrapper=text;},run:()=>{}});
   for(const port of [3001,3002,3001]) {
-    taskUnits({port,dist:'.next'});writeFileSync(join(root,'task.env'),wrapper);
+    taskUnits({port,dist:'.next',app:join(root,'active-web','ai-price-site')});writeFileSync(join(root,'task.env'),wrapper);
     const result=spawnSync('/bin/bash',['-c','source "$1"; printf "%s|%s|%s" "$GEOSUB_WEB_HEALTH_URL" "$GEOSUB_NEXT_DIST_DIR" "$GEOSUB_FRONTEND_DIR"','test',join(root,'task.env')],{encoding:'utf8'});
-    assert.equal(result.status,0);assert.equal(result.stdout,`http://127.0.0.1:${port}/api/health|.next|${live}/ai-price-site`);
+    assert.equal(result.status,0);assert.equal(result.stdout,`http://127.0.0.1:${port}/api/health|.next|${root}/active-web/ai-price-site`);
   }
 });

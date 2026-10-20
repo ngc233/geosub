@@ -49,3 +49,12 @@ test('CLI executes through deployment symlink and propagates invalid-configurati
   assert.equal(invalid.status,1);assert.match(invalid.stderr,/Automatic report cache refresh failed/);
  } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('report refresh follows atomic current web runtime after website switch',async()=>{
+ const calls=[],reads=[];
+ const newEnv={...env,GEOSUB_WEB_RUNTIME_FILE:'/release/web-runtime.json'};
+ const readRuntime=file=>{reads.push(file);return file.endsWith('web-runtime.json')?JSON.stringify({app:'/release/new/ai-price-site',dist:'.next',healthUrl:'http://127.0.0.1:3002/api/health'}):read();};
+ const http=async(url)=>{calls.push(url);return url.startsWith('http:')?new Response('pdf',{headers:{'content-type':'application/pdf'}}):Response.json({success:true});};
+ await refreshCollectedReports(['viki'],newEnv,http,readRuntime);
+ assert.equal(reads[1],'/release/new/ai-price-site/.next/prerender-manifest.json');assert.ok(calls.slice(0,12).every(x=>x.startsWith('http://127.0.0.1:3002/')));
+});

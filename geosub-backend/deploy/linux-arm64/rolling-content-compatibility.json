@@ -50,6 +50,11 @@
       "from": "963d0947112c9ca37bae5e452559d548ea98cce8bf29bb68655caa2763f77aa5",
       "to": "e00146a764f9320a42929cf25ae51cc6a4aae9fe2a1106e3d3c7510caf17f29e",
       "reason": "2.13.6 to 2.13.5: content contract unchanged; fix report refresh CLI symlink entry and scheduled active-slot environment only."
+    },
+    {
+      "from": "0682ba7c82294b3991b3e40a24a4b3dde24f8eeffa05b704f11700f2eb7a853f",
+      "to": "963d0947112c9ca37bae5e452559d548ea98cce8bf29bb68655caa2763f77aa5",
+      "reason": "2.14.0 to 2.13.6: exact content reader/schema contract unchanged; independent collector deployment and conditional migration execution only."
     }
   ]
 }

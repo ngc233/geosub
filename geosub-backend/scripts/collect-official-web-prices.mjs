@@ -363,7 +363,7 @@ async function main() {
     loadEnvFile(path.join(repoRoot, "ai-price-site", ".env"));
     if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set.");
 
-    const requireFromSite = createRequire(path.join(repoRoot, "ai-price-site", "package.json"));
+    const requireFromSite = createRequire(path.join(process.env.GEOSUB_FRONTEND_DIR || path.join(repoRoot, "ai-price-site"), "package.json"));
     const { Client } = requireFromSite("pg");
     client = new Client({ connectionString: process.env.DATABASE_URL });
     try {

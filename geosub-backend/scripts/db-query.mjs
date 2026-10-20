@@ -46,7 +46,7 @@ if (!databaseUrl) {
 
 let Client;
 try {
-  const requireFromSite = createRequire(resolve(repoRoot, "ai-price-site", "package.json"));
+  const requireFromSite = createRequire(resolve(process.env.GEOSUB_FRONTEND_DIR || resolve(repoRoot, "ai-price-site"), "package.json"));
   ({ Client } = requireFromSite("pg"));
 } catch (error) {
   console.error(`Cannot load pg from ai-price-site dependencies: ${error.message}`);

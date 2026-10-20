@@ -10,6 +10,10 @@ export function reportPaths(product) {
 
 export async function refreshCollectedReports(products, env = process.env, http = fetch, read = fs.readFileSync) {
   if (env.GEOSUB_CONTENT_DISTRIBUTION !== 'cloudflare') return { mode: 'inactive', products: 0, reports: 0 };
+  if (env.GEOSUB_WEB_RUNTIME_FILE) {
+    const runtime = JSON.parse(read(env.GEOSUB_WEB_RUNTIME_FILE, 'utf8'));
+    env = {...env, GEOSUB_FRONTEND_DIR: runtime.app, GEOSUB_NEXT_DIST_DIR: runtime.dist, GEOSUB_WEB_HEALTH_URL: runtime.healthUrl};
+  }
   if (!Array.isArray(products) || products.length > 50) throw Error('Invalid completed products');
   const unique = [...new Set(products)];
   const groups = unique.map(product => reportPaths(product));

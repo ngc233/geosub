@@ -13,6 +13,7 @@ User=geosub
 Group=geosub
 RuntimeDirectory=geosub
 RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
 NoNewPrivileges=true
 MemoryMax=1800M
 CPUQuota=120%

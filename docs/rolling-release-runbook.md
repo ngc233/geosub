@@ -59,3 +59,15 @@ sudo -u geosub env GEOSUB_ENV_FILE=/opt/geosub/releases/task.env \
 ```
 
 此例仅用于已授权的单任务美国区待审核验收。不得将退出0当成采集成功；必须确认实际运行记录、来源、套餐身份、观测审核状态和正式价格数量。没有选中任务也可能退出0。普通定时任务继续使用已安装 systemd 单元中的 task.env，不改调度范围。
+
+## 2.14 组件独立运行补充（取代上文每次必迁移/全量暂停步骤）
+
+当前网站仍由 rolling-state.json / current.env / live 管理。采集器由 collector-state.json / collector-current.env / collector-live 管理；collector-attempts 下保留发布及回退回执。仅 collector-jobs.service 使用 collector.env，其他定时任务使用原 task.env。
+
+网站切换原子更新 web-runtime.json 和 web-runtime.env：前者供报告刷新读取一致的端口与构建，后者为新批次提供网站依赖路径。已运行采集批次固定代码目录，排队批次在取得共享锁后解析最新组件路径。/run/geosub 的锁目录在采集服务结束后保留，避免手动任务与定时任务锁文件 inode 分叉。
+
+首次接入：先完成 2.14 网站滚动更新，确认无数据库输入变更则跳过迁移；后台手动入口随环境接入独立路径。再通过 collector-release.sh 提取同一版本的采集组件。可做采集器独立回退/重发演练，核对网站 PID、启动时间、代理摘要始终不变。
+
+后续：采集器升级只运行 collector-release.sh，网站升级只运行 upgrade.sh。二者共享部署互斥锁，禁止并发改运行指针。采集器无法通过此入口执行数据库迁移；数据库契约不一致时拒绝发布。采集候选准备失败不暂停定时器；在途任务超过 120 秒不强制结束，恢复定时器并拒绝切换。
+
+无迁移网站发布的日志/回执必须明确 skipped；仍执行只读数据库健康和上线账本检查。新增迁移、Prisma schema/清单/迁移器变化进入原迁移路径，不能用手动 skip 标记绕过。

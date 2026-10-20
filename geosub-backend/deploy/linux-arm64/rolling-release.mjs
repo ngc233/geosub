@@ -5,6 +5,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
+import { migrationPlan, executeMigrationPlan, webRuntime, webRuntimeEnv, ownedTaskTimers } from './component-release-lib.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const run = (bin, args = [], options = {}) => execFileSync(bin, args, {
   stdio: 'inherit',
@@ -38,9 +39,11 @@ let config,
   paused = false,
   lock = false;
 const controlEnv = process.env;
-const enabled = name => spawnSync('systemctl', ['is-enabled', name], {
-  encoding: 'utf8'
-}).stdout.trim();
+const enabled = name => {
+  const value = spawnSync('systemctl', ['is-enabled', name], {encoding:'utf8'}).stdout.trim();
+  if (!['enabled','disabled','static','indirect','enabled-runtime'].includes(value)) throw Error('Unknown timer enablement');
+  return value;
+};
 function proxy(args, capture = false) {
   const bin = config.proxyContainer ? 'docker' : config.proxyBin;
   const argv = config.proxyContainer ? ['exec', config.proxyContainer, config.proxyBin, ...args, ...config.proxyArgs] : [...args, ...config.proxyArgs];
@@ -83,7 +86,7 @@ function point(dir) {
 }
 function envWrapper(release) {
   const f = path.join(root, 'environments', `${release.id}.sh`);
-  atomic(f, `source '${envFile}'\nexport GEOSUB_BACKEND_DIR='${release.dir}/geosub-backend'\nexport GEOSUB_FRONTEND_DIR='${release.app}'\nexport GEOSUB_NEXT_DIST_DIR='${release.dist}'\nexport GEOSUB_WEB_SERVICE='${release.unit}'\nexport GEOSUB_WEB_HEALTH_URL='http://127.0.0.1:${release.port}/api/health'\nexport GEOSUB_TIMER_STATE_FILE='${root}/timers.json'\n`, 0o640);
+  atomic(f, `source '${envFile}'\nexport GEOSUB_BACKEND_DIR='${release.dir}/geosub-backend'\nexport GEOSUB_FRONTEND_DIR='${release.app}'\nexport GEOSUB_NEXT_DIST_DIR='${release.dist}'\nexport GEOSUB_WEB_SERVICE='${release.unit}'\nexport GEOSUB_WEB_HEALTH_URL='http://127.0.0.1:${release.port}/api/health'\nexport GEOSUB_TIMER_STATE_FILE='${root}/timers.json'\nexport GEOSUB_ENV_FILE='${f}'\nexport GEOSUB_BACKEND_ROOT='${root}/collector-live/geosub-backend'\nexport GEOSUB_COLLECTOR_ENV_FILE='${root}/collector.env'\nexport GEOSUB_COLLECTOR_LOCK_DIR='/run/geosub'\nexport GEOSUB_COLLECTOR_LOCK_FILE='/run/geosub/collector-jobs.lock'\n`, 0o640);
   run('chown', ['root:geosub', f]);
   return f;
 }
@@ -141,21 +144,22 @@ function proxySwitch(release) {
   if (!dump.includes(route(release.port, config.proxyAssets || assets).trim())) throw Error('Proxy mounted configuration is stale or differs from candidate route');
   proxy(['-s', 'reload']);
 }
-async function pauseTimers() {
+async function pauseTimers(selected = timers) {
   const snapshot = {};
-  for (const timer of timers) {
+  for (const timer of selected) {
     snapshot[timer] = {
       active: serviceActive(timer),
       enabled: enabled(timer)
     };
   }
-  save(path.join(root, 'timers.json'), snapshot);
+  const baseline = json(path.join(root, 'timers.json'));
+  save(path.join(root, 'timers.json'), {...baseline, ...snapshot});
   attempt.timers = snapshot;
   paused = true;
   evidence('pause_timers');
-  for (const timer of timers) if (snapshot[timer].active) run('systemctl', ['stop', timer]);
+  for (const timer of selected) if (snapshot[timer].active) run('systemctl', ['stop', timer]);
   for (let i = 0; i < 120; i++) {
-    if (timers.every(t => !taskIsBusy(read('systemctl', ['show', t.replace('.timer', '.service'), '--property=ActiveState', '--value'])))) return;
+    if (selected.every(t => !taskIsBusy(read('systemctl', ['show', t.replace('.timer', '.service'), '--property=ActiveState', '--value'])))) return;
     await sleep(1000);
   }
   throw Error('Scheduled task still running; migration was not started');
@@ -176,13 +180,17 @@ function validateTaskUnits(release) {
   }
 }
 function taskUnits(release) {
-  for (const timer of timers) {
+  run('install', ['-d', '-o', 'geosub', '-g', 'geosub', '-m', '0700', '/run/geosub']);
+  atomic(path.join(root, 'web-runtime.json'), JSON.stringify(webRuntime(release)) + '\n', 0o640);
+  atomic(path.join(root, 'web-runtime.env'), webRuntimeEnv(release), 0o640);
+  run('chown', ['root:geosub', path.join(root, 'web-runtime.json'), path.join(root, 'web-runtime.env')]);
+  for (const timer of ownedTaskTimers(timers, fs.existsSync(path.join(root, 'collector-state.json')))) {
     const unit = timer.replace('.timer', '.service');
     const source = path.join(release.dir, 'geosub-backend/deploy/linux-arm64/systemd', unit);
     const text = taskUnitText(fs.readFileSync(source, 'utf8'), live, root);
     atomic(`/etc/systemd/system/${unit}`, text, 0o644);
   }
-  atomic(path.join(root, 'task.env'), `source '${envFile}'\nexport GEOSUB_BACKEND_DIR='${live}/geosub-backend'\nexport GEOSUB_FRONTEND_DIR='${live}/ai-price-site'\nexport GEOSUB_NEXT_DIST_DIR='${release.dist}'\nexport GEOSUB_WEB_HEALTH_URL='http://127.0.0.1:${release.port}/api/health'\n`, 0o640);
+  atomic(path.join(root, 'task.env'), `source '${envFile}'\nexport GEOSUB_BACKEND_DIR='${live}/geosub-backend'\nexport GEOSUB_FRONTEND_DIR='${release.app}'\nexport GEOSUB_NEXT_DIST_DIR='${release.dist}'\nexport GEOSUB_WEB_HEALTH_URL='http://127.0.0.1:${release.port}/api/health'\n`, 0o640);
   run('chown', ['root:geosub', path.join(root, 'task.env')]);
   run('systemctl', ['daemon-reload']);
 }
@@ -287,7 +295,7 @@ try {
     old = state.active;
     identity(old);
     await health(old);
-    let pinned;
+    let pinned, databasePlan;
     if (operation === 'upgrade') {
       if (args.length) throw Error('Upgrade takes no positional arguments');
       if (read('git', ['-c', `safe.directory=${repo}`, '-C', repo, 'status', '--porcelain', '--untracked-files=normal'])) throw Error('Release repository must be clean');
@@ -316,6 +324,7 @@ try {
         }
       }
       checkMigrationChanges(changes, approved);
+      databasePlan = migrationPlan(changes);
       if (fs.statfsSync(root).bavail * fs.statfsSync(root).bsize < 3 * 1024 ** 3) throw Error('At least 3 GiB free space required; retained resources will not be deleted');
       pinned = commit;
     }
@@ -326,9 +335,11 @@ try {
       operation,
       previous: old,
       status: 'started',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      migration: databasePlan || { required: false, reason: 'application-rollback-no-database-restore', files: [] }
     };
     evidence('preflight');
+    save(path.join(root, 'timers.json'), Object.fromEntries(timers.map(timer => [timer, {active: serviceActive(timer), enabled: enabled(timer)}])));
     if (operation === 'upgrade') {
       const commit = pinned;
       const dir = path.join(root, 'builds', `${commit.slice(0, 12)}-${id}`);
@@ -369,18 +380,26 @@ try {
       validateTaskUnits(release);
       evidence('content_fence');
       user(old, 'node', ['scripts/content-deploy-fence.cjs', 'upgrade']);
-      await pauseTimers();
-      evidence('backup');
-      script(release, 'db-backup.sh');
-      const backupDir = env.GEOSUB_BACKUP_DIR || '/opt/geosub/backups';
-      const backups = fs.readdirSync(backupDir).filter(x => x.startsWith(`${env.GEOSUB_DB_NAME || 'geosub_app'}_`) && x.endsWith('.dump')).sort();
-      if (!backups.length) throw Error('No verified backup');
-      attempt.backup = path.join(backupDir, backups.at(-1));
-      run('sha256sum', ['-c', attempt.backup + '.sha256']);
-      evidence('migrate');
-      script(release, 'db-apply-sql.sh', ['schema']);
-      user(release, 'node', ['scripts/prepare-prisma-baseline.cjs']);
-      user(release, 'npx', ['prisma', 'migrate', 'deploy']);
+      await executeMigrationPlan(databasePlan, {
+        pause: pauseTimers,
+        backup: async () => {
+          evidence('backup');
+          script(release, 'db-backup.sh');
+          const backupDir = env.GEOSUB_BACKUP_DIR || '/opt/geosub/backups';
+          const backups = fs.readdirSync(backupDir).filter(x => x.startsWith(`${env.GEOSUB_DB_NAME || 'geosub_app'}_`) && x.endsWith('.dump')).sort();
+          if (!backups.length) throw Error('No verified backup');
+          attempt.backup = path.join(backupDir, backups.at(-1));
+          run('sha256sum', ['-c', attempt.backup + '.sha256']);
+        },
+        migrate: async () => {
+          evidence('migrate');
+          script(release, 'db-apply-sql.sh', ['schema']);
+          user(release, 'node', ['scripts/prepare-prisma-baseline.cjs']);
+          user(release, 'npx', ['prisma', 'migrate', 'deploy']);
+        },
+        skipped: reason => { evidence('migration_skipped', 'running', reason); console.log(`Database migration skipped: ${reason}`); }
+      });
+      if (!databasePlan.required && !fs.existsSync(path.join(root, 'collector-state.json'))) await pauseTimers(['geosub-collector-jobs.timer']);
       script(release, 'db-smoke-check.sh');
       user(release, 'npm', ['run', 'sync:logos']);
       evidence('candidate_start');
@@ -395,15 +414,16 @@ try {
       if (!/^\d{8}T\d{6}Z(?:-\d{3})?$/.test(ref || '') || opt['--confirm'] !== ref || Object.keys(opt).length !== 2) throw Error('Explicit --attempt ID --confirm ID required');
       const prior = json(path.join(root, 'attempts', ref, 'rolling.json'));
       if (prior.status !== 'succeeded' || prior.operation !== 'upgrade' || old.id !== prior.target?.id || state.previous?.id !== prior.previous?.id) throw Error('Stale or already rolled-back attempt');
-      if (!prior.backup) throw Error('Rollback backup missing');
-      run('sha256sum', ['-c', prior.backup + '.sha256']);
+      if (prior.migration?.required !== false) {
+        if (!prior.backup) throw Error('Rollback backup missing');
+        run('sha256sum', ['-c', prior.backup + '.sha256']);
+      }
       attempt.target = prior.previous;
       attempt.backup = prior.backup;
       identity(attempt.target);
       validateTaskUnits(attempt.target);
       evidence('content_fence');
       rollbackFence(old, attempt.target);
-      await pauseTimers();
       run('systemctl', ['start', attempt.target.unit]);
       await health(attempt.target);
     }

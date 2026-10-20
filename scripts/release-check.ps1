@@ -37,7 +37,7 @@ function Invoke-Step {
 }
 
 function Test-RollingRelease {
-  & node --test (Join-Path $Root "geosub-backend/deploy/linux-arm64/rolling-release.test.mjs")
+  & node --test (Join-Path $Root "geosub-backend/deploy/linux-arm64/rolling-release.test.mjs") (Join-Path $Root "geosub-backend/deploy/linux-arm64/component-release.test.mjs")
   if ($LASTEXITCODE -ne 0) { throw "Rolling release tests failed." }
 }
 

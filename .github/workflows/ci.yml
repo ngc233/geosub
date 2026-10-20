@@ -61,7 +61,7 @@ jobs:
       - name: Test PostgreSQL guard install and rollback
         run: bash ../scripts/tests/postgres-guard-integration.sh
       - name: Test rolling release safety
-        run: node --test ../geosub-backend/deploy/linux-arm64/rolling-release.test.mjs
+        run: node --test ../geosub-backend/deploy/linux-arm64/rolling-release.test.mjs ../geosub-backend/deploy/linux-arm64/component-release.test.mjs
       - name: Prepare build database
         run: npm run db:migrate
       - name: Build

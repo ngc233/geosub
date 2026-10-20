@@ -17,6 +17,9 @@ COMMIT="${1:-}"
 sudo -u geosub git -C "$REPO" fetch origin "${GEOSUB_GIT_BRANCH:-main}"
 [[ $(sudo -u geosub git -C "$REPO" rev-parse FETCH_HEAD) == "$COMMIT" ]] || { echo 'Commit differs from fetched release branch'; exit 1; }
 node "$REPO/scripts/check-release-version.mjs" --root "$REPO" --ref "$COMMIT" --current "$ROOT/current.env"
+if [[ -f "$ROOT/collector-current.env" ]] && ! grep -qx "GEOSUB_COMMIT=$COMMIT" "$ROOT/collector-current.env"; then
+  node "$REPO/scripts/check-release-version.mjs" --root "$REPO" --ref "$COMMIT" --current "$ROOT/collector-current.env"
+fi
 install -d -m 0755 "$ROOT/controllers"
 mkdir "$ROOT/rolling.lock" || { echo 'Another release/control operation is running'; exit 1; }
 trap 'rmdir "$ROOT/rolling.lock"' EXIT
@@ -27,7 +30,7 @@ sudo -u geosub git -C "$REPO" archive "$COMMIT" geosub-backend/deploy/linux-arm6
 chown -R root:root "$TARGET"
 chmod -R go-w "$TARGET"
 for file in "$TARGET"/*.sh; do bash -n "$file"; done
-node --test "$TARGET/rolling-release.test.mjs"
+node --test "$TARGET/rolling-release.test.mjs" "$TARGET/component-release.test.mjs"
 ln -s "$TARGET" "$ROOT/control.pending"
 mv -Tf "$ROOT/control.pending" "$ROOT/control"
 printf 'Control installed from %s. Application and proxy unchanged.\n' "$COMMIT"
