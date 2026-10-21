@@ -6,6 +6,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
 import { migrationPlan, executeMigrationPlan, webRuntime, webRuntimeEnv, ownedTaskTimers } from './component-release-lib.mjs';
+import { finalizeExistingCandidate } from './rolling-finalize-lib.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const run = (bin, args = [], options = {}) => execFileSync(bin, args, {
   stdio: 'inherit',
@@ -219,7 +220,7 @@ function record(release) {
 }
 function checkedConfig() {
   if (process.getuid() !== 0 || process.platform !== 'linux') throw Error('Linux root required');
-  if (!['upgrade', 'rollback', 'adopt'].includes(operation)) throw Error('Use upgrade, rollback --attempt ID --confirm ID, or adopt --confirm SHA');
+  if (!['upgrade', 'rollback', 'adopt', 'finalize'].includes(operation)) throw Error('Use upgrade, rollback, adopt, or finalize with explicit identity');
   for (const f of [configFile, envFile]) {
     const s = fs.statSync(f);
     if (s.uid !== 0 || s.mode & 0o022) throw Error('Configuration must be root-owned and not group/world writable');
@@ -244,7 +245,41 @@ function checkedConfig() {
 }
 try {
   checkedConfig();
-  if (operation === 'adopt') {
+  if (operation === 'finalize') {
+    const opt = Object.fromEntries(Array.from({ length: args.length / 2 }, (_, i) => [args[i * 2], args[i * 2 + 1]]));
+    const ref = opt['--attempt'];
+    if (args.length !== 6 || Object.keys(opt).length !== 3 || !/^\d{8}T\d{6}Z(?:-\d{3})?$/.test(ref || '') || opt['--confirm'] !== ref) throw Error('Explicit attempt, confirmation and candidate commit required');
+    const prior = json(path.join(root, 'attempts', ref, 'rolling.json'));
+    const currentState = json(stateFile);
+    const target = prior.target;
+    const latestAttempt = fs.readdirSync(path.join(root, 'attempts')).filter(x => /^\d{8}T\d{6}Z(?:-\d{3})?$/.test(x)).sort().at(-1);
+    await finalizeExistingCandidate({ prior, state: currentState, expectedCommit: opt['--commit'], latestAttempt,
+      liveDir: fs.realpathSync(live),
+      routeMatches: fs.readFileSync(config.routeFile, 'utf8') === route(target.port, config.proxyAssets || assets),
+      runtimeMatches: JSON.stringify(json(path.join(root, 'web-runtime.json'))) === JSON.stringify(webRuntime(target)),
+    }, {
+      verify: async release => {
+        identity(release);
+        if (fs.readFileSync(path.join(release.dir, 'VERSION'), 'utf8').trim() !== release.version) throw Error('Candidate version changed');
+        await health(release);
+        await proxyHealth(release);
+        user(release, 'node', ['-e', `const {PrismaClient}=require('@prisma/client'),{PrismaPg}=require('@prisma/adapter-pg');const db=new PrismaClient({adapter:new PrismaPg({connectionString:process.env.DATABASE_URL,options:'-c default_transaction_read_only=on'})});(async()=>{const rows=await db.siteSetting.findMany({where:{settingKey:{in:['content-pilot:en:chatgpt:fence','content-pilot:en:chatgpt:state']}},select:{settingKey:true,valueJson:true}});const fence=rows.find(x=>x.settingKey.endsWith(':fence'))?.valueJson,state=rows.find(x=>x.settingKey.endsWith(':state'))?.valueJson;if((state||fence)&&fence?.admission!=='closed')throw Error('Content admission must stay closed');if(state?.version&&state.receipt!=='verified')throw Error('Content receipt is not verified');console.log('Existing content fence and receipt verified read-only');})().catch(()=>{console.error('Content state verification failed');process.exitCode=1;}).finally(()=>db.$disconnect());`]);
+        run('bash', [path.join(here, 'post-deploy-check.sh')], { env: { ...envFor(release), PGOPTIONS: '-c default_transaction_read_only=on' } });
+        // Recheck pointers after the potentially long verification. No switch,
+        // service start/stop, task install, migration or content write is allowed.
+        if (JSON.stringify(json(stateFile)) !== JSON.stringify(currentState) || fs.realpathSync(live) !== release.dir || fs.readFileSync(config.routeFile, 'utf8') !== route(release.port, config.proxyAssets || assets)) throw Error('Runtime changed during finalization');
+      },
+      record: next => {
+        const id = new Date().toISOString().replace(/[-:]/g, '').replace(/\.(\d+)Z$/, 'Z-$1');
+        attempt = { id, operation: 'finalize', previous: prior.previous, target, migration: prior.migration, originalAttempt: ref, createdAt: new Date().toISOString() };
+        evidence('record');
+        state = next;
+        record(target);
+        evidence('complete', 'succeeded');
+      },
+    });
+    console.log(`Existing release ${target.version} finalized; original failure retained; no runtime restart or switch.`);
+  } else if (operation === 'adopt') {
     if (fs.existsSync(stateFile)) throw Error('Already adopted');
     const commit = read('git', ['-c', `safe.directory=${repo}`, '-C', repo, 'rev-parse', 'HEAD']);
     if (args.join(' ') !== `--confirm ${commit}`) throw Error('Explicit current commit confirmation required');
@@ -413,7 +448,7 @@ try {
       const ref = opt['--attempt'];
       if (!/^\d{8}T\d{6}Z(?:-\d{3})?$/.test(ref || '') || opt['--confirm'] !== ref || Object.keys(opt).length !== 2) throw Error('Explicit --attempt ID --confirm ID required');
       const prior = json(path.join(root, 'attempts', ref, 'rolling.json'));
-      if (prior.status !== 'succeeded' || prior.operation !== 'upgrade' || old.id !== prior.target?.id || state.previous?.id !== prior.previous?.id) throw Error('Stale or already rolled-back attempt');
+      if (prior.status !== 'succeeded' || !['upgrade', 'finalize'].includes(prior.operation) || old.id !== prior.target?.id || state.previous?.id !== prior.previous?.id) throw Error('Stale or already rolled-back attempt');
       if (prior.migration?.required !== false) {
         if (!prior.backup) throw Error('Rollback backup missing');
         run('sha256sum', ['-c', prior.backup + '.sha256']);

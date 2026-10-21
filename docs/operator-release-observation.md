@@ -66,3 +66,19 @@ python3 scripts/geosub_ops.py observe \
 - 已安装控制器保持原样。新入口可调用其标准执行器；它不要求更新生产应用才能使用。
 - 原任务工作区的旧发布/探测脚本停用，提示迁移到此入口，防止今后继续使用分叉副本。
 - 回退工具改动只回退此提交；不回退网站、数据库或既有发布回执。正在服务器运行的请求必须先核对状态，不能以工具回退为由重发。
+
+## 已切换但成功账本未登记的恢复
+
+2026-10-21 的 2.14.2 发布遇到采集并行期间的暂态价格门禁（3 条较新同价观测，随后自然归零），自动恢复又被缺少精确内容兼容对拦住。候选已服务、成功账本仍为旧版本时，不得重跑 upgrade 或手工编辑成功状态。
+
+新入口 `web-finalize` 只用于此类无迁移、未暂停定时器、切换后健康检查失败且恢复不完整的升级。需独立的新请求文件、原生失败 attempt 和已通过 CI 的候选完整 SHA。它验证原失败仍是最新 attempt、旧成功状态匹配、live/代理/运行配置均已指向该候选、构建和资源身份一致、内容围栏关闭及回执 verified，再以只读数据库权限重新执行原有完整健康门禁。全部通过才写成功账本和新的 finalize 回执；原失败记录保留。失败时不重启、切换、回退或修改业务数据。重复、过期、迁移发布和已恢复到旧实例的情况拒绝。
+
+```bash
+python3 scripts/geosub_ops.py start \
+  --host "$GEOSUB_SSH_HOST" --identity "$GEOSUB_SSH_IDENTITY" \
+  --known-hosts "$GEOSUB_KNOWN_HOSTS" --controller-commit "$VERIFIED_CONTROLLER_SHA" \
+  --kind web-finalize --attempt "$FAILED_NATIVE_ATTEMPT" \
+  --candidate-commit "$VERIFIED_CANDIDATE_SHA" --receipt .ops-evidence/finalize-request.json
+```
+
+这属于已有发布的恢复操作，需要发布授权，不属于只读观察自动化。控制器须由已通过 CI 的精确提交安装；安装不重启应用或采集器。回退可引用成功 finalize 的原生回执，仍走精确内容兼容门禁。2.14.2 → 2.14.1 的内容契约文件已逐字节核对，除 VERSION 外均一致，现登记该精确兼容对；未知组合继续拒绝。

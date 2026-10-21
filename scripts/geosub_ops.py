@@ -50,11 +50,11 @@ def validate_request(req):
     root = req['releaseRoot']
     if not re.fullmatch(r'/[A-Za-z0-9_./-]+', root) or '..' in root.split('/') or root.endswith('/'):
         raise ValueError('Invalid release root')
-    if req['kind'] not in ('web-upgrade', 'collector-upgrade', 'web-rollback', 'collector-rollback'):
+    if req['kind'] not in ('web-upgrade', 'collector-upgrade', 'web-rollback', 'collector-rollback', 'web-finalize'):
         raise ValueError('Unknown release operation')
-    if req['kind'].endswith('rollback') and not re.fullmatch(r'[0-9TZ-]+', req.get('attempt', '')):
+    if (req['kind'].endswith('rollback') or req['kind'] == 'web-finalize') and not re.fullmatch(r'\d{8}T\d{6}Z(?:-\d{3})?', req.get('attempt', '')):
         raise ValueError('Rollback requires an exact native attempt ID')
-    if req['kind'] == 'collector-upgrade' and not re.fullmatch(r'[a-f0-9]{40}', req.get('candidateCommit', '')):
+    if req['kind'] in ('collector-upgrade', 'web-finalize') and not re.fullmatch(r'[a-f0-9]{40}', req.get('candidateCommit', '')):
         raise ValueError('Collector upgrade requires a full candidate commit')
 
 
@@ -81,6 +81,8 @@ def release_argv(req):
         return ['/bin/bash', controller + '/upgrade.sh']
     if req['kind'] == 'collector-upgrade':
         return ['/bin/bash', controller + '/collector-release.sh', 'upgrade', '--commit', req['candidateCommit']]
+    if req['kind'] == 'web-finalize':
+        return ['/bin/bash', controller + '/finalize-release.sh', '--attempt', req['attempt'], '--confirm', req['attempt'], '--commit', req['candidateCommit']]
     script = '/rollback.sh' if req['kind'] == 'web-rollback' else '/collector-release.sh'
     return ['/bin/bash', controller + script] + ([] if req['kind'] == 'web-rollback' else ['rollback']) + ['--attempt', req['attempt'], '--confirm', req['attempt']]
 
@@ -255,7 +257,7 @@ def main():
         if name == 'start':
             p.add_argument('--host', required=True)
             p.add_argument('--controller-commit', required=True)
-            p.add_argument('--kind', choices=['web-upgrade', 'collector-upgrade', 'web-rollback', 'collector-rollback'], required=True)
+            p.add_argument('--kind', choices=['web-upgrade', 'collector-upgrade', 'web-rollback', 'collector-rollback', 'web-finalize'], required=True)
             p.add_argument('--candidate-commit')
             p.add_argument('--attempt')
             p.add_argument('--release-root', default='/opt/geosub/releases')

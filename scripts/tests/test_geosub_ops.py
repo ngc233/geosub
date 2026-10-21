@@ -113,6 +113,13 @@ class OpsTest(unittest.TestCase):
         ops.validate_request(req)
         self.assertEqual(ops.release_argv(req)[-4:],['--attempt',req['attempt'],'--confirm',req['attempt']])
 
+    def test_finalize_requires_exact_attempt_and_candidate(self):
+        req=dict(id='safe',controllerCommit='a'*40,releaseRoot='/opt/geosub/releases',kind='web-finalize',attempt='20261021T111929Z-174',candidateCommit='b'*40)
+        ops.validate_request(req)
+        self.assertEqual(ops.release_argv(req),['/bin/bash','/opt/geosub/releases/controllers/'+'a'*40+'/finalize-release.sh','--attempt',req['attempt'],'--confirm',req['attempt'],'--commit',req['candidateCommit']])
+        for bad in [{'attempt':'latest'},{'attempt':''},{'candidateCommit':'main'},{'candidateCommit':''}]:
+            with self.assertRaises(ValueError):ops.validate_request({**req,**bad})
+
     def test_ssh_failure_is_unknown_not_automatic_resubmission(self):
         with tempfile.TemporaryDirectory() as temp:
             file=Path(temp)/'key';file.touch()

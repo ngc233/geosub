@@ -136,3 +136,24 @@ test('scheduled task environment targets the active slot after upgrade and rollb
     assert.equal(result.status,0);assert.equal(result.stdout,`http://127.0.0.1:${port}/api/health|.next|${root}/active-web/ai-price-site`);
   }
 });
+
+
+test('finalization rejects stale, migrated, recovered or differently routed candidates before writing', async () => {
+  const {finalizeExistingCandidate} = await import('./rolling-finalize-lib.mjs');
+  const previous={id:'old',commit:'b'.repeat(40)};
+  const target={id:'new',commit:'a'.repeat(40),dir:'/retained/new'};
+  const input={prior:{id:'attempt',operation:'upgrade',status:'failed',detail:'Command failed: post-deploy-check.sh; recovery=incomplete',migration:{required:false},previous,target},state:{active:previous},expectedCommit:target.commit,latestAttempt:'attempt',liveDir:target.dir,routeMatches:true,runtimeMatches:true};
+  for(const mutate of [x=>x.prior.status='succeeded',x=>x.prior.operation='rollback',x=>x.prior.detail='recovery=verified',x=>x.prior.migration.required=true,x=>x.prior.timers={timer:{active:true}},x=>x.expectedCommit='c'.repeat(40),x=>x.latestAttempt='later',x=>x.state.active.id='other',x=>x.liveDir='/other',x=>x.routeMatches=false,x=>x.runtimeMatches=false]) {
+    const value=JSON.parse(JSON.stringify(input));mutate(value);
+    let calls=0;
+    await assert.rejects(finalizeExistingCandidate(value,{verify:()=>{calls++;},record:()=>{calls++;}}));
+    assert.equal(calls,0);
+  }
+  let writes=0;
+  await assert.rejects(finalizeExistingCandidate(input,{verify:()=>{throw Error('gate still fails');},record:()=>{writes++;}}),/gate still fails/);
+  assert.equal(writes,0);
+  const calls=[];
+  await finalizeExistingCandidate(input,{verify:async release=>{assert.deepEqual(release,target);calls.push('verify');},record:next=>{assert.deepEqual(next,{active:target,previous});calls.push('record');}});
+  assert.deepEqual(calls,['verify','record']);
+  assert.equal(input.prior.status,'failed','original failure must remain intact');
+});
