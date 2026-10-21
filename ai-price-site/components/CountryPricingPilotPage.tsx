@@ -1,3 +1,5 @@
+import { getCountryPricingPlans } from "../lib/pricing-page-facts";
+import PurchaseEligibilityNote from "./PurchaseEligibilityNote";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,6 +8,7 @@ import BrandIcon from "./BrandIcon";
 import TrackedLink from "./analytics/TrackedLink";
 import {
   getCountryPagePilot,
+  getCountryPageCopy,
   getCountryPagePilotLanguageAlternates,
   getCountryPagePilotPath,
   isCountryPagePilotIndexApproved,
@@ -146,12 +149,18 @@ export async function getCountryPricingPilotMetadata({
   const pilot = getCountryPagePilot(slug, country, category);
   if (!pilot) return {};
 
+  const product = await getPricingDetailProduct(slug, locale);
+  if (!product || product.category !== category) return {};
+  const plans = getCountryPricingPlans(product.plans, pilot.countryCode);
+  if (!plans.length) return {};
+  const pageCopy = getCountryPageCopy(pilot, locale, plans);
+
   const path = getCountryPagePilotPath(pilot, locale);
   const indexApproved = isCountryPagePilotIndexApproved(pilot);
   const languages = getCountryPagePilotLanguageAlternates(pilot);
   return {
     title: pilot.title[locale],
-    description: pilot.description[locale],
+    description: pageCopy.description,
     alternates: {
       canonical: path,
       ...(languages ? { languages } : {}),
@@ -172,17 +181,11 @@ export default async function CountryPricingPilotPage({
   const product = await getPricingDetailProduct(slug, locale);
   if (!product || product.category !== category) notFound();
 
-  const plans = product.plans
-    .map((plan) => ({
-      ...plan,
-      region: plan.regions.find(
-        (region) => region.code.toUpperCase() === pilot.countryCode,
-      ),
-    }))
-    .filter((plan) => plan.billing === "monthly" && Boolean(plan.region));
+  const plans = getCountryPricingPlans(product.plans, pilot.countryCode);
   if (plans.length === 0) notFound();
 
   const copy = getCopy(locale);
+  const pageCopy = getCountryPageCopy(pilot, locale, plans);
   const categoryPath = getCategoryPath(category);
   const productPath = `/${locale}/${categoryPath}/${product.slug}`;
   const latestCheckedAt = plans
@@ -243,8 +246,9 @@ export default async function CountryPricingPilotPage({
               {pilot.title[locale]}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">
-              {pilot.description[locale]}
+              {pageCopy.description}
             </p>
+            <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={plans} />
           </div>
         </div>
       </header>
@@ -415,7 +419,7 @@ export default async function CountryPricingPilotPage({
 
       <section className="grid gap-0 border-b border-zinc-200 py-2 md:grid-cols-3 dark:border-zinc-800">
         {[
-          [copy.decision, pilot.decisionSummary[locale]],
+          [copy.decision, pageCopy.decisionSummary],
           [copy.localContext, pilot.localContext[locale]],
           [copy.beforeSubscribe, pilot.availabilityCaution[locale]],
         ].map(([title, body], index) => (

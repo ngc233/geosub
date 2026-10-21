@@ -1,3 +1,4 @@
+import type { ProductPlan } from "./public-pricing-model";
 import type { ProductEditorialContent } from "./product-editorial-content";
 import type { PricingFaq } from "./pricing-seo";
 import type { SiteLocale } from "./site-locale";
@@ -84,6 +85,9 @@ export function getPlanSearchIntentCopy({
   lowestCountry,
   lowestPrice,
   content,
+  priceScope,
+  billing = "monthly",
+  platformLabel = "App Store",
 }: {
   locale: SiteLocale;
   displayName: string;
@@ -92,12 +96,16 @@ export function getPlanSearchIntentCopy({
   lowestCountry?: string | null;
   lowestPrice?: string | null;
   content: EditorialContent | null;
+  priceScope?: string;
+  billing?: ProductPlan["billing"];
+  platformLabel?: string;
 }): {
   description: string;
   faqs: PricingFaq[];
 } | null {
   if (!content || (locale !== "zh" && locale !== "en")) return null;
 
+  const cycle = { monthly: ["月费", "per month"], yearly: ["年费", "per year"], weekly: ["周费", "per week"], quarterly: ["季度费用", "per quarter"], one_time: ["一次性费用", "one time"], lifetime: ["终身费用", "for lifetime access"], unknown: ["价格", ""] }[billing];
   const difference = withoutTerminalPunctuation(content.plan.difference);
   const primaryDifference = firstSentence(difference);
   const availability = content.plan.availabilityNote
@@ -108,11 +116,11 @@ export function getPlanSearchIntentCopy({
     const priceContext =
       lowestCountry && lowestPrice
         ? `已核验 ${regionCount} 个地区，当前最低约 ${lowestPrice}（${lowestCountry}），并可查看税费、汇率和购买力。`
-        : `比较 ${regionCount} 个已核验地区的月费、税费、汇率和购买力。`;
+        : `比较 ${regionCount} 个已核验地区的${cycle[0]}、税费、汇率和购买力。`;
 
     return {
       description: buildIntentDescription({
-        prefix: `${displayName} 套餐价格：`,
+        prefix: `${displayName} ${priceScope || "套餐价格"}：`,
         difference: primaryDifference,
         separator: "。",
         context: priceContext,
@@ -132,7 +140,7 @@ export function getPlanSearchIntentCopy({
 
   const priceLead =
     lowestCountry && lowestPrice
-      ? `${displayName} starts at ${lowestPrice} per month in ${lowestCountry}.`
+      ? `${displayName}${priceScope ? ` ${priceScope}` : ""} ${priceScope ? "start" : "starts"} at ${lowestPrice} ${cycle[1]} in ${lowestCountry}.`
       : `${displayName} prices are compared across ${regionCount} reviewed regions.`;
 
   return {
@@ -140,7 +148,7 @@ export function getPlanSearchIntentCopy({
       prefix: `${priceLead} `,
       difference: primaryDifference,
       separator: " ",
-      context: `Compare ${regionCount} reviewed App Store regions.`,
+      context: `Compare ${regionCount} reviewed ${platformLabel} regions.`,
     }),
     faqs: [
       {

@@ -1,3 +1,6 @@
+import { getPricingPagePlan, getPricingChannelLabel } from "../lib/pricing-page-facts";
+import { getPurchaseEligibility } from "../lib/purchase-eligibility";
+import PurchaseEligibilityNote from "./PurchaseEligibilityNote";
 import { getPublishedContent } from "../lib/managed-content-store";
 import { isContentTarget, type OverviewContent } from "../lib/managed-content";
 import { requireAdmin } from "../lib/admin-auth";
@@ -814,8 +817,10 @@ export async function getPricingDetailMetadata({
 
   const activePlan =
     routePlan || getProductPlan(product, resolvedSearchParams.plan);
+  const contentPlan = getPricingPagePlan(activePlan, getPricingPlanPath(locale, product.category, product.slug, activePlan.slug));
+  const eligibility = getPurchaseEligibility(locale, product.slug, [contentPlan]);
   const stats =
-    activePlan.regions.length > 0 ? getPlanStats(activePlan) : null;
+    contentPlan.regions.length > 0 ? getPlanStats(contentPlan) : null;
   const metadataRegions = getDefaultPlanRegions(activePlan);
   const metadataStats =
     metadataRegions.length > 0
@@ -832,7 +837,7 @@ export async function getPricingDetailMetadata({
     productName: product.name,
     planName: activePlan.name,
     stats,
-    regionCount: activePlan.regions.length,
+    regionCount: contentPlan.regions.length,
   });
   const editorialContent = getProductEditorialContent(
     locale,
@@ -843,10 +848,13 @@ export async function getPricingDetailMetadata({
     locale,
     displayName: getPlanDisplayName(product.name, activePlan.name),
     productName: product.name,
-    regionCount: activePlan.regions.length,
+    regionCount: contentPlan.regions.length,
     lowestCountry: stats?.minRegion.country,
     lowestPrice: stats ? formatUsd(stats.minRegion.priceUsd) : null,
     content: editorialContent,
+    priceScope: eligibility?.priceScope,
+    billing: contentPlan.billing,
+    platformLabel: getPricingChannelLabel(contentPlan),
   });
   const metadataExperiment = getPricingMetadataExperiment({
     locale,
@@ -1154,6 +1162,8 @@ export default async function PricingDetailPage({
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
                   {pageDescription}
                 </p>
+                <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={publishedPlans} />
+
                 {product.officialUrl ? (
                   <TrackedLink
                     href={product.officialUrl}
@@ -1200,13 +1210,14 @@ export default async function PricingDetailPage({
 
   const activePlan =
     routePlan || getProductPlan(product, resolvedSearchParams.plan);
+  const contentPlan = getPricingPagePlan(activePlan, getPricingPlanPath(locale, product.category, product.slug, activePlan.slug));
+  const eligibility = getPurchaseEligibility(locale, product.slug, [contentPlan]);
   const canonicalDetailPath = getPricingPlanPath(
     locale,
     product.category,
     product.slug,
     activePlan.slug,
   );
-  const hasPublishedPrices = activePlan.regions.length > 0;
   const defaultCurrency =
     getSiteLocaleDefinition(locale).defaultCurrency;
   const [affordability, latestExchangeRates] = await Promise.all([
@@ -1256,7 +1267,7 @@ export default async function PricingDetailPage({
           },
     ]),
   ) as Record<DisplayCurrency, ExchangeRateSnapshot>;
-  const stats = hasPublishedPrices ? getPlanStats(activePlan) : null;
+  const stats = contentPlan.regions.length > 0 ? getPlanStats(contentPlan) : null;
   const metadataRegions = getDefaultPlanRegions(activePlan);
   const metadataStats =
     metadataRegions.length > 0
@@ -1291,10 +1302,13 @@ export default async function PricingDetailPage({
     locale,
     displayName: getPlanDisplayName(product.name, activePlan.name),
     productName: product.name,
-    regionCount: activePlan.regions.length,
+    regionCount: contentPlan.regions.length,
     lowestCountry: stats?.minRegion.country,
     lowestPrice: stats ? formatUsd(stats.minRegion.priceUsd) : null,
     content: editorialContent,
+    priceScope: eligibility?.priceScope,
+    billing: contentPlan.billing,
+    platformLabel: getPricingChannelLabel(contentPlan),
   });
   const metadataExperiment = getPricingMetadataExperiment({
     locale,
@@ -1311,7 +1325,7 @@ export default async function PricingDetailPage({
   const billingContent = getPlanBillingContent({
     locale,
     productSlug: product.slug,
-    plan: activePlan,
+    plan: contentPlan,
   });
   const effectiveFaqs = [
     ...(searchIntentCopy?.faqs ?? []),
@@ -1324,7 +1338,7 @@ export default async function PricingDetailPage({
     title: pageTitle,
     description: heroDescription,
     product,
-    plan: activePlan,
+    plan: contentPlan,
     faqs: effectiveFaqs,
   });
 
@@ -1386,6 +1400,8 @@ export default async function PricingDetailPage({
                   {heroDescription}
                 </p>
 
+                <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={[contentPlan]} />
+
                 {product.officialUrl ? (
                   <TrackedLink
                     href={product.officialUrl}
@@ -1445,7 +1461,7 @@ export default async function PricingDetailPage({
                 brand: product.brand,
                 updatedAt: product.updatedAt,
               }}
-              plan={activePlan}
+              plan={contentPlan}
               defaultCurrency={defaultCurrency}
               exchangeRates={exchangeRates}
               locale={locale}
@@ -1472,7 +1488,7 @@ export default async function PricingDetailPage({
               productName={product.name}
               priceView={(
                 <PricePositionSection
-                  plan={activePlan}
+                  plan={contentPlan}
                   bigMacBenchmarks={affordability.bigMacBenchmarks}
                   locale={locale}
                 />

@@ -626,7 +626,7 @@ test("pricing detail freshness follows the active plan and trusted matching obse
   assert.match(pricingCopy, /可信状态/);
   assert.doesNotMatch(platformView, /getLatestPlanReviewDate/);
   assert.match(adapter, /freshness: getPlanFreshness\(regions\)/);
-  assert.match(adapter, /pageUpdatedAt: getLatestDate\(\[planReviewedAt, priceCollectedAt\]\)/);
+  assert.match(readAppFile("..", "lib", "public-pricing-model.ts"), /pageUpdatedAt: getLatestDate\(\[planReviewedAt, priceCollectedAt\]\)/);
   assert.doesNotMatch(adapter, /latestCheckedAt \|\| staticProduct\?\.updatedAt/);
   assert.match(shareModal, /plan\.freshness\?\.pageUpdatedAt \|\| product\.updatedAt/);
   assert.match(adapter, /po\.status = 'approved'/);

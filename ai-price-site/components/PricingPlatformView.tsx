@@ -1,4 +1,6 @@
-﻿"use client";
+"use client";
+
+import { getDefaultPlanRegions } from "../lib/public-pricing-model";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -845,7 +847,7 @@ export default function PricingPlatformView({
 
     return {
       ...plan,
-      regions: plan.regions.filter((region) => getPlatform(region) === platform),
+      regions: getDefaultPlanRegions(plan),
     };
   }, [plan, platform]);
 

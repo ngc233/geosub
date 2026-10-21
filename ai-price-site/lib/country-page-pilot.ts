@@ -1,4 +1,4 @@
-import type { ProductCategory } from "./public-pricing-model";
+import type { ProductCategory, ProductPlan } from "./public-pricing-model";
 
 export type CountryPagePilotLocale = "zh" | "en";
 
@@ -141,16 +141,16 @@ export const countryPagePilots: CountryPagePilot[] = [
       en: "ChatGPT prices and plans in India",
     },
     description: {
-      zh: "比较 ChatGPT Go、Plus、Pro 5x 和 Pro 20x 在印度 App Store 的卢比月付价格。",
-      en: "Compare Indian App Store monthly prices for ChatGPT Go, Plus, Pro 5x and Pro 20x.",
+      zh: "比较该地区已发布的 ChatGPT App Store 月付套餐、本币价格和适用条件。",
+      en: "Compare published monthly ChatGPT App Store plans, local prices and subscription conditions in this region.",
     },
     decisionSummary: {
-      zh: "印度区从低价 Go 到高阶 Pro 20x 共四档，价格和使用范围差异明显。Go 不是便宜版 Plus，选择时应先确认功能和额度是否满足需求。",
-      en: "India spans four tiers from lower-cost Go to Pro 20x. Go is not simply a discounted Plus plan, so features and limits should be checked before comparing price alone.",
+      zh: "选择前请核对各套餐的功能、使用额度和账号可见选项，不能只按价格倍数推断权益。",
+      en: "Check each plan's features and usage limits before choosing; price multiples alone do not establish benefits.",
     },
     localContext: {
-      zh: "印度页面的价值在于把四档卢比标价放在同一决策框架中，并说明哪一档适合轻量使用、常规个人使用或高强度工作。",
-      en: "The India view puts all four INR prices into one decision frame, separating light use, regular personal use and high-intensity work.",
+      zh: "印度页面的价值在于把当前卢比标价放在同一决策框架中，并说明哪一档适合轻量使用、常规个人使用或高强度工作。",
+      en: "The India view puts current INR prices into one decision frame, separating light use, regular personal use and high-intensity work.",
     },
     availabilityCaution: {
       zh: "Go 的提供范围可能随地区和账号变化。购买前应在自己的印度区商店确认可见套餐、付款方式和税后金额。",
@@ -169,12 +169,12 @@ export const countryPagePilots: CountryPagePilot[] = [
       en: "ChatGPT prices and plans in the Philippines",
     },
     description: {
-      zh: "查看 ChatGPT Go、Plus、Pro 5x 和 Pro 20x 的菲律宾比索月付价格及适用人群。",
-      en: "Review Philippine-peso monthly prices and intended use for ChatGPT Go, Plus, Pro 5x and Pro 20x.",
+      zh: "比较该地区已发布的 ChatGPT App Store 月付套餐、本币价格和适用条件。",
+      en: "Compare published monthly ChatGPT App Store plans, local prices and subscription conditions in this region.",
     },
     decisionSummary: {
-      zh: "菲律宾区四档月付价格完整，其中 Plus 与 Pro 5x 的本币价格具有明确搜索需求。不同档位代表不同使用额度，不能只按价格倍数推断功能。",
-      en: "All four monthly tiers are visible in the Philippines, with clear search interest around Plus and Pro 5x local pricing. Price multiples alone do not describe the capability limits.",
+      zh: "选择前请核对各套餐的功能、使用额度和账号可见选项，不能只按价格倍数推断权益。",
+      en: "Check each plan's features and usage limits before choosing; price multiples alone do not establish benefits.",
     },
     localContext: {
       zh: "页面将菲律宾比索标价、美元参考和套餐用途分开呈现，避免用户把汇率波动误认为官方调价。",
@@ -335,5 +335,21 @@ export function getCountryPagePilotLanguageAlternates(
     "zh-CN": getCountryPagePilotPath(pilot, "zh"),
     "en-US": getCountryPagePilotPath(pilot, "en"),
     "x-default": getCountryPagePilotPath(pilot, "en"),
+  };
+}
+
+// Names and counts come from exactly the monthly iOS rows rendered in the table.
+export function getCountryPageCopy(pilot: CountryPagePilot, locale: CountryPagePilotLocale, plans: Pick<ProductPlan, "name">[]) {
+  if (pilot.productSlug !== "chatgpt" || plans.length === 0) {
+    return { description: pilot.description[locale], decisionSummary: pilot.decisionSummary[locale] };
+  }
+  const names = plans.map((plan) => plan.name).join(locale === "zh" ? "、" : ", ");
+  return {
+    description: locale === "zh"
+      ? `比较${pilot.countryName.zh} App Store 当前已发布的 ${plans.length} 档月付套餐（${names}）及本币价格。`
+      : `Compare ${plans.length} published monthly App Store plans in ${pilot.countryName.en}: ${names}, with local prices.`,
+    decisionSummary: locale === "zh"
+      ? `下表包含 ${plans.length} 档月付套餐：${names}。${pilot.decisionSummary.zh}`
+      : `The table contains ${plans.length} monthly plans: ${names}. ${pilot.decisionSummary.en}`,
   };
 }

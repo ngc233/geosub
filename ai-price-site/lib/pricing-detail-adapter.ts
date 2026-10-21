@@ -1,4 +1,5 @@
 import {
+  getPlanFreshness,
   type ProductPlan,
   type RegionPrice,
   type SubscriptionProduct,
@@ -108,45 +109,6 @@ function formatDate(value: Date | string | null) {
   if (Number.isNaN(date.getTime())) return undefined;
 
   return date.toISOString().slice(0, 10);
-}
-
-function getLatestDate(values: Array<Date | string | null | undefined>) {
-  const latest = values
-    .map((value) => {
-      if (!value) return null;
-      const date = value instanceof Date ? value : new Date(value);
-      return Number.isNaN(date.getTime()) ? null : date;
-    })
-    .filter((date): date is Date => Boolean(date))
-    .sort((a, b) => b.getTime() - a.getTime())[0];
-
-  return latest ? formatDate(latest) : undefined;
-}
-
-function getPlanFreshness(regions: RegionPrice[]) {
-  const priceCollectedAt = getLatestDate(regions.map((region) => region.lastCheckedAt));
-  const fxRateDate = getLatestDate(regions.map((region) => region.fxRateDate));
-  const planReviewedAt = getLatestDate(regions.map((region) => region.reviewedAt));
-  const sourceNames = [...new Set(regions.map((region) => region.sourceName).filter(Boolean))];
-  const minimumConfidence = Math.min(
-    ...regions.map((region) => region.confidenceScore ?? 0),
-  );
-  const qualities = regions.map((region) => region.dataQuality || "unknown");
-  const trustStatus = qualities.every((quality) => quality === "verified") && minimumConfidence >= 80
-    ? "verified"
-    : qualities.every((quality) => quality === "verified" || quality === "estimated") &&
-        minimumConfidence >= 60
-      ? "reviewed"
-      : "needs_review";
-
-  return {
-    sourceLabel: sourceNames.length > 0 ? sourceNames.join(" + ") : "App Store",
-    priceCollectedAt,
-    fxRateDate,
-    planReviewedAt,
-    pageUpdatedAt: getLatestDate([planReviewedAt, priceCollectedAt]),
-    trustStatus,
-  } satisfies NonNullable<ProductPlan["freshness"]>;
 }
 
 function getCountryName(
