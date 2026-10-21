@@ -13,7 +13,7 @@
 
 ## 正式升级
 
-运行 `sudo bash "$GEOSUB_RELEASE_DIR/control/upgrade.sh"`。默认 rolling-v1；缺少已登记运行基线、配置或 systemd 时拒绝。只有未接入滚动模式且明确设置 `maintenance-v1` 才走旧停站流程。已接入后拒绝维护模式，避免更新旧 checkout 而流量仍指向保留构建。
+通过 [标准远程入口](operator-release-observation.md) 的 `geosub_ops.py start --kind web-upgrade` 启动；服务器 systemd 内调用 `$GEOSUB_RELEASE_DIR/controllers/<已核实SHA>/upgrade.sh`。不要将升级进程直接绑定 SSH 会话。默认 rolling-v1；缺少已登记运行基线、配置或 systemd 时拒绝。只有未接入滚动模式且明确设置 `maintenance-v1` 才走旧停站流程。已接入后拒绝维护模式，避免更新旧 checkout 而流量仍指向保留构建。
 
 固定候选提交 → 版本和兼容迁移检查 → 独立目录安装/构建 → 静态资源冲突检查与保留 → 关闭内容发布围栏 → 记录并暂停定时器、等待在途任务 → 真实备份及校验 → schema/Prisma 迁移与数据库检查 → 新端口启动与健康检查 → 代理原子切换与回读 → 后台任务目录切换并恢复原定时器状态 → 标准完整健康检查 → 记录版本。
 

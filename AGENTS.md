@@ -65,7 +65,7 @@ Do not call code complete when the required browser, data, SEO, or production ac
 
 - Push, deployment, IndexNow submission, webmaster changes, production SQL, backfills, bulk content changes, and database restore require explicit user approval.
 - A local implementation request does not authorize production mutation.
-- Production deployment must use `docs/RELEASE.md` and the standard scripts.
+- Production deployment must use `docs/RELEASE.md` and the standard scripts. Remote starts/status and public observations must use `scripts/geosub_ops.py` per `docs/operator-release-observation.md`; never revive task-local legacy wrappers or bind an upgrade directly to an SSH session. Unknown transport outcomes require status lookup, never automatic redispatch.
 - Never expose or commit environment files, private keys, database dumps, tokens, sessions, logs containing sensitive data, or generated admin URLs.
 
 ## Minimum completion gate

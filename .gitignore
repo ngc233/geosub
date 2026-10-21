@@ -59,3 +59,8 @@ ai-price-site/.next-admin-reliability/
 
 # Root-managed production database override (installed from verified release)
 geosub-backend/docker-compose.override.yml
+
+# Private operator evidence and Python cache
+.ops-evidence/
+__pycache__/
+*.pyc

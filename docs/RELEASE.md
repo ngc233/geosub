@@ -76,7 +76,7 @@ npm run preflight:full
 
 ## 5. 生产升级
 
-2.12 起采用已核验控制目录中的正式 `upgrade.sh`，默认 `rolling-v1`。首次接入、配置、兼容迁移约束与回退步骤见 [滚动发布手册](rolling-release-runbook.md)。生产必须先完成用户授权、推送及远端 CI；本地预生产成功不等于生产已经部署。
+远程操作统一使用仓库 `scripts/geosub_ops.py start/status`，详见 [发布连接与探测流程](operator-release-observation.md)。该入口把执行交给服务器 systemd，连接断开后只查询同一请求，不重发。服务器内部从 2.12 起采用已核验控制目录中的正式 `upgrade.sh`，默认 `rolling-v1`。首次接入、配置、兼容迁移约束与回退步骤见 [滚动发布手册](rolling-release-runbook.md)。生产必须先完成用户授权、推送及远端 CI；本地预生产成功不等于生产已经部署。
 
 滚动升级先固定候选与验证版本，在独立目录完成依赖及构建，再暂停任务、验证备份和兼容迁移。候选健康通过后才切换代理；完整健康检查通过才记录成功版本。旧构建及静态资源保留，回退不重新构建。关闭的内容发布围栏不自动打开。
 
@@ -84,7 +84,7 @@ npm run preflight:full
 
 ## 6. 发布后验证
 
-至少检查：
+公网验收使用标准 `geosub_ops.py observe` 保留分阶段日志；观察不完整不能计为成功。至少检查：
 
 - `/api/health` 返回进程、数据库、目录和汇率正常。
 - 目标提交记录在 `/opt/geosub/releases/current.env`。

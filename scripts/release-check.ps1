@@ -37,6 +37,10 @@ function Invoke-Step {
 }
 
 function Test-RollingRelease {
+  $python = Get-Command python3 -ErrorAction SilentlyContinue
+  if ($null -eq $python) { $python = Get-Command python -ErrorAction Stop }
+  & $python.Source -m unittest discover -s (Join-Path $Root "scripts/tests") -p "test_geosub_ops.py" -v
+  if ($LASTEXITCODE -ne 0) { throw "Release transport and observation tests failed." }
   & node --test (Join-Path $Root "geosub-backend/deploy/linux-arm64/rolling-release.test.mjs") (Join-Path $Root "geosub-backend/deploy/linux-arm64/component-release.test.mjs")
   if ($LASTEXITCODE -ne 0) { throw "Rolling release tests failed." }
 }

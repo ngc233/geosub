@@ -60,6 +60,8 @@ jobs:
         run: node --test ../scripts/tests/postgres-existing-cluster.test.mjs
       - name: Test PostgreSQL guard install and rollback
         run: bash ../scripts/tests/postgres-guard-integration.sh
+      - name: Test release transport and observation tools
+        run: python3 -m unittest discover -s ../scripts/tests -p "test_geosub_ops.py" -v
       - name: Test rolling release safety
         run: node --test ../geosub-backend/deploy/linux-arm64/rolling-release.test.mjs ../geosub-backend/deploy/linux-arm64/component-release.test.mjs
       - name: Prepare build database

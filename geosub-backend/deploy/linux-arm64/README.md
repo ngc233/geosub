@@ -315,10 +315,13 @@ Password rotation revokes every existing session for that account. Admin
 sessions default to 24 hours and are capped at five active sessions per user.
 Failed logins are rate limited by both source IP and account identifier.
 
-## Upgrade without redeploying from scratch
+## Standard remote upgrade and observation
 
-After the first deployment, routine updates should use the upgrade script
-instead of reinstalling the server:
+Use the repository `scripts/geosub_ops.py start/status/observe` entry points documented in [the operator runbook](../../../docs/operator-release-observation.md). The server owns each release process through systemd; SSH disconnection must be followed by status lookup, not redispatch. Installed `control/upgrade.sh` and `collector-release.sh` remain internal executors.
+
+## Historical maintenance-mode upgrade (not the rolling production entry)
+
+The following historical sequence applies only to explicitly selected maintenance-v1 installations. Adopted rolling sites must use the standard remote entry above; this sequence is not the current production procedure:
 
 ```bash
 sudo bash /opt/geosub/geosub-backend/deploy/linux-arm64/upgrade.sh
