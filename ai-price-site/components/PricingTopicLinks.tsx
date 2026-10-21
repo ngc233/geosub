@@ -14,6 +14,8 @@ import { getPlanDisplayName } from "../lib/pricing-labels";
 import { getPricingPlanPath } from "../lib/pricing-routes";
 import type { SubscriptionProduct } from "../lib/public-pricing-model";
 import BrandIcon from "./BrandIcon";
+import { hasPlanComparison } from "../lib/plan-comparison";
+import styles from "./ManagedContent.module.css";
 
 type IndexablePricingLocale = Extract<SiteLocale, "zh" | "en">;
 
@@ -196,7 +198,9 @@ export function RelatedPlanChoices({
         {localeCopy.otherPlansTitle(product.name)}
       </h2>
       <p className="mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-        {localeCopy.otherPlansDescription}
+        {hasPlanComparison(locale, product.slug) ? (
+          <><Link href={`/en/ai-pricing/${product.slug}#compare-plans`} className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare ChatGPT plans</Link> side by side to choose for your usage and budget, then explore each plan&apos;s prices by country.</>
+        ) : localeCopy.otherPlansDescription}
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
