@@ -21,7 +21,7 @@ import BrandIcon from "./BrandIcon";
 import TrackedLink from "./analytics/TrackedLink";
 import ProductSidebar from "./ProductSidebar";
 import ProductPlanOverview from "./ProductPlanOverview";
-import GeminiUltraDecision from "./GeminiUltraDecision";
+import PlanDecisionGuidance from "./PlanDecisionGuidance";
 import PlanTabs from "./PlanTabs";
 import MobileProductSwitcher from "./MobileProductSwitcher";
 import {
@@ -1480,7 +1480,7 @@ export default async function PricingDetailPage({
               category={product.category}
             />
 
-            <GeminiUltraDecision product={product} locale={locale} planSlug={activePlan.slug} />
+            <PlanDecisionGuidance product={product} locale={locale} planSlug={activePlan.slug} />
 
             {editorialContent ? (
               <ProductEditorialSection

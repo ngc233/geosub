@@ -70,6 +70,11 @@
       "from": "31732d8f45359721378976dbedeeb7e14dc6a5cb4db1ee3decf999606c49ac85",
       "to": "bd687cf7c4fa26f7507e5ce75a97e4cbe59e465d3dc0ea84312aab2f9fecd2a6",
       "reason": "2.15.1 to 2.15.0: managed content reader, store, validator, distribution and schema are byte-identical. PricingDetailPage adds only an English Gemini Ultra server-rendered decision section; managed content precedence and all other page branches are unchanged. No data contract or migration changes."
+    },
+    {
+      "from": "fd1bbc12344bcc59012a887fb0b1a61d5d48ce049573c62aecb23f122288a27a",
+      "to": "31732d8f45359721378976dbedeeb7e14dc6a5cb4db1ee3decf999606c49ac85",
+      "reason": "2.15.2 to 2.15.1: managed content reader, store, validator, distribution and schema byte-identical. PricingDetailPage reuses the decision composer with a narrowly scoped English YouTube Family section; existing Gemini output and managed content precedence are preserved. No data contract or migration changes."
     }
   ]
 }

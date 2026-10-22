@@ -2,6 +2,8 @@ import { getDefaultPlanRegions, type ProductPlan } from "./public-pricing-model.
 import type { SiteLocale } from "./site-locale";
 import { geminiDecisionEvidence, hasGeminiUltraDecision } from "./gemini-plan-decision.ts";
 
+import { youtubeFamilyEvidence, hasYouTubeFamilyDecision } from "./youtube-family-decision.ts";
+
 // Product/channel evidence, separate from changing regional prices and their dates.
 const netflixAppleEvidence = {
   url: "https://help.netflix.com/en/node/25097",
@@ -9,6 +11,15 @@ const netflixAppleEvidence = {
 };
 
 export function getPurchaseEligibility(locale: SiteLocale, productSlug: string, plans: ProductPlan[]) {
+  if (plans.length === 1 && hasYouTubeFamilyDecision(locale, productSlug, plans[0].slug)
+    && plans[0].billing === "monthly" && getDefaultPlanRegions(plans[0]).some((region) => region.billingPlatform?.toLowerCase() === "ios")) {
+    return {
+      ...youtubeFamilyEvidence.eligibility,
+      checkedAt: youtubeFamilyEvidence.checkedAt,
+      checkedLabel: "Eligibility guidance checked",
+      priceScope: undefined,
+    };
+  }
   if (plans.length === 1 && hasGeminiUltraDecision(locale, productSlug, plans[0].slug)
     && plans[0].billing === "monthly" && getDefaultPlanRegions(plans[0]).some((region) => region.billingPlatform?.toLowerCase() === "ios")) {
     return {

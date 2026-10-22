@@ -68,6 +68,12 @@ export default function ProductPlanOverview({
         </p>
       ) : null}
 
+      {locale === "en" && product.slug === "youtube-premium" && decisionPlans.some((plan) => plan.slug === "family") ? (
+        <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+          Sharing with your household? <Link href="/en/streaming-pricing/youtube-premium/family#compare-plans" className="inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]">Compare Individual, Family and Premium Lite</Link> and check the same-address requirements before choosing a regional price.
+        </p>
+      ) : null}
+
       <div
         className={singlePlan
           ? "mt-5"
