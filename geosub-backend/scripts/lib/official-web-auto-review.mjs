@@ -22,7 +22,14 @@ export function decideOfficialWebReview(samples, baseline, now = new Date()) {
   const changed = baseline && Math.abs(Number(latest.raw_price) / Number(baseline.local_price) - 1) > 0.30;
   const count = changed ? 5 : 3;
   const spanHours = changed ? 72 : 24;
+  const hours = (a, b) => (a - b) / 3_600_000;
   const window = distinct.slice(0, count);
+  // Minimum sample count and elapsed time are separate gates. With a 12-hour
+  // schedule a 72-hour change window needs seven samples, not the latest five.
+  while (window.length < distinct.length
+    && hours(latest.observed_at, window.at(-1).observed_at) < spanHours) {
+    window.push(distinct[window.length]);
+  }
   if (window.some(row => row.anomaly_flag || row.status === 'rejected' || !row.evidence_ok || row.source_level !== 'A'
     || Number(row.confidence_score) < 80 || row.currency !== 'USD'
     || !Number.isFinite(Number(row.raw_price)) || Number(row.raw_price) < 1 || Number(row.raw_price) > 100
@@ -38,7 +45,6 @@ export function decideOfficialWebReview(samples, baseline, now = new Date()) {
     return { decision: 'isolated', reason: 'unstable_local_price' };
   }
   if (window.length < count) return { decision: 'waiting', reason: changed ? 'large_change_extended_observation' : 'awaiting_samples' };
-  const hours = (a, b) => (a - b) / 3_600_000;
   if (hours(now, latest.observed_at) < 0 || hours(now, latest.observed_at) > 48
     || window.some(row => hours(now, row.observed_at) > 7 * 24)) {
     return { decision: 'waiting', reason: 'stale_evidence' };

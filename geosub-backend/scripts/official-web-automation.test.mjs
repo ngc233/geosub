@@ -77,6 +77,9 @@ test('a large real change needs five stable samples over 72h and then recovers a
   const baseline={local_price:8};
   assert.notEqual(decideOfficialWebReview(stableSamples(),baseline,now).decision,'approved');
   assert.equal(decideOfficialWebReview(stableSamples([0,18,36,54,72]),baseline,now).decision,'approved');
+  assert.notEqual(decideOfficialWebReview(stableSamples([0,12,24,36,48]),baseline,now).decision,'approved');
+  const scheduled=decideOfficialWebReview(stableSamples([0,12,24,36,48,60,72]),baseline,now);
+  assert.equal(scheduled.decision,'approved');assert.equal(scheduled.observationIds.length,7);
 });
 test('an older anomaly ceases blocking after three newer independent clean samples',()=>{
   const rows=stableSamples([0,12,24,36]);rows[3].anomaly_flag=true;
