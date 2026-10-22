@@ -8,7 +8,7 @@ import type { SiteLocale } from "../lib/site-locale";
 import styles from "./ManagedContent.module.css";
 
 // A shared presenter keeps the common-country price and mobile table rules identical.
-export default function PublishedPlanComparison({ product, locale, title, intro, footer, planSlugs, choices, placement = "product_overview_comparison" }: {
+export default function PublishedPlanComparison({ product, locale, title, intro, footer, planSlugs, choices, showLowestPrices = false, placement = "product_overview_comparison" }: {
   product: SubscriptionProduct;
   locale: SiteLocale;
   title: string;
@@ -17,6 +17,7 @@ export default function PublishedPlanComparison({ product, locale, title, intro,
   planSlugs?: readonly string[];
   choices?: Record<string, { bestFor: string; difference: string }>;
   placement?: string;
+  showLowestPrices?: boolean;
 }) {
   const rows = getMonthlyAppStoreComparison(product).filter(({ plan }) => !planSlugs || planSlugs.includes(plan.slug));
   return (
@@ -29,12 +30,12 @@ export default function PublishedPlanComparison({ product, locale, title, intro,
           <p className="mt-4 text-sm">No published plans are available for comparison yet.</p>
         ) : (
           <table className="mt-4 block w-full text-left text-sm md:table">
-            <caption className="sr-only">Published plans with US monthly App Store prices and regional coverage</caption>
+            <caption className="sr-only">{showLowestPrices ? "Each plan's lowest reviewed monthly App Store price, US monthly price and regional coverage" : "Published plans with US monthly App Store prices and regional coverage"}</caption>
             <thead className="hidden text-[var(--color-text-secondary)] md:table-header-group">
-              <tr><th scope="col" className="p-3">Plan</th><th scope="col" className="p-3">US / month</th><th scope="col" className="p-3">Choose when</th><th scope="col" className="p-3">App Store coverage</th></tr>
+              <tr><th scope="col" className="p-3">Plan</th><th scope="col" className="p-3">{showLowestPrices ? "Monthly App Store prices" : "US / month"}</th><th scope="col" className="p-3">Choose when</th><th scope="col" className="p-3">App Store coverage</th></tr>
             </thead>
             <tbody className="block md:table-row-group">
-              {rows.map(({ plan, usPrice, collectedAt, regionCount, freshness }) => {
+              {rows.map(({ plan, usPrice, collectedAt, regionCount, freshness, lowest }) => {
                 const editorial = getProductEditorialContent(locale, product.slug, plan.slug);
                 const choice = choices?.[plan.slug] ?? editorial?.plan;
                 return (
@@ -45,9 +46,18 @@ export default function PublishedPlanComparison({ product, locale, title, intro,
                       </Link>
                     </th>
                     <td className="block px-3 py-2 md:table-cell md:py-3">
-                      <span className="block text-[var(--color-text-secondary)] md:hidden">US / month</span>
+                      <span className={`block text-[var(--color-text-secondary)]${showLowestPrices ? "" : " md:hidden"}`}>US / month</span>
                       <span className="tabular-nums font-semibold">{usPrice === undefined ? "Not available" : `${formatUsd(usPrice)} USD`}</span>
                       {collectedAt ? <span className="mt-1 block text-xs leading-5 text-[var(--color-text-secondary)]">Price collected {collectedAt.slice(0, 10)}</span> : null}
+                      {showLowestPrices ? <div data-plan-lowest-price className="mt-3 leading-6">
+                        <span className="block text-[var(--color-text-secondary)]">Lowest reviewed / month</span>
+                        {lowest ? <>
+                          <span className="block font-semibold">{lowest.country}</span>
+                          <span className="block tabular-nums">{lowest.localPrice} · {lowest.currencyCode}</span>
+                          <span className="block tabular-nums">≈ {formatUsd(lowest.priceUsd)} USD</span>
+                          <span className="mt-1 block text-xs leading-5 text-[var(--color-text-secondary)]">Price collected {lowest.lastCheckedAt!.slice(0, 10)}</span>
+                        </> : <span>Not available</span>}
+                      </div> : null}
                     </td>
                     <td className="block px-3 py-2 leading-6 md:table-cell md:py-3">
                       <span className="block text-[var(--color-text-secondary)] md:hidden">Choose when</span>

@@ -1168,7 +1168,7 @@ export default async function PricingDetailPage({
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
                   {pageDescription}
                 </p>
-                <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={publishedPlans} />
+                <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={publishedPlans} pageKind="overview" />
 
                 {product.officialUrl ? (
                   <TrackedLink

@@ -16,6 +16,7 @@ import type { SubscriptionProduct } from "../lib/public-pricing-model";
 import BrandIcon from "./BrandIcon";
 import { hasPlanComparison } from "../lib/plan-comparison";
 import styles from "./ManagedContent.module.css";
+import { hasClaudeOverviewDecision } from "../lib/claude-overview-decision";
 
 type IndexablePricingLocale = Extract<SiteLocale, "zh" | "en">;
 
@@ -208,6 +209,11 @@ export function RelatedPlanChoices({
           <>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Scoped native-fragment RFC: docs/grok-super-decision-2026-10-23.md */}
           <a href="/en/ai-pricing/grok/super#compare-plans" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare the collected App Store plans</a> and check which plan your account can buy or renew before comparing countries. These listings are separate from the current website offer.</>
+        ) : hasClaudeOverviewDecision(locale, product.slug) && ["pro", "max-5x", "max-20x"].includes(currentPlanSlug) ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Scoped native-fragment RFC: docs/claude-overview-decision-2026-10-23.md */}
+            <a href="/en/ai-pricing/claude#compare-plans" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare Claude plans and each plan&apos;s lowest reviewed price</a> before choosing a tier or region. The US amounts compare the same monthly App Store basis; country minima are shown separately.
+          </>
         ) : localeCopy.otherPlansDescription}
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">

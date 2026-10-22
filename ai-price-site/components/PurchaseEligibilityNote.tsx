@@ -2,10 +2,10 @@ import { getPurchaseEligibility } from "../lib/purchase-eligibility";
 import type { ProductPlan } from "../lib/public-pricing-model";
 import type { SiteLocale } from "../lib/site-locale";
 
-export default function PurchaseEligibilityNote({ locale, productSlug, plans }: {
-  locale: SiteLocale; productSlug: string; plans: ProductPlan[];
+export default function PurchaseEligibilityNote({ locale, productSlug, plans, pageKind = "plan" }: {
+  locale: SiteLocale; productSlug: string; plans: ProductPlan[]; pageKind?: "overview" | "plan";
 }) {
-  const note = getPurchaseEligibility(locale, productSlug, plans);
+  const note = getPurchaseEligibility(locale, productSlug, plans, pageKind);
   if (!note) return null;
   return (
     <aside data-purchase-eligibility className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">

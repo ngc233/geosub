@@ -80,6 +80,11 @@
       "from": "7b737044e79c0f011f8b440b30f7b14b1e3f75e4ddd62039c3760b75695c5349",
       "to": "fd1bbc12344bcc59012a887fb0b1a61d5d48ce049573c62aecb23f122288a27a",
       "reason": "2.15.3 to 2.15.2: all listed managed content reader, store, validator, distribution, renderer and schema files are byte-identical except VERSION. Existing server decision composition adds only English Grok Super guidance and narrow English contextual links; managed content and data contracts are unchanged."
+    },
+    {
+      "from": "b9eb6219e657dc0cf594a2d48731946d8e4d446bdaba74ca50ca1ea25043fb4b",
+      "to": "7b737044e79c0f011f8b440b30f7b14b1e3f75e4ddd62039c3760b75695c5349",
+      "reason": "2.15.4 to 2.15.3: managed content reader, store, validator, distribution and schema are byte-identical. PricingDetailPage only passes explicit overview context to the existing eligibility note; only English Claude handles that context. Shared comparison adds opt-in minimum facts; existing output and managed content precedence are preserved. No data contract or migration changes."
     }
   ]
 }

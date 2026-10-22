@@ -14,6 +14,7 @@ import { getProductEditorialContent } from "../lib/product-editorial-content";
 import { hasPlanComparison } from "../lib/plan-comparison";
 import PublishedPlanComparison from "./PublishedPlanComparison";
 import styles from "./ManagedContent.module.css";
+import { claudeOverviewEvidence, hasClaudeOverviewDecision } from "../lib/claude-overview-decision";
 
 export default function ProductPlanOverview({
   product,
@@ -39,6 +40,22 @@ export default function ProductPlanOverview({
       getProductEditorialContent(locale, product.slug, plan.slug),
     )
     .find(Boolean);
+
+  if (hasClaudeOverviewDecision(locale, product.slug)) {
+    const guide = claudeOverviewEvidence;
+    return <>
+      <PublishedPlanComparison product={product} locale={locale} planSlugs={["pro", "max-5x", "max-20x"]} showLowestPrices
+        title={guide.comparisonTitle} intro={guide.comparisonIntro} footer={guide.comparisonFooter} choices={guide.choices} placement="claude_overview_comparison" />
+      <section aria-labelledby="claude-overview-purchase-title" className={`${styles.scope} rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5 text-sm leading-6 text-[var(--color-text-secondary)]`}>
+        <h2 id="claude-overview-purchase-title" className="text-xl font-semibold text-[var(--color-text-primary)]">{guide.purchaseTitle}</h2>
+        {guide.paragraphs.map((paragraph) => <p key={paragraph} className="mt-3">{paragraph}</p>)}
+        <ul className="mt-3 flex flex-col items-start">
+          {guide.sources.map((source) => <li key={source.href}><a href={source.href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]">{source.label}</a></li>)}
+        </ul>
+        <p className="mt-2 text-xs">Benefit and eligibility guidance checked: {guide.checkedAt}. Price collection dates are shown separately for each quote above.</p>
+      </section>
+    </>;
+  }
 
   // Reuse this overview's published plans and editorial records. The compact
   // comparison is scoped to the approved English page; other layouts stay intact.

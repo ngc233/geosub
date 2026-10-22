@@ -4,6 +4,7 @@ import { geminiDecisionEvidence, hasGeminiUltraDecision } from "./gemini-plan-de
 
 import { youtubeFamilyEvidence, hasYouTubeFamilyDecision } from "./youtube-family-decision.ts";
 import { grokSuperEvidence, hasGrokSuperAppStoreDecision } from "./grok-super-decision.ts";
+import { claudeOverviewEvidence, hasClaudeOverviewDecision } from "./claude-overview-decision.ts";
 
 // Product/channel evidence, separate from changing regional prices and their dates.
 const netflixAppleEvidence = {
@@ -11,7 +12,11 @@ const netflixAppleEvidence = {
   checkedAt: "2026-10-21",
 };
 
-export function getPurchaseEligibility(locale: SiteLocale, productSlug: string, plans: ProductPlan[]) {
+export function getPurchaseEligibility(locale: SiteLocale, productSlug: string, plans: ProductPlan[], pageKind: "overview" | "plan" = "plan") {
+  if (pageKind === "overview" && hasClaudeOverviewDecision(locale, productSlug)
+    && plans.some((plan) => plan.billing === "monthly" && getDefaultPlanRegions(plan).some((region) => region.billingPlatform?.toLowerCase() === "ios"))) {
+    return { ...claudeOverviewEvidence.eligibility, checkedAt: claudeOverviewEvidence.checkedAt, checkedLabel: "Eligibility guidance checked", priceScope: undefined };
+  }
   if (hasGrokSuperAppStoreDecision(locale, productSlug, plans)) {
     return {
       ...grokSuperEvidence.eligibility,

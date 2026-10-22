@@ -18,12 +18,18 @@ export function getMonthlyAppStoreComparison(product: SubscriptionProduct) {
       const us = regions.find((region) => region.code.toUpperCase() === "US");
       const usPrice = us?.currencyCode === "USD" && Number.isFinite(us.localPriceValue) && (us.localPriceValue ?? 0) > 0
         ? us.localPriceValue : undefined;
+      const lowest = regions.filter((region) => Number.isFinite(region.priceUsd) && region.priceUsd > 0
+        && Number.isFinite(region.localPriceValue) && (region.localPriceValue ?? 0) > 0
+        && Boolean(region.localPrice) && /^[A-Z]{3}$/.test(region.currencyCode ?? "")
+        && Boolean(region.lastCheckedAt) && Number.isFinite(Date.parse(region.lastCheckedAt!)))
+        .sort((a, b) => a.priceUsd - b.priceUsd)[0];
       return {
         plan,
         usPrice,
         collectedAt: usPrice === undefined ? undefined : us?.lastCheckedAt,
         regionCount: new Set(regions.map((region) => region.code.toUpperCase())).size,
         freshness: getPlanFreshness(regions),
+        lowest,
       };
     });
 }
