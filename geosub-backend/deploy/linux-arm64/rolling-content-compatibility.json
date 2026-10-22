@@ -65,6 +65,11 @@
       "from": "bd687cf7c4fa26f7507e5ce75a97e4cbe59e465d3dc0ea84312aab2f9fecd2a6",
       "to": "78219cddad1d7dc42da8e0e47451c4354f71ae06de2e7402f1346242c0244c04",
       "reason": "2.15.0 to 2.14.2: managed content reader, store, validator and schema are byte-identical; PricingDetailPage adds Web-only copy while retaining managed content precedence and existing App Store output. Spotify is not published during the release window."
+    },
+    {
+      "from": "31732d8f45359721378976dbedeeb7e14dc6a5cb4db1ee3decf999606c49ac85",
+      "to": "bd687cf7c4fa26f7507e5ce75a97e4cbe59e465d3dc0ea84312aab2f9fecd2a6",
+      "reason": "2.15.1 to 2.15.0: managed content reader, store, validator, distribution and schema are byte-identical. PricingDetailPage adds only an English Gemini Ultra server-rendered decision section; managed content precedence and all other page branches are unchanged. No data contract or migration changes."
     }
   ]
 }

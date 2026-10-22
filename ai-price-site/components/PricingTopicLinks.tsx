@@ -200,6 +200,8 @@ export function RelatedPlanChoices({
       <p className="mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
         {hasPlanComparison(locale, product.slug) ? (
           <><Link href={`/en/ai-pricing/${product.slug}#compare-plans`} className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare ChatGPT plans</Link> side by side to choose for your usage and budget, then explore each plan&apos;s prices by country.</>
+        ) : locale === "en" && product.slug === "gemini" && currentPlanSlug === "pro" && plans.some((plan) => plan.slug === "ultra") ? (
+          <><Link href="/en/ai-pricing/gemini/ultra#compare-plans" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare Pro with Ultra</Link> if you need more usage: check the monthly App Store price difference, exact tier and account eligibility before upgrading.</>
         ) : localeCopy.otherPlansDescription}
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">

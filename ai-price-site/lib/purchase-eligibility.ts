@@ -1,5 +1,6 @@
 import { getDefaultPlanRegions, type ProductPlan } from "./public-pricing-model.ts";
 import type { SiteLocale } from "./site-locale";
+import { geminiDecisionEvidence, hasGeminiUltraDecision } from "./gemini-plan-decision.ts";
 
 // Product/channel evidence, separate from changing regional prices and their dates.
 const netflixAppleEvidence = {
@@ -8,6 +9,16 @@ const netflixAppleEvidence = {
 };
 
 export function getPurchaseEligibility(locale: SiteLocale, productSlug: string, plans: ProductPlan[]) {
+  if (plans.length === 1 && hasGeminiUltraDecision(locale, productSlug, plans[0].slug)
+    && plans[0].billing === "monthly" && getDefaultPlanRegions(plans[0]).some((region) => region.billingPlatform?.toLowerCase() === "ios")) {
+    return {
+      ...geminiDecisionEvidence.eligibility,
+      checkedAt: geminiDecisionEvidence.checkedAt,
+      checkedLabel: "Eligibility guidance checked",
+      // Preserve the existing search title/description and price-scope copy.
+      priceScope: undefined,
+    };
+  }
   if (productSlug !== "netflix" || (locale !== "zh" && locale !== "en")) return null;
   if (!plans.some((plan) => getDefaultPlanRegions(plan).some((region) => region.billingPlatform?.toLowerCase() === "ios"))) return null;
   return {

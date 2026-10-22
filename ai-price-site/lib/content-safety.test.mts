@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import sanitizeHtml from "sanitize-html";
 import { sanitizeArticleHtml } from "./content-safety.ts";
 import { serializeJsonLd } from "./json-ld.ts";
 
@@ -40,4 +41,19 @@ test("JSON-LD cannot terminate its script element", () => {
   assert.doesNotMatch(output, /<|>|&/);
   assert.match(output, /\\u003c\/script\\u003e/);
   assert.match(output, /A\\u0026B/);
+});
+
+test("patched sanitizer keeps a malformed noscript discard region closed", () => {
+  // GHSA-x3q4-9hxx-gx8m: an implied ancestor close must not leak an image.
+  const html = sanitizeHtml('<div><noscript></div><img src="https://example.com/leaked.png"></noscript>', {
+    allowedTags: ["div", "img"],
+    allowedAttributes: { img: ["src"] },
+    nonTextTags: ["script", "style", "textarea", "option", "noscript"],
+  });
+  assert.equal(html, "<div></div>");
+});
+
+test("article allowlist still rejects refresh and namespaced SVG URL payloads", () => {
+  const html = sanitizeArticleHtml('<p>Safe article</p><meta http-equiv="refresh" content="0;url=javascript:alert(1)"><svg><svg:animate attributeName="href" values="#safe;javascript:alert(1)" /></svg>');
+  assert.equal(html, "<p>Safe article</p>");
 });

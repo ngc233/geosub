@@ -1,6 +1,6 @@
 {
     "name": "ai-price-site",
-    "version": "2.15.0",
+    "version": "2.15.1",
     "private": true,
     "engines": {
         "node": ">=22 <23"
@@ -79,14 +79,14 @@
         "dotenv": "^17.4.2",
         "html-to-image": "^1.11.13",
         "lucide-react": "^1.21.0",
-        "next": "16.3.8",
+        "next": "16.4.2",
         "opencc-js": "^1.4.1",
         "pdfkit": "^0.17.2",
         "pg": "^8.22.0",
         "prisma": "^7.9.1",
         "react": "19.2.4",
         "react-dom": "19.2.4",
-        "sanitize-html": "^2.17.7",
+        "sanitize-html": "^2.18.1",
         "server-only": "^0.0.1",
         "simple-icons": "^16.24.0",
         "topojson-client": "^3.1.0",
@@ -102,7 +102,7 @@
         "@types/sanitize-html": "^2.16.1",
         "@types/topojson-client": "^3.1.5",
         "eslint": "^9",
-        "eslint-config-next": "16.3.8",
+        "eslint-config-next": "16.4.2",
         "tailwindcss": "^4",
         "typescript": "^5",
         "fast-glob": "file:vendor/next-eslint-root-glob"
@@ -123,7 +123,7 @@
         "postcss": "8.5.26",
         "source-map-js": "1.2.2",
         "sharp": "0.35.5",
-        "@next/eslint-plugin-next@16.3.8": {
+        "@next/eslint-plugin-next@16.4.2": {
             "fast-glob": "$fast-glob"
         }
     }
