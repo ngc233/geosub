@@ -5,6 +5,7 @@ import { geminiDecisionEvidence, hasGeminiUltraDecision } from "./gemini-plan-de
 import { youtubeFamilyEvidence, hasYouTubeFamilyDecision } from "./youtube-family-decision.ts";
 import { grokSuperEvidence, hasGrokSuperAppStoreDecision } from "./grok-super-decision.ts";
 import { claudeOverviewEvidence, hasClaudeOverviewDecision } from "./claude-overview-decision.ts";
+import { chatgptPro100Evidence, hasChatGPTPro100Decision } from "./chatgpt-pro100-decision.ts";
 
 // Product/channel evidence, separate from changing regional prices and their dates.
 const netflixAppleEvidence = {
@@ -13,6 +14,10 @@ const netflixAppleEvidence = {
 };
 
 export function getPurchaseEligibility(locale: SiteLocale, productSlug: string, plans: ProductPlan[], pageKind: "overview" | "plan" = "plan") {
+  if (pageKind === "plan" && plans.length === 1 && hasChatGPTPro100Decision(locale, productSlug, plans[0].slug)
+    && plans[0].billing === "monthly" && getDefaultPlanRegions(plans[0]).some((region) => region.billingPlatform?.toLowerCase() === "ios")) {
+    return { ...chatgptPro100Evidence.eligibility, checkedAt: chatgptPro100Evidence.checkedAt, checkedLabel: "Eligibility guidance checked", priceScope: undefined };
+  }
   if (pageKind === "overview" && hasClaudeOverviewDecision(locale, productSlug)
     && plans.some((plan) => plan.billing === "monthly" && getDefaultPlanRegions(plan).some((region) => region.billingPlatform?.toLowerCase() === "ios"))) {
     return { ...claudeOverviewEvidence.eligibility, checkedAt: claudeOverviewEvidence.checkedAt, checkedLabel: "Eligibility guidance checked", priceScope: undefined };
