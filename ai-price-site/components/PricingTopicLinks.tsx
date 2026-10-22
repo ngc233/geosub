@@ -214,6 +214,8 @@ export function RelatedPlanChoices({
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Scoped native-fragment RFC: docs/claude-overview-decision-2026-10-23.md */}
             <a href="/en/ai-pricing/claude#compare-plans" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare Claude plans and each plan&apos;s lowest reviewed price</a> before choosing a tier or region. The US amounts compare the same monthly App Store basis; country minima are shown separately.
           </>
+        ) : locale === "en" && product.slug === "disney" && ["standard-with-ads", "standard", "premium"].includes(currentPlanSlug) ? (
+          <><Link href="/en/streaming-pricing/disney" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare Disney+ plan features and UK monthly renewal prices</Link> before choosing a country: check advertising, video quality, streams, downloads and eligibility for your billing platform.</>
         ) : localeCopy.otherPlansDescription}
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">

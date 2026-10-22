@@ -1,9 +1,21 @@
 import { getProductOverviewDecisionPlans } from "./pricing-product-overview-copy.ts";
-import { getPlanFreshness, type SubscriptionProduct } from "./public-pricing-model.ts";
+import { getPlanFreshness, type ProductPlan, type SubscriptionProduct } from "./public-pricing-model.ts";
 import type { SiteLocale } from "./site-locale.ts";
 
 export function hasPlanComparison(locale: SiteLocale, productSlug: string) {
   return locale === "en" && productSlug === "chatgpt";
+}
+
+// Exact market / currency / monthly iOS scope. A missing or ambiguous quote
+// remains unavailable, even when a cheaper country or another channel exists.
+export function getMonthlyAppStoreReferenceQuote(plan: ProductPlan, countryCode: string, currencyCode: string) {
+  if (plan.billing !== "monthly" || plan.priceStatus === "pending" || plan.priceStatus === "empty") return undefined;
+  const matches = plan.regions.filter((region) => region.code.toUpperCase() === countryCode.toUpperCase()
+    && region.currencyCode === currencyCode && region.billingPlatform?.toLowerCase() === "ios"
+    && region.dataQuality === "verified" && Number.isFinite(region.localPriceValue) && (region.localPriceValue ?? 0) > 0
+    && Boolean(region.localPrice) && Number.isFinite(region.priceUsd) && region.priceUsd > 0
+    && Boolean(region.lastCheckedAt) && Number.isFinite(Date.parse(region.lastCheckedAt!)));
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 // A common country, channel and billing period; never substitute another

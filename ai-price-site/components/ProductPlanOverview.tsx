@@ -15,6 +15,7 @@ import { hasPlanComparison } from "../lib/plan-comparison";
 import PublishedPlanComparison from "./PublishedPlanComparison";
 import styles from "./ManagedContent.module.css";
 import { claudeOverviewEvidence, hasClaudeOverviewDecision } from "../lib/claude-overview-decision";
+import { disneyOverviewEvidence, hasDisneyOverviewDecision } from "../lib/disney-overview-decision";
 
 export default function ProductPlanOverview({
   product,
@@ -41,13 +42,16 @@ export default function ProductPlanOverview({
     )
     .find(Boolean);
 
-  if (hasClaudeOverviewDecision(locale, product.slug)) {
-    const guide = claudeOverviewEvidence;
+  if (hasClaudeOverviewDecision(locale, product.slug) || hasDisneyOverviewDecision(locale, product.slug)) {
+    const disney = hasDisneyOverviewDecision(locale, product.slug);
+    const guide = disney ? disneyOverviewEvidence : claudeOverviewEvidence;
+    const purchaseTitleId = `${product.slug}-overview-purchase-title`;
     return <>
-      <PublishedPlanComparison product={product} locale={locale} planSlugs={["pro", "max-5x", "max-20x"]} showLowestPrices
-        title={guide.comparisonTitle} intro={guide.comparisonIntro} footer={guide.comparisonFooter} choices={guide.choices} placement="claude_overview_comparison" />
-      <section aria-labelledby="claude-overview-purchase-title" className={`${styles.scope} rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5 text-sm leading-6 text-[var(--color-text-secondary)]`}>
-        <h2 id="claude-overview-purchase-title" className="text-xl font-semibold text-[var(--color-text-primary)]">{guide.purchaseTitle}</h2>
+      <PublishedPlanComparison product={product} locale={locale} planSlugs={disney ? ["standard-with-ads", "standard", "premium"] : ["pro", "max-5x", "max-20x"]} showLowestPrices={!disney}
+        referenceMarket={disney ? disneyOverviewEvidence.referenceMarket : undefined} choiceColumnLabel={disney ? "UK plan features" : undefined}
+        title={guide.comparisonTitle} intro={guide.comparisonIntro} footer={guide.comparisonFooter} choices={guide.choices} placement={`${product.slug}_overview_comparison`} />
+      <section aria-labelledby={purchaseTitleId} className={`${styles.scope} rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5 text-sm leading-6 text-[var(--color-text-secondary)]`}>
+        <h2 id={purchaseTitleId} className="text-xl font-semibold text-[var(--color-text-primary)]">{guide.purchaseTitle}</h2>
         {guide.paragraphs.map((paragraph) => <p key={paragraph} className="mt-3">{paragraph}</p>)}
         <ul className="mt-3 flex flex-col items-start">
           {guide.sources.map((source) => <li key={source.href}><a href={source.href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]">{source.label}</a></li>)}
