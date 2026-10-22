@@ -1,5 +1,6 @@
 import { xPremiumEditorial } from "./x-premium-editorial.ts";
 import { spotifyEditorial } from './spotify-editorial.ts';
+import { grokSuperEvidence } from "./grok-super-decision.ts";
 import type { SiteLocale } from "./site-locale";
 import {
   expandedEditorialContent,
@@ -556,11 +557,9 @@ const editorialContent: Record<
           sourceUrl: "https://x.ai/pricing",
         },
         super: {
-          bestFor:
-            "Frequent users of Grok search, Expert, connectors and image or video generation who need higher limits.",
-          difference:
-            "The mainstream paid individual tier, with frontier model access and higher feature limits between Lite and Heavy.",
-          sourceUrl: "https://x.ai/pricing",
+          ...grokSuperEvidence.choices.super,
+          availabilityNote: "This is a collected App Store plan identity. Check the current website offer separately; a country listing does not establish new-purchase availability.",
+          sourceUrl: "https://x.ai/news/x-subscription",
         },
         "super-heavy": {
           bestFor:

@@ -3,6 +3,7 @@ import type { SiteLocale } from "./site-locale";
 import { geminiDecisionEvidence, hasGeminiUltraDecision } from "./gemini-plan-decision.ts";
 
 import { youtubeFamilyEvidence, hasYouTubeFamilyDecision } from "./youtube-family-decision.ts";
+import { grokSuperEvidence, hasGrokSuperAppStoreDecision } from "./grok-super-decision.ts";
 
 // Product/channel evidence, separate from changing regional prices and their dates.
 const netflixAppleEvidence = {
@@ -11,6 +12,14 @@ const netflixAppleEvidence = {
 };
 
 export function getPurchaseEligibility(locale: SiteLocale, productSlug: string, plans: ProductPlan[]) {
+  if (hasGrokSuperAppStoreDecision(locale, productSlug, plans)) {
+    return {
+      ...grokSuperEvidence.eligibility,
+      checkedAt: grokSuperEvidence.checkedAt,
+      checkedLabel: "Eligibility guidance checked",
+      priceScope: undefined,
+    };
+  }
   if (plans.length === 1 && hasYouTubeFamilyDecision(locale, productSlug, plans[0].slug)
     && plans[0].billing === "monthly" && getDefaultPlanRegions(plans[0]).some((region) => region.billingPlatform?.toLowerCase() === "ios")) {
     return {

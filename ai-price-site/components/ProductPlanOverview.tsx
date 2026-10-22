@@ -13,6 +13,7 @@ import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import { getProductEditorialContent } from "../lib/product-editorial-content";
 import { hasPlanComparison } from "../lib/plan-comparison";
 import PublishedPlanComparison from "./PublishedPlanComparison";
+import styles from "./ManagedContent.module.css";
 
 export default function ProductPlanOverview({
   product,
@@ -60,6 +61,13 @@ export default function ProductPlanOverview({
       {!singlePlan && overviewEditorial ? (
         <p className="mt-2 max-w-4xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
           {overviewEditorial.summary}
+        </p>
+      ) : null}
+      {locale === "en" && product.slug === "grok" && decisionPlans.some((plan) => plan.slug === "super") ? (
+        <p className={`${styles.scope} text-sm leading-6 text-[var(--color-text-secondary)]`}>
+          Comparing App Store SuperGrok with the current website offer?{" "}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Scoped native-fragment RFC: docs/grok-super-decision-2026-10-23.md */}
+          <a href="/en/ai-pricing/grok/super#compare-plans" className="inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">Compare the collected app plans and check new versus existing subscriber eligibility</a>. The website&apos;s new subscription names do not identify these App Store listings.
         </p>
       ) : null}
       {locale === "en" && product.slug === "gemini" && ["pro", "ultra"].every((slug) => decisionPlans.some((plan) => plan.slug === slug)) ? (

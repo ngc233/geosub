@@ -204,6 +204,10 @@ export function RelatedPlanChoices({
           <><Link href="/en/ai-pricing/gemini/ultra#compare-plans" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare Pro with Ultra</Link> if you need more usage: check the monthly App Store price difference, exact tier and account eligibility before upgrading.</>
         ) : locale === "en" && product.slug === "youtube-premium" && ["individual", "lite"].includes(currentPlanSlug) && plans.some((plan) => plan.slug === "family") ? (
           <><Link href="/en/streaming-pricing/youtube-premium/family#compare-plans" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare Individual, Family and Premium Lite</Link> on the same monthly App Store basis, then check whether your household meets Family requirements.</>
+        ) : locale === "en" && product.slug === "grok" && ["super-lite", "super-heavy"].includes(currentPlanSlug) && plans.some((plan) => plan.slug === "super") ? (
+          <>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Scoped native-fragment RFC: docs/grok-super-decision-2026-10-23.md */}
+          <a href="/en/ai-pricing/grok/super#compare-plans" className={`${styles.scope} inline-flex min-h-11 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]`}>Compare the collected App Store plans</a> and check which plan your account can buy or renew before comparing countries. These listings are separate from the current website offer.</>
         ) : localeCopy.otherPlansDescription}
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
