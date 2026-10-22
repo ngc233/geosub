@@ -168,6 +168,13 @@ jobs:
         run: |
           createdb --host=localhost --username=geosub geosub_identity_test_ci
           node --test ../geosub-backend/scripts/automatic-identity-lifecycle.test.mjs
+      - name: Test official Web collection approval and isolation
+        env:
+          PGPASSWORD: geosub_ci_password
+          GEOSUB_WEB_TEST_DATABASE_URL: postgresql://geosub:geosub_ci_password@localhost:5432/geosub_web_test_ci
+        run: |
+          createdb --host=localhost --username=geosub geosub_web_test_ci
+          node --test ../geosub-backend/scripts/official-web-database.test.mjs
       - name: Seed deterministic quality fixture
         run: npm run seed:ci-quality
       - name: Audit migrations

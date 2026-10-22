@@ -61,6 +61,7 @@ import {
   getProductOverviewDecisionPlans,
   getProductOverviewRegionCount,
   getProductOverviewPriceFact,
+  getProductOverviewChannel,
 } from "../lib/pricing-product-overview-copy";
 import { getPlanDisplayName } from "../lib/pricing-labels";
 import { getPlanSearchIntentCopy } from "../lib/plan-search-intent";
@@ -759,6 +760,7 @@ export async function getPricingDetailMetadata({
       planCount: getProductOverviewDecisionPlans(product).length,
       regionCount,
       lowest: getProductOverviewPriceFact(product),
+      billingChannel: getProductOverviewChannel(product),
     });
     const hasOverviewEditorial = publishedPlans.some((plan) =>
       Boolean(getProductEditorialContent(locale, product.slug, plan.slug)),
@@ -767,13 +769,13 @@ export async function getPricingDetailMetadata({
       ? stripGeoSubTitleSuffix(seoMeta?.title || "")
       : "";
     const title = managed?.title || (
-      locale === "zh" && configuredTitle && !hasOverviewEditorial
+      locale === "zh" && configuredTitle && !hasOverviewEditorial && getProductOverviewChannel(product) !== 'Web'
         ? configuredTitle
         : overviewCopy.metadataTitle);
     const description = managed?.description || (
       locale === "zh" &&
       hasChineseText(seoMeta?.description) &&
-      !hasOverviewEditorial
+      !hasOverviewEditorial && getProductOverviewChannel(product) !== 'Web'
         ? seoMeta?.description || overviewCopy.description
         : overviewCopy.description);
     const robots = getProductRobotsPolicy(
@@ -831,6 +833,7 @@ export async function getPricingDetailMetadata({
     productName: product.name,
     planName: activePlan.name,
     stats,
+    billingChannel: getPricingChannelLabel(contentPlan),
   });
   const seoCopy = getPricingDetailSeoCopy({
     locale,
@@ -838,6 +841,7 @@ export async function getPricingDetailMetadata({
     planName: activePlan.name,
     stats,
     regionCount: contentPlan.regions.length,
+    billingChannel: getPricingChannelLabel(contentPlan),
   });
   const editorialContent = getProductEditorialContent(
     locale,
@@ -1077,6 +1081,7 @@ export default async function PricingDetailPage({
       planCount: getProductOverviewDecisionPlans(product).length,
       regionCount,
       lowest: getProductOverviewPriceFact(product),
+      billingChannel: getProductOverviewChannel(product),
     });
     const hasOverviewEditorial = publishedPlans.some((plan) =>
       Boolean(getProductEditorialContent(locale, product.slug, plan.slug)),
@@ -1084,13 +1089,13 @@ export default async function PricingDetailPage({
     const pageTitle = managed?.heading || (
       locale === "zh" &&
       hasChineseText(seoMeta?.h1) &&
-      !hasOverviewEditorial
+      !hasOverviewEditorial && getProductOverviewChannel(product) !== 'Web'
         ? seoMeta?.h1 || overviewCopy.pageTitle
         : overviewCopy.pageTitle);
     const pageDescription = managed?.description || (
       locale === "zh" &&
       hasChineseText(seoMeta?.description) &&
-      !hasOverviewEditorial
+      !hasOverviewEditorial && getProductOverviewChannel(product) !== 'Web'
         ? seoMeta?.description || overviewCopy.description
         : overviewCopy.description);
     const overviewFaqs = managed ? managed.faqs : getProductOverviewSearchFaqs({ locale, product });
@@ -1278,6 +1283,7 @@ export default async function PricingDetailPage({
     productName: product.name,
     planName: activePlan.name,
     stats,
+    billingChannel: getPricingChannelLabel(contentPlan),
   });
   const hasSinglePublishedPlan =
     product.plans.filter((plan) => plan.regions.length > 0).length === 1;

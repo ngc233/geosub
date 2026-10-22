@@ -25,7 +25,7 @@ test("data-quality rows use source-aware copy and hide unsupported manual collec
   );
   const page = readProjectFile("app/admin/data-quality/page.tsx");
 
-  assert.match(model, /label: "Web 样本待审"/);
+  assert.match(model, /row.active_official_web_job_count > 0 \? "Web 自动验证中" : "Web 样本待审"/);
   assert.match(model, /label: "等待官网采集器"/);
   assert.match(model, /label: "一次性商品"/);
   assert.match(model, /supportsManualCollection: false/);

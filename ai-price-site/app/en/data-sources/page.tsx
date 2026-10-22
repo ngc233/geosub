@@ -13,6 +13,7 @@ const sourceLayers = [
     badge: "App Store",
     items: [
       "Public App Store subscription prices across supported regions",
+      "Regular official Web prices for supported products, shown separately from App Store prices",
       "Structured product, plan, country and currency records",
       "Only reviewed observations are published to public rankings",
     ],

@@ -97,6 +97,37 @@ Use it explicitly when you want to collect evidence:
 Do not mix Web observations into the public ranking unless the source-specific
 parser and review rules are stable.
 
+### Spotify US automatic source
+
+`spotify` is an explicitly approved exception to the pending-only default. It
+fetches the official public HTML without a browser and reads the server's
+structured country, canonical plan IDs and regular monthly renewal prices.
+Only existing Individual/Family plans and US/USD are supported. Introductory
+zeroes, annual prices, login/geo redirects and ambiguous evidence cannot publish.
+
+`node scripts/collect-official-web-prices.mjs --source-key spotify --dry-run`
+performs a live read without database writes. `configure-official-web-job.mjs
+--source-key spotify` previews onboarding; add `--execute` only in an authorized,
+backed-up production data window. It creates one low-priority task on the existing
+scheduler, every 12 hours, and does not rewrite other jobs or timers. Repeating
+configuration preserves the existing job and its counters/schedule.
+
+Automatic review requires three independent same-price samples spanning at least
+24 hours, at least six hours apart. Large changes over 30% need five samples over
+72 hours. Evidence is at most seven days old and latest at most 48 hours old.
+All target plans must pass. Only exact Web keys are updated; iOS prices are never
+fallback targets. The decision audit stores the supporting observation IDs.
+Invalid evidence remains isolated, followed by ordinary automatic sampling and
+recovery. `--force` cannot bypass independence; `--skip-auto-review` is honored.
+
+After successful Spotify collection the scheduler requests scoped pricing-cache
+invalidation from the current website over loopback, then refreshes reports.
+The request uses a job-bound HMAC derived from the current private build preview
+key, cannot follow redirects, and is accepted only for the Spotify source job.
+Secrets never appear in logs or external requests. The existing admin-only random
+token route remains supported. A cache failure is a bounded system-task failure
+and retries on the next successful collection. No new persistent timer is added.
+
 ## Apple Music five-market pilot
 
 The first maintained source-specific parser is `apple-music`. It covers US, BR,

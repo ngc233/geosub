@@ -5,6 +5,8 @@ import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { fetchSpotifyOfficialSnapshot } from './lib/spotify-official-web.mjs';
+import { assertAutomaticWebSource, reviewOfficialWebMarket } from './lib/official-web-auto-review.mjs';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const backendDir = path.resolve(scriptsDir, "..");
@@ -24,7 +26,7 @@ function parseArgs(argv) {
   return parsed;
 }
 
-function loadEnvFile(filePath) {
+export function loadEnvFile(filePath) {
   let text;
   try {
     text = readFileSync(filePath, "utf8");
@@ -53,7 +55,11 @@ function boolArg(value) {
   return value === "true" || value === "1";
 }
 
-function renderMarket({ source, market, chromePath }) {
+async function renderMarket({ source, market, chromePath }) {
+  if (source.fetch_mode === 'structured_http') {
+    assertAutomaticWebSource(source);
+    return fetchSpotifyOfficialSnapshot(market);
+  }
   const rendererArgs = [
     rendererPath,
     "--url",
@@ -120,7 +126,7 @@ function validateSnapshot(source, market, snapshot) {
   return [...new Set(issues)];
 }
 
-async function loadDatabaseContext(client, source, countryCodes) {
+export async function loadDatabaseContext(client, source, countryCodes) {
   const productResult = await client.query(
     "SELECT id, slug, name, status::text FROM products WHERE slug = $1 LIMIT 1",
     [source.product_slug]
@@ -159,7 +165,7 @@ async function loadDatabaseContext(client, source, countryCodes) {
   return { product, plans, countries };
 }
 
-async function ensureSource(client, source) {
+export async function ensureSource(client, source) {
   const result = await client.query(
     `
       INSERT INTO price_sources (
@@ -170,9 +176,9 @@ async function ensureSource(client, source) {
       )
       VALUES (
         gen_random_uuid(), $1, $2, $3::source_level, 'official_page'::price_source_type,
-        $4, $5, NULL, TRUE, FALSE, FALSE, 'low'::risk_level, $6,
+        $4, $5, NULL, $7, FALSE, FALSE, 'low'::risk_level, $6,
         'active'::source_status,
-        'Official localized pricing pages with explicit country and locale mapping. Parser output remains pending until a Web-specific review rule is approved.',
+        $8,
         NOW(), NOW()
       )
       ON CONFLICT (source_key) DO UPDATE SET
@@ -196,13 +202,15 @@ async function ensureSource(client, source) {
       source.source_level,
       source.provider,
       source.base_url,
-      source.reliability_score
+      source.reliability_score,
+      source.fetch_mode !== 'structured_http',
+      source.evidence_note
     ]
   );
   return result.rows[0].id;
 }
 
-async function insertMarketObservations({
+export async function insertMarketObservations({
   client,
   source,
   market,
@@ -216,6 +224,10 @@ async function insertMarketObservations({
   await client.query("BEGIN");
 
   try {
+    if (source.auto_review) {
+      await client.query("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'");
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`official_web:${database.product.id}:${database.countries.get(market.country_code).id}`]);
+    }
     for (const candidate of snapshot.parser_result.candidates) {
       const plan = database.plans.get(candidate.plan_slug);
       const country = database.countries.get(market.country_code);
@@ -231,8 +243,12 @@ async function insertMarketObservations({
         source_url: market.url,
         final_url: snapshot.final_url,
         content_hash: snapshot.content_hash,
+        render_mode: snapshot.render_mode,
         captured_at: snapshot.captured_at,
-        publication_eligible: false
+        publication_eligible: Boolean(source.auto_review),
+        automatic_rule: source.auto_review?.rule_id ?? null,
+        billing_cycle: candidate.billing_cycle,
+        availability_note: candidate.availability_note ?? null
       };
 
       const observationResult = await client.query(
@@ -257,11 +273,13 @@ async function insertMarketObservations({
               AND existing.plan_id = $2
               AND existing.country_id = $3
               AND existing.billing_platform = 'web'::billing_platform
-              AND existing.status = 'pending'::observation_status
-              AND existing.raw_price = $6
-              AND existing.currency = $7
+              AND (existing.status = 'pending'::observation_status OR $14::boolean)
+              AND (NOT $14::boolean OR existing.source_id=$4)
+              AND ($14::boolean OR existing.raw_price = $6)
+              AND ($14::boolean OR existing.currency = $7)
               AND existing.parser_version = $12
-              AND existing.observed_at::date = ($8::timestamptz)::date
+              AND (CASE WHEN $14::boolean THEN existing.observed_at > $8::timestamptz - INTERVAL '6 hours'
+                   ELSE existing.observed_at::date = ($8::timestamptz)::date END)
           )
           RETURNING id
         `,
@@ -278,7 +296,8 @@ async function insertMarketObservations({
           market.locale.toLowerCase(),
           JSON.stringify(rawPayload),
           snapshot.parser_result.parser_version,
-          force
+          force && !source.auto_review,
+          Boolean(source.auto_review)
         ]
       );
 
@@ -324,18 +343,50 @@ async function insertMarketObservations({
   }
 }
 
+export async function recordMarketFailure({ client, source, market, database, sourceId, snapshot, issues }) {
+  assertAutomaticWebSource(source);
+  const captured = snapshot?.captured_at ?? new Date().toISOString();
+  await client.query('BEGIN');
+  try {
+    await client.query("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'");
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`official_web:${database.product.id}:${database.countries.get(market.country_code).id}`]);
+    for (const slug of source.required_plan_slugs) {
+      const result = await client.query(`INSERT INTO price_observations
+        (id,product_id,plan_id,country_id,source_id,source_level,currency,observed_at,source_url,locale,
+         billing_platform,price_type,raw_payload,parser_version,confidence_score,anomaly_flag,anomaly_reason,status)
+        SELECT gen_random_uuid(),$1,$2,$3,$4,'A',$5,$6,$7,$8,'web','list_price',$9::jsonb,$10,0,TRUE,'official_web_evidence_incomplete','pending'
+        WHERE NOT EXISTS(SELECT 1 FROM price_observations o WHERE o.product_id=$1 AND o.plan_id=$2
+          AND o.country_id=$3 AND o.source_id=$4 AND o.billing_platform='web'
+          AND o.anomaly_flag AND o.observed_at>=$6::timestamptz-INTERVAL '6 hours') RETURNING id`,
+        [database.product.id,database.plans.get(slug).id,database.countries.get(market.country_code).id,sourceId,
+        market.currency,captured,market.url,market.locale,JSON.stringify({ collector:'collect-official-web-prices.mjs',
+          automatic_rule:source.auto_review.rule_id,publication_eligible:false,billing_cycle:source.billing_cycle,
+          requested_country:market.country_code,source_url:market.url,final_url:snapshot?.final_url ?? null,
+          content_hash:snapshot?.content_hash ?? null,issues }),source.parser_version]);
+      if (result.rows[0] && snapshot?.content_hash) {
+        await client.query(`INSERT INTO source_evidence(id,observation_id,evidence_type,content_hash,captured_at,http_status,final_url,country_context,note)
+          VALUES(gen_random_uuid(),$1,'html',$2,$3,$4,$5,$6,'Automatically isolated incomplete official Web evidence')`,
+          [result.rows[0].id,snapshot.content_hash,captured,snapshot.http_status,snapshot.final_url,market.country_code]);
+      }
+    }
+    await client.query('COMMIT');
+  } catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
+}
+
 async function main() {
   const args = parseArgs(process.argv);
   const sourceKey = args.get("source-key");
   const productSlug = args.get("product-slug");
   const dryRun = boolArg(args.get("dry-run"));
   const force = boolArg(args.get("force"));
+  const skipAutoReview = boolArg(args.get('skip-auto-review'));
   const chromePath = args.get("chrome-path") ?? process.env.CHROME_PATH ?? null;
 
   if (!sourceKey) throw new Error("Missing --source-key.");
   const config = JSON.parse(readFileSync(sourceConfigPath, "utf8"));
   const source = config.sources?.[sourceKey];
   if (!source) throw new Error(`Unknown official Web source: ${sourceKey}.`);
+  if (source.auto_review) assertAutomaticWebSource(source);
   if (productSlug && productSlug !== source.product_slug) {
     throw new Error(`Source ${sourceKey} belongs to ${source.product_slug}, not ${productSlug}.`);
   }
@@ -346,6 +397,7 @@ async function main() {
     .filter(Boolean);
   const requestedSet = new Set(requestedCodes);
   const markets = source.markets.filter((market) => requestedSet.has(market.country_code));
+  if (markets.length === 0) throw Error('No official Web markets selected.');
   const unknownMarkets = requestedCodes.filter(
     (code) => !source.markets.some((market) => market.country_code === code)
   );
@@ -395,16 +447,19 @@ async function main() {
     inserted_observation_count: 0,
     skipped_observation_count: 0,
     dry_run_observation_count: 0,
+    published_price_count: 0,
     collection_outcome: "succeeded",
     markets: []
   };
 
   try {
     for (const market of markets) {
+      let snapshot = null;
       try {
-        const snapshot = renderMarket({ source, market, chromePath });
+        snapshot = await renderMarket({ source, market, chromePath });
         const issues = validateSnapshot(source, market, snapshot);
         if (issues.length > 0) {
+          if (client && source.auto_review) await recordMarketFailure({ client,source,market,database,sourceId,snapshot,issues });
           summary.failed_market_count += 1;
           summary.markets.push({
             country_code: market.country_code,
@@ -442,6 +497,9 @@ async function main() {
           summary.skipped_observation_count += writeResult.skipped;
         }
 
+        const review = client && source.auto_review && !skipAutoReview
+          ? await reviewOfficialWebMarket({ client, source, market, database, sourceId }) : null;
+        summary.published_price_count += review?.published ?? 0;
         summary.complete_market_count += 1;
         summary.markets.push({
           country_code: market.country_code,
@@ -451,12 +509,16 @@ async function main() {
           content_hash: snapshot.content_hash,
           inserted: writeResult.inserted,
           skipped: writeResult.skipped,
+          auto_review: review,
           observations
         });
         console.log(
           `${market.country_code}: ${observations.map((item) => `${item.plan_slug} ${item.currency} ${item.raw_price}`).join("; ")}`
         );
       } catch (error) {
+        if (client && source.auto_review && !snapshot?.parser_result?.complete) {
+          await recordMarketFailure({ client,source,market,database,sourceId,snapshot,issues:[error.message] });
+        }
         summary.failed_market_count += 1;
         summary.markets.push({
           country_code: market.country_code,
@@ -484,7 +546,7 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch((error) => {
   console.error(error?.stack || error?.message || String(error));
   process.exitCode = 1;
 });

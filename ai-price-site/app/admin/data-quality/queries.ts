@@ -84,6 +84,14 @@ export async function getProductQualityRows() {
     price_state AS (
       SELECT
         price.product_id,
+        COUNT(*) FILTER (WHERE price.status::text='published' AND price.billing_platform::text='web'
+          AND price.data_quality::text='verified')::int AS published_web_price_count,
+        COUNT(DISTINCT price.country_id) FILTER (WHERE price.status::text='published' AND price.billing_platform::text='web'
+          AND price.data_quality::text='verified')::int AS published_web_country_count,
+        COUNT(*) FILTER (WHERE price.status::text='published' AND price.billing_platform::text='web'
+          AND (price.last_checked_at IS NULL OR price.last_checked_at<NOW()-INTERVAL '14 days'))::int AS stale_web_price_count,
+        MAX(price.last_checked_at) FILTER (WHERE price.status::text='published' AND price.billing_platform::text='web'
+          AND price.data_quality::text='verified') AS latest_web_price_checked_at,
         COUNT(*) FILTER (
           WHERE price.status::text = 'published'
             AND price.billing_platform::text = 'ios'
@@ -527,13 +535,20 @@ export async function getProductQualityRows() {
       latest_run.latest_runner_state,
       latest_run.latest_run_age_seconds,
       COALESCE(price_state.published_price_count, 0)::int AS published_price_count,
+      COALESCE(price_state.published_web_price_count, 0)::int AS published_web_price_count,
+      COALESCE(price_state.published_web_country_count, 0)::int AS published_web_country_count,
+      COALESCE(price_state.stale_web_price_count, 0)::int AS stale_web_price_count,
       COALESCE(price_state.published_country_count, 0)::int AS published_country_count,
       COALESCE(price_state.app_store_price_count, 0)::int AS app_store_price_count,
       COALESCE(price_state.stale_published_count, 0)::int AS stale_published_count,
       COALESCE(outlier_state.published_outlier_count, 0)::int AS published_outlier_count,
       COALESCE(duplicate_plan_state.duplicate_plan_group_count, 0)::int AS duplicate_plan_group_count,
       COALESCE(tax_state.missing_tax_profile_count, 0)::int AS missing_tax_profile_count,
-      price_state.latest_price_checked_at,
+      CASE WHEN COALESCE(job_state.app_store_job_count,0)=0
+        AND (source_profile_state.source_integration_status='official_page_only'
+          OR COALESCE(job_state.official_web_job_count,0)>0)
+        THEN price_state.latest_web_price_checked_at ELSE price_state.latest_price_checked_at
+        END AS latest_price_checked_at,
       COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
       COALESCE(observation_state.pending_app_store_count, 0)::int AS pending_app_store_count,
       COALESCE(observation_state.pending_web_observation_count, 0)::int AS pending_web_observation_count,

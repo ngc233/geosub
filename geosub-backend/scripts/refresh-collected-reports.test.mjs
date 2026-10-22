@@ -28,7 +28,7 @@ test('bounded failures visible, no edge purge before origin succeeds, invalid sc
 });
 test('scheduler hook follows successful review and full locale inventory matches frontend',()=>{
  const runner=fs.readFileSync(new URL('./run-collector-jobs.ps1',import.meta.url),'utf8');
- assert.ok(runner.indexOf('refresh-collected-reports.mjs')>runner.indexOf('$reportRefreshProducts = @($pendingAppStoreCompletions'));
+ assert.ok(runner.indexOf('refresh-collected-reports.mjs')>runner.indexOf('Running App Store stability auto-review'));
  assert.match(runner,/if \(\$LASTEXITCODE -ne 0\)/);
  const locales=fs.readFileSync(new URL('../../ai-price-site/lib/site-locale.ts',import.meta.url),'utf8');
  const launched=locales.match(/export const launchedSiteLocales = \[([\s\S]*?)\]/)[1].match(/"([\w-]+)"/g).map(s=>JSON.parse(s));

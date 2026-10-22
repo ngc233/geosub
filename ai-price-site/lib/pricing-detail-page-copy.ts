@@ -1,7 +1,8 @@
-import { formatUsd, type PlanStats } from "./public-pricing-model";
-import { getPlanDisplayName } from "./pricing-labels";
+import { formatUsd, type PlanStats } from "./public-pricing-model.ts";
+import { getPlanDisplayName } from "./pricing-labels.ts";
 import type { PricingFaq } from "./pricing-seo";
 import type { PreparedSiteLocale } from "./site-locale";
+import { getBillingSourceText, getBillingSourceFaqs } from './billing-source-copy.ts';
 
 type StaticDetailCopy = {
   metadataFallbackTitle: string;
@@ -502,11 +503,13 @@ export function getPricingDetailPageCopy({
   productName,
   planName,
   stats,
+  billingChannel = 'App Store',
 }: {
   locale: PreparedSiteLocale;
   productName: string;
   planName: string;
   stats: PlanStats | null;
+  billingChannel?: string;
 }) {
   const staticCopy = staticDetailCopy[locale];
 
@@ -518,7 +521,7 @@ export function getPricingDetailPageCopy({
       title: staticCopy.empty.title(productName, planName),
     },
     pageTitle: getPageTitle(locale, productName, planName),
-    description: getDescription(locale, productName),
-    faqs: getFaqs(locale, productName, planName, stats),
+    description: getBillingSourceText(getDescription(locale, productName), billingChannel),
+    faqs: getBillingSourceFaqs(getFaqs(locale, productName, planName, stats), billingChannel),
   };
 }

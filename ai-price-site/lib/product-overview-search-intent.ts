@@ -3,11 +3,13 @@ import {
   getProductOverviewDecisionPlans,
   getProductOverviewRegionCount,
   getProductOverviewPriceFact,
+  getProductOverviewChannel,
 } from "./pricing-product-overview-copy.ts";
 import { getPlanDisplayName } from "./pricing-labels.ts";
 import type { PricingFaq } from "./pricing-seo.ts";
 import type { SubscriptionProduct } from "./public-pricing-model.ts";
 import type { SiteLocale } from "./site-locale.ts";
+import { getBillingSourceFaqs } from './billing-source-copy.ts';
 
 function getPlanChoiceSummary(
   locale: SiteLocale,
@@ -47,9 +49,10 @@ export function getProductOverviewSearchFaqs({
   const planCount = getProductOverviewDecisionPlans(product).length;
   const regionCount = getProductOverviewRegionCount(product);
   const planChoiceSummary = getPlanChoiceSummary(locale, product);
+  const channel = getProductOverviewChannel(product);
 
   if (locale === "zh") {
-    return [
+    return getBillingSourceFaqs([
       {
         q: `${product.name} 哪个套餐和地区最便宜？`,
         a: lowest
@@ -69,10 +72,10 @@ export function getProductOverviewSearchFaqs({
         q: `可以直接切换到最便宜地区订阅 ${product.name} 吗？`,
         a: `不一定。跨地区订阅可能受到 Apple ID 地区、付款方式、账单地址、税务和服务条款限制。GeoSub 只提供公开价格比较，不建议为了低价规避平台规则。`,
       },
-    ];
+    ], channel);
   }
 
-  return [
+  return getBillingSourceFaqs([
     {
       q: `Which ${product.name} plan and country are cheapest?`,
       a: lowest
@@ -92,5 +95,5 @@ export function getProductOverviewSearchFaqs({
       q: `Can I switch regions to buy ${product.name} at the lowest price?`,
       a: `Not necessarily. Cross-region subscriptions may be restricted by Apple ID region, payment method, billing address, tax and service terms. GeoSub compares public prices and does not recommend bypassing platform rules.`,
     },
-  ];
+  ], channel);
 }

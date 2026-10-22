@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const sourceLayers = [
-  { number: "01", title: "公开价格", badge: "主要来源", icon: Database, items: ["App Store 各地区公开订阅价格", "产品、套餐、国家和币种的结构化记录", "原始本地币种与检查日期同步保留"] },
+  { number: "01", title: "公开价格", badge: "主要来源", icon: Database, items: ["App Store 各地区公开订阅价格", "已接入产品的官网 Web 正价，与 App Store 分开展示", "产品、套餐、国家和币种的结构化记录", "原始本地币种与检查日期同步保留"] },
   { number: "02", title: "换算比较", badge: "定期更新", icon: CircleDollarSign, items: ["按所选显示币种换算地区价格", "相对美国基准价和地区价差", "缺失或过期汇率不生成估算"] },
   { number: "03", title: "阅读边界", badge: "结算页为准", icon: Scale, items: ["本地标价与换算价格分别展示", "价格采集、汇率和套餐复核日期分别标注", "账号、付款方式和税费可能影响最终金额"] },
 ] as const;

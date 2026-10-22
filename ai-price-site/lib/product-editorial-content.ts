@@ -1,4 +1,5 @@
 import { xPremiumEditorial } from "./x-premium-editorial.ts";
+import { spotifyEditorial } from './spotify-editorial.ts';
 import type { SiteLocale } from "./site-locale";
 import {
   expandedEditorialContent,
@@ -32,6 +33,7 @@ const editorialContent: Record<
   zh: {
     ...expandedEditorialContent.zh,
     "x-premium": xPremiumEditorial.zh,
+    spotify: spotifyEditorial.zh,
     chatgpt: {
       summary:
         "ChatGPT 是 OpenAI 面向个人用户的 AI 助手。各付费层级主要差在使用额度、可用模型、记忆与上下文，以及 Codex 等高级工具的访问范围。本页只比较可核验的个人月度订阅价格，不混入团队版或 API 计费。",
@@ -387,6 +389,7 @@ const editorialContent: Record<
   en: {
     ...expandedEditorialContent.en,
     "x-premium": xPremiumEditorial.en,
+    spotify: spotifyEditorial.en,
     chatgpt: {
       summary:
         "ChatGPT is OpenAI's AI assistant for individuals. Paid tiers mainly differ in usage limits, model access, memory and context capacity, and access to advanced tools such as Codex. This page compares verified monthly consumer subscriptions, excluding team plans and API usage.",

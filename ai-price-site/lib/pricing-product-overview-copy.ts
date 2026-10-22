@@ -7,6 +7,7 @@ import {
 } from "./public-pricing-model.ts";
 import { getPlanDisplayName } from "./pricing-labels.ts";
 import { getPlanEditorialIndexingStatus } from "./product-editorial-content.ts";
+import { getBillingSourceText } from './billing-source-copy.ts';
 
 type OverviewCopy = {
   title: (productName: string, year: number) => string;
@@ -52,6 +53,11 @@ export function getProductOverviewDecisionPlans(
 
 export function getProductOverviewRegionCount(product: SubscriptionProduct) {
   return new Set(getProductOverviewDecisionPlans(product).flatMap((plan) => plan.regions.map((region) => region.code))).size;
+}
+
+export function getProductOverviewChannel(product: SubscriptionProduct) {
+  const regions = getProductOverviewDecisionPlans(product).flatMap(plan => plan.regions);
+  return regions.length > 0 && regions.every(region => region.billingPlatform === 'web') ? 'Web' : 'App Store';
 }
 
 export function getProductOverviewPriceFact(
@@ -270,6 +276,7 @@ export function getPricingProductOverviewCopy({
   regionCount,
   lowest = null,
   year = new Date().getFullYear(),
+  billingChannel = 'App Store',
 }: {
   locale: SiteLocale;
   productName: string;
@@ -277,6 +284,7 @@ export function getPricingProductOverviewCopy({
   regionCount: number;
   lowest?: ProductOverviewPriceFact | null;
   year?: number;
+  billingChannel?: string;
 }) {
   const copy = overviewCopy[locale];
   return {
@@ -288,7 +296,7 @@ export function getPricingProductOverviewCopy({
         : locale === "en"
           ? `${productName} Plans and Prices by Country`
           : copy.title(productName, year),
-    description: copy.description(productName, planCount, regionCount, lowest),
+    description: getBillingSourceText(copy.description(productName, planCount, regionCount, lowest), billingChannel),
     intro: copy.intro(productName, lowest),
   };
 }

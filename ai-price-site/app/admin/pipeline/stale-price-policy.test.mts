@@ -48,13 +48,15 @@ test("pipeline marks published App Store prices stale by last checked date", () 
 
   assert.match(source, /published_stale_price_count/);
   assert.match(source, /price\.status = 'published'::publish_status/);
-  assert.match(source, /price\.billing_platform = 'ios'::billing_platform/);
+  assert.match(source, /price\.billing_platform::text = pricing_scope\.billing_platform/);
+  assert.match(source, /THEN 'web' ELSE 'ios' END AS billing_platform/);
+  assert.match(source, /product\.slug='spotify'[\s\S]*?job_stats\.app_store_job_count,0\)=0/);
   assert.match(source, /price\.price_usd IS NOT NULL/);
   assert.match(source, /price\.last_checked_at < NOW\(\) - INTERVAL '14 days'/);
   assert.match(source, /published_stale_price_count = 0/);
   assert.match(source, /latest_price_checked_at IS NOT NULL/);
   assert.match(source, /label: "需复采"/);
-  assert.match(source, /正式 App Store 价格超过 14 天未更新/);
+  assert.match(source, /App Store'.*价格超过 14 天未更新/);
   assert.match(source, /正式价超过 14 天/);
   assert.match(source, /最新 \$\{formatDate\(row\.latest_price_checked_at\)\}/);
 });
@@ -64,7 +66,7 @@ test("pipeline recommendation uses published price freshness instead of only col
 
   assert.match(source, /published_stale_price_count > 0/);
   assert.match(source, /latest_price_checked_at IS NULL/);
-  assert.match(source, /超过 14 天未更新的正式 App Store 价格/);
+  assert.match(source, /超过 14 天未更新的正式价格/);
   assert.doesNotMatch(source, /超过 24 小时没有成功采集记录/);
 });
 

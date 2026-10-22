@@ -1,6 +1,7 @@
-import { formatUsd, type PlanStats } from "./public-pricing-model";
-import { getPlanDisplayName } from "./pricing-labels";
+import { formatUsd, type PlanStats } from "./public-pricing-model.ts";
+import { getPlanDisplayName } from "./pricing-labels.ts";
 import type { SiteLocale } from "./site-locale";
+import { getBillingSourceText } from './billing-source-copy.ts';
 
 type SeoTemplate = {
   title: (name: string, year: number) => string;
@@ -105,6 +106,7 @@ export function getPricingDetailSeoCopy({
   stats,
   regionCount,
   year = new Date().getFullYear(),
+  billingChannel = 'App Store',
 }: {
   locale: SiteLocale;
   productName: string;
@@ -112,19 +114,20 @@ export function getPricingDetailSeoCopy({
   stats: PlanStats | null;
   regionCount: number;
   year?: number;
+  billingChannel?: string;
 }) {
   const name = getPlanDisplayName(productName, planName);
   const template = seoTemplates[locale];
 
   return {
     title: template.title(name, year),
-    description: stats
+    description: getBillingSourceText(stats
       ? template.description(
           name,
           regionCount,
           stats.minRegion.country,
           formatUsd(stats.minRegion.priceUsd),
         )
-      : template.fallbackDescription(name),
+      : template.fallbackDescription(name), billingChannel),
   };
 }

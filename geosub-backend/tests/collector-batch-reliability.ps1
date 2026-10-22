@@ -53,6 +53,7 @@ $reportAssignment = $ast.Find({param($node)
   $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
   $node.Left.Extent.Text -eq '$reportRefreshProducts' -and $node.Right.Extent.Text -match 'pendingAppStoreCompletions'
 }, $true)
+$reportRefreshProducts = @()
 . ([scriptblock]::Create($reportAssignment.Extent.Text))
 $reportBlock = $ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.IfStatementAst] -and $_.Extent.Text.Contains('refresh-collected-reports.mjs') }
 function node { $script:reportArgs = @($args); $global:LASTEXITCODE = $script:reportExit }
@@ -69,3 +70,18 @@ try {
   if (!$cacheFailureVisible) { throw 'Report cache refresh failure was hidden' }
 } finally { $env:GEOSUB_CONTENT_DISTRIBUTION = $priorDistribution }
 Write-Output 'PASS: actual report refresh command arguments and failure propagation'
+
+foreach ($name in @('Complete-JobRun','Get-NextRunSql','Get-FailureNextRunSql','Test-PermanentCollectorFailure','Get-ConfigValue','Quote-SqlJson')) {
+  $fn = $ast.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name}, $true)
+  . ([scriptblock]::Create($fn.Extent.Text))
+}
+$DryRun = $false
+$webJob = @{ id='12345678-1234-4234-8234-123456789abc'; product_id='12345678-1234-4234-8234-123456789abd'; source_id=$null; schedule='daily'; error_count=4; job_config=@{collector_kind='pricing_page';official_web_source_key='spotify';interval_hours=12} }
+$webJob.job_config = [pscustomobject]$webJob.job_config
+$webResult = @{Status='failed';CollectorKind='pricing_page';Output='parser incomplete';Error='parser incomplete';RawPayload=@{collection_outcome='failed'}}
+Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12345678-1234-4234-8234-123456789abe'
+if ($identitySql -notmatch "status = 'active'" -or $identitySql -notmatch "INTERVAL '12 hours'" -or $identitySql -notmatch 'official_web_isolated_retry') { throw 'Maintained Spotify task stopped instead of automatic scheduled recovery' }
+$webJob.job_config.official_web_source_key='apple-music'
+Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12345678-1234-4234-8234-123456789abe'
+if ($identitySql -notmatch "status = 'failed'") { throw 'Spotify retry exception changed another source' }
+Write-Output 'PASS: actual Spotify failure transaction retries automatically and preserves other-source behavior'

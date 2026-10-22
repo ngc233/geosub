@@ -752,6 +752,7 @@ function Invoke-CollectorScript {
           "--country-codes", ($countryCodes -join ",")
         )
         $expectedIdentity = "Using official Web source $officialWebSourceKey for $productSlug."
+        if ($SkipAutoReview) { $nodeArguments += "--skip-auto-review" }
 
         if (![string]::IsNullOrWhiteSpace($ChromePath)) {
           $nodeArguments += @("--chrome-path", $ChromePath)
@@ -942,6 +943,14 @@ function Complete-JobRun {
     $retryCountryCodes.Count -gt 0 -and
     $collectionOutcome -in @("partial_success", "transient_failure")
   )
+  # Maintained official-Web sources quarantine evidence and recover on later
+  # scheduled samples. A transient page/layout failure must not create a human
+  # restart requirement after the generic three short retries are exhausted.
+  $retryableOfficialWebFailure = (
+    $failedAttempt -and !$permanentFailure -and
+    [string]$Result.CollectorKind -eq "pricing_page" -and
+    (Get-ConfigValue -Config $Job.job_config -Name "official_web_source_key") -eq "spotify"
+  )
 
   if ($status -eq "succeeded") {
     $errorCountSql = "0"
@@ -959,6 +968,8 @@ function Complete-JobRun {
       "app_store_partial_retry"
     } elseif ($retryableAppStoreFailure) {
       "app_store_transient_retry"
+    } elseif ($retryableOfficialWebFailure -and $failureAttempt -gt 3) {
+      "official_web_isolated_retry"
     } elseif ($failureAttempt -gt 3) {
       "retry_exhausted"
     } else {
@@ -970,16 +981,18 @@ function Complete-JobRun {
       "Some storefronts completed; only transient storefront failures will be retried."
     } elseif ($retryableAppStoreFailure) {
       "All requested storefronts failed transiently and remain scheduled for retry."
+    } elseif ($retryableOfficialWebFailure -and $failureAttempt -gt 3) {
+      "Official Web evidence remains isolated; ordinary scheduled observations will recover automatically."
     } elseif ($failureAttempt -gt 3) {
       "Automatic retry attempts were exhausted."
     } else {
       "Transient collector failure scheduled for automatic retry."
     }
 
-    if ($permanentFailure -or (!$retryableAppStoreFailure -and $failureAttempt -gt 3)) {
+    if ($permanentFailure -or (!$retryableAppStoreFailure -and !$retryableOfficialWebFailure -and $failureAttempt -gt 3)) {
       $nextRunSql = "NULL"
       $jobStatusSql = "'failed'"
-    } elseif ($retryableAppStoreFailure -and $failureAttempt -gt 3) {
+    } elseif (($retryableAppStoreFailure -or $retryableOfficialWebFailure) -and $failureAttempt -gt 3) {
       $nextRunSql = Get-NextRunSql -Job $Job -Status "succeeded"
       $jobStatusSql = "'active'"
     } else {
@@ -1253,6 +1266,8 @@ $summary = @{
   appStoreSucceeded = 0
 }
 $pendingAppStoreCompletions = @()
+$completedWebPublications = @()
+$completedWebJobs = @()
 
 foreach ($job in $jobs) {
   $summary.checked += 1
@@ -1263,6 +1278,11 @@ foreach ($job in $jobs) {
 
   try {
     $result = Invoke-CollectorScript -Job $job
+    if (!$SkipAutoReview -and $result.Status -eq "succeeded" -and $result.CollectorKind -eq "pricing_page" -and
+        $result.RawPayload -and [string]$result.RawPayload.source_key -eq "spotify") {
+      $completedWebPublications += [string]$job.product_slug
+      $completedWebJobs += [string]$job.id
+    }
     if ($result.Status -eq "succeeded") { $summary.succeeded += 1 }
     elseif ($result.Status -eq "skipped") { $summary.skipped += 1 }
     else { $summary.failed += 1 }
@@ -1313,7 +1333,7 @@ foreach ($job in $jobs) {
   }
 }
 
-$reportRefreshProducts = @()
+$reportRefreshProducts = @($completedWebPublications | Select-Object -Unique)
 if (!$SkipAutoReview -and $pendingAppStoreCompletions.Count -gt 0) {
   Write-Host "Running App Store stability auto-review after collection."
   # Restrict lifecycle changes to products completed by this batch so the
@@ -1355,7 +1375,7 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
         -StartedAt $completion.StartedAt `
         -RunId $completion.RunId
     }
-    $reportRefreshProducts = @($pendingAppStoreCompletions | ForEach-Object { [string]$_.Job.product_slug } | Select-Object -Unique)
+    $reportRefreshProducts = @(@($reportRefreshProducts) + @($pendingAppStoreCompletions | ForEach-Object { [string]$_.Job.product_slug }) | Select-Object -Unique)
   } catch {
     $reviewError = $_.Exception.Message
     $summary.succeeded -= $pendingAppStoreCompletions.Count
@@ -1387,6 +1407,10 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
 
 # Scheduled runs also refresh report origin/edge caches, with no human queue.
 # A cache failure is a system-task failure; successful collection rows stay true.
+if ($completedWebJobs.Count -gt 0) {
+  & node (Join-Path $PSScriptRoot "refresh-official-web-publication.mjs") --job-ids-json (ConvertTo-Json -InputObject @($completedWebJobs) -Compress)
+  if ($LASTEXITCODE -ne 0) { throw "Official Web publication cache refresh failed after successful collection." }
+}
 if ($reportRefreshProducts.Count -gt 0 -and $env:GEOSUB_CONTENT_DISTRIBUTION -eq "cloudflare") {
   & node (Join-Path $PSScriptRoot "refresh-collected-reports.mjs") --products-json (ConvertTo-Json -InputObject @($reportRefreshProducts) -Compress)
   if ($LASTEXITCODE -ne 0) { throw "Automatic report cache refresh failed after successful collection." }

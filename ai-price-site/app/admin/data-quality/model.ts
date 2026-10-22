@@ -7,14 +7,14 @@ import {
 import {
   assessProductOperationalStatus,
   type AdminOperationalStatus,
-} from "../../../lib/admin-operational-status";
+} from "../../../lib/admin-operational-status.ts";
 import {
   classifyProductCollectionSource,
   isAppStoreCollectionState,
   type ProductCollectionSourceState,
-} from "../../../lib/admin-product-collection-source";
-import { reviewReasonLabel } from "../review/review-reason-copy";
-import { summarizeCollectorRunError } from "./collector-run-error-copy";
+} from "../../../lib/admin-product-collection-source.ts";
+import { reviewReasonLabel } from "../review/review-reason-copy.ts";
+import { summarizeCollectorRunError } from "./collector-run-error-copy.ts";
 export type ProductQualityRow = {
   id: string;
   slug: string;
@@ -61,6 +61,9 @@ export type ProductQualityRow = {
   latest_runner_state: string | null;
   latest_run_age_seconds: number | null;
   published_price_count: number;
+  published_web_price_count?: number;
+  published_web_country_count?: number;
+  stale_web_price_count?: number;
   published_country_count: number;
   app_store_price_count: number;
   stale_published_count: number;
@@ -249,6 +252,7 @@ export function getProductCollectionPresentation(
 
   if (state.startsWith("official_web_")) {
     const hasSamples = row.pending_web_observation_count > 0;
+    const webPrices = row.published_web_price_count ?? 0;
     const taskSummary =
       state === "official_web_active"
         ? `官网任务 ${row.active_official_web_job_count}`
@@ -258,7 +262,7 @@ export function getProductCollectionPresentation(
             ? `官网样本 ${row.pending_web_observation_count} 条`
             : "官网采集器待接入";
     const nextCollection =
-      state === "official_web_active"
+      row.active_official_web_job_count > 0
         ? "按官网任务调度"
         : state === "official_web_paused" || row.paused_official_web_job_count > 0
           ? "官网任务已暂停"
@@ -267,18 +271,20 @@ export function getProductCollectionPresentation(
     return {
       state,
       taskSummary,
-      coverageTitle: hasSamples
+      coverageTitle: webPrices > 0 ? `${row.published_web_country_count} 个 Web 地区`
+        : hasSamples
         ? `${row.pending_web_country_count} 个 Web 地区`
         : "官网来源 · 尚未采集",
-      coverageDetail: hasSamples
+      coverageDetail: webPrices > 0 ? `${webPrices} 条正式 Web 价格 · 与 App Store 分开统计`
+        : hasSamples
         ? `${row.pending_web_observation_count} 条待审官网样本 · 不计 App Store 覆盖`
         : "暂不计算 App Store 覆盖",
       coveragePercent: null,
-      reviewTitle: hasSamples
+      reviewTitle: webPrices > 0 && !hasSamples ? "官网价格已自动发布" : hasSamples
         ? `${row.pending_web_observation_count} 条 Web 待审`
         : "暂无 Web 样本",
-      reviewDetail: hasSamples
-        ? "等待 Web 专属稳定性规则"
+      reviewDetail: webPrices > 0 ? "新样本继续自动验证，异常隔离后重试" : hasSamples
+        ? "等待来源与独立样本稳定性检查"
         : "等待专用网页采集器",
       nextCollection,
       lastCollectionLabel: "最近官网样本",
@@ -364,8 +370,8 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
   if (collectionState === "official_web_observed") {
     return {
       level: "info",
-      label: "Web 样本待审",
-      reason: `已有 ${row.pending_web_observation_count} 条官网样本，等待 Web 专属稳定性规则后再形成正式价格。`,
+      label: row.active_official_web_job_count > 0 ? "Web 自动验证中" : "Web 样本待审",
+      reason: `已有 ${row.pending_web_observation_count} 条官网样本，尚未满足来源与独立样本稳定性发布条件。`,
       nextAction:
         row.paused_official_web_job_count > 0
           ? "完善 Web 审核规则"
@@ -374,6 +380,14 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
   }
 
   if (collectionState === "official_web_active") {
+    if ((row.published_web_price_count ?? 0) > 0) {
+      return {
+        level: (row.stale_web_price_count ?? 0) > 0 ? "warning" : "good",
+        label: (row.stale_web_price_count ?? 0) > 0 ? "官网价格需刷新" : "官网价格已发布",
+        reason: `${row.published_web_price_count} 条官网价格已通过自动审核，后续采集持续验证。`,
+        nextAction: "等待自动刷新",
+      };
+    }
     return {
       level: "info",
       label: "官网采集中",
@@ -665,12 +679,18 @@ export function getProductOperationalAssessment(row: ProductQualityRow) {
     return { status: "pending" as const, reason: "一次性商品不进入订阅采集流程。" };
   }
   if (collectionState === "official_web_observed") {
+    if ((row.published_web_price_count ?? 0) > 0 && (row.stale_web_price_count ?? 0) === 0) {
+      return { status: "published" as const, reason: "已有正式 Web 价格，新样本继续自动验证。" };
+    }
     return {
       status: "pending" as const,
-      reason: `${row.pending_web_observation_count} 条官网样本等待 Web 专属审核规则。`,
+      reason: `${row.pending_web_observation_count} 条官网样本等待来源与独立样本稳定性检查。`,
     };
   }
   if (collectionState === "official_web_active") {
+    if ((row.published_web_price_count ?? 0) > 0 && (row.stale_web_price_count ?? 0) === 0) {
+      return { status: "published" as const, reason: "官网采集、自动审核和正式价格已接通。" };
+    }
     return { status: "pending" as const, reason: "官网采集任务正在运行。" };
   }
   if (collectionState === "official_web_paused") {

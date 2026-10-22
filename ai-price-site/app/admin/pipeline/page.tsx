@@ -29,6 +29,15 @@ import BatchCollectionPanel from "./BatchCollectionPanel";
 
 export const dynamic = "force-dynamic";
 
+// Source-specific Web pilot; existing App Store products keep their current
+// scope. This is shared by the row query and aggregate counters below.
+const webPilotScope = Prisma.sql`LEFT JOIN LATERAL (
+  SELECT CASE WHEN product.slug='spotify'
+    AND COALESCE(job_stats.official_web_job_count,0)>0
+    AND COALESCE(job_stats.app_store_job_count,0)=0
+    THEN 'web' ELSE 'ios' END AS billing_platform
+) pricing_scope ON TRUE`;
+
 const categories = [
   { value: "all", label: "全部" },
   { value: "ai", label: "AI 订阅" },
@@ -49,7 +58,7 @@ const pipelineStages: Array<{
   { value: "all", label: "全部产品", description: "查看完整流水线" },
   { value: "exception", label: "需要介入", description: "采集失败或硬异常" },
   { value: "pending", label: "系统处理中", description: "等待采集、审核或复采" },
-  { value: "not_started", label: "未开始", description: "还没有 App Store 任务" },
+  { value: "not_started", label: "未开始", description: "还没有受支持的采集任务" },
   { value: "published", label: "已发布", description: "正式价格当前可用" },
 ];
 
@@ -63,6 +72,7 @@ type PipelineProductRow = {
   plan_count: unknown;
   total_job_count: unknown;
   app_store_job_count: unknown;
+  official_web_job_count?: unknown;
   active_job_count: unknown;
   due_job_count: unknown;
   source_count: unknown;
@@ -162,12 +172,13 @@ function joinClasses(...classes: Array<string | false | null | undefined>) {
 
 function getPipelineState(row: PipelineProductRow) {
   const appStoreJobs = toNumber(row.app_store_job_count);
+  const webJobs = toNumber(row.official_web_job_count);
   const pending = toNumber(row.pending_observation_count);
   const blocked = toNumber(row.blocked_observation_count);
   const published = toNumber(row.published_price_count);
   const stalePublished = toNumber(row.published_stale_price_count);
 
-  if (appStoreJobs <= 0) {
+  if (appStoreJobs + webJobs <= 0) {
     return {
       key: "setup",
       label: "缺采集任务",
@@ -191,7 +202,7 @@ function getPipelineState(row: PipelineProductRow) {
     return {
       key: "review",
       label: blocked > 0 ? "异常待决" : "待审核",
-      detail: blocked > 0 ? "有硬异常，系统不会自动上线。" : "采集到新价格，等待自动或人工审核。",
+      detail: webJobs > 0 ? "官网样本正在自动验证，异常隔离后由后续任务重试。" : blocked > 0 ? "有硬异常，系统不会自动上线。" : "采集到新价格，等待自动或人工审核。",
       className: blocked > 0
         ? "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800"
         : "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800",
@@ -203,7 +214,7 @@ function getPipelineState(row: PipelineProductRow) {
     return {
       key: "collect",
       label: "待采集",
-      detail: "已有 App Store 任务，但还没有成功运行记录。",
+      detail: webJobs > 0 ? "已有官网任务，等待首次自动采集。" : "已有 App Store 任务，但还没有成功运行记录。",
       className: "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800",
       icon: DatabaseZap,
     };
@@ -223,7 +234,7 @@ function getPipelineState(row: PipelineProductRow) {
     return {
       key: "stale",
       label: "需复采",
-      detail: `${stalePublished} 条正式 App Store 价格超过 14 天未更新。先按产品复采，稳定结果会自动入库。`,
+      detail: `${stalePublished} 条正式${webJobs > 0 && appStoreJobs <= 0 ? ' Web' : ' App Store'}价格超过 14 天未更新。稳定结果会自动入库。`,
       className: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800",
       icon: Clock3,
     };
@@ -242,7 +253,7 @@ function getPipelineOperationalAssessment(row: PipelineProductRow) {
   return assessProductOperationalStatus({
     publishStatus: row.product_status,
     planCount: toNumber(row.plan_count),
-    activeCollectorJobCount: toNumber(row.app_store_job_count),
+    activeCollectorJobCount: toNumber(row.app_store_job_count) + toNumber(row.official_web_job_count),
     latestRunStatus: row.latest_run_status,
     pendingWorkCount: toNumber(row.pending_observation_count),
     blockedCount: toNumber(row.blocked_observation_count),
@@ -260,7 +271,7 @@ function getPipelineOperationalStatus(
 function getPublishReadiness(row: PipelineProductRow) {
   const checks = [
     { ready: toNumber(row.plan_count) > 0, missing: "补套餐" },
-    { ready: toNumber(row.app_store_job_count) > 0, missing: "补 App Store 采集任务" },
+    { ready: toNumber(row.app_store_job_count) + toNumber(row.official_web_job_count) > 0, missing: "补采集任务" },
     { ready: Boolean(row.latest_success_at), missing: "完成首次采集" },
     { ready: toNumber(row.published_price_count) > 0, missing: "形成正式价格" },
     {
@@ -315,6 +326,7 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       COALESCE(plan_stats.plan_count, 0)::int AS plan_count,
       COALESCE(job_stats.total_job_count, 0)::int AS total_job_count,
       COALESCE(job_stats.app_store_job_count, 0)::int AS app_store_job_count,
+      COALESCE(job_stats.official_web_job_count, 0)::int AS official_web_job_count,
       COALESCE(job_stats.active_job_count, 0)::int AS active_job_count,
       COALESCE(job_stats.due_job_count, 0)::int AS due_job_count,
       COALESCE(job_stats.source_count, 0)::int AS source_count,
@@ -350,6 +362,8 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
             'unknown'
           ) = 'app_store'
         )::int AS app_store_job_count,
+        COUNT(*) FILTER (WHERE product.slug='spotify' AND job.job_config->>'collector_kind'='pricing_page'
+          AND job.job_config->>'official_web_source_key'='spotify')::int AS official_web_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active')::int AS active_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count,
         COUNT(DISTINCT job.source_id)::int AS source_count,
@@ -360,13 +374,14 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
         AND job.job_type IN ('ai_pricing', 'streaming_pricing')
         AND job.status <> 'archived'
     ) job_stats ON TRUE
+    ${webPilotScope}
     LEFT JOIN LATERAL (
       SELECT run.status, run.started_at, run.error_message
       FROM collector_jobs scoped_job
       JOIN collector_job_runs run ON run.job_id = scoped_job.id
       WHERE scoped_job.product_id = product.id
         AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
+        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
       ORDER BY run.started_at DESC
       LIMIT 1
     ) latest_run ON TRUE
@@ -381,7 +396,7 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       JOIN collector_job_runs run ON run.job_id = scoped_job.id
       WHERE scoped_job.product_id = product.id
         AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
+        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
     ) latest_success ON TRUE
     LEFT JOIN LATERAL (
       SELECT
@@ -393,7 +408,7 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       FROM price_observations observation
       WHERE observation.product_id = product.id
         AND observation.status = 'pending'::observation_status
-        AND observation.billing_platform = 'ios'::billing_platform
+        AND observation.billing_platform::text = pricing_scope.billing_platform
     ) observation_stats ON TRUE
     LEFT JOIN LATERAL (
       SELECT
@@ -407,7 +422,7 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
       FROM region_prices price
       WHERE price.product_id = product.id
         AND price.status = 'published'::publish_status
-        AND price.billing_platform = 'ios'::billing_platform
+        AND price.billing_platform::text = pricing_scope.billing_platform
         AND price.price_usd IS NOT NULL
     ) published_stats ON TRUE
     LEFT JOIN LATERAL (
@@ -422,7 +437,7 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
     ORDER BY
       CASE
         WHEN COALESCE(observation_stats.pending_observation_count, 0) > 0 THEN 0
-        WHEN COALESCE(job_stats.app_store_job_count, 0) <= 0 THEN 1
+        WHEN COALESCE(job_stats.app_store_job_count, 0)+COALESCE(job_stats.official_web_job_count,0) <= 0 THEN 1
         WHEN latest_run.status = 'failed' THEN 2
         WHEN latest_success.latest_success_at IS NULL THEN 3
         WHEN COALESCE(published_stats.published_price_count, 0) <= 0 THEN 4
@@ -442,7 +457,7 @@ async function getPipelineStats() {
     WITH product_status AS (
       SELECT
         product.id,
-        COALESCE(job_stats.app_store_job_count, 0) AS app_store_job_count,
+        COALESCE(job_stats.app_store_job_count, 0)+COALESCE(job_stats.official_web_job_count,0) AS supported_job_count,
         COALESCE(job_stats.due_job_count, 0) AS due_job_count,
         latest_run.status AS latest_run_status,
         latest_success.latest_success_at,
@@ -460,6 +475,8 @@ async function getPipelineStats() {
               'unknown'
             ) = 'app_store'
           )::int AS app_store_job_count,
+          COUNT(*) FILTER (WHERE product.slug='spotify' AND job.job_config->>'collector_kind'='pricing_page'
+            AND job.job_config->>'official_web_source_key'='spotify')::int AS official_web_job_count,
           COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count
         FROM collector_jobs job
         LEFT JOIN price_sources source ON source.id = job.source_id
@@ -467,13 +484,14 @@ async function getPipelineStats() {
           AND job.job_type IN ('ai_pricing', 'streaming_pricing')
           AND job.status <> 'archived'
       ) job_stats ON TRUE
+      ${webPilotScope}
       LEFT JOIN LATERAL (
         SELECT run.status
         FROM collector_jobs scoped_job
         JOIN collector_job_runs run ON run.job_id = scoped_job.id
         WHERE scoped_job.product_id = product.id
           AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
+          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
         ORDER BY run.started_at DESC
         LIMIT 1
       ) latest_run ON TRUE
@@ -483,14 +501,14 @@ async function getPipelineStats() {
         JOIN collector_job_runs run ON run.job_id = scoped_job.id
         WHERE scoped_job.product_id = product.id
           AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
+          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
       ) latest_success ON TRUE
       LEFT JOIN LATERAL (
         SELECT COUNT(*)::int AS pending_observation_count
         FROM price_observations observation
         WHERE observation.product_id = product.id
           AND observation.status = 'pending'::observation_status
-          AND observation.billing_platform = 'ios'::billing_platform
+          AND observation.billing_platform::text = pricing_scope.billing_platform
       ) observation_stats ON TRUE
       LEFT JOIN LATERAL (
         SELECT
@@ -503,7 +521,7 @@ async function getPipelineStats() {
         FROM region_prices price
         WHERE price.product_id = product.id
           AND price.status = 'published'::publish_status
-          AND price.billing_platform = 'ios'::billing_platform
+          AND price.billing_platform::text = pricing_scope.billing_platform
           AND price.price_usd IS NOT NULL
       ) published_stats ON TRUE
       WHERE product.status <> 'archived'::publish_status
@@ -516,7 +534,7 @@ async function getPipelineStats() {
           AND published_stale_price_count = 0
           AND latest_price_checked_at IS NOT NULL
       )::int AS ready_count,
-      COUNT(*) FILTER (WHERE app_store_job_count <= 0)::int AS setup_count,
+      COUNT(*) FILTER (WHERE supported_job_count <= 0)::int AS setup_count,
       COUNT(*) FILTER (WHERE pending_observation_count > 0)::int AS pending_count,
       COUNT(*) FILTER (WHERE latest_run_status = 'failed')::int AS failed_count,
       COUNT(*) FILTER (WHERE due_job_count > 0)::int AS due_count,
@@ -570,7 +588,7 @@ function getPipelineRecommendation(stats: PipelineStats) {
   if (stats.setupCount > 0) {
     return {
       title: "先补采集任务",
-      body: `${stats.setupCount} 个产品还没有 App Store 采集任务。没有任务就不会自动抓价，也不会进入审核。`,
+      body: `${stats.setupCount} 个产品还没有受支持的采集任务。没有任务就不会自动抓价，也不会进入审核。`,
       href: "/admin/discovery",
       action: "去线索入口",
       className: "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200",
@@ -600,7 +618,7 @@ function getPipelineRecommendation(stats: PipelineStats) {
   if (stats.staleCount > 0) {
     return {
       title: "上线价格需要定期复核",
-      body: `${stats.staleCount} 个已上线产品存在超过 14 天未更新的正式 App Store 价格。建议按产品复采，稳定结果会自动入库。`,
+      body: `${stats.staleCount} 个已上线产品存在超过 14 天未更新的正式价格。稳定结果会自动入库。`,
       href: "/admin/collector-jobs",
       action: "查看采集任务",
       className: "border-slate-200 bg-slate-50 text-slate-950 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50",
@@ -683,6 +701,7 @@ function ProductPipelineCard({
   const pendingCount = toNumber(row.pending_observation_count);
   const blockedCount = toNumber(row.blocked_observation_count);
   const appStoreJobs = toNumber(row.app_store_job_count);
+  const webJobs = toNumber(row.official_web_job_count);
   const stalePublishedCount = toNumber(row.published_stale_price_count);
 
   return (
@@ -712,6 +731,11 @@ function ProductPipelineCard({
               buttonLabel="采集这个产品"
               pendingLabel="正在采集"
             />
+          ) : webJobs > 0 ? (
+            <AdminLink href={`/admin/data-quality?q=${encodeURIComponent(row.product_slug)}`}
+              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              官网自动采集
+            </AdminLink>
           ) : (
             <AdminLink
               href={`/admin/products/${row.product_id}/edit`}
@@ -731,9 +755,9 @@ function ProductPipelineCard({
 
       <div className="mt-5 grid gap-3 md:grid-cols-4">
         <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-          <div className="text-xs font-bold text-slate-400">采集任务</div>
+          <div className="text-xs font-bold text-slate-400">{webJobs > 0 && appStoreJobs <= 0 ? '官网采集任务' : '采集任务'}</div>
           <div className="mt-1 text-lg font-black text-slate-950 dark:text-slate-50">
-            {appStoreJobs} / {toNumber(row.total_job_count)}
+            {appStoreJobs + webJobs} / {toNumber(row.total_job_count)}
           </div>
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             启用 {toNumber(row.active_job_count)}，到期 {toNumber(row.due_job_count)}
@@ -926,7 +950,7 @@ export default async function AdminPipelinePage({
       <AdminPageHeader
         eyebrow="Pipeline"
         title="价格采集流水线"
-        description="后台主入口按产品聚合：先看产品有没有 App Store 采集任务，再看最近是否采集成功、是否有异常待决、是否已有正式价格。"
+        description="后台主入口按产品聚合：核对 App Store 或已接入的官网采集任务、最近运行、自动验证和正式价格。"
         action={
           <AdminLinkButton href="/admin/discovery">
             新增线索
