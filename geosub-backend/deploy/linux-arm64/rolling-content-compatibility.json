@@ -60,6 +60,11 @@
       "from": "78219cddad1d7dc42da8e0e47451c4354f71ae06de2e7402f1346242c0244c04",
       "to": "d5b96dd1d46ac1597d0684b17643783b0c768a6a0887df66c41b9a9d581d3da9",
       "reason": "2.14.2 to 2.14.1: all listed content reader, validator, renderer and schema files byte-identical except VERSION; English comparison presentation only. Exact pair reviewed after a transient post-deploy data gate exposed missing rollback compatibility."
+    },
+    {
+      "from": "bd687cf7c4fa26f7507e5ce75a97e4cbe59e465d3dc0ea84312aab2f9fecd2a6",
+      "to": "78219cddad1d7dc42da8e0e47451c4354f71ae06de2e7402f1346242c0244c04",
+      "reason": "2.15.0 to 2.14.2: managed content reader, store, validator and schema are byte-identical; PricingDetailPage adds Web-only copy while retaining managed content precedence and existing App Store output. Spotify is not published during the release window."
     }
   ]
 }
