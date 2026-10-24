@@ -127,6 +127,7 @@ test('regional publication waits for FX and uses local currency with an existing
   const database={product:{id:'product'},plans:new Map([['individual',{id:'individual'}],['family',{id:'family'}]]),
     countries:new Map([['NG',{id:'nigeria'}]])};
   const calls=[];
+  const observedAt=new Date(Date.now()-60_000);
   const client={query:async(sql,params=[])=>{
     calls.push({sql,params});
     if(sql.includes('AS product_status')) return {rows:[{product_status:'published',source_status:'active',source_type:'official_page',source_key:source.source_key,base_url:source.base_url}]};
@@ -135,7 +136,7 @@ test('regional publication waits for FX and uses local currency with an existing
     if(sql.includes('FROM price_observations o')) {
       const price=params[1]==='individual'?1600:2500;
       return {rows:[0,12,24].map((hours,index)=>({id:`${params[1]}-${index}`,raw_price:price,currency:'NGN',
-        observed_at:new Date(Date.now()-hours*3_600_000),source_level:'A',confidence_score:82,status:'pending',evidence_ok:true,
+        observed_at:new Date(observedAt.getTime()-hours*3_600_000),source_level:'A',confidence_score:82,status:'pending',evidence_ok:true,
         raw_payload:{publication_eligible:true,billing_cycle:'monthly',automatic_rule:source.auto_review.rule_id,
           requested_country:'NG',source_url:market.url,final_url:market.url,render_mode:'structured_http',availability_note:'Official NG Web price'}}))};
     }
