@@ -1,6 +1,7 @@
 import "server-only";
 
 import path from "node:path";
+import { getPricingReportFontFiles } from "./pricing-report-fonts.ts";
 import PDFKitDocument from "pdfkit";
 import type { PricingReportDataset, PricingReportRow } from "./pricing-report";
 import type { SiteLocale } from "./site-locale";
@@ -68,20 +69,6 @@ function formatTaxTreatment(value: string, locale: SiteLocale) {
   return taxTreatmentCopy[locale][value] || value.replaceAll("_", " ");
 }
 
-const localeFontFiles: Record<SiteLocale, { regular: string; bold: string }> = {
-  zh: { regular: "assets/fonts/NotoSansSC-VF.ttf", bold: "assets/fonts/NotoSansSC-VF.ttf" },
-  "zh-tw": { regular: "assets/fonts/NotoSansSC-VF.ttf", bold: "assets/fonts/NotoSansSC-VF.ttf" },
-  ja: { regular: "assets/fonts/NotoSansSC-VF.ttf", bold: "assets/fonts/NotoSansSC-VF.ttf" },
-  ko: { regular: "assets/fonts/NotoSansKR-VF.ttf", bold: "assets/fonts/NotoSansKR-VF.ttf" },
-  ar: { regular: "assets/fonts/NotoSansArabic-VF.ttf", bold: "assets/fonts/NotoSansArabic-VF.ttf" },
-  en: { regular: "@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff", bold: "@fontsource/noto-sans/files/noto-sans-latin-700-normal.woff" },
-  es: { regular: "@fontsource/noto-sans/files/noto-sans-latin-ext-400-normal.woff", bold: "@fontsource/noto-sans/files/noto-sans-latin-ext-700-normal.woff" },
-  tr: { regular: "@fontsource/noto-sans/files/noto-sans-latin-ext-400-normal.woff", bold: "@fontsource/noto-sans/files/noto-sans-latin-ext-700-normal.woff" },
-  fr: { regular: "@fontsource/noto-sans/files/noto-sans-latin-ext-400-normal.woff", bold: "@fontsource/noto-sans/files/noto-sans-latin-ext-700-normal.woff" },
-  it: { regular: "@fontsource/noto-sans/files/noto-sans-latin-ext-400-normal.woff", bold: "@fontsource/noto-sans/files/noto-sans-latin-ext-700-normal.woff" },
-  de: { regular: "@fontsource/noto-sans/files/noto-sans-latin-ext-400-normal.woff", bold: "@fontsource/noto-sans/files/noto-sans-latin-ext-700-normal.woff" },
-  pt: { regular: "@fontsource/noto-sans/files/noto-sans-latin-ext-400-normal.woff", bold: "@fontsource/noto-sans/files/noto-sans-latin-ext-700-normal.woff" },
-};
 
 function formatUsd(value: number) {
   return `$${value.toFixed(2)}`;
@@ -99,7 +86,7 @@ function formatDifference(value: number | null, copy: typeof reportCopy.en) {
 
 export async function renderPricingReportPdf(dataset: PricingReportDataset) {
   const copy = reportCopy[dataset.locale];
-  const files = localeFontFiles[dataset.locale];
+  const files = getPricingReportFontFiles(dataset.locale);
   const resolveFont = (fontPath: string) => fontPath.startsWith("assets/")
     ? path.join(/* turbopackIgnore: true */ process.cwd(), ...fontPath.split("/"))
     : path.join(/* turbopackIgnore: true */ process.cwd(), "node_modules", ...fontPath.split("/"));

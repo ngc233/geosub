@@ -590,8 +590,8 @@ function PriceBurdenMatrix({ rows, locale }: { rows: PlanAffordabilityRow[]; loc
   );
 }
 
-function getAffordabilityUnavailableReason(quality: AffordabilityQuality, locale: SiteLocale) {
-  const copy = getPricingPressureCopy(locale).pending;
+function getAffordabilityUnavailableReason(quality: AffordabilityQuality, locale: SiteLocale, billingChannel: string) {
+  const copy = getPricingPressureCopy(locale, billingChannel).pending;
   if (quality.reasons.includes("no_computed_rows")) {
     return copy.noRows;
   }
@@ -1515,7 +1515,7 @@ export default async function PricingDetailPage({
               matrixView={affordability.rows.length > 0 ? (
                 <PriceBurdenMatrix rows={affordability.rows} locale={locale} />
               ) : undefined}
-              unavailableReason={getAffordabilityUnavailableReason(affordability.quality, locale)}
+              unavailableReason={getAffordabilityUnavailableReason(affordability.quality, locale, getPricingChannelLabel(contentPlan))}
             />
           </>
         ) : (

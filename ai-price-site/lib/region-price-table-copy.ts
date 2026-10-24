@@ -1,7 +1,6 @@
-import { getPublicPricingCopy } from "./public-pricing-copy";
-import {
-  type PreparedSiteLocale,
-} from "./site-locale";
+import { getPublicPricingCopy } from "./public-pricing-copy.ts";
+import { getBillingSourceText } from "./billing-source-copy.ts";
+import type { PreparedSiteLocale } from "./site-locale";
 
 type WidenCopy<T> =
   T extends string
@@ -483,10 +482,17 @@ const preparedRegionPriceTableCopy = {
 
 export function getRegionPriceTableCopy(
   locale: PreparedSiteLocale,
+  billingChannel = "App Store",
 ): RegionPriceTableCopy {
-  if (locale === "zh" || locale === "zh-tw" || locale === "en") {
-    return getPublicPricingCopy(locale).table as RegionPriceTableCopy;
-  }
-
-  return preparedRegionPriceTableCopy[locale];
+  const copy = locale === "zh" || locale === "zh-tw" || locale === "en"
+    ? getPublicPricingCopy(locale).table as RegionPriceTableCopy
+    : preparedRegionPriceTableCopy[locale];
+  if (billingChannel !== "Web") return copy;
+  return {
+    ...copy,
+    taxInferredHelp: getBillingSourceText(copy.taxInferredHelp, billingChannel),
+    taxRankingPolicy: getBillingSourceText(copy.taxRankingPolicy, billingChannel),
+    taxHelp: getBillingSourceText(copy.taxHelp, billingChannel),
+    riskNote: getBillingSourceText(copy.riskNote, billingChannel),
+  };
 }

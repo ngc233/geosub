@@ -95,6 +95,11 @@
       "from": "fe049603d916d29ec1cec296513e0ac544c066708484a056f837c7998ba0ed4a",
       "to": "bbab3571d904402422bdda82178f1d1a5a0d9a30b9c2bbfe6b254e5fd490371a",
       "reason": "2.15.6 to 2.15.5: all registered managed content reader, renderer, validator, store and schema contract files are byte-identical except VERSION; English Disney overview uses optional shared comparison inputs and existing eligibility context. No migration or data contract changes."
+    },
+    {
+      "from": "d69b77de17166808b645d27af4588aca1d0b5f9847f6d20a112c47d3e8b67a7d",
+      "to": "fe049603d916d29ec1cec296513e0ac544c066708484a056f837c7998ba0ed4a",
+      "reason": "2.15.7 to 2.15.6: managed content reader/store/validator/distribution/schema are byte-identical. PricingDetailPage changes only affordability pending-copy billing channel arguments, preserving managed content structure, priority and rendering contract; VERSION increment. No database input change."
     }
   ]
 }

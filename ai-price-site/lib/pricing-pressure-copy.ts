@@ -1,4 +1,5 @@
 import type { SiteLocale } from "./site-locale";
+import { getBillingSourceText } from "./billing-source-copy.ts";
 
 export type PricingPressureCopy = {
   title: (product: string) => string;
@@ -113,6 +114,8 @@ const copies = {
   },
 } satisfies Record<SiteLocale, PricingPressureCopy>;
 
-export function getPricingPressureCopy(locale: SiteLocale) {
-  return copies[locale];
+export function getPricingPressureCopy(locale: SiteLocale, billingChannel = "App Store") {
+  const copy = copies[locale];
+  if (billingChannel !== "Web") return copy;
+  return { ...copy, pending: { ...copy.pending, noRows: getBillingSourceText(copy.pending.noRows, billingChannel) } };
 }

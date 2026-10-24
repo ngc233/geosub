@@ -2,10 +2,12 @@ import type {
   ProductPlan,
   SubscriptionProduct,
 } from "./public-pricing-model";
+import { getBillingSourceText } from "./billing-source-copy.ts";
+import { getPricingChannelLabel } from "./pricing-page-facts.ts";
 import {
   getSiteLocaleDefinition,
   type SiteLocale,
-} from "./site-locale";
+} from "./site-locale.ts";
 
 export type PricingFaq = {
   q: string;
@@ -72,7 +74,7 @@ export function buildPricingStructuredData({
         variableMeasured: [
           {
             "@type": "PropertyValue",
-            name: regionalPricePropertyLabels[locale],
+            name: getBillingSourceText(regionalPricePropertyLabels[locale], getPricingChannelLabel(plan)),
             unitText: "USD",
           },
         ],

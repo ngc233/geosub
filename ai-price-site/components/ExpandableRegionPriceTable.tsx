@@ -10,6 +10,7 @@ import AppleStyleExpandableRows from "./AppleStyleExpandableRows";
 import { PublicSection, PublicSectionHeader } from "./ui/PublicPage";
 import { getLocalizedRegionName } from "../lib/locale-format";
 import { getRegionPriceTableCopy } from "../lib/region-price-table-copy";
+import { getBillingSourceText } from "../lib/billing-source-copy";
 import type { PreparedSiteLocale } from "../lib/site-locale";
 import { localizeTaxNote } from "../lib/tax-note-localization";
 import { getBillingCycleSuffix } from "../lib/billing-cycle-label";
@@ -196,24 +197,27 @@ function formatTaxDisplay(
   locale: PreparedSiteLocale,
 ) {
   const raw = (region.tax || "").trim();
-  const copy = getRegionPriceTableCopy(locale);
+  const billingChannel = getPlatform(region) === "web" ? "Web" : "App Store";
+  const copy = getRegionPriceTableCopy(locale, billingChannel);
 
   if (!raw && (region.taxReviewStatus === "needs_review" || region.taxConfidence === "low")) {
     return copy.taxNeedsReview;
   }
 
-  return raw
+  const note = raw
     ? localizeTaxNote(raw, locale, {
         unknownFallback: locale !== "zh" && locale !== "en",
       })
     : copy.checkoutApplies;
+  return getBillingSourceText(note, billingChannel);
 }
 
 function getTaxTooltip(
   region: RegionPrice,
   locale: PreparedSiteLocale,
 ) {
-  const copy = getRegionPriceTableCopy(locale);
+  const billingChannel = getPlatform(region) === "web" ? "Web" : "App Store";
+  const copy = getRegionPriceTableCopy(locale, billingChannel);
   const noteRaw = region.taxFrontendNote || region.tax || "";
   const note = localizeTaxNote(noteRaw, locale, {
     unknownFallback: locale !== "zh" && locale !== "en",
@@ -229,7 +233,7 @@ function getTaxTooltip(
 
   return joinTooltipParts([
     base,
-    note,
+    getBillingSourceText(note, billingChannel),
     region.taxCalculationPolicy === "do_not_calculate"
       ? copy.taxRankingPolicy
       : "",
@@ -761,7 +765,7 @@ function RegionPriceRow({
     ? "md:grid-cols-[40px_minmax(120px,1fr)_104px_96px_110px_minmax(104px,1fr)_64px_124px]"
     : "md:grid-cols-[40px_minmax(130px,1fr)_110px_100px_112px_minmax(116px,1fr)_124px]";
   const taxDisplay = formatTaxDisplay(region, locale);
-  const copy = getRegionPriceTableCopy(locale);
+  const copy = getRegionPriceTableCopy(locale, getPlatform(region) === "web" ? "Web" : "App Store");
   const localizedCountry =
     getLocalizedRegionName(region.code, locale) || region.country;
   const billingSuffix = getBillingCycleSuffix(billingCycle, locale);
@@ -1087,7 +1091,8 @@ export default function ExpandableRegionPriceTable({
   const referenceCountry = referenceRegion
     ? getLocalizedRegionName(referenceRegion.code, locale) || referenceRegion.country
     : "";
-  const copy = getRegionPriceTableCopy(locale);
+  const copy = getRegionPriceTableCopy(locale,
+    platformRegions.length > 0 && platformRegions.every(region => getPlatform(region) === "web") ? "Web" : "App Store");
   const toolbarCopy = getRegionPriceToolbarCopy(locale);
   const effectiveDisplayCurrencyLabel =
     displayCurrencyLabel || copy.usd;
