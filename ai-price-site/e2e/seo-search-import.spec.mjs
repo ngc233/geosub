@@ -89,8 +89,8 @@ test('owner preflight is read-only; same-window recovery and concurrent stale fo
   await Promise.all([f1.getByRole('button', { name: '确认导入' }).click(), f2.getByRole('button', { name: '确认导入' }).click()]);
   await expect.poll(async () => (await saved()).audits.length).toBe(count + 1);
   // Check each tab separately; locator.or cannot cross page contexts.
-  const error = await Promise.race([page.getByRole('alert').waitFor().then(() => page), other.getByRole('alert').waitFor().then(() => other)]);
-  await expect(error.getByRole('alert')).toContainText('设置已被其他操作修改');
+  const error = await Promise.race([source(page).getByRole('alert').waitFor().then(() => page), source(other).getByRole('alert').waitFor().then(() => other)]);
+  await expect(source(error).getByRole('alert')).toContainText('设置已被其他操作修改');
   expect(await source(error).locator('textarea[name=pageRows]').inputValue()).toMatch(/,[45],100,5/);
   await other.close();
 });
