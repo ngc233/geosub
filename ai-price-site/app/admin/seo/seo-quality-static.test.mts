@@ -145,11 +145,11 @@ test("admin SEO page imports audited page-level Google and Bing observations", (
   assert.match(pageObservationPanel, /页面级搜索信号/);
   assert.match(pageObservationPanel, /导入新的完整页面报表/);
   assert.match(pageObservationPanel, /撤销最近导入/);
-  assert.match(pageObservationPanel, /不与旧周期相加/);
+  assert.match(readFileSync(resolve(testDir, "SeoPageImportForm.tsx"), "utf8"), /只读预检/);
   assert.match(observationActions, /importSeoSearchPageObservationsAction/);
   assert.match(observationActions, /rollbackSeoSearchPageObservationsAction/);
-  assert.match(observationActions, /import_seo_search_page_observations/);
-  assert.match(observationActions, /rollback_seo_search_page_observations/);
+  assert.match(readFileSync(resolve(testDir, "../../../lib/seo-search-import-storage.ts"), "utf8"), /import_seo_search_page_observations/);
+  assert.match(readFileSync(resolve(testDir, "../../../lib/seo-search-import-storage.ts"), "utf8"), /rollback_seo_search_page_observations/);
   assert.match(pageObservationImport, /SEO_SEARCH_PAGE_IMPORT_ROW_LIMIT = 500/);
   assert.match(pageObservationImport, /hostname !== "geosub\.org"/);
   assert.match(pageObservationImport, /getEffectiveSeoSearchPageObservations/);

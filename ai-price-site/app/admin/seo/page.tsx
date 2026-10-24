@@ -1,3 +1,5 @@
+import { findSeoSearchImportAudit, seoSearchImportVersion } from "../../../lib/seo-search-import-storage";
+import { planSeoSearchImportRecovery, strictSeoSearchImportState } from "../../../lib/seo-search-import-recovery";
 import AdminLink from "@/components/admin/AdminLink";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { prisma } from "../../../lib/prisma";
@@ -131,7 +133,7 @@ export default async function AdminSeoPage({
           ],
         },
       },
-      select: { settingKey: true, valueText: true },
+      select: { id: true, settingKey: true, valueText: true },
     }),
     getSeoTrafficConversionOverview(),
     getPipelineGrowthSignals(),
@@ -186,6 +188,20 @@ export default async function AdminSeoPage({
   const searchPageImportState = parseSeoSearchPageImportState(
     observationValueByKey.get(SEO_SEARCH_PAGE_IMPORT_SETTING_KEY),
   );
+  const importSetting = observationSettings.find(item => item.settingKey === SEO_SEARCH_PAGE_IMPORT_SETTING_KEY);
+  const importRecordVersion = seoSearchImportVersion(importSetting?.valueText ?? null);
+  const recoveryEntries = await Promise.all((["google", "bing"] as const).map(async engine => {
+    const target = searchPageImportState.batches.findLast(batch => batch.engine === engine);
+    try {
+      if (!target || !importSetting) return [engine, { plan: null, error: null }] as const;
+      const strictState = strictSeoSearchImportState(JSON.parse(importSetting.valueText ?? "null"));
+      const audit = await findSeoSearchImportAudit(prisma, importSetting.id, target.id);
+      return [engine, { plan: planSeoSearchImportRecovery(strictState, engine, audit), error: null }] as const;
+    } catch {
+      return [engine, { plan: null, error: "审计缺失、不可读取或与当前批次不匹配，已阻止恢复；请检查原始审计记录。" }] as const;
+    }
+  }));
+  const importRecoveries = Object.fromEntries(recoveryEntries) as Record<"google" | "bing", (typeof recoveryEntries)[number][1]>;
   const effectiveSearchObservations = getEffectiveSeoSearchPageObservations({
     baseline: seoSearchPerformanceBaseline,
     state: searchPageImportState,
@@ -352,6 +368,8 @@ export default async function AdminSeoPage({
       />
 
       <SeoPageObservationImportPanel
+        recordVersion={importRecordVersion}
+        recoveries={importRecoveries}
         state={searchPageImportState}
         savedEngine={query.pageImportSaved || null}
         rolledBackEngine={query.pageImportRolledBack || null}

@@ -32,14 +32,13 @@ import {
 } from "../../../lib/seo-plan-promotion-state";
 import { seoSitemapBudgets } from "../../../lib/seo-indexing-policy";
 import {
-  appendSeoSearchPageImportBatch,
   getEffectiveSeoSearchPageObservations,
   parseSeoSearchPageImportState,
-  parseSeoSearchPageObservationRows,
-  rollbackLatestSeoSearchPageImport,
   SEO_SEARCH_PAGE_IMPORT_SETTING_KEY,
-  type SeoSearchPageImportState,
 } from "../../../lib/seo-search-observation-import";
+import { saveSeoSearchImport } from "../../../lib/seo-search-import-storage";
+import { AdminSaveConflict } from "../../../lib/admin-save";
+import { SeoSearchImportError } from "../../../lib/seo-search-import-recovery";
 import type { SeoSearchEngine } from "../../../lib/seo-search-performance-baseline";
 
 function cleanPromotionValue(value: FormDataEntryValue | null, maxLength: number) {
@@ -112,124 +111,35 @@ function parseSearchEngine(value: FormDataEntryValue | null): SeoSearchEngine {
   throw new Error("Invalid search engine.");
 }
 
-async function persistSeoSearchPageImportState({
-  adminId,
-  previousState,
-  nextState,
-  action,
-  note,
-}: {
-  adminId: string;
-  previousState: SeoSearchPageImportState;
-  nextState: SeoSearchPageImportState;
-  action: "import_seo_search_page_observations" | "rollback_seo_search_page_observations";
-  note: string;
-}) {
-  await prisma.$transaction(async (transaction) => {
-    const setting = await transaction.siteSetting.upsert({
-      where: { settingKey: SEO_SEARCH_PAGE_IMPORT_SETTING_KEY },
-      update: {
-        groupName: "seo",
-        label: "Google and Bing page observation imports",
-        valueText: JSON.stringify(nextState),
-        isPublic: false,
-        note: "Audited page-level webmaster observations. Does not call search platforms or submit URLs.",
-      },
-      create: {
-        settingKey: SEO_SEARCH_PAGE_IMPORT_SETTING_KEY,
-        groupName: "seo",
-        label: "Google and Bing page observation imports",
-        valueText: JSON.stringify(nextState),
-        isPublic: false,
-        note: "Audited page-level webmaster observations. Does not call search platforms or submit URLs.",
-      },
-      select: { id: true },
-    });
-    await transaction.auditLog.create({
-      data: {
-        actorId: adminId,
-        action,
-        targetType: "site_setting",
-        targetId: setting.id,
-        oldValue: previousState,
-        newValue: nextState,
-        note,
-      },
-    });
-  });
-  revalidatePath("/admin/seo");
+function searchImportError(error: unknown) {
+  return { error: error instanceof AdminSaveConflict || error instanceof SeoSearchImportError
+    ? error.message : "操作未完成或结果暂时无法确认，输入仍保留。请先刷新另一标签页核对记录，勿重复提交。" };
 }
 
 export async function importSeoSearchPageObservationsAction(formData: FormData) {
   const admin = await requireAdmin("manage");
-  let engine: SeoSearchEngine;
-  let observations;
-
   try {
-    engine = parseSearchEngine(formData.get("engine"));
-    observations = parseSeoSearchPageObservationRows({
-      engine,
-      periodStart: cleanPromotionValue(formData.get("periodStart"), 10),
-      periodEnd: cleanPromotionValue(formData.get("periodEnd"), 10),
-      text: cleanPromotionValue(formData.get("pageRows"), 250_000),
+    const result = await saveSeoSearchImport(prisma, admin, String(formData.get("recordVersion") ?? ""), {
+      kind: "import",
+      input: { engine: parseSearchEngine(formData.get("engine")), periodStart: String(formData.get("periodStart") ?? ""),
+        periodEnd: String(formData.get("periodEnd") ?? ""), text: String(formData.get("pageRows") ?? "") },
+      preflightToken: String(formData.get("preflightToken") ?? ""), acknowledgeExcluded: formData.get("acknowledgeExcluded") === "yes",
+      batchId: randomUUID(), importedAt: new Date().toISOString(),
     });
-  } catch {
-    redirect("/admin/seo?pageImportError=invalid");
-  }
-
-  const existing = await prisma.siteSetting.findUnique({
-    where: { settingKey: SEO_SEARCH_PAGE_IMPORT_SETTING_KEY },
-    select: { valueText: true },
-  });
-  const previousState = parseSeoSearchPageImportState(existing?.valueText);
-  const batch = {
-    id: randomUUID(),
-    engine,
-    periodStart: observations[0].periodStart,
-    periodEnd: observations[0].periodEnd,
-    importedAt: new Date().toISOString(),
-    actorLabel: admin.email,
-    observations,
-  };
-  const nextState = appendSeoSearchPageImportBatch(previousState, batch);
-  await persistSeoSearchPageImportState({
-    adminId: admin.id,
-    previousState,
-    nextState,
-    action: "import_seo_search_page_observations",
-    note: `Imported ${observations.length} ${engine} page observations for ${batch.periodStart} through ${batch.periodEnd}.`,
-  });
-  redirect(`/admin/seo?pageImportSaved=${engine}`);
+    revalidatePath("/admin/seo");
+    return { ...result, message: "页面报表已导入，窗口选择状态已更新。" };
+  } catch (error) { return searchImportError(error); }
 }
 
 export async function rollbackSeoSearchPageObservationsAction(formData: FormData) {
   const admin = await requireAdmin("manage");
-  let engine: SeoSearchEngine;
   try {
-    engine = parseSearchEngine(formData.get("engine"));
-  } catch {
-    redirect("/admin/seo?pageImportError=invalid");
-  }
-
-  const existing = await prisma.siteSetting.findUnique({
-    where: { settingKey: SEO_SEARCH_PAGE_IMPORT_SETTING_KEY },
-    select: { valueText: true },
-  });
-  const previousState = parseSeoSearchPageImportState(existing?.valueText);
-  let nextState;
-  try {
-    nextState = rollbackLatestSeoSearchPageImport(previousState, engine);
-  } catch {
-    redirect("/admin/seo?pageImportError=history");
-  }
-  await persistSeoSearchPageImportState({
-    adminId: admin.id,
-    previousState,
-    nextState,
-    action: "rollback_seo_search_page_observations",
-    note: `Rolled back the latest ${engine} page observation import.`,
-  });
-  redirect(`/admin/seo?pageImportRolledBack=${engine}`);
+    const result = await saveSeoSearchImport(prisma, admin, String(formData.get("recordVersion") ?? ""), {
+      kind: "restore", engine: parseSearchEngine(formData.get("engine")), batchId: String(formData.get("batchId") ?? ""), auditId: String(formData.get("auditId") ?? ""),
+    });
+    revalidatePath("/admin/seo");
+    return { ...result, message: "已按审计撤销最近导入；同窗口原批次已恢复（首次导入则移除该窗口），其他窗口保持原样。" };
+  } catch (error) { return searchImportError(error); }
 }
 
 function getActiveProductPlanPageCount(

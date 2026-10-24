@@ -8,6 +8,7 @@ export const SEO_SEARCH_PAGE_IMPORT_SETTING_KEY =
   "seo.search_page_observation_imports.v1";
 export const SEO_SEARCH_PAGE_IMPORT_HISTORY_LIMIT = 8;
 export const SEO_SEARCH_PAGE_IMPORT_ROW_LIMIT = 500;
+export const SEO_SEARCH_PAGE_IMPORT_TEXT_LIMIT = 250_000;
 
 export type SeoSearchImportEvidence = {
   evidenceHash: string;
@@ -94,6 +95,7 @@ function parseDelimitedLine(line: string, delimiter: string) {
     }
   }
   cells.push(cell.trim());
+  if (quoted) throw new Error("Unclosed quoted cell.");
   return cells;
 }
 
@@ -137,7 +139,8 @@ function headerIndex(headers: string[], aliases: Set<string>) {
 function parseCount(value: string) {
   const normalized = value.replace(/[\s,]/g, "");
   if (!/^\d+$/.test(normalized)) return Number.NaN;
-  return Number(normalized);
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : Number.NaN;
 }
 
 function parsePosition(value: string) {
@@ -148,102 +151,101 @@ function parsePosition(value: string) {
     : Number.NaN;
 }
 
-export function parseSeoSearchPageObservationRows({
-  engine,
-  periodStart,
-  periodEnd,
-  text,
-}: {
-  engine: SeoSearchEngine;
-  periodStart: string;
-  periodEnd: string;
-  text: string;
-}): SeoSearchPageObservation[] {
-  if (
-    !isIsoDate(periodStart)
-    || !isIsoDate(periodEnd)
-    || periodStart > periodEnd
-  ) {
-    throw new Error("Invalid observation period.");
+export type SeoSearchImportInput = {
+  engine: SeoSearchEngine; periodStart: string; periodEnd: string; text: string;
+};
+// Multipart form encoding normalizes textarea newlines to CRLF. Hash the same
+// logical input in the browser and server without trimming or rounding values.
+export function seoSearchImportPreflightPayload(input: SeoSearchImportInput) {
+  return JSON.stringify([input.engine, input.periodStart, input.periodEnd, input.text.replace(/\r\n?/g, "\n")]);
+}
+export type SeoSearchImportIssue = {
+  line: number; value: string; reason: string;
+};
+export type SeoSearchImportPreflight = {
+  canImport: boolean; errors: string[]; inputRows: number; acceptedRows: number;
+  mergedRows: number; excluded: SeoSearchImportIssue[];
+  observations: SeoSearchPageObservation[];
+};
+
+/** Pure preview: no database, audit, platform connection or silent truncation. */
+export function preflightSeoSearchPageObservationRows({
+  engine, periodStart, periodEnd, text,
+}: SeoSearchImportInput): SeoSearchImportPreflight {
+  const result: SeoSearchImportPreflight = {
+    canImport: false, errors: [], inputRows: 0, acceptedRows: 0,
+    mergedRows: 0, excluded: [], observations: [],
+  };
+  if (!['google', 'bing'].includes(engine)) result.errors.push("搜索引擎无效。");
+  if (!isIsoDate(periodStart) || !isIsoDate(periodEnd) || periodStart > periodEnd) {
+    result.errors.push("观察窗口日期无效，请使用真实开始、结束日期。");
   }
-
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length < 2) throw new Error("No observation rows found.");
-
-  const delimiter = detectDelimiter(lines[0]);
-  const headers = parseDelimitedLine(lines[0], delimiter);
+  if (text.length > SEO_SEARCH_PAGE_IMPORT_TEXT_LIMIT) result.errors.push("报表超过 250000 字符，不会截取导入。");
+  if (result.errors.length) return result;
+  const lines = text.split(/\r\n?|\n/).map((value, index) => ({ value: value.trim(), line: index + 1 })).filter(item => item.value);
+  result.inputRows = Math.max(0, lines.length - 1);
+  if (lines.length < 2) { result.errors.push("没有报表数据行。"); return result; }
+  let delimiter: string, headers: string[];
+  try { delimiter = detectDelimiter(lines[0].value); headers = parseDelimitedLine(lines[0].value, delimiter); }
+  catch { result.errors.push("表头引号未闭合，请重新导出报表。"); return result; }
   const pathIndex = headerIndex(headers, HEADER_ALIASES.path);
   const clicksIndex = headerIndex(headers, HEADER_ALIASES.clicks);
   const impressionsIndex = headerIndex(headers, HEADER_ALIASES.impressions);
   const positionIndex = headerIndex(headers, HEADER_ALIASES.position);
   if (pathIndex < 0 || clicksIndex < 0 || impressionsIndex < 0) {
-    throw new Error("Required headers are missing.");
+    const keyword = headers.some(value => /^(query|queries|keyword|keywords|查询|热门查询|关键字|关键词)$/.test(normalizeHeader(value)));
+    result.errors.push(keyword ? "这是查询/关键词报表，请切换到页面报表；不会把查询当作 URL。" : "缺少页面、点击或展示表头。");
+    return result;
   }
-
+  if ([HEADER_ALIASES.path, HEADER_ALIASES.clicks, HEADER_ALIASES.impressions, HEADER_ALIASES.position].some(aliases => headers.filter(value => aliases.has(normalizeHeader(value))).length > 1)) {
+    result.errors.push("存在重复指标表头，无法确定列口径。"); return result;
+  }
   const grouped = new Map<string, SeoSearchPageObservation>();
-  for (const line of lines.slice(1)) {
-    const cells = parseDelimitedLine(line, delimiter);
+  const positionWeights = new Map<string, number>();
+  for (const { value, line } of lines.slice(1)) {
+    let cells: string[];
+    const exclude = (reason: string) => result.excluded.push({ line, value, reason });
+    try { cells = parseDelimitedLine(value, delimiter); }
+    catch { exclude("引号未闭合；不支持跨行单元格"); continue; }
+    if (cells.length !== headers.length) { exclude("列数与表头不一致"); continue; }
     const path = normalizePublicPath(cells[pathIndex] || "");
     const clicks = parseCount(cells[clicksIndex] || "");
     const impressions = parseCount(cells[impressionsIndex] || "");
-    const averagePosition = positionIndex >= 0
-      ? parsePosition(cells[positionIndex] || "")
-      : undefined;
-
-    if (
-      !path
-      || !Number.isInteger(clicks)
-      || !Number.isInteger(impressions)
-      || clicks < 0
-      || impressions < 0
-      || clicks > impressions
-      || (averagePosition !== undefined && Number.isNaN(averagePosition))
-    ) {
-      continue;
-    }
-
+    const averagePosition = positionIndex >= 0 ? parsePosition(cells[positionIndex] || "") : undefined;
+    if (!path) { exclude("不属于支持的 geosub.org 公开语言页面（含报告或后台路径）"); continue; }
+    if (!Number.isSafeInteger(clicks) || !Number.isSafeInteger(impressions)) { exclude("点击/展示必须是精确非负整数，不能使用 K/M 等约数"); continue; }
+    if (clicks > impressions) { exclude("点击大于展示，无法确认指标口径"); continue; }
+    if (averagePosition !== undefined && Number.isNaN(averagePosition)) { exclude("平均排名必须在 0–1000 之间"); continue; }
     const current = grouped.get(path);
-    if (!current) {
-      grouped.set(path, {
-        engine,
-        periodStart,
-        periodEnd,
-        path,
-        clicks,
-        impressions,
-        ...(averagePosition === undefined ? {} : { averagePosition }),
-      });
-      continue;
+    const nextClicks = (current?.clicks ?? 0) + clicks;
+    const nextImpressions = (current?.impressions ?? 0) + impressions;
+    if (!Number.isSafeInteger(nextClicks) || !Number.isSafeInteger(nextImpressions)) {
+      result.errors.push("合并后的计数超出精确整数范围。"); continue;
     }
-
-    const nextImpressions = current.impressions + impressions;
-    const weightedPosition =
-      current.averagePosition !== undefined && averagePosition !== undefined
-        ? (
-          current.averagePosition * current.impressions
-          + averagePosition * impressions
-        ) / Math.max(1, nextImpressions)
-        : current.averagePosition ?? averagePosition;
-    grouped.set(path, {
-      ...current,
-      clicks: current.clicks + clicks,
-      impressions: nextImpressions,
-      ...(weightedPosition === undefined
-        ? {}
-        : { averagePosition: Math.round(weightedPosition * 100) / 100 }),
-    });
+    const weight = positionWeights.get(path) ?? 0;
+    const nextWeight = weight + (averagePosition === undefined ? 0 : impressions);
+    const weightedPosition = nextWeight > 0
+      ? ((current?.averagePosition ?? 0) * weight + (averagePosition ?? 0) * impressions) / nextWeight
+      : current?.averagePosition ?? averagePosition;
+    positionWeights.set(path, nextWeight);
+    grouped.set(path, { engine, periodStart, periodEnd, path, clicks: nextClicks, impressions: nextImpressions,
+      ...(weightedPosition === undefined ? {} : { averagePosition: weightedPosition }) });
+    result.acceptedRows += 1;
   }
+  result.observations = [...grouped.values()].map(item => ({ ...item,
+    ...(item.averagePosition === undefined ? {} : { averagePosition: Math.round(item.averagePosition * 100) / 100 }),
+  })).sort((a, b) => b.impressions - a.impressions || a.path.localeCompare(b.path));
+  result.mergedRows = result.acceptedRows - result.observations.length;
+  if (!result.observations.length) result.errors.push("没有可导入的有效页面。");
+  if (result.observations.length > SEO_SEARCH_PAGE_IMPORT_ROW_LIMIT) result.errors.push(`有效页面共 ${result.observations.length} 个，超过 500 页上限；不会截取导入，请明确缩小报表范围。`);
+  result.canImport = result.errors.length === 0;
+  return result;
+}
 
-  const observations = [...grouped.values()]
-    .sort((left, right) =>
-      right.impressions - left.impressions || left.path.localeCompare(right.path)
-    )
-    .slice(0, SEO_SEARCH_PAGE_IMPORT_ROW_LIMIT);
-  if (observations.length === 0) throw new Error("No valid observation rows found.");
-  return observations;
+export function parseSeoSearchPageObservationRows(input: SeoSearchImportInput): SeoSearchPageObservation[] {
+  const result = preflightSeoSearchPageObservationRows(input);
+  if (!result.canImport) throw new Error(result.errors.join(" "));
+  return result.observations;
 }
 
 function parseObservation(value: unknown): SeoSearchPageObservation | null {
@@ -263,12 +265,12 @@ function parseObservation(value: unknown): SeoSearchPageObservation | null {
     || !isIsoDate(periodStart)
     || !isIsoDate(periodEnd)
     || periodStart > periodEnd
-    || !Number.isInteger(clicks)
-    || !Number.isInteger(impressions)
+    || !Number.isSafeInteger(clicks)
+    || !Number.isSafeInteger(impressions)
     || clicks < 0
     || impressions < 0
     || clicks > impressions
-    || (averagePosition !== undefined && !Number.isFinite(averagePosition))
+    || (averagePosition !== undefined && (!Number.isFinite(averagePosition) || averagePosition < 0 || averagePosition > 1000))
   ) return null;
   return {
     engine,
@@ -293,7 +295,7 @@ function parseBatch(value: unknown): SeoSearchPageImportBatch | null {
     ? value.observations
       .map(parseObservation)
       .filter((item): item is SeoSearchPageObservation => Boolean(item))
-      .filter((item) => item.engine === engine)
+      .filter((item) => item.engine === engine && item.periodStart === periodStart && item.periodEnd === periodEnd)
       .slice(0, SEO_SEARCH_PAGE_IMPORT_ROW_LIMIT)
     : [];
   if (
@@ -301,6 +303,8 @@ function parseBatch(value: unknown): SeoSearchPageImportBatch | null {
     || !engine
     || !isIsoDate(periodStart)
     || !isIsoDate(periodEnd)
+    || periodStart > periodEnd
+    || !Number.isFinite(Date.parse(importedAt))
     || !importedAt
     || !actorLabel
     || observations.length === 0
