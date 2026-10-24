@@ -115,6 +115,11 @@
       "from": "529c42018856b9922f4e37ebfd4958297a9a3b86e8d05482683ea5dc0dbf6a67",
       "to": "b0dc8839606d07569e6ad1028eed567d8be6ff27034f16c1d24c648af40dcb6d",
       "reason": "2.15.10 to 2.15.9: all registered managed-content readers, renderers, validators, stores and schema byte-identical except VERSION. PDF name wrapping and existing-font glyph fallback only; canonical data, titles and collector contracts unchanged."
+    },
+    {
+      "from": "82b1056639d4ec1d29a06b2debbdf823fe4d104c7c1dab12f1277d08ef20701a",
+      "to": "529c42018856b9922f4e37ebfd4958297a9a3b86e8d05482683ea5dc0dbf6a67",
+      "reason": "2.15.11 to 2.15.10: registered managed-content contract files byte-identical except VERSION. Existing report source/canonical URLs receive PDF link annotations only; text, canonical price data, titles and collector contracts unchanged."
     }
   ]
 }

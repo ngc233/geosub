@@ -85,6 +85,16 @@ function formatDifference(value: number | null, copy: typeof reportCopy.en) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
+function reportLink(value: string | null) {
+  if (!value || /\s/.test(value)) return undefined;
+  try {
+    const url = new URL(value);
+    return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function renderPricingReportPdf(dataset: PricingReportDataset) {
   const copy = reportCopy[dataset.locale];
   const files = getPricingReportFontFiles(dataset.locale);
@@ -157,9 +167,9 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
   y = doc.y + 20;
   font(true).fontSize(12).fillColor(ink).text(copy.canonicalUrls, MARGIN, y);
   y = doc.y + 7;
-  font(false).fontSize(8).fillColor(muted).text(`${copy.productPage}: ${dataset.canonicalPageUrl}`, MARGIN, y, { width: contentWidth });
+  font(false).fontSize(8).fillColor(muted).text(`${copy.productPage}: ${dataset.canonicalPageUrl}`, MARGIN, y, { width: contentWidth, link: reportLink(dataset.canonicalPageUrl) });
   y = doc.y + 7;
-  doc.text(`${copy.reportUrl}: ${dataset.canonicalReportUrl}`, MARGIN, y, { width: contentWidth });
+  doc.text(`${copy.reportUrl}: ${dataset.canonicalReportUrl}`, MARGIN, y, { width: contentWidth, link: reportLink(dataset.canonicalReportUrl) });
 
   const sourceKeys = new Map(dataset.pricingSources.map((source, index) => [`${source.name}|${source.url || ""}`, `S${index + 1}`]));
   const planGroups = [...new Map(dataset.rows.map((row) => [row.planSlug, { name: row.planName, billing: row.billingCycle }])).entries()];
@@ -211,10 +221,15 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
   dataset.pricingSources.forEach((source, index) => {
     const text = `S${index + 1}  [${copy.sourceStatus[source.status]}]  ${source.name}${source.url ? ` - ${source.url}` : ` - ${copy.urlNotLinked}`}`;
     const sourceText = names.layout(text, contentWidth, 7.5);
+    const destination = reportLink(source.url);
     doc.fillColor(muted);
     for (const line of sourceText.lines) {
       if (y + line.height > 780) { addPage(); y = 65; }
-      names.drawLine(line, sourceText.size, MARGIN, y); y += line.height;
+      names.drawLine(line, sourceText.size, MARGIN, y);
+      // Explicit annotations work in readers that do not auto-detect URLs.
+      // Every wrapped line targets the unchanged canonical source address.
+      if (destination && line.width > 0) doc.link(MARGIN, y, line.width, line.height, destination);
+      y += line.height;
     }
     y += 5;
   });
