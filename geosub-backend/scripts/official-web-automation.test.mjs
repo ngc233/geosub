@@ -49,6 +49,16 @@ test('Spotify maps explicit canonical IDs and regular monthly prices, excluding 
   const result=parse(); assert.equal(result.complete,true);
   assert.deepEqual(result.candidates.map(x=>[x.plan_slug,x.raw_price,x.billing_cycle]),[['individual',12.99,'monthly'],['family',21.99,'monthly']]);
 });
+test('Spotify reads named storefront cards without treating benefits comparison as price evidence', () => {
+  const result=parse(props=>{
+    const cards=props.components[0].attributes.plans;
+    props.components={benefitsComparison:{plans:[{planId:'PREMIUM_INDIVIDUAL',primaryPriceDescription:'$1 / month'}]},
+      storefront:{plans:cards}};
+  });
+  assert.equal(result.complete,true,result.issues.join(','));
+  assert.deepEqual(result.candidates.map(x=>x.raw_price),[12.99,21.99]);
+  assert.equal(parse(props=>{props.components={benefitsComparison:{plans:[]}}}).complete,false);
+});
 for (const [name,change,extra] of [
   ['wrong market',p=>p.metadata.country='GB'],
   ['redirect',()=>{},{finalUrl:'https://www.spotify.com/gb/premium/'}],

@@ -44,7 +44,15 @@ export function parseSpotifyOfficialHtml(html, { countryCode, currency, finalUrl
       || props?.basePageProps?.country !== countryCode || props?.basePageProps?.market !== market.path) {
       throw Error('structured_country_mismatch');
     }
-    const cards = (props.components ?? []).flatMap(component => component.attributes?.plans ?? []);
+    // Spotify serves both the legacy component array and a named component
+    // object. In the latter, only storefront plans are purchase cards; the
+    // benefits comparison also has a plans array but is not price evidence.
+    const components = props.components;
+    const cards = Array.isArray(components)
+      ? components.flatMap(component => component.attributes?.plans ?? [])
+      : components && !Array.isArray(components) && Array.isArray(components.storefront?.plans)
+        ? components.storefront.plans
+        : [];
     for (const [slug, [id, identifier, header]] of Object.entries(identities)) {
       const matches = cards.filter(card => card.planId === id);
       if (matches.length !== 1) { result.issues.push(`plan_identity_missing_or_duplicate:${slug}`); continue; }
