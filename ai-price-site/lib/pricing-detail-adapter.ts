@@ -471,9 +471,11 @@ export async function getPricingDetailProduct(
     LEFT JOIN country_tax_profiles tax_profile
       ON tax_profile.country_id = c.id
       AND tax_profile.status = 'active'
+      AND NOT (p.slug = 'spotify' AND rp.billing_platform = 'web')
     LEFT JOIN country_app_store_risk_profiles risk_profile
       ON risk_profile.country_id = c.id
       AND risk_profile.status = 'active'
+      AND NOT (p.slug = 'spotify' AND rp.billing_platform = 'web')
     LEFT JOIN LATERAL (
       SELECT
         po.raw_payload,

@@ -3,21 +3,26 @@
   "sources": {
     "spotify": {
       "product_slug": "spotify",
-      "parser_key": "spotify_us",
-      "parser_version": "spotify-us-official-web-v1",
+      "parser_key": "spotify_official_web",
+      "parser_version": "spotify-official-web-v2",
       "source_key": "spotify-official-web",
-      "source_name": "Spotify Official US Web Pricing",
+      "source_name": "Spotify Official Web Pricing",
       "provider": "Spotify",
       "base_url": "https://www.spotify.com/us/premium/",
       "source_level": "A",
       "reliability_score": 90,
       "fetch_mode": "structured_http",
       "billing_cycle": "monthly",
-      "evidence_note": "Official US Web regular monthly price after introductory offers. Tax and purchase eligibility remain subject to Spotify checkout.",
+      "evidence_note": "Official regional Web regular monthly price after introductory offers. Tax and purchase eligibility remain subject to Spotify checkout.",
       "required_plan_slugs": ["individual", "family"],
-      "auto_review": { "rule_id": "spotify-us-monthly-stability-v1", "publish_product": true },
-      "public_description": "Compare Spotify Premium Individual and Family regular monthly US Web prices. Introductory offers are excluded; tax and purchase eligibility are determined at Spotify checkout.",
-      "markets": [{ "country_code": "US", "locale": "en-US", "currency": "USD", "url": "https://www.spotify.com/us/premium/" }]
+      "auto_review": { "rule_id": "spotify-regional-monthly-stability-v2", "publish_product": true },
+      "public_description": "Compare Spotify Premium Individual and Family regular monthly regional Web prices. Introductory offers are excluded; tax and purchase eligibility are determined at Spotify checkout.",
+      "markets": [
+        { "country_code": "US", "locale": "en-US", "currency": "USD", "url": "https://www.spotify.com/us/premium/" },
+        { "country_code": "NG", "locale": "en-NG", "currency": "NGN", "url": "https://www.spotify.com/ng/premium/" },
+        { "country_code": "GB", "locale": "en-GB", "currency": "GBP", "url": "https://www.spotify.com/uk/premium/" },
+        { "country_code": "AU", "locale": "en-AU", "currency": "AUD", "url": "https://www.spotify.com/au/premium/" }
+      ]
     },
     "apple-music": {
       "product_slug": "apple-music",

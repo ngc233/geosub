@@ -23,7 +23,10 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
       await client.query(readFileSync(new URL(`../sql/schema/${file}`,import.meta.url),'utf8'));
     }
     const product=(await client.query("INSERT INTO products(slug,name,category,status) VALUES('spotify','Spotify Premium','streaming','review') RETURNING *")).rows[0];
-    const country=(await client.query("INSERT INTO countries(code,name_en,name_zh,currency) VALUES('US','United States','美国','USD') RETURNING *")).rows[0];
+    const countryRows=(await client.query(`INSERT INTO countries(code,name_en,name_zh,currency) VALUES
+      ('US','United States','美国','USD'),('NG','Nigeria','尼日利亚','NGN'),
+      ('GB','United Kingdom','英国','GBP'),('AU','Australia','澳大利亚','AUD') RETURNING *`)).rows;
+    const country=countryRows.find(row=>row.code==='US');
     const plans=new Map();
     for(const slug of ['individual','family']) {
       const plan=(await client.query("INSERT INTO plans(product_id,slug,name,billing_cycle,status) VALUES($1,$2,$2,'monthly','review') RETURNING *",[product.id,slug])).rows[0];
@@ -31,7 +34,7 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     }
     const sourceId=(await client.query(`INSERT INTO price_sources(source_key,name,type,provider,base_url,source_level,status)
       VALUES($1,'Spotify official','official_page','Spotify',$2,'A','active') RETURNING id`,[source.source_key,source.base_url])).rows[0].id;
-    const database={product,plans,countries:new Map([['US',country]])};
+    const database={product,plans,countries:new Map(countryRows.map(row=>[row.code,row]))};
     // Test the real onboarding transaction using the existing production table
     // columns without installing any new database schema capability.
     await client.query("ALTER TABLE collector_jobs ADD COLUMN job_config JSONB DEFAULT '{}'::jsonb, ADD COLUMN priority INTEGER DEFAULT 50");
@@ -41,6 +44,11 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     assert.equal(configured.action,'created');
     assert.equal((await configureOfficialWebJob(client,source,true)).jobId,configured.jobId);
     assert.equal((await client.query('SELECT count(*)::int n FROM collector_jobs')).rows[0].n,1);
+    await client.query("UPDATE collector_jobs SET job_config=jsonb_set(job_config,'{country_codes}','[\"US\"]'::jsonb) WHERE id=$1",[configured.jobId]);
+    assert.equal((await configureOfficialWebJob(client,source)).action,'update-required');
+    assert.equal((await configureOfficialWebJob(client,source,true)).action,'updated');
+    assert.deepEqual((await client.query('SELECT job_config FROM collector_jobs WHERE id=$1',[configured.jobId])).rows[0].job_config.country_codes,
+      ['US','NG','GB','AU']);
     // Same product/plan/country iOS row is a real regression risk in the old
     // approve_price_observation function. Preserve it byte-for-byte.
     await client.query(`INSERT INTO region_prices(product_id,plan_id,country_id,local_price,currency,price_usd,billing_platform,status)
@@ -62,12 +70,30 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     let prices=(await client.query("SELECT * FROM region_prices WHERE billing_platform='web' ORDER BY local_price")).rows;
     assert.deepEqual(prices.map(r=>[Number(r.local_price),r.data_quality,r.status]),[[12.99,'verified','published'],[21.99,'verified','published']]);
     assert.equal((await client.query('SELECT status FROM products WHERE id=$1',[product.id])).rows[0].status,'published');
+    const nigeria=source.markets.find(item=>item.country_code==='NG');
+    const nigeriaSnapshot=hours=>({ok:true,render_mode:'structured_http',http_status:200,final_url:nigeria.url,user_agent:'GeoSub-test',
+      content_hash:createHash('sha256').update(`ng-${hours}`).digest('hex'),captured_at:new Date(now-hours*3_600_000).toISOString(),
+      parser_result:{parser_key:source.parser_key,parser_version:source.parser_version,complete:true,issues:[],candidates:[
+        {plan_slug:'individual',raw_price:1600,currency:'NGN',billing_cycle:'monthly',observed_price_text:'₦1,600/month',evidence_text:'canonical NG individual monthly price',price_type:'list_price'},
+        {plan_slug:'family',raw_price:2500,currency:'NGN',billing_cycle:'monthly',observed_price_text:'₦2,500/month',evidence_text:'canonical NG family monthly price',price_type:'list_price'}]}});
+    for(const hours of [24,12,0]) await insertMarketObservations({client,source,market:nigeria,database,sourceId,snapshot:nigeriaSnapshot(hours),force:true});
+    const noFx=await reviewOfficialWebMarket({client,source,market:nigeria,database,sourceId});
+    assert.equal(noFx.published,0);
+    assert.equal(noFx.decisions[0].reason,'current_exchange_rate_missing');
+    await client.query(`INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,is_latest,status)
+      VALUES('USD','NGN',1000,CURRENT_DATE,TRUE,'active')`);
+    assert.equal((await reviewOfficialWebMarket({client,source,market:nigeria,database,sourceId})).published,2);
+    const ngPrices=(await client.query(`SELECT local_price,currency,price_usd,us_base_price,diff_vs_us_percent
+      FROM region_prices WHERE country_id=$1 AND billing_platform='web' ORDER BY local_price`,[database.countries.get('NG').id])).rows;
+    assert.deepEqual(ngPrices.map(row=>[Number(row.local_price),row.currency,Number(row.price_usd),Number(row.us_base_price)]),
+      [[1600,'NGN',1.6,12.99],[2500,'NGN',2.5,21.99]]);
+    assert.ok(ngPrices.every(row=>Number(row.diff_vs_us_percent)<0));
     assert.equal((await review()).published,0,'review is idempotent');
     const retry=await collect(35);assert.equal(retry.inserted,0,'--force cannot manufacture close samples');
     const priceBeforeFailure=JSON.stringify(prices);
     await recordMarketFailure({client,source,market,database,sourceId,snapshot:snapshot(30),issues:['missing recurring period']});
     const isolated=await review();assert.equal(isolated.published,0);assert.ok(isolated.decisions.every(d=>d.decision==='isolated'));
-    assert.equal(JSON.stringify((await client.query("SELECT * FROM region_prices WHERE billing_platform='web' ORDER BY local_price")).rows),priceBeforeFailure);
+    assert.equal(JSON.stringify((await client.query("SELECT * FROM region_prices WHERE billing_platform='web' AND country_id=$1 ORDER BY local_price",[country.id])).rows),priceBeforeFailure);
     await collect(24);await collect(12);await collect(0);
     assert.equal((await review()).published,2,'three newer clean samples recover automatically');
     assert.equal((await client.query("SELECT count(*)::int AS n FROM price_observations WHERE anomaly_flag AND status='ignored'")).rows[0].n,2);

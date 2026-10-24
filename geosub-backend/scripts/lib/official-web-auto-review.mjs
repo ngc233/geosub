@@ -1,20 +1,28 @@
-const ruleId = 'spotify-us-monthly-stability-v1';
+import { spotifyMarkets } from './spotify-official-web.mjs';
+
+const ruleId = 'spotify-regional-monthly-stability-v2';
 
 export function assertAutomaticWebSource(source) {
   if (source.product_slug !== 'spotify' || source.source_key !== 'spotify-official-web'
-    || source.parser_key !== 'spotify_us' || source.parser_version !== 'spotify-us-official-web-v1'
+    || source.parser_key !== 'spotify_official_web' || source.parser_version !== 'spotify-official-web-v2'
     || source.billing_cycle !== 'monthly' || source.auto_review?.rule_id !== ruleId
+    || source.source_level !== 'A' || source.fetch_mode !== 'structured_http'
+    || source.base_url !== 'https://www.spotify.com/us/premium/'
     || source.required_plan_slugs.join(',') !== 'individual,family'
-    || source.markets.length !== 1 || source.markets[0].country_code !== 'US'
-    || source.markets[0].currency !== 'USD'
-    || source.markets[0].url !== 'https://www.spotify.com/us/premium/') {
+    || source.markets.length !== Object.keys(spotifyMarkets).length
+    || new Set(source.markets.map(market => market.country_code)).size !== source.markets.length
+    || source.markets.some(market => {
+      const allowed = spotifyMarkets[market.country_code];
+      return !allowed || market.currency !== allowed.currency || market.locale !== allowed.locale
+        || market.url !== `https://www.spotify.com/${allowed.path}/premium/`;
+    })) {
     throw Error('automatic_web_source_not_allowlisted');
   }
 }
 
 // Time-separated observations measure local price stability; neither retries
 // nor exchange-rate movement are evidence of a subscription-price change.
-export function decideOfficialWebReview(samples, baseline, now = new Date()) {
+export function decideOfficialWebReview(samples, baseline, now = new Date(), market = {country_code:'US',currency:'USD',url:'https://www.spotify.com/us/premium/'}) {
   const distinct = [...new Map(samples.map(sample => [sample.observed_at.toISOString(), sample])).values()]
     .sort((a, b) => b.observed_at - a.observed_at);
   const latest = distinct[0];
@@ -31,13 +39,13 @@ export function decideOfficialWebReview(samples, baseline, now = new Date()) {
     window.push(distinct[window.length]);
   }
   if (window.some(row => row.anomaly_flag || row.status === 'rejected' || !row.evidence_ok || row.source_level !== 'A'
-    || Number(row.confidence_score) < 80 || row.currency !== 'USD'
-    || !Number.isFinite(Number(row.raw_price)) || Number(row.raw_price) < 1 || Number(row.raw_price) > 100
+    || Number(row.confidence_score) < 80 || row.currency !== market.currency
+    || !Number.isFinite(Number(row.raw_price)) || Number(row.raw_price) <= 0 || Number(row.raw_price) >= 1_000_000
     || row.raw_payload?.billing_cycle !== 'monthly'
     || row.raw_payload?.publication_eligible !== true
-    || row.raw_payload?.automatic_rule !== ruleId || row.raw_payload?.requested_country !== 'US'
-    || row.raw_payload?.source_url !== 'https://www.spotify.com/us/premium/'
-    || row.raw_payload?.final_url !== 'https://www.spotify.com/us/premium/'
+    || row.raw_payload?.automatic_rule !== ruleId || row.raw_payload?.requested_country !== market.country_code
+    || row.raw_payload?.source_url !== market.url
+    || row.raw_payload?.final_url !== market.url
     || row.raw_payload?.render_mode !== 'structured_http')) {
     return { decision: 'isolated', reason: 'incomplete_or_anomalous_evidence' };
   }
@@ -60,9 +68,9 @@ export function decideOfficialWebReview(samples, baseline, now = new Date()) {
 
 export async function reviewOfficialWebMarket({ client, source, market, database, sourceId }) {
   assertAutomaticWebSource(source);
-  if (market.country_code !== 'US' || market.currency !== 'USD') throw Error('automatic_web_market_not_allowlisted');
+  if (!source.markets.some(item => item.country_code === market.country_code && item.currency === market.currency && item.url === market.url)) throw Error('automatic_web_market_not_allowlisted');
   const product = database.product;
-  const country = database.countries.get('US');
+  const country = database.countries.get(market.country_code);
   await client.query('BEGIN');
   try {
     await client.query("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'");
@@ -89,19 +97,53 @@ export async function reviewOfficialWebMarket({ client, source, market, database
       const samples = await client.query(`SELECT o.*, EXISTS(SELECT 1 FROM source_evidence e
           WHERE e.observation_id=o.id AND e.http_status=200 AND e.final_url=$5
           AND e.content_hash=o.raw_payload->>'content_hash' AND length(e.content_hash)=64
-          AND e.captured_at=o.observed_at AND e.country_context='US') AS evidence_ok
+          AND e.captured_at=o.observed_at AND e.country_context=$8) AS evidence_ok
         FROM price_observations o WHERE o.product_id=$1 AND o.plan_id=$2 AND o.country_id=$3
           AND o.source_id=$4 AND o.billing_platform='web' AND o.price_type='list_price'
           AND o.parser_version=$6 AND o.raw_payload->>'automatic_rule'=$7
         ORDER BY o.observed_at DESC,o.created_at DESC LIMIT 40`,
-        [product.id,plan.id,country.id,sourceId,market.url,source.parser_version,ruleId]);
-      const result = decideOfficialWebReview(samples.rows, prices.rows[0]);
+        [product.id,plan.id,country.id,sourceId,market.url,source.parser_version,ruleId,market.country_code]);
+      const result = decideOfficialWebReview(samples.rows, prices.rows[0],new Date(),market);
       decisions.push({ ...result, planSlug: slug, planId: plan.id });
     }
     // A partly parsed/unstable market cannot make a new product public.
     if (decisions.some(result => result.decision !== 'approved')) {
       await client.query('COMMIT');
       return { published: 0, decisions: decisions.map(({observation, ...result}) => result) };
+    }
+    let fxRate = 1;
+    let fxDate = null;
+    if (market.currency !== 'USD') {
+      const fx = await client.query(`SELECT rate,rate_date FROM exchange_rates
+        WHERE base_currency='USD' AND quote_currency=$1 AND status='active'
+          AND rate_date>=CURRENT_DATE-INTERVAL '2 days'
+        ORDER BY is_latest DESC,rate_date DESC,fetched_at DESC LIMIT 1`, [market.currency]);
+      fxRate = Number(fx.rows[0]?.rate);
+      fxDate = fx.rows[0]?.rate_date ?? null;
+      if (!Number.isFinite(fxRate) || fxRate <= 0) {
+        await client.query('COMMIT');
+        return { published: 0, decisions: [{decision:'waiting',reason:'current_exchange_rate_missing'}] };
+      }
+    }
+    for (const result of decisions) {
+      const usd = Math.round(Number(result.observation.raw_price) / fxRate * 100) / 100;
+      if (usd < 0.5 || usd > 100) {
+        await client.query('COMMIT');
+        return { published: 0, decisions: [{decision:'isolated',reason:'converted_price_out_of_bounds'}] };
+      }
+      result.usd = usd;
+      if (market.country_code === 'US') {
+        result.usBase = usd;
+      } else {
+        const baseline = await client.query(`SELECT price_usd FROM region_prices WHERE plan_id=$1
+          AND country_id=(SELECT id FROM countries WHERE code='US') AND billing_platform='web'
+          AND price_type='list_price' AND status='published' AND data_quality='verified'`,[result.planId]);
+        result.usBase = Number(baseline.rows[0]?.price_usd);
+        if (!Number.isFinite(result.usBase) || result.usBase <= 0) {
+          await client.query('COMMIT');
+          return { published: 0, decisions: [{decision:'waiting',reason:'published_us_baseline_missing'}] };
+        }
+      }
     }
     let published = 0;
     for (const result of decisions) {
@@ -112,18 +154,20 @@ export async function reviewOfficialWebMarket({ client, source, market, database
         (id,product_id,plan_id,country_id,local_price,currency,price_usd,us_base_price,diff_vs_us_percent,
          billing_platform,price_type,primary_source_id,confidence_score,data_quality,status,last_checked_at,
          source_summary,availability_note,published_at,created_at,updated_at)
-        VALUES(gen_random_uuid(),$1,$2,$3,$4,'USD',$4,$4,0,'web','list_price',$5,$9,'verified','published',$6,$7,$8,NOW(),NOW(),NOW())
+        VALUES(gen_random_uuid(),$1,$2,$3,$4,$10,$11,$12,$13,'web','list_price',$5,$9,'verified','published',$6,$7,$8,NOW(),NOW(),NOW())
         ON CONFLICT(plan_id,country_id,billing_platform,price_type) DO UPDATE SET
           local_price=EXCLUDED.local_price,currency=EXCLUDED.currency,price_usd=EXCLUDED.price_usd,
-          us_base_price=EXCLUDED.us_base_price,diff_vs_us_percent=0,primary_source_id=EXCLUDED.primary_source_id,
+          us_base_price=EXCLUDED.us_base_price,diff_vs_us_percent=EXCLUDED.diff_vs_us_percent,primary_source_id=EXCLUDED.primary_source_id,
           confidence_score=EXCLUDED.confidence_score,data_quality='verified',status='published',last_checked_at=EXCLUDED.last_checked_at,
           source_summary=EXCLUDED.source_summary,availability_note=EXCLUDED.availability_note,updated_at=NOW()
         RETURNING id`, [product.id,result.planId,country.id,row.raw_price,sourceId,row.observed_at,
-        `Spotify official US Web regular monthly price; ${ruleId}`,row.raw_payload.availability_note ?? null,result.confidenceScore]);
-      await client.query(`UPDATE price_observations SET status='approved',converted_usd=raw_price,
-        raw_payload=raw_payload||jsonb_build_object('automatic_review',jsonb_build_object('rule_id',$2::text,
-        'observation_ids',$3::jsonb,'approved_at',NOW(),'region_price_id',$4::text)),updated_at=NOW()
-        WHERE id=$1 AND status='pending'`, [row.id,ruleId,JSON.stringify(result.observationIds),price.rows[0].id]);
+        `Spotify official ${market.country_code} Web regular monthly price; ${ruleId}`,row.raw_payload.availability_note ?? null,result.confidenceScore,
+        market.currency,result.usd,result.usBase,Math.round((result.usd/result.usBase-1)*10000)/100]);
+      await client.query(`UPDATE price_observations SET status='approved',converted_usd=$5,
+        raw_payload=raw_payload||jsonb_build_object('fx_rate_date',$6::text,'automatic_review',jsonb_build_object('rule_id',$2::text,
+        'observation_ids',$3::jsonb,'approved_at',NOW(),'region_price_id',$4::text,'fx_rate_date',$6::text)),updated_at=NOW()
+        WHERE id=$1 AND status='pending'`, [row.id,ruleId,JSON.stringify(result.observationIds),price.rows[0].id,result.usd,
+          typeof fxDate === 'string' ? fxDate.slice(0,10) : fxDate?.toISOString?.().slice(0,10) ?? null]);
       await client.query(`UPDATE price_observations SET status='ignored',updated_at=NOW(),
         raw_payload=raw_payload||jsonb_build_object('automatic_resolution','superseded_by_stable_official_web_price','resolved_by',$6::text)
         WHERE product_id=$1 AND plan_id=$2 AND country_id=$3 AND source_id=$4 AND billing_platform='web'
@@ -131,6 +175,19 @@ export async function reviewOfficialWebMarket({ client, source, market, database
           AND raw_payload->>'automatic_rule'=$7`,
         [product.id,result.planId,country.id,sourceId,row.observed_at,row.id,ruleId]);
       published++;
+    }
+    if (market.country_code === 'US' && published > 0) {
+      await client.query(`UPDATE region_prices regional SET
+          us_base_price=baseline.price_usd,
+          diff_vs_us_percent=ROUND((regional.price_usd/NULLIF(baseline.price_usd,0)-1)*100,2),
+          updated_at=NOW()
+        FROM region_prices baseline
+        WHERE regional.product_id=$1 AND regional.billing_platform='web'
+          AND regional.price_type='list_price' AND regional.status='published'
+          AND regional.country_id<>$2 AND regional.plan_id=baseline.plan_id
+          AND baseline.product_id=$1 AND baseline.country_id=$2
+          AND baseline.billing_platform='web' AND baseline.price_type='list_price'
+          AND baseline.status='published' AND baseline.price_usd>0`,[product.id,country.id]);
     }
     // Trigger 054 only promotes products for App Store completions. This source
     // supplies its own equivalent gate after *all* canonical Web plans passed.

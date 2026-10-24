@@ -11,19 +11,31 @@ export async function configureOfficialWebJob(client, source, execute=false) {
   await client.query(execute ? 'BEGIN' : 'BEGIN READ ONLY');
   try {
     await client.query("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'");
-    const database=await loadDatabaseContext(client,source,['US']);
+    const countryCodes=source.markets.map(market=>market.country_code);
+    const database=await loadDatabaseContext(client,source,countryCodes);
+    for(const market of source.markets) {
+      if(database.countries.get(market.country_code)?.currency!==market.currency)
+        throw Error(`canonical_country_currency_mismatch:${market.country_code}`);
+    }
     if (!['draft','review','published'].includes(database.product.status)) throw Error('official_web_product_not_active');
     if (execute) await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`configure_official_web:${database.product.id}`]);
     const jobs=await client.query(`SELECT j.id,j.status,j.job_config FROM collector_jobs j
       LEFT JOIN price_sources s ON s.id=j.source_id WHERE j.product_id=$1 AND j.status<>'archived'
-      AND (j.job_config->>'collector_kind' IN ('app_store','pricing_page','official_site') OR s.type='official_page') ${execute?'FOR SHARE OF j':''}`,[database.product.id]);
+      AND (j.job_config->>'collector_kind' IN ('app_store','pricing_page','official_site') OR s.type='official_page') ${execute?'FOR UPDATE OF j':''}`,[database.product.id]);
+    const config={collector_kind:'pricing_page',official_web_source_key:'spotify',country_codes:countryCodes,
+      interval_hours:12,url:source.base_url,automatic_review_rule:source.auto_review.rule_id};
     if (jobs.rows.length) {
       if (jobs.rows.length !== 1 || jobs.rows[0].job_config.official_web_source_key !== 'spotify'
         || jobs.rows[0].status !== 'active') throw Error('official_web_existing_job_requires_explicit_resolution');
-      await client.query('COMMIT');return {action:'existing',product:source.product_slug,jobId:jobs.rows[0].id};
+      const current=jobs.rows[0].job_config;
+      const matches=JSON.stringify(current.country_codes)===JSON.stringify(countryCodes)
+        && current.automatic_review_rule===config.automatic_review_rule;
+      if (!matches && execute) await client.query(`UPDATE collector_jobs SET
+        job_config=job_config||jsonb_build_object('country_codes',$2::jsonb,'automatic_review_rule',$3::text)
+        WHERE id=$1`,[jobs.rows[0].id,JSON.stringify(countryCodes),config.automatic_review_rule]);
+      await client.query('COMMIT');return {action:matches?'existing':execute?'updated':'update-required',
+        product:source.product_slug,jobId:jobs.rows[0].id,config:matches?undefined:config};
     }
-    const config={collector_kind:'pricing_page',official_web_source_key:'spotify',country_codes:['US'],
-      interval_hours:12,url:source.base_url,automatic_review_rule:source.auto_review.rule_id};
     let jobId=null;
     if(execute){
       const sourceId=await ensureSource(client,source);
