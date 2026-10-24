@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getLatestUsdExchangeRates } from "../../../../lib/exchange-rates";
 import { getPricingDetailProduct } from "../../../../lib/pricing-detail-adapter";
@@ -44,7 +45,9 @@ export async function GET(
       "Content-Disposition": `inline; filename="${productSlug}-${locale}-global-pricing.pdf"`,
       "Content-Type": "application/pdf",
       "Content-Language": locale,
-      ETag: `"${dataset.snapshotId}-${locale}"`,
+      // Validate the rendered file, including renderer/font/link fixes that do
+      // not change the canonical pricing snapshot.
+      ETag: `"${createHash("sha256").update(pdf).digest("hex")}"`,
       Link: `<${dataset.canonicalReportUrl}>; rel="canonical"`,
       "X-GeoSub-Dataset-Version": dataset.datasetVersion,
       "X-GeoSub-Snapshot-Id": dataset.snapshotId,

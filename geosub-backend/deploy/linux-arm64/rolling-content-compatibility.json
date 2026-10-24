@@ -120,6 +120,11 @@
       "from": "82b1056639d4ec1d29a06b2debbdf823fe4d104c7c1dab12f1277d08ef20701a",
       "to": "529c42018856b9922f4e37ebfd4958297a9a3b86e8d05482683ea5dc0dbf6a67",
       "reason": "2.15.11 to 2.15.10: registered managed-content contract files byte-identical except VERSION. Existing report source/canonical URLs receive PDF link annotations only; text, canonical price data, titles and collector contracts unchanged."
+    },
+    {
+      "from": "c1c57dee7396131711d06114f32488b0e58be98c9d87a23a7ca0f0ffa51d2bda",
+      "to": "82b1056639d4ec1d29a06b2debbdf823fe4d104c7c1dab12f1277d08ef20701a",
+      "reason": "2.15.12 to 2.15.11: identical content readers/schema, PDF bytes unchanged; only the PDF HTTP validator now fingerprints the rendered representation. Price data, titles and experiment locks unchanged."
     }
   ]
 }
