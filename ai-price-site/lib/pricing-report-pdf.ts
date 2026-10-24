@@ -2,6 +2,7 @@ import "server-only";
 
 import path from "node:path";
 import { getPricingReportFontFiles } from "./pricing-report-fonts.ts";
+import { createReportText } from "./pricing-report-text.ts";
 import PDFKitDocument from "pdfkit";
 import type { PricingReportDataset, PricingReportRow } from "./pricing-report";
 import type { SiteLocale } from "./site-locale";
@@ -98,13 +99,18 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
   const boldFont = ["zh", "zh-tw", "ja", "ko", "ar"].includes(dataset.locale)
     ? regularFont
     : resolveFont(files.bold);
-  const doc = new PDFKitDocument({ size: "A4", margin: MARGIN, bufferPages: true, font: regularFont, info: {
+  const doc = new PDFKitDocument({ size: "A4", margins: { top: 65, bottom: 64, left: MARGIN, right: MARGIN }, bufferPages: true, font: regularFont, info: {
     Title: dataset.reportTitle,
     Author: "GeoSub",
     Subject: copy.subtitle,
     Keywords: `GeoSub, ${dataset.productName}, global pricing`,
     Creator: "GeoSub Global Pricing Report Export",
   } });
+  const names = createReportText(doc, [regularFont, ...[
+    "assets/fonts/NotoSansSC-VF.ttf",
+    "assets/fonts/NotoSansKR-VF.ttf",
+    "assets/fonts/NotoSansArabic-VF.ttf",
+  ].map(resolveFont)]);
   const chunks: Buffer[] = [];
   doc.on("data", (chunk: Buffer) => chunks.push(chunk));
   const output = new Promise<Uint8Array>((resolve, reject) => {
@@ -179,16 +185,17 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
       const sourceKey = sourceKeys.get(`${row.sourceName}|${row.sourceUrl || ""}`) || "-";
       const sourceLabel = `${sourceKey} ${copy.sourceStatus[row.sourceStatus]}`;
       const taxText = `${formatTaxTreatment(row.taxTreatment, dataset.locale)}. ${row.taxNote}`;
+      const regionName = names.layout(`${row.region} (${row.regionCode})`, columns[0].width - 8, 7.1);
       font(false).fontSize(6.3);
-      const rowHeight = Math.max(29, doc.heightOfString(taxText, { width: 124, lineGap: 0 }) + 10);
+      const rowHeight = Math.max(29, regionName.height + 14, doc.heightOfString(taxText, { width: 124, lineGap: 0 }) + 10);
       if (y + rowHeight > 780) {
         addPage(); y = 66;
         font(true).fontSize(12).fillColor(ink).text(`${planInfo.name} - ${copy.continued}`, MARGIN, y);
         y = doc.y + 14; tableHeader();
       }
       doc.moveTo(MARGIN, y).lineTo(pageWidth - MARGIN, y).lineWidth(0.45).stroke(line);
-      font(false).fontSize(7.1).fillColor(ink).text(`${row.region} (${row.regionCode})`, columns[0].x + 4, y + 9, { width: columns[0].width - 8, height: rowHeight - 8 });
-      doc.text(formatLocal(row, dataset.locale), columns[1].x + 4, y + 9, { width: columns[1].width - 8, height: rowHeight - 8 });
+      doc.fillColor(ink); names.draw(regionName, columns[0].x + 4, y + 9);
+      font(false).fontSize(7.1).text(formatLocal(row, dataset.locale), columns[1].x + 4, y + 9, { width: columns[1].width - 8, height: rowHeight - 8 });
       font(true).text(formatUsd(row.usdEquivalent), columns[2].x + 4, y + 9, { width: columns[2].width - 8, lineBreak: false });
       font(false).fontSize(7).text(formatDifference(row.differenceVsUsPercent, copy), columns[3].x + 4, y + 9, { width: columns[3].width - 8, lineBreak: false });
       font(false).fontSize(6.3).fillColor(muted).text(taxText, columns[4].x + 4, y + 7, { width: columns[4].width - 8, height: rowHeight - 6, lineGap: 0 });
@@ -203,8 +210,18 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
   font(true).fontSize(11).text(copy.pricingSources, MARGIN, y); y = doc.y + 8;
   dataset.pricingSources.forEach((source, index) => {
     const text = `S${index + 1}  [${copy.sourceStatus[source.status]}]  ${source.name}${source.url ? ` - ${source.url}` : ` - ${copy.urlNotLinked}`}`;
-    font(false).fontSize(7.5).fillColor(muted).text(text, MARGIN, y, { width: contentWidth }); y = doc.y + 5;
+    const sourceText = names.layout(text, contentWidth, 7.5);
+    doc.fillColor(muted);
+    for (const line of sourceText.lines) {
+      if (y + line.height > 780) { addPage(); y = 65; }
+      names.drawLine(line, sourceText.size, MARGIN, y); y += line.height;
+    }
+    y += 5;
   });
+  // A taller multilingual source list must not push the final fixed citation
+  // box or verification block through the footer.
+  const ensureSpace = (height: number) => { if (y + height > 780) { addPage(); y = 65; } };
+  ensureSpace(70);
   y += 7; font(true).fontSize(11).fillColor(ink).text(copy.exchangeRates, MARGIN, y); y = doc.y + 8;
   if (!dataset.exchangeRateSources.length) {
     font(false).fontSize(7.5).fillColor(muted).text(copy.noFx, MARGIN, y, { width: contentWidth }); y = doc.y + 15;
@@ -213,9 +230,11 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
   });
   font(true).fontSize(11).fillColor(ink).text(copy.taxTreatment, MARGIN, y); y = doc.y + 8;
   font(false).fontSize(7.5).fillColor(muted).text(copy.taxExplanation, MARGIN, y, { width: contentWidth }); y = doc.y + 18;
+  ensureSpace(110);
   font(true).fontSize(11).fillColor(ink).text(copy.citation, MARGIN, y); y = doc.y + 8;
   doc.rect(MARGIN, y, contentWidth, 62).fill(soft);
   font(false).fontSize(8).fillColor(ink).text(dataset.citation, MARGIN + 10, y + 10, { width: contentWidth - 20, height: 44 }); y += 79;
+  ensureSpace(65);
   font(true).fontSize(11).text(copy.verification, MARGIN, y); y = doc.y + 8;
   font(false).fontSize(7.5).fillColor(muted).text(`${copy.snapshotId}: ${dataset.snapshotId}`, MARGIN, y); y = doc.y + 7;
   doc.text(`${copy.generated}: ${dataset.generatedAt} | ${copy.schema}: ${dataset.schemaVersion}`, MARGIN, y);
