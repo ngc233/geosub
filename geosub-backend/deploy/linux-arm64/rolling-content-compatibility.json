@@ -105,6 +105,11 @@
       "from": "d328fe041ed2e1c2b6d625ab020c7391166233135dde7e3209125c0c548d2788",
       "to": "fe049603d916d29ec1cec296513e0ac544c066708484a056f837c7998ba0ed4a",
       "reason": "2.15.8 to retained 2.15.6: same audited managed-content compatibility as 2.15.7. Only VERSION and channel arguments for affordability empty copy differ from 2.15.6; reader/store/validator/distribution/schema unchanged. Spotify local asset registration does not change the content contract."
+    },
+    {
+      "from": "b0dc8839606d07569e6ad1028eed567d8be6ff27034f16c1d24c648af40dcb6d",
+      "to": "d328fe041ed2e1c2b6d625ab020c7391166233135dde7e3209125c0c548d2788",
+      "reason": "2.15.9 to 2.15.8: all registered content reader, renderer, validator, store and schema files byte-identical except VERSION. PDF page-number positioning and one-pass page furniture only; canonical price data and report titles unchanged. No database input or collector changes."
     }
   ]
 }

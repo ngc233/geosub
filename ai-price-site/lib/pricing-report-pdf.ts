@@ -125,7 +125,8 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
     font(false).fontSize(7.5).fillColor(muted).text(dataset.reportTitle, 300, 26, { width: pageWidth - MARGIN - 300, align: "right", lineBreak: false });
     doc.moveTo(MARGIN, 40).lineTo(pageWidth - MARGIN, 40).lineWidth(0.6).stroke(line);
   };
-  const addPage = () => { doc.addPage(); addHeader(); };
+  // Headers and footers are drawn once, after content pagination is complete.
+  const addPage = () => { doc.addPage(); };
   let y = 78;
   font(true).fontSize(25).fillColor(ink).text(dataset.reportTitle, MARGIN, y, { width: contentWidth });
   y = doc.y + 8;
@@ -226,7 +227,10 @@ export async function renderPricingReportPdf(dataset: PricingReportDataset) {
     doc.moveTo(MARGIN, 786).lineTo(pageWidth - MARGIN, 786).lineWidth(0.5).stroke(line);
     font(false).fontSize(6.5).fillColor(muted).text(dataset.datasetVersion, MARGIN, 794, { lineBreak: false });
     const pageLabel = copy.page.replace("{page}", String(index + 1));
-    doc.text(pageLabel, pageWidth - MARGIN - 70, 794, { width: 70, align: "right", lineBreak: false });
+    // PDFKit still enables its line wrapper when width is supplied, even with
+    // lineBreak:false. Font line heights can then push the footer onto a new
+    // page. Position this single line explicitly, outside the content flow.
+    doc.text(pageLabel, pageWidth - MARGIN - doc.widthOfString(pageLabel), 794, { lineBreak: false });
   }
   doc.end();
   return output;

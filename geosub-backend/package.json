@@ -1,6 +1,6 @@
 {
     "name": "geosub-backend-tools",
-    "version": "2.15.8",
+    "version": "2.15.9",
     "private": true,
     "type": "module",
     "scripts": {
