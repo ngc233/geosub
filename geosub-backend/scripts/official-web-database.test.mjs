@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { insertMarketObservations, recordMarketFailure } from './collect-official-web-prices.mjs';
 import { reviewOfficialWebMarket } from './lib/official-web-auto-review.mjs';
 import { configureOfficialWebJob } from './configure-official-web-job.mjs';
-import { spotifyRegistry } from './lib/spotify-official-web.mjs';
+import { spotifyRegistry, parseSpotifyOfficialHtml } from './lib/spotify-official-web.mjs';
 
 const dsn=process.env.GEOSUB_WEB_TEST_DATABASE_URL;
 test('real PostgreSQL official Web pipeline publishes, isolates and recovers without touching iOS/other products', {skip:!dsn}, async()=>{
@@ -42,8 +42,20 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     await client.query("ALTER TABLE collector_jobs ADD COLUMN job_config JSONB DEFAULT '{}'::jsonb, ADD COLUMN priority INTEGER DEFAULT 50");
     const preview=await configureOfficialWebJob(client,source);
     assert.equal(preview.action,'dry-run');assert.equal(preview.catalogAdditions.length,21);
+    assert.deepEqual(preview.planAdditions.map(p=>p.slug),['standard','platinum']);
+    assert.equal((await client.query('SELECT count(*)::int n FROM plans')).rows[0].n,2);
     assert.equal((await client.query('SELECT count(*)::int n FROM countries')).rows[0].n,initialCountries.length);
     assert.equal((await client.query('SELECT count(*)::int n FROM collector_jobs')).rows[0].n,0);
+    assert.equal((await configureOfficialWebJob(client,source,true,{plansOnly:true})).action,'plans-created');
+    assert.equal((await configureOfficialWebJob(client,source,true,{plansOnly:true})).action,'plans-existing');
+    assert.equal((await client.query('SELECT count(*)::int n FROM collector_jobs')).rows[0].n,0,'plan registration does not activate a collector');
+    assert.equal((await client.query('SELECT count(*)::int n FROM countries')).rows[0].n,initialCountries.length);
+    for(const plan of (await client.query("SELECT * FROM plans WHERE slug IN ('standard','platinum')")).rows) {
+      assert.equal(plan.status,'review');plans.set(plan.slug,plan);
+    }
+    await client.query("UPDATE plans SET name='Conflicting identity' WHERE slug='standard'");
+    await assert.rejects(configureOfficialWebJob(client,source,true),/identity_conflict/);
+    await client.query("UPDATE plans SET name='Spotify Premium Standard' WHERE slug='standard'");
     const configured=await configureOfficialWebJob(client,source,true);
     assert.equal(configured.action,'created');
     assert.equal((await client.query('SELECT count(*)::int n FROM countries')).rows[0].n,source.markets.length);
@@ -63,6 +75,26 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     const untouched=async()=>JSON.stringify((await client.query("SELECT row_to_json(p) AS row FROM products p WHERE id=$1 UNION ALL SELECT row_to_json(r) FROM region_prices r WHERE billing_platform='ios'",[other.id])).rows);
     const before=await untouched();
     const now=Date.now();
+    const tierMarket=source.markets.find(m=>m.country_code==='AE');
+    const tierFixture=JSON.parse(readFileSync(new URL('./fixtures/spotify-world.json',import.meta.url))).find(f=>f.country_code==='AE');
+    const parsedTiers=parseSpotifyOfficialHtml(`<script id="__NEXT_DATA__">${JSON.stringify({props:{pageProps:tierFixture.props}})}</script>`,
+      {countryCode:'AE',currency:'AED',finalUrl:tierMarket.url});
+    assert.equal(parsedTiers.complete,true);
+    const tierReview=()=>reviewOfficialWebMarket({client,source,market:tierMarket,database,sourceId});
+    for(const hours of [24,12]) await insertMarketObservations({client,source,market:tierMarket,database,sourceId,force:true,
+      snapshot:{ok:true,render_mode:'structured_http',http_status:200,final_url:tierMarket.url,user_agent:'GeoSub-test',
+        content_hash:createHash('sha256').update(`ae-${hours}`).digest('hex'),captured_at:new Date(now-hours*3_600_000).toISOString(),parser_result:parsedTiers}});
+    assert.equal((await tierReview()).published,0,'new tiers still require three independent samples');
+    await insertMarketObservations({client,source,market:tierMarket,database,sourceId,force:true,
+      snapshot:{ok:true,render_mode:'structured_http',http_status:200,final_url:tierMarket.url,user_agent:'GeoSub-test',
+        content_hash:createHash('sha256').update('ae-0').digest('hex'),captured_at:new Date(now).toISOString(),parser_result:parsedTiers}});
+    assert.equal((await tierReview()).decisions[0].reason,'current_exchange_rate_missing');
+    await client.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,is_latest,status) VALUES('USD','AED',3.6725,CURRENT_DATE,TRUE,'active')");
+    assert.equal((await tierReview()).published,2,'a real same-plan US price is unavailable; do not invent or borrow one');
+    const tierPrices=(await client.query(`SELECT p.slug,r.us_base_price,r.diff_vs_us_percent,r.local_price FROM region_prices r JOIN plans p ON p.id=r.plan_id WHERE p.slug IN ('standard','platinum') ORDER BY r.local_price`)).rows;
+    assert.deepEqual(tierPrices.map(r=>[r.slug,Number(r.local_price),r.us_base_price,r.diff_vs_us_percent]),
+      [['standard',23.99,null,null],['platinum',59.99,null,null]]);
+    assert.equal((await client.query("SELECT count(*)::int n FROM plans WHERE slug IN ('standard','platinum') AND status='published'")).rows[0].n,2);
     const snapshot=(hours,price=12.99)=>({ok:true,render_mode:'structured_http',http_status:200,final_url:market.url,user_agent:'GeoSub-test',
       content_hash:createHash('sha256').update(`fixture-${hours}-${price}`).digest('hex'),captured_at:new Date(now-hours*3_600_000).toISOString(),
       parser_result:{parser_key:source.parser_key,parser_version:source.parser_version,complete:true,issues:[],candidates:[
@@ -73,7 +105,7 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     await collect(84);await collect(60);
     assert.equal((await review()).published,0,'two independent samples cannot publish');
     await collect(36);const approved=await review();assert.equal(approved.published,2);
-    let prices=(await client.query("SELECT * FROM region_prices WHERE billing_platform='web' ORDER BY local_price")).rows;
+    let prices=(await client.query("SELECT * FROM region_prices WHERE billing_platform='web' AND country_id=$1 ORDER BY local_price",[country.id])).rows;
     assert.deepEqual(prices.map(r=>[Number(r.local_price),r.data_quality,r.status]),[[12.99,'verified','published'],[21.99,'verified','published']]);
     assert.equal((await client.query('SELECT status FROM products WHERE id=$1',[product.id])).rows[0].status,'published');
     const nigeria=source.markets.find(item=>item.country_code==='NG');

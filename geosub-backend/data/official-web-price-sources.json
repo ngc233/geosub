@@ -16,13 +16,15 @@
       "evidence_note": "Official regional Web regular monthly price after introductory offers. Tax and purchase eligibility remain subject to Spotify checkout.",
       "required_plan_slugs": [
         "individual",
-        "family"
+        "family",
+        "standard",
+        "platinum"
       ],
       "auto_review": {
         "rule_id": "spotify-regional-monthly-stability-v2",
         "publish_product": true
       },
-      "public_description": "Compare Spotify Premium Individual and Family regular monthly regional Web prices. Introductory offers are excluded; tax and purchase eligibility are determined at Spotify checkout.",
+      "public_description": "Compare Spotify Premium Individual, Family, Standard and Platinum regular monthly regional Web prices. Plans are compared separately; introductory offers are excluded and taxes and eligibility are determined at Spotify checkout.",
       "markets": [
         {
           "country_code": "US",
@@ -1807,6 +1809,56 @@
           "required_plan_slugs": [
             "individual",
             "family"
+          ]
+        },
+        {
+          "country_code": "AE",
+          "locale": "en-Latn-AE",
+          "currency": "AED",
+          "url": "https://www.spotify.com/ae-en/premium/",
+          "required_plan_slugs": [
+            "standard",
+            "platinum"
+          ]
+        },
+        {
+          "country_code": "ID",
+          "locale": "en-Latn-ID",
+          "currency": "IDR",
+          "url": "https://www.spotify.com/id-en/premium/",
+          "required_plan_slugs": [
+            "standard",
+            "platinum"
+          ]
+        },
+        {
+          "country_code": "IN",
+          "locale": "en-Latn-IN",
+          "currency": "INR",
+          "url": "https://www.spotify.com/in-en/premium/",
+          "required_plan_slugs": [
+            "standard",
+            "platinum"
+          ]
+        },
+        {
+          "country_code": "SA",
+          "locale": "en-Latn-SA",
+          "currency": "SAR",
+          "url": "https://www.spotify.com/sa-en/premium/",
+          "required_plan_slugs": [
+            "standard",
+            "platinum"
+          ]
+        },
+        {
+          "country_code": "ZA",
+          "locale": "en-Latn-ZA",
+          "currency": "ZAR",
+          "url": "https://www.spotify.com/za-en/premium/",
+          "required_plan_slugs": [
+            "standard",
+            "platinum"
           ]
         }
       ]

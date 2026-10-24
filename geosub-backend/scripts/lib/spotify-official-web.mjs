@@ -7,6 +7,8 @@ export const spotifyMarkets = Object.freeze(spotifyRegistry.markets);
 const identities = {
   individual: ['PREMIUM_INDIVIDUAL', 'premium-individual', 'Premium Individual'],
   family: ['PREMIUM_FAMILY', 'premium-family', 'Premium Family'],
+  standard: ['PREMIUM_STANDARD', 'premium-standard', 'Premium Standard'],
+  platinum: ['PLATINUM', 'platinum', 'Premium Platinum'],
 };
 
 function plain(value) {
@@ -104,6 +106,9 @@ export function parseSpotifyOfficialHtml(html, { countryCode, currency, finalUrl
       const card = matches[0];
       if (card.planIdentifier !== identifier || plain(card.header) !== market.headers[slug]
         || card.isRecurringProduct !== true || card.hasNonRecurringProduct !== false
+        || (['standard','platinum'].includes(slug) && !card.benefits?.some(benefit =>
+          benefit.benefitType === 'ACCOUNTS_DESCRIPTION' && plain(benefit.children) ===
+            (slug === 'standard' ? '1 Standard account' : 'Up to 3 Platinum accounts')))
         || (slug === 'family' && /\b6$/.test(market.headers.family)
           && !card.benefits?.some(benefit => benefit.benefitType === 'ACCOUNTS_DESCRIPTION' && /\b6\b/.test(plain(benefit.children))))) {
         result.issues.push(`plan_identity_or_cycle_mismatch:${slug}`); continue;
@@ -133,7 +138,11 @@ export function parseSpotifyOfficialHtml(html, { countryCode, currency, finalUrl
         raw_price: price, currency: market.currency, billing_cycle: 'monthly', price_type: 'list_price',
         observed_price_text: regularText,
         evidence_text: `${id}; ${header}; ${regularText}; ${legal}`.slice(0, 1800),
-        availability_note: slug === 'family'
+        availability_note: slug === 'platinum'
+          ? `Official ${countryCode} Web monthly price for the whole Platinum plan, up to three accounts at the same address. No US price is available for this plan; eligibility and taxes are determined by Spotify at checkout.`
+          : slug === 'standard'
+            ? `Official ${countryCode} Web regular monthly Standard price for one account. No US price is available for this plan; eligibility and taxes are determined by Spotify at checkout.`
+          : slug === 'family'
           ? `Official ${countryCode} Web monthly price for the whole Family plan; household eligibility and taxes are determined by Spotify at checkout.`
           : `Official ${countryCode} Web regular monthly price after any introductory offer; eligibility and taxes are determined by Spotify at checkout.`,
       });

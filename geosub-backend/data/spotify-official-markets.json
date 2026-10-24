@@ -3214,6 +3214,96 @@
         "individual",
         "family"
       ]
+    },
+    "AE": {
+      "path": "ae-en",
+      "currency": "AED",
+      "symbol": "AED",
+      "locale": "en-Latn-AE",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "standard": "Premium Standard",
+        "platinum": "Premium Platinum"
+      },
+      "plan_slugs": [
+        "standard",
+        "platinum"
+      ]
+    },
+    "ID": {
+      "path": "id-en",
+      "currency": "IDR",
+      "symbol": "Rp",
+      "locale": "en-Latn-ID",
+      "language": "en",
+      "decimal": ",",
+      "group": ".",
+      "symbol_position": "prefix",
+      "headers": {
+        "standard": "Premium Standard",
+        "platinum": "Premium Platinum"
+      },
+      "plan_slugs": [
+        "standard",
+        "platinum"
+      ]
+    },
+    "IN": {
+      "path": "in-en",
+      "currency": "INR",
+      "symbol": "₹",
+      "locale": "en-Latn-IN",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "standard": "Premium Standard",
+        "platinum": "Premium Platinum"
+      },
+      "plan_slugs": [
+        "standard",
+        "platinum"
+      ]
+    },
+    "SA": {
+      "path": "sa-en",
+      "currency": "SAR",
+      "symbol": "SAR",
+      "locale": "en-Latn-SA",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "standard": "Premium Standard",
+        "platinum": "Premium Platinum"
+      },
+      "plan_slugs": [
+        "standard",
+        "platinum"
+      ]
+    },
+    "ZA": {
+      "path": "za-en",
+      "currency": "ZAR",
+      "symbol": "R",
+      "locale": "en-Latn-ZA",
+      "language": "en",
+      "decimal": ",",
+      "group": ".",
+      "symbol_position": "prefix",
+      "headers": {
+        "standard": "Premium Standard",
+        "platinum": "Premium Platinum"
+      },
+      "plan_slugs": [
+        "standard",
+        "platinum"
+      ]
     }
   },
   "catalog_additions": {
@@ -3344,56 +3434,27 @@
       "region": "Oceania"
     }
   },
-  "excluded_markets": [
-    {
-      "country_code": "ZA",
-      "path": "za-en",
-      "reason": "different_plan_catalog",
-      "plan_ids": [
-        "PREMIUM_STANDARD",
-        "PLATINUM",
-        "PREMIUM_STANDARD_STUDENT"
-      ]
+  "excluded_markets": [],
+  "plan_additions": {
+    "standard": {
+      "name": "Spotify Premium Standard",
+      "billing_cycle": "monthly",
+      "sort_order": 30,
+      "account_count": 1,
+      "description": "Regional Premium Standard monthly subscription for one account. Regular monthly Web price after introductory offers; availability and taxes are determined by Spotify.",
+      "plan_id": "PREMIUM_STANDARD",
+      "plan_identifier": "premium-standard",
+      "us_baseline": "unavailable"
     },
-    {
-      "country_code": "AE",
-      "path": "ae-en",
-      "reason": "different_plan_catalog",
-      "plan_ids": [
-        "PREMIUM_STANDARD",
-        "PLATINUM",
-        "PREMIUM_STANDARD_STUDENT"
-      ]
-    },
-    {
-      "country_code": "ID",
-      "path": "id-en",
-      "reason": "different_plan_catalog",
-      "plan_ids": [
-        "PREMIUM_STANDARD",
-        "PLATINUM",
-        "PREMIUM_STANDARD_STUDENT"
-      ]
-    },
-    {
-      "country_code": "IN",
-      "path": "in-en",
-      "reason": "different_plan_catalog",
-      "plan_ids": [
-        "PREMIUM_STANDARD",
-        "PLATINUM",
-        "PREMIUM_STANDARD_STUDENT"
-      ]
-    },
-    {
-      "country_code": "SA",
-      "path": "sa-en",
-      "reason": "different_plan_catalog",
-      "plan_ids": [
-        "PREMIUM_STANDARD",
-        "PLATINUM",
-        "PREMIUM_STANDARD_STUDENT"
-      ]
+    "platinum": {
+      "name": "Spotify Premium Platinum",
+      "billing_cycle": "monthly",
+      "sort_order": 40,
+      "account_count": 3,
+      "description": "Regional Premium Platinum monthly subscription for up to three accounts residing at the same address. The listed Web price covers the whole plan; eligibility and taxes are determined by Spotify.",
+      "plan_id": "PLATINUM",
+      "plan_identifier": "platinum",
+      "us_baseline": "unavailable"
     }
-  ]
+  }
 }

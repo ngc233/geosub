@@ -1,4 +1,4 @@
-import { spotifyMarkets } from './spotify-official-web.mjs';
+import { spotifyMarkets, spotifyRegistry } from './spotify-official-web.mjs';
 
 const ruleId = 'spotify-regional-monthly-stability-v2';
 
@@ -8,7 +8,7 @@ export function assertAutomaticWebSource(source) {
     || source.billing_cycle !== 'monthly' || source.auto_review?.rule_id !== ruleId
     || source.source_level !== 'A' || source.fetch_mode !== 'structured_http'
     || source.base_url !== 'https://www.spotify.com/us/premium/'
-    || source.required_plan_slugs.join(',') !== 'individual,family'
+    || source.required_plan_slugs.join(',') !== 'individual,family,standard,platinum'
     || source.markets.length !== Object.keys(spotifyMarkets).length
     || new Set(source.markets.map(market => market.country_code)).size !== source.markets.length
     || source.markets.some(market => {
@@ -70,6 +70,8 @@ export function decideOfficialWebReview(samples, baseline, now = new Date(), mar
 export async function reviewOfficialWebMarket({ client, source, market, database, sourceId }) {
   assertAutomaticWebSource(source);
   if (!source.markets.some(item => item.country_code === market.country_code && item.currency === market.currency && item.url === market.url)) throw Error('automatic_web_market_not_allowlisted');
+  const planSlugs=spotifyMarkets[market.country_code].plan_slugs;
+  if(market.required_plan_slugs && JSON.stringify(market.required_plan_slugs)!==JSON.stringify(planSlugs)) throw Error('automatic_web_market_not_allowlisted');
   const product = database.product;
   const country = database.countries.get(market.country_code);
   await client.query('BEGIN');
@@ -86,7 +88,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
       throw Error('automatic_web_context_changed');
     }
     const decisions = [];
-    for (const slug of market.required_plan_slugs ?? source.required_plan_slugs) {
+    for (const slug of planSlugs) {
       const plan = database.plans.get(slug);
       const check = await client.query("SELECT status::text,billing_cycle::text FROM plans WHERE id=$1 AND product_id=$2 FOR SHARE", [plan.id,product.id]);
       if (!check.rows[0] || check.rows[0].status === 'archived' || check.rows[0].billing_cycle !== 'monthly') throw Error('automatic_web_plan_changed');
@@ -135,6 +137,11 @@ export async function reviewOfficialWebMarket({ client, source, market, database
       result.usd = usd;
       if (market.country_code === 'US') {
         result.usBase = usd;
+      } else if (['standard','platinum'].includes(result.planSlug)
+        && spotifyRegistry.plan_additions[result.planSlug]?.us_baseline === 'unavailable') {
+        // These are separate regional products, absent from the US catalog.
+        // Persist an unavailable US comparison rather than borrowing a tier.
+        result.usBase = null;
       } else {
         const baseline = await client.query(`SELECT price_usd FROM region_prices WHERE plan_id=$1
           AND country_id=(SELECT id FROM countries WHERE code='US') AND billing_platform='web'
@@ -163,7 +170,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
           source_summary=EXCLUDED.source_summary,availability_note=EXCLUDED.availability_note,updated_at=NOW()
         RETURNING id`, [product.id,result.planId,country.id,row.raw_price,sourceId,row.observed_at,
         `Spotify official ${market.country_code} Web regular monthly price; ${ruleId}`,row.raw_payload.availability_note ?? null,result.confidenceScore,
-        market.currency,result.usd,result.usBase,Math.round((result.usd/result.usBase-1)*10000)/100]);
+        market.currency,result.usd,result.usBase,result.usBase == null ? null : Math.round((result.usd/result.usBase-1)*10000)/100]);
       await client.query(`UPDATE price_observations SET status='approved',converted_usd=$5,
         raw_payload=raw_payload||jsonb_build_object('fx_rate_date',$6::text,'automatic_review',jsonb_build_object('rule_id',$2::text,
         'observation_ids',$3::jsonb,'approved_at',NOW(),'region_price_id',$4::text,'fx_rate_date',$6::text)),updated_at=NOW()

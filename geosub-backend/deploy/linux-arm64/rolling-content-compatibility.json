@@ -125,6 +125,16 @@
       "from": "c1c57dee7396131711d06114f32488b0e58be98c9d87a23a7ca0f0ffa51d2bda",
       "to": "82b1056639d4ec1d29a06b2debbdf823fe4d104c7c1dab12f1277d08ef20701a",
       "reason": "2.15.12 to 2.15.11: identical content readers/schema, PDF bytes unchanged; only the PDF HTTP validator now fingerprints the rendered representation. Price data, titles and experiment locks unchanged."
+    },
+    {
+      "from": "a129e7676336aaec568e505c8b2c28110019f8ac28a17e3b67ea99c8386df922",
+      "to": "7b1e013ceeb0830f732c00c2abae7002d30376902c3c9a86704539b799990389",
+      "reason": "2.18.0 to 2.17.0: registered managed-content reader, renderer, validator, store and schema files byte-identical except VERSION. Spotify adds independent Standard/Platinum editorial and source-scoped collection; dynamic plans and nullable US comparisons remain compatible. No schema migration."
+    },
+    {
+      "from": "a129e7676336aaec568e505c8b2c28110019f8ac28a17e3b67ea99c8386df922",
+      "to": "2e176b81a217aeef8025b07f29599a9553be2d59dc6d89b7f46dddc26175f42c",
+      "reason": "2.18.0 to 2.15.15: registered managed-content reader, renderer, validator, store and schema files byte-identical except VERSION. Spotify adds independent Standard/Platinum editorial and source-scoped collection; dynamic plans and nullable US comparisons remain compatible. No schema migration."
     }
   ]
 }

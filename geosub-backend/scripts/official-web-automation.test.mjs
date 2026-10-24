@@ -35,15 +35,34 @@ for(const fixture of worldFixtures) test(`official ${fixture.country_code} purch
   assert.deepEqual(result.candidates.map(c=>c.raw_price),fixture.prices);
 });
 test('world allowlist covers every discovered region or records a distinct unsupported catalog',()=>{
-  assert.equal(Object.keys(spotifyMarkets).length,179);
-  assert.equal(worldFixtures.length,179);
-  assert.equal(Object.values(spotifyMarkets).reduce((n,m)=>n+m.plan_slugs.length,0),353);
+  assert.equal(Object.keys(spotifyMarkets).length,184);
+  assert.equal(worldFixtures.length,184);
+  assert.equal(Object.values(spotifyMarkets).reduce((n,m)=>n+m.plan_slugs.length,0),363);
   const registry=JSON.parse(readFileSync(new URL('../data/spotify-official-markets.json',import.meta.url)));
   assert.equal(registry.official_region_count,worldFixtures.length+registry.excluded_markets.length);
-  assert.deepEqual(registry.excluded_markets.map(m=>m.country_code).sort(),['AE','ID','IN','SA','ZA']);
+  assert.deepEqual(registry.excluded_markets,[]);
+});
+test('Standard and Platinum cannot be relabelled from Individual, Student, Family or another account capacity',()=>{
+  for(const code of ['AE','ID','IN','SA','ZA']) {
+    const fixture=worldFixtures.find(f=>f.country_code===code),market=spotifyMarkets[code];
+    for(const mutate of [
+      cards=>cards[0].planId='PREMIUM_INDIVIDUAL',
+      cards=>cards[0].planIdentifier='premium-standard_student',
+      cards=>cards[0].header='Premium Individual',
+      cards=>cards[1].planId='PREMIUM_FAMILY',
+      cards=>cards[1].benefits[0].children='Up to 6 Platinum accounts',
+      cards=>cards[0].benefits[0].children='3 Standard accounts',
+      cards=>cards[0].hasNonRecurringProduct=true,
+    ]) {
+      const props=structuredClone(fixture.props);mutate(props.components.storefront.plans);
+      const result=parseSpotifyOfficialHtml(`<script id="__NEXT_DATA__">${JSON.stringify({props:{pageProps:props}})}</script>`,
+        {countryCode:code,currency:market.currency,finalUrl:fixture.source_url});
+      assert.equal(result.complete,false,code);
+    }
+  }
 });
 test('localized prices fail closed for annual billing, other currencies, conflicting renewal and malformed amounts',()=>{
-  for(const code of ['DE','FR','JP','TW','BR','AR','KR','PT']) {
+  for(const code of ['DE','FR','JP','TW','BR','AR','KR','PT','AE','ID','IN','SA','ZA']) {
     const fixture=worldFixtures.find(f=>f.country_code===code),market=spotifyMarkets[code];
     for(const mutate of [
       p=>p.metadata.country='XX',

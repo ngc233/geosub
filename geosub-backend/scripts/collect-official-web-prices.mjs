@@ -137,7 +137,7 @@ export function validateSnapshot(source, market, snapshot) {
   return [...new Set(issues)];
 }
 
-export async function loadDatabaseContext(client, source, countryCodes, allowedMissingCountries = []) {
+export async function loadDatabaseContext(client, source, countryCodes, allowedMissingCountries = [], allowedMissingPlans = []) {
   const productResult = await client.query(
     "SELECT id, slug, name, status::text FROM products WHERE slug = $1 LIMIT 1",
     [source.product_slug]
@@ -150,12 +150,12 @@ export async function loadDatabaseContext(client, source, countryCodes, allowedM
     [product.id]
   );
   const plans = new Map(planResult.rows.map((plan) => [plan.slug, plan]));
-  const missingPlans = source.required_plan_slugs.filter((slug) => !plans.has(slug));
+  const missingPlans = source.required_plan_slugs.filter((slug) => !plans.has(slug) && !allowedMissingPlans.includes(slug));
   if (missingPlans.length > 0) {
     throw new Error(`missing_canonical_plans:${missingPlans.join(",")}`);
   }
   const mismatchedPlans = source.required_plan_slugs.filter(
-    (slug) => plans.get(slug)?.billing_cycle !== source.billing_cycle
+    (slug) => !allowedMissingPlans.includes(slug) && plans.get(slug)?.billing_cycle !== source.billing_cycle
   );
   if (mismatchedPlans.length > 0) {
     throw new Error(
