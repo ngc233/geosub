@@ -21,11 +21,11 @@ import {
 } from "../../../lib/seo-observation-snapshots";
 import {
   buildSeoSearchPagePriorities,
-  SEO_SEARCH_BASELINE_OBSERVED_AT,
   seoSearchPerformanceBaseline,
 } from "../../../lib/seo-search-performance-baseline";
 import SeoObservationPanel from "./SeoObservationPanel";
 import SeoSearchPriorityPanel from "./SeoSearchPriorityPanel";
+import { activeSeoExperimentLocks } from "../../../lib/seo-experiment-locks";
 import SeoTrafficConversionPanel from "./SeoTrafficConversionPanel";
 import { getSeoTrafficConversionOverview } from "../../../lib/admin-seo-conversion";
 import { evaluateArticleContentQuality } from "../../../lib/article-content-quality";
@@ -229,11 +229,7 @@ export default async function AdminSeoPage({
   );
   const searchPagePriorities = buildSeoSearchPagePriorities(
     effectiveSearchObservations,
-  );
-  const searchObservationDate = effectiveSearchObservations.reduce(
-    (latest, observation) =>
-      observation.periodEnd > latest ? observation.periodEnd : latest,
-    SEO_SEARCH_BASELINE_OBSERVED_AT,
+    activeSeoExperimentLocks,
   );
   const activeProductPlanPages =
     promotionSummary.productOverviewPages + promotionSummary.promotedPlanPages;
@@ -366,7 +362,6 @@ export default async function AdminSeoPage({
 
       <SeoSearchPriorityPanel
         priorities={searchPagePriorities}
-        observedAt={searchObservationDate}
       />
 
       <AdminCard>

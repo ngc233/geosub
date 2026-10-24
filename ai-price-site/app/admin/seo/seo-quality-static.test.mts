@@ -155,10 +155,14 @@ test("admin SEO page imports audited page-level Google and Bing observations", (
   assert.match(pageObservationImport, /getEffectiveSeoSearchPageObservations/);
 });
 
-test("admin SEO page exposes a dated cross-engine page priority queue", () => {
+test("admin SEO page separates engine windows and preserves experiment protection", () => {
   assert.match(page, /SeoSearchPriorityPanel/);
   assert.match(page, /buildSeoSearchPagePriorities/);
-  assert.match(priorityPanel, /双引擎页面优先级/);
+  assert.match(page, /effectiveSearchObservations,\s+activeSeoExperimentLocks/);
+  assert.match(priorityPanel, /按引擎与观察窗口的页面优先级/);
+  assert.match(priorityPanel, /groupSeoSearchPagePriorities/);
+  assert.match(priorityPanel, /实验锁定，仅观察/);
+  assert.doesNotMatch(page, /searchObservationDate/);
   assert.match(priorityPanel, /手工核验快照，非实时 API/);
   assert.match(priorityPanel, /旧地址曝光/);
 });

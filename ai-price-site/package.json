@@ -1,6 +1,6 @@
 {
     "name": "ai-price-site",
-    "version": "2.15.14",
+    "version": "2.15.15",
     "private": true,
     "engines": {
         "node": ">=22 <23"

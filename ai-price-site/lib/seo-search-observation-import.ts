@@ -374,7 +374,14 @@ export function getLatestSeoSearchPageImportBatch(
   state: SeoSearchPageImportState,
   engine: SeoSearchEngine,
 ) {
-  return [...state.batches].reverse().find((batch) => batch.engine === engine) || null;
+  // Observation time determines freshness, not the order an operator imports files.
+  // For an equal end date prefer the later start, then the newer import of that window.
+  return state.batches.filter((batch) => batch.engine === engine).sort((a, b) =>
+    b.periodEnd.localeCompare(a.periodEnd)
+    || b.periodStart.localeCompare(a.periodStart)
+    || b.importedAt.localeCompare(a.importedAt)
+    || state.batches.indexOf(b) - state.batches.indexOf(a),
+  )[0] ?? null;
 }
 
 export function getEffectiveSeoSearchPageObservations({

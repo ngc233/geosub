@@ -11,13 +11,16 @@ export type SeoSearchPageObservation = {
 };
 
 export type SeoSearchPagePriority = {
+  engine: SeoSearchEngine;
+  periodStart: string;
+  periodEnd: string;
   path: string;
   score: number;
-  tier: "优先优化" | "继续放大" | "观察";
+  tier: "优先优化" | "继续放大" | "观察" | "实验锁定";
   clicks: number;
   impressions: number;
   ctr: number;
-  engines: SeoSearchEngine[];
+  experimentId: string | null;
   legacyImpressions: number;
   reasons: string[];
 };
@@ -62,33 +65,40 @@ export function canonicalizeObservedSearchPath(path: string) {
 
 export function buildSeoSearchPagePriorities(
   observations: SeoSearchPageObservation[],
+  experimentLocks: ReadonlyArray<{ canonicalPath: string; experimentId: string; status: "active" }> = [],
 ): SeoSearchPagePriority[] {
   const grouped = new Map<string, {
     clicks: number;
     impressions: number;
-    engines: Set<SeoSearchEngine>;
+    engine: SeoSearchEngine;
+    periodStart: string;
+    periodEnd: string;
+    path: string;
     legacyImpressions: number;
   }>();
 
   for (const observation of observations) {
     const path = canonicalizeObservedSearchPath(observation.path);
-    const current = grouped.get(path) || {
+    const key = JSON.stringify([observation.engine, observation.periodStart, observation.periodEnd, path]);
+    const current = grouped.get(key) || {
       clicks: 0,
       impressions: 0,
-      engines: new Set<SeoSearchEngine>(),
+      engine: observation.engine,
+      periodStart: observation.periodStart,
+      periodEnd: observation.periodEnd,
+      path,
       legacyImpressions: 0,
     };
     current.clicks += observation.clicks;
     current.impressions += observation.impressions;
-    current.engines.add(observation.engine);
     if (observation.path.includes("?plan=")) {
       current.legacyImpressions += observation.impressions;
     }
-    grouped.set(path, current);
+    grouped.set(key, current);
   }
 
-  return [...grouped.entries()]
-    .map(([path, data]) => {
+  return [...grouped.values()]
+    .map((data) => {
       const ctr = data.impressions > 0
         ? Math.round((data.clicks / data.impressions) * 10_000) / 100
         : 0;
@@ -99,34 +109,60 @@ export function buildSeoSearchPagePriorities(
       const ctrOpportunity = data.impressions >= 100
         ? ctr < 2 ? 25 : ctr < 5 ? 14 : 5
         : ctr === 0 ? 8 : 2;
-      const crossEngineScore = data.engines.size > 1 ? 12 : 0;
       const legacyScore = data.legacyImpressions > 0 ? 8 : 0;
       const score = Math.min(
         100,
-        demandScore + ctrOpportunity + crossEngineScore + legacyScore,
+        demandScore + ctrOpportunity + legacyScore,
       );
       const reasons: string[] = [];
 
       if (data.impressions >= 500) reasons.push("已有较高搜索曝光");
       else if (data.impressions >= 100) reasons.push("已有稳定搜索需求");
-      if (data.impressions >= 100 && ctr < 2) reasons.push("点击率偏低，优先改善标题与摘要");
-      if (data.engines.size > 1) reasons.push("Google 与 Bing 都已出现需求");
+      if (data.impressions >= 100 && ctr < 2) reasons.push("点击率偏低，需结合查询意图与排名诊断");
       if (data.legacyImpressions > 0) reasons.push("旧查询地址仍有曝光，应巩固稳定套餐地址");
       if (reasons.length === 0) reasons.push("继续观察搜索量和点击变化");
+      const lock = experimentLocks.find((item) => item.canonicalPath === data.path.replace(/\/+$/, ""));
+      if (lock) reasons.unshift("实验锁定，仅观察；不得修改锁定字段或共享输出");
 
       return {
-        path,
+        engine: data.engine,
+        periodStart: data.periodStart,
+        periodEnd: data.periodEnd,
+        path: data.path,
         score,
-        tier: score >= 72 ? "优先优化" : score >= 52 ? "继续放大" : "观察",
+        tier: lock ? "实验锁定" : score >= 72 ? "优先优化" : score >= 52 ? "继续放大" : "观察",
         clicks: data.clicks,
         impressions: data.impressions,
         ctr,
-        engines: [...data.engines].sort(),
+        experimentId: lock?.experimentId ?? null,
         legacyImpressions: data.legacyImpressions,
         reasons,
       } satisfies SeoSearchPagePriority;
     })
     .sort((left, right) =>
-      right.score - left.score || right.impressions - left.impressions,
+      right.score - left.score || right.impressions - left.impressions
+      || left.path.localeCompare(right.path),
     );
+}
+
+
+export function groupSeoSearchPagePriorities(priorities: SeoSearchPagePriority[]) {
+  const groups = new Map<string, {
+    engine: SeoSearchEngine;
+    periodStart: string;
+    periodEnd: string;
+    priorities: SeoSearchPagePriority[];
+  }>();
+  for (const item of priorities) {
+    const key = JSON.stringify([item.engine, item.periodStart, item.periodEnd]);
+    const group = groups.get(key) ?? {
+      engine: item.engine, periodStart: item.periodStart, periodEnd: item.periodEnd, priorities: [],
+    };
+    group.priorities.push(item);
+    groups.set(key, group);
+  }
+  return [...groups.values()].sort((a, b) =>
+    a.engine.localeCompare(b.engine) || b.periodEnd.localeCompare(a.periodEnd)
+    || b.periodStart.localeCompare(a.periodStart),
+  );
 }

@@ -3,10 +3,33 @@ import test from "node:test";
 import {
   appendSeoSearchPageImportBatch,
   getEffectiveSeoSearchPageObservations,
+  getLatestSeoSearchPageImportBatch,
+  type SeoSearchPageImportBatch,
   parseSeoSearchPageImportState,
   parseSeoSearchPageObservationRows,
   rollbackLatestSeoSearchPageImport,
 } from "./seo-search-observation-import.ts";
+
+test("back-importing an older observation window does not replace the latest window", () => {
+  const batch = (id: string, periodStart: string, periodEnd: string, importedAt: string): SeoSearchPageImportBatch => ({
+    id, engine: "bing", periodStart, periodEnd, importedAt, actorLabel: "fixture",
+    observations: [{ engine: "bing", periodStart, periodEnd, path: "/zh/ai-pricing/chatgpt", clicks: 1, impressions: 10 }],
+  });
+  const current = batch("current", "2026-10-15", "2026-10-21", "2026-10-22T00:00:00Z");
+  const old = batch("old-imported-last", "2026-10-08", "2026-10-14", "2026-10-24T00:00:00Z");
+  const state = { version: 1 as const, batches: [current, old] };
+  assert.equal(getLatestSeoSearchPageImportBatch(state, "bing")?.id, "current");
+  assert.equal(getEffectiveSeoSearchPageObservations({ baseline: [], state })[0].periodEnd, "2026-10-21");
+  assert.equal(getLatestSeoSearchPageImportBatch(state, "google"), null);
+  // Undo remains an explicit undo of the last import, not of the selected window.
+  assert.equal(rollbackLatestSeoSearchPageImport(state, "bing").batches[0].id, "current");
+
+  const shorter = batch("shorter", "2026-10-15", "2026-10-21", "2026-10-22T00:00:00Z");
+  const longer = batch("longer", "2026-09-24", "2026-10-21", "2026-10-24T00:00:00Z");
+  assert.equal(getLatestSeoSearchPageImportBatch({ version: 1, batches: [shorter, longer] }, "bing")?.id, "shorter");
+  const replacement = { ...shorter, id: "replacement", importedAt: "2026-10-25T00:00:00Z" };
+  assert.equal(getLatestSeoSearchPageImportBatch({ version: 1, batches: [replacement, shorter] }, "bing")?.id, "replacement");
+});
 
 test("page observation import accepts exported URLs and canonicalizes plan queries", () => {
   const rows = parseSeoSearchPageObservationRows({

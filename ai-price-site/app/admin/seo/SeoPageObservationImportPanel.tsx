@@ -40,6 +40,8 @@ function ImportSource({
   rolledBack: boolean;
 }) {
   const latest = getLatestSeoSearchPageImportBatch(state, engine);
+  const history = state.batches.filter((batch) => batch.engine === engine).toReversed();
+  const lastImported = history[0];
   const baselineCount = seoSearchPerformanceBaseline.filter(
     (item) => item.engine === engine,
   ).length;
@@ -53,10 +55,11 @@ function ImportSource({
             <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
               当前使用数据库导入 · {latest.observations.length} 个页面 · {latest.periodStart} 至 {latest.periodEnd}
               <br />导入于 {formatImportedAt(latest.importedAt)} · {latest.actorLabel}
+              <br />按观察结束日、开始日选择最新窗口，同窗采用较新导入；导入时间不代表数据新鲜度。
             </p>
           ) : (
             <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-              当前使用 {SEO_SEARCH_BASELINE_OBSERVED_AT} 随代码核验的基线，共 {baselineCount} 个页面。
+              当前使用 {SEO_SEARCH_BASELINE_OBSERVED_AT} 随代码核验的历史基线，共 {baselineCount} 个页面；不是当前实时数据。观察窗口见下方排序表。
             </p>
           )}
         </div>
@@ -70,11 +73,31 @@ function ImportSource({
         ) : null}
       </div>
 
+      {latest && lastImported && latest.id !== lastImported.id ? (
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          最近导入窗口为 {lastImported.periodStart} 至 {lastImported.periodEnd}，未替代当前最新观察窗口。撤销最近导入针对这份留档报表。
+        </p>
+      ) : null}
+
+      {history.length > 0 ? (
+        <details className="mt-3 text-xs leading-5 text-slate-600 dark:text-slate-300">
+          <summary className="cursor-pointer rounded py-2 font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">已导入窗口与选择状态（{history.length} 批）</summary>
+          <ul className="mt-1 space-y-2">
+            {history.map((batch, index) => (
+              <li key={batch.id} className="break-words">
+                {batch.periodStart} 至 {batch.periodEnd} · {batch.observations.length} 个页面 · {batch.id === latest?.id ? "当前使用" : "历史留档"}{index === 0 ? " · 最近导入" : ""}
+                <br />导入于 {formatImportedAt(batch.importedAt)} · {batch.actorLabel}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
       {saved || rolledBack ? (
         <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
           {saved
-            ? "页面级搜索数据已导入，推广评分已使用这批数据重新计算。"
-            : "最近一批导入已撤销，系统已恢复到上一批数据或代码基线。"}
+            ? "页面级搜索数据已导入；当前使用的观察窗口见上方来源说明。"
+            : "最近一批导入已撤销；已从剩余批次选择最新观察窗口，无批次时回退历史基线。"}
         </div>
       ) : null}
 
@@ -100,7 +123,7 @@ function ImportSource({
           </div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
-              新导入会替代该搜索引擎当前评分数据，不与旧周期相加，也不会向搜索平台提交网址。
+              按观察结束日、开始日选择该引擎最新窗口；旧窗口仅留档，不与旧周期相加，也不会向搜索平台提交网址。
             </p>
             <AdminButton type="submit" size="sm">导入并重新计算</AdminButton>
           </div>
