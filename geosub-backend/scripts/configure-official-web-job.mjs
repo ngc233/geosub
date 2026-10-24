@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertAutomaticWebSource } from './lib/official-web-auto-review.mjs';
+import { spotifyRegistry } from './lib/spotify-official-web.mjs';
 import { loadDatabaseContext, ensureSource, loadEnvFile } from './collect-official-web-prices.mjs';
 
 export async function configureOfficialWebJob(client, source, execute=false) {
@@ -12,11 +13,17 @@ export async function configureOfficialWebJob(client, source, execute=false) {
   try {
     await client.query("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'");
     const countryCodes=source.markets.map(market=>market.country_code);
-    const database=await loadDatabaseContext(client,source,countryCodes);
-    for(const market of source.markets) {
-      if(database.countries.get(market.country_code)?.currency!==market.currency)
-        throw Error(`canonical_country_currency_mismatch:${market.country_code}`);
+    // This reviewed catalog only fills absent countries. Never rewrite a
+    // country's default currency to match Spotify's actual charge currency.
+    const additions=Object.entries(spotifyRegistry.catalog_additions)
+      .filter(([code])=>countryCodes.includes(code));
+    if(execute) for(const [code,row] of additions) {
+      await client.query(`INSERT INTO countries(code,name_en,name_zh,currency,region)
+        VALUES($1,$2,$3,$4,$5) ON CONFLICT(code) DO NOTHING`,
+        [code,row.name_en,row.name_zh,row.currency,row.region]);
     }
+    const database=await loadDatabaseContext(client,source,countryCodes,execute?[]:additions.map(([code])=>code));
+    const catalogAdditions=additions.filter(([code])=>!database.countries.has(code)).map(([code,row])=>({code,...row}));
     if (!['draft','review','published'].includes(database.product.status)) throw Error('official_web_product_not_active');
     if (execute) await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`configure_official_web:${database.product.id}`]);
     const jobs=await client.query(`SELECT j.id,j.status,j.job_config FROM collector_jobs j
@@ -34,7 +41,8 @@ export async function configureOfficialWebJob(client, source, execute=false) {
         job_config=job_config||jsonb_build_object('country_codes',$2::jsonb,'automatic_review_rule',$3::text)
         WHERE id=$1`,[jobs.rows[0].id,JSON.stringify(countryCodes),config.automatic_review_rule]);
       await client.query('COMMIT');return {action:matches?'existing':execute?'updated':'update-required',
-        product:source.product_slug,jobId:jobs.rows[0].id,config:matches?undefined:config};
+        product:source.product_slug,jobId:jobs.rows[0].id,config:matches?undefined:config,
+        ...(catalogAdditions.length?{catalogAdditions}:{})};
     }
     let jobId=null;
     if(execute){
@@ -44,7 +52,8 @@ export async function configureOfficialWebJob(client, source, execute=false) {
         [database.product.id,sourceId,JSON.stringify(config)]);
       jobId=result.rows[0].id;
     }
-    await client.query('COMMIT');return {action:execute?'created':'dry-run',product:source.product_slug,jobId,config};
+    await client.query('COMMIT');return {action:execute?'created':'dry-run',product:source.product_slug,jobId,config,
+      ...(catalogAdditions.length?{catalogAdditions}:{})};
   }catch(error){await client.query('ROLLBACK').catch(()=>{});throw error;}
 }
 

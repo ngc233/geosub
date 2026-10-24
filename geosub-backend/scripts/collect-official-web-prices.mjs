@@ -92,7 +92,18 @@ async function renderMarket({ source, market, chromePath }) {
   }
 }
 
-function validateSnapshot(source, market, snapshot) {
+export async function* collectMarketSnapshots(source, markets, chromePath, render = renderMarket) {
+  // Only the structured Spotify fetcher uses this bounded HTTP batch. Database
+  // work stays sequential on its single transaction connection.
+  const batchSize = source.fetch_mode === 'structured_http' ? 4 : 1;
+  for (let index = 0; index < markets.length; index += batchSize) {
+    const batch = markets.slice(index, index + batchSize);
+    const results = await Promise.allSettled(batch.map(market => render({source,market,chromePath})));
+    for (const [offset,result] of results.entries()) yield {market:batch[offset],result};
+  }
+}
+
+export function validateSnapshot(source, market, snapshot) {
   if (!snapshot.ok || snapshot.http_status !== 200) {
     return [`page_unavailable:${snapshot.http_status ?? "unknown"}`];
   }
@@ -108,7 +119,7 @@ function validateSnapshot(source, market, snapshot) {
   }
   const candidates = parserResult.candidates ?? [];
   const actualPlans = [...new Set(candidates.map((candidate) => candidate.plan_slug))].sort();
-  const expectedPlans = [...source.required_plan_slugs].sort();
+  const expectedPlans = [...(market.required_plan_slugs ?? source.required_plan_slugs)].sort();
   if (JSON.stringify(actualPlans) !== JSON.stringify(expectedPlans)) {
     issues.push("required_plan_set_mismatch");
   }
@@ -126,7 +137,7 @@ function validateSnapshot(source, market, snapshot) {
   return [...new Set(issues)];
 }
 
-export async function loadDatabaseContext(client, source, countryCodes) {
+export async function loadDatabaseContext(client, source, countryCodes, allowedMissingCountries = []) {
   const productResult = await client.query(
     "SELECT id, slug, name, status::text FROM products WHERE slug = $1 LIMIT 1",
     [source.product_slug]
@@ -157,7 +168,7 @@ export async function loadDatabaseContext(client, source, countryCodes) {
     [countryCodes]
   );
   const countries = new Map(countryResult.rows.map((country) => [country.code, country]));
-  const missingCountries = countryCodes.filter((code) => !countries.has(code));
+  const missingCountries = countryCodes.filter((code) => !countries.has(code) && !allowedMissingCountries.includes(code));
   if (missingCountries.length > 0) {
     throw new Error(`missing_canonical_countries:${missingCountries.join(",")}`);
   }
@@ -350,7 +361,7 @@ export async function recordMarketFailure({ client, source, market, database, so
   try {
     await client.query("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'");
     await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`official_web:${database.product.id}:${database.countries.get(market.country_code).id}`]);
-    for (const slug of source.required_plan_slugs) {
+    for (const slug of market.required_plan_slugs ?? source.required_plan_slugs) {
       const result = await client.query(`INSERT INTO price_observations
         (id,product_id,plan_id,country_id,source_id,source_level,currency,observed_at,source_url,locale,
          billing_platform,price_type,raw_payload,parser_version,confidence_score,anomaly_flag,anomaly_reason,status)
@@ -423,7 +434,10 @@ async function main() {
       database = await loadDatabaseContext(client, source, requestedCodes);
       for (const market of markets) {
         const country = database.countries.get(market.country_code);
-        if (country.currency !== market.currency) {
+        // A Spotify country page can explicitly charge USD/EUR rather than
+        // the country's default currency. The automatic source allowlist
+        // already validates its exact market URL and charge currency.
+        if (!source.auto_review && country.currency !== market.currency) {
           throw new Error(
             `canonical_country_currency_mismatch:${market.country_code}:${country.currency}:${market.currency}`
           );
@@ -453,10 +467,11 @@ async function main() {
   };
 
   try {
-    for (const market of markets) {
+    for await (const {market,result} of collectMarketSnapshots(source,markets,chromePath)) {
       let snapshot = null;
       try {
-        snapshot = await renderMarket({ source, market, chromePath });
+        if (result.status === 'rejected') throw result.reason;
+        snapshot = result.value;
         const issues = validateSnapshot(source, market, snapshot);
         if (issues.length > 0) {
           if (client && source.auto_review) await recordMarketFailure({ client,source,market,database,sourceId,snapshot,issues });

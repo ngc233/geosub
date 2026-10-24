@@ -14,7 +14,8 @@ export function assertAutomaticWebSource(source) {
     || source.markets.some(market => {
       const allowed = spotifyMarkets[market.country_code];
       return !allowed || market.currency !== allowed.currency || market.locale !== allowed.locale
-        || market.url !== `https://www.spotify.com/${allowed.path}/premium/`;
+        || market.url !== `https://www.spotify.com/${allowed.path}/premium/`
+        || JSON.stringify(market.required_plan_slugs) !== JSON.stringify(allowed.plan_slugs);
     })) {
     throw Error('automatic_web_source_not_allowlisted');
   }
@@ -85,7 +86,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
       throw Error('automatic_web_context_changed');
     }
     const decisions = [];
-    for (const slug of source.required_plan_slugs) {
+    for (const slug of market.required_plan_slugs ?? source.required_plan_slugs) {
       const plan = database.plans.get(slug);
       const check = await client.query("SELECT status::text,billing_cycle::text FROM plans WHERE id=$1 AND product_id=$2 FOR SHARE", [plan.id,product.id]);
       if (!check.rows[0] || check.rows[0].status === 'archived' || check.rows[0].billing_cycle !== 'monthly') throw Error('automatic_web_plan_changed');

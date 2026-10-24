@@ -14,14 +14,1801 @@
       "fetch_mode": "structured_http",
       "billing_cycle": "monthly",
       "evidence_note": "Official regional Web regular monthly price after introductory offers. Tax and purchase eligibility remain subject to Spotify checkout.",
-      "required_plan_slugs": ["individual", "family"],
-      "auto_review": { "rule_id": "spotify-regional-monthly-stability-v2", "publish_product": true },
+      "required_plan_slugs": [
+        "individual",
+        "family"
+      ],
+      "auto_review": {
+        "rule_id": "spotify-regional-monthly-stability-v2",
+        "publish_product": true
+      },
       "public_description": "Compare Spotify Premium Individual and Family regular monthly regional Web prices. Introductory offers are excluded; tax and purchase eligibility are determined at Spotify checkout.",
       "markets": [
-        { "country_code": "US", "locale": "en-US", "currency": "USD", "url": "https://www.spotify.com/us/premium/" },
-        { "country_code": "NG", "locale": "en-NG", "currency": "NGN", "url": "https://www.spotify.com/ng/premium/" },
-        { "country_code": "GB", "locale": "en-GB", "currency": "GBP", "url": "https://www.spotify.com/uk/premium/" },
-        { "country_code": "AU", "locale": "en-AU", "currency": "AUD", "url": "https://www.spotify.com/au/premium/" }
+        {
+          "country_code": "US",
+          "locale": "en-US",
+          "currency": "USD",
+          "url": "https://www.spotify.com/us/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NG",
+          "locale": "en-NG",
+          "currency": "NGN",
+          "url": "https://www.spotify.com/ng/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GB",
+          "locale": "en-GB",
+          "currency": "GBP",
+          "url": "https://www.spotify.com/uk/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AU",
+          "locale": "en-AU",
+          "currency": "AUD",
+          "url": "https://www.spotify.com/au/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AD",
+          "locale": "ca-Latn-AD",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/ad-ca/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AG",
+          "locale": "en-Latn-AG",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ag/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AL",
+          "locale": "en-Latn-AL",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/al/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AM",
+          "locale": "en-Latn-AM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/am/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AO",
+          "locale": "en-Latn-AO",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ao-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AR",
+          "locale": "es-Latn-AR",
+          "currency": "ARS",
+          "url": "https://www.spotify.com/ar/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AT",
+          "locale": "de-Latn-AT",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/at/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AZ",
+          "locale": "en-Latn-AZ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/az-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BA",
+          "locale": "en-Latn-BA",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/ba/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BB",
+          "locale": "en-Latn-BB",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bb/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BD",
+          "locale": "en-Latn-BD",
+          "currency": "BDT",
+          "url": "https://www.spotify.com/bd-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BE",
+          "locale": "nl-Latn-BE",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/be-nl/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BF",
+          "locale": "en-Latn-BF",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bf-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BG",
+          "locale": "en-Latn-BG",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/bg-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BH",
+          "locale": "en-Latn-BH",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bh-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BI",
+          "locale": "en-Latn-BI",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bi-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BJ",
+          "locale": "en-Latn-BJ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bj-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BN",
+          "locale": "en-Latn-BN",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bn-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BO",
+          "locale": "es-Latn-BO",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bo/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BR",
+          "locale": "en-Latn-BR",
+          "currency": "BRL",
+          "url": "https://www.spotify.com/br-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BS",
+          "locale": "en-Latn-BS",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bs/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BT",
+          "locale": "en-Latn-BT",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bt/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BW",
+          "locale": "en-Latn-BW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bw/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BY",
+          "locale": "en-Latn-BY",
+          "currency": "USD",
+          "url": "https://www.spotify.com/by-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BZ",
+          "locale": "en-Latn-BZ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/bz-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CA",
+          "locale": "en-Latn-CA",
+          "currency": "CAD",
+          "url": "https://www.spotify.com/ca-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CD",
+          "locale": "sw-Latn-CD",
+          "currency": "USD",
+          "url": "https://www.spotify.com/cd-sw/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CG",
+          "locale": "en-Latn-CG",
+          "currency": "USD",
+          "url": "https://www.spotify.com/cg-en/premium/",
+          "required_plan_slugs": [
+            "individual"
+          ]
+        },
+        {
+          "country_code": "CH",
+          "locale": "de-Latn-CH",
+          "currency": "CHF",
+          "url": "https://www.spotify.com/ch-de/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CI",
+          "locale": "en-Latn-CI",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ci-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CL",
+          "locale": "es-Latn-CL",
+          "currency": "CLP",
+          "url": "https://www.spotify.com/cl/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CM",
+          "locale": "en-Latn-CM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/cm-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CO",
+          "locale": "en-Latn-CO",
+          "currency": "COP",
+          "url": "https://www.spotify.com/co-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CR",
+          "locale": "es-Latn-CR",
+          "currency": "USD",
+          "url": "https://www.spotify.com/cr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CV",
+          "locale": "en-Latn-CV",
+          "currency": "USD",
+          "url": "https://www.spotify.com/cv-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CW",
+          "locale": "en-Latn-CW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/cw-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CY",
+          "locale": "en-Latn-CY",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/cy/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CZ",
+          "locale": "cs-Latn-CZ",
+          "currency": "CZK",
+          "url": "https://www.spotify.com/cz/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "DE",
+          "locale": "en-Latn-DE",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/de-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "DJ",
+          "locale": "en-Latn-DJ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/dj-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "DK",
+          "locale": "en-Latn-DK",
+          "currency": "DKK",
+          "url": "https://www.spotify.com/dk-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "DM",
+          "locale": "en-Latn-DM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/dm/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "DO",
+          "locale": "es-Latn-DO",
+          "currency": "USD",
+          "url": "https://www.spotify.com/do/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "DZ",
+          "locale": "fr-Latn-DZ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/dz-fr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "EC",
+          "locale": "es-Latn-EC",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ec/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "EE",
+          "locale": "en-Latn-EE",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/ee-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "EG",
+          "locale": "en-Latn-EG",
+          "currency": "EGP",
+          "url": "https://www.spotify.com/eg-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ES",
+          "locale": "es-Latn-ES",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/es/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ET",
+          "locale": "en-Latn-ET",
+          "currency": "USD",
+          "url": "https://www.spotify.com/et-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "FI",
+          "locale": "fi-Latn-FI",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/fi/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "FJ",
+          "locale": "en-Latn-FJ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/fj/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "FM",
+          "locale": "en-Latn-FM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/fm/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "FR",
+          "locale": "fr-Latn-FR",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/fr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GA",
+          "locale": "en-Latn-GA",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ga-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GD",
+          "locale": "en-Latn-GD",
+          "currency": "USD",
+          "url": "https://www.spotify.com/gd/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GE",
+          "locale": "en-Latn-GE",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ge/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GH",
+          "locale": "en-Latn-GH",
+          "currency": "GHS",
+          "url": "https://www.spotify.com/gh/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GM",
+          "locale": "en-Latn-GM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/gm/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GN",
+          "locale": "en-Latn-GN",
+          "currency": "USD",
+          "url": "https://www.spotify.com/gn-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GQ",
+          "locale": "en-Latn-GQ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/gq-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GR",
+          "locale": "el-Grek-GR",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/gr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GT",
+          "locale": "es-Latn-GT",
+          "currency": "USD",
+          "url": "https://www.spotify.com/gt/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GW",
+          "locale": "en-Latn-GW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/gw-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GY",
+          "locale": "en-Latn-GY",
+          "currency": "USD",
+          "url": "https://www.spotify.com/gy/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "HK",
+          "locale": "en-Latn-HK",
+          "currency": "HKD",
+          "url": "https://www.spotify.com/hk-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "HN",
+          "locale": "es-Latn-HN",
+          "currency": "USD",
+          "url": "https://www.spotify.com/hn/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "HR",
+          "locale": "en-Latn-HR",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/hr-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "HT",
+          "locale": "en-Latn-HT",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ht-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "HU",
+          "locale": "hu-Latn-HU",
+          "currency": "HUF",
+          "url": "https://www.spotify.com/hu/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "IE",
+          "locale": "en-Latn-IE",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/ie/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "IL",
+          "locale": "en-Latn-IL",
+          "currency": "ILS",
+          "url": "https://www.spotify.com/il-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "IQ",
+          "locale": "en-Latn-IQ",
+          "currency": "IQD",
+          "url": "https://www.spotify.com/iq-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "IS",
+          "locale": "en-Latn-IS",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/is-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "IT",
+          "locale": "it-Latn-IT",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/it/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "JM",
+          "locale": "en-Latn-JM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/jm/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "JO",
+          "locale": "en-Latn-JO",
+          "currency": "USD",
+          "url": "https://www.spotify.com/jo-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "JP",
+          "locale": "ja-Jpan-JP",
+          "currency": "JPY",
+          "url": "https://www.spotify.com/jp/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KE",
+          "locale": "en-Latn-KE",
+          "currency": "KES",
+          "url": "https://www.spotify.com/ke-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KG",
+          "locale": "en-Latn-KG",
+          "currency": "USD",
+          "url": "https://www.spotify.com/kg-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KH",
+          "locale": "en-Latn-KH",
+          "currency": "USD",
+          "url": "https://www.spotify.com/kh/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KI",
+          "locale": "en-Latn-KI",
+          "currency": "AUD",
+          "url": "https://www.spotify.com/ki/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KM",
+          "locale": "en-Latn-KM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/km-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KN",
+          "locale": "en-Latn-KN",
+          "currency": "USD",
+          "url": "https://www.spotify.com/kn/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KR",
+          "locale": "en-Latn-KR",
+          "currency": "KRW",
+          "url": "https://www.spotify.com/kr-en/premium/",
+          "required_plan_slugs": [
+            "individual"
+          ]
+        },
+        {
+          "country_code": "KW",
+          "locale": "en-Latn-KW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/kw-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KZ",
+          "locale": "en-Latn-KZ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/kz-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LA",
+          "locale": "en-Latn-LA",
+          "currency": "USD",
+          "url": "https://www.spotify.com/la/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LB",
+          "locale": "en-Latn-LB",
+          "currency": "USD",
+          "url": "https://www.spotify.com/lb-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LC",
+          "locale": "en-Latn-LC",
+          "currency": "USD",
+          "url": "https://www.spotify.com/lc/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LI",
+          "locale": "de-Latn-LI",
+          "currency": "CHF",
+          "url": "https://www.spotify.com/li/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LK",
+          "locale": "en-Latn-LK",
+          "currency": "LKR",
+          "url": "https://www.spotify.com/lk-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LR",
+          "locale": "en-Latn-LR",
+          "currency": "USD",
+          "url": "https://www.spotify.com/lr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LS",
+          "locale": "en-Latn-LS",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ls/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LT",
+          "locale": "en-Latn-LT",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/lt-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LU",
+          "locale": "fr-Latn-LU",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/lu-fr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LV",
+          "locale": "en-Latn-LV",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/lv-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LY",
+          "locale": "en-Latn-LY",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ly-en/premium/",
+          "required_plan_slugs": [
+            "individual"
+          ]
+        },
+        {
+          "country_code": "MA",
+          "locale": "fr-Latn-MA",
+          "currency": "MAD",
+          "url": "https://www.spotify.com/ma-fr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MC",
+          "locale": "fr-Latn-MC",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/mc/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MD",
+          "locale": "en-Latn-MD",
+          "currency": "USD",
+          "url": "https://www.spotify.com/md-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ME",
+          "locale": "en-Latn-ME",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/me-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MG",
+          "locale": "en-Latn-MG",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mg-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MH",
+          "locale": "en-Latn-MH",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mh/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MK",
+          "locale": "en-Latn-MK",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/mk/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ML",
+          "locale": "en-Latn-ML",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ml-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MN",
+          "locale": "en-Latn-MN",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mn/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MO",
+          "locale": "en-Latn-MO",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mo-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MR",
+          "locale": "en-Latn-MR",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mr-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MT",
+          "locale": "en-Latn-MT",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/mt/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MU",
+          "locale": "en-Latn-MU",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mu/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MV",
+          "locale": "en-Latn-MV",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mv-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MW",
+          "locale": "en-Latn-MW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mw/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MX",
+          "locale": "en-Latn-MX",
+          "currency": "MXN",
+          "url": "https://www.spotify.com/mx-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MY",
+          "locale": "en-Latn-MY",
+          "currency": "MYR",
+          "url": "https://www.spotify.com/my-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MZ",
+          "locale": "en-Latn-MZ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/mz-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NA",
+          "locale": "en-Latn-NA",
+          "currency": "USD",
+          "url": "https://www.spotify.com/na-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NE",
+          "locale": "en-Latn-NE",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ne-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NI",
+          "locale": "es-Latn-NI",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ni/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NL",
+          "locale": "en-Latn-NL",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/nl-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NO",
+          "locale": "en-Latn-NO",
+          "currency": "NOK",
+          "url": "https://www.spotify.com/no-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NP",
+          "locale": "en-Latn-NP",
+          "currency": "USD",
+          "url": "https://www.spotify.com/np-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NR",
+          "locale": "en-Latn-NR",
+          "currency": "AUD",
+          "url": "https://www.spotify.com/nr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NZ",
+          "locale": "en-Latn-NZ",
+          "currency": "NZD",
+          "url": "https://www.spotify.com/nz/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "OM",
+          "locale": "en-Latn-OM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/om-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PA",
+          "locale": "es-Latn-PA",
+          "currency": "USD",
+          "url": "https://www.spotify.com/pa/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PE",
+          "locale": "es-Latn-PE",
+          "currency": "PEN",
+          "url": "https://www.spotify.com/pe/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PG",
+          "locale": "en-Latn-PG",
+          "currency": "USD",
+          "url": "https://www.spotify.com/pg/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PH",
+          "locale": "en-Latn-PH",
+          "currency": "PHP",
+          "url": "https://www.spotify.com/ph-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PK",
+          "locale": "en-Latn-PK",
+          "currency": "PKR",
+          "url": "https://www.spotify.com/pk-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PL",
+          "locale": "pl-Latn-PL",
+          "currency": "PLN",
+          "url": "https://www.spotify.com/pl/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PS",
+          "locale": "en-Latn-PS",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ps-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PT",
+          "locale": "en-Latn-PT",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/pt-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PW",
+          "locale": "en-Latn-PW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/pw/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PY",
+          "locale": "es-Latn-PY",
+          "currency": "USD",
+          "url": "https://www.spotify.com/py/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "QA",
+          "locale": "en-Latn-QA",
+          "currency": "QAR",
+          "url": "https://www.spotify.com/qa-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "RO",
+          "locale": "en-Latn-RO",
+          "currency": "RON",
+          "url": "https://www.spotify.com/ro-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "RS",
+          "locale": "en-Latn-RS",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/rs-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "RW",
+          "locale": "en-Latn-RW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/rw/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SB",
+          "locale": "en-Latn-SB",
+          "currency": "USD",
+          "url": "https://www.spotify.com/sb/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SC",
+          "locale": "en-Latn-SC",
+          "currency": "USD",
+          "url": "https://www.spotify.com/sc-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SE",
+          "locale": "sv-Latn-SE",
+          "currency": "SEK",
+          "url": "https://www.spotify.com/se/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SG",
+          "locale": "en-Latn-SG",
+          "currency": "SGD",
+          "url": "https://www.spotify.com/sg-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SI",
+          "locale": "en-Latn-SI",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/si-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SK",
+          "locale": "en-Latn-SK",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/sk-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SL",
+          "locale": "en-Latn-SL",
+          "currency": "USD",
+          "url": "https://www.spotify.com/sl/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SM",
+          "locale": "en-Latn-SM",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/sm-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SN",
+          "locale": "en-Latn-SN",
+          "currency": "USD",
+          "url": "https://www.spotify.com/sn-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SR",
+          "locale": "en-Latn-SR",
+          "currency": "USD",
+          "url": "https://www.spotify.com/sr-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ST",
+          "locale": "en-Latn-ST",
+          "currency": "USD",
+          "url": "https://www.spotify.com/st-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SV",
+          "locale": "es-Latn-SV",
+          "currency": "USD",
+          "url": "https://www.spotify.com/sv/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SZ",
+          "locale": "en-Latn-SZ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/sz/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TD",
+          "locale": "en-Latn-TD",
+          "currency": "USD",
+          "url": "https://www.spotify.com/td-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TG",
+          "locale": "en-Latn-TG",
+          "currency": "USD",
+          "url": "https://www.spotify.com/tg-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TH",
+          "locale": "en-Latn-TH",
+          "currency": "THB",
+          "url": "https://www.spotify.com/th-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TJ",
+          "locale": "en-Latn-TJ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/tj-en/premium/",
+          "required_plan_slugs": [
+            "individual"
+          ]
+        },
+        {
+          "country_code": "TL",
+          "locale": "en-Latn-TL",
+          "currency": "USD",
+          "url": "https://www.spotify.com/tl-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TN",
+          "locale": "fr-Latn-TN",
+          "currency": "TND",
+          "url": "https://www.spotify.com/tn-fr/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TO",
+          "locale": "en-Latn-TO",
+          "currency": "USD",
+          "url": "https://www.spotify.com/to/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TR",
+          "locale": "en-Latn-TR",
+          "currency": "TRY",
+          "url": "https://www.spotify.com/tr-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TT",
+          "locale": "en-Latn-TT",
+          "currency": "USD",
+          "url": "https://www.spotify.com/tt/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TV",
+          "locale": "en-Latn-TV",
+          "currency": "AUD",
+          "url": "https://www.spotify.com/tv/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TW",
+          "locale": "zh-Hant-TW",
+          "currency": "TWD",
+          "url": "https://www.spotify.com/tw/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TZ",
+          "locale": "en-Latn-TZ",
+          "currency": "TZS",
+          "url": "https://www.spotify.com/tz-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "UA",
+          "locale": "en-Latn-UA",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ua-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "UG",
+          "locale": "en-Latn-UG",
+          "currency": "UGX",
+          "url": "https://www.spotify.com/ug-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "UY",
+          "locale": "es-Latn-UY",
+          "currency": "USD",
+          "url": "https://www.spotify.com/uy/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "UZ",
+          "locale": "en-Latn-UZ",
+          "currency": "USD",
+          "url": "https://www.spotify.com/uz/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "VC",
+          "locale": "en-Latn-VC",
+          "currency": "USD",
+          "url": "https://www.spotify.com/vc/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "VE",
+          "locale": "en-Latn-VE",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ve-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "VN",
+          "locale": "en-Latn-VN",
+          "currency": "VND",
+          "url": "https://www.spotify.com/vn-en/premium/",
+          "required_plan_slugs": [
+            "individual"
+          ]
+        },
+        {
+          "country_code": "VU",
+          "locale": "en-Latn-VU",
+          "currency": "USD",
+          "url": "https://www.spotify.com/vu-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "WS",
+          "locale": "en-Latn-WS",
+          "currency": "USD",
+          "url": "https://www.spotify.com/ws/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "XK",
+          "locale": "en-Latn-XK",
+          "currency": "EUR",
+          "url": "https://www.spotify.com/xk-en/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ZM",
+          "locale": "en-Latn-ZM",
+          "currency": "USD",
+          "url": "https://www.spotify.com/zm/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ZW",
+          "locale": "en-Latn-ZW",
+          "currency": "USD",
+          "url": "https://www.spotify.com/zw/premium/",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        }
       ]
     },
     "apple-music": {
@@ -37,7 +1824,11 @@
       "pilot": true,
       "billing_cycle": "monthly",
       "evidence_note": "Official localized Apple Music pricing page. Parser-complete observation remains pending and is not published.",
-      "required_plan_slugs": ["individual", "family", "student"],
+      "required_plan_slugs": [
+        "individual",
+        "family",
+        "student"
+      ],
       "markets": [
         {
           "country_code": "US",

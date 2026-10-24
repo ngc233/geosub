@@ -1,0 +1,3399 @@
+{
+  "discovered_at": "2026-10-25",
+  "discovery_url": "https://www.spotify.com/select-your-country-region/",
+  "official_region_count": 184,
+  "markets": {
+    "US": {
+      "path": "us",
+      "currency": "USD",
+      "symbol": "$",
+      "locale": "en-US",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NG": {
+      "path": "ng",
+      "currency": "NGN",
+      "symbol": "₦",
+      "locale": "en-NG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GB": {
+      "path": "uk",
+      "currency": "GBP",
+      "symbol": "£",
+      "locale": "en-GB",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AU": {
+      "path": "au",
+      "currency": "AUD",
+      "symbol": "$",
+      "locale": "en-AU",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AD": {
+      "path": "ad-ca",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "ca-Latn-AD",
+      "language": "ca",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AG": {
+      "path": "ag",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-AG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AL": {
+      "path": "al",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-AL",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AM": {
+      "path": "am",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-AM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AO": {
+      "path": "ao-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-AO",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AR": {
+      "path": "ar",
+      "currency": "ARS",
+      "symbol": "$",
+      "locale": "es-Latn-AR",
+      "language": "es",
+      "decimal": ".",
+      "group": ".",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AT": {
+      "path": "at",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "de-Latn-AT",
+      "language": "de",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "AZ": {
+      "path": "az-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-AZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BA": {
+      "path": "ba",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-BA",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BB": {
+      "path": "bb",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BB",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BD": {
+      "path": "bd-en",
+      "currency": "BDT",
+      "symbol": "BDT",
+      "locale": "en-Latn-BD",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BE": {
+      "path": "be-nl",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "nl-Latn-BE",
+      "language": "nl",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BF": {
+      "path": "bf-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BF",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BG": {
+      "path": "bg-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-BG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BH": {
+      "path": "bh-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BH",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BI": {
+      "path": "bi-en",
+      "currency": "USD",
+      "symbol": "$",
+      "locale": "en-Latn-BI",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BJ": {
+      "path": "bj-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BJ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BN": {
+      "path": "bn-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BN",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BO": {
+      "path": "bo",
+      "currency": "USD",
+      "symbol": "USD",
+      "locale": "es-Latn-BO",
+      "language": "es",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BR": {
+      "path": "br-en",
+      "currency": "BRL",
+      "symbol": "R$",
+      "locale": "en-Latn-BR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BS": {
+      "path": "bs",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BS",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BT": {
+      "path": "bt",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BT",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BW": {
+      "path": "bw",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BY": {
+      "path": "by-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BY",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "BZ": {
+      "path": "bz-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-BZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CA": {
+      "path": "ca-en",
+      "currency": "CAD",
+      "symbol": "$",
+      "locale": "en-Latn-CA",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CD": {
+      "path": "cd-sw",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "sw-Latn-CD",
+      "language": "sw",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium ya Binafsi",
+        "family": "Premium ya Familia"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CG": {
+      "path": "cg-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-CG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual"
+      },
+      "plan_slugs": [
+        "individual"
+      ]
+    },
+    "CH": {
+      "path": "ch-de",
+      "currency": "CHF",
+      "symbol": "CHF",
+      "locale": "de-Latn-CH",
+      "language": "de",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CI": {
+      "path": "ci-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-CI",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CL": {
+      "path": "cl",
+      "currency": "CLP",
+      "symbol": "$",
+      "locale": "es-Latn-CL",
+      "language": "es",
+      "decimal": ".",
+      "group": ".",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CM": {
+      "path": "cm-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-CM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CO": {
+      "path": "co-en",
+      "currency": "COP",
+      "symbol": "COP",
+      "locale": "en-Latn-CO",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CR": {
+      "path": "cr",
+      "currency": "USD",
+      "symbol": "USD",
+      "locale": "es-Latn-CR",
+      "language": "es",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar 6"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CV": {
+      "path": "cv-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-CV",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CW": {
+      "path": "cw-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-CW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CY": {
+      "path": "cy",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-CY",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "CZ": {
+      "path": "cz",
+      "currency": "CZK",
+      "symbol": "Kč",
+      "locale": "cs-Latn-CZ",
+      "language": "cs",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "DE": {
+      "path": "de-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-DE",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "DJ": {
+      "path": "dj-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-DJ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "DK": {
+      "path": "dk-en",
+      "currency": "DKK",
+      "symbol": "kr.",
+      "locale": "en-Latn-DK",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "DM": {
+      "path": "dm",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-DM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "DO": {
+      "path": "do",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "es-Latn-DO",
+      "language": "es",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar 6"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "DZ": {
+      "path": "dz-fr",
+      "currency": "USD",
+      "symbol": "$US",
+      "locale": "fr-Latn-DZ",
+      "language": "fr",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Personnel",
+        "family": "Premium Famille"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "EC": {
+      "path": "ec",
+      "currency": "USD",
+      "symbol": "$",
+      "locale": "es-Latn-EC",
+      "language": "es",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "EE": {
+      "path": "ee-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-EE",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "EG": {
+      "path": "eg-en",
+      "currency": "EGP",
+      "symbol": "EGP",
+      "locale": "en-Latn-EG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "ES": {
+      "path": "es",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "es-Latn-ES",
+      "language": "es",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "ET": {
+      "path": "et-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-ET",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "FI": {
+      "path": "fi",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "fi-Latn-FI",
+      "language": "fi",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Yksilö-Premium",
+        "family": "Perhe-Premium"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "FJ": {
+      "path": "fj",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-FJ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "FM": {
+      "path": "fm",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-FM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "FR": {
+      "path": "fr",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "fr-Latn-FR",
+      "language": "fr",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Personnel",
+        "family": "Premium Famille"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GA": {
+      "path": "ga-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GA",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GD": {
+      "path": "gd",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GD",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GE": {
+      "path": "ge",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GE",
+      "language": "en",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GH": {
+      "path": "gh",
+      "currency": "GHS",
+      "symbol": "GH₵",
+      "locale": "en-Latn-GH",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GM": {
+      "path": "gm",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GN": {
+      "path": "gn-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GN",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GQ": {
+      "path": "gq-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GQ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GR": {
+      "path": "gr",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "el-Grek-GR",
+      "language": "el",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GT": {
+      "path": "gt",
+      "currency": "USD",
+      "symbol": "USD",
+      "locale": "es-Latn-GT",
+      "language": "es",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GW": {
+      "path": "gw-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "GY": {
+      "path": "gy",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-GY",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "HK": {
+      "path": "hk-en",
+      "currency": "HKD",
+      "symbol": "HK$",
+      "locale": "en-Latn-HK",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "HN": {
+      "path": "hn",
+      "currency": "USD",
+      "symbol": "USD",
+      "locale": "es-Latn-HN",
+      "language": "es",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "HR": {
+      "path": "hr-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-HR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "HT": {
+      "path": "ht-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-HT",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "HU": {
+      "path": "hu",
+      "currency": "HUF",
+      "symbol": "Ft",
+      "locale": "hu-Latn-HU",
+      "language": "hu",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Egyéni Premium csomag",
+        "family": "Családi Premium 6"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "IE": {
+      "path": "ie",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-IE",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "IL": {
+      "path": "il-en",
+      "currency": "ILS",
+      "symbol": "₪",
+      "locale": "en-Latn-IL",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "IQ": {
+      "path": "iq-en",
+      "currency": "IQD",
+      "symbol": "IQD",
+      "locale": "en-Latn-IQ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "IS": {
+      "path": "is-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-IS",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "IT": {
+      "path": "it",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "it-Latn-IT",
+      "language": "it",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "JM": {
+      "path": "jm",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-JM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "JO": {
+      "path": "jo-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-JO",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "JP": {
+      "path": "jp",
+      "currency": "JPY",
+      "symbol": "￥",
+      "locale": "ja-Jpan-JP",
+      "language": "ja",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Standard",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KE": {
+      "path": "ke-en",
+      "currency": "KES",
+      "symbol": "Ksh",
+      "locale": "en-Latn-KE",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KG": {
+      "path": "kg-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-KG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KH": {
+      "path": "kh",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-KH",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KI": {
+      "path": "ki",
+      "currency": "AUD",
+      "symbol": "$",
+      "locale": "en-Latn-KI",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KM": {
+      "path": "km-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-KM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KN": {
+      "path": "kn",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-KN",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KR": {
+      "path": "kr-en",
+      "currency": "KRW",
+      "symbol": "₩",
+      "locale": "en-Latn-KR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual"
+      },
+      "plan_slugs": [
+        "individual"
+      ]
+    },
+    "KW": {
+      "path": "kw-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-KW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "KZ": {
+      "path": "kz-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-KZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LA": {
+      "path": "la",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-LA",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LB": {
+      "path": "lb-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-LB",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LC": {
+      "path": "lc",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-LC",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LI": {
+      "path": "li",
+      "currency": "CHF",
+      "symbol": "CHF",
+      "locale": "de-Latn-LI",
+      "language": "de",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LK": {
+      "path": "lk-en",
+      "currency": "LKR",
+      "symbol": "LKR",
+      "locale": "en-Latn-LK",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LR": {
+      "path": "lr",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-LR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LS": {
+      "path": "ls",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-LS",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LT": {
+      "path": "lt-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-LT",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LU": {
+      "path": "lu-fr",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "fr-Latn-LU",
+      "language": "fr",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Personnel",
+        "family": "Premium Famille"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LV": {
+      "path": "lv-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-LV",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "LY": {
+      "path": "ly-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-LY",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual"
+      },
+      "plan_slugs": [
+        "individual"
+      ]
+    },
+    "MA": {
+      "path": "ma-fr",
+      "currency": "MAD",
+      "symbol": "MAD",
+      "locale": "fr-Latn-MA",
+      "language": "fr",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Personnel",
+        "family": "Premium Famille"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MC": {
+      "path": "mc",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "fr-Latn-MC",
+      "language": "fr",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Personnel",
+        "family": "Premium Famille"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MD": {
+      "path": "md-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MD",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "ME": {
+      "path": "me-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-ME",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MG": {
+      "path": "mg-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MH": {
+      "path": "mh",
+      "currency": "USD",
+      "symbol": "$",
+      "locale": "en-Latn-MH",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MK": {
+      "path": "mk",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-MK",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "ML": {
+      "path": "ml-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-ML",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MN": {
+      "path": "mn",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MN",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MO": {
+      "path": "mo-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MO",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MR": {
+      "path": "mr-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MT": {
+      "path": "mt",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-MT",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MU": {
+      "path": "mu",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MU",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MV": {
+      "path": "mv-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MV",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MW": {
+      "path": "mw",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MX": {
+      "path": "mx-en",
+      "currency": "MXN",
+      "symbol": "MX$",
+      "locale": "en-Latn-MX",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MY": {
+      "path": "my-en",
+      "currency": "MYR",
+      "symbol": "RM",
+      "locale": "en-Latn-MY",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "MZ": {
+      "path": "mz-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-MZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NA": {
+      "path": "na-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-NA",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NE": {
+      "path": "ne-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-NE",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NI": {
+      "path": "ni",
+      "currency": "USD",
+      "symbol": "USD",
+      "locale": "es-Latn-NI",
+      "language": "es",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NL": {
+      "path": "nl-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-NL",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NO": {
+      "path": "no-en",
+      "currency": "NOK",
+      "symbol": "kr",
+      "locale": "en-Latn-NO",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NP": {
+      "path": "np-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-NP",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NR": {
+      "path": "nr",
+      "currency": "AUD",
+      "symbol": "$",
+      "locale": "en-Latn-NR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "NZ": {
+      "path": "nz",
+      "currency": "NZD",
+      "symbol": "$",
+      "locale": "en-Latn-NZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "OM": {
+      "path": "om-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-OM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PA": {
+      "path": "pa",
+      "currency": "USD",
+      "symbol": "USD",
+      "locale": "es-Latn-PA",
+      "language": "es",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PE": {
+      "path": "pe",
+      "currency": "PEN",
+      "symbol": "S/",
+      "locale": "es-Latn-PE",
+      "language": "es",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PG": {
+      "path": "pg",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-PG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PH": {
+      "path": "ph-en",
+      "currency": "PHP",
+      "symbol": "₱",
+      "locale": "en-Latn-PH",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PK": {
+      "path": "pk-en",
+      "currency": "PKR",
+      "symbol": "Rs",
+      "locale": "en-Latn-PK",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PL": {
+      "path": "pl",
+      "currency": "PLN",
+      "symbol": "zł",
+      "locale": "pl-Latn-PL",
+      "language": "pl",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PS": {
+      "path": "ps-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-PS",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PT": {
+      "path": "pt-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-PT",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family 6"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PW": {
+      "path": "pw",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-PW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "PY": {
+      "path": "py",
+      "currency": "USD",
+      "symbol": "USD",
+      "locale": "es-Latn-PY",
+      "language": "es",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "QA": {
+      "path": "qa-en",
+      "currency": "QAR",
+      "symbol": "QAR",
+      "locale": "en-Latn-QA",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "RO": {
+      "path": "ro-en",
+      "currency": "RON",
+      "symbol": "RON",
+      "locale": "en-Latn-RO",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "RS": {
+      "path": "rs-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-RS",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "RW": {
+      "path": "rw",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-RW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SB": {
+      "path": "sb",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-SB",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SC": {
+      "path": "sc-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-SC",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SE": {
+      "path": "se",
+      "currency": "SEK",
+      "symbol": "kr",
+      "locale": "sv-Latn-SE",
+      "language": "sv",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SG": {
+      "path": "sg-en",
+      "currency": "SGD",
+      "symbol": "$",
+      "locale": "en-Latn-SG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SI": {
+      "path": "si-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-SI",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SK": {
+      "path": "sk-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-SK",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family 6"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SL": {
+      "path": "sl",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-SL",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SM": {
+      "path": "sm-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-SM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SN": {
+      "path": "sn-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-SN",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SR": {
+      "path": "sr-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-SR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "ST": {
+      "path": "st-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-ST",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SV": {
+      "path": "sv",
+      "currency": "USD",
+      "symbol": "$",
+      "locale": "es-Latn-SV",
+      "language": "es",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "SZ": {
+      "path": "sz",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-SZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TD": {
+      "path": "td-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-TD",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TG": {
+      "path": "tg-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-TG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TH": {
+      "path": "th-en",
+      "currency": "THB",
+      "symbol": "THB",
+      "locale": "en-Latn-TH",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TJ": {
+      "path": "tj-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-TJ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual"
+      },
+      "plan_slugs": [
+        "individual"
+      ]
+    },
+    "TL": {
+      "path": "tl-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-TL",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TN": {
+      "path": "tn-fr",
+      "currency": "TND",
+      "symbol": "DT",
+      "locale": "fr-Latn-TN",
+      "language": "fr",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Personnel",
+        "family": "Premium Famille"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TO": {
+      "path": "to",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-TO",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TR": {
+      "path": "tr-en",
+      "currency": "TRY",
+      "symbol": "TRY",
+      "locale": "en-Latn-TR",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TT": {
+      "path": "tt",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-TT",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TV": {
+      "path": "tv",
+      "currency": "AUD",
+      "symbol": "$",
+      "locale": "en-Latn-TV",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TW": {
+      "path": "tw",
+      "currency": "TWD",
+      "symbol": "$",
+      "locale": "zh-Hant-TW",
+      "language": "zh",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "TZ": {
+      "path": "tz-en",
+      "currency": "TZS",
+      "symbol": "TSh",
+      "locale": "en-Latn-TZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "UA": {
+      "path": "ua-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-UA",
+      "language": "en",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "suffix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "UG": {
+      "path": "ug-en",
+      "currency": "UGX",
+      "symbol": "USh",
+      "locale": "en-Latn-UG",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "UY": {
+      "path": "uy",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "es-Latn-UY",
+      "language": "es",
+      "decimal": ",",
+      "group": " ",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Familiar"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "UZ": {
+      "path": "uz",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-UZ",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "VC": {
+      "path": "vc",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-VC",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "VE": {
+      "path": "ve-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-VE",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "VN": {
+      "path": "vn-en",
+      "currency": "VND",
+      "symbol": "₫",
+      "locale": "en-Latn-VN",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual"
+      },
+      "plan_slugs": [
+        "individual"
+      ]
+    },
+    "VU": {
+      "path": "vu-en",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-VU",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "WS": {
+      "path": "ws",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-WS",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "XK": {
+      "path": "xk-en",
+      "currency": "EUR",
+      "symbol": "€",
+      "locale": "en-Latn-XK",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "ZM": {
+      "path": "zm",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-ZM",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    },
+    "ZW": {
+      "path": "zw",
+      "currency": "USD",
+      "symbol": "US$",
+      "locale": "en-Latn-ZW",
+      "language": "en",
+      "decimal": ".",
+      "group": ",",
+      "symbol_position": "prefix",
+      "headers": {
+        "individual": "Premium Individual",
+        "family": "Premium Family"
+      },
+      "plan_slugs": [
+        "individual",
+        "family"
+      ]
+    }
+  },
+  "catalog_additions": {
+    "BI": {
+      "name_en": "Burundi",
+      "name_zh": "布隆迪",
+      "currency": "BIF",
+      "region": "Africa"
+    },
+    "DJ": {
+      "name_en": "Djibouti",
+      "name_zh": "吉布提",
+      "currency": "DJF",
+      "region": "Africa"
+    },
+    "ET": {
+      "name_en": "Ethiopia",
+      "name_zh": "埃塞俄比亚",
+      "currency": "ETB",
+      "region": "Africa"
+    },
+    "GN": {
+      "name_en": "Guinea",
+      "name_zh": "几内亚",
+      "currency": "GNF",
+      "region": "Africa"
+    },
+    "GQ": {
+      "name_en": "Equatorial Guinea",
+      "name_zh": "赤道几内亚",
+      "currency": "XAF",
+      "region": "Africa"
+    },
+    "KM": {
+      "name_en": "Comoros",
+      "name_zh": "科摩罗",
+      "currency": "KMF",
+      "region": "Africa"
+    },
+    "LS": {
+      "name_en": "Lesotho",
+      "name_zh": "莱索托",
+      "currency": "LSL",
+      "region": "Africa"
+    },
+    "TG": {
+      "name_en": "Togo",
+      "name_zh": "多哥",
+      "currency": "XOF",
+      "region": "Africa"
+    },
+    "BD": {
+      "name_en": "Bangladesh",
+      "name_zh": "孟加拉国",
+      "currency": "BDT",
+      "region": "Asia"
+    },
+    "PS": {
+      "name_en": "Palestine",
+      "name_zh": "巴勒斯坦",
+      "currency": "ILS",
+      "region": "Asia"
+    },
+    "TL": {
+      "name_en": "Timor-Leste",
+      "name_zh": "东帝汶",
+      "currency": "USD",
+      "region": "Asia"
+    },
+    "AD": {
+      "name_en": "Andorra",
+      "name_zh": "安道尔",
+      "currency": "EUR",
+      "region": "Europe"
+    },
+    "LI": {
+      "name_en": "Liechtenstein",
+      "name_zh": "列支敦士登",
+      "currency": "CHF",
+      "region": "Europe"
+    },
+    "MC": {
+      "name_en": "Monaco",
+      "name_zh": "摩纳哥",
+      "currency": "EUR",
+      "region": "Europe"
+    },
+    "SM": {
+      "name_en": "San Marino",
+      "name_zh": "圣马力诺",
+      "currency": "EUR",
+      "region": "Europe"
+    },
+    "CW": {
+      "name_en": "Curaçao",
+      "name_zh": "库拉索",
+      "currency": "XCG",
+      "region": "North America"
+    },
+    "HT": {
+      "name_en": "Haiti",
+      "name_zh": "海地",
+      "currency": "HTG",
+      "region": "North America"
+    },
+    "KI": {
+      "name_en": "Kiribati",
+      "name_zh": "基里巴斯",
+      "currency": "AUD",
+      "region": "Oceania"
+    },
+    "MH": {
+      "name_en": "Marshall Islands",
+      "name_zh": "马绍尔群岛",
+      "currency": "USD",
+      "region": "Oceania"
+    },
+    "TV": {
+      "name_en": "Tuvalu",
+      "name_zh": "图瓦卢",
+      "currency": "AUD",
+      "region": "Oceania"
+    },
+    "WS": {
+      "name_en": "Samoa",
+      "name_zh": "萨摩亚",
+      "currency": "WST",
+      "region": "Oceania"
+    }
+  },
+  "excluded_markets": [
+    {
+      "country_code": "ZA",
+      "path": "za-en",
+      "reason": "different_plan_catalog",
+      "plan_ids": [
+        "PREMIUM_STANDARD",
+        "PLATINUM",
+        "PREMIUM_STANDARD_STUDENT"
+      ]
+    },
+    {
+      "country_code": "AE",
+      "path": "ae-en",
+      "reason": "different_plan_catalog",
+      "plan_ids": [
+        "PREMIUM_STANDARD",
+        "PLATINUM",
+        "PREMIUM_STANDARD_STUDENT"
+      ]
+    },
+    {
+      "country_code": "ID",
+      "path": "id-en",
+      "reason": "different_plan_catalog",
+      "plan_ids": [
+        "PREMIUM_STANDARD",
+        "PLATINUM",
+        "PREMIUM_STANDARD_STUDENT"
+      ]
+    },
+    {
+      "country_code": "IN",
+      "path": "in-en",
+      "reason": "different_plan_catalog",
+      "plan_ids": [
+        "PREMIUM_STANDARD",
+        "PLATINUM",
+        "PREMIUM_STANDARD_STUDENT"
+      ]
+    },
+    {
+      "country_code": "SA",
+      "path": "sa-en",
+      "reason": "different_plan_catalog",
+      "plan_ids": [
+        "PREMIUM_STANDARD",
+        "PLATINUM",
+        "PREMIUM_STANDARD_STUDENT"
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { insertMarketObservations, recordMarketFailure } from './collect-official-web-prices.mjs';
 import { reviewOfficialWebMarket } from './lib/official-web-auto-review.mjs';
 import { configureOfficialWebJob } from './configure-official-web-job.mjs';
+import { spotifyRegistry } from './lib/spotify-official-web.mjs';
 
 const dsn=process.env.GEOSUB_WEB_TEST_DATABASE_URL;
 test('real PostgreSQL official Web pipeline publishes, isolates and recovers without touching iOS/other products', {skip:!dsn}, async()=>{
@@ -23,9 +24,10 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
       await client.query(readFileSync(new URL(`../sql/schema/${file}`,import.meta.url),'utf8'));
     }
     const product=(await client.query("INSERT INTO products(slug,name,category,status) VALUES('spotify','Spotify Premium','streaming','review') RETURNING *")).rows[0];
-    const countryRows=(await client.query(`INSERT INTO countries(code,name_en,name_zh,currency) VALUES
-      ('US','United States','美国','USD'),('NG','Nigeria','尼日利亚','NGN'),
-      ('GB','United Kingdom','英国','GBP'),('AU','Australia','澳大利亚','AUD') RETURNING *`)).rows;
+    const initialCountries=source.markets.filter(m=>!spotifyRegistry.catalog_additions[m.country_code]);
+    const countryRows=(await client.query(`INSERT INTO countries(code,name_en,name_zh,currency)
+      SELECT code,code,code,currency FROM jsonb_to_recordset($1::jsonb) AS c(code text,currency text) RETURNING *`,
+      [JSON.stringify(initialCountries.map(m=>({code:m.country_code,currency:m.country_code==='AO'?'AOA':m.currency})))])).rows;
     const country=countryRows.find(row=>row.code==='US');
     const plans=new Map();
     for(const slug of ['individual','family']) {
@@ -38,17 +40,21 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     // Test the real onboarding transaction using the existing production table
     // columns without installing any new database schema capability.
     await client.query("ALTER TABLE collector_jobs ADD COLUMN job_config JSONB DEFAULT '{}'::jsonb, ADD COLUMN priority INTEGER DEFAULT 50");
-    assert.equal((await configureOfficialWebJob(client,source)).action,'dry-run');
+    const preview=await configureOfficialWebJob(client,source);
+    assert.equal(preview.action,'dry-run');assert.equal(preview.catalogAdditions.length,21);
+    assert.equal((await client.query('SELECT count(*)::int n FROM countries')).rows[0].n,initialCountries.length);
     assert.equal((await client.query('SELECT count(*)::int n FROM collector_jobs')).rows[0].n,0);
     const configured=await configureOfficialWebJob(client,source,true);
     assert.equal(configured.action,'created');
+    assert.equal((await client.query('SELECT count(*)::int n FROM countries')).rows[0].n,source.markets.length);
+    assert.equal((await client.query("SELECT currency FROM countries WHERE code='AO'")).rows[0].currency,'AOA');
     assert.equal((await configureOfficialWebJob(client,source,true)).jobId,configured.jobId);
     assert.equal((await client.query('SELECT count(*)::int n FROM collector_jobs')).rows[0].n,1);
     await client.query("UPDATE collector_jobs SET job_config=jsonb_set(job_config,'{country_codes}','[\"US\"]'::jsonb) WHERE id=$1",[configured.jobId]);
     assert.equal((await configureOfficialWebJob(client,source)).action,'update-required');
     assert.equal((await configureOfficialWebJob(client,source,true)).action,'updated');
     assert.deepEqual((await client.query('SELECT job_config FROM collector_jobs WHERE id=$1',[configured.jobId])).rows[0].job_config.country_codes,
-      ['US','NG','GB','AU']);
+      source.markets.map(m=>m.country_code));
     // Same product/plan/country iOS row is a real regression risk in the old
     // approve_price_observation function. Preserve it byte-for-byte.
     await client.query(`INSERT INTO region_prices(product_id,plan_id,country_id,local_price,currency,price_usd,billing_platform,status)
@@ -100,6 +106,21 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     assert.equal(await untouched(),before,'iOS row and unrelated product unchanged');
     const audit=(await client.query("SELECT raw_payload->'automatic_review' AS audit FROM price_observations WHERE status='approved'")).rows;
     assert.ok(audit.every(x=>x.audit.observation_ids.length===3));
+    // Actual source currency is independent of the country's default. Angola
+    // charges USD; Korea has no Family card and must publish Individual alone.
+    for(const [code,currency,prices] of [['AO','USD',[3.29,5.79]],['KR','KRW',[11990]]]) {
+      const regional=source.markets.find(m=>m.country_code===code);
+      for(const hours of [24,12,0]) {
+        const sample=snapshot(hours);sample.final_url=regional.url;sample.content_hash=createHash('sha256').update(`${code}-${hours}`).digest('hex');
+        sample.parser_result.candidates=sample.parser_result.candidates.slice(0,prices.length).map((c,i)=>({...c,currency,raw_price:prices[i]}));
+        await insertMarketObservations({client,source,market:regional,database,sourceId,snapshot:sample,force:true});
+      }
+      if(code==='KR') await client.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,is_latest) VALUES('USD','KRW',1400,CURRENT_DATE,TRUE)");
+      const result=await reviewOfficialWebMarket({client,source,market:regional,database,sourceId});
+      assert.equal(result.published,prices.length);
+      const rows=(await client.query(`SELECT currency,local_price FROM region_prices WHERE country_id=$1 AND billing_platform='web' ORDER BY local_price`,[database.countries.get(code).id])).rows;
+      assert.deepEqual(rows.map(r=>[r.currency,Number(r.local_price)]),prices.map(price=>[currency,price]));
+    }
     const evidence=(await client.query('SELECT count(*)::int AS n FROM source_evidence')).rows[0].n;
     assert.ok(evidence>=12);
     // An archived product must not be resurrected by the new reviewer.

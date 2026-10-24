@@ -1,12 +1,9 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 export const spotifyParserVersion = 'spotify-official-web-v2';
-export const spotifyMarkets = Object.freeze({
-  US: { path: 'us', currency: 'USD', symbol: '$', locale: 'en-US' },
-  NG: { path: 'ng', currency: 'NGN', symbol: '₦', locale: 'en-NG' },
-  GB: { path: 'uk', currency: 'GBP', symbol: '£', locale: 'en-GB' },
-  AU: { path: 'au', currency: 'AUD', symbol: '$', locale: 'en-AU' },
-});
+export const spotifyRegistry = JSON.parse(readFileSync(new URL('../../data/spotify-official-markets.json', import.meta.url), 'utf8'));
+export const spotifyMarkets = Object.freeze(spotifyRegistry.markets);
 const identities = {
   individual: ['PREMIUM_INDIVIDUAL', 'premium-individual', 'Premium Individual'],
   family: ['PREMIUM_FAMILY', 'premium-family', 'Premium Family'],
@@ -16,12 +13,53 @@ function plain(value) {
   return String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function monthlyPrice(text, symbol) {
-  const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = plain(text).match(new RegExp(`^${escaped}([\\d,]+(?:\\.\\d{2})?)\\s*(?:\\/\\s*month|per month)(?:\\s+after)?$`, 'i'));
+function escapeRegex(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// Grammars describe an explicit monthly charge, never a numeric substring or
+// an introductory offer. Currency position and separators are market scoped.
+const monthlyGrammars = {
+  en: 'MONEY\\s*(?:\\(incl\\. VAT\\))?\\s*(?:/\\s*month|per month)(?:\\s+after)?(?:\\. Cancel anytime\\.)?',
+  sw: 'MONEY (?:kila mwezi baada ya hapo|kwa mwezi)',
+  fr: 'MONEY\\s*(?:/\\s*mois|par mois)(?: ensuite)?',
+  ja: '(?:キャンペーン期間終了後は)?月額MONEY',
+  zh: '(?:後續)?每月(?:只要)?\\s*MONEY',
+  ca: '(?:Després pagaràs )?MONEY al mes',
+  de: '(?:Danach )?MONEY\\s*/\\s*Monat',
+  nl: '(?:Daarna )?MONEY per maand',
+  cs: '(?:Potom )?MONEY\\s*/měsíc',
+  es: '(?:Después, (?:cuesta )?)?MONEY\\*{0,3}\\s*(?:/mes|al mes|por mes)',
+  fi: '(?:Myöhemmin )?MONEY\\s*(?:/kk|kuukaudessa)',
+  el: 'MONEY\\s*/\\s*μήνα(?: στη συνέχεια)?',
+  hu: '(?:Utána )?MONEY/hó',
+  it: '(?:Dopo, )?MONEY (?:al mese|/ mese)',
+  pl: '(?:Po tym okresie )?MONEY(?:/miesiąc\\.?| miesięcznie)',
+  sv: 'MONEY/månad(?: därefter)?',
+};
+
+function moneyPattern(market) {
+  const group = escapeRegex(market.group), decimal = escapeRegex(market.decimal);
+  const number = `((?:[1-9]\\d{0,2}(?:${group}\\d{3})+|0|[1-9]\\d*)(?:${decimal}\\d{2})?)(?!\\d|[.,]\\d)`;
+  const symbol = escapeRegex(market.symbol);
+  return market.symbol_position === 'prefix' ? `${symbol}\\s*${number}` : `${number}\\s*${symbol}`;
+}
+function numericPrice(value, market) {
+  return Number(value.replaceAll(market.group, '').replace(market.decimal, '.'));
+}
+function monthlyPrice(text, market) {
+  const grammar = monthlyGrammars[market.language];
+  if (!grammar) return null;
+  const match = plain(text).match(new RegExp(`^${grammar.replace('MONEY', moneyPattern(market))}$`, 'i'));
   if (!match) return null;
-  const value = Number(match[1].replaceAll(',', ''));
+  const value = numericPrice(match[1], market);
   return Number.isFinite(value) && value > 0 && value < 1_000_000 ? value : null;
+}
+
+function legalMonthlyPrices(text, market) {
+  const money = moneyPattern(market);
+  const suffix = '(?:per\\s+month|/\\s*month|par mois|/\\s*mois|kwa mwezi|kila mwezi|pro Monat|/\\s*Monat|per maand|/\\s*měsíc|al mes|por mes|/\\s*mes|kuukaudessa|/kk|/\\s*μήνα|/hó|al mese|/\\s*mese|miesięcznie|/miesiąc|/månad)';
+  const pattern = ['ja','zh'].includes(market.language)
+    ? `(?:月額|每月(?:只要)?)\\s*${money}` : `${money}\\*{0,3}\\s*(?:\\(incl\\. VAT\\))?\\s*${suffix}`;
+  return [...text.matchAll(new RegExp(pattern, 'gi'))].map(match => numericPrice(match[1], market));
 }
 
 // The public server response contains the same plan cards rendered to visitors.
@@ -53,27 +91,35 @@ export function parseSpotifyOfficialHtml(html, { countryCode, currency, finalUrl
       : components && !Array.isArray(components) && Array.isArray(components.storefront?.plans)
         ? components.storefront.plans
         : [];
-    for (const [slug, [id, identifier, header]] of Object.entries(identities)) {
-      const matches = cards.filter(card => card.planId === id);
+    for (const slug of market.plan_slugs) {
+      const [id, identifier, header] = identities[slug];
+      const allMatches = cards.filter(card => card.planId === id);
+      // Family 4 and Family 6 share Spotify IDs. The canonical Family plan is
+      // six accounts; require both its exact localized header and capacity.
+      const matches = allMatches.length > 1 && slug === 'family'
+        ? allMatches.filter(card => plain(card.header) === market.headers.family
+          && card.benefits?.some(benefit => benefit.benefitType === 'ACCOUNTS_DESCRIPTION' && /\b6\b/.test(plain(benefit.children))))
+        : allMatches;
       if (matches.length !== 1) { result.issues.push(`plan_identity_missing_or_duplicate:${slug}`); continue; }
       const card = matches[0];
-      if (card.planIdentifier !== identifier || card.header !== header
-        || card.isRecurringProduct !== true || card.hasNonRecurringProduct !== false) {
+      if (card.planIdentifier !== identifier || plain(card.header) !== market.headers[slug]
+        || card.isRecurringProduct !== true || card.hasNonRecurringProduct !== false
+        || (slug === 'family' && /\b6$/.test(market.headers.family)
+          && !card.benefits?.some(benefit => benefit.benefitType === 'ACCOUNTS_DESCRIPTION' && /\b6\b/.test(plain(benefit.children))))) {
         result.issues.push(`plan_identity_or_cycle_mismatch:${slug}`); continue;
       }
       // A promotion must explicitly state its later recurring monthly price.
       const regularText = plain(card.secondaryPriceDescription || card.primaryPriceDescription);
-      const price = monthlyPrice(regularText, market.symbol);
+      const price = monthlyPrice(regularText, market);
       if (price == null || card.additionalPriceDescription) {
         result.issues.push(`monthly_list_price_unclear:${slug}`); continue;
       }
       const legal = plain(card.legalDisclaimer);
-      const recurringLegal = card.secondaryPriceDescription ? legal.split(/\bthen\b/i).at(-1) : legal;
       // Contradictory regular monthly amounts anywhere in this plan's legal copy
       // indicate a changed schema/offer. Introductory zeroes are not candidates.
-      const escaped = market.symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const legalPrices = [...recurringLegal.matchAll(new RegExp(`${escaped}([\\d,]+(?:\\.\\d{2})?)\\s*(?:per|\\/)\\s*month\\b`, 'gi'))]
-        .map(match => Number(match[1].replaceAll(',', '')));
+      const renewalBoundary = {en:/\bthen\b/i,fr:/\bpuis\b/i,sw:/\bkisha\b/i,ja:/その後/,zh:/之後/}[market.language];
+      const recurringLegal = card.secondaryPriceDescription && renewalBoundary ? legal.split(renewalBoundary).at(-1) : legal;
+      const legalPrices = legalMonthlyPrices(recurringLegal, market);
       if (legalPrices.some(value => value !== price)) {
         result.issues.push(`conflicting_recurring_prices:${slug}`); continue;
       }
@@ -92,7 +138,7 @@ export function parseSpotifyOfficialHtml(html, { countryCode, currency, finalUrl
           : `Official ${countryCode} Web regular monthly price after any introductory offer; eligibility and taxes are determined by Spotify at checkout.`,
       });
     }
-    result.complete = result.issues.length === 0 && result.candidates.length === 2;
+    result.complete = result.issues.length === 0 && result.candidates.length === market.plan_slugs.length;
   } catch (error) {
     result.issues.push(error instanceof SyntaxError ? 'invalid_structured_json' : error.message);
   }

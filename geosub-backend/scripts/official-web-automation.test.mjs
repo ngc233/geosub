@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { parseSpotifyOfficialHtml, fetchSpotifyOfficialSnapshot } from './lib/spotify-official-web.mjs';
+import { parseSpotifyOfficialHtml, fetchSpotifyOfficialSnapshot, spotifyMarkets } from './lib/spotify-official-web.mjs';
 import { decideOfficialWebReview, assertAutomaticWebSource, reviewOfficialWebMarket } from './lib/official-web-auto-review.mjs';
 import { refreshOfficialWebPublication } from './refresh-official-web-publication.mjs';
 import { createHmac } from 'node:crypto';
+import { collectMarketSnapshots, validateSnapshot } from './collect-official-web-prices.mjs';
 
 export function spotifyPage(change = () => {}) {
   const props = { metadata:{country:'US',market:'us'},basePageProps:{country:'US',market:'us'},
@@ -23,6 +24,81 @@ export function spotifyPage(change = () => {}) {
 }
 const context = {countryCode:'US',currency:'USD',finalUrl:'https://www.spotify.com/us/premium/'};
 const parse = (change, extra={}) => parseSpotifyOfficialHtml(spotifyPage(change),{...context,...extra});
+
+const worldFixtures=JSON.parse(readFileSync(new URL('./fixtures/spotify-world.json',import.meta.url)));
+for(const fixture of worldFixtures) test(`official ${fixture.country_code} purchase evidence parses its actual monthly prices`,()=>{
+  const market=spotifyMarkets[fixture.country_code];
+  const result=parseSpotifyOfficialHtml(`<script id="__NEXT_DATA__">${JSON.stringify({props:{pageProps:fixture.props}})}</script>`,
+    {countryCode:fixture.country_code,currency:market.currency,finalUrl:fixture.source_url});
+  assert.equal(result.complete,true,result.issues.join(','));
+  assert.deepEqual(result.candidates.map(c=>c.plan_slug),market.plan_slugs);
+  assert.deepEqual(result.candidates.map(c=>c.raw_price),fixture.prices);
+});
+test('world allowlist covers every discovered region or records a distinct unsupported catalog',()=>{
+  assert.equal(Object.keys(spotifyMarkets).length,179);
+  assert.equal(worldFixtures.length,179);
+  assert.equal(Object.values(spotifyMarkets).reduce((n,m)=>n+m.plan_slugs.length,0),353);
+  const registry=JSON.parse(readFileSync(new URL('../data/spotify-official-markets.json',import.meta.url)));
+  assert.equal(registry.official_region_count,worldFixtures.length+registry.excluded_markets.length);
+  assert.deepEqual(registry.excluded_markets.map(m=>m.country_code).sort(),['AE','ID','IN','SA','ZA']);
+});
+test('localized prices fail closed for annual billing, other currencies, conflicting renewal and malformed amounts',()=>{
+  for(const code of ['DE','FR','JP','TW','BR','AR','KR','PT']) {
+    const fixture=worldFixtures.find(f=>f.country_code===code),market=spotifyMarkets[code];
+    for(const mutate of [
+      p=>p.metadata.country='XX',
+      p=>p.components.storefront.plans[0].isRecurringProduct=false,
+      p=>p.components.storefront.plans[0].secondaryPriceDescription='999 / year',
+      p=>p.components.storefront.plans[0].secondaryPriceDescription='EUR 999 / month',
+      p=>{const card=p.components.storefront.plans[0];card.secondaryPriceDescription=(card.secondaryPriceDescription||card.primaryPriceDescription).replace(/\d[\d,.]*/,'1,2,3');},
+      p=>{const card=p.components.storefront.plans[0];card.legalDisclaimer=(card.secondaryPriceDescription||card.primaryPriceDescription).replace(/\d[\d,.]*/,'999');},
+      p=>p.components.storefront.plans[0].button.href='https://www.spotify.com/us/purchase/?country=US',
+    ]) {
+      const props=structuredClone(fixture.props);mutate(props);
+      const result=parseSpotifyOfficialHtml(`<script id="__NEXT_DATA__">${JSON.stringify({props:{pageProps:props}})}</script>`,
+        {countryCode:code,currency:market.currency,finalUrl:fixture.source_url});
+      assert.equal(result.complete,false,code);
+    }
+  }
+});
+test('Family 4 cannot replace the canonical six-account Family price',()=>{
+  const fixture=worldFixtures.find(f=>f.country_code==='PT'),market=spotifyMarkets.PT;
+  for(const mutate of [
+    cards=>cards.filter(c=>!c.header.endsWith('6')),
+    cards=>cards.map(c=>({...c,benefits:[]})),
+    cards=>[...cards,cards.find(c=>c.header.endsWith('6'))],
+  ]) {
+    const props=structuredClone(fixture.props);props.components.storefront.plans=mutate(props.components.storefront.plans);
+    const result=parseSpotifyOfficialHtml(`<script id="__NEXT_DATA__">${JSON.stringify({props:{pageProps:props}})}</script>`,
+      {countryCode:'PT',currency:market.currency,finalUrl:fixture.source_url});
+    assert.equal(result.complete,false);
+  }
+});
+test('a missing regional Family is optional only for explicitly allowlisted individual-only markets',()=>{
+  const source=JSON.parse(readFileSync(new URL('../data/official-web-price-sources.json',import.meta.url))).sources.spotify;
+  const fixture=worldFixtures.find(f=>f.country_code==='KR'),market=source.markets.find(m=>m.country_code==='KR');
+  const parser_result=parseSpotifyOfficialHtml(`<script id="__NEXT_DATA__">${JSON.stringify({props:{pageProps:fixture.props}})}</script>`,
+    {countryCode:'KR',currency:market.currency,finalUrl:market.url});
+  const snapshot={ok:true,http_status:200,parser_result};
+  assert.deepEqual(validateSnapshot(source,market,snapshot),[]);
+  assert.ok(validateSnapshot(source,source.markets[0],snapshot).includes('required_plan_set_mismatch'));
+  assert.throws(()=>assertAutomaticWebSource({...source,markets:source.markets.map(m=>m.country_code==='KR'?{...m,required_plan_slugs:['individual','family']}:m)}));
+});
+test('one unavailable country does not discard adjacent snapshots or reorder the US baseline',async()=>{
+  const markets=Array.from({length:9},(_,i)=>({country_code:String(i)}));
+  let active=0,maxActive=0;
+  const outcomes=[];
+  for await(const item of collectMarketSnapshots({fetch_mode:'structured_http'},markets,null,async({market})=>{
+    active++;maxActive=Math.max(maxActive,active);
+    await new Promise(resolve=>setTimeout(resolve,2));active--;
+    if(market.country_code==='2') throw Error('network unavailable');
+    return market.country_code;
+  })) outcomes.push(item);
+  assert.equal(maxActive,4);
+  assert.deepEqual(outcomes.map(o=>o.market.country_code),markets.map(m=>m.country_code));
+  assert.equal(outcomes.filter(o=>o.result.status==='fulfilled').length,8);
+  assert.match(outcomes[2].result.reason.message,/unavailable/);
+});
 
 test('Spotify parses allowlisted regional recurring prices without treating promotions as prices',()=>{
   for (const [countryCode,currency,path,symbol,individual,family] of [
