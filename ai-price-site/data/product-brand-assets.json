@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-16T10:08:53.817Z",
+  "generatedAt": "2026-10-24T12:49:36.475Z",
   "usagePurpose": "nominative-product-identification",
   "products": {
     "anghami": {
@@ -542,6 +542,24 @@
       "sha256": "2c1d1c9840cef681fa34bef24a4b514d88629bde2560411186ccdaa659d3a690",
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
+    },
+    "spotify": {
+      "path": "/brand-assets/spotify.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id324684580",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b7/ed/61/b7ed610e-a3ef-4684-4862-935158e58f07/AppIcon-0-0-1x_U007epad-0-1-0-0-85-220.png/512x512bb.jpg",
+      "appStoreId": "324684580",
+      "trackName": "Spotify: Music and Podcasts",
+      "sellerName": "Spotify",
+      "mimeType": "image/jpeg",
+      "byteLength": 36954,
+      "sha256": "5ad8826040d1c8c128cc6f42b19851c001a63b4d4030571363797d28602d49d4",
+      "reviewedAt": "2026-10-24",
+      "displayMode": "app-icon",
+      "width": 512,
+      "height": 512,
+      "reviewer": "GeoSub automated identity and asset verification"
     }
   }
 }

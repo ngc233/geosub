@@ -67,6 +67,7 @@ test("the published baseline has checksum-verified local app icons", () => {
     "f1-tv",
     "hbo-max",
     "netflix",
+    "spotify",
   ];
 
   for (const slug of publishedBaseline) {

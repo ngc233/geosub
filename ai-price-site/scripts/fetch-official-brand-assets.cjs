@@ -39,6 +39,7 @@ const products = [
   { slug: "mubi", appStoreId: "626148774", expectedName: /^MUBI:/i },
   { slug: "netflix", appStoreId: "363590051", expectedName: /^Netflix$/i },
   { slug: "soundcloud", appStoreId: "336353151", expectedName: /^SoundCloud:/i },
+  { slug: "spotify", appStoreId: "324684580", expectedName: /^Spotify:/i },
   { slug: "viki", appStoreId: "445553058", expectedName: /Viki/i },
   { slug: "x-premium", appStoreId: "333903271", expectedName: /^X$/i },
   { slug: "youtube-premium", appStoreId: "544007664", expectedName: /YouTube/i },

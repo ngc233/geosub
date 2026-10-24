@@ -100,6 +100,11 @@
       "from": "d69b77de17166808b645d27af4588aca1d0b5f9847f6d20a112c47d3e8b67a7d",
       "to": "fe049603d916d29ec1cec296513e0ac544c066708484a056f837c7998ba0ed4a",
       "reason": "2.15.7 to 2.15.6: managed content reader/store/validator/distribution/schema are byte-identical. PricingDetailPage changes only affordability pending-copy billing channel arguments, preserving managed content structure, priority and rendering contract; VERSION increment. No database input change."
+    },
+    {
+      "from": "d328fe041ed2e1c2b6d625ab020c7391166233135dde7e3209125c0c548d2788",
+      "to": "fe049603d916d29ec1cec296513e0ac544c066708484a056f837c7998ba0ed4a",
+      "reason": "2.15.8 to retained 2.15.6: same audited managed-content compatibility as 2.15.7. Only VERSION and channel arguments for affordability empty copy differ from 2.15.6; reader/store/validator/distribution/schema unchanged. Spotify local asset registration does not change the content contract."
     }
   ]
 }
