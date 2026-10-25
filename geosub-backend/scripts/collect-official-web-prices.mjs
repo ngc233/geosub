@@ -116,7 +116,7 @@ export function validateSnapshot(source, market, snapshot) {
   }
 
   const issues = [...(parserResult.issues ?? [])];
-  if(source.product_slug==='apple-music' && market.storefront
+  if(market.storefront
     && (snapshot.request_context?.country_code!==market.country_code
       || snapshot.request_context?.storefront!==market.storefront
       || snapshot.final_url!==market.evidence_url || snapshot.evidence_type!=='json'))issues.push('storefront_evidence_context_mismatch');

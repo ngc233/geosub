@@ -77,7 +77,7 @@ test("Apple Music rejects multiple distinct prices inside one plan block", () =>
   assert.ok(result.issues.includes("ambiguous_prices:individual"));
 });
 
-test("official Web source config contains only the five approved pilot markets", async () => {
+test("official Web source config covers the approved global inventory and preserves the original five identities", async () => {
   const configPath = path.join(import.meta.dirname, "..", "data", "official-web-price-sources.json");
   const config = JSON.parse(await readFile(configPath, "utf8"));
   const source = config.sources["apple-music"];
@@ -91,8 +91,11 @@ test("official Web source config contains only the five approved pilot markets",
   assert.equal(source.billing_cycle, "monthly");
   assert.match(source.evidence_note, /Apple Music/);
   assert.deepEqual(source.required_plan_slugs, ["individual", "family", "student"]);
-  assert.deepEqual(source.markets.map((market) => market.country_code), ["US", "BR", "TR", "JP", "DE"]);
-  assert.equal(new Set(source.markets.map((market) => market.url)).size, 5);
+  const inventory=JSON.parse(await readFile(path.join(import.meta.dirname,'..','data','apple-music-official-markets.json'),'utf8'));
+  assert.deepEqual(source.markets.slice(0,5).map((market) => market.country_code), ["US", "BR", "TR", "JP", "DE"]);
+  assert.deepEqual(source.markets.map(m=>m.country_code).sort(),inventory.markets.map(m=>m.country_code).sort());
+  assert.equal(new Set(source.markets.map((market) => market.url)).size,172);
+  assert.ok(source.markets.slice(5).every(m=>m.storefront && m.evidence_url==='https://buy.music.apple.com/commerce/web/subscription/offers/music'));
   assert.ok(source.markets.every((market) => !Object.hasOwn(market, "price")));
 });
 

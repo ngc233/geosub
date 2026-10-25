@@ -1875,7 +1875,7 @@
       "reliability_score": 90,
       "pilot": false,
       "billing_cycle": "monthly",
-      "evidence_note": "Official country Web regular monthly renewal price. Exact country URL or reviewed storefront, canonical plan identity, charge currency, P1M period and response hash are required; trials are excluded. Tax and eligibility remain subject to Apple checkout.",
+      "evidence_note": "Official Apple Music country Web regular monthly renewal price. Exact country URL or reviewed storefront, canonical plan identity, charge currency, P1M period and response hash are required; trials are excluded. Tax and eligibility remain subject to Apple checkout.",
       "required_plan_slugs": [
         "individual",
         "family",
