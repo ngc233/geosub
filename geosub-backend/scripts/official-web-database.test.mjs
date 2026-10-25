@@ -164,7 +164,7 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
   }
 });
 
-import {parseAppleMusicOfficialHtml} from './lib/apple-music-official-web.mjs';
+import {parseAppleMusicOfficialHtml,parseAppleMusicOfficialOffers} from './lib/apple-music-official-web.mjs';
 test('real PostgreSQL Apple Music paused pilot resumes once; stable observations publish all plans and recover without changing other sources', {skip:!dsn},async()=>{
   const url=new URL(dsn);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));assert.match(url.pathname,/^\/geosub_web_test/);
   const {Client}=createRequire(new URL('../../ai-price-site/package.json',import.meta.url))('pg');
@@ -193,6 +193,10 @@ test('real PostgreSQL Apple Music paused pilot resumes once; stable observations
     assert.deepEqual((await client.query('SELECT row_to_json(j) row FROM collector_jobs j WHERE id=$1',[job.id])).rows[0],before,'dry-run never activates pilot');
     assert.equal((await configureOfficialWebJob(client,source,true)).jobId,job.id);
     assert.equal((await configureOfficialWebJob(client,source,true)).action,'existing');
+    const scheduled=new Date(Date.now()+2*3600000);
+    await client.query("UPDATE collector_jobs SET next_run_at=$2,job_config=jsonb_set(job_config,'{country_codes}','[\"US\",\"BR\",\"TR\",\"JP\",\"DE\"]'::jsonb) WHERE id=$1",[job.id,scheduled]);
+    assert.equal((await configureOfficialWebJob(client,source,true)).action,'updated');
+    assert.equal(+(await client.query('SELECT next_run_at FROM collector_jobs WHERE id=$1',[job.id])).rows[0].next_run_at,+scheduled,'expansion preserves existing collection schedule');
     const config=(await client.query('SELECT * FROM collector_jobs WHERE id=$1',[job.id])).rows[0];
     assert.equal(config.status,'active');assert.equal(config.job_config.interval_hours,12);assert.equal(config.job_config.pilot,undefined);
     assert.equal((await client.query('SELECT count(*)::int n FROM collector_jobs')).rows[0].n,1);
@@ -233,6 +237,25 @@ test('real PostgreSQL Apple Music paused pilot resumes once; stable observations
     await insert(jp,0);
     await client.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,status,is_latest) VALUES('USD','JPY',150,CURRENT_DATE,'active',TRUE)");
     assert.equal((await review(jp)).published,3,'three later stable samples recover automatically');
+    const world=JSON.parse(readFileSync(new URL('./fixtures/apple-music-world.json',import.meta.url)));
+    const offerSnap=(m,hours)=>({ok:true,render_mode:'structured_http',http_status:200,final_url:m.evidence_url,evidence_type:'json',
+      request_context:{country_code:m.country_code,storefront:m.storefront},user_agent:'GeoSub-test',
+      content_hash:createHash('sha256').update(`${m.country_code}-${hours}`).digest('hex'),captured_at:new Date(now-hours*3600000).toISOString(),
+      parser_result:parseAppleMusicOfficialOffers(world.find(f=>f.country_code===m.country_code),{countryCode:m.country_code,currency:m.currency,finalUrl:m.evidence_url,storefront:m.storefront})});
+    for(const code of ['AL','GH']) {
+      const m=source.markets.find(m=>m.country_code===code);
+      for(const hours of [24,12,0])assert.equal((await insertMarketObservations({client,source,market:m,database,sourceId,force:true,snapshot:offerSnap(m,hours)})).inserted,m.required_plan_slugs.length);
+      assert.equal((await review(m)).published,m.required_plan_slugs.length,'two-plan markets publish without inventing a student price');
+      const records=(await client.query("SELECT r.currency,r.local_price::float8,e.evidence_type,o.raw_payload FROM region_prices r JOIN price_observations o ON o.raw_payload->'automatic_review'->>'region_price_id'=r.id::text JOIN source_evidence e ON e.observation_id=o.id WHERE r.country_id=$1",[database.countries.get(code).id])).rows;
+      assert.equal(records.length,m.required_plan_slugs.length);assert.ok(records.every(r=>r.currency==='USD' && r.evidence_type==='json' && r.raw_payload.request_context.storefront===m.storefront));
+    }
+    const ng=source.markets.find(m=>m.country_code==='NG');
+    for(const hours of [24,12,0])await insertMarketObservations({client,source,market:ng,database,sourceId,force:true,snapshot:offerSnap(ng,hours)});
+    assert.equal((await review(ng)).decisions[0].reason,'current_exchange_rate_missing');
+    // NGN offers require actual FX and retain the same-plan US baseline.
+    await client.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,status,is_latest) VALUES('USD','NGN',1600,CURRENT_DATE,'active',TRUE)");
+    const ngReview=await review(ng);
+    assert.equal(ngReview.published,ng.required_plan_slugs.length,JSON.stringify(ngReview));
     assert.equal(await fingerprint(),untouched,'iOS and other product rows are unchanged');
   } finally {await client.query(`DROP SCHEMA ${schema} CASCADE`);await client.end();}
 });

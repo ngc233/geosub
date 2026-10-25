@@ -318,7 +318,7 @@ test('Apple Music ignores FAQ, Apple One and offer prices outside canonical tile
   const h=appleHtml.replace('</section>','<li id="apple-one"><h3>Apple One</h3><p>$1/month</p></li></section>')+'<section>Individual $99/month, FAQ $0</section>';
   assert.equal(parseAppleMusicOfficialHtml(h,{countryCode:'US',currency:'USD',finalUrl:appleUs.url}).complete,true);
 });
-test('Apple Music only allowlists its exact five-market source; redirects and failed responses fail closed',async()=>{
+test('Apple Music only allowlists its reviewed source; redirects and failed responses fail closed',async()=>{
   assert.doesNotThrow(()=>assertAutomaticWebSource(appleConfig));
   for(const mutate of [s=>s.source_key='spotify-official-web',s=>s.parser_version='apple-music-official-web-v1',
     s=>s.auto_review.rule_id='spotify-regional-monthly-stability-v2',s=>s.markets[0].currency='EUR',
@@ -331,6 +331,77 @@ test('Apple Music only allowlists its exact five-market source; redirects and fa
   await assert.rejects(fetchAppleMusicOfficialSnapshot({...appleUs,url:'https://example.com/'}),/unsupported_official_url/);
   await assert.rejects(fetchAppleMusicOfficialSnapshot(appleUs,async()=>new Response('',{status:503})),/unavailable/);
   await assert.rejects(fetchAppleMusicOfficialSnapshot(appleUs,async()=>new Response('a'.repeat(2*1024*1024+1),{headers:{'content-type':'text/html'}})),/too_large/);
+});
+
+import {parseAppleMusicOfficialOffers,appleMusicRegistry} from './lib/apple-music-official-web.mjs';
+const worldOffers=JSON.parse(readFileSync(new URL('./fixtures/apple-music-world.json',import.meta.url)));
+test('Apple Music accounts for all 172 official markets and 458 actual plan-market combinations',()=>{
+  assert.equal(appleMusicRegistry.markets.length,172);assert.equal(appleConfig.markets.length,172);
+  assert.equal(appleMusicRegistry.markets.reduce((n,m)=>n+m.required_plan_slugs.length,0),458);
+  assert.equal(new Set(appleMusicRegistry.markets.map(m=>m.storefront)).size,172);
+  assert.equal(worldOffers.length,172);
+});
+for(const fixture of worldOffers) {
+ const market=appleConfig.markets.find(m=>m.country_code===fixture.country_code);
+ if(!market.storefront)continue;
+ test(`Apple Music ${fixture.country_code} official anonymous storefront renewal offers`,()=>{
+  const result=parseAppleMusicOfficialOffers(fixture,{countryCode:market.country_code,currency:market.currency,
+    finalUrl:market.evidence_url,storefront:market.storefront});
+  assert.equal(result.complete,true,result.issues.join(','));
+  assert.deepEqual(result.candidates.map(c=>c.plan_slug),market.required_plan_slugs);
+  assert.ok(result.candidates.every(c=>c.raw_price>0 && c.currency===market.currency && c.billing_cycle==='monthly'));
+ });
+}
+const ghMarket=appleConfig.markets.find(m=>m.country_code==='GH'),ghFixture=worldOffers.find(m=>m.country_code==='GH');
+const ghContext={countryCode:'GH',currency:'USD',finalUrl:ghMarket.evidence_url,storefront:ghMarket.storefront};
+for(const [label,mutate,context]of [
+ ['wrong storefront',()=>{},{storefront:'143441-19,8'}],
+ ['wrong country',()=>{},{countryCode:'CA'}],
+ ['wrong currency',()=>{},{currency:'GHS'}],
+ ['redirect',()=>{},{finalUrl:'https://buy.music.apple.com/other'}],
+ ['missing plan',p=>p.offers.pop()],
+ ['duplicate plan',p=>p.offers.push({...p.offers[0]})],
+ ['wrong product ID',p=>p.offers[0].adamId=1],
+ ['annual renewal',p=>p.offers[0].renewalPeriod='P1Y'],
+ ['bundle',p=>p.offers[0].isBundle=true],
+ ['unavailable',p=>p.offers[0].isOfferable=false],
+ ['false family identity',p=>p.offers[0].isSubscriptionShareable=true],
+ ['mixed currency',p=>p.offers[0].price='€3.29'],
+ ['trial only',p=>p.offers[0].price='Free trial'],
+ ['zero price',p=>p.offers[0].price='US$0.00'],
+ ['contradictory amount',p=>p.offers[0].price='US$1.00 then US$3.29'],
+ ['malformed number',p=>p.offers[0].price='US$1,23,45'],
+])test(`Apple Music storefront rejects ${label}`,()=>{
+ const payload=structuredClone(ghFixture);mutate(payload);
+ assert.equal(parseAppleMusicOfficialOffers(payload,{...ghContext,...context}).complete,false);
+});
+test('Apple Music storefront uses regular price, records JSON evidence and never sends account credentials',async()=>{
+ const result=await fetchAppleMusicOfficialSnapshot(ghMarket,async(url,options)=>{
+  assert.equal(url,ghMarket.evidence_url);assert.equal(options.redirect,'error');assert.ok(options.signal);
+  assert.equal(options.headers['X-Apple-Store-Front'],ghMarket.storefront);
+  assert.equal(options.headers.Cookie,undefined);assert.equal(options.headers.Authorization,undefined);
+  return new Response(JSON.stringify(ghFixture),{headers:{'content-type':'application/json'}});
+ });
+ assert.deepEqual(result.parser_result.candidates.map(c=>c.raw_price),[3.29,5.49,1.99]);
+ assert.equal(result.evidence_type,'json');assert.equal(result.final_url,ghMarket.evidence_url);
+ assert.deepEqual(result.request_context,{country_code:'GH',storefront:ghMarket.storefront});
+ assert.deepEqual(validateSnapshot(appleConfig,ghMarket,result),[]);
+ assert.ok(validateSnapshot(appleConfig,ghMarket,{...result,request_context:{...result.request_context,country_code:'US'}}).length);
+ await assert.rejects(fetchAppleMusicOfficialSnapshot(ghMarket,async()=>new Response('x'.repeat(256*1024+1),{headers:{'content-type':'application/json'}})),/too_large/);
+});
+test('Apple Music per-market plans and storefront evidence remain part of the automatic source allowlist',()=>{
+ for(const mutate of [s=>s.markets.find(m=>m.country_code==='AL').required_plan_slugs.push('student'),
+  s=>s.markets.find(m=>m.country_code==='GH').storefront='143441-19,8',
+  s=>s.markets.find(m=>m.country_code==='GH').evidence_url='https://example.com/']) {
+  const s=structuredClone(appleConfig);mutate(s);assert.throws(()=>assertAutomaticWebSource(s));
+ }
+ const now=new Date();const samples=[0,12,24].map((h,i)=>({id:`gh-${i}`,observed_at:new Date(+now-h*3600000),raw_price:3.29,
+  currency:'USD',status:'pending',source_level:'A',confidence_score:82,evidence_ok:true,
+  raw_payload:{billing_cycle:'monthly',publication_eligible:true,automatic_rule:appleMusicRule,requested_country:'GH',
+   source_url:ghMarket.url,final_url:ghMarket.evidence_url,render_mode:'structured_http',request_context:{country_code:'GH',storefront:ghMarket.storefront}}}));
+ assert.equal(decideOfficialWebReview(samples,null,now,ghMarket,appleMusicRule).decision,'approved');
+ samples[1].raw_payload.request_context.storefront='143441-19,8';
+ assert.equal(decideOfficialWebReview(samples,null,now,ghMarket,appleMusicRule).decision,'isolated');
 });
 test('Apple Music stability requires independent new-rule evidence, not legacy samples or forced retries',()=>{
   const now=new Date(),samples=[0,12,24].map((hours,i)=>({id:String(i),observed_at:new Date(+now-hours*3600000),raw_price:11.99,

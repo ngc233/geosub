@@ -58,8 +58,9 @@ export async function configureOfficialWebJob(client, source, execute=false, {pl
       if (!matches && execute) {
         const sourceId=await ensureSource(client,source);
         await client.query(`UPDATE collector_jobs SET status='active',source_id=$3,
-          job_config=(job_config-'pilot')||$2::jsonb,next_run_at=NOW(),updated_at=NOW()
-          WHERE id=$1`,[jobs.rows[0].id,JSON.stringify(config),sourceId]);
+          job_config=(job_config-'pilot')||$2::jsonb,
+          next_run_at=CASE WHEN status='active' AND $4::boolean THEN next_run_at ELSE NOW() END,updated_at=NOW()
+          WHERE id=$1`,[jobs.rows[0].id,JSON.stringify(config),sourceId,source.product_slug==='apple-music']);
       }
       await client.query('COMMIT');return {action:matches?'existing':execute?'updated':'update-required',
         product:source.product_slug,jobId:jobs.rows[0].id,config:matches?undefined:config,

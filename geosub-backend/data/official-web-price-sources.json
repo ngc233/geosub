@@ -1875,7 +1875,7 @@
       "reliability_score": 90,
       "pilot": false,
       "billing_cycle": "monthly",
-      "evidence_note": "Official localized Apple Music monthly plan tile; country, locale, currency, plan identity and source hash retained. Independent stable samples required before publication.",
+      "evidence_note": "Official country Web regular monthly renewal price. Exact country URL or reviewed storefront, canonical plan identity, charge currency, P1M period and response hash are required; trials are excluded. Tax and eligibility remain subject to Apple checkout.",
       "required_plan_slugs": [
         "individual",
         "family",
@@ -1911,6 +1911,2119 @@
           "locale": "de-DE",
           "currency": "EUR",
           "url": "https://www.apple.com/de/apple-music/"
+        },
+        {
+          "country_code": "CA",
+          "locale": "en-CA",
+          "currency": "CAD",
+          "url": "https://music.apple.com/ca/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143455-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AI",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ai/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143538-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AG",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ag/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143540-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AR",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/ar/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143505-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BS",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bs/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143539-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BB",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bb/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143541-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BZ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143555-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143542-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BO",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/bo/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143556-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "VG",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/vg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143543-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "KY",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ky/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143544-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "CL",
+          "locale": "es-MX",
+          "currency": "CLP",
+          "url": "https://music.apple.com/cl/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143483-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "CO",
+          "locale": "es-MX",
+          "currency": "COP",
+          "url": "https://music.apple.com/co/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143501-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "CR",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/cr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143495-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "DM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/dm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143545-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "DO",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/do/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143508-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "EC",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/ec/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143509-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "SV",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/sv/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143506-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GD",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/gd/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143546-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GT",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/gt/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143504-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GY",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/gy/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143553-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "HN",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/hn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143510-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "JM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/jm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143511-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MX",
+          "locale": "es-MX",
+          "currency": "MXN",
+          "url": "https://music.apple.com/mx/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143468-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MS",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ms/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143547-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NI",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/ni/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143512-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "PA",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/pa/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143485-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "PY",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/py/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143513-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "PE",
+          "locale": "es-MX",
+          "currency": "PEN",
+          "url": "https://music.apple.com/pe/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143507-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "KN",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/kn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143548-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "LC",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/lc/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143549-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "VC",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/vc/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143550-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SR",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/sr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143554-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TT",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/tt/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143551-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TC",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/tc/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143552-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "UY",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/uy/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143514-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "VE",
+          "locale": "es-MX",
+          "currency": "USD",
+          "url": "https://music.apple.com/ve/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143502-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AL",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/al/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143575-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AT",
+          "locale": "de-DE",
+          "currency": "EUR",
+          "url": "https://music.apple.com/at/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143445-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BY",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/by/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143565-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BE",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/be/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143446-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BA",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/ba/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143612-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BG",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/bg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143526-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "HR",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/hr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143494-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CY",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/cy/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143557-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "CZ",
+          "locale": "en-GB",
+          "currency": "CZK",
+          "url": "https://music.apple.com/cz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143489-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "DK",
+          "locale": "en-GB",
+          "currency": "DKK",
+          "url": "https://music.apple.com/dk/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143458-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "EE",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/ee/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143518-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "FI",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/fi/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143447-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "FR",
+          "locale": "fr-FR",
+          "currency": "EUR",
+          "url": "https://music.apple.com/fr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143442-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GE",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ge/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143615-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GR",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/gr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143448-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "HU",
+          "locale": "en-GB",
+          "currency": "HUF",
+          "url": "https://music.apple.com/hu/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143482-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "IS",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/is/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143558-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "IE",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/ie/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143449-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "IT",
+          "locale": "it",
+          "currency": "EUR",
+          "url": "https://music.apple.com/it/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143450-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "KZ",
+          "locale": "en-GB",
+          "currency": "KZT",
+          "url": "https://music.apple.com/kz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143517-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "XK",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/xk/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143624-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KG",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/kg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143586-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "LV",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/lv/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143519-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "LT",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/lt/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143520-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "LU",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/lu/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143451-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MT",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/mt/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143521-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MD",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/md/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143523-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "ME",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/me/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143619-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NL",
+          "locale": "nl",
+          "currency": "EUR",
+          "url": "https://music.apple.com/nl/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143452-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MK",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mk/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143530-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NO",
+          "locale": "en-GB",
+          "currency": "NOK",
+          "url": "https://music.apple.com/no/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143457-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "PL",
+          "locale": "en-GB",
+          "currency": "PLN",
+          "url": "https://music.apple.com/pl/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143478-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "PT",
+          "locale": "pt-PT",
+          "currency": "EUR",
+          "url": "https://music.apple.com/pt/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143453-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "RO",
+          "locale": "en-GB",
+          "currency": "RON",
+          "url": "https://music.apple.com/ro/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143487-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "RU",
+          "locale": "ru",
+          "currency": "RUB",
+          "url": "https://music.apple.com/ru/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143469-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "RS",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/rs/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143500-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SK",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/sk/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143496-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "SI",
+          "locale": "en-GB",
+          "currency": "EUR",
+          "url": "https://music.apple.com/si/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143499-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "ES",
+          "locale": "es-ES",
+          "currency": "EUR",
+          "url": "https://music.apple.com/es/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143454-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "SE",
+          "locale": "sv",
+          "currency": "SEK",
+          "url": "https://music.apple.com/se/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143456-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "CH",
+          "locale": "de-CH",
+          "currency": "CHF",
+          "url": "https://music.apple.com/ch/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143459-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TJ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/tj/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143603-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/tm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143604-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "UA",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ua/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143492-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GB",
+          "locale": "en-GB",
+          "currency": "GBP",
+          "url": "https://music.apple.com/gb/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143444-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "UZ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/uz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143566-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "DZ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/dz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143563-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "AO",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ao/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143564-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BJ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bj/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143576-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BW",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bw/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143525-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BF",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bf/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143578-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CM",
+          "locale": "fr-FR",
+          "currency": "USD",
+          "url": "https://music.apple.com/cm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143574-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CV",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/cv/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143580-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TD",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/td/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143581-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CD",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/cd/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143613-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CG",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/cg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143582-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "CI",
+          "locale": "fr-FR",
+          "currency": "USD",
+          "url": "https://music.apple.com/ci/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143527-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SZ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/sz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143602-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GA",
+          "locale": "fr-FR",
+          "currency": "USD",
+          "url": "https://music.apple.com/ga/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143614-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "GH",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/gh/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143573-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/gm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143584-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "GW",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/gw/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143585-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "KE",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ke/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143529-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "LR",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/lr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143588-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MG",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143531-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MW",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mw/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143589-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ML",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ml/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143532-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MR",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143590-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MU",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mu/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143533-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MA",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ma/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143620-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "MZ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143593-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NA",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/na/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143594-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NE",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ne/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143534-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "NG",
+          "locale": "en-GB",
+          "currency": "NGN",
+          "url": "https://music.apple.com/ng/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143561-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "RW",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/rw/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143621-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ST",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/st/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143598-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SN",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/sn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143535-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SC",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/sc/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143599-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SL",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/sl/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143600-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ZA",
+          "locale": "en-GB",
+          "currency": "ZAR",
+          "url": "https://music.apple.com/za/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143472-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TZ",
+          "locale": "en-GB",
+          "currency": "TZS",
+          "url": "https://music.apple.com/tz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143572-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "TN",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/tn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143536-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "UG",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ug/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143537-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "ZM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/zm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143622-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "ZW",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/zw/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143605-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AU",
+          "locale": "en-AU",
+          "currency": "AUD",
+          "url": "https://music.apple.com/au/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143460-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BT",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bt/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143577-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "BN",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143560-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KH",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/kh/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143579-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "CN",
+          "locale": "zh-Hans-CN",
+          "currency": "CNY",
+          "url": "https://music.apple.com/cn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143465-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "FJ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/fj/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143583-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "HK",
+          "locale": "zh-Hant-HK",
+          "currency": "HKD",
+          "url": "https://music.apple.com/hk/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143463-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "IN",
+          "locale": "en-GB",
+          "currency": "INR",
+          "url": "https://music.apple.com/in/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143467-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "ID",
+          "locale": "en-GB",
+          "currency": "IDR",
+          "url": "https://music.apple.com/id/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143476-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "LA",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/la/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143587-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MO",
+          "locale": "zh-Hant-HK",
+          "currency": "USD",
+          "url": "https://music.apple.com/mo/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143515-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MY",
+          "locale": "en-GB",
+          "currency": "MYR",
+          "url": "https://music.apple.com/my/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143473-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MV",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mv/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143488-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "FM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/fm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143591-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MN",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143592-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "MM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/mm/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143570-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "NP",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/np/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143484-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "NZ",
+          "locale": "en-AU",
+          "currency": "NZD",
+          "url": "https://music.apple.com/nz/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143461-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "PK",
+          "locale": "en-GB",
+          "currency": "PKR",
+          "url": "https://music.apple.com/pk/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143477-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "PG",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/pg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143597-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "PH",
+          "locale": "en-GB",
+          "currency": "PHP",
+          "url": "https://music.apple.com/ph/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143474-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "SG",
+          "locale": "en-GB",
+          "currency": "SGD",
+          "url": "https://music.apple.com/sg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143464-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "SB",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/sb/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143601-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "KR",
+          "locale": "ko",
+          "currency": "KRW",
+          "url": "https://music.apple.com/kr/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143466-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LK",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/lk/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143486-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TW",
+          "locale": "zh-Hant-TW",
+          "currency": "TWD",
+          "url": "https://music.apple.com/tw/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143470-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TH",
+          "locale": "en-GB",
+          "currency": "THB",
+          "url": "https://music.apple.com/th/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143475-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "TO",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/to/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143608-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "VU",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/vu/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143609-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "VN",
+          "locale": "en-GB",
+          "currency": "VND",
+          "url": "https://music.apple.com/vn/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143471-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/am/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143524-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AZ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/az/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143568-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "BH",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/bh/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143559-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "EG",
+          "locale": "en-GB",
+          "currency": "EGP",
+          "url": "https://music.apple.com/eg/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143516-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "IQ",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/iq/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143617-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "IL",
+          "locale": "en-GB",
+          "currency": "ILS",
+          "url": "https://music.apple.com/il/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143491-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "JO",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/jo/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143528-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "KW",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/kw/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143493-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "LB",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/lb/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143497-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "LY",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ly/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143567-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "OM",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/om/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143562-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "QA",
+          "locale": "en-GB",
+          "currency": "QAR",
+          "url": "https://music.apple.com/qa/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143498-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
+        },
+        {
+          "country_code": "SA",
+          "locale": "en-GB",
+          "currency": "SAR",
+          "url": "https://music.apple.com/sa/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143479-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "AE",
+          "locale": "en-GB",
+          "currency": "AED",
+          "url": "https://music.apple.com/ae/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143481-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family",
+            "student"
+          ]
+        },
+        {
+          "country_code": "YE",
+          "locale": "en-GB",
+          "currency": "USD",
+          "url": "https://music.apple.com/ye/new",
+          "evidence_url": "https://buy.music.apple.com/commerce/web/subscription/offers/music",
+          "storefront": "143571-19,8",
+          "required_plan_slugs": [
+            "individual",
+            "family"
+          ]
         }
       ],
       "fetch_mode": "structured_http",
@@ -1918,7 +4031,7 @@
         "rule_id": "apple-music-monthly-stability-v1",
         "publish_product": true
       },
-      "public_description": "Compare Apple Music Individual, Family and Student regular monthly official Web prices. Plans are compared separately; free trials and Apple One bundles are excluded. Student verification and Family Sharing conditions apply."
+      "public_description": "Compare Apple Music Individual, Family and available Student regular monthly official Web prices across supported countries and regions. Plans are compared separately; trial prices are excluded and eligibility is determined at Apple checkout."
     }
   }
 }

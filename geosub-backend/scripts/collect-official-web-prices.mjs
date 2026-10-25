@@ -116,6 +116,10 @@ export function validateSnapshot(source, market, snapshot) {
   }
 
   const issues = [...(parserResult.issues ?? [])];
+  if(source.product_slug==='apple-music' && market.storefront
+    && (snapshot.request_context?.country_code!==market.country_code
+      || snapshot.request_context?.storefront!==market.storefront
+      || snapshot.final_url!==market.evidence_url || snapshot.evidence_type!=='json'))issues.push('storefront_evidence_context_mismatch');
   if (parserResult.parser_version !== source.parser_version) {
     issues.push("parser_version_mismatch");
   }
@@ -263,6 +267,7 @@ export async function insertMarketObservations({
         billing_cycle: candidate.billing_cycle,
         availability_note: candidate.availability_note ?? null
       };
+      if(snapshot.request_context)rawPayload.request_context=snapshot.request_context;
 
       const observationResult = await client.query(
         `
@@ -328,7 +333,7 @@ export async function insertMarketObservations({
             note, created_at
           )
           VALUES (
-            gen_random_uuid(), $1, 'html'::evidence_type, NULL, $2,
+            gen_random_uuid(), $1, $9::evidence_type, NULL, $2,
             $3::timestamptz, $4, $5, $6, $7,
             $8,
             NOW()
@@ -342,7 +347,8 @@ export async function insertMarketObservations({
           snapshot.final_url,
           snapshot.user_agent,
           market.country_code,
-          source.evidence_note
+          source.evidence_note,
+          snapshot.evidence_type ?? 'html'
         ]
       );
       inserted += 1;

@@ -14,8 +14,9 @@ export function assertAutomaticWebSource(source) {
       || source.markets?.length!==Object.keys(appleMusicMarkets).length
       || new Set(source.markets.map(m=>m.country_code)).size!==source.markets.length
       || source.markets.some(m=>{const a=appleMusicMarkets[m.country_code];return !a || m.currency!==a.currency
-        || m.locale!==a.locale || m.url!==`https://www.apple.com/${a.path}apple-music/`
-        || (m.required_plan_slugs && m.required_plan_slugs.join(',')!=='individual,family,student');}))
+        || m.locale!==a.locale || m.url!==(a.url ?? `https://www.apple.com/${a.path}apple-music/`)
+        || m.evidence_url!==a.evidence_url || m.storefront!==a.storefront
+        || JSON.stringify(m.required_plan_slugs ?? source.required_plan_slugs)!==JSON.stringify(a.required_plan_slugs ?? source.required_plan_slugs);}))
       throw Error('automatic_web_source_not_allowlisted');
     return;
   }
@@ -62,7 +63,9 @@ export function decideOfficialWebReview(samples, baseline, now = new Date(), mar
     || row.raw_payload?.publication_eligible !== true
     || row.raw_payload?.automatic_rule !== expectedRule || row.raw_payload?.requested_country !== market.country_code
     || row.raw_payload?.source_url !== market.url
-    || row.raw_payload?.final_url !== market.url
+    || row.raw_payload?.final_url !== (market.evidence_url ?? market.url)
+    || (market.storefront && (row.raw_payload?.request_context?.storefront!==market.storefront
+      || row.raw_payload?.request_context?.country_code!==market.country_code))
     || row.raw_payload?.render_mode !== 'structured_http')) {
     return { decision: 'isolated', reason: 'incomplete_or_anomalous_evidence' };
   }
@@ -87,7 +90,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
   assertAutomaticWebSource(source);
   if (!source.markets.some(item => item.country_code === market.country_code && item.currency === market.currency && item.url === market.url)) throw Error('automatic_web_market_not_allowlisted');
   const ruleId=source.auto_review.rule_id;
-  const planSlugs=source.product_slug==='apple-music' ? source.required_plan_slugs : spotifyMarkets[market.country_code].plan_slugs;
+  const planSlugs=source.product_slug==='apple-music' ? (appleMusicMarkets[market.country_code].required_plan_slugs ?? source.required_plan_slugs) : spotifyMarkets[market.country_code].plan_slugs;
   if(market.required_plan_slugs && JSON.stringify(market.required_plan_slugs)!==JSON.stringify(planSlugs)) throw Error('automatic_web_market_not_allowlisted');
   const product = database.product;
   const country = database.countries.get(market.country_code);
@@ -122,7 +125,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
           AND o.source_id=$4 AND o.billing_platform='web' AND o.price_type='list_price'
           AND o.parser_version=$6 AND o.raw_payload->>'automatic_rule'=$7
         ORDER BY o.observed_at DESC,o.created_at DESC LIMIT 40`,
-        [product.id,plan.id,country.id,sourceId,market.url,source.parser_version,ruleId,market.country_code]);
+        [product.id,plan.id,country.id,sourceId,market.evidence_url ?? market.url,source.parser_version,ruleId,market.country_code]);
       const result = decideOfficialWebReview(samples.rows, prices.rows[0],new Date(),market,ruleId);
       decisions.push({ ...result, planSlug: slug, planId: plan.id });
     }
