@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-24T12:49:36.475Z",
+  "generatedAt": "2026-10-25T14:52:50.700Z",
   "usagePurpose": "nominative-product-identification",
   "products": {
     "anghami": {
@@ -560,6 +560,21 @@
       "width": 512,
       "height": 512,
       "reviewer": "GeoSub automated identity and asset verification"
+    },
+    "apple-music": {
+      "path": "/brand-assets/apple-music.jpg",
+      "sourceClass": "official-app-store-artwork",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://apps.apple.com/us/app/id1108187390",
+      "sourceUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c2/74/89/c27489c2-2c63-2e32-efee-b0f59b3184ef/musicCalistoga-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "appStoreId": "1108187390",
+      "trackName": "Apple Music",
+      "sellerName": "Apple Inc.",
+      "mimeType": "image/jpeg",
+      "byteLength": 23318,
+      "sha256": "94526c3dd0b828652698b123d253ea7588f708bee1ad8e1b071390a0d9be9263",
+      "reviewedAt": "2026-10-25",
+      "displayMode": "app-icon"
     }
   }
 }

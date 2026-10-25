@@ -6,6 +6,7 @@ const { resolve } = require("node:path");
 const sharp = require("sharp");
 
 const products = [
+  { slug: "apple-music", appStoreId: "1108187390", expectedName: /^Apple Music$/i },
   { slug: "anghami", appStoreId: "545395155", expectedName: /Anghami/i },
   { slug: "boomplay", appStoreId: "1437251983", expectedName: /Boomplay/i },
   { slug: "captions", appStoreId: "1541407007", expectedName: /Captions/i },

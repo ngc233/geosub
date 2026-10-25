@@ -145,6 +145,11 @@
       "from": "cf3c4a73a05f49dfba71e87d5881ccd0d3a64dbf9d7e77f871b18ebfa9734c9a",
       "to": "5c29c4165e7a35ccf5ad501be8505795070d452ec67f2e9d37f4ff14dd9197e2",
       "reason": "2.20.0 to retained 2.19.0: managed-content reader, store, validator, distribution and schema byte-identical. PricingDetailPage only scopes the existing position chart to its displayed billing platform; published content precedence and shape remain unchanged. Country hubs, source snapshots and history are independent read-only routes. No database input or content contract changes; retain the 2.19 Apple Music collector when rolling back only the website."
+    },
+    {
+      "from": "cd8b0167b1e815a7ad10e727e48973e5a7f116ed68eec007eae99565550fec03",
+      "to": "cf3c4a73a05f49dfba71e87d5881ccd0d3a64dbf9d7e77f871b18ebfa9734c9a",
+      "reason": "2.21.1 to retained website 2.20.0: all registered content readers, renderers, validators and schema files are byte-identical except VERSION. Apple Music only adds its approved local app icon and provenance, without changing existing assets or runtime content/data contracts. Collector 2.21.0 remains independent; no database migration."
     }
   ]
 }
