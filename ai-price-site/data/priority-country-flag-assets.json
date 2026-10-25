@@ -1,0 +1,33 @@
+{
+  "project": "flag-icons",
+  "version": "7.3.2",
+  "license": "MIT",
+  "variant": "4x3 icon rendition",
+  "reviewedAt": "2026-10-25",
+  "assets": [
+    {
+      "countryCode": "TR",
+      "localPath": "/country-flags/tr.svg",
+      "sourceUrl": "https://raw.githubusercontent.com/lipis/flag-icons/v7.3.2/flags/4x3/tr.svg",
+      "sha256": "256a1d6afbedb9f731566982331a1cd1ad14aba211b8a61d338855879505e74f"
+    },
+    {
+      "countryCode": "IN",
+      "localPath": "/country-flags/in.svg",
+      "sourceUrl": "https://raw.githubusercontent.com/lipis/flag-icons/v7.3.2/flags/4x3/in.svg",
+      "sha256": "91185efa1a9b52cdc0e470712518efeefc4e4d6a6555bae9de997ba71885bb98"
+    },
+    {
+      "countryCode": "PH",
+      "localPath": "/country-flags/ph.svg",
+      "sourceUrl": "https://raw.githubusercontent.com/lipis/flag-icons/v7.3.2/flags/4x3/ph.svg",
+      "sha256": "c3bd5e08ddc5f6dbdfa899af9efb45577e3841402e6a7f5d00fef754816b2884"
+    },
+    {
+      "countryCode": "JP",
+      "localPath": "/country-flags/jp.svg",
+      "sourceUrl": "https://raw.githubusercontent.com/lipis/flag-icons/v7.3.2/flags/4x3/jp.svg",
+      "sha256": "bfea80baf9989383dc4bf7ca594ed95be0df0ff125bfc88d0bfa878eb0198022"
+    }
+  ]
+}

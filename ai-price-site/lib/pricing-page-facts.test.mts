@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getPricingPagePlan, getCountryPricingPlans } from "./pricing-page-facts.ts";
+import { getPricingPagePlan, getCountryPricingPlans, getPricePositionPlan } from "./pricing-page-facts.ts";
 import { getDefaultPlanRegions, getPlanStats, type ProductPlan, type RegionPrice } from "./public-pricing-model.ts";
 import { getCountryPagePilot, getCountryPageCopy } from "./country-page-pilot.ts";
 import { getPlanSearchIntentCopy } from "./plan-search-intent.ts";
@@ -13,6 +13,17 @@ function row(code: string, billingPlatform = "ios", priceUsd = 20): RegionPrice 
 function plan(regions: RegionPrice[], name = "Plus"): ProductPlan {
   return { slug: "plus", name, billing: "monthly", regions };
 }
+
+test("Chinese Plus chart counts the same 39 iOS regions as its table without unlocking experiment copy", () => {
+  const source = plan([...Array.from({ length: 39 }, (_, i) => row(`I${i}`)), ...Array.from({ length: 10 }, (_, i) => row(`W${i}`, "web", 1))]);
+  const content = getPricingPagePlan(source, "/zh/ai-pricing/chatgpt/plus");
+  assert.equal(content, source);
+  const chart = getPricePositionPlan(content);
+  assert.equal(chart.regions.length, 39);
+  assert.deepEqual(chart.regions.map(r => r.code), getDefaultPlanRegions(source).map(r => r.code));
+  assert.equal(getPlanStats(chart).minRegion.priceUsd, 20);
+  assert.equal(source.regions.length, 49);
+});
 
 test("49 source rows yield the same 39 iOS rows in copy, stats and table", () => {
   const source = plan([...Array.from({ length: 39 }, (_, i) => row(`I${i}`)), ...Array.from({ length: 10 }, (_, i) => row(`W${i}`, "web", 1))]);

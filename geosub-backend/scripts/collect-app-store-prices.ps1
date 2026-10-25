@@ -1631,6 +1631,15 @@ function Get-AppStorePriceSelectionPenalty {
   return [math]::Round(($convertedUsd - $expectedMax), 4)
 }
 
+function Get-AppStoreSnapshotBillingCycle {
+  param([AllowNull()][object]$PlanSpec = $null)
+  if ($null -eq $PlanSpec) { return "unknown" }
+  if ($PlanSpec.PSObject.Properties.Name -notcontains "billing_cycle") { return "monthly" }
+  $cycle = ([string]$PlanSpec.billing_cycle).Trim().ToLowerInvariant()
+  if ($cycle -in @("monthly", "yearly", "weekly", "quarterly", "one_time", "lifetime")) { return $cycle }
+  return "unknown"
+}
+
 function Insert-Observation {
   param(
     [string]$ProductId,
@@ -2320,7 +2329,12 @@ foreach ($countryCode in $CountryCodes) {
       -PlanSpec (Resolve-PlanSpec -ProductSpec $productPlanSpec -ItemName $item.Name -ProductName $context.product.name)
 
     $observedPriceText = Format-ObservedPriceText -Currency $observedCurrency -Price $rawPrice
+    $capturedPlanSpec = Resolve-PlanSpec -ProductSpec $productPlanSpec -ItemName $item.Name -ProductName $context.product.name
+    $capturedBillingCycle = Get-AppStoreSnapshotBillingCycle -PlanSpec $capturedPlanSpec
     $rawSnapshot = @{
+      snapshotSchemaVersion = 1
+      capturedAt = [DateTime]::UtcNow.ToString("o")
+      billingCycle = $capturedBillingCycle
       country = $code
       sourceUrl = $page.Url
       inAppPurchases = $items

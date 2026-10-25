@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Check, ChevronDown, ExternalLink, Plus, Scale, Search, X } from "lucide-react";
 import type { FocusEvent, MouseEvent, ReactNode } from "react";
 import { useId, useMemo, useState } from "react";
@@ -589,6 +590,12 @@ function RegionEvidencePanel({
         ))}
       </div>
 
+      {region.observationId && (locale === "zh" || locale === "en") ? (
+        <Link href={`/${locale}/price-records/${region.observationId}`} className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--foreground)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4">
+          {locale === "zh" ? "查看当时的原始套餐快照" : "View the original plan snapshot"}
+          <ExternalLink size={14} aria-hidden="true" />
+        </Link>
+      ) : null}
       {assessment.facts.length > 0 ? (
         <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
           <div className="mb-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">

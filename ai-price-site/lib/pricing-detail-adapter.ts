@@ -71,6 +71,7 @@ type PricingDetailRow = {
   reviewed_at: Date | string | null;
   source_name: string | null;
   source_url: string | null;
+  observation_id: string | null;
   confidence_score: number | null;
   data_quality: string | null;
 };
@@ -318,6 +319,8 @@ function buildProductFromRows(
       reviewedAt: formatDate(row.reviewed_at),
       sourceName: row.source_name || (row.billing_platform === "ios" ? "App Store" : undefined),
       sourceUrl: row.source_url || undefined,
+      observationId: locale === "zh" && row.product_slug === "chatgpt" && row.plan_slug === "plus"
+        ? undefined : row.observation_id || undefined,
       confidenceScore: Number(row.confidence_score || 0),
       dataQuality:
         row.data_quality === "verified" ||
@@ -457,6 +460,16 @@ export async function getPricingDetailProduct(
       latest_observation.reviewed_at,
       source.name AS source_name,
       latest_observation.source_url,
+      CASE WHEN latest_observation.raw_price = rp.local_price
+        AND latest_observation.currency = rp.currency
+        AND latest_observation.source_id = rp.primary_source_id
+        AND latest_observation.status = 'approved'
+        AND NOT latest_observation.anomaly_flag
+        AND latest_observation.confidence_score >= 80
+        AND jsonb_typeof(latest_observation.raw_payload #> '{raw_snapshot,inAppPurchases}') = 'array'
+        AND UPPER(latest_observation.raw_payload #>> '{raw_snapshot,country}') = c.code
+        AND latest_observation.raw_payload #>> '{raw_snapshot,planSpecSlug}' = pl.slug
+        THEN latest_observation.id::text ELSE NULL END AS observation_id,
       rp.confidence_score,
       rp.data_quality::text AS data_quality
     FROM products p
@@ -478,6 +491,7 @@ export async function getPricingDetailProduct(
       AND NOT (p.slug = 'spotify' AND rp.billing_platform = 'web')
     LEFT JOIN LATERAL (
       SELECT
+        po.id, po.source_id, po.raw_price, po.currency, po.status, po.anomaly_flag, po.confidence_score,
         po.raw_payload,
         po.source_url,
         COALESCE(

@@ -11,6 +11,14 @@ export function getPricingPagePlan(plan: ProductPlan, canonicalPath: string): Pr
   return { ...plan, regions, freshness: getPlanFreshness(regions) };
 }
 
+// The price-position chart must use the table's platform, including on pages
+// whose experiment copy intentionally retains its original input.
+export function getPricePositionPlan(plan: ProductPlan): ProductPlan {
+  const regions = getDefaultPlanRegions(plan).slice().sort((a, b) => a.priceUsd - b.priceUsd)
+    .map((region, index) => ({ ...region, rank: index + 1 }));
+  return { ...plan, regions, freshness: getPlanFreshness(regions) };
+}
+
 export function getCountryPricingPlans(plans: ProductPlan[], countryCode: string) {
   return plans
     .filter((plan) => plan.billing === "monthly")

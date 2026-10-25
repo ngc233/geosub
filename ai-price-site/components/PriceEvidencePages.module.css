@@ -1,0 +1,39 @@
+/* Semantic aliases use the same Zinc/Lime surfaces and type colors as the
+   shared public pricing components. Scope them to these additive pages. */
+.page {
+  --color-bg-subtle: var(--color-zinc-50);
+  --color-border-default: var(--color-zinc-200);
+  --color-text-primary: var(--color-zinc-950);
+  --color-text-secondary: var(--color-zinc-500);
+  --color-text-muted: var(--color-zinc-500);
+  --color-accent: var(--color-lime-700);
+  --color-accent-soft: var(--color-lime-50);
+  --color-price-low: var(--color-lime-700);
+  --color-price-low-soft: var(--color-lime-50);
+  --color-price-high: var(--color-rose-700);
+  --color-price-high-soft: var(--color-rose-50);
+  --color-focus: var(--color-lime-600);
+}
+.page :is(a, summary):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: var(--radius-lg);
+}
+.page summary { list-style: none; }
+.page summary::-webkit-details-marker { display: none; }
+@media (prefers-color-scheme: dark) {
+  .page {
+    --color-bg-subtle: var(--color-zinc-800);
+    --color-border-default: var(--color-zinc-800);
+    --color-text-primary: var(--color-white);
+    --color-text-secondary: var(--color-zinc-400);
+    --color-text-muted: var(--color-zinc-400);
+    --color-accent: var(--color-lime-300);
+    --color-accent-soft: var(--color-lime-950);
+    --color-price-low: var(--color-lime-300);
+    --color-price-low-soft: var(--color-lime-950);
+    --color-price-high: var(--color-rose-300);
+    --color-price-high-soft: var(--color-rose-950);
+    --color-focus: var(--color-lime-400);
+  }
+}

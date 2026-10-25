@@ -1,4 +1,4 @@
-import { getPricingPagePlan, getPricingChannelLabel } from "../lib/pricing-page-facts";
+import { getPricingPagePlan, getPricingChannelLabel, getPricePositionPlan } from "../lib/pricing-page-facts";
 import { getPurchaseEligibility } from "../lib/purchase-eligibility";
 import PurchaseEligibilityNote from "./PurchaseEligibilityNote";
 import { getPublishedContent } from "../lib/managed-content-store";
@@ -1497,7 +1497,7 @@ export default async function PricingDetailPage({
               productName={product.name}
               priceView={(
                 <PricePositionSection
-                  plan={contentPlan}
+                  plan={getPricePositionPlan(contentPlan)}
                   bigMacBenchmarks={affordability.bigMacBenchmarks}
                   locale={locale}
                 />

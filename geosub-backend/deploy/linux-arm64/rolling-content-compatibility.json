@@ -140,6 +140,11 @@
       "from": "5c29c4165e7a35ccf5ad501be8505795070d452ec67f2e9d37f4ff14dd9197e2",
       "to": "a129e7676336aaec568e505c8b2c28110019f8ac28a17e3b67ea99c8386df922",
       "reason": "2.19.0 to retained 2.18.0: registered content reader, renderer, validator, store, distribution and schema files are byte-identical except VERSION. Apple Music adds a source-specific Web collector/review and product-bound cache authorization, preserving the content contract and published dataset shape. No database schema input changes. Pause Apple Music task before rollback to its pending-only collector and keep product review if reverting the website after first publication."
+    },
+    {
+      "from": "cf3c4a73a05f49dfba71e87d5881ccd0d3a64dbf9d7e77f871b18ebfa9734c9a",
+      "to": "5c29c4165e7a35ccf5ad501be8505795070d452ec67f2e9d37f4ff14dd9197e2",
+      "reason": "2.20.0 to retained 2.19.0: managed-content reader, store, validator, distribution and schema byte-identical. PricingDetailPage only scopes the existing position chart to its displayed billing platform; published content precedence and shape remain unchanged. Country hubs, source snapshots and history are independent read-only routes. No database input or content contract changes; retain the 2.19 Apple Music collector when rolling back only the website."
     }
   ]
 }

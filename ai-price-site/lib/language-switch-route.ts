@@ -6,11 +6,19 @@ import {
   type SiteLocale,
 } from "./site-locale.ts";
 
+export function isBilingualEvidencePath(pathname: string) {
+  return /^\/(?:countries|price-history|price-records)(?:\/|$)/.test(stripSiteLocale(pathname));
+}
+
 export function getLanguageSwitchHref(
   pathname: string,
   nextLocale: SiteLocale,
 ) {
   const relativePath = stripSiteLocale(pathname || "/").replace(/\/+$/, "") || "/";
+
+  if (isBilingualEvidencePath(pathname) && nextLocale !== "zh" && nextLocale !== "en") {
+    return withSiteLocale("/", nextLocale);
+  }
 
   // Detailed guide translations are published only for indexable locales.
   // Keep every language available without linking to an unpublished detail page.

@@ -27,6 +27,7 @@ export type RegionPrice = {
   reviewedAt?: string;
   sourceName?: string;
   sourceUrl?: string;
+  observationId?: string;
   confidenceScore?: number;
   dataQuality?: "verified" | "estimated" | "stale" | "pending_review" | "unknown";
   isCheap?: boolean;

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { getLanguageSwitchHref } from "../lib/language-switch-route";
+import { useEffect, useRef, useState } from "react";
+import { getLanguageSwitchHref, isBilingualEvidencePath } from "../lib/language-switch-route";
 import { shouldHideFromPublicNavigation } from "../lib/public-launch-routes";
 import {
   getSiteLocaleFromPath,
@@ -531,21 +531,26 @@ export default function Header({
   const currentLocaleCode = getSiteLocaleFromPath(pathname);
   const currentLocale =
     languages.find((item) => item.code === currentLocaleCode) || languages[0];
-  const availableLanguages = isCountryPagePilotPath(pathname)
+  const availableLanguages = (isCountryPagePilotPath(pathname) || isBilingualEvidencePath(pathname))
     ? languages.filter((language) => language.code === "zh" || language.code === "en")
     : languages;
   const copy = headerCopy[currentLocaleCode];
   const currentLocaleNavItems =
     initialNavItemsByLocale[currentLocaleCode] || [];
-  const navItems = filterNavigationItems(
+  const baseNavItems = filterNavigationItems(
     currentLocaleNavItems.length > 0
       ? currentLocaleNavItems
       : fallbackNavItemsByLocale[currentLocaleCode],
   );
+  // Preserve the frozen Plus experiment's existing navigation.
+  const discoveryItems: NavItem[] = (currentLocaleCode === "zh" || currentLocaleCode === "en")
+    && pathname !== "/zh/ai-pricing/chatgpt/plus" ? [
+      { href: "/countries", name: currentLocaleCode === "zh" ? "国家价格" : "Countries", match: ["/countries"] },
+      { href: "/price-history", name: currentLocaleCode === "zh" ? "价格历史" : "Price history", match: ["/price-history"] },
+    ].filter(item => !baseNavItems.some(existing => stripSiteLocale(existing.href) === item.href)) : [];
+  const navItems = [...baseNavItems.slice(0, 2), ...discoveryItems, ...baseNavItems.slice(2)];
 
-  const activeItemName = useMemo(() => {
-    return navItems.find((item) => isNavItemActive(item, pathname))?.name || "";
-  }, [navItems, pathname]);
+  const activeItemName = navItems.find((item) => isNavItemActive(item, pathname))?.name || "";
 
   useEffect(() => {
     function handlePointerOutside(event: Event) {

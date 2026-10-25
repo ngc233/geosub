@@ -60,9 +60,11 @@ export function PublicSectionHeader({
 export function MetricStrip({
   children,
   columns = 4,
+  mobileColumns = 1,
 }: {
   children: ReactNode;
   columns?: 3 | 4;
+  mobileColumns?: 1 | 2;
 }) {
   const columnsClass = columns === 3 ? "md:grid-cols-3" : "md:grid-cols-4";
 
@@ -70,6 +72,7 @@ export function MetricStrip({
     <div
       className={[
         "grid border-t border-zinc-100 px-5 py-1 dark:border-zinc-800 md:divide-x md:divide-zinc-100 md:px-0 dark:md:divide-zinc-800",
+        mobileColumns === 2 ? "grid-cols-2 gap-x-4 md:gap-x-0" : "grid-cols-1",
         columnsClass,
       ].join(" ")}
     >
