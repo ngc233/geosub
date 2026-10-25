@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { fetchAppleMusicOfficialSnapshot } from './lib/apple-music-official-web.mjs';
 import { fetchSpotifyOfficialSnapshot } from './lib/spotify-official-web.mjs';
 import { assertAutomaticWebSource, reviewOfficialWebMarket } from './lib/official-web-auto-review.mjs';
 
@@ -58,7 +59,8 @@ function boolArg(value) {
 async function renderMarket({ source, market, chromePath }) {
   if (source.fetch_mode === 'structured_http') {
     assertAutomaticWebSource(source);
-    return fetchSpotifyOfficialSnapshot(market);
+    const fetcher={spotify_official_web:fetchSpotifyOfficialSnapshot,apple_music:fetchAppleMusicOfficialSnapshot}[source.parser_key];
+    return fetcher(market);
   }
   const rendererArgs = [
     rendererPath,
@@ -93,7 +95,7 @@ async function renderMarket({ source, market, chromePath }) {
 }
 
 export async function* collectMarketSnapshots(source, markets, chromePath, render = renderMarket) {
-  // Only the structured Spotify fetcher uses this bounded HTTP batch. Database
+  // Only the maintained structured fetchers uses this bounded HTTP batch. Database
   // work stays sequential on its single transaction connection.
   const batchSize = source.fetch_mode === 'structured_http' ? 4 : 1;
   for (let index = 0; index < markets.length; index += batchSize) {

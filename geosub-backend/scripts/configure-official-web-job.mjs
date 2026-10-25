@@ -16,7 +16,7 @@ export async function configureOfficialWebJob(client, source, execute=false, {pl
     const product=(await client.query("SELECT id,status FROM products WHERE slug=$1",[source.product_slug])).rows[0];
     if(!product || !['draft','review','published'].includes(product.status)) throw Error('official_web_product_not_active');
     if(execute) await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`configure_official_web:${product.id}`]);
-    const definitions=Object.entries(spotifyRegistry.plan_additions);
+    const definitions=Object.entries(source.product_slug==='spotify'?spotifyRegistry.plan_additions:{});
     const currentPlans=(await client.query('SELECT slug,name,billing_cycle,status FROM plans WHERE product_id=$1',[product.id])).rows;
     const planAdditions=definitions.filter(([slug])=>!currentPlans.some(p=>p.slug===slug)).map(([slug,plan])=>({slug,...plan}));
     for(const [slug,plan] of definitions) {
@@ -34,7 +34,7 @@ export async function configureOfficialWebJob(client, source, execute=false, {pl
     }
     // This reviewed catalog only fills absent countries. Never rewrite a
     // country's default currency to match Spotify's actual charge currency.
-    const additions=Object.entries(spotifyRegistry.catalog_additions)
+    const additions=Object.entries(source.product_slug==='spotify'?spotifyRegistry.catalog_additions:{})
       .filter(([code])=>countryCodes.includes(code));
     if(execute) for(const [code,row] of additions) {
       await client.query(`INSERT INTO countries(code,name_en,name_zh,currency,region)
@@ -47,17 +47,20 @@ export async function configureOfficialWebJob(client, source, execute=false, {pl
     const jobs=await client.query(`SELECT j.id,j.status,j.job_config FROM collector_jobs j
       LEFT JOIN price_sources s ON s.id=j.source_id WHERE j.product_id=$1 AND j.status<>'archived'
       AND (j.job_config->>'collector_kind' IN ('app_store','pricing_page','official_site') OR s.type='official_page') ${execute?'FOR UPDATE OF j':''}`,[database.product.id]);
-    const config={collector_kind:'pricing_page',official_web_source_key:'spotify',country_codes:countryCodes,
+    const config={collector_kind:'pricing_page',official_web_source_key:source.product_slug,country_codes:countryCodes,
       interval_hours:12,url:source.base_url,automatic_review_rule:source.auto_review.rule_id};
     if (jobs.rows.length) {
-      if (jobs.rows.length !== 1 || jobs.rows[0].job_config.official_web_source_key !== 'spotify'
-        || jobs.rows[0].status !== 'active') throw Error('official_web_existing_job_requires_explicit_resolution');
+      if (jobs.rows.length !== 1 || jobs.rows[0].job_config.official_web_source_key !== source.product_slug
+        || !((source.product_slug==='apple-music' ? ['active','paused'] : ['active']).includes(jobs.rows[0].status))) throw Error('official_web_existing_job_requires_explicit_resolution');
       const current=jobs.rows[0].job_config;
-      const matches=JSON.stringify(current.country_codes)===JSON.stringify(countryCodes)
+      const matches=jobs.rows[0].status==='active' && current.interval_hours===12 && current.url===source.base_url && JSON.stringify(current.country_codes)===JSON.stringify(countryCodes)
         && current.automatic_review_rule===config.automatic_review_rule;
-      if (!matches && execute) await client.query(`UPDATE collector_jobs SET
-        job_config=job_config||jsonb_build_object('country_codes',$2::jsonb,'automatic_review_rule',$3::text)
-        WHERE id=$1`,[jobs.rows[0].id,JSON.stringify(countryCodes),config.automatic_review_rule]);
+      if (!matches && execute) {
+        const sourceId=await ensureSource(client,source);
+        await client.query(`UPDATE collector_jobs SET status='active',source_id=$3,
+          job_config=(job_config-'pilot')||$2::jsonb,next_run_at=NOW(),updated_at=NOW()
+          WHERE id=$1`,[jobs.rows[0].id,JSON.stringify(config),sourceId]);
+      }
       await client.query('COMMIT');return {action:matches?'existing':execute?'updated':'update-required',
         product:source.product_slug,jobId:jobs.rows[0].id,config:matches?undefined:config,
         ...(catalogAdditions.length?{catalogAdditions}:{}),...(planAdditions.length?{planAdditions}:{})};
@@ -77,12 +80,13 @@ export async function configureOfficialWebJob(client, source, execute=false, {pl
 
 async function main(){
   const args=process.argv.slice(2);
-  if(!args.includes('--source-key') || args[args.indexOf('--source-key')+1]!=='spotify') throw Error('Explicit --source-key spotify required');
+  const sourceKey=args[args.indexOf('--source-key')+1];
+  if(!args.includes('--source-key') || !['spotify','apple-music'].includes(sourceKey)) throw Error('Explicit supported --source-key required');
   const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
   loadEnvFile(path.join(root,'ai-price-site/.env.local'));loadEnvFile(path.join(root,'ai-price-site/.env'));
   const {Client}=createRequire(path.join(process.env.GEOSUB_FRONTEND_DIR || path.join(root,'ai-price-site'),'package.json'))('pg');
   if(!process.env.DATABASE_URL) throw Error('DATABASE_URL is not set');
-  const source=JSON.parse(readFileSync(path.join(root,'geosub-backend/data/official-web-price-sources.json'))).sources.spotify;
+  const source=JSON.parse(readFileSync(path.join(root,'geosub-backend/data/official-web-price-sources.json'))).sources[sourceKey];
   const client=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:5000});
   try {await client.connect();console.log(JSON.stringify(await configureOfficialWebJob(client,source,args.includes('--execute'),{plansOnly:args.includes('--plans-only')})));}
   finally{await client.end().catch(()=>{});}

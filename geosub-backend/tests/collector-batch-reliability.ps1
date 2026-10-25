@@ -83,5 +83,28 @@ Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12
 if ($identitySql -notmatch "status = 'active'" -or $identitySql -notmatch "INTERVAL '12 hours'" -or $identitySql -notmatch 'official_web_isolated_retry') { throw 'Maintained Spotify task stopped instead of automatic scheduled recovery' }
 $webJob.job_config.official_web_source_key='apple-music'
 Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12345678-1234-4234-8234-123456789abe'
-if ($identitySql -notmatch "status = 'failed'") { throw 'Spotify retry exception changed another source' }
+if ($identitySql -notmatch "status = 'active'" -or $identitySql -notmatch 'official_web_isolated_retry') { throw 'Maintained Apple Music task stopped instead of automatic scheduled recovery' }
+$webJob.job_config.official_web_source_key='unmaintained-source'
+Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12345678-1234-4234-8234-123456789abe'
+if ($identitySql -notmatch "status = 'failed'") { throw 'Maintained Web retry exception changed another source' }
 Write-Output 'PASS: actual Spotify failure transaction retries automatically and preserves other-source behavior'
+$publicationIf = $ast.Find({param($node)
+  $node -is [System.Management.Automation.Language.IfStatementAst] -and
+  $node.Extent.Text.StartsWith('if (!$SkipAutoReview -and $result.CollectorKind') -and
+  $node.Extent.Text.Contains('$completedWebJobs +=')
+}, $true)
+if (!$publicationIf) { throw 'Actual official Web publication branch missing' }
+foreach ($case in @(
+  @{source='apple-music';status='succeeded';published=0;expected=1},
+  @{source='apple-music';status='failed';published=3;expected=1},
+  @{source='apple-music';status='failed';published=0;expected=0},
+  @{source='spotify';status='succeeded';published=2;expected=1},
+  @{source='unmaintained-source';status='succeeded';published=3;expected=0}
+)) {
+  $SkipAutoReview=$false;$completedWebJobs=@();$completedWebPublications=@()
+  $job=@{id='12345678-1234-4234-8234-123456789abc';product_slug=$case.source}
+  $result=@{Status=$case.status;CollectorKind='pricing_page';RawPayload=@{source_key=$case.source;published_price_count=$case.published}}
+  . ([scriptblock]::Create($publicationIf.Extent.Text))
+  if ($completedWebJobs.Count -ne $case.expected) { throw 'Published partial Web market did not refresh caches correctly' }
+}
+Write-Output 'PASS: actual Apple Music and Spotify publication branch refreshes published partial markets only'

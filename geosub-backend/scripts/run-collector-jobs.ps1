@@ -949,7 +949,7 @@ function Complete-JobRun {
   $retryableOfficialWebFailure = (
     $failedAttempt -and !$permanentFailure -and
     [string]$Result.CollectorKind -eq "pricing_page" -and
-    (Get-ConfigValue -Config $Job.job_config -Name "official_web_source_key") -eq "spotify"
+    (Get-ConfigValue -Config $Job.job_config -Name "official_web_source_key") -in @("spotify", "apple-music")
   )
 
   if ($status -eq "succeeded") {
@@ -1278,8 +1278,9 @@ foreach ($job in $jobs) {
 
   try {
     $result = Invoke-CollectorScript -Job $job
-    if (!$SkipAutoReview -and $result.Status -eq "succeeded" -and $result.CollectorKind -eq "pricing_page" -and
-        $result.RawPayload -and [string]$result.RawPayload.source_key -eq "spotify") {
+    if (!$SkipAutoReview -and $result.CollectorKind -eq "pricing_page" -and $result.RawPayload -and
+        ($result.Status -eq "succeeded" -or [int]$result.RawPayload.published_price_count -gt 0) -and
+        [string]$result.RawPayload.source_key -in @("spotify", "apple-music")) {
       $completedWebPublications += [string]$job.product_slug
       $completedWebJobs += [string]$job.id
     }

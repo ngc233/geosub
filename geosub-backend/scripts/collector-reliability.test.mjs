@@ -69,7 +69,7 @@ test("official Web parsing remains generic and pending-only", () => {
   assert.match(officialWebCollector, /pilot: source\.pilot === true/);
   assert.match(officialWebCollector, /source\.evidence_note/);
   assert.match(officialWebCollector, /canonical_plan_billing_cycle_mismatch/);
-  assert.doesNotMatch(officialWebCollector, /Apple Music|apple-music|apple_music/);
+  assert.doesNotMatch(officialWebCollector, /source\.product_slug\s*===/);
 });
 
 test("actual batch runner exposes failed children and retains narrow legacy job scope", async () => {

@@ -222,7 +222,7 @@ test('an older anomaly ceases blocking after three newer independent clean sampl
 test('only explicitly configured source/product/markets may use automatic Web approval',()=>{
   const config=JSON.parse(readFileSync(new URL('../data/official-web-price-sources.json',import.meta.url)));
   assert.doesNotThrow(()=>assertAutomaticWebSource(config.sources.spotify));
-  assert.throws(()=>assertAutomaticWebSource(config.sources['apple-music']));
+  assert.doesNotThrow(()=>assertAutomaticWebSource(config.sources['apple-music']));
   assert.throws(()=>assertAutomaticWebSource({...config.sources.spotify,product_slug:'chatgpt'}));
 });
 
@@ -285,4 +285,62 @@ test('publication invalidation uses current loopback build and a job-bound HMAC 
   await assert.rejects(refreshOfficialWebPublication([job],env,async()=>{attempts++;throw Error('timeout');},read),/3 attempts/);
   assert.equal(attempts,3);
   await assert.rejects(refreshOfficialWebPublication([job],env,http,()=>JSON.stringify({app:'/web',dist:'.next',healthUrl:'https://outside.test/'})),/Loopback/);
+});
+
+// Apple uses the same stability decision, with its own exact source identity.
+import {parseAppleMusicOfficialHtml,fetchAppleMusicOfficialSnapshot,appleMusicRule} from './lib/apple-music-official-web.mjs';
+const appleConfig=JSON.parse(readFileSync(new URL('../data/official-web-price-sources.json',import.meta.url))).sources['apple-music'];
+const appleFixtures=JSON.parse(readFileSync(new URL('./fixtures/apple-music-plans.json',import.meta.url)));
+for(const fixture of appleFixtures) test(`Apple Music ${fixture.country_code} real official tile evidence`,()=>{
+  const market=appleConfig.markets.find(m=>m.country_code===fixture.country_code);
+  const result=parseAppleMusicOfficialHtml(fixture.html,{countryCode:market.country_code,currency:market.currency,finalUrl:market.url});
+  assert.equal(result.complete,true,result.issues.join(','));
+  const expected={US:[11.99,19.99,6.99],BR:[23.9,40.9,12.9],TR:[89.99,149.99,49.99],JP:[1180,1980,680],DE:[11.99,19.99,6.99]};
+  assert.deepEqual(result.candidates.map(c=>c.raw_price),expected[market.country_code]);
+  assert.deepEqual(result.candidates.map(c=>c.plan_slug),['individual','family','student']);
+});
+const appleUs=appleConfig.markets[0];
+const appleHtml=appleFixtures[0].html;
+for(const [label,change,context] of [
+  ['missing plan',h=>h.replace('id="student"','id="apple-one"')],
+  ['duplicate plan',h=>h.replace('</section>','<li id="individual"><h3>Individual</h3></li></section>')],
+  ['wrong identity',h=>h.replace('>Individual<','>Apple One<')],
+  ['annual',h=>h.replace('$11.99/month','$11.99/year')],
+  ['trial only',h=>h.replace('$11.99/month','first month free')],
+  ['conflicting price',h=>h.replace('$11.99/month','$10.99/month then $11.99/month')],
+  ['mixed currency',h=>h.replace('$11.99/month','$11.99/month or €9.99')],
+  ['wrong locale',h=>h.replaceAll('en-US','en-GB')],
+  ['wrong currency',h=>h,{currency:'EUR'}],
+  ['redirected country',h=>h,{finalUrl:'https://www.apple.com/br/apple-music/'}],
+]) test(`Apple Music rejects ${label}`,()=>assert.equal(parseAppleMusicOfficialHtml(change(appleHtml),
+  {countryCode:'US',currency:'USD',finalUrl:appleUs.url,...context}).complete,false));
+test('Apple Music ignores FAQ, Apple One and offer prices outside canonical tiles',()=>{
+  const h=appleHtml.replace('</section>','<li id="apple-one"><h3>Apple One</h3><p>$1/month</p></li></section>')+'<section>Individual $99/month, FAQ $0</section>';
+  assert.equal(parseAppleMusicOfficialHtml(h,{countryCode:'US',currency:'USD',finalUrl:appleUs.url}).complete,true);
+});
+test('Apple Music only allowlists its exact five-market source; redirects and failed responses fail closed',async()=>{
+  assert.doesNotThrow(()=>assertAutomaticWebSource(appleConfig));
+  for(const mutate of [s=>s.source_key='spotify-official-web',s=>s.parser_version='apple-music-official-web-v1',
+    s=>s.auto_review.rule_id='spotify-regional-monthly-stability-v2',s=>s.markets[0].currency='EUR',
+    s=>s.markets[0].url='https://example.com/apple-music/',s=>s.markets.push({...s.markets[0]})]) {
+    const s=structuredClone(appleConfig);mutate(s);assert.throws(()=>assertAutomaticWebSource(s));
+  }
+  let options;
+  const snapshot=await fetchAppleMusicOfficialSnapshot(appleUs,async(url,o)=>{options=o;return new Response(appleHtml,{headers:{'content-type':'text/html'}});});
+  assert.equal(options.redirect,'error');assert.equal(snapshot.parser_result.complete,true);assert.equal(snapshot.content_hash.length,64);
+  await assert.rejects(fetchAppleMusicOfficialSnapshot({...appleUs,url:'https://example.com/'}),/unsupported_official_url/);
+  await assert.rejects(fetchAppleMusicOfficialSnapshot(appleUs,async()=>new Response('',{status:503})),/unavailable/);
+  await assert.rejects(fetchAppleMusicOfficialSnapshot(appleUs,async()=>new Response('a'.repeat(2*1024*1024+1),{headers:{'content-type':'text/html'}})),/too_large/);
+});
+test('Apple Music stability requires independent new-rule evidence, not legacy samples or forced retries',()=>{
+  const now=new Date(),samples=[0,12,24].map((hours,i)=>({id:String(i),observed_at:new Date(+now-hours*3600000),raw_price:11.99,
+    currency:'USD',status:'pending',source_level:'A',confidence_score:82,evidence_ok:true,
+    raw_payload:{billing_cycle:'monthly',publication_eligible:true,automatic_rule:appleMusicRule,requested_country:'US',source_url:appleUs.url,final_url:appleUs.url,render_mode:'structured_http'}}));
+  const decide=s=>decideOfficialWebReview(s,null,now,appleUs,appleMusicRule);
+  assert.equal(decide(samples).decision,'approved');
+  assert.equal(decide(samples.slice(0,2)).decision,'waiting');
+  assert.equal(decide(samples.map(s=>({...s,observed_at:now}))).decision,'waiting');
+  const old=structuredClone(samples);old[0].raw_payload.automatic_rule=null;assert.equal(decide(old).decision,'isolated');
+  const anomaly=structuredClone(samples);anomaly[0].anomaly_flag=true;assert.equal(decide(anomaly).decision,'isolated');
+  assert.equal(decideOfficialWebReview(samples,{local_price:5},now,appleUs,appleMusicRule).decision,'waiting');
 });

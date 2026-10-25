@@ -135,6 +135,11 @@
       "from": "a129e7676336aaec568e505c8b2c28110019f8ac28a17e3b67ea99c8386df922",
       "to": "2e176b81a217aeef8025b07f29599a9553be2d59dc6d89b7f46dddc26175f42c",
       "reason": "2.18.0 to 2.15.15: registered managed-content reader, renderer, validator, store and schema files byte-identical except VERSION. Spotify adds independent Standard/Platinum editorial and source-scoped collection; dynamic plans and nullable US comparisons remain compatible. No schema migration."
+    },
+    {
+      "from": "5c29c4165e7a35ccf5ad501be8505795070d452ec67f2e9d37f4ff14dd9197e2",
+      "to": "a129e7676336aaec568e505c8b2c28110019f8ac28a17e3b67ea99c8386df922",
+      "reason": "2.19.0 to retained 2.18.0: registered content reader, renderer, validator, store, distribution and schema files are byte-identical except VERSION. Apple Music adds a source-specific Web collector/review and product-bound cache authorization, preserving the content contract and published dataset shape. No database schema input changes. Pause Apple Music task before rollback to its pending-only collector and keep product review if reverting the website after first publication."
     }
   ]
 }

@@ -1866,16 +1866,16 @@
     "apple-music": {
       "product_slug": "apple-music",
       "parser_key": "apple_music",
-      "parser_version": "apple-music-official-web-v1",
+      "parser_version": "apple-music-official-web-v2",
       "source_key": "apple-music-official-web",
       "source_name": "Apple Music Official Web Pricing",
       "provider": "Apple",
       "base_url": "https://www.apple.com/apple-music/",
       "source_level": "A",
       "reliability_score": 90,
-      "pilot": true,
+      "pilot": false,
       "billing_cycle": "monthly",
-      "evidence_note": "Official localized Apple Music pricing page. Parser-complete observation remains pending and is not published.",
+      "evidence_note": "Official localized Apple Music monthly plan tile; country, locale, currency, plan identity and source hash retained. Independent stable samples required before publication.",
       "required_plan_slugs": [
         "individual",
         "family",
@@ -1912,7 +1912,13 @@
           "currency": "EUR",
           "url": "https://www.apple.com/de/apple-music/"
         }
-      ]
+      ],
+      "fetch_mode": "structured_http",
+      "auto_review": {
+        "rule_id": "apple-music-monthly-stability-v1",
+        "publish_product": true
+      },
+      "public_description": "Compare Apple Music Individual, Family and Student regular monthly official Web prices. Plans are compared separately; free trials and Apple One bundles are excluded. Student verification and Family Sharing conditions apply."
     }
   }
 }

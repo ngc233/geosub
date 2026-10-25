@@ -163,3 +163,76 @@ test('real PostgreSQL official Web pipeline publishes, isolates and recovers wit
     await client.end();
   }
 });
+
+import {parseAppleMusicOfficialHtml} from './lib/apple-music-official-web.mjs';
+test('real PostgreSQL Apple Music paused pilot resumes once; stable observations publish all plans and recover without changing other sources', {skip:!dsn},async()=>{
+  const url=new URL(dsn);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));assert.match(url.pathname,/^\/geosub_web_test/);
+  const {Client}=createRequire(new URL('../../ai-price-site/package.json',import.meta.url))('pg');
+  const client=new Client({connectionString:dsn});await client.connect();const schema=`apple_test_${process.pid}`;
+  const source=JSON.parse(readFileSync(new URL('../data/official-web-price-sources.json',import.meta.url))).sources['apple-music'];
+  const fixtures=JSON.parse(readFileSync(new URL('./fixtures/apple-music-plans.json',import.meta.url)));
+  await client.query(`CREATE SCHEMA ${schema}; SET search_path=${schema},public`);
+  try {
+    for(const file of ['001_core_schema.sql','018_collector_job_runs.sql','043_public_product_lifecycle.sql','054_successful_collection_publication_gate.sql'])
+      await client.query(readFileSync(new URL(`../sql/schema/${file}`,import.meta.url),'utf8'));
+    await client.query("ALTER TABLE collector_jobs ADD COLUMN job_config JSONB DEFAULT '{}'::jsonb, ADD COLUMN priority INTEGER DEFAULT 50");
+    const product=(await client.query("INSERT INTO products(slug,name,category,status) VALUES('apple-music','Apple Music','streaming','review') RETURNING *")).rows[0];
+    const countries=(await client.query(`INSERT INTO countries(code,name_en,name_zh,currency) SELECT code,code,code,currency
+      FROM jsonb_to_recordset($1::jsonb) AS c(code text,currency text) RETURNING *`,[JSON.stringify(source.markets.map(m=>({code:m.country_code,currency:m.currency})))])).rows;
+    const plans=new Map();for(const slug of source.required_plan_slugs) {
+      const p=(await client.query("INSERT INTO plans(product_id,slug,name,billing_cycle,status) VALUES($1,$2,$3,'monthly','review') RETURNING *",
+        [product.id,slug,`Apple Music ${slug}`])).rows[0];plans.set(slug,p);
+    }
+    const database={product,plans,countries:new Map(countries.map(c=>[c.code,c]))};
+    const sourceId=(await client.query(`INSERT INTO price_sources(source_key,name,type,provider,base_url,source_level,status)
+      VALUES($1,'Apple official','official_page','Apple',$2,'A','active') RETURNING id`,[source.source_key,source.base_url])).rows[0].id;
+    const job=(await client.query(`INSERT INTO collector_jobs(product_id,source_id,job_type,schedule,status,job_config)
+      VALUES($1,$2,'streaming_pricing','daily','paused',$3::jsonb) RETURNING id`,[product.id,sourceId,JSON.stringify({collector_kind:'pricing_page',official_web_source_key:'apple-music',pilot:true})])).rows[0];
+    const before=(await client.query('SELECT row_to_json(j) row FROM collector_jobs j WHERE id=$1',[job.id])).rows[0];
+    assert.equal((await configureOfficialWebJob(client,source)).action,'update-required');
+    assert.deepEqual((await client.query('SELECT row_to_json(j) row FROM collector_jobs j WHERE id=$1',[job.id])).rows[0],before,'dry-run never activates pilot');
+    assert.equal((await configureOfficialWebJob(client,source,true)).jobId,job.id);
+    assert.equal((await configureOfficialWebJob(client,source,true)).action,'existing');
+    const config=(await client.query('SELECT * FROM collector_jobs WHERE id=$1',[job.id])).rows[0];
+    assert.equal(config.status,'active');assert.equal(config.job_config.interval_hours,12);assert.equal(config.job_config.pilot,undefined);
+    assert.equal((await client.query('SELECT count(*)::int n FROM collector_jobs')).rows[0].n,1);
+    const market=source.markets[0],country=database.countries.get('US');
+    await client.query(`INSERT INTO region_prices(product_id,plan_id,country_id,local_price,currency,price_usd,billing_platform,status)
+      VALUES($1,$2,$3,99,'USD',99,'ios','published')`,[product.id,plans.get('individual').id,country.id]);
+    const other=(await client.query("INSERT INTO products(slug,name) VALUES('other','Other') RETURNING *")).rows[0];
+    const fingerprint=async()=>JSON.stringify((await client.query("SELECT row_to_json(p) row FROM products p WHERE id=$1 UNION ALL SELECT row_to_json(r) FROM region_prices r WHERE billing_platform='ios'",[other.id])).rows);
+    const untouched=await fingerprint(),now=Date.now();
+    const snap=(m,hours)=>({ok:true,render_mode:'structured_http',http_status:200,final_url:m.url,user_agent:'GeoSub-test',
+      content_hash:createHash('sha256').update(`${m.country_code}-${hours}`).digest('hex'),captured_at:new Date(now-hours*3600000).toISOString(),
+      parser_result:parseAppleMusicOfficialHtml(fixtures.find(f=>f.country_code===m.country_code).html,{countryCode:m.country_code,currency:m.currency,finalUrl:m.url})});
+    const insert=(m,hours)=>insertMarketObservations({client,source,market:m,database,sourceId,force:true,snapshot:snap(m,hours)});
+    const review=m=>reviewOfficialWebMarket({client,source,market:m,database,sourceId});
+    // Retained pilot evidence cannot qualify, and is only resolved after the
+    // same market/plan obtains a newly verified formal price.
+    const legacySource={...source,parser_version:'apple-music-official-web-v1',auto_review:undefined,pilot:true};
+    const legacySnap=snap(market,48);legacySnap.parser_result.parser_version=legacySource.parser_version;
+    await insertMarketObservations({client,source:legacySource,market,database,sourceId,force:false,snapshot:legacySnap});
+    for(const hours of [24,12])assert.equal((await insert(market,hours)).inserted,3);
+    assert.equal((await review(market)).published,0);
+    assert.equal((await client.query('SELECT status FROM products WHERE id=$1',[product.id])).rows[0].status,'review');
+    assert.equal((await insert(market,12)).inserted,0,'force cannot invent independent samples');
+    await insert(market,0);assert.equal((await review(market)).published,3);assert.equal((await review(market)).published,0);
+    assert.equal((await client.query('SELECT status FROM products WHERE id=$1',[product.id])).rows[0].status,'published');
+    assert.equal((await client.query("SELECT count(*)::int n FROM price_observations WHERE parser_version='apple-music-official-web-v1' AND status='ignored'")).rows[0].n,3,'legacy evidence is retained and resolved, never approved');
+    assert.equal((await client.query("SELECT count(*)::int n FROM plans WHERE product_id=$1 AND status='published'",[product.id])).rows[0].n,3);
+    assert.equal((await client.query("SELECT count(*)::int n FROM region_prices WHERE billing_platform='web' AND status='published' AND data_quality='verified'")).rows[0].n,3);
+    const br=source.markets[1];for(const hours of [24,12,0])await insert(br,hours);
+    assert.equal((await review(br)).decisions[0].reason,'current_exchange_rate_missing');
+    await client.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,status,is_latest) VALUES('USD','BRL',5,CURRENT_DATE,'active',TRUE)");
+    assert.equal((await review(br)).published,3);
+    assert.equal((await client.query("SELECT price_usd::float8,us_base_price::float8 FROM region_prices WHERE plan_id=$1 AND country_id=$2 AND billing_platform='web'",[plans.get('individual').id,database.countries.get('BR').id])).rows[0].price_usd,4.78);
+    const jp=source.markets.find(m=>m.country_code==='JP');
+    await recordMarketFailure({client,source,market:jp,database,sourceId,snapshot:{...snap(jp,48),http_status:503},issues:['page_unavailable']});
+    for(const hours of [24,12])await insert(jp,hours);
+    assert.equal((await review(jp)).decisions[0].decision,'isolated');
+    await insert(jp,0);
+    await client.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,status,is_latest) VALUES('USD','JPY',150,CURRENT_DATE,'active',TRUE)");
+    assert.equal((await review(jp)).published,3,'three later stable samples recover automatically');
+    assert.equal(await fingerprint(),untouched,'iOS and other product rows are unchanged');
+  } finally {await client.query(`DROP SCHEMA ${schema} CASCADE`);await client.end();}
+});

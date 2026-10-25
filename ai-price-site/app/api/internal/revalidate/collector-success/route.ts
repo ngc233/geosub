@@ -53,9 +53,9 @@ export async function POST(request: Request) {
   if (buildClaim) {
     const allowed = await prisma.$queryRaw<{ allowed: boolean }[]>`
       SELECT EXISTS(SELECT 1 FROM collector_jobs job JOIN products product ON product.id=job.product_id
-        WHERE job.id=${jobId}::uuid AND job.status='active' AND product.slug='spotify'
+        WHERE job.id=${jobId}::uuid AND job.status='active' AND product.slug IN ('spotify','apple-music')
         AND job.job_config->>'collector_kind'='pricing_page'
-        AND job.job_config->>'official_web_source_key'='spotify') AS allowed`;
+        AND job.job_config->>'official_web_source_key'=product.slug) AS allowed`;
     if (!allowed[0]?.allowed) return new Response(null, { status: 404 });
   }
   const productSlug = job?.product?.slug ?? null;

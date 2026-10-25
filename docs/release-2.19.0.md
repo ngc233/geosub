@@ -1,0 +1,11 @@
+# 2.19.0 — Apple Music official Web automation
+
+Candidate (not yet production verified). User authorized implementation, push and deployment on 2026-10-25. See the Apple Music automation PRD for source scope, stability, deployment and rollback.
+
+Connect the existing five-region Individual/Family/Student pilot to strict official HTML evidence, source-specific stability review, Web-only formal prices, product publication, private cache invalidation and report refresh. Resume the exact paused job at 12-hour intervals after a verified database backup. Invalid samples are isolated and subsequent stable samples recover automatically; old v1 pending samples are retained as ignored only once their same plan/market has a verified v2 replacement. Partial markets that publish still refresh their pages/reports.
+
+No schema/database-input changes; ordinary backfills disabled. No iOS, other-source, country catalog, index promotion list or Chinese Plus experiment changes. Exact retained 2.18.0 content rollback compatibility was verified byte-for-byte for every registered contract file except VERSION.
+
+Validation: five live official pages parse 15 regular monthly prices without DB writes; isolated PostgreSQL verifies activation idempotency, all-plan publication, FX checks, legacy resolution, failure recovery and unrelated/iOS invariants; runtime tests and standard release-check pass. Full local preflight is blocked by existing country-page readiness fixtures (unrelated approved country pilots lack their historical events/prices in this minimal local database); no policy was weakened. Chromium verified 40 public/admin page states across Chinese/English, desktop/390px and light/dark, plus filtering and private publication authorization. WebKit verified four representative states; both language PDF endpoints generated valid reports. Production evidence will be recorded separately.
+
+Deployment: CI-approved exact commit; verified controller installation; website rolling upgrade, collector component upgrade, then distinct backed-up job activation. Preserve old receipts, use status for unknown results. The first real samples remain pending until the natural 24-hour stability window passes. Never claim Apple Music public-page acceptance from local fixtures or early pending samples.

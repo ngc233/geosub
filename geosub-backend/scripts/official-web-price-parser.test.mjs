@@ -85,8 +85,9 @@ test("official Web source config contains only the five approved pilot markets",
   assert.equal(config.version, 1);
   assert.equal(source.product_slug, "apple-music");
   assert.equal(source.parser_key, "apple_music");
-  assert.equal(source.parser_version, getOfficialWebParserVersion(source.parser_key));
-  assert.equal(source.pilot, true);
+  assert.equal(source.parser_version, 'apple-music-official-web-v2');
+  assert.equal(getOfficialWebParserVersion(source.parser_key), 'apple-music-official-web-v1');
+  assert.equal(source.pilot, false);
   assert.equal(source.billing_cycle, "monthly");
   assert.match(source.evidence_note, /Apple Music/);
   assert.deepEqual(source.required_plan_slugs, ["individual", "family", "student"]);

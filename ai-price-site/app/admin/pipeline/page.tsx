@@ -32,7 +32,7 @@ export const dynamic = "force-dynamic";
 // Source-specific Web pilot; existing App Store products keep their current
 // scope. This is shared by the row query and aggregate counters below.
 const webPilotScope = Prisma.sql`LEFT JOIN LATERAL (
-  SELECT CASE WHEN product.slug='spotify'
+  SELECT CASE WHEN product.slug IN ('spotify','apple-music')
     AND COALESCE(job_stats.official_web_job_count,0)>0
     AND COALESCE(job_stats.app_store_job_count,0)=0
     THEN 'web' ELSE 'ios' END AS billing_platform
@@ -362,8 +362,8 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
             'unknown'
           ) = 'app_store'
         )::int AS app_store_job_count,
-        COUNT(*) FILTER (WHERE product.slug='spotify' AND job.job_config->>'collector_kind'='pricing_page'
-          AND job.job_config->>'official_web_source_key'='spotify')::int AS official_web_job_count,
+        COUNT(*) FILTER (WHERE product.slug IN ('spotify','apple-music') AND job.job_config->>'collector_kind'='pricing_page'
+          AND job.job_config->>'official_web_source_key'=product.slug)::int AS official_web_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active')::int AS active_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count,
         COUNT(DISTINCT job.source_id)::int AS source_count,
@@ -475,8 +475,8 @@ async function getPipelineStats() {
               'unknown'
             ) = 'app_store'
           )::int AS app_store_job_count,
-          COUNT(*) FILTER (WHERE product.slug='spotify' AND job.job_config->>'collector_kind'='pricing_page'
-            AND job.job_config->>'official_web_source_key'='spotify')::int AS official_web_job_count,
+          COUNT(*) FILTER (WHERE product.slug IN ('spotify','apple-music') AND job.job_config->>'collector_kind'='pricing_page'
+            AND job.job_config->>'official_web_source_key'=product.slug)::int AS official_web_job_count,
           COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count
         FROM collector_jobs job
         LEFT JOIN price_sources source ON source.id = job.source_id

@@ -150,3 +150,7 @@ node .\scripts\collect-official-web-prices.mjs --source-key apple-music
 
 The write path leaves `converted_usd` null until an approved FX/review step and
 stores `status=pending`, `billing_platform=web`, page hash and evidence metadata.
+
+## Apple Music automation (2026-10-25)
+
+The five-market pilot now uses bounded official HTML fetching and strict plan-tile parser v2. Configure with `node scripts/configure-official-web-job.mjs --source-key apple-music` (read-only preview); add `--execute` only after verified backup in an authorized configuration window. It resumes the existing paused Apple job instead of duplicating it, and leaves unrelated jobs unchanged. Samples use the source-specific `apple-music-monthly-stability-v1`; old parser v1 samples cannot qualify. All three plans must meet the same independent-sample stability gates as Spotify before Web-only prices and the product publish. The scheduler refreshes product/list/report caches using the existing job-bound private proof; repeated failures continue periodic evidence collection and later stable evidence recovers automatically.

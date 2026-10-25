@@ -1,8 +1,24 @@
 import { spotifyMarkets, spotifyRegistry } from './spotify-official-web.mjs';
 
+import { appleMusicMarkets, appleMusicRule, appleMusicParserVersion } from './apple-music-official-web.mjs';
+
 const ruleId = 'spotify-regional-monthly-stability-v2';
 
 export function assertAutomaticWebSource(source) {
+  if(source.product_slug==='apple-music') {
+    if(source.source_key!=='apple-music-official-web' || source.parser_key!=='apple_music'
+      || source.parser_version!==appleMusicParserVersion || source.auto_review?.rule_id!==appleMusicRule
+      || source.billing_cycle!=='monthly' || source.source_level!=='A' || source.fetch_mode!=='structured_http'
+      || source.base_url!=='https://www.apple.com/apple-music/'
+      || source.required_plan_slugs?.join(',')!=='individual,family,student'
+      || source.markets?.length!==Object.keys(appleMusicMarkets).length
+      || new Set(source.markets.map(m=>m.country_code)).size!==source.markets.length
+      || source.markets.some(m=>{const a=appleMusicMarkets[m.country_code];return !a || m.currency!==a.currency
+        || m.locale!==a.locale || m.url!==`https://www.apple.com/${a.path}apple-music/`
+        || (m.required_plan_slugs && m.required_plan_slugs.join(',')!=='individual,family,student');}))
+      throw Error('automatic_web_source_not_allowlisted');
+    return;
+  }
   if (source.product_slug !== 'spotify' || source.source_key !== 'spotify-official-web'
     || source.parser_key !== 'spotify_official_web' || source.parser_version !== 'spotify-official-web-v2'
     || source.billing_cycle !== 'monthly' || source.auto_review?.rule_id !== ruleId
@@ -23,7 +39,7 @@ export function assertAutomaticWebSource(source) {
 
 // Time-separated observations measure local price stability; neither retries
 // nor exchange-rate movement are evidence of a subscription-price change.
-export function decideOfficialWebReview(samples, baseline, now = new Date(), market = {country_code:'US',currency:'USD',url:'https://www.spotify.com/us/premium/'}) {
+export function decideOfficialWebReview(samples, baseline, now = new Date(), market = {country_code:'US',currency:'USD',url:'https://www.spotify.com/us/premium/'}, expectedRule = ruleId) {
   const distinct = [...new Map(samples.map(sample => [sample.observed_at.toISOString(), sample])).values()]
     .sort((a, b) => b.observed_at - a.observed_at);
   const latest = distinct[0];
@@ -44,7 +60,7 @@ export function decideOfficialWebReview(samples, baseline, now = new Date(), mar
     || !Number.isFinite(Number(row.raw_price)) || Number(row.raw_price) <= 0 || Number(row.raw_price) >= 1_000_000
     || row.raw_payload?.billing_cycle !== 'monthly'
     || row.raw_payload?.publication_eligible !== true
-    || row.raw_payload?.automatic_rule !== ruleId || row.raw_payload?.requested_country !== market.country_code
+    || row.raw_payload?.automatic_rule !== expectedRule || row.raw_payload?.requested_country !== market.country_code
     || row.raw_payload?.source_url !== market.url
     || row.raw_payload?.final_url !== market.url
     || row.raw_payload?.render_mode !== 'structured_http')) {
@@ -70,7 +86,8 @@ export function decideOfficialWebReview(samples, baseline, now = new Date(), mar
 export async function reviewOfficialWebMarket({ client, source, market, database, sourceId }) {
   assertAutomaticWebSource(source);
   if (!source.markets.some(item => item.country_code === market.country_code && item.currency === market.currency && item.url === market.url)) throw Error('automatic_web_market_not_allowlisted');
-  const planSlugs=spotifyMarkets[market.country_code].plan_slugs;
+  const ruleId=source.auto_review.rule_id;
+  const planSlugs=source.product_slug==='apple-music' ? source.required_plan_slugs : spotifyMarkets[market.country_code].plan_slugs;
   if(market.required_plan_slugs && JSON.stringify(market.required_plan_slugs)!==JSON.stringify(planSlugs)) throw Error('automatic_web_market_not_allowlisted');
   const product = database.product;
   const country = database.countries.get(market.country_code);
@@ -106,7 +123,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
           AND o.parser_version=$6 AND o.raw_payload->>'automatic_rule'=$7
         ORDER BY o.observed_at DESC,o.created_at DESC LIMIT 40`,
         [product.id,plan.id,country.id,sourceId,market.url,source.parser_version,ruleId,market.country_code]);
-      const result = decideOfficialWebReview(samples.rows, prices.rows[0],new Date(),market);
+      const result = decideOfficialWebReview(samples.rows, prices.rows[0],new Date(),market,ruleId);
       decisions.push({ ...result, planSlug: slug, planId: plan.id });
     }
     // A partly parsed/unstable market cannot make a new product public.
@@ -137,7 +154,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
       result.usd = usd;
       if (market.country_code === 'US') {
         result.usBase = usd;
-      } else if (['standard','platinum'].includes(result.planSlug)
+      } else if (source.product_slug==='spotify' && ['standard','platinum'].includes(result.planSlug)
         && spotifyRegistry.plan_additions[result.planSlug]?.us_baseline === 'unavailable') {
         // These are separate regional products, absent from the US catalog.
         // Persist an unavailable US comparison rather than borrowing a tier.
@@ -169,7 +186,7 @@ export async function reviewOfficialWebMarket({ client, source, market, database
           confidence_score=EXCLUDED.confidence_score,data_quality='verified',status='published',last_checked_at=EXCLUDED.last_checked_at,
           source_summary=EXCLUDED.source_summary,availability_note=EXCLUDED.availability_note,updated_at=NOW()
         RETURNING id`, [product.id,result.planId,country.id,row.raw_price,sourceId,row.observed_at,
-        `Spotify official ${market.country_code} Web regular monthly price; ${ruleId}`,row.raw_payload.availability_note ?? null,result.confidenceScore,
+        `${source.provider} official ${market.country_code} Web regular monthly price; ${ruleId}`,row.raw_payload.availability_note ?? null,result.confidenceScore,
         market.currency,result.usd,result.usBase,result.usBase == null ? null : Math.round((result.usd/result.usBase-1)*10000)/100]);
       await client.query(`UPDATE price_observations SET status='approved',converted_usd=$5,
         raw_payload=raw_payload||jsonb_build_object('fx_rate_date',$6::text,'automatic_review',jsonb_build_object('rule_id',$2::text,
@@ -180,8 +197,9 @@ export async function reviewOfficialWebMarket({ client, source, market, database
         raw_payload=raw_payload||jsonb_build_object('automatic_resolution','superseded_by_stable_official_web_price','resolved_by',$6::text)
         WHERE product_id=$1 AND plan_id=$2 AND country_id=$3 AND source_id=$4 AND billing_platform='web'
           AND price_type='list_price' AND status='pending' AND observed_at<$5
-          AND raw_payload->>'automatic_rule'=$7`,
-        [product.id,result.planId,country.id,sourceId,row.observed_at,row.id,ruleId]);
+          AND (raw_payload->>'automatic_rule'=$7
+            OR ($8::boolean AND parser_version='apple-music-official-web-v1'))`,
+        [product.id,result.planId,country.id,sourceId,row.observed_at,row.id,ruleId,source.product_slug==='apple-music']);
       published++;
     }
     if (market.country_code === 'US' && published > 0) {
