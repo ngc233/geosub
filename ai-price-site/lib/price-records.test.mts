@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getPriceChanges, getPublicPriceSnapshot, getAppStoreSourceUrl, type PriceObservationRecord } from "./price-records.ts";
+import { getPriceChanges, getPriceHistorySummary, getPublicPriceSnapshot, getAppStoreSourceUrl, type PriceObservationRecord } from "./price-records.ts";
 
 function record(n: number, amount = 999, extra: Partial<PriceObservationRecord> = {}): PriceObservationRecord {
   return { id: `10000000-0000-4000-8000-${String(n).padStart(12, "0")}`, productSlug: "chatgpt", productName: "ChatGPT",
@@ -66,4 +66,29 @@ test("routine ignored same-price reads preserve an approved baseline, without ap
     assert.deepEqual(getPriceChanges([record(1), { ...duplicate, ...extra }, record(3, 1099)]), []);
   }
   assert.deepEqual(getPriceChanges([duplicate, record(3, 1099)]), []);
+});
+
+test("history cache stays bounded for large raw snapshots while preserving events and detail links", () => {
+  const records = Array.from({ length: 128 }, (_, index) => {
+    const row = record(index + 1, 1000 + index, {
+      observedAt: new Date(Date.UTC(2026, 9, 1) + index * 3_600_000).toISOString(),
+    });
+    (row.snapshot as Record<string, unknown>).html = "private-source-page".repeat(2000);
+    return row;
+  });
+  assert.ok(Buffer.byteLength(JSON.stringify(records)) > 2 * 1024 * 1024);
+  const summary = getPriceHistorySummary(records);
+  assert.equal(summary.eventCount, 127);
+  assert.equal(summary.events.length, 100);
+  assert.equal(summary.snapshots.length, 12);
+  assert.equal(summary.events[0].after.id, records[127].id);
+  assert.equal(summary.events[0].before.id, records[126].id);
+  assert.equal(summary.events[0].after.amount, 1127);
+  assert.equal(summary.snapshots[0].id, records[0].id);
+  assert.ok(Buffer.byteLength(JSON.stringify(summary)) < 150_000);
+  assert.doesNotMatch(JSON.stringify(summary), /inAppPurchases|items|html|private-source-page|sourceId/);
+  assert.equal(getPublicPriceSnapshot(records[127])!.items.length, 2);
+  assert.deepEqual(getPriceHistorySummary([record(1, 999, { status: "pending" })]), {
+    eventCount: 0, events: [], snapshots: [],
+  });
 });

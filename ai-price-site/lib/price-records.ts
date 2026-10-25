@@ -123,3 +123,28 @@ export function getPriceChanges(records: PriceObservationRecord[]): PriceChange[
   }
   return events.sort((a, b) => Date.parse(b.after.observedAt) - Date.parse(a.after.observedAt));
 }
+
+// Cache only fields rendered by history cards. Full item lists remain available
+// from the individual snapshot reader, without exceeding Next's cache limit.
+export function getPriceHistorySummary(records: PriceObservationRecord[]) {
+  const summarize = (snapshot: NonNullable<ReturnType<typeof getPublicPriceSnapshot>>) => ({
+    id: snapshot.id, planName: snapshot.planName, countryCode: snapshot.countryCode,
+    observedAt: snapshot.observedAt, amount: snapshot.amount, currency: snapshot.currency,
+    billingCycle: snapshot.billingCycle,
+  });
+  const changes = getPriceChanges(records);
+  const snapshots = [];
+  for (const record of records) {
+    const snapshot = getPublicPriceSnapshot(record);
+    if (snapshot) snapshots.push(summarize(snapshot));
+    if (snapshots.length === 12) break;
+  }
+  return {
+    eventCount: changes.length,
+    events: changes.slice(0, 100).map(event => ({
+      before: summarize(event.before), after: summarize(event.after),
+      direction: event.direction, percent: event.percent,
+    })),
+    snapshots,
+  };
+}

@@ -12,7 +12,7 @@ import type { ProductPlan } from "../lib/public-pricing-model";
 import { getCountryHub } from "../lib/country-hubs-data";
 import { getPriorityCountry, priorityCountries, type HubLocale } from "../lib/country-hubs";
 import { getEvidencePlanHref, getPriceEvidencePreview } from "../lib/price-evidence-preview";
-import { getPriceChanges, getPublicPriceSnapshot } from "../lib/price-records";
+import { getPriceHistorySummary } from "../lib/price-records";
 import { getPriceRecordProducts, getPriceSnapshotById, getProductPriceRecords } from "../lib/price-records-data";
 import { PUBLIC_PRICING_CACHE_TAG, PUBLIC_EXCHANGE_RATE_CACHE_TAG, PUBLIC_PRICING_REVALIDATE_SECONDS } from "../lib/public-pricing-cache";
 import styles from "./PriceEvidencePages.module.css";
@@ -29,7 +29,10 @@ const previewCacheScope = () => getPriceEvidencePreview()?.capturedAt || "public
 const loadHub = (code: string) => unstable_cache(() => getCountryHub(code), ["country-hub-v2", code, previewCacheScope()], {
   revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS, tags: [PUBLIC_PRICING_CACHE_TAG, PUBLIC_EXCHANGE_RATE_CACHE_TAG],
 })();
-const loadRecords = (slug: string) => unstable_cache(() => getProductPriceRecords(slug), ["price-records-v1", slug, previewCacheScope()], {
+const loadRecords = (slug: string) => unstable_cache(async () => {
+  const result = await getProductPriceRecords(slug);
+  return { ...getPriceHistorySummary(result.records), truncated: result.truncated };
+}, ["price-records-v2", slug, previewCacheScope()], {
   revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS, tags: [PUBLIC_PRICING_CACHE_TAG],
 })();
 const loadProducts = () => unstable_cache(getPriceRecordProducts, ["price-record-products-v1", previewCacheScope()], {
@@ -153,11 +156,8 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
   if (product) {
     try { result = await loadRecords(product.slug); } catch { unavailable = true; }
   }
-  const events = result ? getPriceChanges(result.records) : [];
-  const snapshots = result?.records.flatMap(record => {
-    const snapshot = getPublicPriceSnapshot(record);
-    return snapshot ? [snapshot] : [];
-  }).slice(0, 12) || [];
+  const events = result?.events || [];
+  const snapshots = result?.snapshots || [];
   return <main className={pageClass}>
     <PageHeading centered locale={locale} title={`${product ? `${product.name} ` : ""}${locale === "zh" ? "价格变化记录" : "Price change records"}`}
       description={locale === "zh" ? "追踪同一套餐、地区与计费周期的 App Store 本币标价变化。每条变化均可回溯采集记录；汇率折算波动不计为调价。" : "Track local App Store price changes for the same plan, country and billing period. Each change links to its source records. Exchange-rate movements are not price changes."} />
@@ -184,7 +184,7 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
         <div className="flex flex-wrap gap-x-6 border-t border-[var(--color-border-default)] px-5 py-1 md:px-6"><Link className={linkClass} href={`/${locale}/price-records/${event.before.id}`}>{locale === "zh" ? "变化前快照" : "Before snapshot"}</Link><Link className={linkClass} href={`/${locale}/price-records/${event.after.id}`}>{locale === "zh" ? "变化后快照" : "After snapshot"}<ArrowRight size={14} aria-hidden="true" /></Link></div>
       </PublicSection>)}</div>
     </section> : null}
-    {events.length > 100 ? <p className={mutedClass}>{locale === "zh" ? "显示最近 100 个已确认事件。" : "Showing the latest 100 confirmed events."}</p> : null}
+    {(result?.eventCount || 0) > 100 ? <p className={mutedClass}>{locale === "zh" ? "显示最近 100 个已确认事件。" : "Showing the latest 100 confirmed events."}</p> : null}
     {snapshots.length ? <PublicSection className="mt-6">
       <PublicSectionHeader title={locale === "zh" ? "最近原始观测" : "Recent original observations"} description={locale === "zh" ? "查看当时保存的套餐条目与原始价格文本。" : "Inspect the plan items and original price text retained at collection."} />
       <div className="divide-y divide-[var(--color-border-default)]">{snapshots.map(snapshot => <Link key={snapshot.id} href={`/${locale}/price-records/${snapshot.id}`} className="flex min-h-11 items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--color-bg-subtle)] md:px-6">
