@@ -137,7 +137,9 @@ export async function reviewOfficialWebMarket({ client, source, market, database
     let fxRate = 1;
     let fxDate = null;
     if (market.currency !== 'USD') {
-      const fx = await client.query(`SELECT rate,rate_date FROM exchange_rates
+      // PostgreSQL DATE is a calendar date, not local midnight. Keep it as text
+      // so pg/Node timezone conversion cannot move the evidence to yesterday.
+      const fx = await client.query(`SELECT rate,rate_date::text AS rate_date FROM exchange_rates
         WHERE base_currency='USD' AND quote_currency=$1 AND status='active'
           AND rate_date>=CURRENT_DATE-INTERVAL '2 days'
         ORDER BY is_latest DESC,rate_date DESC,fetched_at DESC LIMIT 1`, [market.currency]);

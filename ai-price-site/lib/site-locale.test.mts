@@ -255,3 +255,12 @@ test("shared Intl formatting supports every v2.1 locale", () => {
   assert.equal(getLocalizedRegionName("DE", "de"), "Deutschland");
   assert.equal(getLocalizedRegionName("PT", "pt"), "Portugal");
 });
+
+test("HK and MO use stable short names across server and browser ICU versions", () => {
+  assert.equal(getLocalizedRegionName("HK", "en"), "Hong Kong");
+  assert.equal(getLocalizedRegionName("MO", "en"), "Macao");
+  assert.equal(getLocalizedRegionName("HK", "zh"), "香港");
+  assert.equal(getLocalizedRegionName("MO", "zh"), "澳门");
+  assert.equal(getLocalizedRegionName("MO", "zh-tw"), "澳門");
+  assert.equal(getLocalizedRegionName("MO", "ja"), "マカオ");
+});

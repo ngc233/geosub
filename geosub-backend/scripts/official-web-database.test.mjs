@@ -229,6 +229,11 @@ test('real PostgreSQL Apple Music paused pilot resumes once; stable observations
     assert.equal((await review(br)).decisions[0].reason,'current_exchange_rate_missing');
     await client.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date,status,is_latest) VALUES('USD','BRL',5,CURRENT_DATE,'active',TRUE)");
     assert.equal((await review(br)).published,3);
+    const fxEvidence = (await client.query(`SELECT raw_payload->>'fx_rate_date' AS recorded,
+      CURRENT_DATE::text AS expected FROM price_observations WHERE country_id=$1 AND status='approved'`,
+      [database.countries.get('BR').id])).rows;
+    assert.equal(fxEvidence.length,3);
+    assert.ok(fxEvidence.every(row=>row.recorded===row.expected),'FX calendar dates survive positive-offset Node timezones');
     assert.equal((await client.query("SELECT price_usd::float8,us_base_price::float8 FROM region_prices WHERE plan_id=$1 AND country_id=$2 AND billing_platform='web'",[plans.get('individual').id,database.countries.get('BR').id])).rows[0].price_usd,4.78);
     const jp=source.markets.find(m=>m.country_code==='JP');
     await recordMarketFailure({client,source,market:jp,database,sourceId,snapshot:{...snap(jp,48),http_status:503},issues:['page_unavailable']});

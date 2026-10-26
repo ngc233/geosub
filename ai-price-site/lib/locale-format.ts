@@ -97,6 +97,9 @@ export function getLocalizedRegionName(
     const name = new Intl.DisplayNames([getIntlLocale(locale)], {
       type: "region",
       fallback: "none",
+      // ICU versions disagree on long SAR labels. Their short names are
+      // stable across Node and browsers, keeping server/client text identical.
+      style: normalizedCode === "HK" || normalizedCode === "MO" ? "short" : "long",
     }).of(normalizedCode);
 
     return name || null;

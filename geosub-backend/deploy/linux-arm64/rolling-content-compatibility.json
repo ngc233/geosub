@@ -150,6 +150,11 @@
       "from": "cd8b0167b1e815a7ad10e727e48973e5a7f116ed68eec007eae99565550fec03",
       "to": "cf3c4a73a05f49dfba71e87d5881ccd0d3a64dbf9d7e77f871b18ebfa9734c9a",
       "reason": "2.21.1 to retained website 2.20.0: all registered content readers, renderers, validators and schema files are byte-identical except VERSION. Apple Music only adds its approved local app icon and provenance, without changing existing assets or runtime content/data contracts. Collector 2.21.0 remains independent; no database migration."
+    },
+    {
+      "from": "2d7968107dbbcb184b098d267734d03f0bf95a696220811920a18c0a54185abe",
+      "to": "cd8b0167b1e815a7ad10e727e48973e5a7f116ed68eec007eae99565550fec03",
+      "reason": "2.21.2 to retained website 2.21.1: registered content readers, renderers, validators and schema byte-identical except VERSION. Stable HK/MO localized short labels fix Apple Music hydration; calendar-date text preserves collector FX evidence. No database input, content contract, pricing threshold or SEO promotion changes; retain corrected factual evidence on code rollback."
     }
   ]
 }
