@@ -101,3 +101,36 @@ test("admin can log in and approve a pending observation", async ({ page }) => {
   await page.reload();
   await expect(observationInput).toHaveCount(0);
 });
+
+test("a country click opens persistent price details while the map remains pannable", async ({ page }) => {
+  await page.goto(`/en/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`);
+  const map = page.locator("[data-detail-geo-pricing]");
+  await map.scrollIntoViewIfNeeded();
+  const country = page.locator('[data-detail-map-country="US"]');
+  await expect(country).toBeVisible();
+  const point = await country.evaluate((path) => {
+    const box = path.getBBox();
+    for (let y = 0.1; y < 1; y += 0.1) for (let x = 0.1; x < 1; x += 0.1) {
+      const local = new DOMPoint(box.x + box.width * x, box.y + box.height * y);
+      if (!path.isPointInFill(local)) continue;
+      const screen = local.matrixTransform(path.getScreenCTM());
+      if (document.elementFromPoint(screen.x, screen.y) === path) return { x: screen.x, y: screen.y };
+    }
+    throw new Error("No accessible country shape point");
+  });
+  await page.mouse.click(point.x, point.y);
+  const selection = page.locator("[data-detail-map-selection]");
+  await expect(selection.getByRole("button")).toBeVisible();
+  await expect(selection).toContainText("United States");
+  await page.mouse.move(point.x + 40, point.y + 40);
+  await expect(selection.getByRole("button")).toBeVisible();
+  await selection.getByRole("button").click();
+  await expect(selection).toBeHidden();
+  const geometry = country.locator("..");
+  const before = await geometry.getAttribute("transform");
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.move(point.x + 35, point.y + 15, { steps: 5 });
+  await page.mouse.up();
+  await expect(geometry).not.toHaveAttribute("transform", before);
+});

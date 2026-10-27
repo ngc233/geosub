@@ -165,6 +165,11 @@
       "from": "9037f0d31a388624bef4d59bbf58f3288ba84cf0e8b872524b589b2ceeb5c7ed",
       "to": "4e6fa727546280a9e8710f16a689f700e495b87569624964d44e48bd9801a379",
       "reason": "2.21.4 to retained website 2.21.3: registered content readers, renderers, validators and schema byte-identical except VERSION. Complete reviewed ISO/M49 identities repair published-region coverage in detail/share maps, including exact-name Kosovo matching. Price values, sources, collector, database inputs, layouts and indexing policy unchanged."
+    },
+    {
+      "from": "356052cd10f04487509a07484d5afac754b578b4a40124213d5ea82d7ae2ad20",
+      "to": "4e6fa727546280a9e8710f16a689f700e495b87569624964d44e48bd9801a379",
+      "reason": "2.21.5 to retained website2.21.3: registered content readers, renderers, validators and schema byte-identical except VERSION. Global detail/share map identities and pointer selection fixed; actual drags retain capture while taps reach country paths. No database input, canonical price, collector, layout or SEO policy change. Candidate2.21.4 was not deployed."
     }
   ]
 }

@@ -393,10 +393,13 @@ export default function PriceWorldMap({
               viewY: view.y,
             });
 
-            event.currentTarget.setPointerCapture(event.pointerId);
           }}
           onPointerMove={(event) => {
             if (!dragState) return;
+            if (Math.hypot(event.clientX - dragState.startX, event.clientY - dragState.startY) < 3) return;
+            // Capture actual drags only: capturing a tap retargets its click to
+            // the SVG and prevents the country from opening its price details.
+            event.currentTarget.setPointerCapture(event.pointerId);
 
             setView((current) => ({
               ...current,
@@ -406,7 +409,9 @@ export default function PriceWorldMap({
           }}
           onPointerUp={(event) => {
             setDragState(null);
-            event.currentTarget.releasePointerCapture(event.pointerId);
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }
           }}
           onPointerCancel={() => {
             setDragState(null);
@@ -455,7 +460,7 @@ export default function PriceWorldMap({
                       : "cursor-default",
                   ].join(" ")}
                   onMouseEnter={(event) => {
-                    setHoverInfo({
+                    setHoverInfo((current) => current?.locked ? current : {
                       x: event.clientX,
                       y: event.clientY,
                       name: geo.properties?.name || "Unknown",
