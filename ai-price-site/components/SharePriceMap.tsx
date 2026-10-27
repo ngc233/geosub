@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { geoNaturalEarth1, geoPath, type GeoPermissibleObjects } from 'd3-geo';
 import { feature } from 'topojson-client';
 import worldAtlas from 'world-atlas/countries-110m.json';
+import { getCountryCodeForMapFeature } from '../lib/country-map-codes';
 
 import { type ProductPlan, type RegionPrice } from '../lib/public-pricing-model';
 import type { SiteLocale } from '../lib/site-locale';
@@ -23,65 +24,6 @@ type WorldAtlasTopology = {
 
 const MAP_WIDTH = 560;
 const MAP_HEIGHT = 190;
-
-const ISO2_TO_NUMERIC: Record<string, number> = {
-  US: 840,
-  CA: 124,
-  MX: 484,
-  BR: 76,
-  AR: 32,
-  CL: 152,
-  CO: 170,
-  PE: 604,
-
-  GB: 826,
-  IE: 372,
-  FR: 250,
-  DE: 276,
-  ES: 724,
-  IT: 380,
-  NL: 528,
-  BE: 56,
-  CH: 756,
-  AT: 40,
-  DK: 208,
-  SE: 752,
-  NO: 578,
-  FI: 246,
-  PL: 616,
-  PT: 620,
-  TR: 792,
-
-  JP: 392,
-  KR: 410,
-  CN: 156,
-  TW: 158,
-  HK: 344,
-  SG: 702,
-  MY: 458,
-  TH: 764,
-  VN: 704,
-  ID: 360,
-  PH: 608,
-  IN: 356,
-  PK: 586,
-
-  AU: 36,
-  NZ: 554,
-
-  EG: 818,
-  ZA: 710,
-  NG: 566,
-  KE: 404,
-
-  SA: 682,
-  AE: 784,
-  IL: 376,
-};
-
-function getCountryNumericCode(code: string) {
-  return ISO2_TO_NUMERIC[code.toUpperCase()];
-}
 
 function isAntarcticaFeature(featureItem: MapFeature) {
   const id =
@@ -180,19 +122,10 @@ export default function ShareMiniMap({
     };
   }, []);
 
-  const regionByNumericCode = useMemo(() => {
-    const map = new Map<number, RegionPrice>();
-
-    plan.regions.forEach((region) => {
-      const numericCode = getCountryNumericCode(region.code);
-
-      if (numericCode) {
-        map.set(numericCode, region);
-      }
-    });
-
-    return map;
-  }, [plan.regions]);
+  const regionByCode = useMemo(
+    () => new Map(plan.regions.map((region) => [region.code.toUpperCase(), region])),
+    [plan.regions],
+  );
 
   const prices = plan.regions.map((region) => region.priceUsd);
   const lowestPrice = Math.min(...prices);
@@ -210,15 +143,8 @@ export default function ShareMiniMap({
           <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="transparent" />
 
           {mapData.features.map((geo, index) => {
-            const numericCode =
-              typeof geo.id === 'number' || typeof geo.id === 'string'
-                ? Number(geo.id)
-                : undefined;
-
-            const region =
-              typeof numericCode === 'number' && !Number.isNaN(numericCode)
-                ? regionByNumericCode.get(numericCode)
-                : undefined;
+            const countryCode = getCountryCodeForMapFeature(geo);
+            const region = countryCode ? regionByCode.get(countryCode) : undefined;
 
             const path = mapData.pathGenerator(
               geo as unknown as GeoPermissibleObjects
@@ -233,6 +159,7 @@ export default function ShareMiniMap({
                 key={`share-country-${index}-${String(
                   geo.id ?? geo.properties?.name ?? 'unknown'
                 )}`}
+                data-share-map-country={region?.code || "no-data"}
                 d={path}
                 fill={getMapColor(
                   region,

@@ -160,6 +160,11 @@
       "from": "4e6fa727546280a9e8710f16a689f700e495b87569624964d44e48bd9801a379",
       "to": "2d7968107dbbcb184b098d267734d03f0bf95a696220811920a18c0a54185abe",
       "reason": "2.21.3 to retained website 2.21.2: registered managed-content readers, renderers, validators and schema byte-identical except VERSION. Stable localized labels fix cross-ICU hydration after Apple Music global publication; its Web rows use the existing Spotify exclusion of App Store tax/risk profiles. Canonical price values, sources, collector, database inputs and indexing policy unchanged."
+    },
+    {
+      "from": "9037f0d31a388624bef4d59bbf58f3288ba84cf0e8b872524b589b2ceeb5c7ed",
+      "to": "4e6fa727546280a9e8710f16a689f700e495b87569624964d44e48bd9801a379",
+      "reason": "2.21.4 to retained website 2.21.3: registered content readers, renderers, validators and schema byte-identical except VERSION. Complete reviewed ISO/M49 identities repair published-region coverage in detail/share maps, including exact-name Kosovo matching. Price values, sources, collector, database inputs, layouts and indexing policy unchanged."
     }
   ]
 }
