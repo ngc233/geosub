@@ -10,6 +10,22 @@ import {
 
 export type LocalizedDateInput = Date | string | number;
 
+// Preserve the existing server labels where browser ICU versions use different
+// territory names. Client rendering must match the initial server HTML.
+const stableRegionNames: Record<string, Partial<Record<PreparedSiteLocale, string>>> = {
+  CN: {
+    zh: "中国", "zh-tw": "中國", en: "China", ja: "中国", ko: "중국",
+    es: "China", tr: "Çin", ar: "الصين", fr: "Chine", it: "Cina",
+    de: "China", pt: "China",
+  },
+  SL: { "zh-tw": "獅子山" },
+  CD: { ja: "コンゴ民主共和国(キンシャサ)", it: "Congo - Kinshasa" },
+  CG: { ja: "コンゴ共和国(ブラザビル)" },
+  HK: { ar: "هونغ كونغ" },
+  CI: { it: "Costa d’Avorio", pt: "Côte d’Ivoire (Costa do Marfim)" },
+  MO: { de: "Macau", ar: "مكاو" },
+};
+
 function toValidDate(value: LocalizedDateInput) {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -92,6 +108,8 @@ export function getLocalizedRegionName(
 ) {
   const normalizedCode = regionCode.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(normalizedCode)) return null;
+  const stableName = stableRegionNames[normalizedCode]?.[locale];
+  if (stableName) return stableName;
 
   try {
     const name = new Intl.DisplayNames([getIntlLocale(locale)], {

@@ -264,3 +264,38 @@ test("HK and MO use stable short names across server and browser ICU versions", 
   assert.equal(getLocalizedRegionName("MO", "zh-tw"), "澳門");
   assert.equal(getLocalizedRegionName("MO", "ja"), "マカオ");
 });
+
+test("region labels preserve server HTML when WebKit uses different ICU names", () => {
+  const original = Intl.DisplayNames.prototype.of;
+  Intl.DisplayNames.prototype.of = function (code: string) {
+    if (code === "CN") return "China mainland";
+    if (code === "CD") return "Congo-Kinshasa";
+    if (code === "CI") return "Côte d'Ivoire";
+    if (code === "MO") return "Macao";
+    if (code === "SL") return "獅子山共和國";
+    if (code === "HK") return "هونج كونج";
+    return original.call(this, code);
+  };
+  try {
+    assert.equal(getLocalizedRegionName(" cn ", "zh"), "中国");
+    assert.equal(getLocalizedRegionName("CN", "zh-tw"), "中國");
+    assert.equal(getLocalizedRegionName("CN", "en"), "China");
+    assert.equal(getLocalizedRegionName("CN", "ja"), "中国");
+    assert.equal(getLocalizedRegionName("CD", "it"), "Congo - Kinshasa");
+    assert.equal(getLocalizedRegionName("CI", "it"), "Costa d’Avorio");
+    assert.equal(getLocalizedRegionName("MO", "de"), "Macau");
+    assert.equal(getLocalizedRegionName("MO", "ar"), "مكاو");
+    assert.equal(getLocalizedRegionName("SL", "zh-tw"), "獅子山");
+    assert.equal(getLocalizedRegionName("HK", "ar"), "هونغ كونغ");
+    assert.equal(getLocalizedRegionName("JP", "ja"), "日本");
+    assert.equal(getLocalizedRegionName("not-a-region", "en"), null);
+  } finally {
+    Intl.DisplayNames.prototype.of = original;
+  }
+});
+
+test("yen and Saudi riyal displays use stable labels instead of ICU currency glyphs", () => {
+  assert.equal(formatLocalizedCurrency(1180, "JPY", "ja"), "¥1,180");
+  assert.equal(formatLocalizedCurrency(39.99, "SAR", "zh"), "SAR39.99");
+  assert.equal(formatLocalizedCurrency(39.99, "SAR", "ar"), "SAR39.99");
+});

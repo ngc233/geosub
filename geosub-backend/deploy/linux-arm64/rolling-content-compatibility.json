@@ -155,6 +155,11 @@
       "from": "2d7968107dbbcb184b098d267734d03f0bf95a696220811920a18c0a54185abe",
       "to": "cd8b0167b1e815a7ad10e727e48973e5a7f116ed68eec007eae99565550fec03",
       "reason": "2.21.2 to retained website 2.21.1: registered content readers, renderers, validators and schema byte-identical except VERSION. Stable HK/MO localized short labels fix Apple Music hydration; calendar-date text preserves collector FX evidence. No database input, content contract, pricing threshold or SEO promotion changes; retain corrected factual evidence on code rollback."
+    },
+    {
+      "from": "4e6fa727546280a9e8710f16a689f700e495b87569624964d44e48bd9801a379",
+      "to": "2d7968107dbbcb184b098d267734d03f0bf95a696220811920a18c0a54185abe",
+      "reason": "2.21.3 to retained website 2.21.2: registered managed-content readers, renderers, validators and schema byte-identical except VERSION. Stable localized labels fix cross-ICU hydration after Apple Music global publication; its Web rows use the existing Spotify exclusion of App Store tax/risk profiles. Canonical price values, sources, collector, database inputs and indexing policy unchanged."
     }
   ]
 }

@@ -42,6 +42,10 @@ const displayCurrencySymbolOverrides: Partial<
   THB: "฿",
   PHP: "₱",
   VND: "₫",
+  // ICU releases disagree on the yen width and the new Saudi riyal glyph.
+  // Use stable labels for server rendering and browser hydration.
+  JPY: "¥",
+  SAR: "SAR",
 };
 
 const zeroFractionDisplayCurrencies = new Set<DisplayCurrency>([
