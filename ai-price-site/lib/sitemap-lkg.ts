@@ -6,7 +6,7 @@ import type { MetadataRoute } from "next";
 type SitemapEntry = MetadataRoute.Sitemap[number];
 
 export const SITEMAP_LKG_SCHEMA_VERSION = "1";
-export const SITEMAP_LKG_POLICY_VERSION = "seo-policy-v2.10-lkg-2026-08-31";
+export const SITEMAP_LKG_POLICY_VERSION = "seo-policy-2026-10-31-expansion";
 export const SITEMAP_LKG_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const SITEMAP_LKG_DYNAMIC_SENTINELS = [
   "/zh/ai-pricing/chatgpt",

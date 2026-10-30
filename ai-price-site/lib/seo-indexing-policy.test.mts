@@ -14,7 +14,10 @@ import { supportedSiteLocales } from "./site-locale.ts";
 test("plan sitemap promotion is explicit and independent from page access", () => {
   assert.equal(isPlanSitemapPromotedProduct("chatgpt"), true);
   assert.equal(isPlanSitemapPromotedProduct("youtube-premium"), true);
-  assert.equal(isPlanSitemapPromotedProduct("captions"), false);
+  for (const product of ["crunchyroll", "viki", "poe", "kimi", "leonardo-ai", "captions"]) {
+    assert.equal(isPlanSitemapPromotedProduct(product), true, product);
+  }
+  assert.equal(isPlanSitemapPromotedProduct("kling-ai"), false);
 });
 
 test("only deliberately promoted locales are indexable", () => {
@@ -53,9 +56,10 @@ test("robots keeps staged translations accessible without indexing them", () => 
 
 test("sitemap budgets stay bounded by the total release budget", () => {
   assert.deepEqual(seoSitemapBudgets, {
-    total: 148,
-    productPlanPages: 98,
+    total: 192,
+    productPlanPages: 130,
     countryPages: 6,
+    countryHubPages: 10,
     guideDetailPages: 24,
     currencyPairPages: 16,
   });
@@ -63,6 +67,7 @@ test("sitemap budgets stay bounded by the total release budget", () => {
   const allocatedPages =
     seoSitemapBudgets.productPlanPages +
     seoSitemapBudgets.countryPages +
+    seoSitemapBudgets.countryHubPages +
     seoSitemapBudgets.guideDetailPages +
     seoSitemapBudgets.currencyPairPages;
 

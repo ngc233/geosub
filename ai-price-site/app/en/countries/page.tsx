@@ -1,4 +1,6 @@
-import { CountryIndexPage, evidenceMetadata } from "../../../components/PriceEvidencePages";
+import { CountryIndexPage } from "../../../components/PriceEvidencePages";
+import { loadCountryHub } from "../../../lib/cached-country-hub";
+import { getCountryHubMetadata } from "../../../lib/country-hub-indexing";
 export const revalidate = 1800;
-export const metadata = evidenceMetadata("en", "/countries", "Subscription prices by country");
+export function generateMetadata() { return getCountryHubMetadata("en", null, loadCountryHub); }
 export default function Page() { return <CountryIndexPage locale="en" />; }

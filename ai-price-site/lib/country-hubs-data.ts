@@ -1,7 +1,7 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
-import { prisma } from "./prisma";
-import { getCountryHubRows, type CountryHubPrice } from "./country-hubs";
+import { prisma } from "./prisma.ts";
+import { getCountryHubRows, type CountryHubPrice } from "./country-hubs.ts";
 
 type CountryRow = Omit<CountryHubPrice, "amount"> & { amount: unknown };
 export async function getCountryHub(countryCode: string) {

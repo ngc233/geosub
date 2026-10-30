@@ -1,9 +1,11 @@
-import { CountryHubPage, evidenceMetadata } from "../../../../components/PriceEvidencePages";
+import { CountryHubPage } from "../../../../components/PriceEvidencePages";
+import { loadCountryHub } from "../../../../lib/cached-country-hub";
+import { getCountryHubMetadata } from "../../../../lib/country-hub-indexing";
 export const revalidate = 1800;
 type Props = { params: Promise<{ country: string }> };
 export async function generateMetadata({ params }: Props) {
   const { country } = await params;
-  return evidenceMetadata("zh", `/countries/${country}`, "地区订阅价格");
+  return getCountryHubMetadata("zh", country, loadCountryHub);
 }
 export default async function Page({ params }: Props) {
   const { country } = await params;

@@ -56,6 +56,7 @@ test("plan sitemap promotion distinguishes promoted waiting and blocked products
   );
 
   const waiting = getProductPlanSitemapPromotion({
+    promotedProductSlugs: ["chatgpt"],
     productSlug: "captions",
     qualityStatus: "indexable",
     gateMode: "enforce",
