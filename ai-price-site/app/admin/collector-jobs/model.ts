@@ -36,6 +36,10 @@ export type JobRow = CollectorExecutionFields & {
   latest_observed_count: number;
   latest_approved_count: number;
   latest_pending_stability_count: number;
+  latest_pending_count: number;
+  latest_ignored_count: number;
+  latest_rejected_count: number;
+  latest_anomaly_count: number;
   latest_isolated_count: number;
   latest_published_price_count: number;
   latest_storefront_count: number;

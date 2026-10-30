@@ -76,7 +76,6 @@ export default async function ReviewPage({
     approvedCount,
     ignoredCount,
     rejectedCount,
-    collectorStatus,
     collectorRunHistoryRows,
     latestAutoReview,
     selectedProductCollector,
@@ -152,7 +151,6 @@ export default async function ReviewPage({
       {showLiveRun ? runSection : null}
 
       <PendingProductReviewSection
-        collectorStatus={collectorStatus}
         productQuery={exactProduct || productQuery}
         pendingPage={pendingPage}
         detailProduct={detailProduct}

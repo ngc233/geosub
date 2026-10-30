@@ -21,6 +21,42 @@ type BuildCollectionProgressStateOptions = {
   collectionRunId?: string | null;
 };
 
+type CollectionOutcomeCounts = {
+  observed_count?: number | null;
+  pending_observation_count?: number | null;
+  approved_observation_count?: number | null;
+  rejected_observation_count?: number | null;
+  ignored_observation_count?: number | null;
+  anomaly_observation_count?: number | null;
+  published_price_count?: number | null;
+};
+
+export type CollectorRunOutcomeChip = {
+  label: string;
+  value: number;
+  kind: "neutral" | "pending" | "ok" | "warn" | "bad";
+};
+
+export function buildCollectorRunOutcomeChips(run: CollectionOutcomeCounts): CollectorRunOutcomeChip[] {
+  const observed = Number(run.observed_count || 0);
+  const approved = Number(run.approved_observation_count || 0);
+  const pending = Number(run.pending_observation_count || 0);
+  const ignored = Number(run.ignored_observation_count || 0);
+  const rejected = Number(run.rejected_observation_count || 0);
+  const anomaly = Number(run.anomaly_observation_count || 0);
+  const published = Number(run.published_price_count || 0);
+  const chips: CollectorRunOutcomeChip[] = [
+    { label: "采集", value: observed, kind: "neutral" },
+    { label: "自动通过", value: approved, kind: "ok" },
+    { label: "待处理", value: pending, kind: "pending" },
+    { label: "异常", value: anomaly, kind: "warn" },
+  ];
+  if (ignored > 0) chips.push({ label: "已忽略", value: ignored, kind: "neutral" });
+  if (rejected > 0) chips.push({ label: "已拒绝", value: rejected, kind: "bad" });
+  chips.push({ label: "正式更新", value: published, kind: "ok" });
+  return chips;
+}
+
 function formatElapsed(seconds: number | null) {
   if (seconds === null || seconds === undefined) return null;
 

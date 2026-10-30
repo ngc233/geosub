@@ -133,7 +133,23 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,observed_count}')::int, 0) AS latest_observed_count,
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,approved_count}')::int, 0) AS latest_approved_count,
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,pending_stability_count}')::int, 0) AS latest_pending_stability_count,
-        COALESCE((latest_runs.raw_payload #>> '{review_outcome,isolated_count}')::int, 0) AS latest_isolated_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,ignored_count}')::int, 0) AS latest_ignored_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,rejected_count}')::int, 0) AS latest_rejected_count,
+        COALESCE((latest_runs.raw_payload #>> '{review_outcome,anomaly_count}')::int, 0) AS latest_anomaly_count,
+        GREATEST(
+          COALESCE(
+            (latest_runs.raw_payload #>> '{review_outcome,observed_count}')::int
+              - (latest_runs.raw_payload #>> '{review_outcome,approved_count}')::int
+              - (latest_runs.raw_payload #>> '{review_outcome,ignored_count}')::int
+              - (latest_runs.raw_payload #>> '{review_outcome,rejected_count}')::int,
+            (latest_runs.raw_payload #>> '{review_outcome,pending_stability_count}')::int,
+            0
+          ), 0
+        ) AS latest_pending_count,
+        GREATEST(
+          COALESCE((latest_runs.raw_payload #>> '{review_outcome,anomaly_count}')::int, 0),
+          COALESCE((latest_runs.raw_payload #>> '{review_outcome,rejected_count}')::int, 0)
+        ) AS latest_isolated_count,
         COALESCE((latest_runs.raw_payload ->> 'published_price_count')::int,
           (latest_runs.raw_payload #>> '{review_outcome,published_price_count}')::int, 0) AS latest_published_price_count,
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,storefront_count}')::int, 0) AS latest_storefront_count,
@@ -225,11 +241,14 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
           observation_outcome.observed_count,
           0
         )::int AS observed_count,
-        COALESCE(
-          (run.raw_payload #>> '{review_outcome,pending_stability_count}')::int,
+        GREATEST(COALESCE(
+          (run.raw_payload #>> '{review_outcome,observed_count}')::int
+            - (run.raw_payload #>> '{review_outcome,approved_count}')::int
+            - (run.raw_payload #>> '{review_outcome,ignored_count}')::int
+            - (run.raw_payload #>> '{review_outcome,rejected_count}')::int,
           observation_outcome.pending_observation_count,
           0
-        )::int AS pending_observation_count,
+        ), 0)::int AS pending_observation_count,
         COALESCE(
           (run.raw_payload #>> '{review_outcome,approved_count}')::int,
           observation_outcome.approved_observation_count,
