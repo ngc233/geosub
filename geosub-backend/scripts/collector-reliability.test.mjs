@@ -132,6 +132,17 @@ test("HeyGen Creator excludes weekly and Credit SKUs from the monthly identity",
   assert.match(result.stdout, /PASS: 12 HeyGen identity cases/);
 });
 
+test("Kling and ReelShort retain only registered monthly identities", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const result = spawnSync(process.platform === "win32" ? "powershell.exe" : "pwsh", [
+    "-NoProfile", "-NonInteractive", "-File",
+    path.join(scriptsDir, "../tests/kling-reelshort-plan-identity.ps1"),
+  ], { encoding: "utf8", timeout: 20_000 });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /PASS: 23 Kling\/ReelShort identity cases/);
+});
+
 
 test("reasoned anomaly repair dispatch and target resolution use actual runner functions", async () => {
   const { spawnSync } = await import("node:child_process");

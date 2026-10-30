@@ -687,6 +687,60 @@
       }
     ]
   },
+  "kling-ai": {
+    "name": "Kling AI",
+    "app_store_id": "6738049229",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/ch/app/kling-ai-ai-image-video-maker/id6738049229",
+    "evidence_checked_at": "2026-10-30",
+    "plans": [
+      {
+        "slug": "standard",
+        "name": "Kling AI Standard",
+        "billing_cycle": "monthly",
+        "aliases": ["standard plan monthly", "standard monthly"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 4,
+        "expected_monthly_usd_max": 25
+      },
+      {
+        "slug": "pro",
+        "name": "Kling AI Pro",
+        "billing_cycle": "monthly",
+        "aliases": ["pro plan monthly", "pro monthly"],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 15,
+        "expected_monthly_usd_max": 65
+      },
+      {
+        "slug": "premier",
+        "name": "Kling AI Premier",
+        "billing_cycle": "monthly",
+        "aliases": ["premier plan monthly", "premier monthly"],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 45,
+        "expected_monthly_usd_max": 140
+      }
+    ]
+  },
+  "reelshort": {
+    "name": "ReelShort",
+    "app_store_id": "1636235979",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/fr/app/reelshort-stream-drama-tv/id1636235979",
+    "evidence_checked_at": "2026-10-30",
+    "plans": [
+      {
+        "slug": "subscription",
+        "name": "ReelShort Subscription",
+        "billing_cycle": "monthly",
+        "aliases": ["monthly subscription"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 5,
+        "expected_monthly_usd_max": 40
+      }
+    ]
+  },
   "heygen": {
     "name": "HeyGen",
     "exact_plan_aliases": true,
