@@ -1,4 +1,65 @@
 {
+  "captions": {
+    "name": "Captions",
+    "app_store_id": "1541407007",
+    "exact_plan_aliases": true,
+    "plans": [
+      {
+        "slug": "basic",
+        "name": "Captions Basic",
+        "billing_cycle": "monthly",
+        "aliases": ["Captions Basic - monthly", "Captions Basic - mensuelle"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 3,
+        "expected_monthly_usd_max": 22
+      },
+      {
+        "slug": "max",
+        "name": "Captions Max",
+        "billing_cycle": "monthly",
+        "aliases": ["Captions Max"],
+        "sort_order": 20,
+        "price_selection_strategy": "lowest_in_expected_range",
+        "expected_monthly_usd_min": 12,
+        "expected_monthly_usd_max": 45
+      }
+    ]
+  },
+  "pollo-ai": {
+    "name": "Pollo AI",
+    "match_product_name": "Pollo",
+    "app_store_id": "6740024098",
+    "exact_plan_aliases": true,
+    "plans": [
+      {
+        "slug": "weekly-premium",
+        "name": "Pollo AI Weekly Premium",
+        "billing_cycle": "weekly",
+        "aliases": ["Pollo Weekly Premium"],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 2,
+        "expected_monthly_usd_max": 15
+      },
+      {
+        "slug": "lite",
+        "name": "Pollo AI Lite",
+        "billing_cycle": "monthly",
+        "aliases": ["Pollo Lite - Monthly Plan", "Monthly Subscription Lite"],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 6,
+        "expected_monthly_usd_max": 30
+      },
+      {
+        "slug": "pro",
+        "name": "Pollo AI Pro",
+        "billing_cycle": "monthly",
+        "aliases": ["Pollo Pro - Monthly Plan", "Monthly Subscription Pro"],
+        "sort_order": 30,
+        "expected_monthly_usd_min": 12,
+        "expected_monthly_usd_max": 55
+      }
+    ]
+  },
   "chatgpt": {
     "name": "ChatGPT",
     "exact_plan_aliases": true,
@@ -163,6 +224,42 @@
         "sort_order": 30,
         "expected_monthly_usd_min": 8.0,
         "expected_monthly_usd_max": 70.0
+      }
+    ]
+  },
+  "anghami": {
+    "name": "Anghami",
+    "app_store_id": "545395155",
+    "exact_plan_aliases": true,
+    "country_scoped_aliases": [
+      { "token": "egypt", "country_codes": ["EG"] },
+      { "token": "lebanon", "country_codes": ["LB"] }
+    ],
+    "excluded_aliases": ["international pricing", "special offer"],
+    "plans": [
+      {
+        "slug": "plus",
+        "name": "Anghami Plus",
+        "billing_cycle": "monthly",
+        "aliases": [
+          "plus", "anghami plus", "anghami+ subscription",
+          "anghami plus - أنغامي بلاس", "anghami plus monthly"
+        ],
+        "sort_order": 10,
+        "expected_monthly_usd_min": 1.0,
+        "expected_monthly_usd_max": 18.0
+      },
+      {
+        "slug": "family",
+        "name": "Anghami Family",
+        "billing_cycle": "monthly",
+        "aliases": [
+          "family", "anghami family", "anghami plus monthly family",
+          "anghami plus family par mois", "anghami family plan for egypt", "anghami gold family"
+        ],
+        "sort_order": 20,
+        "expected_monthly_usd_min": 2.0,
+        "expected_monthly_usd_max": 25.0
       }
     ]
   },

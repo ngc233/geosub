@@ -14,6 +14,12 @@ const MAX_ACTIVE_SESSIONS = 5;
 const LOGIN_WINDOW_MINUTES = 15;
 const LOGIN_BLOCK_MINUTES = 30;
 const LOGIN_ATTEMPT_RETENTION_DAYS = 7;
+// A browser that completed a successful login may still try its own account while
+// that account is locked by failures from elsewhere. The per-IP limit always applies.
+const TRUSTED_DEVICE_COOKIE_NAME = "geosub_admin_device";
+const TRUSTED_DEVICE_DAYS = 30;
+const MAX_TRUSTED_DEVICES = 10;
+const TRUSTED_DEVICE_MAX_FAILURES = 5;
 
 type LoginThrottleKey = {
   keyHash: string;
@@ -56,8 +62,14 @@ function getLoginThrottleKeys(email: string, ipAddress: string): LoginThrottleKe
   ];
 }
 
-export async function getAdminLoginThrottle(email: string, ipAddress: string) {
-  const keys = getLoginThrottleKeys(email, ipAddress);
+export async function getAdminLoginThrottle(
+  email: string,
+  ipAddress: string,
+  { trustedDevice = false }: { trustedDevice?: boolean } = {},
+) {
+  const keys = getLoginThrottleKeys(email, ipAddress).filter(
+    (key) => !(trustedDevice && key.scope === "account"),
+  );
   const rows = await prisma.$queryRaw<LoginThrottleRow[]>(Prisma.sql`
     SELECT blocked_until
     FROM admin_login_attempts
@@ -135,6 +147,136 @@ export async function clearAdminLoginFailures(email: string, ipAddress: string) 
     DELETE FROM admin_login_attempts
     WHERE key_hash IN (${Prisma.join(keys.map((key) => key.keyHash))})
   `);
+}
+
+export function isTrustedDeviceUsable(
+  device: { userId: string; expiresAt: Date; failureCount: number } | null,
+  userId: string,
+  now = new Date(),
+) {
+  return Boolean(
+    device &&
+      device.userId === userId &&
+      device.expiresAt.getTime() > now.getTime() &&
+      device.failureCount < TRUSTED_DEVICE_MAX_FAILURES,
+  );
+}
+
+export async function findTrustedDevice(userId: string) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  const device = await prisma.adminTrustedDevice.findUnique({
+    where: {
+      tokenHash: hashSessionToken(token),
+    },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      failureCount: true,
+    },
+  });
+
+  return device && isTrustedDeviceUsable(device, userId) ? device : null;
+}
+
+export async function recordTrustedDeviceFailure(deviceId: string) {
+  const device = await prisma.adminTrustedDevice.update({
+    where: {
+      id: deviceId,
+    },
+    data: {
+      failureCount: {
+        increment: 1,
+      },
+    },
+    select: {
+      failureCount: true,
+    },
+  });
+
+  if (device.failureCount >= TRUSTED_DEVICE_MAX_FAILURES) {
+    await prisma.adminTrustedDevice.deleteMany({
+      where: {
+        id: deviceId,
+      },
+    });
+  }
+}
+
+export async function rememberTrustedDevice(userId: string, existingDeviceId: string | null) {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + TRUSTED_DEVICE_DAYS * 24 * 60 * 60 * 1000);
+  const cookieStore = await cookies();
+  let token = cookieStore.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+
+  if (existingDeviceId && token) {
+    await prisma.adminTrustedDevice.update({
+      where: {
+        id: existingDeviceId,
+      },
+      data: {
+        failureCount: 0,
+        lastUsedAt: now,
+        expiresAt,
+      },
+    });
+  } else {
+    token = randomBytes(32).toString("hex");
+
+    await prisma.adminTrustedDevice.create({
+      data: {
+        userId,
+        tokenHash: hashSessionToken(token),
+        lastUsedAt: now,
+        expiresAt,
+      },
+    });
+  }
+
+  await prisma.adminTrustedDevice.deleteMany({
+    where: {
+      expiresAt: {
+        lte: now,
+      },
+    },
+  });
+
+  const surplusDevices = await prisma.adminTrustedDevice.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      lastUsedAt: "desc",
+    },
+    skip: MAX_TRUSTED_DEVICES,
+    select: {
+      id: true,
+    },
+  });
+
+  if (surplusDevices.length > 0) {
+    await prisma.adminTrustedDevice.deleteMany({
+      where: {
+        id: {
+          in: surplusDevices.map((device) => device.id),
+        },
+      },
+    });
+  }
+
+  cookieStore.set(TRUSTED_DEVICE_COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    expires: expiresAt,
+  });
 }
 
 export function verifyPassword(password: string, passwordHash: string) {
@@ -359,6 +501,11 @@ export async function changeCurrentAdminPassword({
         userId,
       },
     });
+    const revokedDevices = await tx.adminTrustedDevice.deleteMany({
+      where: {
+        userId,
+      },
+    });
 
     await tx.auditLog.create({
       data: {
@@ -369,6 +516,7 @@ export async function changeCurrentAdminPassword({
         newValue: {
           otherSessionsRevoked: Math.max(0, revoked.count - 1),
           currentSessionRotated: true,
+          trustedDevicesRevoked: revokedDevices.count,
         },
         note: "Administrator changed the account password from system settings.",
       },

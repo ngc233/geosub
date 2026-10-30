@@ -1,6 +1,66 @@
 {
   "version": 1,
   "sources": {
+    "suno-us-monthly": {
+      "product_slug": "suno",
+      "parser_key": "suno_us_monthly",
+      "parser_version": "suno-us-monthly-web-v1",
+      "source_key": "suno-us-monthly-official-web",
+      "source_name": "Suno Official US Monthly",
+      "provider": "Suno",
+      "base_url": "https://suno.com/pricing",
+      "source_level": "A",
+      "reliability_score": 90,
+      "fetch_mode": "structured_http",
+      "billing_cycle": "monthly",
+      "pilot": true,
+      "evidence_note": "Official PricingPage IDs, USD/month and monthly_price_usd agree with country=US. Annual equivalents excluded; taxes and eligibility unverified.",
+      "required_plan_slugs": [
+        "pro",
+        "premier-plan"
+      ],
+      "markets": [
+        {
+          "country_code": "US",
+          "locale": "en-US",
+          "currency": "USD",
+          "url": "https://suno.com/pricing",
+          "required_plan_slugs": [
+            "pro",
+            "premier-plan"
+          ]
+        }
+      ]
+    },
+    "claude-us-pro": {
+      "product_slug": "claude",
+      "parser_key": "claude_us_pro",
+      "parser_version": "claude-us-pro-web-v1",
+      "source_key": "claude-us-pro-official-web",
+      "source_name": "Claude Official US Pro Monthly",
+      "provider": "Anthropic",
+      "base_url": "https://claude.com/pricing",
+      "source_level": "A",
+      "reliability_score": 90,
+      "fetch_mode": "structured_http",
+      "billing_cycle": "monthly",
+      "pilot": true,
+      "evidence_note": "Official pricing pro_monthly marker corroborated by the official Pro help article's explicit US monthly price. No other region or Max price is inferred.",
+      "required_plan_slugs": [
+        "pro"
+      ],
+      "markets": [
+        {
+          "country_code": "US",
+          "locale": "en-US",
+          "currency": "USD",
+          "url": "https://claude.com/pricing",
+          "required_plan_slugs": [
+            "pro"
+          ]
+        }
+      ]
+    },
     "spotify": {
       "product_slug": "spotify",
       "parser_key": "spotify_official_web",

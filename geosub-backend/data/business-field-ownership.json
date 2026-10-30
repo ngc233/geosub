@@ -1,0 +1,1700 @@
+{
+  "schemaVersion": 1,
+  "scope": "phase-1 ownership inventory; not a runtime write authorization",
+  "modules": [
+    "website",
+    "catalog",
+    "price_facts",
+    "content",
+    "collection_quality",
+    "operations"
+  ],
+  "entities": [
+    {
+      "model": "Product",
+      "table": "products",
+      "prismaFields": {
+        "id": "id",
+        "slug": "slug",
+        "name": "name",
+        "category": "category",
+        "provider": "provider",
+        "logo_asset_id": "logoAssetId",
+        "logo_url": "logoUrl",
+        "description": "description",
+        "official_url": "officialUrl",
+        "status": "status",
+        "featured": "featured",
+        "sort_order": "sortOrder",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "operations",
+          "columns": [
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "owner": "catalog",
+          "columns": [
+            "id",
+            "slug",
+            "name",
+            "category",
+            "provider",
+            "logo_asset_id",
+            "logo_url",
+            "description",
+            "official_url",
+            "status",
+            "featured",
+            "sort_order"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "product_admin",
+        "catalog_seed",
+        "web_review",
+        "lifecycle_sql",
+        "official_config"
+      ],
+      "readers": [
+        "pricing_reader",
+        "workspace_reader"
+      ],
+      "targetAction": "catalog.command"
+    },
+    {
+      "model": "Plan",
+      "table": "plans",
+      "prismaFields": {
+        "id": "id",
+        "product_id": "productId",
+        "slug": "slug",
+        "name": "name",
+        "billing_cycle": "billingCycle",
+        "description": "description",
+        "status": "status",
+        "sort_order": "sortOrder",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "operations",
+          "columns": [
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "owner": "catalog",
+          "columns": [
+            "id",
+            "product_id",
+            "slug",
+            "name",
+            "billing_cycle",
+            "description",
+            "status",
+            "sort_order"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "plan_admin",
+        "app_store",
+        "catalog_seed",
+        "lifecycle_sql",
+        "official_config"
+      ],
+      "readers": [
+        "pricing_reader"
+      ],
+      "targetAction": "catalog.command"
+    },
+    {
+      "model": "RegionPrice",
+      "table": "region_prices",
+      "prismaFields": {
+        "id": "id",
+        "product_id": "productId",
+        "plan_id": "planId",
+        "country_id": "countryId",
+        "local_price": "localPrice",
+        "currency": "currency",
+        "price_usd": "priceUsd",
+        "us_base_price": "usBasePrice",
+        "diff_vs_us_percent": "diffVsUsPercent",
+        "billing_platform": "billingPlatform",
+        "price_type": "priceType",
+        "tax_note": "taxNote",
+        "availability_note": "availabilityNote",
+        "source_summary": "sourceSummary",
+        "primary_source_id": "primarySourceId",
+        "confidence_score": "confidenceScore",
+        "data_quality": "dataQuality",
+        "status": "status",
+        "last_checked_at": "lastCheckedAt",
+        "published_at": "publishedAt",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "price_facts",
+          "columns": [
+            "id",
+            "product_id",
+            "plan_id",
+            "country_id",
+            "local_price",
+            "currency",
+            "price_usd",
+            "us_base_price",
+            "diff_vs_us_percent",
+            "billing_platform",
+            "price_type",
+            "tax_note",
+            "availability_note",
+            "source_summary",
+            "primary_source_id",
+            "confidence_score",
+            "data_quality",
+            "status",
+            "last_checked_at",
+            "published_at",
+            "created_at",
+            "updated_at"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "price_review",
+        "web_review",
+        "identity_quarantine",
+        "stale_quarantine"
+      ],
+      "readers": [
+        "pricing_reader"
+      ],
+      "targetAction": "price.review_or_evidence"
+    },
+    {
+      "model": "PriceObservation",
+      "table": "price_observations",
+      "prismaFields": {
+        "id": "id",
+        "product_id": "productId",
+        "plan_id": "planId",
+        "country_id": "countryId",
+        "source_id": "sourceId",
+        "source_level": "sourceLevel",
+        "raw_price": "rawPrice",
+        "currency": "currency",
+        "converted_usd": "convertedUsd",
+        "observed_at": "observedAt",
+        "source_url": "sourceUrl",
+        "locale": "locale",
+        "ip_country": "ipCountry",
+        "billing_platform": "billingPlatform",
+        "price_type": "priceType",
+        "tax_included": "taxIncluded",
+        "raw_payload": "rawPayload",
+        "parser_version": "parserVersion",
+        "confidence_score": "confidenceScore",
+        "anomaly_flag": "anomalyFlag",
+        "anomaly_reason": "anomalyReason",
+        "status": "status",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "price_facts",
+          "columns": [
+            "id",
+            "product_id",
+            "plan_id",
+            "country_id",
+            "source_id",
+            "source_level",
+            "raw_price",
+            "currency",
+            "converted_usd",
+            "observed_at",
+            "source_url",
+            "locale",
+            "ip_country",
+            "billing_platform",
+            "price_type",
+            "tax_included",
+            "raw_payload",
+            "parser_version",
+            "confidence_score",
+            "anomaly_flag",
+            "anomaly_reason",
+            "status",
+            "created_at",
+            "updated_at"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "app_store",
+        "web_review",
+        "price_review",
+        "web_collector"
+      ],
+      "readers": [
+        "pricing_reader"
+      ],
+      "targetAction": "price.review_or_evidence"
+    },
+    {
+      "model": "PriceSource",
+      "table": "price_sources",
+      "prismaFields": {
+        "id": "id",
+        "source_key": "sourceKey",
+        "name": "name",
+        "source_level": "sourceLevel",
+        "type": "type",
+        "provider": "provider",
+        "base_url": "baseUrl",
+        "country_url_pattern": "countryUrlPattern",
+        "requires_javascript": "requiresJavascript",
+        "requires_account": "requiresAccount",
+        "requires_geo": "requiresGeo",
+        "terms_risk": "termsRisk",
+        "reliability_score": "reliabilityScore",
+        "status": "status",
+        "note": "note",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "collection_quality",
+          "columns": [
+            "id",
+            "source_key",
+            "name",
+            "source_level",
+            "type",
+            "provider",
+            "base_url",
+            "country_url_pattern",
+            "requires_javascript",
+            "requires_account",
+            "requires_geo",
+            "terms_risk",
+            "reliability_score",
+            "status",
+            "note",
+            "created_at",
+            "updated_at"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "product_admin",
+        "app_store",
+        "official_config",
+        "web_collector"
+      ],
+      "readers": [
+        "scheduler"
+      ],
+      "targetAction": "collection.command"
+    },
+    {
+      "model": "SeoMeta",
+      "table": "seo_meta",
+      "prismaFields": {
+        "id": "id",
+        "product_id": "productId",
+        "plan_id": "planId",
+        "article_id": "articleId",
+        "category_id": "categoryId",
+        "locale": "locale",
+        "title": "title",
+        "description": "description",
+        "h1": "h1",
+        "canonical_url": "canonicalUrl",
+        "schema_type": "schemaType",
+        "status": "status",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "catalog",
+          "columns": [
+            "product_id",
+            "plan_id"
+          ]
+        },
+        {
+          "owner": "website",
+          "columns": [
+            "canonical_url",
+            "schema_type"
+          ]
+        },
+        {
+          "owner": "operations",
+          "columns": [
+            "id",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "owner": "content",
+          "columns": [
+            "article_id",
+            "category_id",
+            "locale",
+            "title",
+            "description",
+            "h1",
+            "status"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "product_admin",
+        "seo_admin"
+      ],
+      "readers": [
+        "content_renderer"
+      ],
+      "targetAction": "content.publish"
+    },
+    {
+      "model": "Faq",
+      "table": "faqs",
+      "prismaFields": {
+        "id": "id",
+        "product_id": "productId",
+        "plan_id": "planId",
+        "article_id": "articleId",
+        "locale": "locale",
+        "question": "question",
+        "answer": "answer",
+        "sort_order": "sortOrder",
+        "status": "status",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "catalog",
+          "columns": [
+            "product_id",
+            "plan_id"
+          ]
+        },
+        {
+          "owner": "operations",
+          "columns": [
+            "id",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "owner": "content",
+          "columns": [
+            "article_id",
+            "locale",
+            "question",
+            "answer",
+            "sort_order",
+            "status"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "article_admin",
+        "catalog_seed"
+      ],
+      "readers": [
+        "content_renderer"
+      ],
+      "targetAction": "content.publish"
+    },
+    {
+      "model": "CollectorJob",
+      "table": "collector_jobs",
+      "prismaFields": {
+        "id": "id",
+        "source_id": "sourceId",
+        "product_id": "productId",
+        "job_type": "jobType",
+        "schedule": "schedule",
+        "status": "status",
+        "last_run_at": "lastRunAt",
+        "next_run_at": "nextRunAt",
+        "success_count": "successCount",
+        "error_count": "errorCount",
+        "last_error": "lastError",
+        "created_at": "createdAt",
+        "updated_at": "updatedAt"
+      },
+      "groups": [
+        {
+          "owner": "collection_quality",
+          "columns": [
+            "id",
+            "source_id",
+            "product_id",
+            "job_type",
+            "schedule",
+            "status",
+            "last_run_at",
+            "next_run_at",
+            "success_count",
+            "error_count",
+            "last_error",
+            "created_at",
+            "updated_at"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "product_admin",
+        "job_admin",
+        "scheduler",
+        "official_config"
+      ],
+      "readers": [
+        "workspace_reader"
+      ],
+      "targetAction": "collection.command"
+    },
+    {
+      "model": "CollectorJobRun",
+      "table": "collector_job_runs",
+      "prismaFields": {
+        "id": "id",
+        "job_id": "jobId",
+        "product_id": "productId",
+        "source_id": "sourceId",
+        "status": "status",
+        "collector_kind": "collectorKind",
+        "started_at": "startedAt",
+        "finished_at": "finishedAt",
+        "duration_ms": "durationMs",
+        "error_message": "errorMessage",
+        "output_excerpt": "outputExcerpt",
+        "raw_payload": "rawPayload",
+        "created_at": "createdAt"
+      },
+      "groups": [
+        {
+          "owner": "collection_quality",
+          "columns": [
+            "id",
+            "job_id",
+            "product_id",
+            "source_id",
+            "status",
+            "collector_kind",
+            "started_at",
+            "finished_at",
+            "duration_ms",
+            "error_message",
+            "output_excerpt",
+            "raw_payload",
+            "created_at"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "scheduler"
+      ],
+      "readers": [
+        "workspace_reader"
+      ],
+      "targetAction": "collection.command"
+    },
+    {
+      "model": "AuditLog",
+      "table": "audit_logs",
+      "prismaFields": {
+        "id": "id",
+        "actor_id": "actorId",
+        "action": "action",
+        "target_type": "targetType",
+        "target_id": "targetId",
+        "old_value": "oldValue",
+        "new_value": "newValue",
+        "note": "note",
+        "created_at": "createdAt"
+      },
+      "groups": [
+        {
+          "owner": "operations",
+          "columns": [
+            "id",
+            "actor_id",
+            "action",
+            "target_type",
+            "target_id",
+            "old_value",
+            "new_value",
+            "note",
+            "created_at"
+          ]
+        }
+      ],
+      "currentWriters": [
+        "product_admin",
+        "plan_admin",
+        "content_store",
+        "article_admin",
+        "job_admin",
+        "content_deployment_gate"
+      ],
+      "readers": [
+        "content_store"
+      ],
+      "targetAction": "operations.audit"
+    }
+  ],
+  "nativeSql": [
+    {
+      "table": "collector_jobs",
+      "columns": [
+        "job_config"
+      ],
+      "owner": "collection_quality",
+      "evidence": {
+        "path": "geosub-backend/sql/schema/017_discovery_collection_handoff.sql",
+        "anchor": "ADD COLUMN IF NOT EXISTS job_config"
+      }
+    },
+    {
+      "table": "collector_jobs",
+      "columns": [
+        "priority"
+      ],
+      "owner": "collection_quality",
+      "evidence": {
+        "path": "geosub-backend/sql/schema/031_app_store_collection_schedule_policy.sql",
+        "anchor": "priority"
+      }
+    },
+    {
+      "table": "product_source_profiles",
+      "columns": [
+        "id",
+        "product_id",
+        "product_slug",
+        "platform",
+        "source_type",
+        "source_name",
+        "external_app_id",
+        "bundle_id",
+        "source_url",
+        "storefront_country_code",
+        "config",
+        "is_active",
+        "last_checked_at",
+        "created_at",
+        "updated_at"
+      ],
+      "owner": "collection_quality",
+      "evidence": {
+        "path": "geosub-backend/sql/schema/053_product_source_profiles.sql",
+        "anchor": "CREATE TABLE IF NOT EXISTS product_source_profiles"
+      }
+    },
+    {
+      "table": "audit_logs",
+      "columns": [
+        "actor"
+      ],
+      "owner": "operations",
+      "evidence": {
+        "path": "geosub-backend/sql/schema/001_core_schema.sql",
+        "anchor": "CREATE TABLE IF NOT EXISTS audit_logs"
+      }
+    }
+  ],
+  "references": {
+    "product_admin": {
+      "path": "ai-price-site/app/admin/products/actions.ts",
+      "anchor": "updateProductAction"
+    },
+    "plan_admin": {
+      "path": "ai-price-site/app/admin/plans/actions.ts",
+      "anchor": "updatePlanAction"
+    },
+    "app_store": {
+      "path": "geosub-backend/scripts/collect-app-store-prices.ps1",
+      "anchor": "function Ensure-Plan"
+    },
+    "web_review": {
+      "path": "geosub-backend/scripts/lib/official-web-auto-review.mjs",
+      "anchor": "publish_product"
+    },
+    "price_review": {
+      "path": "geosub-backend/sql/schema/006_price_observation_review_functions.sql",
+      "anchor": "approve_price_observation"
+    },
+    "lifecycle_sql": {
+      "path": "geosub-backend/sql/schema/054_successful_collection_publication_gate.sql",
+      "anchor": "promote_public_product_after_successful_collection"
+    },
+    "identity_quarantine": {
+      "path": "geosub-backend/sql/schema/058_automatic_identity_ambiguity_lifecycle.sql",
+      "anchor": "CREATE OR REPLACE FUNCTION"
+    },
+    "stale_quarantine": {
+      "path": "geosub-backend/sql/schema/056_quarantine_confirmed_absent_stale_app_store_prices.sql",
+      "anchor": "quarantine_unconfirmed_stale_app_store_prices"
+    },
+    "content_store": {
+      "path": "ai-price-site/lib/managed-content-store.ts",
+      "anchor": "mutateContent"
+    },
+    "content_distribution": {
+      "path": "ai-price-site/lib/content-distribution.ts",
+      "anchor": "distributeContentAttempt"
+    },
+    "editorial_code": {
+      "path": "ai-price-site/lib/product-editorial-content.ts",
+      "anchor": "editorialContent"
+    },
+    "seo_admin": {
+      "path": "ai-price-site/app/admin/seo/actions.ts",
+      "anchor": "requireAdmin"
+    },
+    "article_admin": {
+      "path": "ai-price-site/app/admin/articles/actions.ts",
+      "anchor": "requireAdmin"
+    },
+    "settings_admin": {
+      "path": "ai-price-site/app/admin/settings/actions.ts",
+      "anchor": "requireAdmin"
+    },
+    "job_admin": {
+      "path": "ai-price-site/app/admin/collector-jobs/actions.ts",
+      "anchor": "runCollectorJobNow"
+    },
+    "scheduler": {
+      "path": "geosub-backend/scripts/run-collector-jobs.ps1",
+      "anchor": "collector_job_runs"
+    },
+    "catalog_seed": {
+      "path": "geosub-backend/scripts/generate-catalog-expansion-sql.cjs",
+      "anchor": "product_source_profiles"
+    },
+    "official_config": {
+      "path": "geosub-backend/scripts/configure-official-web-job.mjs",
+      "anchor": "job_config"
+    },
+    "spec_json": {
+      "path": "geosub-backend/data/product-plan-specs.json",
+      "anchor": "exact_plan_aliases"
+    },
+    "expansion_json": {
+      "path": "geosub-backend/data/catalog-expansion-2026-08.json",
+      "anchor": "products"
+    },
+    "official_json": {
+      "path": "geosub-backend/data/official-web-price-sources.json",
+      "anchor": "sources"
+    },
+    "pricing_reader": {
+      "path": "ai-price-site/lib/pricing-detail-adapter.ts",
+      "anchor": "product_description"
+    },
+    "content_renderer": {
+      "path": "ai-price-site/components/PricingDetailPage.tsx",
+      "anchor": "getPublishedContent"
+    },
+    "quality_reader": {
+      "path": "ai-price-site/app/admin/data-quality/queries.ts",
+      "anchor": "product_source_profiles"
+    },
+    "workspace_reader": {
+      "path": "ai-price-site/lib/admin-workspace.ts",
+      "anchor": "readWorkspaceProducts"
+    },
+    "seo_policy": {
+      "path": "ai-price-site/lib/seo-indexing-policy.ts",
+      "anchor": "seoIndexableLocales"
+    },
+    "permissions": {
+      "path": "ai-price-site/lib/admin-permissions.ts",
+      "anchor": "canAdmin"
+    },
+    "operations": {
+      "path": "geosub-backend/deploy/linux-arm64/collector-release.mjs",
+      "anchor": "version"
+    },
+    "web_collector": {
+      "path": "geosub-backend/scripts/collect-official-web-prices.mjs",
+      "anchor": "ensureSource"
+    },
+    "content_effects": {
+      "path": "ai-price-site/lib/content-effects-store.ts",
+      "anchor": "linkContentEffect"
+    },
+    "content_fact_view": {
+      "path": "ai-price-site/lib/managed-content-facts.ts",
+      "anchor": "projectClaudeFactProduct"
+    },
+    "content_deployment_gate": {
+      "path": "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+      "anchor": "pauseContentForDeployment"
+    }
+  },
+  "knownConflicts": [
+    {
+      "id": "plan-catalog-overwrite",
+      "fields": [
+        "plans.name",
+        "plans.billing_cycle",
+        "plans.status",
+        "plans.sort_order"
+      ],
+      "writers": [
+        "plan_admin",
+        "app_store"
+      ],
+      "cutover": "C2 / D1-D2",
+      "resolution": "Stop collector catalog updates only after stable-ID mapping cutover; preserve existing jobs until then."
+    },
+    {
+      "id": "product-description-overwrite",
+      "fields": [
+        "products.description"
+      ],
+      "writers": [
+        "product_admin",
+        "web_review",
+        "editorial_code",
+        "official_config"
+      ],
+      "cutover": "B2 / C1",
+      "resolution": "Separate catalog short description from page editorial; retain current Web automation until explicit cutover."
+    },
+    {
+      "id": "product-publication-coupling",
+      "fields": [
+        "products.status"
+      ],
+      "writers": [
+        "product_admin",
+        "lifecycle_sql",
+        "web_review"
+      ],
+      "cutover": "C1",
+      "resolution": "Keep approved automatic rules; introduce explicit catalog request without changing thresholds or SEO decisions."
+    },
+    {
+      "id": "legacy-seo-write-path",
+      "fields": [
+        "seo_meta.title",
+        "seo_meta.description",
+        "seo_meta.h1"
+      ],
+      "writers": [
+        "product_admin",
+        "seo_admin"
+      ],
+      "cutover": "B2",
+      "resolution": "Select one writer per migrated target/locale; legacy targets stay on the existing path."
+    }
+  ],
+  "jsonSurfaces": [
+    {
+      "id": "managed-content",
+      "storage": "site_settings.value_json under fixed target registry prefixes; legacy content-pilot:en:chatgpt: retained, Claude zh/en local rehearsal only",
+      "owner": "content",
+      "writer": "content_store",
+      "readers": [
+        "content_renderer",
+        "content_fact_view"
+      ],
+      "fields": [
+        "draft",
+        "generation",
+        "version",
+        "content.title",
+        "content.heading",
+        "content.description",
+        "content.sections",
+        "content.faqs",
+        "content.sources",
+        "revision.hash",
+        "revision.actor",
+        "revision.reason",
+        "revision.previousVersion",
+        "revision.rollbackOf",
+        "attempt.id",
+        "attempt.status",
+        "attempt.previousAttemptId",
+        "attempt.evidence",
+        "fence.admission",
+        "fence.epoch",
+        "fence.generation",
+        "attempt.number",
+        "attempt.owner",
+        "attempt.leaseUntil",
+        "attempt.failure",
+        "attempt.actor",
+        "attempt.targetId",
+        "revision.targetId",
+        "attempt.evidence.origin.factsHash",
+        "attempt.evidence.public.factsHash"
+      ],
+      "cutover": "Preserve exact pilot keys and revisions; new targets need distinct registered keys. Claude editorial strings may contain fixed read-only fact tokens; prices remain owned by price_facts, never copied into template values."
+    },
+    {
+      "id": "app-store-config",
+      "storage": "product-plan-specs.json + catalog-expansion-2026-08.json",
+      "owner": "collection_quality",
+      "writer": "spec_json",
+      "readers": [
+        "app_store"
+      ],
+      "fields": [
+        "app_store_id",
+        "exact_plan_aliases",
+        "plans.aliases",
+        "plans.review_only",
+        "plans.expected_monthly_usd_min",
+        "plans.expected_monthly_usd_max",
+        "plans.price_selection_strategy"
+      ],
+      "cutover": "D1-D4; quality policy must remain separate from routine mapping."
+    },
+    {
+      "id": "official-web-config",
+      "storage": "official-web-price-sources.json",
+      "owner": "collection_quality",
+      "writer": "official_json",
+      "readers": [
+        "web_review"
+      ],
+      "fields": [
+        "source_key",
+        "parser_key",
+        "parser_version",
+        "countries",
+        "plans",
+        "auto_review",
+        "public_description"
+      ],
+      "cutover": "D1-D4; public_description is a known legacy content write, not a new editorial owner."
+    },
+    {
+      "id": "program-release",
+      "storage": "website/collector/controller operation receipts",
+      "owner": "operations",
+      "writer": "operations",
+      "readers": [
+        "operations"
+      ],
+      "fields": [
+        "version",
+        "commit",
+        "attempt",
+        "database_inputs",
+        "rollback_target"
+      ],
+      "cutover": "Existing independent release controllers remain authoritative."
+    },
+    {
+      "id": "content-effects",
+      "storage": "site_settings.value_json: legacy content-effect:v1 keys/groups retained; new target-specific content-effect:v2 keys/groups",
+      "owner": "content",
+      "writer": "content_effects",
+      "readers": [
+        "content_effects"
+      ],
+      "fields": [
+        "link.targetId",
+        "link.path",
+        "link.version",
+        "link.revisionHash",
+        "link.attemptId",
+        "link.opportunityId",
+        "link.publishedAt",
+        "link.engine",
+        "link.timezone",
+        "check.linkId",
+        "check.targetId",
+        "check.at",
+        "check.actor",
+        "check.result",
+        "link.factsHash"
+      ],
+      "cutover": "Local-only Claude rehearsal; complete verified distribution receipt required, no inferred historical target or effect."
+    },
+    {
+      "id": "content-deployment-fence",
+      "storage": "same fixed content registry fence/attempt keys; append-only audit_logs.new_value.rollbackPolicy",
+      "owner": "content",
+      "writer": "content_deployment_gate",
+      "readers": [
+        "content_store"
+      ],
+      "fields": [
+        "fence.generation",
+        "fence.epoch",
+        "fence.admission",
+        "attempt.status",
+        "attempt.finishedAt",
+        "attempt.owner",
+        "attempt.leaseUntil",
+        "audit.rollbackPolicy.mode",
+        "audit.rollbackPolicy.targets",
+        "audit.rollbackPolicy.pair"
+      ],
+      "cutover": "Deployment controller may only close all target fences/retire current attempts under the existing content lock; legacy resume is separate and Claude production admission remains disabled. Does not change revisions, prices or historical audit."
+    }
+  ],
+  "literalWriteSurfaces": [
+    {
+      "path": "ai-price-site/app/admin/articles/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/collector-jobs/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs",
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/contact-tickets/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/discovery/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs",
+        "collector_jobs",
+        "price_sources",
+        "products"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/plans/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs",
+        "plans"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/products/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs",
+        "collector_jobs",
+        "price_sources",
+        "products",
+        "seo_meta"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/review/collection-runner.ts",
+      "classification": "admin_action",
+      "tables": [
+        "collector_job_runs",
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/search-demand/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/search-demand/authority-collect/route.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/seo/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/settings/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/lib/admin-auth.ts",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/lib/content-effects-store.ts",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/lib/first-party-promotion-store.ts",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/lib/managed-content-store.ts",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/lib/seo-search-import-storage.ts",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/check-admin-reliability-isolated.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "audit_logs",
+        "products"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/check-admin-save-isolated.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "audit_logs",
+        "collector_jobs",
+        "price_sources",
+        "products"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/check-content-store-isolated.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/import-price-observations.mjs",
+      "classification": "controlled_script",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/refresh-local-affordability-preview.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "region_prices"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/seed-ci-quality-fixture.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "collector_job_runs",
+        "collector_jobs",
+        "plans",
+        "price_sources",
+        "products",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/seed-e2e.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "plans",
+        "price_observations",
+        "price_sources",
+        "products",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "ai-price-site/scripts/seed-local-demo.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "collector_job_runs",
+        "collector_jobs",
+        "plans",
+        "price_observations",
+        "price_sources",
+        "products",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/collect-app-store-prices.ps1",
+      "classification": "controlled_script",
+      "tables": [
+        "plans",
+        "price_observations",
+        "price_sources"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/collect-google-play-prices.ps1",
+      "classification": "controlled_script",
+      "tables": [
+        "price_observations",
+        "price_sources"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/collect-official-web-prices.mjs",
+      "classification": "controlled_script",
+      "tables": [
+        "price_observations",
+        "price_sources"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/collect-web-prices.ps1",
+      "classification": "controlled_script",
+      "tables": [
+        "price_observations",
+        "price_sources"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/configure-official-web-job.mjs",
+      "classification": "controlled_script",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/generate-catalog-expansion-sql.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "product_source_profiles",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/lib/claude-pro-job-reuse.mjs",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs",
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/lib/official-web-auto-review.mjs",
+      "classification": "runtime_service",
+      "tables": [
+        "price_observations",
+        "products",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/run-collector-jobs.ps1",
+      "classification": "controlled_script",
+      "tables": [
+        "collector_job_runs",
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/002_seed_chatgpt.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "faqs",
+        "plans",
+        "price_sources",
+        "products",
+        "region_prices",
+        "seo_meta"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/008_archive_non_subscription_plans.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/009_clear_legacy_multisource_review_notes.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/010_archive_capacity_only_app_store_items.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/016_product_plan_specs_seed.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/018_relax_claude_max_app_store_range.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/019_gemini_app_store_collector.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "price_sources"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/020_merge_gemini_advanced_into_pro.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/021_app_store_collection_schedule_policy.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/025_normalize_disney_app_store_plans.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/026_reclassify_app_store_selection_false_positives.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/027_ignore_legacy_non_primary_app_store_tiers.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/028_data_quality_repair_cycles.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/029_operational_self_healing.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_job_runs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/030_public_product_lifecycle.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/032_required_catalog_products.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/033_disney_app_store_source.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs",
+        "price_sources"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/035_normalize_hbo_max_app_store_plans.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "price_observations",
+        "price_sources",
+        "products",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/036_product_seo_content_quality.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "products",
+        "seo_meta"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/037_repair_hbo_max_app_store_selection.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/048_archive_kimi_non_subscription_iaps.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/049_expand_competitor_catalog.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "product_source_profiles",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/050_ensure_required_catalog_products.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "product_source_profiles",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/051_normalize_suno_app_store_plans.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/052_normalize_copilot_app_store_plans.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/053_seed_apple_music_official_web_pilot.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "price_sources",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/retired/001_cleanup_duplicates.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "faqs",
+        "seo_meta"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/retired/003_price_observation_tables.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "product_source_profiles"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/retired/007_update_chatgpt_logo_to_app_store_artwork.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/retired/008_sync_official_app_store_logos.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/retired/009_fix_chatgpt_plus_korea_app_store_outlier.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/retired/010_quarantine_app_store_anomaly_promotions.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/backfill/retired/011_cleanup_app_store_plan_matching_artifacts.sql",
+      "classification": "historical_backfill",
+      "tables": [
+        "plans",
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/isolated/collector-availability-hardening.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/isolated/collector-review-hardening.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/006_price_observation_review_functions.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/010_price_auto_review_rules.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/020_app_store_stability_auto_review.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/026_app_store_stability_auto_review_v2.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/031_app_store_collection_schedule_policy.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/035_refresh_matching_app_store_prices.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/036_refresh_exact_local_app_store_prices.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/037_quarantine_published_app_store_price_outliers.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/038_stale_app_store_price_lifecycle.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_jobs",
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/039_app_store_coverage_gap_rechecks.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/041_data_quality_repair_cycles.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_jobs",
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/042_operational_self_healing.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_job_runs",
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/043_public_product_lifecycle.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "plans",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/045_plan_region_availability.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_jobs"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/046_archive_superseded_app_store_ambiguities.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/047_product_seo_content_quality.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "seo_meta"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/054_successful_collection_publication_gate.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "plans",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/055_product_seo_description_bounds.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "seo_meta"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/056_quarantine_confirmed_absent_stale_app_store_prices.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/058_automatic_identity_ambiguity_lifecycle.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "audit_logs",
+        "region_prices"
+      ]
+    }
+  ],
+  "resolvedConflicts": [
+    {
+      "id": "fresh-schema-audit-actor-mismatch",
+      "fields": [
+        "audit_logs.actor",
+        "audit_logs.actor_id"
+      ],
+      "writers": [
+        "content_store",
+        "product_admin",
+        "plan_admin"
+      ],
+      "cutover": "B1 prerequisite / separately verified additive schema compatibility",
+      "resolution": "Additive schema 059 and matching Prisma migration preserve both nullable columns and every historical row; local legacy/account/mixed/rerun and atomic failure cases verified. Production not migrated."
+    }
+  ]
+}

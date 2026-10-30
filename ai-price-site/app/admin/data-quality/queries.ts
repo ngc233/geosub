@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { latestObservationIdsSql } from "../../../lib/admin-current-observations";
 import { DEFAULT_APP_STORE_COUNTRY_CODES } from "../../../lib/app-store-country-policy";
 import { prisma } from "../../../lib/prisma";
 import type { ProductQualityRow, RepairCycleRow } from "./model";
@@ -46,7 +47,6 @@ export async function getProductQualityRows() {
         COUNT(*) FILTER (WHERE price.plan_id IS NOT NULL)::int AS covered_pair_count,
         COUNT(*) FILTER (
           WHERE availability.status IN ('not_available', 'available_no_iap')
-            OR plan_availability.status = 'confirmed_absent'
         )::int AS unavailable_pair_count,
         COUNT(DISTINCT country.id) FILTER (
           WHERE availability.status IN ('not_available', 'available_no_iap')
@@ -54,17 +54,14 @@ export async function getProductQualityRows() {
         COUNT(*) FILTER (
           WHERE price.plan_id IS NULL
             AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
-            AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
         )::int AS missing_pair_count,
         COUNT(DISTINCT country.id) FILTER (
           WHERE price.plan_id IS NULL
             AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
-            AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
         )::int AS missing_country_count,
         STRING_AGG(DISTINCT country.code, ', ' ORDER BY country.code) FILTER (
           WHERE price.plan_id IS NULL
             AND COALESCE(availability.status, '') NOT IN ('not_available', 'available_no_iap')
-            AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
         ) AS missing_country_codes
       FROM active_plan plan
       CROSS JOIN target_country country
@@ -75,10 +72,6 @@ export async function getProductQualityRows() {
         ON availability.product_id = plan.product_id
         AND availability.country_id = country.id
         AND availability.billing_platform::text = 'ios'
-      LEFT JOIN app_store_plan_availability_checks plan_availability
-        ON plan_availability.plan_id = plan.id
-        AND plan_availability.country_id = country.id
-        AND plan_availability.billing_platform::text = 'ios'
       GROUP BY plan.product_id
     ),
     price_state AS (
@@ -179,6 +172,47 @@ export async function getProductQualityRows() {
         AND price.billing_platform::text = 'ios'
       GROUP BY price.product_id
     ),
+    observation_current AS MATERIALIZED (
+      ${latestObservationIdsSql()}
+    ),
+    observation_input AS MATERIALIZED (
+      SELECT
+        observation.product_id,
+        observation.country_id,
+        observation.status,
+        observation.billing_platform,
+        observation.anomaly_flag,
+        observation.anomaly_reason,
+        observation.updated_at,
+        observation.observed_at,
+        CASE
+          WHEN observation.status::text = 'pending'
+            OR (
+              observation.status::text = 'ignored'
+              AND observation.billing_platform::text = 'ios'
+              AND observation.updated_at > NOW() - INTERVAL '30 days'
+            )
+          THEN observation.raw_payload ->> 'auto_review_reason_code'
+        END AS auto_review_reason_code
+      FROM price_observations observation
+      WHERE (observation.status = 'pending'
+          AND observation.id IN (SELECT id FROM observation_current))
+        OR (
+          observation.status = 'ignored'
+          AND observation.billing_platform = 'ios'
+          AND observation.updated_at > NOW() - INTERVAL '30 days'
+        )
+    ),
+    observation_latest AS (
+      SELECT
+        observation.product_id,
+        MAX(observation.observed_at) AS latest_observed_at,
+        MAX(observation.observed_at) FILTER (
+          WHERE observation.billing_platform::text = 'web'
+        ) AS latest_web_observed_at
+      FROM price_observations observation
+      GROUP BY observation.product_id
+    ),
     observation_state AS (
       SELECT
         observation.product_id,
@@ -203,7 +237,7 @@ export async function getProductQualityRows() {
         COUNT(*) FILTER (
           WHERE observation.status::text = 'pending'
             AND observation.billing_platform::text = 'ios'
-            AND COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '') IN (
+            AND COALESCE(observation.auto_review_reason_code, '') IN (
               'waiting_for_more_app_store_samples',
               'app_store_price_changed',
               'app_store_samples_too_old',
@@ -216,13 +250,22 @@ export async function getProductQualityRows() {
             AND (
               observation.anomaly_flag
               OR lower(COALESCE(observation.anomaly_reason, '')) LIKE '%hard%'
-              OR COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '') IN (
+              OR COALESCE(observation.auto_review_reason_code, '') IN (
                 'app_store_global_price_outlier',
                 'app_store_hard_anomaly_guard',
                 'hard_price_guard'
               )
             )
         )::int AS hard_anomaly_count,
+        COUNT(*) FILTER (
+          WHERE observation.status::text = 'pending'
+            AND observation.auto_review_reason_code = 'app_store_plan_order_conflict'
+        )::int AS plan_conflict_count,
+        COUNT(*) FILTER (
+          WHERE observation.status::text = 'pending'
+            AND observation.anomaly_reason =
+              'This new plan requires manual identity and regional price review before publication.'
+        )::int AS review_only_count,
         COUNT(*) FILTER (
           WHERE observation.status::text = 'ignored'
             AND observation.billing_platform::text = 'ios'
@@ -232,14 +275,10 @@ export async function getProductQualityRows() {
           WHERE observation.status::text = 'ignored'
             AND observation.billing_platform::text = 'ios'
             AND observation.updated_at > NOW() - INTERVAL '30 days'
-            AND COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '')
+            AND COALESCE(observation.auto_review_reason_code, '')
               = 'automated_anomaly_rechecks_exhausted'
-        )::int AS auto_closed_observation_count,
-        MAX(observation.observed_at) AS latest_observed_at,
-        MAX(observation.observed_at) FILTER (
-          WHERE observation.billing_platform::text = 'web'
-        ) AS latest_web_observed_at
-      FROM price_observations observation
+        )::int AS auto_closed_observation_count
+      FROM observation_input observation
       GROUP BY observation.product_id
     ),
     source_profile_state AS (
@@ -264,10 +303,10 @@ export async function getProductQualityRows() {
           ELSE 'ignored'
         END AS reason_kind,
         NULLIF(COALESCE(
-          observation.raw_payload ->> 'auto_review_reason_code',
+          observation.auto_review_reason_code,
           observation.anomaly_reason
         ), '') AS reason_code
-      FROM price_observations observation
+      FROM observation_input observation
       WHERE observation.status::text = 'pending'
         OR (
           observation.status::text = 'ignored'
@@ -556,11 +595,13 @@ export async function getProductQualityRows() {
       COALESCE(observation_state.pending_anomaly_count, 0)::int AS pending_anomaly_count,
       COALESCE(observation_state.pending_stability_count, 0)::int AS pending_stability_count,
       COALESCE(observation_state.hard_anomaly_count, 0)::int AS hard_anomaly_count,
+      COALESCE(observation_state.plan_conflict_count, 0)::int AS plan_conflict_count,
+      COALESCE(observation_state.review_only_count, 0)::int AS review_only_count,
       COALESCE(observation_state.ignored_observation_count, 0)::int AS ignored_observation_count,
       COALESCE(observation_state.auto_closed_observation_count, 0)::int AS auto_closed_observation_count,
       observation_reason_state.ignored_reason_codes,
-      observation_state.latest_observed_at,
-      observation_state.latest_web_observed_at,
+      observation_latest.latest_observed_at,
+      observation_latest.latest_web_observed_at,
       observation_reason_state.review_reason_codes,
       source_profile_state.source_integration_status,
       source_profile_state.source_integration_note
@@ -572,6 +613,7 @@ export async function getProductQualityRows() {
     LEFT JOIN duplicate_plan_state ON duplicate_plan_state.product_id = product.id
     LEFT JOIN tax_state ON tax_state.product_id = product.id
     LEFT JOIN observation_state ON observation_state.product_id = product.id
+    LEFT JOIN observation_latest ON observation_latest.product_id = product.id
     LEFT JOIN observation_reason_state ON observation_reason_state.product_id = product.id
     LEFT JOIN source_profile_state ON source_profile_state.product_id = product.id
     LEFT JOIN job_state ON job_state.product_id = product.id

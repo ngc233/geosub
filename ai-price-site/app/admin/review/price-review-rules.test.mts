@@ -74,6 +74,10 @@ const appStoreCollector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
 );
+const appStorePlanLoader = readFileSync(
+  resolve(repoRoot, "geosub-backend/scripts/app-store-plan-specs.ps1"),
+  "utf8",
+);
 
 const appStoreRenderer = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/render-app-store-prices.mjs"),
@@ -157,7 +161,8 @@ test("exact local App Store prices are not blocked by normal FX movement", () =>
 });
 
 test("collector compares parsed App Store prices against plan-specific USD ranges", () => {
-  assert.match(appStoreCollector, /ReadAllText\(\$specPath, \[Text\.Encoding\]::UTF8\)/);
+  assert.match(appStoreCollector, /Join-Path \$PSScriptRoot "app-store-plan-specs\.ps1"/);
+  assert.match(appStorePlanLoader, /ReadAllText\(\$specPath, \[Text\.Encoding\]::UTF8\)/);
   assert.match(appStoreCollector, /expected_monthly_usd_min/);
   assert.match(appStoreCollector, /expected_monthly_usd_max/);
   assert.match(appStoreCollector, /Converted App Store price is below the expected range/);

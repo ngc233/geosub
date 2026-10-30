@@ -20,6 +20,9 @@ import { getCollectorRunHistoryRows } from "./collector-run-history-query";
 
 export type ReviewPageQueryInput = {
   productQuery: string;
+  exactProduct?:string;
+  detailProduct?: string;
+  detailPage?: number;
   discoveryProduct: string;
   discoveryJobs: number;
   pendingPage: number;
@@ -28,7 +31,10 @@ export type ReviewPageQueryInput = {
 
 async function getReviewPageDataUnmeasured({
   productQuery,
+  exactProduct = "",
   discoveryProduct,
+  detailProduct = "",
+  detailPage = 1,
   discoveryJobs,
   pendingPage,
   historyPage,
@@ -38,7 +44,9 @@ async function getReviewPageDataUnmeasured({
   const pendingOffset = (pendingPage - 1) * pendingPageSize;
   const historyPageSize = 25;
   const historyOffset = (historyPage - 1) * historyPageSize;
-  const detailRowsPerProduct = productQuery ? 120 : 6;
+  const detailRowsPerProduct = 10;
+  const detailOffset = (detailPage - 1) * detailRowsPerProduct;
+  const detailProductSlugs = detailProduct ? [detailProduct] : [];
 
   const pendingProductSummaryPromise = prisma.$queryRaw<PendingProductSummaryRow[]>`
     WITH scoped_pending AS (
@@ -64,6 +72,7 @@ async function getReviewPageDataUnmeasured({
         AND published.price_type = observation.price_type
         AND published.status = 'published'::publish_status
       WHERE pending.platform = 'ios'
+        AND (${exactProduct} = '' OR pending.product_slug = ${exactProduct})
         AND (
           ${productQuery} = ''
           OR pending.product_slug ILIKE ${productQueryLike}
@@ -171,7 +180,7 @@ async function getReviewPageDataUnmeasured({
   const pendingTotalPages = Math.max(1, Math.ceil(pendingProductTotal / pendingPageSize));
 
   const pendingProductSlugs = pendingProductSummaryRows.map((row) => row.product_slug);
-  const pendingRowsPromise = pendingProductSlugs.length
+  const pendingRowsPromise = detailProductSlugs.some((slug) => pendingProductSlugs.includes(slug))
     ? prisma.$queryRaw<PendingRow[]>`
     WITH detail_rows AS (
     SELECT
@@ -225,7 +234,7 @@ async function getReviewPageDataUnmeasured({
     FROM price_observation_evidence_view evidence
     WHERE evidence.status = 'pending'::observation_status
       AND evidence.billing_platform = 'ios'::billing_platform
-      AND evidence.product_slug IN (${Prisma.join(pendingProductSlugs)})
+      AND evidence.product_slug IN (${Prisma.join(detailProductSlugs)})
       AND evidence.published_comparison NOT IN (
         'superseded_by_newer_published_price',
         'matches_published_price'
@@ -240,7 +249,8 @@ async function getReviewPageDataUnmeasured({
     )
     SELECT *
     FROM detail_rows
-    WHERE detail_rank <= ${detailRowsPerProduct}
+    WHERE detail_rank > ${detailOffset}
+      AND detail_rank <= ${detailOffset + detailRowsPerProduct}
     ORDER BY product_slug, plan_slug, observed_at DESC
   `
     : Promise.resolve([] as PendingRow[]);
@@ -342,8 +352,9 @@ async function getReviewPageDataUnmeasured({
             AND published.status = 'published'::publish_status
             AND published.billing_platform = 'ios'::billing_platform
         ) published_stats ON TRUE
-        WHERE product.slug ILIKE ${productQueryLike}
-          OR product.name ILIKE ${productQueryLike}
+        WHERE (product.slug ILIKE ${productQueryLike}
+          OR product.name ILIKE ${productQueryLike})
+          AND (${exactProduct} = '' OR product.slug = ${exactProduct})
         ORDER BY
           CASE WHEN product.slug = ${productQuery} THEN 0 ELSE 1 END,
           product.sort_order,
@@ -454,6 +465,7 @@ async function getReviewPageDataUnmeasured({
       COUNT(*) FILTER (WHERE status = 'rejected'::observation_status)::int AS rejected_count
     FROM price_observations
     WHERE status <> 'pending'::observation_status
+      AND (${exactProduct} = '' OR EXISTS (SELECT 1 FROM products scope_product WHERE scope_product.id = price_observations.product_id AND scope_product.slug = ${exactProduct}))
   `;
 
   const getHistoryRows = () => prisma.$queryRaw<HistoryRow[]>`
@@ -461,6 +473,7 @@ async function getReviewPageDataUnmeasured({
       SELECT observation.id, observation.updated_at
       FROM price_observations observation
       WHERE observation.status <> 'pending'::observation_status
+        AND (${exactProduct} = '' OR EXISTS (SELECT 1 FROM products scope_product WHERE scope_product.id = observation.product_id AND scope_product.slug = ${exactProduct}))
       ORDER BY observation.updated_at DESC, observation.id DESC
       LIMIT ${historyPageSize}
       OFFSET ${historyOffset}
@@ -536,7 +549,7 @@ async function getReviewPageDataUnmeasured({
     LIMIT 1
   `;
 
-  const getCollectorRunRows = () => getCollectorRunHistoryRows(productQuery);
+  const getCollectorRunRows = () => getCollectorRunHistoryRows(productQuery,12,{product:exactProduct});
 
   const getLatestAutoReviewRows = () => prisma.$queryRaw<AutoReviewRunRow[]>`
     SELECT

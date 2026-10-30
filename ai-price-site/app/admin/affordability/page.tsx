@@ -1,3 +1,6 @@
+import AdminPagination from "@/components/admin/AdminPagination";
+import { createAdminListView } from "@/lib/admin-list-params";
+import { AdminPageHeader } from "../../../components/admin/AdminCard";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 
@@ -126,10 +129,11 @@ function levelClassName(level: string) {
     return "bg-lime-100 text-lime-700 dark:bg-lime-950 dark:text-lime-300";
   }
 
-  return "bg-zinc-100 text-zinc-700 dark:bg-slate-800 dark:text-slate-200";
+  return "bg-admin-chip text-admin-text-body dark:bg-admin-chip dark:text-admin-text-body";
 }
 
-export default async function AffordabilityPreviewPage() {
+export default async function AffordabilityPreviewPage({ searchParams }: { searchParams?: Promise<Record<string,string | undefined>> }) {
+  const params = searchParams ? await searchParams : {};
   const [summaryRows, detailRows] = await measureAdminWorkload(
     "affordability.page-data",
     () => Promise.all([
@@ -168,70 +172,69 @@ export default async function AffordabilityPreviewPage() {
   const latestSummary = summaryRows[0];
   const latestDetail = detailRows[0];
 
+  const summaryList = createAdminListView(summaryRows, {basePath:"/admin/affordability",params,pageParam:"summaryPage",pageSize:25,id:"affordability-summary"});
+  const detailList = createAdminListView(detailRows, {basePath:"/admin/affordability",params,pageSize:25,id:"affordability-details"});
   return (
-    <main className="min-h-screen bg-zinc-50 px-6 py-8 text-zinc-950 dark:bg-slate-900 dark:text-slate-100">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="space-y-6">
         <div>
-          <p className="text-sm font-black text-lime-700 dark:text-lime-300">GeoSub Admin</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight">
-            本地订阅负担指数预览
-          </h1>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-zinc-500 dark:text-slate-400">
-            基于 World Bank 当前最新可用收入指标，将订阅月费折算为当地月均收入占比，并计算相对美国的负担倍数。
-            收入指标通常会滞后于实时价格数据，因此需要单独标注“收入数据年份”。
-          </p>
+          <AdminPageHeader
+            eyebrow="数据资产"
+            title="本地订阅负担指数预览"
+            description="基于 World Bank 当前最新可用收入指标，将订阅月费折算为当地月均收入占比，并计算相对美国的负担倍数。收入指标通常会滞后于实时价格数据，因此需要单独标注收入数据年份。"
+          />
 
-          <div className="mt-5 grid gap-3 md:grid-cols-5">
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="text-xs font-black text-zinc-400">收入指标</div>
-              <div className="mt-1 text-sm font-black">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+            <div className="rounded-admin-card border border-admin-border bg-admin-surface px-4 py-3 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+              <div className="text-xs font-medium text-admin-text-faint">收入指标</div>
+              <div className="mt-1 break-words text-sm font-medium [overflow-wrap:anywhere]">
                 {metricLabel(latestSummary?.income_metric_type)}
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="text-xs font-black text-zinc-400">指标代码</div>
-              <div className="mt-1 text-sm font-black">
+            <div className="rounded-admin-card border border-admin-border bg-admin-surface px-4 py-3 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+              <div className="text-xs font-medium text-admin-text-faint">指标代码</div>
+              <div className="mt-1 break-words text-sm font-medium [overflow-wrap:anywhere]">
                 {latestSummary?.income_indicator_code || "-"}
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="text-xs font-black text-zinc-400">收入数据年份</div>
-              <div className="mt-1 text-sm font-black">
+            <div className="rounded-admin-card border border-admin-border bg-admin-surface px-4 py-3 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+              <div className="text-xs font-medium text-admin-text-faint">收入数据年份</div>
+              <div className="mt-1 break-words text-sm font-medium [overflow-wrap:anywhere]">
                 {latestSummary?.income_data_year || "-"}，最新可用值
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="text-xs font-black text-zinc-400">收入同步时间</div>
-              <div className="mt-1 text-sm font-black">
+            <div className="rounded-admin-card border border-admin-border bg-admin-surface px-4 py-3 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+              <div className="text-xs font-medium text-admin-text-faint">收入同步时间</div>
+              <div className="mt-1 break-words text-sm font-medium [overflow-wrap:anywhere]">
                 {formatDate(latestSummary?.income_synced_at)}
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="text-xs font-black text-zinc-400">价格检查时间</div>
-              <div className="mt-1 text-sm font-black">
+            <div className="rounded-admin-card border border-admin-border bg-admin-surface px-4 py-3 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+              <div className="text-xs font-medium text-admin-text-faint">价格检查时间</div>
+              <div className="mt-1 break-words text-sm font-medium [overflow-wrap:anywhere]">
                 {formatDate(latestDetail?.price_last_checked_at)}
               </div>
             </div>
           </div>
         </div>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <section className="rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-admin-card sm:p-6 dark:border-admin-border-strong dark:bg-admin-surface">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-black">套餐汇总</h2>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-slate-400">
+              <h2 className="text-base font-semibold text-admin-text">套餐汇总</h2>
+              <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
                 用于判断每个套餐的最低负担、最高负担和平均负担。
               </p>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-slate-700">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400 dark:bg-slate-900">
+          <AdminPagination {...summaryList.pagination} id="affordability-summary" ariaLabel="购买力列表分页" className="my-4 px-4" />
+          <div className="admin-scrollbar overflow-x-auto rounded-xl border border-admin-border dark:border-admin-border-strong">
+            <table className="w-full min-w-[800px] text-left text-sm">
+              <thead className="bg-admin-surface-subtle text-xs font-semibold uppercase tracking-wide text-admin-text-faint dark:bg-admin-surface">
                 <tr>
                   <th className="px-4 py-3">产品</th>
                   <th className="px-4 py-3">套餐</th>
@@ -244,11 +247,11 @@ export default async function AffordabilityPreviewPage() {
                   <th className="px-4 py-3">收入年份</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {summaryRows.map((row) => (
+              <tbody className="divide-y divide-admin-border">
+                {summaryList.items.map((row) => (
                   <tr key={`${row.product_slug}-${row.plan_slug}`}>
-                    <td className="px-4 py-4 font-bold">{row.product_name}</td>
-                    <td className="px-4 py-4 font-bold">{row.plan_name}</td>
+                    <td className="px-4 py-4 font-semibold">{row.product_name}</td>
+                    <td className="px-4 py-4 font-semibold">{row.plan_name}</td>
                     <td className="px-4 py-4">{String(row.covered_regions)} 个地区</td>
                     <td className="px-4 py-4">{formatPercent(row.min_income_share_percent)}</td>
                     <td className="px-4 py-4">{formatPercent(row.max_income_share_percent)}</td>
@@ -261,19 +264,21 @@ export default async function AffordabilityPreviewPage() {
               </tbody>
             </table>
           </div>
+        <AdminPagination {...summaryList.pagination} ariaLabel="购买力列表底部分页" className="my-4 px-4" />
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <section className="rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-admin-card sm:p-6 dark:border-admin-border-strong dark:bg-admin-surface">
           <div className="mb-5">
-            <h2 className="text-xl font-black">ChatGPT 地区负担明细</h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-slate-400">
+            <h2 className="text-base font-semibold text-admin-text">ChatGPT 地区负担明细</h2>
+            <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
               收入占比越高，表示该订阅对当地平均收入的负担越高。收入数据年份表示 World Bank 当前最新可用年份，不代表价格数据年份。
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-slate-700">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs font-black uppercase tracking-wide text-zinc-400 dark:bg-slate-900">
+          <AdminPagination {...detailList.pagination} id="affordability-details" ariaLabel="购买力列表分页" className="my-4 px-4" />
+          <div className="admin-scrollbar overflow-x-auto rounded-xl border border-admin-border dark:border-admin-border-strong">
+            <table className="w-full min-w-[800px] text-left text-sm">
+              <thead className="bg-admin-surface-subtle text-xs font-semibold uppercase tracking-wide text-admin-text-faint dark:bg-admin-surface">
                 <tr>
                   <th className="px-4 py-3">套餐</th>
                   <th className="px-4 py-3">地区</th>
@@ -285,37 +290,37 @@ export default async function AffordabilityPreviewPage() {
                   <th className="px-4 py-3">收入年份</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {detailRows.map((row) => (
+              <tbody className="divide-y divide-admin-border">
+                {detailList.items.map((row) => (
                   <tr key={`${row.product_slug}-${row.plan_slug}-${row.country_code}`}>
-                    <td className="px-4 py-4 font-bold">{row.plan_name}</td>
+                    <td className="px-4 py-4 font-semibold">{row.plan_name}</td>
                     <td className="px-4 py-4">
-                      <div className="font-black">{row.country_name_zh || row.country_name_en}</div>
-                      <div className="mt-1 text-xs font-bold text-zinc-400">{row.country_code}</div>
+                      <div className="font-semibold">{row.country_name_zh || row.country_name_en}</div>
+                      <div className="mt-1 text-xs font-medium text-admin-text-faint">{row.country_code}</div>
                     </td>
-                    <td className="px-4 py-4 font-mono font-bold">
+                    <td className="px-4 py-4 font-mono font-semibold">
                       {formatUsd(row.price_usd, 2)}/mo
                     </td>
                     <td className="px-4 py-4 font-mono">
                       {formatUsd(row.monthly_income_usd, 0)}/mo
                     </td>
-                    <td className="px-4 py-4 font-black">
+                    <td className="px-4 py-4 font-semibold">
                       {formatPercent(row.income_share_percent, 2)}
                     </td>
-                    <td className="px-4 py-4 font-black">
+                    <td className="px-4 py-4 font-semibold">
                       {formatTimes(row.burden_vs_us)}
                     </td>
                     <td className="px-4 py-4">
                       <span
                         className={[
-                          "inline-flex rounded-full px-3 py-1 text-xs font-black",
+                          "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
                           levelClassName(row.affordability_level),
                         ].join(" ")}
                       >
                         {levelLabel(row.affordability_level)}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-xs font-bold text-zinc-500 dark:text-slate-400">
+                    <td className="px-4 py-4 text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
                       {row.income_data_year} 最新可用
                     </td>
                   </tr>
@@ -323,8 +328,8 @@ export default async function AffordabilityPreviewPage() {
               </tbody>
             </table>
           </div>
+        <AdminPagination {...detailList.pagination} ariaLabel="购买力列表底部分页" className="my-4 px-4" />
         </section>
-      </div>
-    </main>
+    </div>
   );
 }

@@ -14,5 +14,14 @@ export default async function Preview({ searchParams }: { searchParams: Promise<
   const revision = id ? await readPromotionRevision(id) : null;
   if (id && !revision) notFound();
   const content = revision?.content || { merchant: '轨道商店（主体待确认）', title: '了解轨道商店', description: '这里用于查看自营推广卡片的版式。实际商品、介绍和落地页将在核验后填写；此占位内容不会对访客投放。', cta: '了解详情' };
-  return <div className="space-y-6"><h1 className="text-2xl font-semibold">自营推广预览</h1><p>仅管理员可见，不计入统计。此处所有按钮均不可跳转，不代表商品审核通过。</p><AdminLinkButton href="/admin/promotions" variant="secondary">返回推广管理</AdminLinkButton>{(revision ? PLACEMENTS.filter((p) => p.id === revision.content.placement) : PLACEMENTS).map((p) => <section key={p.id} className="space-y-3"><h2 className="text-lg font-semibold">{p.label}</h2><p>{p.path ? '计划位于首页主要分类入口之后。' : '位置保留：尚无产品页面，不会在公开站展示。'}</p><PromotionCard content={content} /></section>)}</div>;
+  return <div className="space-y-6"><h1 className="font-semibold text-xl sm:text-2xl">自营推广预览</h1>
+    <p>仅管理员可见，不计入统计。此处所有按钮均不可跳转，不代表商品审核通过。</p>
+    <AdminLinkButton href="/admin/promotions" variant="secondary">返回推广管理</AdminLinkButton>
+    {(revision ? PLACEMENTS.filter((p) => p.id === revision.content.placement) : PLACEMENTS).map((p) =>
+      <section key={p.id} className="space-y-3">
+        <h2 className="text-base font-semibold text-admin-text">{p.label}</h2>
+        <p>{p.path ? '计划位于首页主要分类入口之后。' : '位置保留：尚无产品页面，不会在公开站展示。'}</p>
+        <PromotionCard content={content} />
+      </section>)}
+  </div>;
 }

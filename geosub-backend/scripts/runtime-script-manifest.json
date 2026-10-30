@@ -8,6 +8,15 @@
   },
   "scripts": [
     {
+      "path": "scripts/app-store-plan-specs.ps1",
+      "kind": "shared-library",
+      "migrationPhase": 3,
+      "replacement": "scripts/app-store-plan-specs.mjs",
+      "databaseEffect": "none",
+      "networkEffect": "none",
+      "dryRun": false
+    },
+    {
       "path": "scripts/audit-price-integrity.ps1",
       "kind": "report",
       "migrationPhase": 6,
@@ -215,7 +224,8 @@
       "wrapper": "deploy/linux-arm64/run-price-pipeline.sh",
       "legacyScript": "scripts/run-price-pipeline.ps1",
       "replacement": "scripts/run-price-pipeline.mjs",
-      "status": "legacy-active"
+      "status": "delegated",
+      "delegatesTo": "collector-jobs"
     }
   ]
 }

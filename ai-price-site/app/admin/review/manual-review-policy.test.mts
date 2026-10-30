@@ -31,13 +31,15 @@ test("collection workspace keeps the default flow understandable", () => {
   const pending = readReviewFile("PendingProductReviewSection.tsx");
   const runs = readReviewFile("CollectionRunHistorySection.tsx");
 
-  assert.match(overview, /选择要采集的产品/);
-  assert.match(overview, /开始采集/);
-  assert.match(pending, /需要系统继续处理的产品/);
-  assert.match(pending, /仍要重新采集/);
-  assert.doesNotMatch(pending, /规则已修，重新采集/);
-  assert.doesNotMatch(pending, /只补采这个产品/);
-  assert.match(runs, /本轮采集状态/);
+  assert.match(overview, /异常审核/);
+  assert.match(overview, /稳定价格通过验证后自动写入正式库/);
+  assert.doesNotMatch(overview, /<ManualCollectionProgressForm/);
+  assert.match(pending, /待审异常/);
+  assert.match(pending, /修正后补采/);
+  assert.match(pending, /补采不会跳过稳定样本或硬异常门禁/);
+  assert.match(runs, /本次采集进度/);
+  assert.match(runs, /继续处理异常/);
+  assert.match(runs, /查看正式价格/);
   assert.match(runs, /技术详情/);
   assert.doesNotMatch(runs, /<table/);
 });

@@ -1,3 +1,4 @@
+import contentContract from './content-release-contract.cjs';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, lstatSync, existsSync, mkdirSync, copyFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -49,10 +50,23 @@ export function retainAssets(source, target) {
     hash: digest(join(source, file))
   }));
 }
+// Cloudflare edge ranges from https://www.cloudflare.com/ips/ (checked 2026-10-28).
+// Only these peers may supply CF-Connecting-IP; direct-to-origin clients keep their
+// own TCP address, so X-Real-IP is the visitor either way.
+export const CLOUDFLARE_EDGE_RANGES = Object.freeze([
+  '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+  '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+  '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+  '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+  '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+  '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32'
+]);
 export function route(port, assets) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw Error('Invalid release port');
   safePath(assets);
   return `# Managed by GeoSub rolling-v1. Include inside this site's server block only.
+${CLOUDFLARE_EDGE_RANGES.map(range => `set_real_ip_from ${range};`).join('\n')}
+real_ip_header CF-Connecting-IP;
 location ^~ /_next/static/ {
   alias ${assets}/;
   add_header Cache-Control "public, max-age=31536000, immutable";
@@ -83,17 +97,9 @@ export function checkMigrationChanges(changes, approved) {
   }
 }
 
-/** Exact audited reader/schema pair only; unknown or changed builds keep the strict legacy fence. */
+/** Legacy boolean API; v2 callers must also enforce the per-target capability plan. */
 export function contentRollbackCompatible(from, to, policy) {
-  try {
-    if (!policy.files?.length || !policy.approvedPairs?.length) return false;
-    const fingerprint = dir => createHash('sha256').update(policy.files.map(file => {
-      if (file.startsWith('/') || file.split('/').includes('..')) throw Error('Unsafe content contract path');
-      return file + ':' + digest(join(dir, file));
-    }).join('\n')).digest('hex');
-    const source = fingerprint(from), target = fingerprint(to);
-    return policy.approvedPairs.some(pair => pair.from === source && pair.to === target);
-  } catch { return false; }
+  return contentContract.rollbackPlan(from, to, policy).mode === 'audited-compatible-readers';
 }
 
 /** Normalize both new templates and retained legacy units during rollback. */

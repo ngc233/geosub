@@ -8,7 +8,7 @@ export type CollectionProgressState = {
   tone: CollectionProgressTone;
   label: string;
   detail: string;
-  progress: number;
+  progress: null;
   elapsedLabel: string | null;
   runStatus: string | null;
   runId: string | null;
@@ -18,6 +18,7 @@ type BuildCollectionProgressStateOptions = {
   rows: CollectorRunHistoryRow[];
   collectionRun: string | null;
   collectionScope: string | null;
+  collectionRunId?: string | null;
 };
 
 function formatElapsed(seconds: number | null) {
@@ -34,19 +35,20 @@ function scopeText(collectionScope: string | null) {
   return collectionScope ? ` ${collectionScope}` : "";
 }
 
-function pickProgressRun(rows: CollectorRunHistoryRow[], collectionRun: string | null) {
-  const running = rows.find((row) => row.status === "running");
-  if (running) return running;
-  if (collectionRun === "queued") return rows[0] ?? null;
-  return null;
+function pickProgressRun(rows: CollectorRunHistoryRow[], collectionRun: string | null, runId?:string|null, scope?:string|null) {
+  const scoped=scope ? rows.filter(row=>row.product_slug===scope) : rows;
+  if(runId)return scoped.find(row=>row.id===runId) ?? null;
+  // A queued request without an ID cannot be attributed to an old completed run.
+  return scoped.find(row=>row.status==="running") ?? null;
 }
 
 export function buildCollectionProgressState({
   rows,
   collectionRun,
   collectionScope,
+  collectionRunId,
 }: BuildCollectionProgressStateOptions): CollectionProgressState {
-  const run = pickProgressRun(rows, collectionRun);
+  const run = pickProgressRun(rows, collectionRun, collectionRunId, collectionScope);
 
   if (!run && collectionRun !== "queued") {
     return {
@@ -55,7 +57,7 @@ export function buildCollectionProgressState({
       tone: "neutral",
       label: "",
       detail: "",
-      progress: 0,
+      progress: null,
       elapsedLabel: null,
       runStatus: null,
       runId: null,
@@ -68,15 +70,15 @@ export function buildCollectionProgressState({
       active: true,
       tone: "info",
       label: `已提交${scopeText(collectionScope)} 采集请求`,
-      detail: "正在创建运行记录并唤起后台采集脚本；本区块会自动刷新。",
-      progress: 18,
+      detail: "暂未读到本次运行记录；不会把历史成功记录当成本次结果。本区块会继续查询。",
+      progress: null,
       elapsedLabel: null,
       runStatus: "queued",
       runId: null,
     };
   }
 
-  const elapsedLabel = formatElapsed(run.run_age_seconds);
+  const elapsedLabel = formatElapsed(run.status === "running" ? run.run_age_seconds : run.duration_ms == null ? null : Math.max(0,Math.round(run.duration_ms / 1000)));
   const started = Boolean(run.process_id) || run.runner_state === "spawned" || run.runner_state === "started";
   const outputCount =
     Number(run.observed_count || 0) +
@@ -94,7 +96,7 @@ export function buildCollectionProgressState({
         detail: run.process_id
           ? `后台进程 ${run.process_id} 正在运行；完成后会写回成功、失败和输出摘要。`
           : "后台脚本已接管这一轮任务；完成后会写回结果。",
-        progress: outputCount > 0 ? 72 : 58,
+        progress: null,
         elapsedLabel,
         runStatus: run.status,
         runId: run.id,
@@ -107,7 +109,7 @@ export function buildCollectionProgressState({
       tone: "info",
       label: "正在唤起后台采集脚本",
       detail: "运行记录已创建。如果 3 分钟内脚本没有接管，系统会自动标记为失败。",
-      progress: 34,
+      progress: null,
       elapsedLabel,
       runStatus: run.status,
       runId: run.id,
@@ -124,7 +126,7 @@ export function buildCollectionProgressState({
         outputCount > 0
           ? "本轮已经写回采集结果；稳定价格会进入正式库，异常会留在审核中心。"
           : "本轮完成但没有归因到新增价格，可能是无变更或采集器跳过。",
-      progress: 100,
+      progress: null,
       elapsedLabel,
       runStatus: run.status,
       runId: run.id,
@@ -138,7 +140,7 @@ export function buildCollectionProgressState({
       tone: "danger",
       label: "采集失败",
       detail: run.error_message || "本轮采集没有成功完成，请查看下方运行记录和输出摘要。",
-      progress: 100,
+      progress: null,
       elapsedLabel,
       runStatus: run.status,
       runId: run.id,
@@ -152,7 +154,7 @@ export function buildCollectionProgressState({
       tone: "neutral",
       label: "本轮跳过",
       detail: run.output_excerpt || "脚本判断本轮无需采集或该来源暂不支持。",
-      progress: 100,
+      progress: null,
       elapsedLabel,
       runStatus: run.status,
       runId: run.id,
@@ -165,7 +167,7 @@ export function buildCollectionProgressState({
     tone: "warning",
     label: "采集状态待确认",
     detail: "运行记录已经出现，但状态不在常见集合里；请查看下方明细。",
-    progress: 92,
+    progress: null,
     elapsedLabel,
     runStatus: run.status,
     runId: run.id,

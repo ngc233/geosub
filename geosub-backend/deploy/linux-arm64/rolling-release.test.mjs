@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, symlinkSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { retainAssets, route, checkMigrationChanges, safePath, contentRollbackCompatible, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
+import { retainAssets, route, checkMigrationChanges, safePath, contentRollbackCompatible, taskUnitText, taskLaunch, taskIsBusy, CLOUDFLARE_EDGE_RANGES } from './rolling-release-lib.mjs';
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'geosub-release-'));
   t.after(() => rmSync(root, {
@@ -78,6 +78,18 @@ test('proxy uses retained static files and does not cache application responses'
   assert.throws(() => route(80, '/srv/assets'));
   assert.throws(() => safePath('/tmp/../etc'));
   assert.throws(() => safePath('/srv/assets;evil'));
+});
+test('proxy restores the visitor IP only from Cloudflare edges', () => {
+  const s = route(3001, '/srv/assets');
+  const trusted = [...s.matchAll(/^set_real_ip_from (\S+);$/gm)].map(m => m[1]);
+  assert.deepEqual(trusted, [...CLOUDFLARE_EDGE_RANGES]);
+  assert.equal(trusted.length, 22);
+  for (const broad of ['0.0.0.0/0', '::/0', '127.0.0.1', '10.0.0.0/8']) assert.ok(!trusted.includes(broad));
+  assert.match(s, /^real_ip_header CF-Connecting-IP;$/m);
+  assert.doesNotMatch(s, /real_ip_header X-Forwarded-For/);
+  assert.ok(s.indexOf('real_ip_header') < s.indexOf('location '), 'server-level, before locations');
+  assert.match(s, /proxy_set_header X-Real-IP \$remote_addr;/);
+  assert.match(s, /proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;/);
 });
 
 test('content rollback keeps default-only restriction for unknown, reversed or modified readers', t => {
@@ -156,4 +168,53 @@ test('finalization rejects stale, migrated, recovered or differently routed cand
   await finalizeExistingCandidate(input,{verify:async release=>{assert.deepEqual(release,target);calls.push('verify');},record:next=>{assert.deepEqual(next,{active:target,previous});calls.push('record');}});
   assert.deepEqual(calls,['verify','record']);
   assert.equal(input.prior.status,'failed','original failure must remain intact');
+});
+
+test('v2 exact contracts bind both file scopes and per-target token capability', async t => {
+  const {fingerprint,rollbackPlan}=await import('./content-release-contract.cjs').then(m=>m.default);
+  const r=fixture(t),from=join(r,'next'),to=join(r,'old');
+  writeFileSync(join(from,'reader'),'current tokens');writeFileSync(join(to,'reader'),'retained plain');
+  writeFileSync(join(from,'gate'),'all three targets');
+  const files=['reader','gate'],toFiles=['reader'];
+  const pair={format:2,from:fingerprint(from,files),to:fingerprint(to,toFiles),toFiles,targets:[{id:'overview:zh:claude',facts:false}],reason:'Synthetic exact pair',evidence:'local synthetic test'};
+  const policy={files,approvedPairs:[pair]};
+  assert.equal(rollbackPlan(from,to,policy).mode,'audited-compatible-readers');
+  assert.equal(rollbackPlan(from,to,policy).targets[0].facts,false);
+  assert.equal(rollbackPlan(to,from,policy).mode,'code-default-required');
+  assert.equal(rollbackPlan(from,to,{...policy,approvedPairs:[{...pair,targets:[{id:'evil',facts:true}]}]}).mode,'code-default-required');
+  writeFileSync(join(from,'gate'),'changed gate');
+  assert.equal(rollbackPlan(from,to,policy).mode,'code-default-required');
+  writeFileSync(join(from,'gate'),'all three targets');writeFileSync(join(to,'reader'),'one changed byte');
+  assert.equal(rollbackPlan(from,to,policy).mode,'code-default-required');
+  assert.throws(()=>fingerprint(from,['../reader']));
+  assert.throws(()=>fingerprint(from,['reader','reader']));
+  rmSync(join(from,'gate'));symlinkSync(join(from,'reader'),join(from,'gate'));
+  assert.throws(()=>fingerprint(from,files));
+});
+test('missing files in another retained scope do not hide a later exact pair', async t => {
+  const {fingerprint,rollbackPlan}=await import('./content-release-contract.cjs').then(m=>m.default);
+  const r=fixture(t),from=join(r,'next'),to=join(r,'old');
+  writeFileSync(join(from,'reader'),'current');writeFileSync(join(to,'reader'),'retained');
+  const pair={
+    format:2,from:fingerprint(from,['reader']),to:fingerprint(to,['reader']),toFiles:['reader'],
+    targets:[{id:'overview:en:chatgpt',facts:false}],reason:'Exact synthetic pair',evidence:'local test',
+  };
+  const other={...pair,toFiles:['reader','absent-in-this-release']};
+  const policy={files:['reader'],approvedPairs:[other,pair]};
+  assert.deepEqual(rollbackPlan(from,to,policy).targets,pair.targets);
+  assert.equal(rollbackPlan(from,to,{...policy,approvedPairs:[other]}).mode,'code-default-required');
+  writeFileSync(join(to,'reader'),'changed');
+  assert.equal(rollbackPlan(from,to,policy).mode,'code-default-required');
+  rmSync(join(to,'reader'));
+  assert.equal(rollbackPlan(from,to,policy).mode,'code-default-required');
+});
+
+test('controller gates precede every switch and finalization uses all-target read-only verification', () => {
+  const code=readFileSync(new URL('./rolling-release.mjs',import.meta.url),'utf8');
+  assert.ok(code.includes("contentGate(old, ['upgrade'])"));
+  assert.ok(code.includes("contentGate(old, ['verify-closed', '--production'])"));
+  assert.ok(code.includes("contentGate(attempt.target, ['verify-origin', `http://127.0.0.1:${attempt.target.port}`, '--production']);\n    evidence('switch')"));
+  assert.ok(code.includes("contentGate(release, ['verify-closed', '--production'])"));
+  assert.ok(code.includes("path.join(here, 'content-release-fence.cjs')"));
+  assert.ok(!code.includes("['scripts/content-deploy-fence.cjs', compatible"));
 });

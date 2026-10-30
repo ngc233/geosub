@@ -9,6 +9,16 @@ import { fetchAppleMusicOfficialSnapshot } from './lib/apple-music-official-web.
 import { fetchSpotifyOfficialSnapshot } from './lib/spotify-official-web.mjs';
 import { assertAutomaticWebSource, reviewOfficialWebMarket } from './lib/official-web-auto-review.mjs';
 
+import {
+  assertClaudeProSource, fetchClaudeProSnapshot, claudeProHelpUrl, claudePricingUrl,
+} from "./lib/claude-pro-official-web.mjs";
+
+import {
+  assertClaudeReviewDatabase, claudeReviewConnectionFromUrl, resolveClaudeReviewAdmission,
+} from './lib/claude-pro-review-admission.mjs';
+
+import { assertSunoSource, fetchSunoSnapshot, validateSunoSnapshot } from "./lib/suno-official-web.mjs";
+
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const backendDir = path.resolve(scriptsDir, "..");
 const repoRoot = path.resolve(backendDir, "..");
@@ -57,6 +67,14 @@ function boolArg(value) {
 }
 
 async function renderMarket({ source, market, chromePath }) {
+  if (source.parser_key === "suno_us_monthly") {
+    assertSunoSource(source);
+    return fetchSunoSnapshot(market);
+  }
+  if (source.parser_key === "claude_us_pro") {
+    assertClaudeProSource(source);
+    return fetchClaudeProSnapshot(market);
+  }
   if (source.fetch_mode === 'structured_http') {
     assertAutomaticWebSource(source);
     const fetcher={spotify_official_web:fetchSpotifyOfficialSnapshot,apple_music:fetchAppleMusicOfficialSnapshot}[source.parser_key];
@@ -116,6 +134,16 @@ export function validateSnapshot(source, market, snapshot) {
   }
 
   const issues = [...(parserResult.issues ?? [])];
+  if (source.parser_key === "suno_us_monthly") issues.push(...validateSunoSnapshot(snapshot));
+  if (source.parser_key === "claude_us_pro" && (
+    snapshot.final_url !== claudePricingUrl
+    || snapshot.request_context?.country_code !== "US"
+    || snapshot.request_context?.basis !== "official_support_explicit_US_monthly_price"
+    || snapshot.support_evidence?.url !== claudeProHelpUrl
+    || snapshot.support_evidence?.http_status !== 200
+    || !/^[a-f0-9]{64}$/.test(snapshot.support_evidence?.content_hash ?? "")
+    || !/^[a-f0-9]{64}$/.test(snapshot.content_hash ?? "")
+  )) issues.push("claude_corroborating_evidence_missing");
   if(market.storefront
     && (snapshot.request_context?.country_code!==market.country_code
       || snapshot.request_context?.storefront!==market.storefront
@@ -268,6 +296,11 @@ export async function insertMarketObservations({
         availability_note: candidate.availability_note ?? null
       };
       if(snapshot.request_context)rawPayload.request_context=snapshot.request_context;
+      if (source.parser_key === "claude_us_pro") {
+        if (source.review_admission_policy) rawPayload.review_admission_policy=source.review_admission_policy;
+        rawPayload.support_url = snapshot.support_evidence.url;
+        rawPayload.support_content_hash = snapshot.support_evidence.content_hash;
+      }
 
       const observationResult = await client.query(
         `
@@ -351,6 +384,13 @@ export async function insertMarketObservations({
           snapshot.evidence_type ?? 'html'
         ]
       );
+      if (source.parser_key === "claude_us_pro") {
+        await client.query(`INSERT INTO source_evidence
+          (id,observation_id,evidence_type,content_hash,captured_at,http_status,final_url,country_context,note)
+          VALUES(gen_random_uuid(),$1,'html',$2,$3::timestamptz,200,$4,'US',$5)`,
+          [observation.id,snapshot.support_evidence.content_hash,snapshot.captured_at,
+            claudeProHelpUrl,"Official support corroboration of the US Pro monthly price"]);
+      }
       inserted += 1;
     }
 
@@ -403,8 +443,19 @@ async function main() {
 
   if (!sourceKey) throw new Error("Missing --source-key.");
   const config = JSON.parse(readFileSync(sourceConfigPath, "utf8"));
-  const source = config.sources?.[sourceKey];
+  let source = config.sources?.[sourceKey];
   if (!source) throw new Error(`Unknown official Web source: ${sourceKey}.`);
+  if (source.parser_key === "suno_us_monthly") assertSunoSource(source);
+  if (source.parser_key === "claude_us_pro") {
+    assertClaudeProSource(source);
+    if (source.auto_review) throw Error("claude_automatic_publication_isolated_harness_only");
+  }
+  const reviewPolicy=args.get('review-policy');
+  if (reviewPolicy) {
+    if (dryRun) throw Error('claude_review_admission_requires_collection');
+    source=resolveClaudeReviewAdmission({source,policy:reviewPolicy,
+      connectionParameters:claudeReviewConnectionFromUrl(process.env.DATABASE_URL)});
+  }
   if (source.auto_review) assertAutomaticWebSource(source);
   if (productSlug && productSlug !== source.product_slug) {
     throw new Error(`Source ${sourceKey} belongs to ${source.product_slug}, not ${productSlug}.`);
@@ -436,9 +487,15 @@ async function main() {
 
     const requireFromSite = createRequire(path.join(process.env.GEOSUB_FRONTEND_DIR || path.join(repoRoot, "ai-price-site"), "package.json"));
     const { Client } = requireFromSite("pg");
-    client = new Client({ connectionString: process.env.DATABASE_URL });
+    client = new Client({ connectionString: process.env.DATABASE_URL,
+      ...(reviewPolicy?{connectionTimeoutMillis:5_000}:{}) });
     try {
+      if (reviewPolicy) assertClaudeReviewDatabase(client.connectionParameters);
       await client.connect();
+      if (reviewPolicy) {
+        const actual=(await client.query('SELECT current_database() AS name')).rows[0]?.name;
+        if (actual !== client.connectionParameters.database) throw Error('claude_review_database_identity_mismatch');
+      }
       database = await loadDatabaseContext(client, source, requestedCodes);
       for (const market of markets) {
         const country = database.countries.get(market.country_code);

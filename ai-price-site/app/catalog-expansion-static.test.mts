@@ -18,6 +18,10 @@ const collector = readFileSync(
   resolve(repoRoot, "geosub-backend/scripts/collect-app-store-prices.ps1"),
   "utf8",
 );
+const planLoader = readFileSync(
+  resolve(repoRoot, "geosub-backend/scripts/app-store-plan-specs.ps1"),
+  "utf8",
+);
 const sunoNormalization = readFileSync(
   resolve(repoRoot, "geosub-backend/sql/backfill/051_normalize_suno_app_store_plans.sql"),
   "utf8",
@@ -152,8 +156,9 @@ test("catalog migration is review-first, idempotent and staggered", () => {
 });
 
 test("collector reads expansion specs and preserves billing and country scope", () => {
-  assert.match(collector, /catalog-expansion-2026-08\.json/);
-  assert.match(collector, /required_products/);
+  assert.match(collector, /Join-Path \$PSScriptRoot "app-store-plan-specs\.ps1"/);
+  assert.match(planLoader, /catalog-expansion-2026-08\.json/);
+  assert.match(planLoader, /required_products/);
   assert.match(collector, /Test-ProductSpecCountryScope/);
   assert.match(collector, /match_product_name/);
   assert.equal(bySlug.get("x-premium")?.match_product_name, "X");

@@ -1,4 +1,5 @@
 "use server";
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 
 import { type Prisma, ArticleStatus, ArticleType, Locale, StructuredDataType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -267,7 +268,12 @@ export async function createArticleAction(formData: FormData) {
 
   revalidateArticlePaths(article.slug);
   revalidatePath("/admin/search-demand");
-  redirect(`/admin/articles/${article.id}/edit?created=1`);
+  return {redirectTo:formData.get("saveIntent")==="return"
+    ? safeAdminReturnTo(formData.get("returnTo"),"/admin/articles")
+    : `/admin/articles/${article.id}/edit?created=1&returnTo=${
+      encodeURIComponent(safeAdminReturnTo(formData.get("returnTo"),"/admin/articles"))
+    }`
+  };
 }
 
 export async function updateArticleAction(formData: FormData) {

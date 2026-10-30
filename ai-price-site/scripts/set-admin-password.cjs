@@ -48,9 +48,12 @@ async function main() {
     prisma.adminSession.deleteMany({
       where: { userId: user.id },
     }),
+    prisma.adminTrustedDevice.deleteMany({
+      where: { userId: user.id },
+    }),
   ]);
 
-  console.log(`Admin password rotated and existing sessions revoked: ${email}`);
+  console.log(`Admin password rotated; existing sessions and trusted devices revoked: ${email}`);
 }
 
 main()

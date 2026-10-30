@@ -11,6 +11,7 @@ export type CollectionRunStatus =
 export type CollectionRunResult = {
   queuedCount: number;
   runStatus: CollectionRunStatus;
+  runIds?: string[];
 };
 
 export type CollectionStatusTone = "success" | "warning" | "error";
@@ -33,7 +34,7 @@ export function normalizeCollectionRunStatus(status: string | null | undefined) 
 }
 
 export function buildCollectionRedirectPath(
-  { queuedCount, runStatus }: CollectionRunResult,
+  { queuedCount, runStatus, runIds }: CollectionRunResult,
   productSlug?: string,
 ) {
   const redirectParams = new URLSearchParams({
@@ -45,9 +46,11 @@ export function buildCollectionRedirectPath(
   if (trimmedProductSlug) {
     redirectParams.set("collectionScope", trimmedProductSlug);
     redirectParams.set("q", trimmedProductSlug);
+    redirectParams.set("product",trimmedProductSlug);
   }
 
-  return `/admin/review?${redirectParams.toString()}`;
+  if(runIds?.[0]) redirectParams.set("runId",runIds[0]);
+  return `/admin/review?${redirectParams.toString()}${runIds?.[0] ? "#collection-runs" : ""}`;
 }
 
 export function getCollectionStatusTone(status: string | null | undefined): CollectionStatusTone {

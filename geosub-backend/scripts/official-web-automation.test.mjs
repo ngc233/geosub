@@ -415,3 +415,22 @@ test('Apple Music stability requires independent new-rule evidence, not legacy s
   const anomaly=structuredClone(samples);anomaly[0].anomaly_flag=true;assert.equal(decide(anomaly).decision,'isolated');
   assert.equal(decideOfficialWebReview(samples,{local_price:5},now,appleUs,appleMusicRule).decision,'waiting');
 });
+
+test("Claude automatic review is unavailable outside an explicitly owned local test database", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { reviewOfficialWebMarket } = await import("./lib/official-web-auto-review.mjs");
+  const { claudeProRule } = await import("./lib/claude-pro-official-web.mjs");
+  const registry = JSON.parse(await readFile(new URL("../data/official-web-price-sources.json",import.meta.url),"utf8"));
+  const configured = registry.sources['claude-us-pro'];
+  assert.equal(configured.auto_review,undefined);
+  const source = {...configured,auto_review:{rule_id:claudeProRule,publish_product:false}};
+  let calls=0;
+  const remote={connectionParameters:{host:'not-local.invalid'},query:async()=>{calls++;throw Error('must not connect')}};
+  await assert.rejects(reviewOfficialWebMarket({client:remote,source}),/requires_local_database/);
+  assert.equal(calls,0);
+  const local={connectionParameters:{host:'127.0.0.1'},query:async()=>{
+    calls++;return {rows:[{database_name:'geosub_admin_preview_20261028'}]};
+  }};
+  await assert.rejects(reviewOfficialWebMarket({client:local,source}),/requires_isolated_database/);
+  assert.equal(calls,1);
+});

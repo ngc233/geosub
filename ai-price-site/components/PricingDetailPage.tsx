@@ -39,7 +39,9 @@ import {
   getProductPlan,
   type ProductPlan,
 } from "../lib/public-pricing-model";
-import { getPricingDetailProduct } from "../lib/pricing-detail-adapter";
+import { getPublicPricingProduct as getProduct } from "../lib/pricing-product-store";
+import { renderFactContent } from "../lib/managed-content-facts";
+import { findContentTarget } from "../lib/managed-content";
 import {
   getPlanAffordability,
   type AffordabilityQuality,
@@ -122,16 +124,6 @@ export type PricingDetailPageProps = {
   }>;
 };
 
-async function getProduct(slug: string, locale: SiteLocale) {
-  return unstable_cache(
-    () => getPricingDetailProduct(slug, locale),
-    ["public-pricing-product", slug, locale],
-    {
-      revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
-      tags: [PUBLIC_PRICING_CACHE_TAG, getPublicPricingProductCacheTag(slug)],
-    },
-  )();
-}
 
 function toDbProductCategory(category: string) {
   return category === "streaming" ? ProductCategory.STREAMING : ProductCategory.AI;
@@ -750,7 +742,8 @@ export async function getPricingDetailMetadata({
   const isProductOverview = !routePlanSlug;
 
   if (isProductOverview) {
-    const managed = (await getPublishedContent(locale, product.slug))?.content;
+    const template = (await getPublishedContent(locale, product.slug))?.content;
+    const managed = template ? renderFactContent(template, findContentTarget(locale, product.slug)!.id, product).content : template;
     const publishedPlans = product.plans.filter(
       (plan) => plan.regions.length > 0,
     );
@@ -1069,9 +1062,11 @@ export default async function PricingDetailPage({
   if (!routePlanSlug) {
     if (contentPreview !== undefined) await requireAdmin();
     const revision = await getPublishedContent(locale, product.slug);
-    const managed = isContentTarget(locale, product.slug)
+    const template = isContentTarget(locale, product.slug)
       ? contentPreview !== undefined ? contentPreview : revision?.content
       : null;
+    const rendered = template ? renderFactContent(template, findContentTarget(locale, product.slug)!.id, product) : null;
+    const managed = rendered?.content;
     const publishedPlans = product.plans.filter(
       (plan) => plan.regions.length > 0,
     );
@@ -1116,7 +1111,7 @@ export default async function PricingDetailPage({
     });
 
     return (
-      <main data-content-kind={managed ? "managed" : "fallback"} data-content-mode-generation={revision?.modeGeneration} data-content-version={contentPreview !== undefined ? "preview" : revision?.version || "baseline"} className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
+      <main data-content-facts-hash={rendered?.factsHash} data-content-kind={managed ? "managed" : "fallback"} data-content-mode-generation={revision?.modeGeneration} data-content-version={contentPreview !== undefined ? "preview" : revision?.version || "baseline"} className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
@@ -1190,7 +1185,7 @@ export default async function PricingDetailPage({
           </section>
 
           <ProductPlanOverview product={product} locale={locale} />
-          {managed ? <OverviewEditorialSections content={managed} /> : null}
+          {managed ? <OverviewEditorialSections content={managed} locale={locale} /> : null}
 
           <CountryAnalysisLinks
             locale={locale}

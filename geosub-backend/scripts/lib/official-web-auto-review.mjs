@@ -2,9 +2,18 @@ import { spotifyMarkets, spotifyRegistry } from './spotify-official-web.mjs';
 
 import { appleMusicMarkets, appleMusicRule, appleMusicParserVersion } from './apple-music-official-web.mjs';
 
+import { assertClaudeProSource, claudeProRule, claudeProHelpUrl } from './claude-pro-official-web.mjs';
+
+import { assertClaudeReviewDatabase, claudeReviewPolicy } from './claude-pro-review-admission.mjs';
+
 const ruleId = 'spotify-regional-monthly-stability-v2';
 
 export function assertAutomaticWebSource(source) {
+  if (source.product_slug === "claude") {
+    assertClaudeProSource(source);
+    if (source.auto_review?.rule_id !== claudeProRule) throw Error("claude_pro_review_policy_mismatch");
+    return;
+  }
   if(source.product_slug==='apple-music') {
     if(source.source_key!=='apple-music-official-web' || source.parser_key!=='apple_music'
       || source.parser_version!==appleMusicParserVersion || source.auto_review?.rule_id!==appleMusicRule
@@ -88,9 +97,28 @@ export function decideOfficialWebReview(samples, baseline, now = new Date(), mar
 
 export async function reviewOfficialWebMarket({ client, source, market, database, sourceId }) {
   assertAutomaticWebSource(source);
+  if (source.product_slug === "claude") {
+    if (source.review_admission_policy) {
+      if (source.review_admission_policy !== claudeReviewPolicy) throw Error('unknown_claude_review_admission_policy');
+      assertClaudeReviewDatabase(client.connectionParameters);
+    }
+    if (!["localhost", "127.0.0.1", "::1"].includes(client.connectionParameters?.host)) {
+      throw Error("claude_auto_review_requires_local_database");
+    }
+    const scope = await client.query("SELECT current_database() AS database_name");
+    if (source.review_admission_policy && scope.rows[0]?.database_name !== client.connectionParameters.database) {
+      throw Error('claude_review_database_identity_mismatch');
+    }
+    if (!/^geosub_collector_test_claude_[a-z0-9_]+$/.test(scope.rows[0]?.database_name ?? "")) {
+      throw Error("claude_auto_review_requires_isolated_database");
+    }
+  }
   if (!source.markets.some(item => item.country_code === market.country_code && item.currency === market.currency && item.url === market.url)) throw Error('automatic_web_market_not_allowlisted');
   const ruleId=source.auto_review.rule_id;
-  const planSlugs=source.product_slug==='apple-music' ? (appleMusicMarkets[market.country_code].required_plan_slugs ?? source.required_plan_slugs) : spotifyMarkets[market.country_code].plan_slugs;
+  const planSlugs = source.product_slug === 'claude' ? ['pro']
+    : source.product_slug === 'apple-music'
+      ? (appleMusicMarkets[market.country_code].required_plan_slugs ?? source.required_plan_slugs)
+      : spotifyMarkets[market.country_code].plan_slugs;
   if(market.required_plan_slugs && JSON.stringify(market.required_plan_slugs)!==JSON.stringify(planSlugs)) throw Error('automatic_web_market_not_allowlisted');
   const product = database.product;
   const country = database.countries.get(market.country_code);
@@ -120,12 +148,17 @@ export async function reviewOfficialWebMarket({ client, source, market, database
       const samples = await client.query(`SELECT o.*, EXISTS(SELECT 1 FROM source_evidence e
           WHERE e.observation_id=o.id AND e.http_status=200 AND e.final_url=$5
           AND e.content_hash=o.raw_payload->>'content_hash' AND length(e.content_hash)=64
-          AND e.captured_at=o.observed_at AND e.country_context=$8) AS evidence_ok
+          AND e.captured_at=o.observed_at AND e.country_context=$8)
+          AND (NOT $9::boolean OR EXISTS(SELECT 1 FROM source_evidence corroboration
+            WHERE corroboration.observation_id=o.id AND corroboration.http_status=200
+              AND corroboration.final_url=$10 AND corroboration.country_context='US'
+              AND corroboration.content_hash=o.raw_payload->>'support_content_hash'
+              AND length(corroboration.content_hash)=64 AND corroboration.captured_at=o.observed_at)) AS evidence_ok
         FROM price_observations o WHERE o.product_id=$1 AND o.plan_id=$2 AND o.country_id=$3
           AND o.source_id=$4 AND o.billing_platform='web' AND o.price_type='list_price'
           AND o.parser_version=$6 AND o.raw_payload->>'automatic_rule'=$7
         ORDER BY o.observed_at DESC,o.created_at DESC LIMIT 40`,
-        [product.id,plan.id,country.id,sourceId,market.evidence_url ?? market.url,source.parser_version,ruleId,market.country_code]);
+        [product.id,plan.id,country.id,sourceId,market.evidence_url ?? market.url,source.parser_version,ruleId,market.country_code,source.product_slug==='claude',claudeProHelpUrl]);
       const result = decideOfficialWebReview(samples.rows, prices.rows[0],new Date(),market,ruleId);
       decisions.push({ ...result, planSlug: slug, planId: plan.id });
     }

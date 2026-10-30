@@ -1,3 +1,4 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 import { canAdmin } from "../../../../lib/admin-permissions";
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { buildCollectionRedirectPath } from "../collection-status";
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
       },
       productSlug,
     );
+  }
+
+  if(formData.get("returnTo")) {
+    const url=new URL(redirectPath,"http://admin.local");
+    url.searchParams.set("returnTo",safeAdminReturnTo(formData.get("returnTo"),"/admin/pipeline"));
+    redirectPath=url.pathname+url.search+url.hash;
   }
 
   if (wantsJson) {

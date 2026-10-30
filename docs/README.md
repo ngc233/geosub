@@ -18,6 +18,10 @@ v2.11 更新的是团队工作流与核心治理规则，不要求为了统一�
 
 ## 支撑规范与登记表
 
+- [后台信息架构与视觉统一](rfc-admin-information-architecture-2026-10-28.md)：第 11 节记录当前视觉优先决定、统一标准、验证与后续工作流范围。
+
+- [六模块现状核对与实施清单](geosub-six-modules-current-state-and-backlog-2026-10-26.md)：基于 2.21.1 源码的归属盘点、既有能力与差距、五批依赖及验收，以及第一批本地字段契约/生命周期边界实施记录；不替代现行政策。
+
 - [operator-release-observation.md](operator-release-observation.md)：发布连接隔离、防休眠、持久状态查询与分阶段只读探测。
 
 - [product-brand-asset-register.md](product-brand-asset-register.md)：品牌素材来源、授权证据、复审周期和发布门禁登记。

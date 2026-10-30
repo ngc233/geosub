@@ -33,13 +33,13 @@ export async function approvePriceObservation(
 
 export async function ignorePriceObservation(observationId: string, note: string) {
   await prisma.$queryRaw`
-    SELECT ignore_price_observation(CAST(${observationId} AS uuid), ${note}) AS result
+    SELECT ignore_price_observation(CAST(${observationId} AS uuid), ${note})::text AS result
   `;
 }
 
 export async function rejectPriceObservation(observationId: string, note: string) {
   await prisma.$queryRaw`
-    SELECT reject_price_observation(CAST(${observationId} AS uuid), ${note}) AS result
+    SELECT reject_price_observation(CAST(${observationId} AS uuid), ${note})::text AS result
   `;
 }
 

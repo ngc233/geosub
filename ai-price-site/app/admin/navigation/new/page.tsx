@@ -1,3 +1,5 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
+import { adminControlClassName } from "@/components/admin/admin-control";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../../components/admin/AdminButton";
@@ -12,6 +14,7 @@ export default async function NewNavigationItemPage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    returnTo?:string;
     locale?: string;
     position?: string;
   }>;
@@ -19,6 +22,7 @@ export default async function NewNavigationItemPage({
   const params = searchParams ? await searchParams : {};
   const selectedLocale = getNavigationLocaleByValue(params?.locale);
   const selectedPosition = getNavigationPositionByValue(params?.position);
+  const returnTo=safeAdminReturnTo(params.returnTo,`/admin/navigation?locale=${selectedLocale.value}&position=${selectedPosition.value}`);
 
   const parentItems = await prisma.navigationItem.findMany({
     where: {
@@ -52,6 +56,7 @@ export default async function NewNavigationItemPage({
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <AdminCard>
           <AdminActionForm action={createNavigationItem} className="space-y-6">
+            <input type="hidden" name="returnTo" value={returnTo} />
             <input type="hidden" name="locale" value={selectedLocale.value} />
             <input type="hidden" name="position" value={selectedPosition.value} />
 
@@ -59,7 +64,7 @@ export default async function NewNavigationItemPage({
               <div>
                 <label
                   htmlFor="localeDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                  className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
                 >
                   当前语言
                 </label>
@@ -68,14 +73,14 @@ export default async function NewNavigationItemPage({
                   type="text"
                   value={selectedLocale.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  className={`${adminControlClassName} w-full h-11`}
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="positionDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                  className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
                 >
                   当前位置
                 </label>
@@ -84,7 +89,7 @@ export default async function NewNavigationItemPage({
                   type="text"
                   value={selectedPosition.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  className={`${adminControlClassName} w-full h-11`}
                 />
               </div>
             </div>
@@ -92,7 +97,7 @@ export default async function NewNavigationItemPage({
             <div>
               <label
                 htmlFor="label"
-                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
               >
                 菜单名称
               </label>
@@ -102,14 +107,14 @@ export default async function NewNavigationItemPage({
                 type="text"
                 placeholder={selectedLocale.value === "en" ? "For example: AI Pricing" : "例如：AI 定价"}
                 required
-                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
+                className={`${adminControlClassName} w-full h-11`}
               />
             </div>
 
             <div>
               <label
                 htmlFor="href"
-                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
               >
                 链接
               </label>
@@ -119,9 +124,9 @@ export default async function NewNavigationItemPage({
                 type="text"
                 placeholder={`${selectedLocale.prefix}ai-pricing/`}
                 required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
+                className={`${adminControlClassName} w-full h-11`}
               />
-              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              <p className="mt-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                 当前语言内部链接必须以 {selectedLocale.prefix} 开头。外部链接必须以 https:// 或 http:// 开头。
               </p>
             </div>
@@ -129,7 +134,7 @@ export default async function NewNavigationItemPage({
             <div>
               <label
                 htmlFor="parentId"
-                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
               >
                 菜单层级
               </label>
@@ -138,7 +143,7 @@ export default async function NewNavigationItemPage({
                 id="parentId"
                 name="parentId"
                 defaultValue=""
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
+                className={`${adminControlClassName} w-full h-11`}
               >
                 <option value="">
                   {selectedPosition.value === "footer" ? "一级分组" : "一级菜单"}
@@ -150,43 +155,43 @@ export default async function NewNavigationItemPage({
                 ))}
               </select>
 
-              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              <p className="mt-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                 顶部导航的一级菜单会显示在 Header；底部导航的一级菜单会作为 Footer 分组标题。
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
+              <label className="flex items-center gap-3 rounded-admin-card border border-admin-border bg-admin-surface-subtle px-4 py-3 dark:border-admin-border-strong dark:bg-admin-chip">
                 <input
                   name="external"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-700 dark:text-blue-300"
+                  className="h-4 w-4 rounded border-admin-border-strong text-blue-700 dark:border-admin-border-strong dark:text-blue-300"
                 />
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">
                   外部链接
                 </span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
+              <label className="flex items-center gap-3 rounded-admin-card border border-admin-border bg-admin-surface-subtle px-4 py-3 dark:border-admin-border-strong dark:bg-admin-chip">
                 <input
                   name="publishNow"
                   type="checkbox"
                   defaultChecked
-                  className="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-700 dark:text-blue-300"
+                  className="h-4 w-4 rounded border-admin-border-strong text-blue-700 dark:border-admin-border-strong dark:text-blue-300"
                 />
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">
                   创建后立即启用
                 </span>
               </label>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row dark:border-slate-700">
+            <div className="flex flex-col gap-3 border-t border-admin-border pt-6 sm:flex-row dark:border-admin-border-strong">
               <AdminButton type="submit">
                 创建菜单
               </AdminButton>
 
               <AdminLinkButton
-                href={`/admin/navigation?locale=${selectedLocale.value}&position=${selectedPosition.value}`}
+                href={returnTo}
                 variant="secondary"
               >
                 取消
@@ -196,9 +201,9 @@ export default async function NewNavigationItemPage({
         </AdminCard>
 
         <AdminCard>
-          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">新增规则</h2>
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">新增规则</h2>
 
-          <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+          <div className="mt-5 space-y-4 text-sm leading-7 text-admin-text-secondary dark:text-admin-text-secondary">
             <p>
               当前正在新增：{selectedLocale.label} · {selectedPosition.label}。
             </p>

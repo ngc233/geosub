@@ -16,7 +16,7 @@ export function AdminCard({
   return (
     <div
       className={joinClasses(
-        "min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 dark:bg-slate-900 dark:border-slate-800 dark:shadow-black/20",
+        "min-w-0 rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-admin-card sm:p-6",
         className
       )}
     >
@@ -39,20 +39,20 @@ export function AdminStatCard({
   const card = (
     <div
       className={joinClasses(
-        "h-full min-w-0 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20",
+        "h-full min-w-0 rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-admin-card sm:p-6 transition",
         href
-          ? "cursor-pointer hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80 dark:hover:border-blue-700 dark:hover:shadow-black/30"
+          ? "cursor-pointer hover:border-admin-accent/30 hover:shadow-md motion-reduce:transition-none"
           : ""
       )}
     >
       <div className="flex h-full items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">{label}</p>
-          <p className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
+          <p className="text-sm font-medium text-admin-text-muted">{label}</p>
+          <p className="mt-2 text-[28px] font-semibold tracking-tight text-admin-text tabular-nums">
             {value}
           </p>
           {helper ? (
-            <p className="mt-2 text-xs leading-5 text-slate-400 dark:text-slate-400">{helper}</p>
+            <p className="mt-2 text-xs leading-5 text-admin-text-faint">{helper}</p>
           ) : null}
         </div>
 
@@ -61,9 +61,7 @@ export function AdminStatCard({
             <ArrowRight size={16} strokeWidth={2} />
           </span>
         ) : (
-          <span className="mt-1 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-400">
-            统计
-          </span>
+          null
         )}
       </div>
     </div>
@@ -92,26 +90,26 @@ export function AdminPageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-7 lg:flex-row lg:items-end lg:justify-between dark:border-slate-800">
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         {eyebrow ? (
-          <p className="text-sm font-bold tracking-tight text-blue-700 dark:text-blue-400">
+          <p className="text-xs font-medium tracking-wide text-admin-text-muted">
             {eyebrow}
           </p>
         ) : null}
 
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-admin-text sm:text-2xl">
           {title}
         </h1>
 
         {description ? (
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-admin-text-secondary">
             {description}
           </p>
         ) : null}
       </div>
 
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div> : null}
     </div>
   );
 }
@@ -119,16 +117,21 @@ export function AdminPageHeader({
 export function AdminSectionHeader({
   title,
   description,
+  action,
+  id,
 }: {
   title: string;
   description?: string;
+  action?: ReactNode;
+  id?: string;
 }) {
   return (
-    <div className="mb-4">
-      <h2 className="text-base font-bold text-slate-950 dark:text-slate-50">{title}</h2>
-      {description ? (
-        <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{description}</p>
-      ) : null}
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <h2 id={id} className="text-base font-semibold text-admin-text">{title}</h2>
+        {description ? <p className="mt-1 max-w-3xl text-sm leading-6 text-admin-text-muted">{description}</p> : null}
+      </div>
+      {action ? <div className="flex shrink-0 flex-wrap items-center gap-3">{action}</div> : null}
     </div>
   );
 }

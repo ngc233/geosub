@@ -1,4 +1,5 @@
 "use server";
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
@@ -263,7 +264,7 @@ export async function updateNavigationItem(
   const localeQuery = getNavigationLocaleByDbValue(currentItem.locale).value;
   const positionQuery = getNavigationPositionByDbValue(currentItem.position).value;
 
-  redirect(`/admin/navigation?locale=${localeQuery}&position=${positionQuery}`);
+  return {message:"菜单已保存。",redirectTo:safeAdminReturnTo(formData.get("returnTo"),`/admin/navigation?locale=${localeQuery}&position=${positionQuery}`)};
 }
 
 export async function createNavigationItem(formData: FormData) {
@@ -351,9 +352,7 @@ export async function createNavigationItem(formData: FormData) {
 
   invalidatePublishedNavigation();
 
-  redirect(
-    `/admin/navigation?locale=${localeEntry.value}&position=${positionEntry.value}`
-  );
+  return {message:"导航已创建。",redirectTo:safeAdminReturnTo(formData.get("returnTo"),`/admin/navigation?locale=${localeEntry.value}&position=${positionEntry.value}`)};
 }
 
 export async function seedDefaultNavigation(formData: FormData) {

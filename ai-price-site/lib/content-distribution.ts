@@ -1,7 +1,9 @@
 import "server-only";
-import { assertLocalContentDatabase } from "./managed-content";
-import { assertContentDistributionCurrent, finishContentDistribution, readRevision, recordContentDistribution } from "./managed-content-store";
+import { assertLocalContentDatabase, assertContentTargetRuntime, LEGACY_CONTENT_TARGET } from "./managed-content";
+import { contentStore } from "./managed-content-store";
 import { purgeContentUrl, readContentEndpoint, verifyContentDistribution } from "./content-readback";
+
+import { hasContentFactTokens } from "./content-fact-tokens";
 
 export type ContentDistributionConfig = { originPort: number; zoneId: string; token: string; cachePolicy: "audited-single-url" };
 /** Server configuration is never accepted from form data or returned to clients. */
@@ -22,7 +24,10 @@ export function contentDistributionConfig(env: Record<string, string | undefined
   throw new Error("本地数据库不能清理生产缓存。");
 }
 
-export async function distributeContentAttempt(id: string, owner: string, invalidateOrigin: () => Promise<void>, config: ContentDistributionConfig | null) {
+export async function distributeContentAttempt(id: string, owner: string, invalidateOrigin: () => Promise<void>, config: ContentDistributionConfig | null, targetId: string = LEGACY_CONTENT_TARGET) {
+  assertContentTargetRuntime(targetId);
+  const { assertContentDistributionCurrent, finishContentDistribution, readRevision, recordContentDistribution } = contentStore(targetId);
+  await assertContentDistributionCurrent(id, owner);
   if (!config) {
     try { await invalidateOrigin(); }
     catch {
@@ -35,15 +40,18 @@ export async function distributeContentAttempt(id: string, owner: string, invali
   const identity = await assertContentDistributionCurrent(id, owner);
   const revision = await readRevision(identity.version);
   if (!revision) throw new Error("内容修订不存在。");
-  const content = revision.content;
-  const expected = {title:content ? `${content.title} - GeoSub` : undefined,heading:content?.heading,description:content?.description,content,version:String(identity.version),modeGeneration:String(identity.modeGeneration)};
+  const rendered = revision.content && hasContentFactTokens(revision.content)
+    ? await (await import('./managed-content-fact-view')).readFactContent(revision.content, targetId)
+    : {content:revision.content,factsHash:undefined};
+  const content = rendered.content;
+  const expected = {title:content ? `${content.title} - GeoSub` : undefined,heading:content?.heading,description:content?.description,content,factsHash:rendered.factsHash,version:String(identity.version),modeGeneration:String(identity.modeGeneration)};
   const result = await verifyContentDistribution({
     assertCurrent: async () => { await assertContentDistributionCurrent(id, owner); },
     invalidateOrigin,
-    origin: () => readContentEndpoint("origin", config.originPort, expected),
-    purge: () => purgeContentUrl(config),
-    public: () => readContentEndpoint("public", config.originPort, expected),
-  });
+    origin: () => readContentEndpoint("origin", config.originPort, expected, fetch, targetId),
+    purge: () => purgeContentUrl(config, fetch, targetId),
+    public: () => readContentEndpoint("public", config.originPort, expected, fetch, targetId),
+  }, targetId);
   if (!await recordContentDistribution(id, owner, result)) throw new Error("内容已保存，但源站或公网验收未完成；请查看分发回执后重试。");
   return "verified" as const;
 }

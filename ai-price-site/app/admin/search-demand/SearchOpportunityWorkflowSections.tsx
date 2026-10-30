@@ -56,7 +56,7 @@ export function SearchOpportunityActions({
           </AdminButton>
         </AdminActionForm>
       ) : (
-        <span className="text-xs font-semibold text-slate-400 dark:text-slate-400">
+        <span className="text-xs font-semibold text-admin-text-faint dark:text-admin-text-muted">
           暂不创建
         </span>
       )}
@@ -128,15 +128,15 @@ export function SearchOpportunityWorkflowSections({
                 activeGapQueue.map((gap) => (
                   <AdminTr key={gap.query}>
                     <AdminTd>
-                      <span className="inline-flex min-w-11 justify-center rounded-md bg-red-50 px-2 py-1 text-xs font-bold tabular-nums text-red-700 dark:bg-red-950/60 dark:text-red-300">
+                      <span className="inline-flex min-w-11 justify-center rounded-md bg-red-50 px-2 py-1 text-xs font-semibold tabular-nums text-red-700 dark:bg-red-950/60 dark:text-red-300">
                         {gap.priorityScore}
                       </span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="font-bold text-slate-950 dark:text-slate-50">
+                      <span className="font-semibold text-admin-text dark:text-admin-text">
                         {gap.query}
                       </span>
-                      <span className="mt-1 block text-xs uppercase text-slate-400 dark:text-slate-400">
+                      <span className="mt-1 block text-xs uppercase text-admin-text-faint dark:text-admin-text-muted">
                         {gap.locales.join(", ") || "unknown"}
                       </span>
                     </AdminTd>
@@ -145,24 +145,24 @@ export function SearchOpportunityWorkflowSections({
                         <AdminBadge variant={opportunityStatus(gap.status).variant}>
                           {opportunityStatus(gap.status).label}
                         </AdminBadge>
-                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <span className="text-xs font-semibold text-admin-text-secondary dark:text-admin-text-secondary">
                           {gapKindLabel(gap.kind)}
                         </span>
-                        <span className="text-[11px] text-slate-400 dark:text-slate-400">
+                        <span className="text-[11px] text-admin-text-faint dark:text-admin-text-muted">
                           {opportunityStatus(gap.status).helper}
                         </span>
                       </div>
                     </AdminTd>
                     <AdminTd>
-                      <span className="block max-w-md text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      <span className="block max-w-md text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                         {gap.reason}
                       </span>
                     </AdminTd>
                     <AdminTd align="right">
-                      <span className="font-bold tabular-nums text-slate-950 dark:text-slate-50">
+                      <span className="font-semibold tabular-nums text-admin-text dark:text-admin-text">
                         {gap.noResultCount}
                       </span>
-                      <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
+                      <span className="mt-1 block text-xs text-admin-text-faint dark:text-admin-text-muted">
                         共搜 {gap.searchCount} 次 · {gap.visitorCount} 位访客
                       </span>
                     </AdminTd>
@@ -181,7 +181,7 @@ export function SearchOpportunityWorkflowSections({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-6 py-10 text-center text-sm text-slate-400 dark:text-slate-400"
+                    className="px-6 py-10 text-center text-sm text-admin-text-faint dark:text-admin-text-muted"
                   >
                     当前范围内没有无结果搜索，暂时不需要补产品或内容。
                   </td>
@@ -213,7 +213,7 @@ export function SearchOpportunityWorkflowSections({
                 {completedWorkflow.slice(0, 20).map((record) => (
                   <AdminTr key={record.id}>
                     <AdminTd>
-                      <span className="font-bold text-slate-950 dark:text-slate-50">
+                      <span className="font-semibold text-admin-text dark:text-admin-text">
                         {record.query}
                       </span>
                     </AdminTd>
@@ -226,7 +226,7 @@ export function SearchOpportunityWorkflowSections({
                       </AdminBadge>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">
                         {record.linkedCandidateId
                           ? "已关联产品线索"
                           : record.linkedArticleId
@@ -235,7 +235,7 @@ export function SearchOpportunityWorkflowSections({
                       </span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">
                         {formatDate(record.updatedAt)} UTC
                       </span>
                     </AdminTd>

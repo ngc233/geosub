@@ -31,23 +31,23 @@ export const adminOperationalStatusMeta: Record<
 > = {
   not_started: {
     label: "未开始",
-    className: "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
-    dotClassName: "bg-slate-400 dark:bg-slate-500",
+    className: "bg-admin-chip text-admin-text-secondary",
+    dotClassName: "bg-admin-text-muted",
   },
   pending: {
     label: "待处理",
-    className: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800",
-    dotClassName: "bg-amber-500",
+    className: "bg-admin-warning-soft text-admin-warning",
+    dotClassName: "bg-admin-warning",
   },
   exception: {
     label: "异常",
-    className: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/60 dark:text-red-300 dark:ring-red-800",
-    dotClassName: "bg-red-500",
+    className: "bg-admin-danger-soft text-admin-danger",
+    dotClassName: "bg-admin-danger",
   },
   published: {
     label: "已发布",
-    className: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800",
-    dotClassName: "bg-emerald-500",
+    className: "bg-admin-success-soft text-admin-success",
+    dotClassName: "bg-admin-success",
   },
 };
 

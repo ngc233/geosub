@@ -39,6 +39,7 @@ type BrandIconProps = {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   priority?: boolean;
+  appearance?: "public" | "admin";
 };
 
 type SimpleIcon = {
@@ -104,9 +105,11 @@ function getInitials(name: string | undefined, slug: string) {
 function SvgIcon({
   icon,
   className,
+  monochrome = false,
 }: {
   icon: SimpleIcon;
   className: string;
+  monochrome?: boolean;
 } & SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -114,7 +117,7 @@ function SvgIcon({
       className={className}
       role="img"
       aria-label={icon.title}
-      fill={`#${icon.hex}`}
+      fill={monochrome ? "currentColor" : `#${icon.hex}`}
     >
       <path d={icon.path} />
     </svg>
@@ -126,6 +129,7 @@ export default function BrandIcon({
   size = "md",
   className = "",
   priority = false,
+  appearance = "public",
 }: BrandIconProps) {
   const [localAssetFailed, setLocalAssetFailed] = useState(false);
   const approvedLocalAsset = getApprovedLocalBrandAsset(product.slug);
@@ -135,7 +139,11 @@ export default function BrandIcon({
 
   return (
     <span
-      className={`relative inline-flex aspect-square shrink-0 items-center justify-center overflow-hidden rounded-[22%] border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${sizeClass.box} ${className}`}
+      className={`relative inline-flex aspect-square shrink-0 items-center justify-center
+        overflow-hidden rounded-[22%] border shadow-sm ${appearance === "admin"
+          ? "border-admin-border bg-admin-surface-subtle text-admin-text-secondary"
+          : "border-zinc-200/80 bg-white dark:border-zinc-700 dark:bg-zinc-900"} ${sizeClass.box} ${className}`}
+      data-brand-source={approvedLocalAsset && !localAssetFailed ? "approved-local" : icon ? "simple-icons" : "neutral"}
       title={product.name || product.slug}
     >
       {approvedLocalAsset && !localAssetFailed ? (
@@ -154,11 +162,11 @@ export default function BrandIcon({
           onError={() => setLocalAssetFailed(true)}
         />
       ) : icon ? (
-        <SvgIcon icon={icon} className={sizeClass.svg} />
+        <SvgIcon icon={icon} className={sizeClass.svg} monochrome={appearance === "admin"} />
       ) : (
         <span
           aria-hidden="true"
-          className={`font-black tracking-normal text-zinc-700 dark:text-zinc-200 ${sizeClass.text}`}
+          className={`font-black tracking-normal ${appearance === "admin" ? "text-admin-text-secondary" : "text-zinc-700 dark:text-zinc-200"} ${sizeClass.text}`}
         >
           {initials}
         </span>

@@ -16,7 +16,7 @@ export default function AdminStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset ${meta.className}`}
+      className={`inline-flex shrink-0 items-center whitespace-nowrap gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${meta.className}`}
       title={title}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${meta.dotClassName}`} />

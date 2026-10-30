@@ -84,6 +84,12 @@ if ($identitySql -notmatch "status = 'active'" -or $identitySql -notmatch "INTER
 $webJob.job_config.official_web_source_key='apple-music'
 Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12345678-1234-4234-8234-123456789abe'
 if ($identitySql -notmatch "status = 'active'" -or $identitySql -notmatch 'official_web_isolated_retry') { throw 'Maintained Apple Music task stopped instead of automatic scheduled recovery' }
+$webJob.job_config.official_web_source_key='claude-us-pro'
+Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12345678-1234-4234-8234-123456789abe'
+if ($identitySql -notmatch "status = 'active'" -or $identitySql -notmatch 'official_web_isolated_retry') {
+  throw 'Claude Pro pending-only pilot lost scheduled recovery after temporary failures'
+}
+Write-Output 'PASS: Claude pending-only source retains scheduled recovery without publication'
 $webJob.job_config.official_web_source_key='unmaintained-source'
 Complete-JobRun -Job $webJob -Result $webResult -StartedAt (Get-Date) -RunId '12345678-1234-4234-8234-123456789abe'
 if ($identitySql -notmatch "status = 'failed'") { throw 'Maintained Web retry exception changed another source' }

@@ -44,15 +44,15 @@ export function SearchEvidenceSections({
   return (
     <>
       {summary.totalSearches === 0 ? (
-      <AdminCard className="mb-6 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20">
+      <AdminCard className="mb-6 dark:border-admin-border dark:bg-admin-surface dark:shadow-black/20">
       <div className="flex flex-col items-center py-10 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
       <SearchCheck size={22} />
       </span>
-      <h2 className="mt-4 text-lg font-bold text-slate-950 dark:text-slate-50">
+      <h2 className="mt-4 text-base font-semibold text-admin-text dark:text-admin-text">
       暂时没有搜索数据
       </h2>
-      <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+      <p className="mt-2 max-w-xl text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">
       前台搜索上线后，真实关键词会自动出现在这里。系统不会把搜索词公开，也不会创建可索引的搜索结果页。
       </p>
       </div>
@@ -82,7 +82,7 @@ export function SearchEvidenceSections({
       return (
       <AdminTr key={term.query}>
       <AdminTd>
-      <span className="font-bold text-slate-950 dark:text-slate-50">
+      <span className="font-semibold text-admin-text dark:text-admin-text">
       {term.query}
       </span>
       </AdminTd>
@@ -92,7 +92,7 @@ export function SearchEvidenceSections({
       </AdminBadge>
       </AdminTd>
       <AdminTd align="right">
-      <span className="font-bold tabular-nums">
+      <span className="font-semibold tabular-nums">
       {term.searchCount}
       </span>
       </AdminTd>
@@ -100,30 +100,30 @@ export function SearchEvidenceSections({
       <span
       className={
       term.noResultCount > 0
-      ? "font-bold text-red-700 tabular-nums dark:text-red-300"
-      : "text-slate-400 dark:text-slate-400"
+      ? "font-semibold text-red-700 tabular-nums dark:text-red-300"
+      : "text-admin-text-faint dark:text-admin-text-muted"
       }
       >
       {term.noResultCount}
       </span>
       </AdminTd>
       <AdminTd align="right">
-      <span className="font-bold tabular-nums">
+      <span className="font-semibold tabular-nums">
       {term.clickCount}
       </span>
       </AdminTd>
       <AdminTd align="right">
-      <span className="tabular-nums text-slate-600 dark:text-slate-300">
+      <span className="tabular-nums text-admin-text-secondary dark:text-admin-text-secondary">
       {term.clickRate}%
       </span>
       </AdminTd>
       <AdminTd>
-      <span className="text-xs uppercase text-slate-500 dark:text-slate-400">
+      <span className="text-xs uppercase text-admin-text-muted dark:text-admin-text-muted">
       {term.locales.join(", ") || "-"}
       </span>
       </AdminTd>
       <AdminTd>
-      <span className="text-xs text-slate-500 dark:text-slate-400">
+      <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">
       {formatDate(term.lastSeenAt)} UTC
       </span>
       </AdminTd>
@@ -175,15 +175,15 @@ export function SearchEvidenceSections({
       key={`${suggestion.locale}:${suggestion.query}:${suggestion.resultHref}`}
       >
       <AdminTd>
-      <span className="font-bold text-slate-950 dark:text-slate-50">
+      <span className="font-semibold text-admin-text dark:text-admin-text">
       {suggestion.query}
       </span>
-      <span className="mt-1 block text-xs uppercase text-slate-400 dark:text-slate-400">
+      <span className="mt-1 block text-xs uppercase text-admin-text-faint dark:text-admin-text-muted">
       {suggestion.locale}
       </span>
       </AdminTd>
       <AdminTd>
-      <span className="font-bold text-slate-700 dark:text-slate-300">
+      <span className="font-semibold text-admin-text-body dark:text-admin-text-secondary">
       {suggestion.resultTitle}
       </span>
       </AdminTd>
@@ -193,12 +193,12 @@ export function SearchEvidenceSections({
       </AdminBadge>
       </AdminTd>
       <AdminTd align="right">
-      <span className="font-bold tabular-nums">
+      <span className="font-semibold tabular-nums">
       {suggestion.clickCount}
       </span>
       </AdminTd>
       <AdminTd align="right">
-      <span className="font-bold tabular-nums">
+      <span className="font-semibold tabular-nums">
       {suggestion.visitorCount}
       </span>
       </AdminTd>
@@ -228,7 +228,7 @@ export function SearchEvidenceSections({
       </AdminBadge>
       </AdminTd>
       <AdminTd>
-      <span className="text-xs text-slate-500 dark:text-slate-400">
+      <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">
       {formatDate(suggestion.lastClickedAt)} UTC
       </span>
       </AdminTd>
@@ -295,7 +295,11 @@ export function SearchEvidenceSections({
       <AdminLink
       href={suggestion.resultHref}
       target="_blank"
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-admin-border
+        text-admin-text-muted transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
+        dark:border-admin-border-strong dark:text-admin-text-muted dark:hover:border-blue-700
+        dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
       aria-label={`查看 ${suggestion.resultTitle}`}
       title={`查看 ${suggestion.resultTitle}`}
       >
@@ -310,7 +314,7 @@ export function SearchEvidenceSections({
       <tr>
       <td
       colSpan={8}
-      className="px-6 py-10 text-center text-sm text-slate-400 dark:text-slate-400"
+      className="px-6 py-10 text-center text-sm text-admin-text-faint dark:text-admin-text-muted"
       >
       暂时没有足够的搜索点击，系统不会凭空猜测别名。
       </td>
@@ -340,7 +344,7 @@ export function SearchEvidenceSections({
       summary.results.map((result) => (
       <AdminTr key={`${result.kind}:${result.href}`}>
       <AdminTd>
-      <span className="font-bold text-slate-950 dark:text-slate-50">
+      <span className="font-semibold text-admin-text dark:text-admin-text">
       {result.title}
       </span>
       </AdminTd>
@@ -348,12 +352,12 @@ export function SearchEvidenceSections({
       <AdminBadge>{resultKindLabel(result.kind)}</AdminBadge>
       </AdminTd>
       <AdminTd align="right">
-      <span className="font-bold tabular-nums">
+      <span className="font-semibold tabular-nums">
       {result.clickCount}
       </span>
       </AdminTd>
       <AdminTd>
-      <span className="text-xs text-slate-500 dark:text-slate-400">
+      <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">
       {formatDate(result.lastClickedAt)} UTC
       </span>
       </AdminTd>
@@ -361,7 +365,11 @@ export function SearchEvidenceSections({
       <AdminLink
       href={result.href}
       target="_blank"
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-admin-border
+        text-admin-text-muted transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
+        dark:border-admin-border-strong dark:text-admin-text-muted dark:hover:border-blue-700
+        dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
       aria-label={`打开 ${result.title}`}
       title={`打开 ${result.title}`}
       >
@@ -374,7 +382,7 @@ export function SearchEvidenceSections({
       <tr>
       <td
       colSpan={5}
-      className="px-6 py-10 text-center text-sm text-slate-400 dark:text-slate-400"
+      className="px-6 py-10 text-center text-sm text-admin-text-faint dark:text-admin-text-muted"
       >
       暂时还没有搜索结果点击。
       </td>

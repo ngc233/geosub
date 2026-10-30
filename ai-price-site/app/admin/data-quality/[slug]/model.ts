@@ -28,6 +28,7 @@ export type ProductSummaryRow = {
   pending_observation_count: number;
   pending_anomaly_count: number;
   hard_anomaly_count: number;
+  historical_observation_count: number;
   latest_observed_at: Date | string | null;
 };
 
@@ -185,13 +186,14 @@ export function availabilityLabel(status: string | null) {
 
 export function missingPlanCountryLabel(row: MissingCountryRow) {
   if (row.pending_observation_count > 0) {
-    return `已采集，等待自动审核 ${row.pending_observation_count} 条`;
+    return `已采集，等待自动审核 ${row.pending_observation_count} 组`;
+  }
+
+  if (["pending_absence", "confirmed_absent"].includes(row.plan_availability_status || "")) {
+    return `公开页未显示套餐（${row.consecutive_missing_count} 次）`;
   }
 
   if (row.latest_availability_status === "available_with_prices") {
-    if (row.plan_availability_status === "pending_absence") {
-      return `套餐本轮未出现（${row.consecutive_missing_count}/3）`;
-    }
     return "该套餐尚缺正式价格";
   }
 
@@ -214,10 +216,11 @@ export function missingPlanCountryDetail(row: MissingCountryRow) {
     return "系统已取得候选价格，稳定样本通过后会自动写入正式价格库。";
   }
 
+  if (["pending_absence", "confirmed_absent"].includes(row.plan_availability_status || "")) {
+    return "公开页未显示不代表套餐停售；需核验来源覆盖。异常补采暂停重复请求，日常采集仍会检查新证据，问题保持未解决。";
+  }
+
   if (row.latest_availability_status === "available_with_prices") {
-    if (row.plan_availability_status === "pending_absence") {
-      return "该地区已成功取得其他套餐，但本套餐本轮未出现；连续 3 次成功采集仍缺失后，系统才会确认为地区套餐差异并停止空跑。";
-    }
     return "产品页可以访问，但该套餐在此地区仍缺少可发布的稳定价格。";
   }
 

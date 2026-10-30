@@ -199,7 +199,7 @@ test("admin coverage audit follows the collector's exact default country policy"
     /row\.hard_anomaly_count > 0 && row\.published_price_count <= 0/,
   );
   assert.match(overview, /label: "异常已隔离"/);
-  assert.match(overview, /不影响现有稳定正式价格/);
+  assert.match(overview, /问题仍未解决/);
   assert.match(detail, /DEFAULT_APP_STORE_COUNTRY_CODES/);
   assert.equal(
     detail.match(/availability\.status IN \('not_available', 'available_no_iap'\)/g)
@@ -332,36 +332,26 @@ test("coverage gaps queue bounded product-level App Store rechecks", () => {
   );
   assert.match(deployCheck, /entries schema/);
   assert.match(overview, /coverage_refresh_success_count/);
-  assert.match(overview, /label: "地区差异已复核"/);
-  assert.match(overview, /无需手工处理/);
+  assert.match(overview, /label: "来源覆盖待核验"/);
+  assert.match(overview, /问题保持未解决/);
 });
 
-test("regional plan differences require three successful storefront checks", () => {
-  const planAvailability = readSqlMigration("sql/068_plan_region_availability.sql");
+test("public plan omissions remain unconfirmed and visible in coverage gaps", () => {
   const collector = readRepoFile(
     "geosub-backend/scripts/collect-app-store-prices.ps1",
   );
   const overview = readDataQualitySource();
   const detail = readDataQualityDetailSource();
+  const start = collector.indexOf("function Record-AppStorePlanAvailability");
+  const availability = collector.slice(start, collector.indexOf("$context = Get-ProductContext", start));
 
-  assert.match(planAvailability, /app_store_plan_availability_checks/);
-  assert.match(planAvailability, /'pending_absence'/);
-  assert.match(planAvailability, /'confirmed_absent'/);
-  assert.match(planAvailability, /consecutive_missing_count/);
-  assert.match(
-    planAvailability,
-    /COALESCE\(plan_availability\.status, ''\) <> 'confirmed_absent'/,
-  );
-  assert.match(collector, /function Record-AppStorePlanAvailability/);
-  assert.match(
-    collector,
-    /app_store_plan_availability_checks\.consecutive_missing_count \+ 1 >= 3/,
-  );
-  assert.match(collector, /WHEN EXCLUDED\.status = 'available' THEN 0/);
-  assert.match(collector, /-Found \(\$selectedItemsBySlug\.ContainsKey\(\$planSlug\)\)/);
-  assert.match(overview, /plan_availability\.status = 'confirmed_absent'/);
-  assert.match(detail, /plan_availability\.status = 'confirmed_absent'/);
-  assert.match(detail, /plan_availability_status/);
-  assert.match(detail, /consecutive_missing_count/);
-  assert.match(detail, /套餐本轮未出现（\$\{row\.consecutive_missing_count\}\/3）/);
+  assert.match(availability, /RequireCapturedAt/);
+  assert.doesNotMatch(availability, /confirmed_absent/);
+  assert.match(availability, /WHEN EXCLUDED\.status = 'available' THEN 0/);
+  assert.match(availability, /EXCLUDED\.checked_at > app_store_plan_availability_checks\.checked_at/);
+  assert.match(collector, /-CapturedAt \$page\.CapturedAt/);
+  assert.doesNotMatch(overview, /plan_availability\.status = 'confirmed_absent'/);
+  assert.doesNotMatch(detail, /COALESCE\(plan_availability\.status, ''\) <> 'confirmed_absent'/);
+  assert.match(detail, /公开页未显示套餐/);
+  assert.match(detail, /公开页未显示不代表套餐停售/);
 });

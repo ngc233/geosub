@@ -1,3 +1,4 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 import { BillingCycle, PublishStatus } from "@prisma/client";
 import { notFound } from "next/navigation";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
@@ -25,18 +26,23 @@ const statusOptions = [
   { value: PublishStatus.ARCHIVED, label: "已归档" },
 ];
 
-export default async function EditPlanPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditPlanPage({ params,searchParams }: { params: Promise<{ id: string }>;searchParams?:Promise<{returnTo?:string}> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const plan = await prisma.plan.findUnique({ where: { id }, include: { product: true, _count: { select: { regionPrices: true, priceObservations: true } } } });
   if (!plan) notFound();
+  const query=searchParams ? await searchParams : {};
+  const returnTo=safeAdminReturnTo(query.returnTo,`/admin/plans?product=${encodeURIComponent(plan.product.slug)}`);
 
   return (
     <div>
-      <AdminPageHeader eyebrow="Plans" title={`编辑 ${plan.name}`} description={`${plan.product.name} · ${plan.product.category}。归档只改变状态，保留来源和审核证据。`} action={<AdminLinkButton href={`/admin/plans?product=${encodeURIComponent(plan.product.slug)}`} variant="secondary">返回套餐</AdminLinkButton>} />
+      <AdminPageHeader eyebrow="Plans" title={`编辑 ${plan.name}`}
+        description={`${plan.product.name} · ${plan.product.category}。归档只改变状态，保留来源和审核证据。`}
+        action={<AdminLinkButton href={returnTo} variant="secondary">返回套餐</AdminLinkButton>} />
       <AdminCard>
-        <p className="mb-5 text-sm text-slate-600 dark:text-slate-300">价格 {plan._count.regionPrices} 条，观测 {plan._count.priceObservations} 条。已有记录时套餐 slug 与周期锁定；请归档错误身份后另建草稿。</p>
+        <p className="mb-5 text-sm text-admin-text-secondary dark:text-admin-text-secondary">价格 {plan._count.regionPrices} 条，观测 {plan._count.priceObservations} 条。已有记录时套餐 slug 与周期锁定；请归档错误身份后另建草稿。</p>
         <AdminActionForm action={updatePlanAction} className="grid gap-5 md:grid-cols-2">
+          <input type="hidden" name="returnTo" value={returnTo} />
           <input type="hidden" name="id" value={plan.id} />
           <input type="hidden" name="recordVersion" value={adminRecordVersion(plan)} />
           <AdminInput name="name" label="套餐名称" defaultValue={plan.name} required maxLength={160} />
@@ -44,7 +50,10 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
           <AdminSelect name="billingCycle" label="计费周期" value={plan.billingCycle} options={cycleOptions} />
           <AdminSelect name="status" label="发布状态" value={plan.status} options={statusOptions} />
           <AdminInput name="sortOrder" label="排序" type="number" min={0} max={100000} defaultValue={plan.sortOrder} required />
-          <div className="flex items-end"><AdminButton type="submit">保存套餐</AdminButton></div>
+          <div className="flex flex-wrap items-end gap-2">
+            <AdminButton type="submit">保存套餐</AdminButton>
+            <AdminButton type="submit" variant="secondary" name="saveIntent" value="return">保存并返回</AdminButton>
+          </div>
         </AdminActionForm>
       </AdminCard>
     </div>

@@ -1,0 +1,16 @@
+{
+  "captured_on": "2026-10-29",
+  "scope": "Public unauthenticated official pages; exact extracted snippets, not independent historical samples",
+  "documents": [
+    {
+      "url": "https://claude.com/pricing",
+      "sha256": "844ea5908b86fcf941be6af348e3dc554fc92cac513680b280c5965c410d97df",
+      "fixture": "claude-pro-pricing.html"
+    },
+    {
+      "url": "https://support.claude.com/en/articles/8325606-what-is-the-pro-plan",
+      "sha256": "562e4136eda31ea785569539c203a225506f75b9525d79a08033adbf52e6a139",
+      "fixture": "claude-pro-help.html"
+    }
+  ]
+}

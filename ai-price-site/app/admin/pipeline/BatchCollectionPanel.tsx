@@ -46,26 +46,26 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
   }
 
   return (
-    <details className="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
+    <details className="mb-6 overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface shadow-sm shadow-admin-shadow/50">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 marker:hidden">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
             <CheckSquare2 className="h-4 w-4" aria-hidden="true" />
           </span>
           <div>
-            <div className="text-sm font-black text-slate-950">批量更新产品</div>
-            <div className="mt-1 text-xs leading-5 text-slate-500">
-              当前筛选中有 {selectable.length} 个可采集产品；每批最多 {MAX_BATCH_COLLECTION_PRODUCTS} 个。
+            <div className="text-sm font-semibold text-admin-text">批量更新产品</div>
+            <div className="mt-1 text-xs leading-5 text-admin-text-muted">
+              本页有 {selectable.length} 个可采集产品；每批最多 {MAX_BATCH_COLLECTION_PRODUCTS} 个。切页后清空本页选择。
             </div>
           </div>
         </div>
-        <span className="shrink-0 text-xs font-bold text-blue-700">展开选择</span>
+        <span className="shrink-0 text-xs font-semibold text-blue-700">展开选择</span>
       </summary>
 
       <AdminActionForm
         action="/admin/pipeline/collect"
         method="post"
-        className="border-t border-slate-200 px-5 py-5"
+        className="border-t border-admin-border px-5 py-5"
         onSubmit={async (event) => {
           event.preventDefault();
           if (submitting || selected.length === 0) return;
@@ -99,7 +99,7 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
         }}
       >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-3xl text-xs leading-5 text-slate-500">
+          <p className="max-w-3xl text-xs leading-5 text-admin-text-muted">
             系统只立即启动一个采集器，其余产品进入后台队列；所有新价格仍需通过自动审核，不会直接发布。
           </p>
           <div className="flex gap-2">
@@ -109,7 +109,7 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
               disabled={recommended.length === 0 || submitting}
               className={adminButtonClassName({ variant: "secondary", size: "sm" })}
             >
-              选择建议更新
+              选择本页建议更新
             </button>
             <button
               type="button"
@@ -122,14 +122,14 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
           </div>
         </div>
 
-        <div className="max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
+        <div className="max-h-56 overflow-y-auto rounded-lg border border-admin-border bg-admin-surface-subtle p-2">
           <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">
             {selectable.map((product) => {
               const checked = selectedSet.has(product.slug);
               return (
                 <label
                   key={product.slug}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg bg-white px-3 py-2.5 text-sm transition hover:bg-blue-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg bg-admin-surface px-3 py-2.5 text-sm transition hover:bg-blue-50"
                 >
                   <input
                     type="checkbox"
@@ -138,11 +138,11 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
                     checked={checked}
                     onChange={() => toggleProduct(product.slug)}
                     disabled={submitting}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-admin-border-strong text-blue-700 focus:ring-blue-500"
                   />
-                  <span className="min-w-0 flex-1 truncate font-bold text-slate-800">{product.name}</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-admin-text">{product.name}</span>
                   {product.needsUpdate ? (
-                    <span className="shrink-0 text-[11px] font-bold text-amber-700">建议更新</span>
+                    <span className="shrink-0 text-[11px] font-semibold text-amber-700">建议更新</span>
                   ) : null}
                 </label>
               );
@@ -151,7 +151,7 @@ export default function BatchCollectionPanel({ products }: { products: ProductOp
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs font-bold text-slate-500">已选择 {selected.length} 个产品</div>
+          <div className="text-xs font-semibold text-admin-text-muted">已选择 {selected.length} 个产品</div>
           <button
             type="submit"
             disabled={selected.length === 0 || submitting}

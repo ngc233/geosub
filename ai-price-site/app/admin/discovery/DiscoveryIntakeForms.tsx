@@ -1,4 +1,5 @@
 "use client";
+import { adminControlClassName } from "@/components/admin/admin-control";
 
 import { AdminActionForm, useAdminActionState } from "@/components/admin/AdminPermissions";
 import { useState } from "react";
@@ -17,10 +18,9 @@ const initialState: DiscoveryActionState = {
   message: "",
 };
 
-const inputClassName =
-  "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:focus:ring-blue-800";
+const inputClassName = `${adminControlClassName} h-11 w-full`;
 
-const labelClassName = "text-xs font-semibold text-slate-500 dark:text-slate-400";
+const labelClassName = "text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted";
 
 function ModeButton({
   active,
@@ -43,20 +43,24 @@ function ModeButton({
         "flex min-h-[92px] items-start gap-3 rounded-lg border p-4 text-left transition",
         active
           ? "border-blue-200 bg-blue-50 text-blue-950 ring-1 ring-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200 dark:ring-blue-800"
-          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900",
+          : [
+            "border-admin-border bg-admin-surface text-admin-text-body hover:border-admin-border-strong",
+            "hover:bg-admin-surface-subtle dark:border-admin-border-strong dark:bg-admin-surface",
+            "dark:text-admin-text-body dark:hover:border-admin-border-strong dark:hover:bg-admin-surface"
+          ].join(" "),
       ].join(" ")}
     >
       <span
         className={[
           "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-          active ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+          active ? "bg-blue-700 text-white" : "bg-admin-chip text-admin-text-muted dark:bg-admin-chip dark:text-admin-text-muted",
         ].join(" ")}
       >
         {icon}
       </span>
       <span>
-        <span className="block text-sm font-bold">{title}</span>
-        <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="mt-1 block text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
           {description}
         </span>
       </span>
@@ -365,15 +369,15 @@ export default function DiscoveryIntakeForms({
   const [mode, setMode] = useState<IntakeMode>("candidate");
 
   return (
-    <section className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 dark:border-slate-700 dark:bg-slate-900">
+    <section className="mb-6 rounded-admin-card border border-admin-border bg-admin-surface p-6 shadow-sm shadow-admin-shadow/60 dark:border-admin-border-strong dark:bg-admin-surface">
       <div className="mb-5">
-        <p className="text-sm font-bold tracking-tight text-blue-700 dark:text-blue-300">
+        <p className="text-sm font-semibold tracking-tight text-blue-700 dark:text-blue-300">
           线索入口
         </p>
-        <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950 dark:text-slate-100">
+        <h2 className="mt-2 text-base font-semibold tracking-tight text-admin-text dark:text-admin-text">
           添加发现线索
         </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">
           已经明确是某个产品时，先放进候选池；点击加入后会创建产品、匹配 App Store，并进入这个产品的采集工作台。如果只是一个值得长期监控的网站、频道或应用市场入口，就保存为发现来源，后续由扫描器定期检查。
         </p>
       </div>

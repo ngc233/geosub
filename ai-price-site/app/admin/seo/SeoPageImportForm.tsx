@@ -34,7 +34,7 @@ export default function SeoPageImportForm({ engine, recordVersion }: { engine: S
   return <AdminActionForm ref={form} capability="read" action={importSeoSearchPageObservationsAction}
     onChange={event => { if ((event.target instanceof HTMLInputElement ? event.target.name : '') !== 'acknowledgeExcluded') invalidate(); }}
     onSubmit={event => { if (!ready || !canManage) event.preventDefault(); }}
-    className="border-t border-slate-200 p-3 dark:border-slate-700">
+    className="border-t border-admin-border p-3 dark:border-admin-border-strong">
     <input type="hidden" name="engine" value={engine} />
     <input type="hidden" name="recordVersion" value={recordVersion} />
     <input type="hidden" name="preflightToken" value={token} />
@@ -49,14 +49,14 @@ export default function SeoPageImportForm({ engine, recordVersion }: { engine: S
       <AdminButton type="button" variant="secondary" disabled={pending} onClick={previewRows}>{pending ? '正在预检…' : '只读预检'}</AdminButton>
       <AdminButton type="submit" disabled={!ready || !canManage} title={!canManage ? '仅管理员可导入；当前角色可只读预检' : undefined}>确认导入</AdminButton>
     </div>
-    <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">预检只在浏览器计算，不保存报表或审计。修改输入后必须重新预检；导入仍按引擎和观察窗口选择，不更改中文 Plus 实验锁。</p>
+    <p className="mt-3 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">预检只在浏览器计算，不保存报表或审计。修改输入后必须重新预检；导入仍按引擎和观察窗口选择，不更改中文 Plus 实验锁。</p>
     {pending ? <p role="status" className="mt-3 text-sm">正在计算预检…</p> : null}
-    {preview ? <div className="mt-4 space-y-3 rounded-lg border border-slate-300 p-3 text-sm dark:border-slate-600" aria-live="polite">
-      <p className="font-bold">预检：{preview.canImport ? '可导入' : '已阻止导入'}</p>
+    {preview ? <div className="mt-4 space-y-3 rounded-lg border border-admin-border-strong p-3 text-sm dark:border-slate-600" aria-live="polite">
+      <p className="font-semibold">预检：{preview.canImport ? '可导入' : '已阻止导入'}</p>
       <p>原始 {preview.inputRows} 行 · 有效 {preview.acceptedRows} 行 · 排除 {preview.excluded.length} 行 · 合并 {preview.mergedRows} 行 · 最终 {preview.observations.length} 页</p>
       {preview.errors.length ? <ul role="alert" className="list-inside list-disc space-y-2">{preview.errors.map(error => <li key={error}>{error}</li>)}</ul> : null}
       {preview.excluded.length ? <>
-        <details><summary className="cursor-pointer py-3 font-bold focus-visible:outline-2">查看排除行和原因（{preview.excluded.length}）</summary>
+        <details><summary className="cursor-pointer py-3 font-semibold focus-visible:outline-2">查看排除行和原因（{preview.excluded.length}）</summary>
           <ul className="max-h-72 space-y-3 overflow-auto break-all">{preview.excluded.map(item => <li key={item.line}>第 {item.line} 行：{item.reason}<pre className="mt-1 whitespace-pre-wrap font-sans text-xs">{item.value}</pre></li>)}</ul>
         </details>
         {preview.canImport ? <label className="flex min-h-11 items-center gap-3"><input type="checkbox" name="acknowledgeExcluded" value="yes" checked={acknowledged} onChange={event => setAcknowledged(event.target.checked)} />我已核对并确认排除以上 {preview.excluded.length} 行</label> : null}

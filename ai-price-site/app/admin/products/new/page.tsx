@@ -1,3 +1,4 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminButton, AdminLinkButton } from "../../../../components/admin/AdminButton";
 import {
@@ -32,10 +33,11 @@ const publishStatusOptions = [
 export default async function NewProductPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string;returnTo?:string }>;
 }) {
   const params = searchParams ? await searchParams : {};
   const error = params?.error;
+  const returnTo=safeAdminReturnTo(params.returnTo,"/admin/products");
 
   return (
     <div>
@@ -44,7 +46,7 @@ export default async function NewProductPage({
         title="新增数字服务"
         description="先建立产品档案。保存后继续补套餐、App Store 来源，并到价格采集审核页执行采集。"
         action={
-          <AdminLinkButton href="/admin/products" variant="secondary">
+          <AdminLinkButton href={returnTo} variant="secondary">
             返回列表
           </AdminLinkButton>
         }
@@ -65,6 +67,7 @@ export default async function NewProductPage({
       <ProductOnboardingSteps currentStep="product" />
 
       <AdminActionForm action={createProductAction} className="space-y-6">
+        <input type="hidden" name="returnTo" value={returnTo} />
         <AdminCard>
           <AdminSectionHeader
             title="基础信息"
@@ -162,7 +165,7 @@ export default async function NewProductPage({
             保存数字服务
           </AdminButton>
 
-          <AdminLinkButton href="/admin/products" variant="secondary">
+          <AdminLinkButton href={returnTo} variant="secondary">
             取消
           </AdminLinkButton>
         </div>

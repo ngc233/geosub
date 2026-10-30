@@ -1,8 +1,14 @@
+import AdminProductLogo from "@/components/admin/AdminProductLogo";
+import AdminPipelineSteps from "@/components/admin/AdminPipelineSteps";
+import { withAdminReturnTo, adminListLocation } from "@/lib/admin-workflow-context";
+import AdminProductContext from "@/components/admin/AdminProductContext";
+import AdminPagination from "@/components/admin/AdminPagination";
+import { createAdminListView } from "@/lib/admin-list-params";
 import AdminLink from "@/components/admin/AdminLink";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { ArrowRight } from "lucide-react";
-import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
-import SegmentedControl from "../../../components/ui/SegmentedControl";
+import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
+import SegmentedControl from "../../../components/admin/AdminSegmentedControl";
 import {
   adminOperationalStatusMeta,
   assessPriceOperationalStatus,
@@ -173,7 +179,7 @@ function normalizeProductSummary(row: ProductPriceSummaryRow): ProductPriceSumma
   };
 }
 
-async function getProductPriceSummaries() {
+async function getProductPriceSummaries(productSlug = "") {
   const rows = await prisma.$queryRaw<ProductPriceSummaryRow[]>`
     SELECT
       product.id::text,
@@ -217,17 +223,23 @@ async function getProductPriceSummaries() {
         AND price.status <> 'archived'::publish_status
     ) price_stats ON TRUE
     WHERE product.status <> 'archived'::publish_status
+      AND (${productSlug} = '' OR product.slug = ${productSlug})
     ORDER BY product.category ASC, product.sort_order ASC, product.name ASC
   `;
 
   return rows.map(normalizeProductSummary);
 }
 
-async function getSitePriceStats() {
+async function getSitePriceStats(productSlug = "") {
   const rows = await prisma.$queryRaw<PriceSiteStatsRow[]>`
     SELECT
       COUNT(*)::int AS price_count,
-      (SELECT COUNT(*)::int FROM region_prices archived_price WHERE archived_price.status = 'archived'::publish_status) AS archived_price_count,
+      (SELECT COUNT(*)::int FROM region_prices archived_price
+        WHERE archived_price.status = 'archived'::publish_status
+          AND (${productSlug} = '' OR EXISTS (
+            SELECT 1 FROM products scope_product
+            WHERE scope_product.id = archived_price.product_id AND scope_product.slug = ${productSlug}
+          ))) AS archived_price_count,
       COUNT(DISTINCT country_id)::int AS country_count,
       MIN(price_usd) AS min_price_usd,
       MAX(price_usd) AS max_price_usd,
@@ -235,6 +247,7 @@ async function getSitePriceStats() {
       COUNT(*) FILTER (WHERE primary_source_id IS NULL)::int AS no_source_price_count
     FROM region_prices
     WHERE status <> 'archived'::publish_status
+      AND (${productSlug} = '' OR EXISTS (SELECT 1 FROM products scope_product WHERE scope_product.id = region_prices.product_id AND scope_product.slug = ${productSlug}))
   `;
   const row = rows[0];
 
@@ -249,7 +262,7 @@ async function getSitePriceStats() {
   };
 }
 
-async function getPriceDetailRows({ page, pageSize }: { page: number; pageSize: number }) {
+async function getPriceDetailRows({ page, pageSize, productSlug = "" }: { page: number; pageSize: number; productSlug?: string }) {
   const offset = (page - 1) * pageSize;
 
   return prisma.$queryRaw<PriceDetailRow[]>`
@@ -280,6 +293,7 @@ async function getPriceDetailRows({ page, pageSize }: { page: number; pageSize: 
     JOIN countries country ON country.id = price.country_id
     LEFT JOIN price_sources source ON source.id = price.primary_source_id
     WHERE product.status <> 'archived'::publish_status
+      AND (${productSlug} = '' OR product.slug = ${productSlug})
       AND plan.status <> 'archived'::publish_status
       AND price.status <> 'archived'::publish_status
     ORDER BY product.category ASC, product.sort_order ASC, product.name ASC, plan.sort_order ASC, price.price_usd ASC
@@ -288,7 +302,7 @@ async function getPriceDetailRows({ page, pageSize }: { page: number; pageSize: 
   `;
 }
 
-async function getTaxCoverage() {
+async function getTaxCoverage(productSlug = "") {
   const rows = await prisma.$queryRaw<Array<{
     with_tax_profile: bigint;
     verified_tax_profile: bigint;
@@ -304,6 +318,7 @@ async function getTaxCoverage() {
       SELECT DISTINCT country_id
       FROM region_prices
       WHERE status = 'published'::publish_status
+        AND (${productSlug} = '' OR EXISTS (SELECT 1 FROM products scope_product WHERE scope_product.id = region_prices.product_id AND scope_product.slug = ${productSlug}))
     ) published_countries
     LEFT JOIN country_tax_profiles tax_profile
       ON tax_profile.country_id = published_countries.country_id
@@ -348,25 +363,31 @@ export default async function AdminPricesPage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    page?: string;
+    product?: string;
+    returnTo?: string;
     pricePage?: string;
     state?: string;
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
+  const productSlug = String(params.product || "").trim().toLowerCase().slice(0,120);
+  const contextProduct = productSlug ? await prisma.product.findUnique({where:{slug:productSlug},select:{id:true,slug:true,name:true}}) : null;
   const selectedState = ["not_started", "pending", "exception", "published"].includes(
     String(params.state),
   )
     ? (String(params.state) as AdminOperationalStatus)
     : "all";
   const detailPageSize = 50;
-  const detailPage = Math.max(1, Number(params.pricePage ?? 1) || 1);
-  const [products, siteStats, detailRows, taxCoverage] = await measureAdminWorkload(
+  const requestedDetailPage = /^\d+$/.test(params.pricePage || "") ? Number(params.pricePage) : 1;
+  const detailPage = Number.isSafeInteger(requestedDetailPage) && requestedDetailPage > 0 ? requestedDetailPage : 1;
+  const [products, siteStats, initialDetailRows, taxCoverage] = await measureAdminWorkload(
     "prices.page-data",
     () => Promise.all([
-      getProductPriceSummaries(),
-      getSitePriceStats(),
-      getPriceDetailRows({ page: detailPage, pageSize: detailPageSize }),
-      getTaxCoverage(),
+      getProductPriceSummaries(productSlug),
+      getSitePriceStats(productSlug),
+      getPriceDetailRows({ page: detailPage, pageSize: detailPageSize, productSlug }),
+      getTaxCoverage(productSlug),
     ]),
   );
   const assessProduct = (product: ProductPriceSummary) =>
@@ -400,12 +421,15 @@ export default async function AdminPricesPage({
   );
   const detailTotalPages = Math.max(1, Math.ceil(siteStats.priceCount / detailPageSize));
   const safeDetailPage = Math.min(detailPage, detailTotalPages);
+  const detailRows = safeDetailPage === detailPage ? initialDetailRows : await getPriceDetailRows({ page: safeDetailPage, pageSize: detailPageSize, productSlug });
   const buildDetailPageHref = (nextPage: number) => {
     const query = new URLSearchParams();
+    if (productSlug) query.set("product", productSlug);
     if (selectedState !== "all") query.set("state", selectedState);
+    if (params.page) query.set("page", params.page);
     if (nextPage > 1) query.set("pricePage", String(nextPage));
     const value = query.toString();
-    return value ? `/admin/prices?${value}` : "/admin/prices";
+    return `${value ? `/admin/prices?${value}` : "/admin/prices"}#price-details`;
   };
 
   const categorySummaries = categories.map((category) => {
@@ -442,80 +466,89 @@ export default async function AdminPricesPage({
   );
   const stateHref = (state: "all" | AdminOperationalStatus) => {
     const query = new URLSearchParams();
+    if (productSlug) query.set("product", productSlug);
     if (state !== "all") query.set("state", state);
     const suffix = query.toString();
     return suffix ? `/admin/prices?${suffix}` : "/admin/prices";
   };
 
+  const productList = createAdminListView(visibleProductSummaries, { basePath: "/admin/prices", params, pageSize: 10, id: "price-products" });
   return (
     <div>
+      {contextProduct ? <AdminProductContext {...contextProduct} returnTo={params.returnTo} /> : null}
+      {productSlug ? <p className="mb-4 text-sm text-admin-text-muted">
+        {contextProduct ? `当前产品：${contextProduct.name}` : "未找到指定产品，未显示其他产品价格。"}{" "}
+        <AdminLink href="/admin/prices" className="text-admin-accent underline">查看全部产品</AdminLink>
+      </p> : null}
+
       <AdminPageHeader
         eyebrow="Prices"
         title="正式价格库"
-        description="按分类、产品、套餐和地区管理正式价格。这里不是单个产品详情，而是全站价格资产的总览。"
+        description={productSlug ? "查看当前产品的套餐、地区、来源与正式价格；筛选和分页保持在该产品内。" : "按分类、产品、套餐和地区管理正式价格。这里是全站价格资产的总览。"}
       />
+      <AdminPipelineSteps currentStep="published" productSlug={productSlug || undefined} returnTo={params.returnTo}/>
 
       <div className="mb-6 grid gap-4 md:grid-cols-5">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">产品覆盖</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">产品覆盖</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {productsWithPrices.length} / {activeTotal}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             已发布产品 {publishedProducts.length} 个。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">套餐 / 地区</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">套餐 / 地区</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {plansWithPrices} / {siteStats.countryCount}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             有价格套餐 / 覆盖地区。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">全站价格范围</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">{productSlug ? "当前产品价格范围" : "全站价格范围"}</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {range.min === null ? "无" : formatUsd(range.min)}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             最高：{range.max === null ? "无" : formatUsd(range.max)}
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">需处理</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">需处理</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {siteStats.stalePriceCount + siteStats.noSourcePriceCount}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             过期 {siteStats.stalePriceCount}，缺来源 {siteStats.noSourcePriceCount}；归档 {siteStats.archivedPriceCount} 条另计。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">税务资料覆盖</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">税务资料覆盖</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {taxCoverage.withTaxProfile} / {taxCoverage.publishedCountryCount}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             高可信 {taxCoverage.verifiedTaxProfile}，待复核 {taxCoverage.needsReviewTaxProfile}，缺失 {missingTaxProfileCount}。
           </div>
         </AdminCard>
       </div>
 
-      <AdminCard className="mb-6 border-blue-100 bg-blue-50/60">
+      <AdminCard className="mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-base font-black text-slate-950 dark:text-slate-50">税费展示规则</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              价格采集只记录 App Store 标价；税务资料按国家代码独立匹配，不额外加到排序价格里。高可信国家直接展示税种和税率，待复核或缺失国家保守显示为待核验，并提示以官方结算页为准。
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">税费展示规则</h2>
+            <p className="mt-1 text-sm leading-6 text-admin-text-secondary dark:text-admin-text-secondary">
+              价格采集记录对应来源的标价；税务资料按国家代码独立匹配，不额外加到排序价格里。高可信国家直接展示税种和税率，待复核或缺失国家保守显示为待核验，并提示以官方结算页为准。
             </p>
           </div>
-          <div className="shrink-0 rounded-xl bg-white px-4 py-3 text-sm font-black text-blue-700 ring-1 ring-blue-100 dark:bg-slate-900">
+          <div className="shrink-0 rounded-admin-card bg-admin-surface px-4 py-3 text-sm font-semibold text-admin-accent ring-1 ring-admin-border">
             税务库独立同步
           </div>
         </div>
@@ -524,12 +557,12 @@ export default async function AdminPricesPage({
       <AdminCard className="mb-6">
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">分类价格资产</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">分类价格资产</h2>
+            <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
               先从分类看价格库健康度：哪些业务线已有价格，哪些还只是产品占位。
             </p>
           </div>
-          <AdminLink href="/admin/products" className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900">
+          <AdminLink href="/admin/products" className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline">
             去产品库
             <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
           </AdminLink>
@@ -537,37 +570,39 @@ export default async function AdminPricesPage({
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {categorySummaries.map((summary) => (
-            <div key={summary.category} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+            <div key={summary.category} className="rounded-admin-card border border-admin-border bg-admin-surface p-4 dark:border-admin-border-strong dark:bg-admin-surface">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="font-black text-slate-950 dark:text-slate-50">{categoryLabel(summary.category)}</div>
-                  <div className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  <div className="font-semibold text-admin-text dark:text-admin-text">{categoryLabel(summary.category)}</div>
+                  <div className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                     {categoryMeta[summary.category]?.description || "自定义分类。"}
                   </div>
                 </div>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                <span className="shrink-0 whitespace-nowrap rounded-full bg-admin-chip px-2.5 py-1 text-xs font-semibold
+                  text-admin-text-secondary dark:bg-admin-chip dark:text-admin-text-secondary"
+                >
                   {summary.products.length} 产品
                 </span>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="text-lg font-black text-slate-950 dark:text-slate-50">{summary.productsWithPrices}</div>
-                  <div className="mt-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">有价格</div>
+                <div className="rounded-lg bg-admin-surface-subtle p-2 dark:bg-admin-chip">
+                  <div className="text-lg font-semibold text-admin-text dark:text-admin-text">{summary.productsWithPrices}</div>
+                  <div className="mt-1 text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">有价格</div>
                 </div>
-                <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="text-lg font-black text-slate-950 dark:text-slate-50">{summary.planCount}</div>
-                  <div className="mt-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">套餐</div>
+                <div className="rounded-lg bg-admin-surface-subtle p-2 dark:bg-admin-chip">
+                  <div className="text-lg font-semibold text-admin-text dark:text-admin-text">{summary.planCount}</div>
+                  <div className="mt-1 text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">套餐</div>
                 </div>
-                <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="text-lg font-black text-slate-950 dark:text-slate-50">{summary.priceCount}</div>
-                  <div className="mt-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">价格</div>
+                <div className="rounded-lg bg-admin-surface-subtle p-2 dark:bg-admin-chip">
+                  <div className="text-lg font-semibold text-admin-text dark:text-admin-text">{summary.priceCount}</div>
+                  <div className="mt-1 text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">价格</div>
                 </div>
               </div>
 
-              <div className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+              <div className="mt-4 text-xs text-admin-text-muted dark:text-admin-text-muted">
                 价格范围：
-                <span className="font-black text-slate-900 dark:text-slate-100">
+                <span className="font-semibold text-admin-text dark:text-admin-text">
                   {summary.range.min === null
                     ? "暂无"
                     : `${formatUsd(summary.range.min)} - ${formatUsd(summary.range.max ?? summary.range.min)}`}
@@ -575,7 +610,7 @@ export default async function AdminPricesPage({
               </div>
 
               {(summary.staleCount > 0 || summary.noSourceCount > 0) ? (
-                <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
+                <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
                   <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700 ring-1 ring-red-200">
                     过期 {summary.staleCount}
                   </span>
@@ -590,25 +625,20 @@ export default async function AdminPricesPage({
       </AdminCard>
 
       <AdminCard className="mb-6">
-        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">产品价格覆盖</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              每个产品独立展示分类、状态、套餐数、地区覆盖和价格范围，适合判断下一步补采对象。
-            </p>
-          </div>
-          <AdminLink href="/admin/review" className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900">
+        <AdminSectionHeader title="产品价格覆盖" description="每个产品独立展示分类、状态、套餐数、地区覆盖和价格范围，适合判断下一步补采对象。" action={
+          <AdminLink href={productSlug ? `/admin/review?product=${encodeURIComponent(productSlug)}` : "/admin/review"}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/40">
             去审核中心
             <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
           </AdminLink>
-        </div>
+        } />
 
-        <div className="mb-5 max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mb-4 min-w-0">
           <SegmentedControl
             ariaLabel="正式价格产品状态"
             value={selectedState}
             tone="blue"
-            className="min-w-[520px]"
             items={[
               { label: `全部 ${activeTotal}`, value: "all", href: stateHref("all") },
               ...(["exception", "pending", "not_started", "published"] as AdminOperationalStatus[]).map(
@@ -622,16 +652,20 @@ export default async function AdminPricesPage({
           />
         </div>
 
+        <AdminPagination {...productList.pagination} id="price-products" ariaLabel="价格产品分页" className="mb-4" />
         <div className="grid gap-3 lg:grid-cols-2">
-          {visibleProductSummaries.map((summary) => {
+          {productList.items.map((summary) => {
             const assessment = assessProduct(summary.product);
             return (
-            <div key={summary.product.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+            <div key={summary.product.id} id={`price-product-${summary.product.id}`}
+              className="scroll-mt-24 rounded-admin-card border border-admin-border bg-admin-surface p-4
+                dark:border-admin-border-strong dark:bg-admin-surface">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-black text-slate-950 dark:text-slate-50">{summary.product.name}</h3>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <AdminProductLogo slug={summary.product.slug} name={summary.product.name} size="md"/>
+                    <h3 className="min-w-0 break-words font-semibold text-admin-text dark:text-admin-text">{summary.product.name}</h3>
+                    <span className="rounded-full bg-admin-chip px-2.5 py-1 text-xs font-semibold text-admin-text-secondary dark:bg-admin-chip dark:text-admin-text-secondary">
                       {categoryLabel(summary.product.category)}
                     </span>
                     <AdminStatusBadge
@@ -639,12 +673,12 @@ export default async function AdminPricesPage({
                       title={assessment?.reason}
                     />
                   </div>
-                  <div className="mt-1 font-mono text-xs text-slate-400">
+                  <div className="mt-1 font-mono text-xs text-admin-text-faint">
                     {summary.product.slug} · {summary.product.provider || "未填服务商"}
                   </div>
                 </div>
-                <div className="text-right text-xs text-slate-500 dark:text-slate-400">
-                  <div className="font-black text-slate-950 dark:text-slate-50">
+                <div className="text-right text-xs text-admin-text-muted dark:text-admin-text-muted">
+                  <div className="font-semibold text-admin-text dark:text-admin-text">
                     {summary.product.priceCount} 条价格
                   </div>
                   <div>{summary.countryCount} 个地区</div>
@@ -652,28 +686,28 @@ export default async function AdminPricesPage({
               </div>
 
               <div className="mt-4 grid grid-cols-4 gap-2 text-center">
-                <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="text-lg font-black text-slate-950 dark:text-slate-50">{summary.product.planCount}</div>
-                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">套餐</div>
+                <div className="rounded-lg bg-admin-surface-subtle p-2 dark:bg-admin-chip">
+                  <div className="text-lg font-semibold text-admin-text dark:text-admin-text">{summary.product.planCount}</div>
+                  <div className="text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">套餐</div>
                 </div>
                 <div className="rounded-lg bg-emerald-50 p-2">
-                  <div className="text-lg font-black text-emerald-700">{summary.verifiedCount}</div>
-                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">已验证</div>
+                  <div className="text-lg font-semibold text-emerald-700">{summary.verifiedCount}</div>
+                  <div className="text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">已验证</div>
                 </div>
                 <div className="rounded-lg bg-red-50 p-2">
-                  <div className="text-lg font-black text-red-700">{summary.stalePrices}</div>
-                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">过期</div>
+                  <div className="text-lg font-semibold text-red-700">{summary.stalePrices}</div>
+                  <div className="text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">过期</div>
                 </div>
                 <div className="rounded-lg bg-amber-50 p-2">
-                  <div className="text-lg font-black text-amber-700">{summary.noSourcePrices}</div>
-                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">缺来源</div>
+                  <div className="text-lg font-semibold text-amber-700">{summary.noSourcePrices}</div>
+                  <div className="text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">缺来源</div>
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-admin-surface-subtle p-3 text-sm dark:bg-admin-chip">
                 <div>
-                  <div className="text-xs font-bold text-slate-500 dark:text-slate-400">价格范围</div>
-                  <div className="mt-1 font-black text-slate-950 dark:text-slate-50">
+                  <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">价格范围</div>
+                  <div className="mt-1 font-semibold text-admin-text dark:text-admin-text">
                     {summary.range.min === null
                       ? "暂无正式价格"
                       : `${formatUsd(summary.range.min)} - ${formatUsd(summary.range.max ?? summary.range.min)}`}
@@ -681,37 +715,44 @@ export default async function AdminPricesPage({
                 </div>
                 <div className="flex gap-2">
                   <AdminLink
-                    href={`/admin/products/${summary.product.id}/edit`}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    href={withAdminReturnTo(`/admin/products/${summary.product.id}/edit`,adminListLocation("/admin/prices",params,`price-product-${summary.product.id}`))}
+                    className="rounded-lg border border-admin-border bg-admin-surface px-3 py-1.5 text-xs
+                      font-semibold text-admin-text-body hover:bg-admin-surface-subtle
+                      dark:border-admin-border-strong dark:bg-admin-surface dark:text-admin-text-body
+                      dark:hover:bg-admin-chip"
                   >
                     管理产品
                   </AdminLink>
                 </div>
               </div>
-              <div className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              <div className="mt-3 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                 {assessment?.reason}
               </div>
             </div>
           );})}
         </div>
+      <AdminPagination {...productList.pagination} ariaLabel="价格产品底部分页" className="mt-4" />
       </AdminCard>
 
       <AdminCard>
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">地区价格明细</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">地区价格明细</h2>
+            <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
               明细用于排查单个地区价格，不作为页面第一判断入口。
             </p>
           </div>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">
             共 {siteStats.priceCount} 条正式价格，当前第 {safeDetailPage} / {detailTotalPages} 页
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <AdminPagination id="price-details" page={safeDetailPage} totalPages={detailTotalPages}
+          total={siteStats.priceCount} pageSize={detailPageSize} pageHref={buildDetailPageHref}
+          ariaLabel="地区价格分页" className="mb-4" />
+        <div className="overflow-x-auto rounded-xl border border-admin-border dark:border-admin-border-strong">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+            <thead className="border-b border-admin-border bg-admin-surface-subtle text-xs text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">分类 / 产品</th>
                 <th className="px-4 py-3 font-medium">套餐</th>
@@ -722,40 +763,43 @@ export default async function AdminPricesPage({
                 <th className="px-4 py-3 font-medium">更新时间</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
+            <tbody className="divide-y divide-admin-border bg-admin-surface dark:bg-admin-surface">
               {detailRows.map((price) => (
-                <tr key={price.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800">
+                <tr key={price.id} className="align-top hover:bg-admin-surface-subtle dark:hover:bg-admin-chip">
                   <td className="px-4 py-4">
-                    <div className="text-xs font-black text-slate-400">
+                    <div className="text-xs font-semibold text-admin-text-faint">
                       {categoryLabel(price.category)}
                     </div>
-                    <div className="mt-1 font-black text-slate-950 dark:text-slate-50">{price.product_name}</div>
-                    <div className="mt-1 font-mono text-xs text-slate-400">{price.product_slug}</div>
+                    <div className="mt-1 flex items-center gap-3">
+                      <AdminProductLogo slug={price.product_slug} name={price.product_name}/>
+                      <div className="font-semibold text-admin-text">{price.product_name}</div>
+                    </div>
+                    <div className="mt-1 font-mono text-xs text-admin-text-faint">{price.product_slug}</div>
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="font-bold text-slate-800 dark:text-slate-200">{price.plan_name}</div>
-                    <div className="mt-1 font-mono text-xs text-slate-400">{price.plan_slug}</div>
+                    <div className="font-semibold text-admin-text dark:text-admin-text-body">{price.plan_name}</div>
+                    <div className="mt-1 font-mono text-xs text-admin-text-faint">{price.plan_slug}</div>
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="font-black text-slate-900 dark:text-slate-100">
+                    <div className="font-semibold text-admin-text dark:text-admin-text">
                       {price.country_name_zh || price.country_name_en}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {price.country_code} · {platformLabel(normalizeStatus(price.billing_platform))}
                     </div>
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="text-base font-black text-slate-950 dark:text-slate-50">
+                    <div className="text-base font-semibold text-admin-text dark:text-admin-text">
                       {formatUsd(toNumber(price.price_usd))}
                     </div>
-                    <div className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <div className="mt-1 text-xs font-medium text-admin-text-muted dark:text-admin-text-muted">
                       {formatMoney(toNumber(price.local_price), price.currency)}
                     </div>
                     {price.diff_vs_us_percent !== null ? (
-                      <div className="mt-1 text-xs text-slate-400">
+                      <div className="mt-1 text-xs text-admin-text-faint">
                         较美国 {toNumber(price.diff_vs_us_percent).toFixed(1)}%
                       </div>
                     ) : null}
@@ -772,7 +816,7 @@ export default async function AdminPricesPage({
                         return assessment ? (
                           <>
                             <AdminStatusBadge status={assessment.status} title={assessment.reason} />
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                            <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">
                               数据：{qualityLabel(normalizeStatus(price.data_quality))}
                             </span>
                           </>
@@ -782,15 +826,15 @@ export default async function AdminPricesPage({
                   </td>
 
                   <td className="max-w-[220px] px-4 py-4">
-                    <div className="truncate font-bold text-slate-700 dark:text-slate-200">
+                    <div className="truncate font-semibold text-admin-text-body dark:text-admin-text-body">
                       {price.source_name || "无来源"}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-admin-text-faint">
                       置信度 {price.confidence_score}
                     </div>
                   </td>
 
-                  <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">
+                  <td className="px-4 py-4 text-xs text-admin-text-muted dark:text-admin-text-muted">
                     {formatDate(price.last_checked_at || price.updated_at)}
                   </td>
                 </tr>
@@ -798,7 +842,7 @@ export default async function AdminPricesPage({
 
               {siteStats.priceCount === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm font-bold text-slate-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-sm font-semibold text-admin-text-faint">
                     暂无正式价格数据。
                   </td>
                 </tr>
@@ -807,40 +851,8 @@ export default async function AdminPricesPage({
           </table>
         </div>
 
-        {detailTotalPages > 1 ? (
-          <div className="mt-4 flex flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between">
-            <div className="font-bold text-slate-500 dark:text-slate-400">
-              每页 {detailPageSize} 条，当前显示第 {safeDetailPage} 页。
-            </div>
-            <div className="flex items-center gap-2">
-              <AdminLink
-                href={buildDetailPageHref(Math.max(1, safeDetailPage - 1))}
-                aria-disabled={safeDetailPage <= 1}
-                className={`rounded-lg border px-3 py-1.5 font-bold ${
-                  safeDetailPage <= 1
-                    ? "pointer-events-none border-slate-100 text-slate-300 dark:border-slate-800"
-                    : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                }`}
-              >
-                上一页
-              </AdminLink>
-              <span className="text-slate-500 dark:text-slate-400">
-                {safeDetailPage} / {detailTotalPages}
-              </span>
-              <AdminLink
-                href={buildDetailPageHref(Math.min(detailTotalPages, safeDetailPage + 1))}
-                aria-disabled={safeDetailPage >= detailTotalPages}
-                className={`rounded-lg border px-3 py-1.5 font-bold ${
-                  safeDetailPage >= detailTotalPages
-                    ? "pointer-events-none border-slate-100 text-slate-300 dark:border-slate-800"
-                    : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                }`}
-              >
-                下一页
-              </AdminLink>
-            </div>
-          </div>
-        ) : null}
+        <AdminPagination page={safeDetailPage} totalPages={detailTotalPages} total={siteStats.priceCount}
+          pageSize={detailPageSize} pageHref={buildDetailPageHref} ariaLabel="地区价格底部分页" className="mt-4" />
       </AdminCard>
     </div>
   );

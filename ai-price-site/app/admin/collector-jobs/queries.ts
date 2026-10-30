@@ -1,8 +1,13 @@
+import { claudeReviewPolicyId } from "./claude-reuse-model";
+import { parseAdminProductFilter } from "@/lib/admin-workflow-context";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { prisma } from "../../../lib/prisma";
 import type { AvailabilityRow, JobRow, RunRow } from "./model";
 
-export async function getCollectorJobsPageData() {  return measureAdminWorkload(
+export async function getCollectorJobsPageData(raw: {product?:string;q?:string;platform?:string} = {}) {
+  const {product:productSlug,q,platform} = parseAdminProductFilter(raw);
+  const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+  return measureAdminWorkload(
     "collector-jobs.page-data",
     () => Promise.all([
     prisma.$queryRaw<JobRow[]>`
@@ -32,7 +37,15 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         JOIN products product ON product.id = job.product_id
         LEFT JOIN price_sources source ON source.id = job.source_id
         LEFT JOIN product_discovery_candidates candidate ON candidate.id = job.discovery_candidate_id
-        WHERE job.status <> 'archived'
+        WHERE job.status <> 'archived' AND (${productSlug} = '' OR product.slug = ${productSlug})
+        AND (${q} = '' OR product.slug ILIKE ${pattern} OR product.name ILIKE ${pattern})
+        AND (${platform} = ''
+          OR (${platform} = 'ios'
+            AND COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store')
+          OR (${platform} = 'web'
+            AND (COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown')
+              IN ('official_page','official_site','pricing_page')
+              OR source.type::text = 'official_page')))
         ORDER BY
           CASE job.status
             WHEN 'failed' THEN 1
@@ -54,6 +67,7 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         FROM region_prices price
         JOIN (SELECT DISTINCT product_id FROM job_scope WHERE product_id IS NOT NULL) scoped_product
           ON scoped_product.product_id = price.product_id
+        WHERE (${platform} = '' OR price.billing_platform::text = ${platform})
         GROUP BY price.product_id
       ),
       observation_state AS (
@@ -72,6 +86,7 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         FROM price_observations observation
         JOIN (SELECT DISTINCT product_id FROM job_scope WHERE product_id IS NOT NULL) scoped_product
           ON scoped_product.product_id = observation.product_id
+        WHERE (${platform} = '' OR observation.billing_platform::text = ${platform})
         GROUP BY observation.product_id
       )
       SELECT
@@ -92,6 +107,20 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         job.last_error,
         job.priority,
         job.job_config ->> 'collector_kind' AS collector_kind,
+        CASE
+          WHEN job.job_config ->> 'official_web_review_policy' IS NULL THEN 'pending'
+          WHEN job.job_config ->> 'official_web_review_policy' = ${claudeReviewPolicyId} THEN 'candidate'
+          ELSE 'unknown'
+        END AS review_mode,
+        job.job_config ->> 'operational_state' AS operational_state,
+        job.job_config ->> 'repair_state' AS repair_state,
+        latest_runs.raw_payload ->> 'collection_outcome' AS collection_outcome,
+        (latest_runs.raw_payload ->> 'inserted_observation_count')::int AS collected_count,
+        (latest_runs.raw_payload ->> 'skipped_observation_count')::int AS skipped_count,
+        COALESCE(latest_runs.raw_payload ? 'review_outcome', FALSE)
+          OR COALESCE(jsonb_path_exists(latest_runs.raw_payload,
+            '$.markets[*].auto_review ? (@.type() == "object")'), FALSE) AS has_automatic_review,
+        jsonb_path_query_first(latest_runs.raw_payload, '$.markets[*].issues[*]') #>> '{}' AS failure_reason,
         job.discovery_candidate_name,
         latest_runs.status AS latest_run_status,
         latest_runs.started_at AS latest_run_started_at,
@@ -105,7 +134,8 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,approved_count}')::int, 0) AS latest_approved_count,
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,pending_stability_count}')::int, 0) AS latest_pending_stability_count,
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,isolated_count}')::int, 0) AS latest_isolated_count,
-        COALESCE((latest_runs.raw_payload #>> '{review_outcome,published_price_count}')::int, 0) AS latest_published_price_count,
+        COALESCE((latest_runs.raw_payload ->> 'published_price_count')::int,
+          (latest_runs.raw_payload #>> '{review_outcome,published_price_count}')::int, 0) AS latest_published_price_count,
         COALESCE((latest_runs.raw_payload #>> '{review_outcome,storefront_count}')::int, 0) AS latest_storefront_count,
         CASE
           WHEN latest_runs.started_at IS NULL THEN NULL
@@ -171,6 +201,14 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         source.name AS source_name,
         run.status,
         run.collector_kind,
+        run.raw_payload ->> 'collection_outcome' AS collection_outcome,
+        (run.raw_payload ->> 'inserted_observation_count')::int AS collected_count,
+        (run.raw_payload ->> 'skipped_observation_count')::int AS skipped_count,
+        run.raw_payload #>> '{repair_resolution,state}' AS repair_state,
+        COALESCE(run.raw_payload ? 'review_outcome', FALSE)
+          OR COALESCE(jsonb_path_exists(run.raw_payload,
+            '$.markets[*].auto_review ? (@.type() == "object")'), FALSE) AS has_automatic_review,
+        jsonb_path_query_first(run.raw_payload, '$.markets[*].issues[*]') #>> '{}' AS failure_reason,
         run.started_at,
         run.finished_at,
         run.duration_ms,
@@ -182,6 +220,7 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         run.raw_payload ->> 'state' AS runner_state,
         GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(run.finished_at, NOW()) - run.started_at)))::int AS run_age_seconds,
         COALESCE(
+          (run.raw_payload ->> 'inserted_observation_count')::int,
           (run.raw_payload #>> '{review_outcome,observed_count}')::int,
           observation_outcome.observed_count,
           0
@@ -212,6 +251,7 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
           0
         )::int AS anomaly_observation_count,
         COALESCE(
+          (run.raw_payload ->> 'published_price_count')::int,
           (run.raw_payload #>> '{review_outcome,published_price_count}')::int,
           published_outcome.published_price_count,
           0
@@ -269,6 +309,14 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
             run.started_at + INTERVAL '2 hours'
           )
       ) published_outcome ON TRUE
+      WHERE TRUE AND (${productSlug} = '' OR product.slug = ${productSlug})
+        AND (${q} = '' OR product.slug ILIKE ${pattern} OR product.name ILIKE ${pattern})
+        AND (${platform} = ''
+          OR (${platform} = 'ios' AND COALESCE(run.collector_kind,source.type::text) = 'app_store')
+          OR (${platform} = 'web'
+            AND (COALESCE(run.collector_kind,source.type::text)
+              IN ('official_page','official_site','pricing_page')
+              OR source.type::text = 'official_page')))
       ORDER BY run.started_at DESC
       LIMIT 50
     `,
@@ -287,6 +335,9 @@ export async function getCollectorJobsPageData() {  return measureAdminWorkload(
         availability.reason,
         availability.checked_at
       FROM app_store_availability_latest_view availability
+      WHERE (${productSlug} = '' OR availability.product_slug = ${productSlug})
+        AND (${q} = '' OR availability.product_slug ILIKE ${pattern} OR availability.product_name ILIKE ${pattern})
+        AND ${platform} <> 'web'
       ORDER BY availability.checked_at DESC, availability.product_name, availability.country_code
       LIMIT 80
     `,

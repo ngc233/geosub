@@ -150,11 +150,13 @@ async function getCollectorRunOutcomeSummary(runIds: string[]) {
   return new Map(rows.map((row) => [row.run_id, normalizeOutcomeSummary(row)]));
 }
 
-export async function getCollectorRunHistoryRows(productQuery: string, limit = 12) {
+export async function getCollectorRunHistoryRows(productQuery: string, limit = 12, scope: {product?:string;runId?:string} = {}) {
   const trimmedQuery = productQuery.trim();
 
   const rows = await prisma.collectorJobRun.findMany({
-    where: trimmedQuery
+    where: {
+      ...(scope.runId ? {id:scope.runId} : {}),
+      ...(scope.product ? {product:{slug:scope.product}} : trimmedQuery
       ? {
           product: {
             OR: [
@@ -173,7 +175,8 @@ export async function getCollectorRunHistoryRows(productQuery: string, limit = 1
             ],
           },
         }
-      : undefined,
+      : {}),
+    },
     orderBy: {
       startedAt: "desc",
     },

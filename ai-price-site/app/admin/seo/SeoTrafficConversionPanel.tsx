@@ -34,18 +34,18 @@ function Metric({
   tone?: "slate" | "blue" | "emerald";
 }) {
   const toneClassName = {
-    slate: "text-slate-950 dark:text-slate-50",
+    slate: "text-admin-text dark:text-admin-text",
     blue: "text-blue-700",
     emerald: "text-emerald-700",
   }[tone];
 
   return (
-    <div className="border-t border-slate-200 py-4 first:border-t-0 md:border-l md:border-t-0 md:px-5 md:first:border-l-0 md:first:pl-0 dark:border-slate-700">
-      <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{label}</div>
-      <div className={`mt-1 text-2xl font-black ${toneClassName}`}>
+    <div className="border-t border-admin-border py-4 first:border-t-0 md:border-l md:border-t-0 md:px-5 md:first:border-l-0 md:first:pl-0 dark:border-admin-border-strong">
+      <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">{label}</div>
+      <div className={`mt-1 text-2xl font-semibold ${toneClassName}`}>
         {value.toLocaleString("zh-CN")}
       </div>
-      <div className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{helper}</div>
+      <div className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{helper}</div>
     </div>
   );
 }
@@ -58,40 +58,40 @@ function EngineRow({
   metric: SeoConversionMetric;
 }) {
   return (
-    <div className="grid grid-cols-[100px_repeat(6,minmax(120px,1fr))] items-center border-t border-slate-100 px-4 py-3 text-sm first:border-t-0 dark:border-slate-800">
+    <div className="grid grid-cols-[100px_repeat(6,minmax(120px,1fr))] items-center border-t border-admin-border px-4 py-3 text-sm first:border-t-0 dark:border-admin-border">
       <div>
-        <span className={`rounded-md px-2 py-1 text-xs font-black ring-1 ${engineClassName(engine)}`}>
+        <span className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${engineClassName(engine)}`}>
           {engineLabel(engine)}
         </span>
       </div>
-      <div className="font-black text-slate-950 dark:text-slate-50">{metric.landingSessions}</div>
+      <div className="font-semibold text-admin-text dark:text-admin-text">{metric.landingSessions}</div>
       <div>
-        <span className="font-black text-slate-950 dark:text-slate-50">{metric.pricingSessions}</span>
-        <span className="ml-1 text-xs text-slate-400">
+        <span className="font-semibold text-admin-text dark:text-admin-text">{metric.pricingSessions}</span>
+        <span className="ml-1 text-xs text-admin-text-faint">
           {rateLabel(metric.pricingSessions, metric.landingSessions)}
         </span>
       </div>
       <div>
-        <span className="font-black text-slate-950 dark:text-slate-50">{metric.planSessions}</span>
-        <span className="ml-1 text-xs text-slate-400">
+        <span className="font-semibold text-admin-text dark:text-admin-text">{metric.planSessions}</span>
+        <span className="ml-1 text-xs text-admin-text-faint">
           {rateLabel(metric.planSessions, metric.landingSessions)}
         </span>
       </div>
       <div>
-        <span className="font-black text-slate-950 dark:text-slate-50">{metric.officialSessions}</span>
-        <span className="ml-1 text-xs text-slate-400">
+        <span className="font-semibold text-admin-text dark:text-admin-text">{metric.officialSessions}</span>
+        <span className="ml-1 text-xs text-admin-text-faint">
           {rateLabel(metric.officialSessions, metric.landingSessions)}
         </span>
       </div>
       <div>
-        <span className="font-black text-slate-950 dark:text-slate-50">{metric.commercialSessions}</span>
-        <span className="ml-1 text-xs text-slate-400">
+        <span className="font-semibold text-admin-text dark:text-admin-text">{metric.commercialSessions}</span>
+        <span className="ml-1 text-xs text-admin-text-faint">
           {rateLabel(metric.commercialSessions, metric.landingSessions)}
         </span>
       </div>
       <div>
-        <span className="font-black text-emerald-700">{metric.completedSessions}</span>
-        <span className="ml-1 text-xs text-slate-400">
+        <span className="font-semibold text-emerald-700">{metric.completedSessions}</span>
+        <span className="ml-1 text-xs text-admin-text-faint">
           {rateLabel(metric.completedSessions, metric.landingSessions)}
         </span>
       </div>
@@ -108,17 +108,19 @@ export default function SeoTrafficConversionPanel({
 
   return (
     <AdminCard className="mb-6">
-      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-start lg:justify-between dark:border-slate-700">
+      <div className="flex flex-col gap-4 border-b border-admin-border pb-5 lg:flex-row lg:items-start lg:justify-between dark:border-admin-border-strong">
         <div>
           <div className="flex items-center gap-2">
             <Search aria-hidden="true" className="size-5 text-blue-700" />
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">搜索落地后的用户动作</h2>
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">搜索落地后的用户动作</h2>
           </div>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">
             统计由 Google 或 Bing 进入 GeoSub 公开页面的会话，观察用户是否继续进入价格内容、查看套餐并访问官网。它用于判断搜索流量有没有产生真实兴趣，不与站内搜索漏斗混算。
           </p>
         </div>
-        <div className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <div className="shrink-0 rounded-lg border border-admin-border bg-admin-surface-subtle px-3 py-2
+          text-xs leading-5 text-admin-text-secondary dark:border-admin-border-strong dark:bg-admin-chip
+          dark:text-admin-text-secondary">
           滚动 {overview.windowDays} 天<br />同一访问最多观察 {overview.sessionMinutes} 分钟
         </div>
       </div>
@@ -154,11 +156,11 @@ export default function SeoTrafficConversionPanel({
         />
       </div>
 
-      <section className="border-t border-slate-200 py-5 dark:border-slate-700">
-        <h3 className="text-sm font-black text-slate-950 dark:text-slate-50">按搜索引擎比较</h3>
-        <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+      <section className="border-t border-admin-border py-5 dark:border-admin-border-strong">
+        <h3 className="text-sm font-semibold text-admin-text dark:text-admin-text">按搜索引擎比较</h3>
+        <div className="mt-3 overflow-x-auto rounded-lg border border-admin-border dark:border-admin-border-strong">
           <div className="min-w-[960px]">
-            <div className="grid grid-cols-[100px_repeat(6,minmax(120px,1fr))] bg-slate-50 px-4 py-3 text-xs font-black text-slate-400 dark:bg-slate-800">
+            <div className="grid grid-cols-[100px_repeat(6,minmax(120px,1fr))] bg-admin-surface-subtle px-4 py-3 text-xs font-semibold text-admin-text-faint dark:bg-admin-chip">
               <div>来源</div>
               <div>落地会话</div>
               <div>价格内容</div>
@@ -172,7 +174,7 @@ export default function SeoTrafficConversionPanel({
                 <EngineRow key={item.engine} engine={item.engine} metric={item} />
               ))
             ) : (
-              <div className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="px-4 py-8 text-center text-sm text-admin-text-muted dark:text-admin-text-muted">
                 当前观察窗内还没有可归因的 Google/Bing 搜索落地会话。
               </div>
             )}
@@ -180,17 +182,17 @@ export default function SeoTrafficConversionPanel({
         </div>
       </section>
 
-      <section className="border-t border-slate-200 py-5 dark:border-slate-700">
+      <section className="border-t border-admin-border py-5 dark:border-admin-border-strong">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-sm font-black text-slate-950 dark:text-slate-50">主要搜索落地页</h3>
-            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            <h3 className="text-sm font-semibold text-admin-text dark:text-admin-text">主要搜索落地页</h3>
+            <p className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
               先看哪些页面获得搜索访问，再判断它们有没有把用户带到套餐和官网。
             </p>
           </div>
           <AdminLink
             href="/admin/events?eventKey=click_official"
-            className="inline-flex items-center gap-1.5 text-xs font-black text-blue-700 hover:text-blue-900"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-admin-accent hover:underline"
           >
             查看官网点击明细
             <ArrowRight aria-hidden="true" className="size-4" />
@@ -198,41 +200,41 @@ export default function SeoTrafficConversionPanel({
         </div>
 
         {overview.topPages.length > 0 ? (
-          <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-            <div className="min-w-[940px] divide-y divide-slate-100">
+          <div className="mt-3 overflow-x-auto rounded-lg border border-admin-border dark:border-admin-border-strong">
+            <div className="min-w-[940px] divide-y divide-admin-border">
               {overview.topPages.map((item) => (
                 <div
                   key={`${item.engine}:${item.path}`}
                   className="grid grid-cols-[90px_minmax(320px,1fr)_110px_120px_120px_120px] items-center px-4 py-3 text-sm"
                 >
                   <div>
-                    <span className={`rounded-md px-2 py-1 text-xs font-black ring-1 ${engineClassName(item.engine)}`}>
+                    <span className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${engineClassName(item.engine)}`}>
                       {engineLabel(item.engine)}
                     </span>
                   </div>
                   <AdminLink
                     href={item.path}
                     target="_blank"
-                    className="inline-flex min-w-0 items-center gap-1.5 font-mono text-xs font-bold text-blue-700 hover:text-blue-900"
+                    className="inline-flex min-w-0 items-center gap-1.5 font-mono text-xs font-medium text-admin-accent hover:underline"
                   >
                     <span className="truncate">{item.path}</span>
                     <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" />
                   </AdminLink>
                   <div>
-                    <span className="font-black text-slate-950 dark:text-slate-50">{item.landingSessions}</span>
-                    <span className="ml-1 text-xs text-slate-400">次落地</span>
+                    <span className="font-semibold text-admin-text dark:text-admin-text">{item.landingSessions}</span>
+                    <span className="ml-1 text-xs text-admin-text-faint">次落地</span>
                   </div>
                   <div>
-                    <span className="font-black text-slate-950 dark:text-slate-50">{item.pricingSessions}</span>
-                    <span className="ml-1 text-xs text-slate-400">进价格页</span>
+                    <span className="font-semibold text-admin-text dark:text-admin-text">{item.pricingSessions}</span>
+                    <span className="ml-1 text-xs text-admin-text-faint">进价格页</span>
                   </div>
                   <div>
-                    <span className="font-black text-slate-950 dark:text-slate-50">{item.planSessions}</span>
-                    <span className="ml-1 text-xs text-slate-400">看套餐</span>
+                    <span className="font-semibold text-admin-text dark:text-admin-text">{item.planSessions}</span>
+                    <span className="ml-1 text-xs text-admin-text-faint">看套餐</span>
                   </div>
                   <div>
-                    <span className="font-black text-emerald-700">{item.officialSessions}</span>
-                    <span className="ml-1 text-xs text-slate-400">进官网</span>
+                    <span className="font-semibold text-emerald-700">{item.officialSessions}</span>
+                    <span className="ml-1 text-xs text-admin-text-faint">进官网</span>
                   </div>
                 </div>
               ))}
@@ -241,17 +243,17 @@ export default function SeoTrafficConversionPanel({
         ) : null}
       </section>
 
-      <div className="grid gap-4 border-t border-slate-200 pt-5 text-xs leading-5 text-slate-500 md:grid-cols-3 dark:border-slate-700 dark:text-slate-400">
+      <div className="grid gap-4 border-t border-admin-border pt-5 text-xs leading-5 text-admin-text-muted md:grid-cols-3 dark:border-admin-border-strong dark:text-admin-text-muted">
         <div>
-          <div className="font-black text-slate-700 dark:text-slate-200">站长平台口径</div>
+          <div className="font-semibold text-admin-text-body dark:text-admin-text-body">站长平台口径</div>
           Google/Bing 快照看展示、点击和收录，用固定报表周期比较前后变化。
         </div>
         <div>
-          <div className="font-black text-slate-700 dark:text-slate-200">站内转化口径</div>
+          <div className="font-semibold text-admin-text-body dark:text-admin-text-body">站内转化口径</div>
           本面板从带搜索来源的公开页面会话起算；直接访问、站内搜索和无法识别来源的访问不计入。
         </div>
         <div>
-          <div className="font-black text-slate-700 dark:text-slate-200">判断方式</div>
+          <div className="font-semibold text-admin-text-body dark:text-admin-text-body">判断方式</div>
           站长平台点击和本站会话受同意状态、隐私设置及时区影响，判断趋势，不要求数字完全相等。
         </div>
       </div>

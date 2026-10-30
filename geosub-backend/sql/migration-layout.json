@@ -697,6 +697,15 @@
       "legacyChecksums": [
         "e5c9c4354eb1e7ba3f60423c991115f36a31f150c13e48d4e00c03188f06a27f"
       ]
+    },
+    {
+      "id": "schema:059",
+      "file": "sql/schema/059_audit_actor_compatibility.sql",
+      "legacyBaseline": false,
+      "legacyFile": "sql/schema/059_audit_actor_compatibility.sql",
+      "legacyChecksums": [
+        "2ef1f35b47461096ad4756a2f90ef3654d8c1ad6c6c16221093cbf00afc980e1"
+      ]
     }
   ],
   "backfill": [

@@ -1,11 +1,11 @@
+import { adminControlClassName } from "./admin-control";
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 function joinClasses(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-const inputBase =
-  "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-50";
+const inputBase = `${adminControlClassName} w-full`;
 
 export function AdminInput({
   label,
@@ -19,15 +19,15 @@ export function AdminInput({
   return (
     <label className="block">
       {label ? (
-        <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+        <span className="mb-2 block text-sm font-medium text-admin-text-body">
           {label}
         </span>
       ) : null}
 
-      <input {...props} className={joinClasses(inputBase, className)} />
+      <input {...props} className={joinClasses(inputBase, "h-11", className)} />
 
       {helperText ? (
-        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{helperText}</p>
+        <p className="mt-2 text-xs leading-5 text-admin-text-muted">{helperText}</p>
       ) : null}
     </label>
   );
@@ -45,7 +45,7 @@ export function AdminTextarea({
   return (
     <label className="block">
       {label ? (
-        <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+        <span className="mb-2 block text-sm font-medium text-admin-text-body">
           {label}
         </span>
       ) : null}
@@ -54,13 +54,13 @@ export function AdminTextarea({
         {...props}
         className={joinClasses(
           inputBase,
-          "min-h-32 resize-y leading-6",
+          "min-h-32 resize-y py-3 leading-6",
           className
         )}
       />
 
       {helperText ? (
-        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{helperText}</p>
+        <p className="mt-2 text-xs leading-5 text-admin-text-muted">{helperText}</p>
       ) : null}
     </label>
   );

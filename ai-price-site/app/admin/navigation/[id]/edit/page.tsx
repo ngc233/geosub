@@ -1,3 +1,5 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
+import { adminControlClassName } from "@/components/admin/admin-control";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { notFound } from "next/navigation";
 import { AdminCard, AdminPageHeader } from "../../../../../components/admin/AdminCard";
@@ -20,7 +22,9 @@ function statusLabel(status: string) {
 
 export default async function EditNavigationItemPage({
   params,
+  searchParams,
 }: {
+  searchParams?:Promise<{returnTo?:string}>;
   params: Promise<{
     id: string;
   }>;
@@ -55,7 +59,9 @@ export default async function EditNavigationItemPage({
 
   const selectedLocale = getNavigationLocaleByDbValue(item.locale);
   const selectedPosition = getNavigationPositionByDbValue(item.position);
-  const backHref = `/admin/navigation?locale=${selectedLocale.value}&position=${selectedPosition.value}`;
+  const fallbackBackHref = `/admin/navigation?locale=${selectedLocale.value}&position=${selectedPosition.value}`;
+  const query=searchParams ? await searchParams : {};
+  const backHref=safeAdminReturnTo(query.returnTo,fallbackBackHref);
   const lockedHome = isNavigationHomeHref(item.href);
 
   return (
@@ -69,11 +75,12 @@ export default async function EditNavigationItemPage({
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <AdminCard>
           <AdminActionForm action={updateNavigationItem.bind(null, item.id)} className="space-y-6">
+            <input type="hidden" name="returnTo" value={backHref} />
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label
                   htmlFor="localeDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                  className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
                 >
                   当前语言
                 </label>
@@ -82,14 +89,14 @@ export default async function EditNavigationItemPage({
                   type="text"
                   value={selectedLocale.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  className={`${adminControlClassName} w-full h-11`}
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="positionDisplay"
-                  className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                  className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
                 >
                   当前位置
                 </label>
@@ -98,7 +105,7 @@ export default async function EditNavigationItemPage({
                   type="text"
                   value={selectedPosition.label}
                   readOnly
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  className={`${adminControlClassName} w-full h-11`}
                 />
               </div>
             </div>
@@ -106,7 +113,7 @@ export default async function EditNavigationItemPage({
             <div>
               <label
                 htmlFor="label"
-                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
               >
                 菜单名称
               </label>
@@ -116,14 +123,14 @@ export default async function EditNavigationItemPage({
                 type="text"
                 defaultValue={item.label}
                 required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800"
+                className={`${adminControlClassName} w-full h-11`}
               />
             </div>
 
             <div>
               <label
                 htmlFor="href"
-                className="mb-2 block text-sm font-black text-slate-700 dark:text-slate-200"
+                className="mb-2 block text-sm font-semibold text-admin-text-body dark:text-admin-text-body"
               >
                 链接
               </label>
@@ -135,37 +142,43 @@ export default async function EditNavigationItemPage({
                 readOnly={lockedHome}
                 required
                 className={[
-                  "w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm font-bold outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:focus:border-blue-800 dark:focus:ring-blue-800",
+                  [
+                    "w-full rounded-xl border border-admin-border px-4 py-3 font-mono text-sm font-semibold",
+                    "outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100",
+                    "dark:border-admin-border-strong dark:focus:border-blue-800 dark:focus:ring-blue-800"
+                  ].join(" "),
                   lockedHome
-                    ? "bg-slate-50 text-slate-400 dark:bg-slate-800"
-                    : "bg-white text-slate-950 dark:bg-slate-900 dark:text-slate-50",
+                    ? "bg-admin-surface-subtle text-admin-text-faint dark:bg-admin-chip"
+                    : "bg-admin-surface text-admin-text dark:bg-admin-surface dark:text-admin-text",
                 ].join(" ")}
               />
-              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              <p className="mt-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                 首页链接固定。其他内部链接必须使用当前语言路径，例如 /zh/ 或 /en/。
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
+              <label className="flex items-center gap-3 rounded-admin-card border border-admin-border bg-admin-surface-subtle px-4 py-3 dark:border-admin-border-strong dark:bg-admin-chip">
                 <input
                   name="external"
                   type="checkbox"
                   defaultChecked={item.external}
                   disabled={lockedHome}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-700 dark:border-slate-700 dark:text-blue-300"
+                  className="h-4 w-4 rounded border-admin-border-strong text-blue-700 dark:border-admin-border-strong dark:text-blue-300"
                 />
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">
                   外部链接
                 </span>
               </label>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+              <div className="rounded-admin-card border border-admin-border bg-admin-surface-subtle
+                px-4 py-3 text-sm font-semibold text-admin-text-muted dark:border-admin-border-strong
+                dark:bg-admin-chip dark:text-admin-text-muted">
                 当前状态：{statusLabel(String(item.status))}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row dark:border-slate-700">
+            <div className="flex flex-col gap-3 border-t border-admin-border pt-6 sm:flex-row dark:border-admin-border-strong">
               <AdminButton type="submit">
                 保存修改
               </AdminButton>
@@ -178,9 +191,9 @@ export default async function EditNavigationItemPage({
         </AdminCard>
 
         <AdminCard>
-          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">菜单信息</h2>
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">菜单信息</h2>
 
-          <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+          <div className="mt-5 space-y-4 text-sm leading-7 text-admin-text-secondary dark:text-admin-text-secondary">
             <p>
               所属语言：{selectedLocale.label}
             </p>
