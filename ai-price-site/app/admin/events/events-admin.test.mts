@@ -57,8 +57,11 @@ test("event log page supports operational filters pagination and export", () => 
   }
 
   assert.match(page, /PAGE_SIZE = 25/);
-  assert.match(page, /上一页/);
-  assert.match(page, /下一页/);
+  assert.match(page, /<AdminPagination/);
+  assert.match(page, /pageHref=\{\(next\)=>/);
+  const pager = readProjectFile("components/admin/AdminPagination.tsx");
+  assert.match(pager, /上一页/);
+  assert.match(pager, /下一页/);
   assert.match(page, /\/admin\/events\/export/);
   assert.match(page, /distinct: \["anonymousId"\]/);
   assert.doesNotMatch(page, /where: \{ status: "PUBLISHED" \}/);

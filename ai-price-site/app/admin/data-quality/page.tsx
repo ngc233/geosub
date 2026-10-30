@@ -1,3 +1,4 @@
+import { parseAdminProductFilter, matchesAdminProduct } from "@/lib/admin-workflow-context";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
 import { readAdminReadModel } from "../../../lib/admin-read-model-cache";
 import { countAdminOperationalAssessments } from "../../../lib/admin-operational-status";
@@ -14,7 +15,8 @@ import {
 } from "./queries";
 
 export const dynamic = "force-dynamic";
-export default async function AdminDataQualityPage() {
+export default async function AdminDataQualityPage({ searchParams }: { searchParams?: Promise<{ page?: string; product?: string; q?: string; returnTo?: string }> }) {
+  const params = searchParams ? await searchParams : {};
   const [qualityRows, latestRepairCycle] = await measureAdminWorkload(
     "data-quality.page-data",
     () => Promise.all([
@@ -26,7 +28,8 @@ export default async function AdminDataQualityPage() {
       getLatestRepairCycle(),
     ]),
   );
-  const rows = qualityRows.sort((a, b) => {
+  const filter = parseAdminProductFilter(params);
+  const rows = qualityRows.filter(row => matchesAdminProduct(row, filter)).sort((a, b) => {
     const healthA = getProductHealth(a);
     const healthB = getProductHealth(b);
     const priorityDiff = healthPriority(healthA.level) - healthPriority(healthB.level);
@@ -52,6 +55,9 @@ export default async function AdminDataQualityPage() {
 
   return (
     <DataQualityOverview
+      listParams={params}
+      filter={filter}
+      listPage={params.page}
       rows={rows}
       latestRepairCycle={latestRepairCycle}
       operationalCounts={operationalCounts}

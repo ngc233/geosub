@@ -16,7 +16,7 @@ test("collection redirect stays relative and preserves product scope", () => {
       },
       " netflix ",
     ),
-    "/admin/review?collectionQueued=2&collectionRun=queued&collectionScope=netflix&q=netflix",
+    "/admin/review?collectionQueued=2&collectionRun=queued&collectionScope=netflix&q=netflix&product=netflix",
   );
 });
 

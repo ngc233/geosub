@@ -1,181 +1,38 @@
 "use client";
-
-import { AdminActionForm } from "@/components/admin/AdminPermissions";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { AdminActionForm } from "@/components/admin/AdminPermissions";
+import { adminButtonClassName } from "@/components/admin/AdminButton";
+import { safeAdminHref, safeAdminReturnTo } from "@/lib/admin-workflow-context";
 
-type Props = {
-  productSlug?: string;
-  buttonLabel?: string;
-  pendingLabel?: string;
-  disabled?: boolean;
-  submitUrl?: string;
-};
-
-const stages = [
-  { untilSeconds: 3, progress: 16, label: "正在提交采集请求" },
-  { untilSeconds: 9, progress: 34, label: "正在创建运行记录" },
-  { untilSeconds: 18, progress: 56, label: "正在唤起后台采集脚本" },
-  { untilSeconds: 35, progress: 78, label: "正在进入自动审核流程" },
-  { untilSeconds: Infinity, progress: 92, label: "即将跳转到运行记录" },
-];
-
-const MIN_VISIBLE_MS = 4500;
-
-function getStage(elapsedSeconds: number) {
-  return stages.find((stage) => elapsedSeconds < stage.untilSeconds) ?? stages[stages.length - 1];
-}
-
-function formatElapsed(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-
-  if (minutes <= 0) return `${rest}s`;
-
-  return `${minutes}m ${String(rest).padStart(2, "0")}s`;
-}
-
-function ProgressContent({
-  startedAt,
-  buttonLabel,
-  pendingLabel,
-  disabled,
-  errorMessage,
-}: {
-  startedAt: number | null;
-  buttonLabel: string;
-  pendingLabel: string;
-  disabled: boolean;
-  errorMessage: string | null;
-}) {
-  const [now, setNow] = useState(() => Date.now());
-  const active = startedAt !== null;
-
-  useEffect(() => {
-    if (!active) return;
-
-    const timer = window.setInterval(() => {
-      setNow(Date.now());
-    }, 500);
-
-    return () => window.clearInterval(timer);
-  }, [active]);
-
-  const elapsedSeconds = active && startedAt ? Math.max(0, Math.floor((now - startedAt) / 1000)) : 0;
-  const stage = useMemo(() => getStage(elapsedSeconds), [elapsedSeconds]);
-
-  return (
-    <div className="space-y-3" aria-live="polite">
-      <button
-        type="submit"
-        disabled={active || disabled}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-700 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-wait disabled:border-blue-100 disabled:bg-blue-50 disabled:text-blue-400 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/70 dark:disabled:border-blue-900 dark:disabled:bg-blue-950/40 dark:disabled:text-blue-600 dark:focus-visible:ring-blue-400/60"
-      >
-        {active ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : null}
-        {active ? pendingLabel : buttonLabel}
-      </button>
-
-      {errorMessage ? (
-        <div className="w-80 max-w-[80vw] rounded-xl border border-red-100 bg-red-50 p-3 text-xs leading-5 text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300">
-          {errorMessage}
-        </div>
-      ) : null}
-
-      {active ? (
-        <div className="w-80 max-w-[80vw] rounded-xl border border-blue-100 bg-white/90 p-4 text-xs text-blue-950 shadow-sm shadow-blue-200/40 dark:border-blue-900 dark:bg-slate-900/95 dark:text-blue-100 dark:shadow-black/30">
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-bold">{stage.label}</span>
-            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 font-mono font-bold tabular-nums text-blue-600 dark:bg-blue-950 dark:text-blue-300">
-              {formatElapsed(elapsedSeconds)}
-            </span>
-          </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-blue-100 dark:bg-blue-950">
-            <div
-              className="h-full rounded-full bg-blue-600 transition-all duration-500"
-              style={{ width: `${stage.progress}%` }}
-            />
-          </div>
-          <p className="mt-3 leading-5 text-blue-600 dark:text-blue-300">
-            请求会先唤起后台脚本，再跳转到最近采集运行记录。若脚本还没完成，运行记录会继续自动显示最新状态。
-          </p>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-export default function ManualCollectionProgressForm({
-  productSlug,
-  buttonLabel = "立即补采并审核",
-  pendingLabel = "正在采集并审核",
-  disabled = false,
-  submitUrl = "/admin/review/collect",
-}: Props) {
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  return (
-    <AdminActionForm
-      ref={formRef}
-      action={submitUrl}
-      method="post"
-      onClick={(event) => {
-        event.stopPropagation();
-      }}
-      onSubmit={async (event) => {
-        event.preventDefault();
-
-        if (disabled || startedAt !== null || !formRef.current) {
-          return;
-        }
-
-        const submittedAt = Date.now();
-        setErrorMessage(null);
-        setStartedAt(submittedAt);
-
-        try {
-          const response = await fetch(submitUrl, {
-            method: "POST",
-            body: new FormData(formRef.current),
-            headers: {
-              Accept: "application/json",
-            },
-            credentials: "same-origin",
-          });
-          const payload = (await response.json().catch(() => null)) as {
-            redirectPath?: string;
-          } | null;
-          const elapsed = Date.now() - submittedAt;
-
-          if (elapsed < MIN_VISIBLE_MS) {
-            await new Promise((resolve) => window.setTimeout(resolve, MIN_VISIBLE_MS - elapsed));
-          }
-
-          if (payload?.redirectPath) {
-            window.location.assign(payload.redirectPath);
-            return;
-          }
-
-          if (!response.ok) {
-            throw new Error("采集请求失败，请查看采集任务页的运行记录。");
-          }
-
-          window.location.assign("/admin/review");
-        } catch (error) {
-          setStartedAt(null);
-          setErrorMessage(error instanceof Error ? error.message : "采集请求失败，请稍后再试。");
-        }
-      }}
-    >
-      {productSlug ? <input type="hidden" name="productSlug" value={productSlug} /> : null}
-      <ProgressContent
-        startedAt={startedAt}
-        buttonLabel={buttonLabel}
-        pendingLabel={pendingLabel}
-        disabled={disabled}
-        errorMessage={errorMessage}
-      />
-    </AdminActionForm>
-  );
+type Props={productSlug?:string;buttonLabel?:string;pendingLabel?:string;disabled?:boolean;submitUrl?:string};
+export default function ManualCollectionProgressForm({productSlug,buttonLabel="立即补采并审核",pendingLabel="正在提交请求",disabled=false,submitUrl="/admin/review/collect"}:Props){
+ const router=useRouter();
+ const inFlight=useRef(false);
+ const [pending,setPending]=useState(false);
+ const [error,setError]=useState<string|null>(null);
+ return <AdminActionForm action={submitUrl} method="post" onClick={e=>e.stopPropagation()} onSubmit={async e=>{
+   e.preventDefault();if(disabled||inFlight.current)return;
+   inFlight.current=true;setPending(true);setError(null);
+   const data=new FormData(e.currentTarget);
+   data.set("returnTo",safeAdminReturnTo(window.location.pathname+window.location.search+window.location.hash,"/admin/pipeline"));
+   let acknowledged=false;
+   try{
+     const response=await fetch(submitUrl,{method:"POST",body:data,headers:{Accept:"application/json"},credentials:"same-origin"});
+     const payload=await response.json().catch(()=>null) as {ok?:boolean;redirectPath?:string;message?:string}|null;
+     if(!response.ok||payload?.ok!==true)throw new Error(payload?.message||"未能确认采集请求。请先查看运行记录，再决定是否重试。");
+     acknowledged=true;
+     router.push(safeAdminHref(payload.redirectPath,`/admin/review?q=${encodeURIComponent(productSlug||"")}`));
+   }catch(err){setError(err instanceof Error?err.message:"暂时无法确认请求结果，请先查看运行记录。");}
+   finally{if(!acknowledged){inFlight.current=false;setPending(false);}}
+ }}>
+   {productSlug?<input type="hidden" name="productSlug" value={productSlug}/>:null}
+   <button type="submit" disabled={disabled||pending} aria-busy={pending} className={adminButtonClassName({variant:"primary",size:"sm"})}>
+     {pending?<Loader2 size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true"/>:null}
+     {pending?"正在提交请求…":buttonLabel}
+   </button>
+   {pending?<p role="status" className="mt-2 max-w-xs text-xs text-admin-text-muted">{pendingLabel}；收到后台确认后显示真实运行记录。</p>:null}
+   {error?<p role="alert" className="mt-2 max-w-xs text-xs text-admin-danger">{error}</p>:null}
+ </AdminActionForm>;
 }

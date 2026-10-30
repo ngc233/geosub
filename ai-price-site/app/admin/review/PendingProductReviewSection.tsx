@@ -1,10 +1,13 @@
+import LazyReviewDetails from "./LazyReviewDetails";
+import AdminProductLogo from "@/components/admin/AdminProductLogo";
+import { productWorkflowHref } from "@/lib/admin-product-next-action";
+import { withAdminReturnTo } from "@/lib/admin-workflow-context";
+import { AdminLinkButton } from "@/components/admin/AdminButton";
+import AdminPagination from "@/components/admin/AdminPagination";
 import AdminLink from "@/components/admin/AdminLink";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
 import ObservationReviewActions from "./ObservationReviewActions";
-import {
-  diagnosePendingProductGroup,
-  type PendingProductDiagnosisLevel,
-} from "./pending-product-diagnosis";
+import { diagnosePendingProductGroup } from "./pending-product-diagnosis";
 import type { CollectorStatusRow, PendingProductGroup } from "./types";
 import {
   PriceEvidencePanel,
@@ -26,34 +29,10 @@ type PendingProductReviewSectionProps = {
   pendingTotal: number;
   historyPage: number;
   pendingProductGroups: PendingProductGroup[];
+  detailProduct?: string;
+  detailPage?: number;
+  returnTo?: string;
 };
-
-function diagnosisClassName(level: PendingProductDiagnosisLevel) {
-  if (level === "danger") {
-    return "border-red-100 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-200";
-  }
-
-  if (level === "warning") {
-    return "border-amber-100 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200";
-  }
-
-  if (level === "good") {
-    return "border-emerald-100 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
-  }
-
-  return "border-blue-100 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200";
-}
-
-function collectorStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    active: "采集服务正常",
-    paused: "采集服务已暂停",
-    disabled: "采集服务已停用",
-    archived: "采集服务已停用",
-  };
-
-  return labels[status] ?? "采集服务状态待确认";
-}
 
 export function PendingProductReviewSection({
   collectorStatus,
@@ -61,228 +40,261 @@ export function PendingProductReviewSection({
   pendingPage,
   pendingTotalPages,
   detailRowsPerProduct,
-  detailRowsLimited,
   pendingProductTotal,
   pendingTotal,
   historyPage,
   pendingProductGroups,
+  detailProduct = "",
+  detailPage = 1,
+  returnTo,
 }: PendingProductReviewSectionProps) {
-  const buildPendingPageHref = (nextPage: number) => {
+  function pendingHref(nextPage: number) {
     const query = new URLSearchParams();
-
     if (nextPage > 1) query.set("page", String(nextPage));
     if (historyPage > 1) query.set("historyPage", String(historyPage));
-    if (productQuery) query.set("q", productQuery);
-
-    const value = query.toString();
-    return value ? `/admin/review?${value}` : "/admin/review";
-  };
-
+    if (productQuery) query.set("product", productQuery);
+    if (returnTo) query.set("returnTo", returnTo);
+    return `/admin/review${query.size ? `?${query}` : ""}`;
+  }
+  function detailHref(slug: string, nextPage = 1) {
+    const url = new URL(pendingHref(pendingPage), "http://local.invalid");
+    url.searchParams.set("detailProduct", slug);
+    if (nextPage > 1) url.searchParams.set("detailPage", String(nextPage));
+    return (
+      url.pathname + url.search + `#review-product-${encodeURIComponent(slug)}`
+    );
+  }
   return (
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between dark:border-slate-700">
+    <section
+      id="review-pending"
+      className="scroll-mt-24 rounded-admin-card border border-admin-border bg-admin-surface shadow-sm"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border px-4 py-3">
         <div>
-          <p className="text-xs font-bold text-blue-700 dark:text-blue-300">第 3 步</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-950 dark:text-slate-100">需要系统继续处理的产品</h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            这里只列出尚未自动确认的产品。通常点击“重新采集”即可，不需要逐个国家人工核验。
+          <h2 className="text-base font-semibold text-admin-text">待审异常</h2>
+          <p className="mt-1 text-xs text-admin-text-muted">
+            按产品查看拦截原因和证据，不需要逐个国家人工核验。展开后每页加载{" "}
+            {detailRowsPerProduct} 条明细。
           </p>
-          {detailRowsLimited ? (
-            <p className="mt-1 text-xs text-slate-400">展开产品后显示最近 {detailRowsPerProduct} 条异常明细。</p>
-          ) : null}
         </div>
-        <div className="text-xs text-slate-400">
+        <p className="text-xs text-admin-text-muted">
           {pendingProductTotal} 个产品 · {pendingTotal} 条待处理
-          {collectorStatus ? ` · ${collectorStatusLabel(collectorStatus.status)}` : ""}
-        </div>
+          {collectorStatus
+            ? ` · 采集服务${collectorStatus.status === "active" ? "正常" : "状态：" + collectorStatus.status}`
+            : ""}
+        </p>
       </div>
-
+      <AdminPagination
+        page={pendingPage}
+        totalPages={pendingTotalPages}
+        total={pendingProductTotal}
+        pageSize={25}
+        pageHref={(next) => `${pendingHref(next)}#review-pending`}
+        ariaLabel="审核顶部分页"
+        className="px-4 py-3"
+      />
       {pendingProductGroups.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+        <div className="px-4 py-10 text-center text-sm text-admin-text-muted">
           暂无待审核价格观测。
         </div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-admin-border">
           {pendingProductGroups.map((productGroup) => {
             const diagnosis = diagnosePendingProductGroup(productGroup);
-            const diagnosisClasses = diagnosisClassName(diagnosis.level);
-            const buttonLabel = productGroup.hasFreshSuccess ? "仍要重新采集" : "重新采集";
-
+            const loaded = detailProduct === productGroup.productSlug;
+            const total = productGroup.pendingCount || 0;
             return (
-              <details key={productGroup.productSlug} className="group">
-                <summary className="flex cursor-pointer list-none flex-col gap-4 px-4 py-4 hover:bg-slate-50 xl:flex-row xl:items-center xl:justify-between dark:hover:bg-slate-900">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold text-slate-950 dark:text-slate-100">
-                        {productGroup.productName ?? productGroup.productSlug}
-                      </h3>
-                      <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        {productGroup.productSlug}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300">
-                      <span className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800">
-                        待处理 {productGroup.pendingCount ?? productGroup.rows.length}
-                      </span>
-                      <span className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
-                        已通过 {productGroup.approvedCount ?? 0}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-slate-400">
-                      最近成功采集：{formatDate(productGroup.latestSuccessAt ?? null)}
-                      {productGroup.hasFreshSuccess ? " · 12 小时内已更新" : ""}
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-200">{diagnosis.title}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">建议：{diagnosis.nextAction}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <ManualCollectionProgressForm
-                      productSlug={productGroup.productSlug}
-                      buttonLabel={buttonLabel}
-                      pendingLabel="正在补采这个产品"
-                    />
-                    <span className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 group-open:bg-slate-50 dark:border-slate-700 dark:text-slate-300">
-                      查看详情
-                    </span>
-                  </div>
-                </summary>
-
-                <div className="bg-slate-50/60 px-4 pb-4 dark:bg-slate-900/60">
-                  <div className={`mb-3 rounded-xl border px-3 py-2 ${diagnosisClasses}`}>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-bold">系统判断：{diagnosis.label}</span>
-                      <AdminLink
-                        href={`/admin/data-quality/${encodeURIComponent(productGroup.productSlug)}`}
-                        className="text-xs font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
-                      >
-                        打开数据诊断
-                      </AdminLink>
-                    </div>
-                    <p className="mt-1 text-xs leading-5 opacity-80">{diagnosis.detail}</p>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  {productGroup.plans.map((planGroup) => (
-                    <div
-                      key={`${productGroup.productSlug}-${planGroup.planSlug}`}
-                      className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
-                    >
-                      <div className="flex items-center justify-between gap-4 px-4 py-3">
-                        <div>
-                          <div className="text-sm font-semibold text-slate-950 dark:text-slate-100">
-                            {planGroup.planName ?? planGroup.planSlug}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            {planGroup.planSlug} · 显示 {planGroup.rows.length} 条最新明细
-                          </div>
-                        </div>
-                        <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                          待审核 {planGroup.rows.length}
+              <LazyReviewDetails
+                key={`${productGroup.productSlug}:${loaded}`}
+                id={`review-product-${productGroup.productSlug}`}
+                loaded={loaded}
+                initiallyOpen={loaded}
+                loadHref={detailHref(productGroup.productSlug)}
+                summary={
+                  <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-4 py-4 hover:bg-admin-surface-subtle">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <AdminProductLogo
+                          slug={productGroup.productSlug}
+                          name={productGroup.productName}
+                          size="md"
+                        />
+                        <h3 className="text-sm font-semibold text-admin-text">
+                          {productGroup.productName || productGroup.productSlug}
+                        </h3>
+                        <span className="shrink-0 whitespace-nowrap text-xs text-admin-text-muted">
+                          待处理 {total}
                         </span>
                       </div>
-
-                      <div className="max-h-[560px] space-y-2 overflow-y-auto border-t border-slate-100 p-3 dark:border-slate-700">
-                        {planGroup.rows.map((row) => (
-                          <div key={row.id} className="rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <div className="text-xs font-semibold text-slate-950 dark:text-slate-100">
-                                  {row.country_name_zh ?? row.country_name_en ?? row.country_code}
-                                </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                  <span>{row.country_code}</span>
-                                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                    {platformLabel(row.platform)}
-                                  </span>
-                                  <span>可信度 {row.confidence_score ?? "-"}</span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs font-semibold text-slate-950 dark:text-slate-100">
-                                  {row.observed_price_text ?? formatLocal(row.observed_local_price, row.observed_currency)}
-                                </div>
-                                <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                  {formatUsd(row.observed_price_usd)}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] leading-4 text-amber-800 ring-1 ring-inset ring-amber-100 dark:bg-amber-950 dark:text-amber-200 dark:ring-amber-800">
-                              <div className="font-semibold">
-                                拦截原因：{reviewReasonLabel(row.review_reason_code)}
-                              </div>
-                              <div className="mt-0.5 text-amber-700 dark:text-amber-300">
-                                {reviewReasonAction(row.review_reason_code)}
-                              </div>
-                            </div>
-                            <PriceEvidencePanel row={row} />
-
-                            {row.review_note ? (
-                              <p className="mt-1.5 line-clamp-1 text-[11px] leading-4 text-slate-400">
-                                原始规则说明：{row.review_note}
-                              </p>
-                            ) : null}
-
-                            <div className="mt-2 flex items-center justify-between gap-2">
-                              {row.source_url ? (
-                                <a
-                                  href={row.source_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-300"
-                                >
-                                  查看采集证据
-                                </a>
-                              ) : (
-                                <span className="text-xs text-slate-400">无来源链接</span>
-                              )}
-                              <ObservationReviewActions observationId={row.id} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="mt-2 text-sm font-semibold text-admin-text">
+                        {diagnosis.title}
+                      </p>
+                      <p className="mt-1 text-xs text-admin-text-muted">
+                        建议：{diagnosis.nextAction}
+                      </p>
+                      <p className="mt-1 text-xs text-admin-text-faint">
+                        最近成功采集：
+                        {formatDate(productGroup.latestSuccessAt || null)}
+                      </p>
                     </div>
-                  ))}
+                    <span className="shrink-0 whitespace-nowrap rounded-lg border border-admin-border px-3 py-2 text-xs text-admin-text-secondary">
+                      展开证据
+                    </span>
+                  </summary>
+                }
+              >
+                {loaded ? (
+                  <div className="bg-admin-surface-subtle px-4 pb-4">
+                    <div className="flex flex-wrap items-start gap-3 py-3">
+                      <AdminLinkButton
+                        variant="secondary"
+                        size="sm"
+                        href={withAdminReturnTo(
+                          `/admin/data-quality/${encodeURIComponent(productGroup.productSlug)}`,
+                          `/admin/review?product=${encodeURIComponent(productGroup.productSlug)}#review-pending`,
+                        )}
+                      >
+                        查看原因与诊断
+                      </AdminLinkButton>
+                      <details className="text-xs text-admin-text-muted">
+                        <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-lg px-2">
+                          需要补采？
+                        </summary>
+                        <p className="mb-2 max-w-lg leading-5">
+                          {diagnosis.nextAction}{" "}
+                          补采不会跳过稳定样本或硬异常门禁。
+                        </p>
+                        <ManualCollectionProgressForm
+                          productSlug={productGroup.productSlug}
+                          buttonLabel="修正后补采"
+                          pendingLabel="正在提交补采请求"
+                        />
+                      </details>
+                      <AdminLink
+                        href={productWorkflowHref(
+                          "/admin/prices",
+                          productGroup.productSlug,
+                        )}
+                        className="inline-flex min-h-11 items-center px-2 text-sm text-admin-accent"
+                      >
+                        查看正式价格
+                      </AdminLink>
+                    </div>
+                    <p className="mb-3 text-xs leading-5 text-admin-text-secondary">
+                      系统判断：{diagnosis.label}。{diagnosis.detail}
+                    </p>
+                    <AdminPagination
+                      page={detailPage}
+                      totalPages={Math.max(
+                        1,
+                        Math.ceil(total / detailRowsPerProduct),
+                      )}
+                      total={total}
+                      pageSize={detailRowsPerProduct}
+                      pageHref={(next) =>
+                        detailHref(productGroup.productSlug, next)
+                      }
+                      ariaLabel={`${productGroup.productName || productGroup.productSlug} 异常明细分页`}
+                      className="mb-3"
+                    />
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      {productGroup.plans.map((planGroup) => (
+                        <div
+                          key={planGroup.planSlug}
+                          className="overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface"
+                        >
+                          <div className="border-b border-admin-border px-4 py-3">
+                            <h4 className="text-sm font-semibold text-admin-text">
+                              {planGroup.planName || planGroup.planSlug}
+                            </h4>
+                            <p className="mt-1 text-xs text-admin-text-muted">
+                              当前页 {planGroup.rows.length} 条
+                            </p>
+                          </div>
+                          <div className="max-h-[560px] space-y-2 overflow-y-auto p-3">
+                            {planGroup.rows.map((row) => (
+                              <div
+                                key={row.id}
+                                data-observation-id={row.id}
+                                className="rounded-lg border border-admin-border bg-admin-surface p-3"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <p className="text-xs font-semibold text-admin-text">
+                                      {row.country_name_zh ||
+                                        row.country_name_en ||
+                                        row.country_code}
+                                    </p>
+                                    <p className="mt-1 text-xs text-admin-text-muted">
+                                      {row.country_code} ·{" "}
+                                      {platformLabel(row.platform)} · 可信度{" "}
+                                      {row.confidence_score ?? "-"}
+                                    </p>
+                                  </div>
+                                  <div className="text-right text-xs text-admin-text">
+                                    <p>
+                                      {row.observed_price_text ||
+                                        formatLocal(
+                                          row.observed_local_price,
+                                          row.observed_currency,
+                                        )}
+                                    </p>
+                                    <p className="mt-1 text-admin-text-muted">
+                                      {formatUsd(row.observed_price_usd)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="mt-2 text-xs leading-5 text-admin-text-secondary">
+                                  <p className="font-semibold">
+                                    拦截原因：
+                                    {reviewReasonLabel(row.review_reason_code)}
+                                  </p>
+                                  <p>
+                                    {reviewReasonAction(row.review_reason_code)}
+                                  </p>
+                                </div>
+                                <PriceEvidencePanel row={row} />
+                                {row.review_note ? (
+                                  <p className="mt-2 break-words text-xs text-admin-text-muted">
+                                    原始规则说明：{row.review_note}
+                                  </p>
+                                ) : null}
+                                {row.source_url ? (
+                                  <a
+                                    href={row.source_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex min-h-11 items-center text-xs text-admin-accent"
+                                  >
+                                    查看采集证据
+                                  </a>
+                                ) : null}
+                                <ObservationReviewActions
+                                  observationId={row.id}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </details>
+                ) : null}
+              </LazyReviewDetails>
             );
           })}
         </div>
       )}
-
       {pendingTotalPages > 1 ? (
-        <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm dark:border-slate-700">
-          <div className="text-slate-500 dark:text-slate-400">
-            共 {pendingProductTotal} 个产品，{pendingTotal} 条待处理观测
-          </div>
-          <div className="flex items-center gap-2">
-            <AdminLink
-              href={buildPendingPageHref(Math.max(1, pendingPage - 1))}
-              aria-disabled={pendingPage <= 1}
-              className={`rounded-lg border px-3 py-1.5 font-medium ${
-                pendingPage <= 1
-                  ? "pointer-events-none border-slate-100 text-slate-300 dark:border-slate-700"
-                  : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
-              }`}
-            >
-              上一页
-            </AdminLink>
-            <span className="text-slate-500 dark:text-slate-400">
-              {pendingPage} / {pendingTotalPages}
-            </span>
-            <AdminLink
-              href={buildPendingPageHref(Math.min(pendingTotalPages, pendingPage + 1))}
-              aria-disabled={pendingPage >= pendingTotalPages}
-              className={`rounded-lg border px-3 py-1.5 font-medium ${
-                pendingPage >= pendingTotalPages
-                  ? "pointer-events-none border-slate-100 text-slate-300 dark:border-slate-700"
-                  : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
-              }`}
-            >
-              下一页
-            </AdminLink>
-          </div>
-        </div>
+        <AdminPagination
+          page={pendingPage}
+          totalPages={pendingTotalPages}
+          total={pendingProductTotal}
+          pageSize={25}
+          pageHref={(next) => `${pendingHref(next)}#review-pending`}
+          ariaLabel="审核分页"
+          className="border-t border-admin-border p-4"
+        />
       ) : null}
     </section>
   );

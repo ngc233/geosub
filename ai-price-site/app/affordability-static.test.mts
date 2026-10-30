@@ -101,7 +101,7 @@ test("collector success refreshes affordability and invalidates shared pricing d
   );
   assert.match(
     adminRunner,
-    /invalidatePublicPricing\(productSlug \|\| null\)/,
+    /invalidatePublicPricingFromRoute\(productSlug \|\| null\)/,
     "the admin completion path should invalidate the shared product cache instead of naming one page",
   );
 });

@@ -28,8 +28,8 @@ function stepClassName(state: CollectorRunTimelineStepState) {
   if (state === "done") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
   if (state === "active") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300";
   if (state === "failed") return "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300";
-  if (state === "skipped") return "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400";
-  return "border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-900";
+  if (state === "skipped") return "border-admin-border bg-admin-surface-subtle text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-surface dark:text-admin-text-muted";
+  return "border-admin-border bg-admin-surface text-admin-text-faint dark:border-admin-border-strong dark:bg-admin-surface";
 }
 
 function dotClassName(state: CollectorRunTimelineStepState) {
@@ -37,7 +37,7 @@ function dotClassName(state: CollectorRunTimelineStepState) {
   if (state === "active") return "bg-blue-500";
   if (state === "failed") return "bg-red-500";
   if (state === "skipped") return "bg-slate-400";
-  return "bg-slate-200 dark:bg-slate-800";
+  return "bg-admin-chip-hover dark:bg-admin-chip";
 }
 
 function numberValue(value: number | null | undefined) {
@@ -57,7 +57,7 @@ function outcomeChipClassName(kind: "neutral" | "pending" | "ok" | "warn" | "bad
   if (kind === "pending") return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
   if (kind === "warn") return "bg-orange-50 text-orange-700 ring-orange-200";
   if (kind === "bad") return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
-  return "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700";
+  return "bg-admin-surface-subtle text-admin-text-secondary ring-admin-border dark:bg-admin-surface dark:text-admin-text-secondary dark:ring-admin-border-strong";
 }
 
 export function CollectorRunOutcomeSummary({ run, compact = false }: OutcomeProps) {
@@ -80,10 +80,10 @@ export function CollectorRunOutcomeSummary({ run, compact = false }: OutcomeProp
   ];
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-lg border border-admin-border bg-admin-surface px-3 py-2 dark:border-admin-border-strong dark:bg-admin-surface">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">本轮产出</span>
-        {note ? <span className="text-[11px] text-slate-400">{note}</span> : null}
+        <span className="text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">本轮产出</span>
+        {note ? <span className="text-[11px] text-admin-text-faint">{note}</span> : null}
       </div>
       <div className={`mt-2 flex flex-wrap ${compact ? "gap-1.5" : "gap-2"}`}>
         {chips.map((chip) => (
@@ -114,7 +114,7 @@ export default function CollectorRunTimeline({ run, compact = false }: Props) {
         >
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${dotClassName(step.state)}`} />
-            <span className="text-[11px] font-bold">{step.label}</span>
+            <span className="text-[11px] font-semibold">{step.label}</span>
           </div>
           <p className="mt-1 line-clamp-2 text-[11px] leading-4 opacity-80">{step.detail}</p>
         </div>

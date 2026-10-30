@@ -1,23 +1,33 @@
 "use client";
 
+import AdminProductLogo from "@/components/admin/AdminProductLogo";
+
+import { adminButtonClassName } from "@/components/admin/AdminButton";
+
 import AdminLink from "@/components/admin/AdminLink";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { withAdminReturnTo } from "@/lib/admin-workflow-context";
 import { buildCollectionProgressState, type CollectionProgressState } from "./collection-progress";
 import CollectorRunTimeline, { CollectorRunOutcomeSummary } from "./CollectorRunTimeline";
 import { formatDate } from "./review-display";
 import type { CollectorRunHistoryRow } from "./types";
 
 type Props = {
+  pendingCount?:number;
   rows: CollectorRunHistoryRow[];
   collectionRun: string | null;
   collectionScope: string | null;
   productQuery: string;
+  runId?:string|null;
+  returnTo?: string;
+  productSlug?:string;
 };
 
 function statusClassName(status: string) {
   if (status === "succeeded") return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
   if (status === "failed") return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
-  if (status === "skipped") return "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700";
+  if (status === "skipped") return "bg-admin-surface-subtle text-admin-text-secondary ring-admin-border dark:bg-admin-surface dark:text-admin-text-secondary dark:ring-admin-border-strong";
   return "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800";
 }
 
@@ -90,7 +100,7 @@ function runOutput(row: CollectorRunHistoryRow) {
   if (output) {
     return {
       text: output,
-      className: "text-slate-500 dark:text-slate-400",
+      className: "text-admin-text-muted dark:text-admin-text-muted",
     };
   }
 
@@ -106,14 +116,14 @@ function runOutput(row: CollectorRunHistoryRow) {
       text:
         row.runner_state === "queued_from_admin"
           ? "已创建运行记录，正在唤起后台脚本；如果 3 分钟内没有接管，系统会自动标记为失败。"
-          : "后台脚本已启动，正在等待采集结果写回。",
+          : "运行记录已创建，等待脚本接管或写回采集结果。",
       className: "text-blue-700 dark:text-blue-300",
     };
   }
 
   return {
     text: "暂无摘要",
-    className: "text-slate-400",
+    className: "text-admin-text-faint",
   };
 }
 
@@ -123,7 +133,7 @@ function runSummary(row: CollectorRunHistoryRow) {
   }
 
   if (row.status === "succeeded") {
-    return "采集完成，系统正在自动检查并更新价格。";
+    return "本轮运行已完成；审核和正式入库结果见详情。";
   }
 
   if (row.status === "failed") {
@@ -142,7 +152,7 @@ function progressToneClassName(tone: CollectionProgressState["tone"]) {
     return {
       wrapper: "border-emerald-100 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
       bar: "bg-emerald-600",
-      pill: "bg-white text-emerald-700 ring-emerald-200 dark:bg-slate-900 dark:text-emerald-300 dark:ring-emerald-800",
+      pill: "bg-admin-surface text-emerald-700 ring-emerald-200 dark:bg-admin-surface dark:text-emerald-300 dark:ring-emerald-800",
     };
   }
 
@@ -150,7 +160,7 @@ function progressToneClassName(tone: CollectionProgressState["tone"]) {
     return {
       wrapper: "border-red-100 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
       bar: "bg-red-600",
-      pill: "bg-white text-red-700 ring-red-200 dark:bg-slate-900 dark:text-red-300 dark:ring-red-800",
+      pill: "bg-admin-surface text-red-700 ring-red-200 dark:bg-admin-surface dark:text-red-300 dark:ring-red-800",
     };
   }
 
@@ -158,22 +168,22 @@ function progressToneClassName(tone: CollectionProgressState["tone"]) {
     return {
       wrapper: "border-amber-100 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200",
       bar: "bg-amber-500",
-      pill: "bg-white text-amber-700 ring-amber-200 dark:bg-slate-900 dark:text-amber-300 dark:ring-amber-800",
+      pill: "bg-admin-surface text-amber-700 ring-amber-200 dark:bg-admin-surface dark:text-amber-300 dark:ring-amber-800",
     };
   }
 
   if (tone === "neutral") {
     return {
-      wrapper: "border-slate-100 bg-slate-50 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100",
+      wrapper: "border-admin-border bg-admin-surface-subtle text-admin-text dark:border-admin-border-strong dark:bg-admin-surface dark:text-admin-text",
       bar: "bg-slate-500",
-      pill: "bg-white text-slate-600 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700",
+      pill: "bg-admin-surface text-admin-text-secondary ring-admin-border dark:bg-admin-surface dark:text-admin-text-secondary dark:ring-admin-border-strong",
     };
   }
 
   return {
     wrapper: "border-blue-100 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200",
     bar: "bg-blue-600",
-    pill: "bg-white text-blue-700 ring-blue-200 dark:bg-slate-900 dark:text-blue-300 dark:ring-blue-800",
+    pill: "bg-admin-surface text-blue-700 ring-blue-200 dark:bg-admin-surface dark:text-blue-300 dark:ring-blue-800",
   };
 }
 
@@ -187,34 +197,20 @@ function CollectionProgressPanel({ progress }: { progress: CollectionProgressSta
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${classes.pill}`}>
+            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${classes.pill}`}>
               {progress.active ? "采集中" : "本轮结果"}
             </span>
             {progress.elapsedLabel ? (
-              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${classes.pill}`}>
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${classes.pill}`}>
                 已用 {progress.elapsedLabel}
               </span>
             ) : null}
           </div>
-          <h3 className="mt-2 text-sm font-bold">{progress.label}</h3>
+          <h3 className="mt-2 text-sm font-semibold">{progress.label}</h3>
           <p className="mt-1 text-xs leading-5 opacity-80">{progress.detail}</p>
         </div>
 
-        <div className="w-full lg:w-80">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span>采集进度</span>
-            <span className="font-mono tabular-nums">{progress.progress}%</span>
-          </div>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/80 ring-1 ring-inset ring-black/5 dark:bg-slate-900/80">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
-              style={{ width: `${progress.progress}%` }}
-            />
-          </div>
-          <p className="mt-2 text-[11px] leading-4 opacity-70">
-            页面会自动刷新运行记录；不需要反复点击采集按钮。
-          </p>
-        </div>
+        <p className="max-w-xs text-xs leading-5 opacity-80">状态来自后台运行记录；没有可靠的总工作量时不显示百分比。</p>
       </div>
     </div>
   );
@@ -225,25 +221,44 @@ export default function CollectionRunHistorySection({
   collectionRun,
   collectionScope,
   productQuery,
+  runId: requestedRunId,
+  productSlug,
+  returnTo,
+  pendingCount=0,
 }: Props) {
+  const router = useRouter();
+  const scope = productSlug || collectionScope;
+  const [runId] = useState(() => requestedRunId || rows.find(row =>
+    row.status === "running" && (!scope || row.product_slug === scope)
+  )?.id || null);
+  const [refreshingResult, startResultRefresh] = useTransition();
+  const refreshedRun = useRef<string | null>(null);
   const [visibleRows, setVisibleRows] = useState(rows);
+  const [unavailable,setUnavailable] = useState(false);
   const queued = collectionRun === "queued";
   const runningRows = useMemo(
     () => visibleRows.filter((row) => row.status === "running"),
     [visibleRows],
   );
   const hasRunning = runningRows.length > 0;
-  const autoRefreshActive = queued || hasRunning;
+  const autoRefreshActive = hasRunning || (queued && (!runId || !visibleRows.some(row=>row.id===runId && ["succeeded","failed","skipped"].includes(row.status))));
   const progressState = useMemo(
     () =>
       buildCollectionProgressState({
         rows: visibleRows,
         collectionRun,
         collectionScope,
+        collectionRunId:runId,
       }),
-    [visibleRows, collectionRun, collectionScope],
+    [visibleRows, collectionRun, collectionScope,runId],
   );
   const recentRows = visibleRows.slice(0, 6);
+  const needsDiagnosis = !["succeeded", "skipped"].includes(progressState.runStatus || "");
+  const contextHref = (href: string) => returnTo ? withAdminReturnTo(href, returnTo) : href;
+  const sourceHref = contextHref(productSlug
+    ? `/admin/collector-jobs?product=${encodeURIComponent(productSlug)}` : "/admin/collector-jobs");
+  const priceHref = contextHref(productSlug
+    ? `/admin/prices?product=${encodeURIComponent(productSlug)}` : "/admin/prices");
 
   useEffect(() => {
     if (!autoRefreshActive) {
@@ -258,24 +273,43 @@ export default function CollectionRunHistorySection({
       try {
         const params = new URLSearchParams();
         if (productQuery) {
-          params.set("q", productQuery);
+          params.set(productSlug ? "product" : "q", productSlug || productQuery);
         }
 
+        if(runId)params.set("runId",runId);
         const response = await fetch(`/admin/review/collection-runs?${params.toString()}`, {
           headers: { Accept: "application/json" },
           credentials: "same-origin",
         });
 
         if (!response.ok) {
+          setUnavailable(true);
           return;
         }
 
         const payload = (await response.json()) as { rows?: CollectorRunHistoryRow[] };
-        if (Array.isArray(payload.rows)) {
+        if (!stopped && Array.isArray(payload.rows)) {
           setVisibleRows(payload.rows);
+          setUnavailable(false);
+          const nextProgress = buildCollectionProgressState({
+            rows: payload.rows, collectionRun, collectionScope, collectionRunId: runId,
+          });
+          if (nextProgress.visible && !nextProgress.active && nextProgress.runId &&
+            refreshedRun.current !== nextProgress.runId) {
+            refreshedRun.current = nextProgress.runId;
+            startResultRefresh(() => {
+              if (requestedRunId) {
+                router.refresh();
+              } else {
+                const nextParams = new URLSearchParams(window.location.search);
+                nextParams.set("runId", nextProgress.runId!);
+                router.replace(`${window.location.pathname}?${nextParams}${window.location.hash}`, { scroll: false });
+              }
+            });
+          }
         }
       } catch {
-        // Keep the last visible state; the next tick can recover.
+        setUnavailable(true);
       }
     };
 
@@ -291,7 +325,7 @@ export default function CollectionRunHistorySection({
 
         if (!stopped && tick < 60) {
           schedule();
-        }
+        } else if(!stopped) { setUnavailable(true); }
       }, delay);
     };
 
@@ -304,43 +338,62 @@ export default function CollectionRunHistorySection({
         window.clearTimeout(timer);
       }
     };
-  }, [autoRefreshActive, productQuery]);
+  }, [autoRefreshActive, productQuery, runId, productSlug, collectionRun, collectionScope, requestedRunId, router, startResultRefresh]);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 md:flex-row md:items-center md:justify-between dark:border-slate-700">
+    <section id="collection-runs" className="scroll-mt-24 rounded-admin-card border border-admin-border bg-admin-surface shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+      <div className="flex flex-col gap-3 border-b border-admin-border px-4 py-3 md:flex-row md:items-center md:justify-between dark:border-admin-border-strong">
         <div>
-          <p className="text-xs font-bold text-blue-700 dark:text-blue-300">第 2 步结果</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-950 dark:text-slate-100">本轮采集状态</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">运行记录</p>
+          <h2 className="mt-1 text-base font-semibold text-admin-text dark:text-admin-text">本次采集进度</h2>
+          <p className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
             点击采集后在这里看进度和结果。页面会自动更新，不需要重复点击。
           </p>
         </div>
         <AdminLink
-          href="/admin/collector-jobs"
-          className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-900"
+          href={sourceHref}
+          className={adminButtonClassName({variant:"secondary",size:"sm",className:""})}
         >
           全部采集记录
         </AdminLink>
       </div>
 
       <CollectionProgressPanel progress={progressState} />
+      {refreshingResult ? <p role="status" className="px-4 py-3 text-sm text-admin-text-muted">
+        正在更新本轮审核结果…
+      </p> : null}
+      {progressState.visible && !progressState.active && !refreshingResult ?
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border px-4 py-3">
+          <p className="text-sm text-admin-text-secondary">{needsDiagnosis
+            ? "本轮未确认成功，请先核对来源与运行记录。" : pendingCount>0
+            ? `当前有 ${pendingCount} 条待审记录，请继续处理异常。`
+            : "本页无待审异常；可直接查看正式价格，无需重复发布。"}</p>
+          <AdminLink href={needsDiagnosis
+            ? sourceHref
+            : pendingCount>0 ? "#review-pending"
+              : priceHref}
+            className={adminButtonClassName({variant:"primary",size:"sm"})}>
+            {needsDiagnosis ? "查看运行原因" : pendingCount>0 ? "继续处理异常" : "查看正式价格"}
+          </AdminLink>
+        </div> : null}
+      {unavailable ? <p role="status" className="px-4 py-3 text-sm text-admin-warning">状态暂时无法刷新，以下为上次读取的记录。请刷新核对，勿据此重复提交。</p> : null}
 
       {visibleRows.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
-          还没有采集记录。先在上方选择产品并开始采集。
+        <div className="px-4 py-10 text-center text-sm text-admin-text-muted dark:text-admin-text-muted">
+          还没有采集记录。请在产品队列中配置来源并开始采集。
         </div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-admin-border">
           {recentRows.map((row) => {
             const output = runOutput(row);
 
             return (
-              <details key={row.id} className="group px-4 py-3 open:bg-slate-50/70">
+              <details key={row.id} className="group px-4 py-3 open:bg-admin-surface-subtle/70">
                 <summary className="flex cursor-pointer list-none flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-slate-950 dark:text-slate-100">
+                      {row.product_slug ? <AdminProductLogo slug={row.product_slug} name={row.product_name}/> : null}
+                      <span className="font-semibold text-admin-text dark:text-admin-text">
                         {row.product_name || row.product_slug || "未知产品"}
                       </span>
                       <span
@@ -349,19 +402,21 @@ export default function CollectionRunHistorySection({
                         {statusLabel(row.status)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{runSummary(row)}</p>
+                    <p className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{runSummary(row)}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex shrink-0 items-center gap-4 text-xs text-admin-text-muted dark:text-admin-text-muted">
                     <span>{formatDate(row.started_at)}</span>
                     <span>{formatDuration(row)}</span>
-                    <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 group-open:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    <span className="rounded-lg border border-admin-border bg-admin-surface px-3 py-1.5
+                      font-medium text-admin-text-secondary group-open:bg-admin-chip
+                      dark:border-admin-border-strong dark:bg-admin-surface dark:text-admin-text-secondary">
                       技术详情
                     </span>
                   </div>
                 </summary>
 
-                <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 dark:border-slate-700 dark:bg-slate-900">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-500 dark:text-slate-400">
+                <div className="mt-3 rounded-admin-card border border-admin-border bg-admin-surface p-3 text-xs leading-5 dark:border-admin-border-strong dark:bg-admin-surface">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-admin-text-muted dark:text-admin-text-muted">
                     <span>来源：{sourceLabel(row.source_type)}</span>
                     <span>产品标识：{row.product_slug || "未知"}</span>
                     {row.diagnosis ? <span>系统诊断：{row.diagnosis}</span> : null}
@@ -376,7 +431,7 @@ export default function CollectionRunHistorySection({
                   {row.product_slug ? (
                     <AdminLink
                       href={`/admin/data-quality/${encodeURIComponent(row.product_slug)}`}
-                      className="mt-3 inline-flex rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+                      className={adminButtonClassName({variant:"secondary",size:"sm",className:"mt-3"})}
                     >
                       打开数据诊断
                     </AdminLink>
@@ -386,7 +441,7 @@ export default function CollectionRunHistorySection({
             );
           })}
           {visibleRows.length > recentRows.length ? (
-            <div className="px-4 py-3 text-center text-xs text-slate-500 dark:text-slate-400">
+            <div className="px-4 py-3 text-center text-xs text-admin-text-muted dark:text-admin-text-muted">
               这里只显示最近 {recentRows.length} 次，更多记录请打开“全部采集记录”。
             </div>
           ) : null}

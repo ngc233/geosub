@@ -1,4 +1,6 @@
 'use client';
+import { useRouter } from "next/navigation";
+import { adminSaveDestination } from "@/lib/admin-workflow-context";
 import { createContext, useContext, useEffect, useRef, useState, startTransition, useCallback, type ComponentProps, type ReactNode } from 'react';
 import { canAdmin, type AdminCapability } from '../../lib/admin-permissions';
 import { guardAdminHistory } from '../../lib/admin-history-guard';
@@ -42,6 +44,7 @@ function fingerprint(form:HTMLFormElement){
 type Props=Omit<ComponentProps<'form'>,'action'>&{capability?:AdminCapability;action?:string|((data:FormData)=>unknown|Promise<unknown>);confirmMessage?:string};
 /** UI protection only: server actions must still authorize, validate and transact. Inputs stay in memory only. */
 export function AdminActionForm({capability='manage',children,onSubmit,onChange,onClick,action,confirmMessage,ref:externalRef,...props}:Props){
+ const router=useRouter();
  const allowed=useAdminPermission(capability),mark=useContext(UnsavedContext),allowOtherForms=useContext(OtherFormsContext);
  const ref=useRef<HTMLFormElement>(null),baseline=useRef(''),inFlight=useRef(false);
  const [pending,setPending]=useState(false),[message,setMessage]=useState(''),[failed,setFailed]=useState(false);
@@ -49,9 +52,9 @@ export function AdminActionForm({capability='manage',children,onSubmit,onChange,
  useEffect(()=>{const form=ref.current;if(!form)return;baseline.current=fingerprint(form);for(const el of form.querySelectorAll<HTMLInputElement>('input[name=recordVersion]'))versions.current.set(el.name,el.value);return()=>mark(form,false);},[mark]);
  return <form {...props} ref={node=>{ref.current=node;if(typeof externalRef==='function')externalRef(node);else if(externalRef)externalRef.current=node;}} action={action as ComponentProps<'form'>['action']} data-admin-capability={capability} aria-busy={pending} onClick={event=>{onClick?.(event);requestAnimationFrame(()=>{if(ref.current&&allowed&&!inFlight.current)mark(ref.current,fingerprint(ref.current)!==baseline.current);});}} onChange={event=>{onChange?.(event);if(ref.current)mark(ref.current,fingerprint(ref.current)!==baseline.current);}} onSubmit={event=>{
   if(!allowed || inFlight.current){event.preventDefault();return;}
-  onSubmit?.(event);if(event.defaultPrevented)return;
   if(!allowOtherForms(event.currentTarget)){event.preventDefault();return;}
   if(confirmMessage&&!window.confirm(confirmMessage)){event.preventDefault();return;}
+  onSubmit?.(event);if(event.defaultPrevented)return;
   if(typeof action!=='function')return;
   event.preventDefault();const form=event.currentTarget;
   const submitter=(event.nativeEvent as SubmitEvent).submitter;
@@ -62,13 +65,24 @@ export function AdminActionForm({capability='manage',children,onSubmit,onChange,
     const result=await action(data);
     if(result&&typeof result==='object'&&(('error' in result&&typeof result.error==='string')||('ok' in result&&result.ok===false))){
      setFailed(true);setMessage('error' in result&&typeof result.error==='string'?result.error:'message' in result&&typeof result.message==='string'?result.message:'操作未完成，输入仍保留。');mark(form,true);
-    }else{baseline.current=submitted;mark(form,false);if(result&&typeof result==='object'&&'recordVersion' in result&&typeof result.recordVersion==='string')versions.current.set('recordVersion',result.recordVersion);setMessage(result&&typeof result==='object'&&'message' in result&&typeof result.message==='string'&&result.message?result.message:'操作已完成。');}
+    }else{
+      baseline.current=submitted;mark(form,false);
+      if(result&&typeof result==='object'&&'recordVersion' in result&&typeof result.recordVersion==='string')
+        versions.current.set('recordVersion',result.recordVersion);
+      setMessage(result&&typeof result==='object'&&'message' in result&&typeof result.message==='string'&&result.message
+        ?result.message:'操作已完成。');
+      const destination=adminSaveDestination(result,{intent:data.get("saveIntent"),returnTo:data.get("returnTo")});
+      if(destination)router.push(destination);
+    }
    }catch{
     setFailed(true);setMessage('暂时无法确认操作结果，输入仍保留。请先在新标签页核对记录是否已保存，再决定是否重试。');mark(form,true);
    }finally{inFlight.current=false;setPending(false);}
   });
  }}>
   <fieldset disabled={!allowed||pending} className="contents" data-admin-permission-denied={!allowed || undefined} title={!allowed?'当前角色无此操作权限':undefined}>{children}</fieldset>
-  {message?<p role={failed?'alert':'status'} className="col-span-full mt-3 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">{message}</p>:null}
+  {message?<p role={failed?'alert':'status'}
+    className="col-span-full mt-3 rounded-lg border border-admin-border-strong bg-admin-surface-subtle
+      p-3 text-sm text-admin-text dark:border-admin-border-strong dark:bg-admin-surface dark:text-admin-text">
+    {message}</p>:null}
  </form>;
 }

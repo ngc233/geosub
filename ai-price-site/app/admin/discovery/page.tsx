@@ -1,3 +1,5 @@
+import AdminPagination from "@/components/admin/AdminPagination";
+import { createAdminListView } from "@/lib/admin-list-params";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
 import { AdminButton } from "../../../components/admin/AdminButton";
@@ -104,9 +106,9 @@ function statusClassName(status: string) {
   if (status === "new") return "bg-blue-50 text-blue-700 ring-blue-200";
   if (status === "watching") return "bg-amber-50 text-amber-700 ring-amber-200";
   if (status === "promoted") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "merged") return "bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-200";
-  if (status === "ignored") return "bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400";
-  return "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300";
+  if (status === "merged") return "bg-admin-chip text-admin-text-body ring-admin-border dark:bg-admin-chip dark:text-admin-text-body";
+  if (status === "ignored") return "bg-admin-chip text-admin-text-muted ring-admin-border dark:bg-admin-chip dark:text-admin-text-muted";
+  return "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary";
 }
 
 function sourceLabel(sourceType: string) {
@@ -151,7 +153,7 @@ function formatOptionalDate(value: Date | string | null) {
 function scoreClassName(score: number) {
   if (score >= 80) return "text-emerald-700";
   if (score >= 60) return "text-amber-700";
-  return "text-slate-500 dark:text-slate-400";
+  return "text-admin-text-muted dark:text-admin-text-muted";
 }
 
 function changeKindLabel(kind: string | null) {
@@ -168,8 +170,8 @@ function changeKindClassName(kind: string | null) {
   if (kind === "new_model_or_plan") return "bg-blue-50 text-blue-700 ring-blue-200";
   if (kind === "product_launch") return "bg-violet-50 text-violet-700 ring-violet-200";
   if (kind === "content_update") return "bg-amber-50 text-amber-700 ring-amber-200";
-  if (kind === "no_change") return "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300";
-  return "bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400";
+  if (kind === "no_change") return "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary";
+  return "bg-admin-chip text-admin-text-muted ring-admin-border dark:bg-admin-chip dark:text-admin-text-muted";
 }
 
 function strategyLabel(strategy: string | null) {
@@ -191,7 +193,7 @@ function sourceQueueLabel(source: SourceRow) {
 function sourceQueueClassName(source: SourceRow) {
   if (source.manual_scan_requested_at) return "bg-blue-50 text-blue-700 ring-blue-200";
   if (source.is_due) return "bg-amber-50 text-amber-700 ring-amber-200";
-  return "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300";
+  return "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary";
 }
 
 function CandidateActions({ candidate }: { candidate: CandidateRow }) {
@@ -203,7 +205,7 @@ function CandidateActions({ candidate }: { candidate: CandidateRow }) {
     });
 
     return (
-      <div className="space-y-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+      <div className="space-y-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
         {candidate.promoted_product_name ? (
           <div>已加入：{candidate.promoted_product_name}</div>
         ) : null}
@@ -213,7 +215,7 @@ function CandidateActions({ candidate }: { candidate: CandidateRow }) {
         {candidate.collector_job_count > 0 ? (
           <div className="rounded-lg bg-emerald-50 px-2 py-2 font-medium leading-5 text-emerald-800 ring-1 ring-emerald-100">
             已生成 {candidate.collector_job_count} 个采集任务。
-            <AdminLink href={reviewHref} className="mt-1 inline-flex font-semibold text-blue-700 underline underline-offset-4">
+            <AdminLink href={reviewHref} className="mt-1 inline-flex font-medium text-admin-accent underline underline-offset-4">
               去这个产品的采集工作台
             </AdminLink>
           </div>
@@ -259,6 +261,9 @@ export default async function DiscoveryPage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    page?: string;
+    sourcePage?: string;
+    checkPage?: string;
     evidence?: string;
     opportunity?: string;
     promotionError?: string;
@@ -404,6 +409,9 @@ export default async function DiscoveryPage({
   ).length;
   const highConfidenceCount = candidates.filter((candidate) => candidate.confidence_score >= 75).length;
 
+  const list = createAdminListView(candidates, { basePath: "/admin/discovery", params: params, pageSize: 25, pageParam: "page", id: "discovery-candidates" });
+  const sourceList=createAdminListView(sources,{basePath:"/admin/discovery",params,pageParam:"sourcePage",pageSize:25,id:"discovery-sources"});
+  const checkList=createAdminListView(recentChecks,{basePath:"/admin/discovery",params,pageParam:"checkPage",pageSize:25,id:"discovery-checks"});
   return (
     <div>
       <AdminPageHeader
@@ -433,38 +441,39 @@ export default async function DiscoveryPage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">新候选</div>
-          <div className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-50">{newCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">等待判断是否上架。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">新候选</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{newCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">等待判断是否上架。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">观察中</div>
-          <div className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-50">{watchingCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">暂不入库，但保留线索。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">观察中</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{watchingCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">暂不入库，但保留线索。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">高置信线索</div>
-          <div className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-50">{highConfidenceCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">优先审核，适合进入服务库。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">高置信线索</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{highConfidenceCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">优先审核，适合进入服务库。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">已处理</div>
-          <div className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-50">{handledCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">已加入、合并或忽略。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">已处理</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{handledCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">已加入、合并或忽略。</div>
         </AdminCard>
       </div>
 
       <AdminCard>
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">候选产品池</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">候选产品池</h2>
+          <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
             添加线索先进入候选池，不会立刻发布。点击“加入并进入采集”后，系统会创建或合并产品、自动匹配 App Store，并跳到价格采集审核页，只采这个产品。
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <AdminPagination {...list.pagination} ariaLabel="列表分页" className="mb-4" id="discovery-candidates" />
+        <div className="overflow-hidden rounded-xl border border-admin-border dark:border-admin-border-strong">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+            <thead className="border-b border-admin-border bg-admin-surface-subtle text-xs text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">候选产品</th>
                 <th className="px-4 py-3 font-medium">来源</th>
@@ -474,15 +483,15 @@ export default async function DiscoveryPage({
                 <th className="px-4 py-3 font-medium">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
-              {candidates.map((candidate) => (
-                <tr key={candidate.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800">
+            <tbody className="divide-y divide-admin-border bg-admin-surface dark:bg-admin-surface">
+              {list.items.map((candidate) => (
+                <tr key={candidate.id} className="align-top hover:bg-admin-surface-subtle dark:hover:bg-admin-chip">
                   <td className="px-4 py-4">
-                    <div className="font-semibold text-slate-950 dark:text-slate-50">{candidate.name}</div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="font-semibold text-admin-text dark:text-admin-text">{candidate.name}</div>
+                    <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {candidate.suggested_slug || "未生成 slug"} / {categoryLabel(candidate.suggested_category)}
                     </div>
-                    {candidate.provider ? <div className="mt-1 text-xs text-slate-400">{candidate.provider}</div> : null}
+                    {candidate.provider ? <div className="mt-1 text-xs text-admin-text-faint">{candidate.provider}</div> : null}
                     {candidate.collector_job_count > 0 ? (
                       <div className="mt-2 text-xs font-medium text-emerald-700">
                         已生成 {candidate.collector_job_count} 个采集任务
@@ -490,24 +499,26 @@ export default async function DiscoveryPage({
                     ) : null}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-medium text-slate-700 dark:text-slate-200">{sourceLabel(candidate.source_type)}</div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{candidate.source_name || "未标注来源名"}</div>
-                    <div className="mt-2 text-xs text-slate-400">发现：{formatDate(candidate.first_seen_at)}</div>
+                    <div className="font-medium text-admin-text-body dark:text-admin-text-body">{sourceLabel(candidate.source_type)}</div>
+                    <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">{candidate.source_name || "未标注来源名"}</div>
+                    <div className="mt-2 text-xs text-admin-text-faint">发现：{formatDate(candidate.first_seen_at)}</div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="space-y-1 text-xs">
-                      {candidate.official_url ? <a className="block font-medium text-blue-700 hover:text-blue-900" href={candidate.official_url} target="_blank" rel="noreferrer">官网</a> : null}
-                      {candidate.pricing_url ? <a className="block font-medium text-blue-700 hover:text-blue-900" href={candidate.pricing_url} target="_blank" rel="noreferrer">定价页</a> : null}
-                      {candidate.app_store_url ? <a className="block font-medium text-blue-700 hover:text-blue-900" href={candidate.app_store_url} target="_blank" rel="noreferrer">App Store</a> : null}
-                      {candidate.google_play_url ? <a className="block font-medium text-blue-700 hover:text-blue-900" href={candidate.google_play_url} target="_blank" rel="noreferrer">Google Play</a> : null}
-                      {!candidate.official_url && !candidate.pricing_url && !candidate.app_store_url && !candidate.google_play_url ? <span className="text-slate-400">暂无链接</span> : null}
+                      {candidate.official_url ? <a className="block font-medium text-admin-accent hover:underline" href={candidate.official_url} target="_blank" rel="noreferrer">官网</a> : null}
+                      {candidate.pricing_url ? <a className="block font-medium text-admin-accent hover:underline" href={candidate.pricing_url} target="_blank" rel="noreferrer">定价页</a> : null}
+                      {candidate.app_store_url ? <a className="block font-medium text-admin-accent hover:underline"
+                        href={candidate.app_store_url} target="_blank" rel="noreferrer">App Store</a> : null}
+                      {candidate.google_play_url ? <a className="block font-medium text-admin-accent hover:underline"
+                        href={candidate.google_play_url} target="_blank" rel="noreferrer">Google Play</a> : null}
+                      {!candidate.official_url && !candidate.pricing_url && !candidate.app_store_url && !candidate.google_play_url ? <span className="text-admin-text-faint">暂无链接</span> : null}
                     </div>
                   </td>
                   <td className="max-w-[340px] px-4 py-4">
                     <div className={`text-sm font-semibold ${scoreClassName(candidate.confidence_score)}`}>
                       置信度 {candidate.confidence_score}
                     </div>
-                    <div className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    <div className="mt-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                       {candidate.discovery_reason || "暂无发现说明。"}
                     </div>
                   </td>
@@ -515,7 +526,7 @@ export default async function DiscoveryPage({
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClassName(candidate.status)}`}>
                       {statusLabel(candidate.status)}
                     </span>
-                    {candidate.review_note ? <div className="mt-2 max-w-[220px] text-xs leading-5 text-slate-500 dark:text-slate-400">{candidate.review_note}</div> : null}
+                    {candidate.review_note ? <div className="mt-2 max-w-[220px] text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{candidate.review_note}</div> : null}
                   </td>
                   <td className="px-4 py-4">
                     <CandidateActions candidate={candidate} />
@@ -524,7 +535,7 @@ export default async function DiscoveryPage({
               ))}
               {candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-admin-text-muted dark:text-admin-text-muted">
                     暂无候选产品。后续自动发现任务会把线索写入这里。
                   </td>
                 </tr>
@@ -532,19 +543,21 @@ export default async function DiscoveryPage({
             </tbody>
           </table>
         </div>
+      <AdminPagination {...list.pagination} ariaLabel="列表底部分页" className="mt-4" />
       </AdminCard>
 
       <AdminCard className="mt-6">
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">发现来源配置</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">发现来源配置</h2>
+          <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
             主动探测器后续会从这里读取目标。当前阶段负责配置、留档和检查记录展示。
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <AdminPagination {...sourceList.pagination} id="discovery-sources" ariaLabel="发现来源分页" className="mb-4" />
+        <div className="overflow-hidden rounded-xl border border-admin-border dark:border-admin-border-strong">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+            <thead className="border-b border-admin-border bg-admin-surface-subtle text-xs text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">来源</th>
                 <th className="px-4 py-3 font-medium">类型</th>
@@ -554,28 +567,32 @@ export default async function DiscoveryPage({
                 <th className="px-4 py-3 font-medium">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
-              {sources.map((source) => (
-                <tr key={source.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800">
+            <tbody className="divide-y divide-admin-border bg-admin-surface dark:bg-admin-surface">
+              {sourceList.items.map((source) => (
+                <tr key={source.id} className="align-top hover:bg-admin-surface-subtle dark:hover:bg-admin-chip">
                   <td className="px-4 py-4">
-                    <div className="font-semibold text-slate-950 dark:text-slate-50">{source.name}</div>
-                    <a href={source.url} target="_blank" rel="noreferrer" className="mt-1 block max-w-[360px] truncate text-xs font-medium text-blue-700 hover:text-blue-900">
+                    <div className="font-semibold text-admin-text dark:text-admin-text">{source.name}</div>
+                    <a href={source.url} target="_blank" rel="noreferrer" className="mt-1 block max-w-[360px] truncate text-xs font-medium text-admin-accent hover:underline">
                       {source.url}
                     </a>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-medium text-slate-700 dark:text-slate-200">{sourceLabel(source.source_type)}</div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{source.category_hint ? categoryLabel(source.category_hint) : "未指定分类"}</div>
+                    <div className="font-medium text-admin-text-body dark:text-admin-text-body">{sourceLabel(source.source_type)}</div>
+                    <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">{source.category_hint ? categoryLabel(source.category_hint) : "未指定分类"}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-xs text-slate-500 dark:text-slate-400">每 {source.scan_interval_hours} 小时</div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">可靠度 {source.reliability_score}</div>
-                    <div className="mt-1 text-xs font-medium text-slate-700 dark:text-slate-200">{strategyLabel(source.strategy)}</div>
-                    <div className="mt-1 text-xs text-slate-400">入池 {source.promote_threshold} / 观察 {source.watch_threshold}</div>
-                    {source.query ? <div className="mt-1 text-xs text-slate-400">{source.query}</div> : null}
+                    <div className="text-xs text-admin-text-muted dark:text-admin-text-muted">每 {source.scan_interval_hours} 小时</div>
+                    <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">可靠度 {source.reliability_score}</div>
+                    <div className="mt-1 text-xs font-medium text-admin-text-body dark:text-admin-text-body">{strategyLabel(source.strategy)}</div>
+                    <div className="mt-1 text-xs text-admin-text-faint">入池 {source.promote_threshold} / 观察 {source.watch_threshold}</div>
+                    {source.query ? <div className="mt-1 text-xs text-admin-text-faint">{source.query}</div> : null}
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${source.status === "active" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+                      source.status === "active" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : [
+                        "bg-admin-chip text-admin-text-secondary ring-admin-border",
+                        "dark:bg-admin-chip dark:text-admin-text-secondary"
+                      ].join(" ")}`}>
                       {source.status === "active" ? "启用" : source.status === "paused" ? "暂停" : "归档"}
                     </span>
                     <div className="mt-2">
@@ -583,7 +600,7 @@ export default async function DiscoveryPage({
                         {sourceQueueLabel(source)}
                       </span>
                     </div>
-                    <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">上次检查：{formatOptionalDate(source.last_checked_at)}</div>
+                    <div className="mt-2 text-xs text-admin-text-muted dark:text-admin-text-muted">上次检查：{formatOptionalDate(source.last_checked_at)}</div>
                     {source.manual_scan_requested_at ? (
                       <div className="mt-1 text-xs text-blue-600">
                         请求时间：{formatDate(source.manual_scan_requested_at)}
@@ -594,15 +611,17 @@ export default async function DiscoveryPage({
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${changeKindClassName(source.latest_check_kind)}`}>
                           {changeKindLabel(source.latest_check_kind)}
                         </span>
-                        {source.latest_importance_score !== null ? <span className="text-xs text-slate-500 dark:text-slate-400">重要度 {source.latest_importance_score}</span> : null}
+                        {source.latest_importance_score !== null ? <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">重要度 {source.latest_importance_score}</span> : null}
                       </div>
                     ) : null}
                     {source.last_error ? <div className="mt-1 text-xs text-red-600">{source.last_error}</div> : null}
                   </td>
-                  <td className="max-w-[260px] px-4 py-4 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    {source.latest_check_title ? <div className="font-semibold text-slate-700 dark:text-slate-200">{source.latest_check_title}</div> : null}
-                    {source.latest_trigger_url ? <a className="mt-1 block truncate font-medium text-blue-700 hover:text-blue-900" href={source.latest_trigger_url} target="_blank" rel="noreferrer">触发条目</a> : null}
-                    {source.latest_trigger_published_at ? <div className="mt-1 text-slate-400">发布时间：{formatDate(source.latest_trigger_published_at)}</div> : null}
+                  <td className="max-w-[260px] px-4 py-4 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
+                    {source.latest_check_title ? <div className="font-semibold text-admin-text-body dark:text-admin-text-body">{source.latest_check_title}</div> : null}
+                    {source.latest_trigger_url ? <a
+                      className="mt-1 block truncate font-medium text-admin-accent hover:underline"
+                      href={source.latest_trigger_url} target="_blank" rel="noreferrer">触发条目</a> : null}
+                    {source.latest_trigger_published_at ? <div className="mt-1 text-admin-text-faint">发布时间：{formatDate(source.latest_trigger_published_at)}</div> : null}
                     {source.latest_check_summary ? <div className="mt-1 line-clamp-3">{source.latest_check_summary}</div> : <div>{source.note || "暂无备注"}</div>}
                   </td>
                   <td className="px-4 py-4">
@@ -616,7 +635,7 @@ export default async function DiscoveryPage({
                         {source.manual_scan_requested_at ? "已在队列" : "加入下一轮检查"}
                       </AdminButton>
                     </AdminActionForm>
-                    <div className="mt-2 max-w-[180px] text-xs leading-5 text-slate-400">
+                    <div className="mt-2 max-w-[180px] text-xs leading-5 text-admin-text-faint">
                       扫描器运行后会更新最近检查记录。
                     </div>
                   </td>
@@ -624,7 +643,7 @@ export default async function DiscoveryPage({
               ))}
               {sources.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-admin-text-muted dark:text-admin-text-muted">
                     暂无发现来源。
                   </td>
                 </tr>
@@ -632,19 +651,21 @@ export default async function DiscoveryPage({
             </tbody>
           </table>
         </div>
+      <AdminPagination {...sourceList.pagination} ariaLabel="发现来源底部分页" className="mt-4" />
       </AdminCard>
 
       <AdminCard className="mt-6">
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">最近检查记录</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">最近检查记录</h2>
+          <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
             保留最近 30 次主动探测结果，用来追踪系统为什么发现候选、为什么没有入池，或者哪个来源失败。
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <AdminPagination {...checkList.pagination} id="discovery-checks" ariaLabel="检查记录分页" className="mb-4" />
+        <div className="overflow-hidden rounded-xl border border-admin-border dark:border-admin-border-strong">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+            <thead className="border-b border-admin-border bg-admin-surface-subtle text-xs text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">时间 / 来源</th>
                 <th className="px-4 py-3 font-medium">结果</th>
@@ -653,33 +674,39 @@ export default async function DiscoveryPage({
                 <th className="px-4 py-3 font-medium">候选</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
-              {recentChecks.map((check) => (
-                <tr key={check.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800">
+            <tbody className="divide-y divide-admin-border bg-admin-surface dark:bg-admin-surface">
+              {checkList.items.map((check) => (
+                <tr key={check.id} className="align-top hover:bg-admin-surface-subtle dark:hover:bg-admin-chip">
                   <td className="px-4 py-4">
-                    <div className="font-medium text-slate-950 dark:text-slate-50">{formatDate(check.checked_at)}</div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{check.source_name}</div>
-                    <div className="mt-1 text-xs text-slate-400">{sourceLabel(check.source_type)}</div>
+                    <div className="font-medium text-admin-text dark:text-admin-text">{formatDate(check.checked_at)}</div>
+                    <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">{check.source_name}</div>
+                    <div className="mt-1 text-xs text-admin-text-faint">{sourceLabel(check.source_type)}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${check.status === "succeeded" ? check.changed ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300" : "bg-red-50 text-red-700 ring-red-200"}`}>
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+                      check.status === "succeeded"
+                        ? check.changed ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : [
+                          "bg-admin-chip text-admin-text-secondary ring-admin-border",
+                          "dark:bg-admin-chip dark:text-admin-text-secondary"
+                        ].join(" ")
+                        : "bg-red-50 text-red-700 ring-red-200"}`}>
                       {check.status === "succeeded" ? check.changed ? "有变化" : "无变化" : "失败"}
                     </span>
-                    {check.http_status ? <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">HTTP {check.http_status}</div> : null}
+                    {check.http_status ? <div className="mt-2 text-xs text-admin-text-muted dark:text-admin-text-muted">HTTP {check.http_status}</div> : null}
                     {check.error_message ? <div className="mt-2 max-w-[220px] text-xs leading-5 text-red-600">{check.error_message}</div> : null}
                   </td>
                   <td className="px-4 py-4">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${changeKindClassName(check.change_kind)}`}>
                       {changeKindLabel(check.change_kind)}
                     </span>
-                    <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">重要度 {check.importance_score ?? 0}</div>
-                    <div className="mt-1 text-xs text-slate-400">{strategyLabel(check.source_strategy)}</div>
+                    <div className="mt-2 text-xs text-admin-text-muted dark:text-admin-text-muted">重要度 {check.importance_score ?? 0}</div>
+                    <div className="mt-1 text-xs text-admin-text-faint">{strategyLabel(check.source_strategy)}</div>
                     {check.matched_keywords && check.matched_keywords.length > 0 ? (
                       <div className="mt-2 flex max-w-[240px] flex-wrap gap-1">
                         {check.matched_keywords.slice(0, 5).map((keyword) => (
                           <span
                             key={keyword}
-                            className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                            className="rounded-md bg-admin-chip px-1.5 py-0.5 text-[11px] font-medium text-admin-text-muted dark:bg-admin-chip dark:text-admin-text-muted"
                           >
                             {keyword}
                           </span>
@@ -688,19 +715,23 @@ export default async function DiscoveryPage({
                     ) : null}
                   </td>
                   <td className="max-w-[360px] px-4 py-4">
-                    <div className="line-clamp-2 font-medium text-slate-800 dark:text-slate-200">{check.title || "无标题"}</div>
-                    {check.trigger_url ? <a className="mt-1 block truncate text-xs font-medium text-blue-700 hover:text-blue-900" href={check.trigger_url} target="_blank" rel="noreferrer">打开触发条目</a> : null}
-                    {check.trigger_published_at ? <div className="mt-1 text-xs text-slate-400">发布时间：{formatDate(check.trigger_published_at)}</div> : null}
-                    {check.summary ? <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{check.summary}</div> : null}
+                    <div className="line-clamp-2 font-medium text-admin-text dark:text-admin-text-body">{check.title || "无标题"}</div>
+                    {check.trigger_url ? <a
+                      className="mt-1 block truncate text-xs font-medium text-admin-accent hover:underline"
+                      href={check.trigger_url} target="_blank" rel="noreferrer">打开触发条目</a> : null}
+                    {check.trigger_published_at ? <div className="mt-1 text-xs text-admin-text-faint">发布时间：{formatDate(check.trigger_published_at)}</div> : null}
+                    {check.summary ? <div className="mt-2 line-clamp-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{check.summary}</div> : null}
                   </td>
                   <td className="px-4 py-4">
-                    {check.candidate_name ? <div className="font-medium text-slate-800 dark:text-slate-200">{check.candidate_name}</div> : <div className="text-xs text-slate-400">未入候选池</div>}
+                    {check.candidate_name
+                      ? <div className="font-medium text-admin-text dark:text-admin-text-body">{check.candidate_name}</div>
+                      : <div className="text-xs text-admin-text-faint">未入候选池</div>}
                   </td>
                 </tr>
               ))}
               {recentChecks.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-admin-text-muted dark:text-admin-text-muted">
                     暂无检查记录。主动发现扫描器运行后会写入这里。
                   </td>
                 </tr>
@@ -708,6 +739,7 @@ export default async function DiscoveryPage({
             </tbody>
           </table>
         </div>
+      <AdminPagination {...checkList.pagination} ariaLabel="检查记录底部分页" className="mt-4" />
       </AdminCard>
     </div>
   );

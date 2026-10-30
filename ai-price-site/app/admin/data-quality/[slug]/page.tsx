@@ -15,10 +15,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductDataQualityPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ page?: string;returnTo?:string }>;
 }) {
   const { slug } = await params;
+  const query = searchParams ? await searchParams : {};
   const product = await measureAdminWorkload("data-quality-detail.product", () =>
     getProductSummary(slug),
   );
@@ -40,8 +43,10 @@ export default async function ProductDataQualityPage({
 
   return (
     <>
-    <AdminProductContext id={product.id} slug={product.slug} name={product.name} />
+    <AdminProductContext id={product.id} slug={product.slug} name={product.name} returnTo={query.returnTo} />
     <ProductDataQualityView
+      returnTo={query.returnTo}
+      listPage={query.page}
       product={product}
       plans={plans}
       missingRows={missingRows}

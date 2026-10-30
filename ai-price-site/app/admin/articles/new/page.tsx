@@ -1,3 +1,5 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
+import AdminSegmentedControl from "@/components/admin/AdminSegmentedControl";
 import AdminLink from "@/components/admin/AdminLink";
 import type { Locale } from "@prisma/client";
 import { AdminPageHeader } from "../../../../components/admin/AdminCard";
@@ -9,6 +11,7 @@ export default async function NewArticlePage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    returnTo?:string;
     brief?: string;
     error?: string;
     locale?: string;
@@ -61,21 +64,11 @@ export default async function NewArticlePage({
         description="创建可发布到前台指南页的内容。保存为发布状态后，文章会进入指南列表和 sitemap。"
         action={
           <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-              <AdminLink
-                href="/admin/articles/new?locale=ZH"
-                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "ZH" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
-              >
-                中文
-              </AdminLink>
-              <AdminLink
-                href="/admin/articles/new?locale=EN"
-                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "EN" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
-              >
-                English
-              </AdminLink>
-            </div>
-            <AdminLink href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
+            <AdminSegmentedControl ariaLabel="内容语言" value={locale} items={[
+              {value:"ZH",label:"中文",href:"/admin/articles/new?locale=ZH"},
+              {value:"EN",label:"English",href:"/admin/articles/new?locale=EN"}
+            ]} />
+            <AdminLink href="/admin/articles" className="text-sm font-medium text-admin-accent hover:underline">
               返回文章列表
             </AdminLink>
           </div>
@@ -83,18 +76,19 @@ export default async function NewArticlePage({
       />
 
       {params?.error === "missing" ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           标题和 URL 标识不能为空。
         </div>
       ) : null}
 
       {params?.error === "slug" ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           这个 URL 标识已经存在，请换一个。
         </div>
       ) : null}
 
       <ArticleForm
+        returnTo={safeAdminReturnTo(params.returnTo,"/admin/articles")}
         defaultLocale={locale}
         defaultTitle={params.topic?.slice(0, 160) || ""}
         defaultExcerpt={params.brief?.slice(0, 300) || ""}

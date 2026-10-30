@@ -101,41 +101,41 @@ export default async function AdminPricingPreviewPage() {
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">可展示产品</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">可展示产品</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {visibleProducts.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             已发布且有价格数据的产品。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">套餐数量</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">套餐数量</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {totalPlans}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             已发布产品下的套餐。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">价格记录</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">价格记录</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {totalPrices}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             已发布区域价格。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">下一步</div>
-          <div className="mt-2 text-base font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">下一步</div>
+          <div className="mt-2 text-base font-semibold text-admin-text dark:text-admin-text">
             前台迁移
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             确认本页正常后，再替换 /zh/ai-pricing。
           </div>
         </AdminCard>
@@ -147,31 +147,31 @@ export default async function AdminPricingPreviewPage() {
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-black text-slate-950 dark:text-slate-50">
+                  <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">
                     {product.name}
                   </h2>
 
-                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-200">
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
                     {categoryLabel(String(product.category))}
                   </span>
 
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-400">
+                  <span className="rounded-full bg-admin-chip px-2.5 py-1 text-xs font-semibold text-admin-text-muted ring-1 ring-admin-border dark:bg-admin-chip dark:text-admin-text-muted">
                     {product.provider || "未知服务商"}
                   </span>
                 </div>
 
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">
                   {product.description || "暂无产品描述。"}
                 </p>
 
-                <p className="mt-2 font-mono text-xs text-slate-400">
+                <p className="mt-2 font-mono text-xs text-admin-text-faint">
                   slug: {product.slug}
                 </p>
               </div>
 
               <AdminLink
                 href="/admin/products"
-                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline"
               >
                 返回服务库
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
@@ -187,19 +187,19 @@ export default async function AdminPricingPreviewPage() {
                 return (
                   <div
                     key={plan.id}
-                    className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
+                    className="overflow-hidden rounded-xl border border-admin-border dark:border-admin-border-strong"
                   >
-                    <div className="flex flex-col gap-2 bg-slate-50 px-5 py-4 md:flex-row md:items-center md:justify-between dark:bg-slate-800">
+                    <div className="flex flex-col gap-2 bg-admin-surface-subtle px-5 py-4 md:flex-row md:items-center md:justify-between dark:bg-admin-chip">
                       <div>
-                        <h3 className="text-base font-black text-slate-950 dark:text-slate-50">
+                        <h3 className="text-base font-semibold text-admin-text dark:text-admin-text">
                           {plan.name}
                         </h3>
-                        <p className="mt-1 font-mono text-xs text-slate-400">
+                        <p className="mt-1 font-mono text-xs text-admin-text-faint">
                           {plan.slug} · {String(plan.billingCycle)}
                         </p>
                       </div>
 
-                      <div className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                      <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">
                         {prices.length} 个地区
                         {minPrice && maxPrice ? (
                           <span className="ml-2 text-emerald-700">
@@ -212,7 +212,9 @@ export default async function AdminPricingPreviewPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="border-y border-slate-100 bg-white text-xs font-black uppercase tracking-wide text-slate-400 dark:border-slate-800 dark:bg-slate-900">
+                          <tr className="border-y border-admin-border bg-admin-surface text-xs font-semibold
+                            uppercase tracking-wide text-admin-text-faint
+                            dark:border-admin-border dark:bg-admin-surface">
                             <th className="w-16 px-5 py-3">#</th>
                             <th className="min-w-[120px] px-5 py-3">国家</th>
                             <th className="min-w-[140px] px-5 py-3">本地价格</th>
@@ -222,37 +224,37 @@ export default async function AdminPricingPreviewPage() {
                           </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
+                        <tbody className="divide-y divide-admin-border bg-admin-surface dark:bg-admin-surface">
                           {prices.map((price, index) => (
                             <tr key={price.id}>
-                              <td className="px-5 py-4 font-mono text-xs text-slate-400">
+                              <td className="px-5 py-4 font-mono text-xs text-admin-text-faint">
                                 {index + 1}
                               </td>
 
                               <td className="px-5 py-4">
-                                <div className="font-black text-slate-900 dark:text-slate-100">
+                                <div className="font-semibold text-admin-text dark:text-admin-text">
                                   {price.country.code}
                                 </div>
-                                <div className="mt-1 text-xs text-slate-400">
+                                <div className="mt-1 text-xs text-admin-text-faint">
                                   {price.country.nameZh || price.country.nameEn}
                                 </div>
                               </td>
 
-                              <td className="px-5 py-4 font-bold text-slate-700 dark:text-slate-200">
+                              <td className="px-5 py-4 font-semibold text-admin-text-body dark:text-admin-text-body">
                                 {formatLocalPrice(price.localPrice, price.currency)}
                               </td>
 
-                              <td className="px-5 py-4 font-black text-emerald-700">
+                              <td className="px-5 py-4 font-semibold text-emerald-700">
                                 {formatUsd(price.priceUsd)}
                               </td>
 
                               <td className="px-5 py-4">
-                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-200">
+                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                                   {String(price.dataQuality)}
                                 </span>
                               </td>
 
-                              <td className="px-5 py-4 text-xs font-bold text-slate-500 dark:text-slate-400">
+                              <td className="px-5 py-4 text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
                                 {price.primarySource?.name || "无来源"}
                               </td>
                             </tr>
@@ -262,7 +264,7 @@ export default async function AdminPricingPreviewPage() {
                             <tr>
                               <td
                                 colSpan={6}
-                                className="px-5 py-8 text-center text-sm font-bold text-slate-400"
+                                className="px-5 py-8 text-center text-sm font-semibold text-admin-text-faint"
                               >
                                 当前套餐暂无已发布价格。
                               </td>
@@ -280,7 +282,7 @@ export default async function AdminPricingPreviewPage() {
 
         {visibleProducts.length === 0 ? (
           <AdminCard>
-            <div className="py-12 text-center text-sm font-bold text-slate-400">
+            <div className="py-12 text-center text-sm font-semibold text-admin-text-faint">
               暂无可展示的数据库价格数据。
             </div>
           </AdminCard>

@@ -78,6 +78,8 @@ export type ProductQualityRow = {
   pending_anomaly_count: number;
   pending_stability_count: number;
   hard_anomaly_count: number;
+  plan_conflict_count?: number;
+  review_only_count?: number;
   ignored_observation_count: number;
   auto_closed_observation_count: number;
   ignored_reason_codes: string | null;
@@ -241,8 +243,8 @@ export function getProductCollectionPresentation(
       coverageTitle: `${row.covered_pair_count} / ${coverage.effectiveTarget} 套餐地区`,
       coverageDetail: `${coverage.percent}% · 缺 ${row.missing_country_count} 地区 · 不可售 ${row.confirmed_unavailable_country_count}`,
       coveragePercent: coverage.percent,
-      reviewTitle: `${row.pending_stability_count} 等稳定 · ${row.pending_anomaly_count} 异常`,
-      reviewDetail: `近 30 天自动忽略 ${row.ignored_observation_count}`,
+      reviewTitle: `${row.pending_stability_count} 等稳定 · ${row.pending_anomaly_count} 异常组合`,
+      reviewDetail: `当前待核验 ${row.pending_observation_count} 组合 · 近 30 天忽略 ${row.ignored_observation_count} 条历史样本`,
       nextCollection: formatNextCollection(row),
       lastCollectionLabel: "上次采集",
       lastCollectionAt: row.latest_run_started_at,
@@ -435,6 +437,24 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     };
   }
 
+  if ((row.plan_conflict_count || 0) > 0) {
+    return {
+      level: "warning",
+      label: "套餐规则冲突",
+      reason: `${row.plan_conflict_count} 个套餐地区组合未通过价格等级检查，重复采集无法修正规则。`,
+      nextAction: "核对套餐映射与等级",
+    };
+  }
+
+  if ((row.review_only_count || 0) > 0 && row.hard_anomaly_count <= (row.review_only_count || 0)) {
+    return {
+      level: "info",
+      label: "新套餐待核实",
+      reason: `${row.review_only_count} 个套餐地区组合尚未具备发布资格，需要核实身份与地区价格依据。`,
+      nextAction: "完善套餐证据",
+    };
+  }
+
   if (row.hard_anomaly_count > 0 && row.anomaly_refresh_status === "active") {
     return {
       level: "info",
@@ -542,7 +562,7 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     return {
       level: "info",
       label: "异常已隔离",
-      reason: `${row.hard_anomaly_count} 条高风险样本已被系统隔离，不影响现有稳定正式价格。`,
+      reason: `${row.hard_anomaly_count} 个当前套餐地区组合的异常证据已隔离，问题仍未解决。`,
       nextAction: "等待自动复采",
     };
   }
@@ -560,7 +580,7 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     return {
       level: "info",
       label: "自动补采中",
-      reason: `${row.pending_stability_count} 条样本正在等待三次稳定一致，系统会继续采集并自动判断。`,
+      reason: `${row.pending_stability_count} 个套餐地区组合正在等待稳定一致的独立样本，系统会继续采集并自动判断。`,
       nextAction: "等待稳定样本",
     };
   }
@@ -569,7 +589,7 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     return {
       level: "warning",
       label: "待审核积压",
-      reason: "待审核记录偏多，建议按产品重新采集或让自动审核再跑一轮。",
+      reason: "当前待核验组合较多，需要先按原因判断下一步；历史重复样本不计入当前问题数。",
       nextAction: "按产品处理",
     };
   }
@@ -598,10 +618,10 @@ export function getProductHealth(row: ProductQualityRow): ProductHealth {
     row.coverage_refresh_status === "paused"
   ) {
     return {
-      level: "good",
-      label: "地区差异已复核",
-      reason: "三轮补采仍未发现这些套餐，系统按地区上架差异保留，并由周度采集继续监测。",
-      nextAction: "无需手工处理",
+      level: "warning",
+      label: "来源覆盖待核验",
+      reason: "补采预算已用完，公开页仍未显示这些套餐；不能据此确认地区停售，问题保持未解决，日常采集继续监测。",
+      nextAction: "核验来源覆盖",
     };
   }
 

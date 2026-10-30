@@ -6,7 +6,10 @@ import path from "node:path";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../lib/prisma";
-import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
+import {
+  invalidatePublicPricing,
+  invalidatePublicPricingFromRoute,
+} from "../../../lib/public-pricing-cache-actions";
 import { requestSuccessfulCollectorRevalidation } from "../../../lib/internal-collector-revalidation";
 import {
   type CollectionRunResult,
@@ -96,7 +99,7 @@ async function markCollectorRunProcessExit(
         finished_at = COALESCE(finished_at, NOW()),
         duration_ms = GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(finished_at, NOW()) - started_at)) * 1000)::int,
         error_message = COALESCE(error_message, ${message}),
-        raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object('state', ${status})
+        raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object('state', ${status}::text)
       WHERE id = ${runId}::uuid
         AND status = 'running'
     `;
@@ -115,10 +118,10 @@ async function markCollectorRunSpawned(runId: string | null, started: StartedCol
       UPDATE collector_job_runs
       SET raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
         'state', 'spawned',
-        'pid', ${started.pid},
-        'backend_root', ${started.backendRoot},
-        'runner_path', ${started.runnerPath},
-        'command', ${started.command}
+        'pid', ${started.pid}::integer,
+        'backend_root', ${started.backendRoot}::text,
+        'runner_path', ${started.runnerPath}::text,
+        'command', ${started.command}::text
       )
       WHERE id = ${runId}::uuid
     `;
@@ -565,6 +568,7 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
     : [];
   const recentlyRunJobIds = new Set(recentlyRunRows.map((row) => row.job_id));
   const runnableJobIds = candidateJobIds.filter((jobId) => !recentlyRunJobIds.has(jobId));
+  const runIds: string[] = [];
   let queuedCount = 0;
   let runStatus: CollectionRunStatus = candidateJobIds.length > 0 ? "queued" : productSlug ? "fresh" : "none";
 
@@ -574,7 +578,8 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
 
   for (const jobId of runnableJobIds) {
     try {
-      await startCollectorJobRunInBackground(jobId);
+      const runId = await startCollectorJobRunInBackground(jobId);
+      if(runId) runIds.push(runId);
       queuedCount += 1;
       runStatus = "queued";
     } catch {
@@ -585,7 +590,7 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
   }
 
   if (queuedCount > 0) {
-    invalidatePublicPricing(productSlug || null);
+    invalidatePublicPricingFromRoute(productSlug || null);
   }
 
   for (const pathToRevalidate of getCollectionRevalidationPaths(productSlug)) {
@@ -595,5 +600,6 @@ export async function queueAndRunAppStoreCollection(productSlug: string): Promis
   return {
     queuedCount,
     runStatus,
+    runIds,
   };
 }

@@ -1223,6 +1223,14 @@
       ]
     },
     {
+      "path": "geosub-backend/scripts/lib/claude-pro-job-reuse.mjs",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs",
+        "collector_jobs"
+      ]
+    },
+    {
       "path": "geosub-backend/scripts/lib/official-web-auto-review.mjs",
       "classification": "runtime_service",
       "tables": [
@@ -1509,6 +1517,20 @@
         "plans",
         "price_observations",
         "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/isolated/collector-availability-hardening.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "region_prices"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/isolated/collector-review-hardening.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations"
       ]
     },
     {

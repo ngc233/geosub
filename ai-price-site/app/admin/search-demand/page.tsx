@@ -1,4 +1,4 @@
-import AdminLink from "@/components/admin/AdminLink";
+import AdminSegmentedControl from "@/components/admin/AdminSegmentedControl";
 import {
   AdminPageHeader,
   AdminStatCard,
@@ -160,23 +160,7 @@ export default async function AdminSearchDemandPage({
         title="搜索需求"
         description="查看访客真正想找的产品、套餐和问题。优先处理反复出现的无结果关键词，再观察搜索后是否进入了对应页面。"
         action={(
-          <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            {SEARCH_DEMAND_RANGES.map((range) => (
-              <AdminLink
-                key={range}
-                href={growthFocusHref(range, growthFocus)}
-                aria-current={days === range ? "page" : undefined}
-                className={[
-                  "rounded-md px-3 py-2 text-sm font-bold transition",
-                  days === range
-                    ? "bg-blue-700 text-white"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100",
-                ].join(" ")}
-              >
-                {range} 天
-              </AdminLink>
-            ))}
-          </div>
+<AdminSegmentedControl ariaLabel="统计周期" value={String(days)} items={SEARCH_DEMAND_RANGES.map(range => ({value:String(range),label:`${range} 天`,href:growthFocusHref(range, growthFocus)}))} />
         )}
       />
 

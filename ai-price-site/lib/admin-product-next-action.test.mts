@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {productNextAction,productWorkflowHref,type ProductNextActionInput} from "./admin-product-next-action.ts";
+const base:ProductNextActionInput={id:"p1",slug:"chatgpt",appStoreJobs:1,webJobs:0,runStatus:"succeeded",pending:0,blocked:0,prices:10,stale:0,due:0};
+test("a running task takes precedence over pending and missing prices",()=>{const a=productNextAction({...base,runStatus:"running",pending:9,prices:0});assert.equal(a.kind,"progress");assert.equal(a.href,"/admin/review?product=chatgpt#collection-runs");});
+test("missing supported source leads to configuration, never a collection submit",()=>{assert.equal(productNextAction({...base,appStoreJobs:0,webJobs:0}).kind,"setup");});
+test("failure sends the operator to the actual run record before retrying",()=>{const a=productNextAction({...base,runStatus:"failed",pending:20});assert.equal(a.kind,"diagnose");assert.equal(a.href,"/admin/collector-jobs?product=chatgpt#collector-runs");});
+test("unresolved App Store records lead to review instead of another default collection",()=>{const a=productNextAction({...base,pending:2,due:1});assert.equal(a.kind,"review");assert.equal(a.href,"/admin/review?product=chatgpt#review-pending");});
+test("a blocked record cannot be presented as ready just because there are prices",()=>{assert.equal(productNextAction({...base,blocked:1}).kind,"review");});
+test("Web-only validation never routes into the App Store review queue",()=>{const a=productNextAction({...base,slug:"spotify",appStoreJobs:0,webJobs:1,pending:3});assert.equal(a.kind,"source");assert.equal(a.href,"/admin/collector-jobs?product=spotify");});
+test("first collection and expired or due App Store prices offer collection",()=>{for(const fields of [{prices:0},{stale:1},{due:1}])assert.equal(productNextAction({...base,...fields}).kind,"collect");});
+test("existing fresh prices lead to the formal dataset, never a publish action",()=>{const a=productNextAction(base);assert.equal(a.kind,"prices");assert.equal(a.href,"/admin/prices?product=chatgpt");assert.doesNotMatch(a.label,/发布/);});
+test("unknown counts do not fabricate a ready result and encoded scope cannot escape its URL",()=>{assert.equal(productNextAction({...base,prices:NaN}).kind,"collect");assert.equal(productWorkflowHref("/admin/pipeline","x&stage=all"),"/admin/pipeline?product=x%26stage%3Dall");});

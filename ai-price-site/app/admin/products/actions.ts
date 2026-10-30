@@ -1,4 +1,5 @@
 "use server";
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 
 import { type Prisma, ProductCategory, PublishStatus, StructuredDataType } from "@prisma/client";
 import { redirect } from "next/navigation";
@@ -360,7 +361,9 @@ export async function createProductAction(formData: FormData) {
   const product=result.value;
   if(candidate) await cacheRemoteProductLogo({productSlug:product.slug,sourceUrl:candidate}).catch(()=>null);
   invalidatePublicPricing(product.slug);
-  redirect(`/admin/products/${product.id}/edit?created=1&appStoreAuto=${appStoreApp ? "found" : "not-found"}`);
+  return {redirectTo:`/admin/products/${product.id}/edit?created=1&appStoreAuto=${
+    appStoreApp ? "found" : "not-found"
+  }&returnTo=${encodeURIComponent(safeAdminReturnTo(formData.get("returnTo"),"/admin/products"))}`};
 }
 
 export async function updateProductAction(formData: FormData) {
@@ -461,7 +464,7 @@ export async function updateProductAction(formData: FormData) {
   if (updated.slug !== current.slug) {
     invalidatePublicPricing(updated.slug);
   }
-  redirect("/admin/products");
+  return {recordVersion:adminRecordVersion(updated),message:"产品已保存。",redirectTo:safeAdminReturnTo(formData.get("returnTo"),"/admin/products")};
 }
 
 function extractAppStoreId(value: string | null) {

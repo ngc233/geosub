@@ -1,3 +1,8 @@
+import AdminPagination from "@/components/admin/AdminPagination";
+import { createAdminListView } from "@/lib/admin-list-params";
+import AdminSegmentedControl from "@/components/admin/AdminSegmentedControl";
+import { adminControlClassName } from "@/components/admin/admin-control";
+import { adminButtonClassName } from "@/components/admin/AdminButton";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import type { Locale } from "@prisma/client";
@@ -11,8 +16,7 @@ import {
   toggleArticleTagStatusAction,
 } from "../actions";
 
-const inputClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50";
+const inputClass = `${adminControlClassName} h-11 w-full`;
 
 function StatusBadge({ status }: { status: string }) {
   const published = status === "PUBLISHED";
@@ -20,10 +24,10 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={[
-        "inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1",
+        "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
         published
           ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-          : "bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-400",
+          : "bg-admin-chip text-admin-text-muted ring-admin-border dark:bg-admin-chip dark:text-admin-text-muted",
       ].join(" ")}
     >
       {published ? "启用" : "停用"}
@@ -43,7 +47,7 @@ function ToggleButton({
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"
-        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+        className={adminButtonClassName({ variant: "secondary", size: "sm", className: "" })}
       >
         切换
       </button>
@@ -54,7 +58,7 @@ function ToggleButton({
 export default async function ArticleTaxonomyPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; created?: string; locale?: string }>;
+  searchParams?: Promise<{ error?: string; created?: string; locale?: string; page?: string; tagPage?: string }>;
 }) {
   const query = searchParams ? await searchParams : {};
   const locale: Locale = query.locale === "EN" ? "EN" : "ZH";
@@ -97,6 +101,8 @@ export default async function ArticleTaxonomyPage({
     }),
   ]);
 
+  const categoryList=createAdminListView(categories,{basePath:"/admin/articles/taxonomy",params:query,pageSize:25,id:"article-categories"});
+  const tagList=createAdminListView(tags,{basePath:"/admin/articles/taxonomy",params:query,pageParam:"tagPage",pageSize:25,id:"article-tags"});
   return (
     <div>
       <AdminPageHeader
@@ -105,21 +111,11 @@ export default async function ArticleTaxonomyPage({
         description="维护文章内容的基础信息架构。分类负责栏目归属，标签负责主题聚合和后续内链。"
         action={
           <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
-              <AdminLink
-                href="/admin/articles/taxonomy?locale=ZH"
-                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "ZH" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"}`}
-              >
-                中文
-              </AdminLink>
-              <AdminLink
-                href="/admin/articles/taxonomy?locale=EN"
-                className={`rounded-md px-3 py-1.5 text-sm font-black ${locale === "EN" ? "bg-blue-700 text-white" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"}`}
-              >
-                English
-              </AdminLink>
-            </div>
-            <AdminLink href="/admin/articles" className="text-sm font-black text-blue-700 hover:text-blue-900">
+            <AdminSegmentedControl ariaLabel="内容语言" value={locale} items={[
+              {value:"ZH",label:"中文",href:"/admin/articles/taxonomy?locale=ZH"},
+              {value:"EN",label:"English",href:"/admin/articles/taxonomy?locale=EN"}
+            ]} />
+            <AdminLink href="/admin/articles" className="text-sm font-medium text-admin-accent hover:underline">
               返回文章列表
             </AdminLink>
           </div>
@@ -127,13 +123,13 @@ export default async function ArticleTaxonomyPage({
       />
 
       {query?.error ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           保存失败，请检查名称或 URL 标识是否重复。
         </div>
       ) : null}
 
       {query?.created ? (
-        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
           已创建。
         </div>
       ) : null}
@@ -141,8 +137,8 @@ export default async function ArticleTaxonomyPage({
       <div className="grid gap-6 xl:grid-cols-2">
         <AdminCard>
           <div className="mb-5">
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">新建分类</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">新建分类</h2>
+            <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
               适合“价格指南”“支付与账号”“方法论”这类栏目。
             </p>
           </div>
@@ -162,8 +158,8 @@ export default async function ArticleTaxonomyPage({
 
         <AdminCard>
           <div className="mb-5">
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">新建标签</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">新建标签</h2>
+            <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
               适合“ChatGPT”“App Store”“汇率”“土耳其区”这类主题。
             </p>
           </div>
@@ -182,43 +178,46 @@ export default async function ArticleTaxonomyPage({
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <AdminCard>
-          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">分类列表</h2>
-          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:border-slate-700">
-            {categories.map((category) => (
-              <div key={category.id} className="grid grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">分类列表</h2>
+          <AdminPagination {...categoryList.pagination} id="article-categories" ariaLabel="分类列表分页" className="mt-4" />
+          <div className="mt-5 overflow-x-auto divide-y divide-admin-border rounded-xl border border-admin-border dark:border-admin-border-strong">
+            {categoryList.items.map((category) => (
+              <div key={category.id} className="grid min-w-[420px] grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
                 <div>
-                  <div className="font-black text-slate-950 dark:text-slate-50">{category.name}</div>
-                  <div className="mt-1 font-mono text-xs text-slate-400">{category.slug}</div>
+                  <div className="font-semibold text-admin-text dark:text-admin-text">{category.name}</div>
+                  <div className="mt-1 font-mono text-xs text-admin-text-faint">{category.slug}</div>
                 </div>
-                <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{category._count.articles} 篇</div>
+                <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">{category._count.articles} 篇</div>
                 <StatusBadge status={category.status} />
                 <ToggleButton id={category.id} action={toggleArticleCategoryStatusAction} />
               </div>
             ))}
             {categories.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm font-bold text-slate-400">还没有分类。</div>
+              <div className="px-4 py-8 text-center text-sm font-semibold text-admin-text-faint">还没有分类。</div>
             ) : null}
           </div>
+        <AdminPagination {...categoryList.pagination} ariaLabel="分类列表底部分页" className="mt-4" />
         </AdminCard>
 
         <AdminCard>
-          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">标签列表</h2>
-          <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:border-slate-700">
-            {tags.map((tag) => (
-              <div key={tag.id} className="grid grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">标签列表</h2><AdminPagination {...tagList.pagination} id="article-tags" ariaLabel="标签列表分页" className="mt-4" />
+          <div className="mt-5 overflow-x-auto divide-y divide-admin-border rounded-xl border border-admin-border dark:border-admin-border-strong">
+            {tagList.items.map((tag) => (
+              <div key={tag.id} className="grid min-w-[420px] grid-cols-[minmax(0,1fr)_80px_80px_80px] items-center gap-3 px-4 py-3 text-sm">
                 <div>
-                  <div className="font-black text-slate-950 dark:text-slate-50">{tag.name}</div>
-                  <div className="mt-1 font-mono text-xs text-slate-400">{tag.slug}</div>
+                  <div className="font-semibold text-admin-text dark:text-admin-text">{tag.name}</div>
+                  <div className="mt-1 font-mono text-xs text-admin-text-faint">{tag.slug}</div>
                 </div>
-                <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{tag._count.articleLinks} 篇</div>
+                <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">{tag._count.articleLinks} 篇</div>
                 <StatusBadge status={tag.status} />
                 <ToggleButton id={tag.id} action={toggleArticleTagStatusAction} />
               </div>
             ))}
             {tags.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm font-bold text-slate-400">还没有标签。</div>
+              <div className="px-4 py-8 text-center text-sm font-semibold text-admin-text-faint">还没有标签。</div>
             ) : null}
           </div>
+        <AdminPagination {...tagList.pagination} ariaLabel="标签列表底部分页" className="mt-4" />
         </AdminCard>
       </div>
     </div>

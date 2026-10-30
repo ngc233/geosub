@@ -102,10 +102,12 @@ test("admin sidebar exposes only operational modules", () => {
   assert.doesNotMatch(source, /\/admin\/affordability-preview/);
   assert.doesNotMatch(source, /href: "\/admin\/review"/);
   assert.doesNotMatch(source, /href: "\/admin\/discovery"/);
-  assert.match(source, /label: "今日工作"/);
-  assert.match(source, /label: "数据生产"/);
-  assert.match(source, /label: "数据资产"/);
-  assert.match(source, /label: "产品流水线"/);
+  // Groups follow the six business modules (rfc-admin-information-architecture-2026-10-28).
+  for (const group of ["工作台", "产品目录", "价格数据", "内容与增长", "运营", "系统"]) {
+    assert.match(source, new RegExp(`label: "${group}",\\n\\s+items:`));
+  }
+  assert.match(source, /label: "采集与审核"/);
+  assert.match(source, /function matchesRoute\(pathname: string, route: string\)[\s\S]*?pathname\.startsWith\(`\$\{route\}\/`\)/);
 });
 
 test("product pipeline is the single lifecycle entry while specialist pages remain reachable", () => {
@@ -114,18 +116,18 @@ test("product pipeline is the single lifecycle entry while specialist pages rema
   const pipeline = readProjectFile("app/admin/pipeline/page.tsx");
   const growth = readProjectFile("lib/admin-pipeline-growth.ts");
 
-  assert.match(sidebar, /label: "产品流水线", href: "\/admin\/pipeline"/);
-  assert.match(sidebar, /"\/admin\/collector-jobs"/);
+  assert.match(sidebar, /label: "采集与审核",\s+href: "\/admin\/pipeline"/);
+  assert.match(sidebar, /also: \[[^\]]*"\/admin\/review"[^\]]*"\/admin\/collector-jobs"/);
   assert.doesNotMatch(sidebar, /href: "\/admin\/review"/);
   assert.doesNotMatch(sidebar, /href: "\/admin\/discovery"/);
-  assert.match(steps, /href: "\/admin\/discovery"/);
-  assert.match(steps, /href: "\/admin\/review"/);
+  assert.match(steps, /href=\{contextHref\("\/admin\/discovery"\)\}/);
+  assert.match(steps, /path:"\/admin\/review"/);
 
   assert.match(pipeline, /label: "需要介入"/);
   assert.match(pipeline, /label: "系统处理中"/);
   assert.match(pipeline, /label: "未开始"/);
-  assert.match(pipeline, /label: "已发布"/);
-  assert.match(pipeline, /最接近发布/);
+  assert.match(pipeline, /label: "正式价可用"/);
+  assert.match(pipeline, /最接近完成价格验证/);
   assert.match(pipeline, /沉睡库存/);
   assert.match(pipeline, /getPublishReadiness/);
   assert.match(pipeline, /getPipelineGrowthSignals\(\)\.catch/);
@@ -331,7 +333,7 @@ test("admin runtime reports slow dashboard workloads without logging payloads", 
   assert.match(review, /measureAdminWorkload\("review\.page-data"/);
   assert.match(review, /measureAdminWorkload\("review\.pending-data"/);
   assert.match(review, /measureAdminWorkload\("review\.history-data"/);
-  assert.match(review, /const detailRowsPerProduct = productQuery \? 120 : 6/);
+  assert.match(review, /const detailRowsPerProduct = 10/);
   assert.match(review, /FROM price_observation_evidence_view evidence/);
   assert.match(review, /evidence\.published_comparison NOT IN/);
   assert.doesNotMatch(

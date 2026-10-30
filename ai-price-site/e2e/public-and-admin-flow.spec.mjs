@@ -77,7 +77,10 @@ test("admin can log in and approve a pending observation", async ({ page }) => {
     .locator("xpath=ancestor::summary[1]");
   const productDetails = productSummary.locator("xpath=parent::details");
   await expect(productDetails).toBeVisible();
-  await productSummary.click();
+  if ((await productDetails.getAttribute("open")) === null) {
+    await productSummary.click();
+  }
+  await expect(productDetails).toHaveAttribute("open", "");
 
   const observationInput = page.locator(
     `input[name="id"][value="${fixture.observationId}"]`,

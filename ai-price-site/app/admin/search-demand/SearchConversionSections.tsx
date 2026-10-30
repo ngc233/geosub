@@ -67,16 +67,16 @@ export function SearchConversionSections({
                   return (
                     <AdminTr key={`conversion:${term.locale}:${term.query}`}>
                       <AdminTd>
-                        <span className="font-bold text-slate-950 dark:text-slate-50">
+                        <span className="font-semibold text-admin-text dark:text-admin-text">
                           {term.query}
                         </span>
-                        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
+                        <span className="mt-1 block text-xs text-admin-text-faint dark:text-admin-text-muted">
                           {term.visitorCount} 位访客 · 最近{" "}
                           {formatDate(term.lastClickedAt)} UTC
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                        <span className="text-xs font-semibold uppercase text-admin-text-muted dark:text-admin-text-muted">
                           {term.locale}
                         </span>
                       </AdminTd>
@@ -99,7 +99,7 @@ export function SearchConversionSections({
               ) : (
                 <AdminTr>
                   <AdminTd>
-                    <span className="text-sm text-slate-400 dark:text-slate-400">
+                    <span className="text-sm text-admin-text-faint dark:text-admin-text-muted">
                       所选时段还没有搜索结果点击，暂时无法判断后续转化。
                     </span>
                   </AdminTd>
@@ -148,10 +148,10 @@ export function SearchConversionSections({
                   return (
                     <AdminTr key={`effect:${record.id}`}>
                       <AdminTd>
-                        <span className="font-bold text-slate-950 dark:text-slate-50">
+                        <span className="font-semibold text-admin-text dark:text-admin-text">
                           {record.query}
                         </span>
-                        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
+                        <span className="mt-1 block text-xs text-admin-text-faint dark:text-admin-text-muted">
                           {gapKindLabel(record.kind)}
                         </span>
                       </AdminTd>
@@ -171,23 +171,23 @@ export function SearchConversionSections({
                           <AdminBadge variant={effect.variant}>
                             {effect.label}
                           </AdminBadge>
-                          <span className="max-w-xs text-xs leading-5 text-slate-500 dark:text-slate-400">
+                          <span className="max-w-xs text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                             {effect.helper}
                           </span>
                         </div>
                       </AdminTd>
                       <AdminTd>
-                        <span className="block text-xs text-slate-600 dark:text-slate-300">
+                        <span className="block text-xs text-admin-text-secondary dark:text-admin-text-secondary">
                           搜索 {record.effectSearchCount} 次 · 无结果{" "}
                           {record.effectNoResultCount} 次
                         </span>
-                        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
+                        <span className="mt-1 block text-xs text-admin-text-faint dark:text-admin-text-muted">
                           点击 {record.effectClickCount} 次 ·{" "}
                           {record.effectVisitorCount} 位访客
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                        <span className="text-xs text-admin-text-muted dark:text-admin-text-muted">
                           {formatDate(record.evaluationStartedAt!)} UTC
                         </span>
                       </AdminTd>
@@ -219,7 +219,7 @@ export function SearchConversionSections({
                             </AdminButton>
                           </AdminActionForm>
                         ) : (
-                          <span className="text-xs font-semibold text-slate-400 dark:text-slate-400">
+                          <span className="text-xs font-semibold text-admin-text-faint dark:text-admin-text-muted">
                             继续观察
                           </span>
                         )}

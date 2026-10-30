@@ -8,6 +8,128 @@
   &:where([data-admin-theme="dark"], [data-admin-theme="dark"] *) { @slot; }
 }
 
+/* Admin design tokens (rfc-admin-information-architecture-2026-10-28, visual standard):
+   soft canvas, white 16px cards without hard borders, medium weights, light-blue active
+   pills. Dark selection mirrors the custom dark variant above. */
+@theme inline {
+  --color-admin-canvas: var(--admin-canvas);
+  --color-admin-surface: var(--admin-surface);
+  --color-admin-surface-subtle: var(--admin-surface-subtle);
+  --color-admin-surface-head: var(--admin-surface-head);
+  --color-admin-row-hover: var(--admin-row-hover);
+  --color-admin-chip: var(--admin-chip);
+  --color-admin-chip-hover: var(--admin-chip-hover);
+  --color-admin-border: var(--admin-border);
+  --color-admin-border-strong: var(--admin-border-strong);
+  --color-admin-text: var(--admin-text);
+  --color-admin-text-body: var(--admin-text-body);
+  --color-admin-text-secondary: var(--admin-text-secondary);
+  --color-admin-text-muted: var(--admin-text-muted);
+  --color-admin-text-faint: var(--admin-text-faint);
+  --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-soft: var(--admin-accent-soft);
+  --color-admin-success: var(--admin-success);
+  --color-admin-success-soft: var(--admin-success-soft);
+  --color-admin-warning: var(--admin-warning);
+  --color-admin-warning-soft: var(--admin-warning-soft);
+  --color-admin-danger: var(--admin-danger);
+  --color-admin-danger-soft: var(--admin-danger-soft);
+  --color-admin-shadow: var(--admin-shadow);
+  --color-admin-primary: var(--admin-primary);
+  --color-admin-primary-hover: var(--admin-primary-hover);
+  --shadow-admin-card: var(--admin-card-shadow);
+  --radius-admin-card: 16px;
+  --radius-admin-control: 8px;
+}
+
+[data-admin-theme] {
+  --admin-primary: #2563eb;
+  --admin-primary-hover: #1d4ed8;
+  --admin-canvas: #f5f7fa;
+  --admin-surface: #ffffff;
+  --admin-surface-subtle: #f7f8fa;
+  --admin-surface-head: #f7f8fa;
+  --admin-row-hover: #f7f9fc;
+  --admin-chip: #f2f3f5;
+  --admin-chip-hover: #e5e6eb;
+  --admin-border: #eef0f3;
+  --admin-border-strong: #e1e4ea;
+  --admin-text: #1d2129;
+  --admin-text-body: #2f3540;
+  --admin-text-secondary: #4e5969;
+  --admin-text-muted: #596579;
+  --admin-text-faint: #626f80;
+  --admin-accent: #2563eb;
+  --admin-accent-soft: #edf3ff;
+  --admin-success: #087a53;
+  --admin-success-soft: #e8f8f1;
+  --admin-warning: #a85400;
+  --admin-warning-soft: #fff4e6;
+  --admin-danger: #c52c38;
+  --admin-danger-soft: #fdeeee;
+  --admin-shadow: rgb(15 23 42 / 0.05);
+  --admin-card-shadow: 0 1px 2px rgb(15 23 42 / 0.03), 0 4px 16px rgb(15 23 42 / 0.04);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-admin-theme]:not([data-admin-theme="light"]) {
+    --admin-canvas: #0e1014;
+    --admin-surface: #171a20;
+    --admin-surface-subtle: #1d2129;
+    --admin-surface-head: #1d2129;
+    --admin-row-hover: #1c2027;
+    --admin-chip: #232831;
+    --admin-chip-hover: #2c323d;
+    --admin-border: #252a33;
+    --admin-border-strong: #313744;
+    --admin-text: #e9ebee;
+    --admin-text-body: #d4d7dd;
+    --admin-text-secondary: #b3b9c4;
+    --admin-text-muted: #a6afbd;
+    --admin-text-faint: #929dad;
+    --admin-accent: #5b93ff;
+    --admin-accent-soft: rgb(91 147 255 / 0.14);
+    --admin-success: #3ccf8e;
+    --admin-success-soft: rgb(60 207 142 / 0.13);
+    --admin-warning: #f5a742;
+    --admin-warning-soft: rgb(245 167 66 / 0.14);
+    --admin-danger: #f47174;
+    --admin-danger-soft: rgb(244 113 116 / 0.14);
+    --admin-shadow: rgb(0 0 0 / 0.3);
+    --admin-card-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+    color-scheme: dark;
+  }
+}
+
+[data-admin-theme="dark"] {
+  --admin-canvas: #0e1014;
+  --admin-surface: #171a20;
+  --admin-surface-subtle: #1d2129;
+  --admin-surface-head: #1d2129;
+  --admin-row-hover: #1c2027;
+  --admin-chip: #232831;
+  --admin-chip-hover: #2c323d;
+  --admin-border: #252a33;
+  --admin-border-strong: #313744;
+  --admin-text: #e9ebee;
+  --admin-text-body: #d4d7dd;
+  --admin-text-secondary: #b3b9c4;
+  --admin-text-muted: #a6afbd;
+  --admin-text-faint: #929dad;
+  --admin-accent: #5b93ff;
+  --admin-accent-soft: rgb(91 147 255 / 0.14);
+  --admin-success: #3ccf8e;
+  --admin-success-soft: rgb(60 207 142 / 0.13);
+  --admin-warning: #f5a742;
+  --admin-warning-soft: rgb(245 167 66 / 0.14);
+  --admin-danger: #f47174;
+  --admin-danger-soft: rgb(244 113 116 / 0.14);
+  --admin-shadow: rgb(0 0 0 / 0.3);
+  --admin-card-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  color-scheme: dark;
+}
+
 :root {
   --background: #f7f8fa;
   --foreground: #18181b;
@@ -175,10 +297,9 @@ body {
   }
 }
 
-button,
-select,
-input,
-textarea {
+/* Preserve the public-site inheritance rule. Admin controls use the explicit
+   typography utilities from their shared components instead of their label's font. */
+:where(button, select, input, textarea):not([data-admin-theme] *) {
   font: inherit;
 }
 
@@ -435,3 +556,9 @@ textarea {
 }
 
 [data-admin-permission-denied] :is(button,input,textarea,select){cursor:not-allowed;opacity:.6}
+
+/* Handwritten admin pills follow the same single-line contract as AdminBadge. */
+[data-admin-theme] span.rounded-full {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

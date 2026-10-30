@@ -1,3 +1,7 @@
+import AdminProductLogo from "@/components/admin/AdminProductLogo";
+import { productNextAction } from "@/lib/admin-product-next-action";
+import { withAdminReturnTo } from "@/lib/admin-workflow-context";
+import { adminButtonClassName } from "@/components/admin/AdminButton";
 import AdminLink from "@/components/admin/AdminLink";
 import { Prisma } from "@prisma/client";
 import {
@@ -5,11 +9,10 @@ import {
   CheckCircle2,
   Clock3,
   DatabaseZap,
-  Search,
   ShieldCheck,
 } from "lucide-react";
-import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
-import { AdminButton, AdminLinkButton } from "../../../components/admin/AdminButton";
+import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
+import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import AdminStatusBadge from "../../../components/admin/AdminStatusBadge";
 import {
@@ -26,6 +29,10 @@ import { measureAdminWorkload } from "../../../lib/admin-performance";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import { prisma } from "../../../lib/prisma";
 import BatchCollectionPanel from "./BatchCollectionPanel";
+import AdminSegmentedControl from "../../../components/admin/AdminSegmentedControl";
+import AdminFilterBar from "../../../components/admin/AdminFilterBar";
+import AdminPagination from "../../../components/admin/AdminPagination";
+import { buildAdminListHref, paginateAdminItems } from "../../../lib/admin-list-params";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +66,7 @@ const pipelineStages: Array<{
   { value: "exception", label: "需要介入", description: "采集失败或硬异常" },
   { value: "pending", label: "系统处理中", description: "等待采集、审核或复采" },
   { value: "not_started", label: "未开始", description: "还没有受支持的采集任务" },
-  { value: "published", label: "已发布", description: "正式价格当前可用" },
+  { value: "published", label: "正式价可用", description: "正式价格当前可用" },
 ];
 
 type PipelineProductRow = {
@@ -306,8 +313,9 @@ function sortPipelineRows(rows: PipelineProductRow[]) {
   });
 }
 
-async function getPipelineRows({ q, category }: { q: string; category: string }) {
-  const searchFilter = q
+async function getPipelineRows({ q, category, product }: { q: string; category: string; product:string }) {
+  const productFilter=product ? Prisma.sql`AND product.slug = ${product}` : Prisma.empty;
+  const searchFilter = q && !product
     ? Prisma.sql`AND (product.slug ILIKE ${`%${q}%`} OR product.name ILIKE ${`%${q}%`})`
     : Prisma.empty;
   const categoryFilter =
@@ -432,6 +440,7 @@ async function getPipelineRows({ q, category }: { q: string; category: string })
         OR candidate.matched_product_id = product.id
     ) candidate_stats ON TRUE
     WHERE product.status <> 'archived'::publish_status
+      ${productFilter}
       ${searchFilter}
       ${categoryFilter}
     ORDER BY
@@ -621,7 +630,7 @@ function getPipelineRecommendation(stats: PipelineStats) {
       body: `${stats.staleCount} 个已上线产品存在超过 14 天未更新的正式价格。稳定结果会自动入库。`,
       href: "/admin/collector-jobs",
       action: "查看采集任务",
-      className: "border-slate-200 bg-slate-50 text-slate-950 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50",
+      className: "border-admin-border bg-admin-surface-subtle text-admin-text dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text",
     };
   }
 
@@ -660,15 +669,15 @@ function PipelineRecommendation({ stats }: { stats: PipelineStats }) {
     <div className={`mb-6 rounded-xl border p-5 ${recommendation.className}`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="text-sm font-black">系统建议</div>
-          <h2 className="mt-1 text-xl font-black">{recommendation.title}</h2>
+          <div className="text-sm font-semibold">系统建议</div>
+          <h2 className="mt-1 text-base font-semibold text-admin-text">{recommendation.title}</h2>
           <p className="mt-2 max-w-4xl text-sm leading-6 opacity-80">
             {recommendation.body}
           </p>
         </div>
         <AdminLink
           href={recommendation.href}
-          className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-white/80 px-4 text-sm font-black text-slate-950 ring-1 ring-current/10 transition hover:bg-white dark:text-slate-50 dark:hover:bg-slate-900 dark:bg-slate-900/80"
+          className={adminButtonClassName({variant:"secondary",size:"md",className:""})}
         >
           {recommendation.action}
         </AdminLink>
@@ -692,9 +701,11 @@ function PipelineStateBadge({ row }: { row: PipelineProductRow }) {
 function ProductPipelineCard({
   row,
   growthSignal,
+  returnTo,
 }: {
   row: PipelineProductRow;
   growthSignal?: PipelineGrowthSignal;
+  returnTo:string;
 }) {
   const state = getPipelineState(row);
   const readiness = getPublishReadiness(row);
@@ -703,94 +714,85 @@ function ProductPipelineCard({
   const appStoreJobs = toNumber(row.app_store_job_count);
   const webJobs = toNumber(row.official_web_job_count);
   const stalePublishedCount = toNumber(row.published_stale_price_count);
+  const next=productNextAction({id:row.product_id,slug:row.product_slug,appStoreJobs:appStoreJobs,webJobs,
+    runStatus:row.latest_run_status,pending:pendingCount,blocked:blockedCount,
+    prices:toNumber(row.published_price_count),stale:stalePublishedCount,due:toNumber(row.due_job_count)
+  });
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-sm shadow-admin-shadow/50 dark:border-admin-border-strong dark:bg-admin-surface">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-black text-slate-950 dark:text-slate-50">{row.product_name}</h3>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <AdminProductLogo slug={row.product_slug} name={row.product_name} size="md"/>
+            <h3 className="min-w-0 break-words text-lg font-semibold text-admin-text dark:text-admin-text">{row.product_name}</h3>
+            <span className="rounded-full bg-admin-chip px-2.5 py-1 text-xs font-semibold text-admin-text-secondary dark:bg-admin-chip dark:text-admin-text-secondary">
               {categoryLabel(row.product_category)}
             </span>
             <PipelineStateBadge row={row} />
           </div>
-          <div className="mt-1 font-mono text-xs text-slate-400">
+          <div className="mt-1 font-mono text-xs text-admin-text-faint">
             {row.product_slug} · {row.provider || "未填服务商"} · {productStatusLabel(row.product_status)}
           </div>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-            <span className="font-bold text-slate-800 dark:text-slate-200">{state.label}：</span>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-admin-text-secondary dark:text-admin-text-secondary">
+            <span className="font-semibold text-admin-text dark:text-admin-text-body">{state.label}：</span>
             {state.detail}
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {appStoreJobs > 0 ? (
-            <ManualCollectionProgressForm
-              productSlug={row.product_slug}
-              buttonLabel="采集这个产品"
-              pendingLabel="正在采集"
-            />
-          ) : webJobs > 0 ? (
-            <AdminLink href={`/admin/data-quality?q=${encodeURIComponent(row.product_slug)}`}
-              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-              官网自动采集
-            </AdminLink>
-          ) : (
-            <AdminLink
-              href={`/admin/products/${row.product_id}/edit`}
-              className="inline-flex h-9 items-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-black text-amber-700 transition hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-950"
-            >
-              补 App Store
-            </AdminLink>
-          )}
-          <AdminLink
-            href={`/admin/review?q=${encodeURIComponent(row.product_slug)}`}
-            className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            查看异常
-          </AdminLink>
+        <div className="max-w-sm space-y-2" data-primary-workflow-action={next.kind}>
+          {next.kind === "collect" ?
+            <ManualCollectionProgressForm productSlug={row.product_slug} buttonLabel={next.label} pendingLabel="正在提交采集请求"/>
+            : <AdminLinkButton href={withAdminReturnTo(next.href,returnTo)} size="sm">{next.label}</AdminLinkButton>}
+          <p className="text-xs leading-5 text-admin-text-muted">{next.detail}</p>
+          {appStoreJobs > 0 && next.kind !== "collect" && next.kind !== "progress" ? <details>
+            <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-xs text-admin-text-muted">
+              需要重新采集？
+            </summary>
+            <p className="mb-2 text-xs text-admin-text-muted">先核对异常或修正来源；重复采集不会跳过稳定样本要求。</p>
+            <ManualCollectionProgressForm productSlug={row.product_slug} buttonLabel="修正后补采" pendingLabel="正在提交补采请求"/>
+          </details> : null}
         </div>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-          <div className="text-xs font-bold text-slate-400">{webJobs > 0 && appStoreJobs <= 0 ? '官网采集任务' : '采集任务'}</div>
-          <div className="mt-1 text-lg font-black text-slate-950 dark:text-slate-50">
+        <div className="rounded-admin-card bg-admin-surface-subtle p-3 dark:bg-admin-chip">
+          <div className="text-xs font-semibold text-admin-text-faint">{webJobs > 0 && appStoreJobs <= 0 ? '官网采集任务' : '采集任务'}</div>
+          <div className="mt-1 text-lg font-semibold text-admin-text dark:text-admin-text">
             {appStoreJobs + webJobs} / {toNumber(row.total_job_count)}
           </div>
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
             启用 {toNumber(row.active_job_count)}，到期 {toNumber(row.due_job_count)}
           </div>
         </div>
-        <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-          <div className="text-xs font-bold text-slate-400">最近采集</div>
-          <div className="mt-1 text-sm font-black text-slate-950 dark:text-slate-50">
+        <div className="rounded-admin-card bg-admin-surface-subtle p-3 dark:bg-admin-chip">
+          <div className="text-xs font-semibold text-admin-text-faint">最近采集</div>
+          <div className="mt-1 text-sm font-semibold text-admin-text dark:text-admin-text">
             {runStatusLabel(row.latest_run_status)}
           </div>
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
             {formatDate(row.latest_run_started_at)}
           </div>
         </div>
-        <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-          <div className="text-xs font-bold text-slate-400">异常待决</div>
-          <div className="mt-1 text-lg font-black text-slate-950 dark:text-slate-50">{pendingCount}</div>
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        <div className="rounded-admin-card bg-admin-surface-subtle p-3 dark:bg-admin-chip">
+          <div className="text-xs font-semibold text-admin-text-faint">异常待决</div>
+          <div className="mt-1 text-lg font-semibold text-admin-text dark:text-admin-text">{pendingCount}</div>
+          <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
             硬异常 {blockedCount}，补样本 {toNumber(row.waiting_observation_count)}
           </div>
         </div>
-        <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-          <div className="text-xs font-bold text-slate-400">正式价格</div>
-          <div className="mt-1 text-lg font-black text-slate-950 dark:text-slate-50">
+        <div className="rounded-admin-card bg-admin-surface-subtle p-3 dark:bg-admin-chip">
+          <div className="text-xs font-semibold text-admin-text-faint">正式价格</div>
+          <div className="mt-1 text-lg font-semibold text-admin-text dark:text-admin-text">
             {toNumber(row.published_price_count)}
           </div>
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
             地区 {toNumber(row.published_region_count)}，套餐 {toNumber(row.plan_count)}
           </div>
           <div
             className={joinClasses(
-              "mt-1 text-xs font-bold",
-              stalePublishedCount > 0 ? "text-amber-700 dark:text-amber-300" : "text-slate-400"
+              "mt-1 text-xs font-semibold",
+              stalePublishedCount > 0 ? "text-amber-700 dark:text-amber-300" : "text-admin-text-faint"
             )}
           >
             {stalePublishedCount > 0
@@ -800,14 +802,14 @@ function ProductPipelineCard({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-admin-border pt-4 dark:border-admin-border">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-            <span>发布准备 {readiness.completed}/{readiness.total}</span>
-            <span className="text-slate-300">·</span>
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-admin-text-secondary dark:text-admin-text-secondary">
+            <span>价格验证 {readiness.completed}/{readiness.total}</span>
+            <span className="text-admin-text-secondary">·</span>
             <span>下一步：{readiness.nextAction}</span>
           </div>
-          <div className="flex flex-wrap gap-2 text-xs font-bold">
+          <div className="flex flex-wrap gap-2 text-xs font-semibold">
           {row.has_fresh_success ? (
             <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
               12 小时内成功采集
@@ -824,7 +826,7 @@ function ProductPipelineCard({
             </span>
           ) : null}
           {toNumber(row.discovery_candidate_count) > 0 ? (
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
+            <span className="rounded-full bg-admin-chip px-2.5 py-1 text-admin-text-secondary ring-1 ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary dark:ring-admin-border-strong">
               来自线索 {toNumber(row.discovery_candidate_count)}
             </span>
           ) : null}
@@ -835,22 +837,23 @@ function ProductPipelineCard({
           ) : null}
           </div>
         </div>
-        <div className="flex gap-3 text-xs font-black">
-          <AdminLink href={`/admin/products/${row.product_id}/edit`} className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200">
+        <div className="flex gap-3 text-xs font-semibold">
+          <AdminLink href={withAdminReturnTo(`/admin/products/${row.product_id}/edit`,returnTo)} className="text-admin-accent hover:underline">
             产品资料
           </AdminLink>
-          <AdminLink href="/admin/collector-jobs" className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200">
+          <AdminLink href={`/admin/collector-jobs?product=${encodeURIComponent(row.product_slug)}`} className="text-admin-accent hover:underline">
             采集任务
           </AdminLink>
-          <AdminLink href="/admin/prices" className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200">
+          <AdminLink href={`/admin/prices?product=${encodeURIComponent(row.product_slug)}`} className="text-admin-accent hover:underline">
             正式价格
           </AdminLink>
         </div>
       </div>
-      {growthSignal ? (
-        <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 text-xs sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500 dark:text-slate-400">
-            <span className="font-bold text-slate-700 dark:text-slate-200">页面质量 {growthSignal.qualityScore}/100</span>
+      {/* Existing growth recommendations use App Store coverage; do not mislabel Web-only products. */}
+      {growthSignal && !(webJobs > 0 && appStoreJobs === 0) ? (
+        <div className="mt-4 flex flex-col gap-2 border-t border-admin-border pt-4 text-xs sm:flex-row sm:items-center sm:justify-between dark:border-admin-border">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-admin-text-muted dark:text-admin-text-muted">
+            <span className="font-semibold text-admin-text-body dark:text-admin-text-body">页面质量 {growthSignal.qualityScore}/100</span>
             <span>搜索需求 {growthSignal.demandScore}</span>
             {growthSignal.demandQueries.length > 0 ? (
               <span title={growthSignal.demandQueries.join("、")}>
@@ -860,7 +863,7 @@ function ProductPipelineCard({
               <span>暂未发现明确站内搜索需求</span>
             )}
           </div>
-          <AdminLink href={growthSignal.actionHref} className="shrink-0 font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200">
+          <AdminLink href={growthSignal.actionHref} className="shrink-0 font-medium text-admin-accent hover:underline">
             {growthSignal.recommendedAction}
           </AdminLink>
         </div>
@@ -874,6 +877,9 @@ export default async function AdminPipelinePage({
 }: {
   searchParams?: Promise<{
     q?: string;
+    product?: string;
+    returnTo?: string;
+    page?: string | string[];
     category?: string;
     stage?: string;
     batchRequested?: string;
@@ -886,7 +892,8 @@ export default async function AdminPipelinePage({
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
-  const q = String(params.q ?? "").trim();
+  const q = String(params.q ?? "").trim().slice(0, 100);
+  const product=String(params.product || "").trim().toLowerCase().slice(0,120);
   const category = categories.some((item) => item.value === params.category)
     ? String(params.category)
     : "all";
@@ -909,7 +916,7 @@ export default async function AdminPipelinePage({
     [allRows, stats, growthSignals] = await measureAdminWorkload(
       "pipeline.page-data",
       () => Promise.all([
-        getPipelineRows({ q, category }),
+        getPipelineRows({ q, category, product }),
         getPipelineStats(),
         getPipelineGrowthSignals().catch(() => []),
       ]),
@@ -921,6 +928,15 @@ export default async function AdminPipelinePage({
   } catch (error) {
     loadError = getErrorMessage(error);
   }
+
+  const pagination = paginateAdminItems(rows, params.page, 10);
+  const pageRows = pagination.items;
+  const pageHref = (page: number) => `${buildAdminListHref("/admin/pipeline", {
+    product:product || undefined,
+    q: q || undefined,
+    category: category === "all" ? undefined : category,
+    stage: stage === "all" ? undefined : stage,
+  }, { page })}#pipeline-products`;
 
   const stageCounts = countAdminOperationalAssessments(
     allRows.map(getPipelineOperationalAssessment),
@@ -938,31 +954,31 @@ export default async function AdminPipelinePage({
     : null;
   const stageHref = (nextStage: "all" | AdminOperationalStatus) => {
     const query = new URLSearchParams();
+    if(product)query.set("product",product);
     if (q) query.set("q", q);
     if (category !== "all") query.set("category", category);
     if (nextStage !== "all") query.set("stage", nextStage);
     const suffix = query.toString();
-    return suffix ? `/admin/pipeline?${suffix}` : "/admin/pipeline";
+    return suffix ? `/admin/pipeline?${suffix}#pipeline-products` : "/admin/pipeline#pipeline-products";
   };
 
   return (
     <div>
       <AdminPageHeader
         eyebrow="Pipeline"
-        title="价格采集流水线"
+        title="采集与审核 · 产品队列"
         description="后台主入口按产品聚合：核对 App Store 或已接入的官网采集任务、最近运行、自动验证和正式价格。"
-        action={
-          <AdminLinkButton href="/admin/discovery">
-            新增线索
-          </AdminLinkButton>
-        }
       />
 
-      <AdminPipelineSteps currentStep="pipeline" />
+      <AdminPipelineSteps currentStep="pipeline" productSlug={product || undefined} returnTo={params.returnTo} />
+      {product ? <p className="mb-4 text-sm text-admin-text-muted">当前产品范围：{product}{" "}
+        <AdminLink href="/admin/pipeline" className="inline-flex min-h-11 items-center px-2 text-admin-accent underline">
+          查看全部产品
+        </AdminLink></p> : null}
 
       {params.batchError ? (
-        <AdminCard className="mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
-          <div className="text-sm font-black text-red-800 dark:text-red-200">批量更新没有提交成功</div>
+        <AdminCard className="mb-6">
+          <div className="text-sm font-semibold text-red-800 dark:text-red-200">批量更新没有提交成功</div>
           <p className="mt-1 text-sm leading-6 text-red-700 dark:text-red-300">
             {params.batchError === "empty"
               ? "请先选择至少一个产品，再加入采集队列。"
@@ -970,8 +986,8 @@ export default async function AdminPipelinePage({
           </p>
         </AdminCard>
       ) : batchRequested !== null && batchQueued !== null ? (
-        <AdminCard className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-          <div className="text-sm font-black text-blue-900 dark:text-blue-200">批量更新已交给后台</div>
+        <AdminCard className="mb-6">
+          <div className="text-sm font-semibold text-blue-900 dark:text-blue-200">批量更新已交给后台</div>
           <p className="mt-1 text-sm leading-6 text-blue-800 dark:text-blue-200">
             已选择 {batchRequested} 个产品，新增排队 {batchQueued} 个，立即启动 {batchStarted ?? 0} 个。
             {(batchProtected ?? 0) > 0 ? ` ${batchProtected} 个处于冷却保护或已有运行记录。` : ""}
@@ -985,14 +1001,14 @@ export default async function AdminPipelinePage({
       ) : null}
 
       {loadError ? (
-        <AdminCard className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+        <AdminCard className="mb-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="text-sm font-black text-amber-700 dark:text-amber-300">数据库未连接</div>
-              <h2 className="mt-1 text-xl font-black text-slate-950 dark:text-slate-50">
+              <div className="text-sm font-semibold text-amber-700 dark:text-amber-300">数据库未连接</div>
+              <h2 className="mt-1 text-base font-semibold text-admin-text dark:text-admin-text">
                 暂时无法读取采集流水线
               </h2>
-              <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-admin-text-secondary dark:text-admin-text-secondary">
                 请先启动本地 PostgreSQL，再刷新本页。当前错误：{loadError.slice(0, 180)}
               </p>
             </div>
@@ -1004,55 +1020,21 @@ export default async function AdminPipelinePage({
             </AdminLinkButton>
           </div>
         </AdminCard>
-      ) : (
-        <PipelineRecommendation stats={stats} />
-      )}
+      ) : null}
 
-      <AdminCard className="mb-6 p-0">
-        <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-700">
-          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">产品现在处于哪一步</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            先按四种管理状态定位产品，再展开具体采集、审核和发布原因。
-          </p>
-        </div>
-        <div className="grid sm:grid-cols-2 xl:grid-cols-5">
-          {pipelineStages.map((item) => {
-            const active = stage === item.value;
-            const count = item.value === "all" ? allRows.length : stageCounts[item.value];
-
-            return (
-              <AdminLink
-                key={item.value}
-                href={stageHref(item.value)}
-                aria-current={active ? "page" : undefined}
-                className={joinClasses(
-                  "border-b border-slate-100 px-5 py-4 transition last:border-b-0 sm:border-r xl:border-b-0 dark:border-slate-800",
-                  active
-                    ? "bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-200"
-                    : "bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
-                )}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-black">{item.label}</span>
-                  <span className="text-lg font-black">{count}</span>
-                </div>
-                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.description}</div>
-              </AdminLink>
-            );
-          })}
-        </div>
-      </AdminCard>
-
+      {!loadError ? <details className="mb-6 rounded-admin-card border border-admin-border bg-admin-surface p-4">
+        <summary className="min-h-11 cursor-pointer text-sm font-semibold text-admin-text">全站运行概况与建议</summary>
+        <div className="mt-4"><PipelineRecommendation stats={stats}/>
       {closestToPublish && closestReadiness ? (
         <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <AdminCard className="border-emerald-200 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/60">
-            <div className="text-xs font-black text-emerald-700 dark:text-emerald-300">最接近发布</div>
+          <AdminCard>
+            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">最接近完成价格验证</div>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-lg font-black text-slate-950 dark:text-slate-50">
+                <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
                   {closestToPublish.product_name}
                 </div>
-                <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                <div className="mt-1 text-sm text-admin-text-secondary dark:text-admin-text-secondary">
                   已完成 {closestReadiness.completed}/{closestReadiness.total} 项，下一步：{closestReadiness.nextAction}
                 </div>
               </div>
@@ -1064,14 +1046,14 @@ export default async function AdminPipelinePage({
               </AdminLinkButton>
             </div>
           </AdminCard>
-          <AdminCard className="border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
-            <div className="text-xs font-black text-slate-500 dark:text-slate-400">沉睡库存</div>
+          <AdminCard>
+            <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">沉睡库存</div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <div>
-                <div className="text-lg font-black text-slate-950 dark:text-slate-50">
+                <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
                   {stageCounts.not_started} 个产品未开始
                 </div>
-                <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">没有采集任务就不会自动产生价格。</div>
+                <div className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">没有采集任务就不会自动产生价格。</div>
               </div>
               <AdminLinkButton href={stageHref("not_started")} variant="secondary">
                 查看
@@ -1083,88 +1065,63 @@ export default async function AdminPipelinePage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">产品</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">{stats.productCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">当前服务库产品。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">产品</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{stats.productCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">当前服务库产品。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">缺任务</div>
-          <div className="mt-2 text-2xl font-black text-amber-700 dark:text-amber-300">{stats.setupCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">需要补 App Store 链接。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">缺任务</div>
+          <div className="mt-2 text-2xl font-semibold text-amber-700 dark:text-amber-300">{stats.setupCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">需要配置受支持的价格来源。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">待审核</div>
-          <div className="mt-2 text-2xl font-black text-blue-700 dark:text-blue-300">{stats.pendingCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">有待决价格观测。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">待审核</div>
+          <div className="mt-2 text-2xl font-semibold text-blue-700 dark:text-blue-300">{stats.pendingCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">有待决价格观测。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">失败</div>
-          <div className="mt-2 text-2xl font-black text-red-700 dark:text-red-300">{stats.failedCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">最近采集失败。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">失败</div>
+          <div className="mt-2 text-2xl font-semibold text-red-700 dark:text-red-300">{stats.failedCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">最近采集失败。</div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">复采提醒</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">{stats.dueCount + stats.staleCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">复采提醒</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{stats.dueCount + stats.staleCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             定时到期 {stats.dueCount}，正式价过期 {stats.staleCount}。
           </div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">正式价格</div>
-          <div className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">{stats.publishedPriceCount}</div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">已上线价格记录。</div>
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">正式价格</div>
+          <div className="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">{stats.publishedPriceCount}</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">已上线价格记录。</div>
         </AdminCard>
       </div>
 
+      </div></details> : null}
+
+      <section id="pipeline-products" aria-labelledby="pipeline-products-heading" className="scroll-mt-24">
       <AdminCard className="mb-6">
-        <form className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          {stage !== "all" ? <input type="hidden" name="stage" value={stage} /> : null}
-          <div>
-            <h2 className="text-base font-black text-slate-950 dark:text-slate-50">筛选产品</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              搜产品名或 slug，常用场景是输入 Netflix、Grok、ChatGPT 后只处理这一个产品。
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="relative block">
-              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                name="q"
-                defaultValue={q}
-                placeholder="搜索产品"
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white pr-3 pl-9 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10 sm:w-64 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-800"
-              />
-            </label>
-            <select
-              name="category"
-              defaultValue={category}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-800"
-            >
-              {categories.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-            <AdminButton type="submit">
-              筛选
-            </AdminButton>
-            {q || category !== "all" ? (
-              <AdminLinkButton
-                href="/admin/pipeline"
-                variant="secondary"
-              >
-                清除
-              </AdminLinkButton>
-            ) : null}
-          </div>
-        </form>
+        <AdminSectionHeader id="pipeline-products-heading" title="采集产品" description="按产品查看采集、审核与发布状态；每页展示 10 个产品。" />
+        <div className="mb-4 min-w-0">
+          <AdminSegmentedControl ariaLabel="采集状态" value={stage} items={pipelineStages.map(item => ({
+            value: item.value,
+            label: `${item.label} ${item.value === "all" ? allRows.length : stageCounts[item.value]}`,
+            href: stageHref(item.value),
+          }))} />
+        </div>
+        <AdminFilterBar action="/admin/pipeline#pipeline-products" q={q} searchLabel="搜索产品" searchPlaceholder="产品名或 slug"
+          filters={[{name:"category",label:"分类",value:category === "all" ? "" : category,options:categories.filter(item=>item.value !== "all")} ]}
+          preserve={{product:product || undefined,stage:stage === "all" ? undefined : stage}}
+          clearHref="/admin/pipeline#pipeline-products" />
+        {!loadError ? <AdminPagination {...pagination} pageHref={pageHref} ariaLabel="采集产品顶部分页" unit="个产品" /> : null}
       </AdminCard>
 
-      {rows.filter((row) => toNumber(row.app_store_job_count) > 0).length > 1 ? (
+      {pageRows.filter((row) => toNumber(row.app_store_job_count) > 0 && row.latest_run_status !== "running").length > 1 ? (
         <BatchCollectionPanel
-          products={rows
-            .filter((row) => toNumber(row.app_store_job_count) > 0)
+          key={`${q}:${category}:${stage}:${pagination.page}`}
+          products={pageRows
+            .filter((row) => toNumber(row.app_store_job_count) > 0 && row.latest_run_status !== "running")
             .map((row) => ({
               slug: row.product_slug,
               name: row.product_name,
@@ -1177,19 +1134,17 @@ export default async function AdminPipelinePage({
       ) : null}
 
       <div className="grid gap-4">
-        {rows.map((row) => (
-          <ProductPipelineCard
-            key={row.product_id}
-            row={row}
-            growthSignal={growthSignalByProduct.get(row.product_id)}
-          />
+        {pageRows.map((row) => (
+          <article key={row.product_id} id={`pipeline-row-${row.product_id}`} className="scroll-mt-24" data-pipeline-product={row.product_slug} aria-label={row.product_name}>
+            <ProductPipelineCard returnTo={pageHref(pagination.page).split("#")[0]+`#pipeline-row-${row.product_id}`} row={row} growthSignal={growthSignalByProduct.get(row.product_id)} />
+          </article>
         ))}
 
         {rows.length === 0 && !loadError ? (
           <AdminCard>
             <div className="py-12 text-center">
-              <div className="text-base font-black text-slate-950 dark:text-slate-50">没有匹配的产品</div>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              <div className="text-base font-semibold text-admin-text dark:text-admin-text">没有匹配的产品</div>
+              <p className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
                 可以清除筛选，或者先从线索入口加入新产品。
               </p>
               <AdminLinkButton
@@ -1202,6 +1157,10 @@ export default async function AdminPipelinePage({
           </AdminCard>
         ) : null}
       </div>
+      {!loadError && pagination.totalPages > 1 ?
+        <AdminPagination {...pagination} pageHref={pageHref} ariaLabel="采集产品底部分页" unit="个产品"
+          className="mt-5 rounded-admin-card bg-admin-surface p-4 shadow-admin-card" /> : null}
+      </section>
     </div>
   );
 }

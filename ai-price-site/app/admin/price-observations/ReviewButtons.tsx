@@ -1,3 +1,4 @@
+import { adminButtonClassName } from "@/components/admin/AdminButton";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import {
   approveObservation,
@@ -16,7 +17,7 @@ export default function ReviewButtons({ observationId }: Props) {
         <input type="hidden" name="id" value={observationId} />
         <button
           type="submit"
-          className="rounded-full bg-lime-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-lime-700"
+          className={adminButtonClassName({ variant: "secondary", size: "sm", className: "" })}
         >
           通过
         </button>
@@ -26,7 +27,7 @@ export default function ReviewButtons({ observationId }: Props) {
         <input type="hidden" name="id" value={observationId} />
         <button
           type="submit"
-          className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50"
+          className={adminButtonClassName({ variant: "secondary", size: "sm", className: "" })}
         >
           忽略
         </button>
@@ -36,7 +37,7 @@ export default function ReviewButtons({ observationId }: Props) {
         <input type="hidden" name="id" value={observationId} />
         <button
           type="submit"
-          className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
+          className={adminButtonClassName({ variant: "danger", size: "sm", className: "" })}
         >
           拒绝
         </button>

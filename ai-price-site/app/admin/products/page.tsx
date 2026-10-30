@@ -1,10 +1,16 @@
+import AdminProductLogo from "@/components/admin/AdminProductLogo";
+import { adminListActionClassName } from "@/components/admin/admin-control";
+import { parseAdminProductFilter, matchesAdminProduct, withAdminReturnTo, adminListLocation } from "@/lib/admin-workflow-context";
+import AdminFilterBar from "@/components/admin/AdminFilterBar";
+import AdminPagination from "@/components/admin/AdminPagination";
+import { createAdminListView } from "@/lib/admin-list-params";
 import AdminLink from "@/components/admin/AdminLink";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { ArrowRight, Plus } from "lucide-react";
 import { Prisma, type ProductCategory } from "@prisma/client";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
-import SegmentedControl from "../../../components/ui/SegmentedControl";
+import SegmentedControl from "../../../components/admin/AdminSegmentedControl";
 import {
   adminOperationalStatusMeta,
   assessProductOperationalStatus,
@@ -372,11 +378,12 @@ export default async function AdminProductsPage({
   searchParams,
 }: {
   searchParams?: Promise<{
-    category?: string;
+    category?: string; page?: string; q?:string; product?:string;
     state?: string;
   }>;
 }) {
   const params = searchParams ? await searchParams : {};
+  const productFilter=parseAdminProductFilter(params);
   const selectedCategory = getSelectedCategory(params?.category);
   const selectedState = ["not_started", "pending", "exception", "published"].includes(
     String(params?.state),
@@ -396,7 +403,7 @@ export default async function AdminProductsPage({
     isArchivedPublishStatus(product.status),
   ).length;
   const activeProducts = allProducts.filter(
-    (product) => !isArchivedPublishStatus(product.status),
+    (product) => !isArchivedPublishStatus(product.status) && matchesAdminProduct(product,productFilter),
   );
   const categoryProducts =
     selectedCategory.value === "all"
@@ -419,6 +426,8 @@ export default async function AdminProductsPage({
     state?: "all" | AdminOperationalStatus;
   }) => {
     const query = new URLSearchParams();
+    if(productFilter.product)query.set("product",productFilter.product);
+    if(productFilter.q)query.set("q",productFilter.q);
     if (category !== "all") query.set("category", category);
     if (state !== "all") query.set("state", state);
     const suffix = query.toString();
@@ -457,6 +466,7 @@ export default async function AdminProductsPage({
     (product) => assessProduct(product)?.status !== "published",
   );
 
+  const list = createAdminListView(products, { basePath: "/admin/products", params: params, pageSize: 25, pageParam: "page", id: "products-list" });
   return (
     <div>
       <AdminPageHeader
@@ -472,7 +482,7 @@ export default async function AdminProductsPage({
               从发现线索导入
             </AdminLinkButton>
             <AdminLinkButton
-              href="/admin/products/new"
+              href={withAdminReturnTo("/admin/products/new",adminListLocation("/admin/products",params))}
             >
               <Plus size={16} strokeWidth={2} />
               新增产品
@@ -483,41 +493,41 @@ export default async function AdminProductsPage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">当前分类</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-medium text-admin-text-muted dark:text-admin-text-muted">当前分类</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {selectedCategory.shortLabel}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             {selectedCategory.description}
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">产品 / 套餐</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-medium text-admin-text-muted dark:text-admin-text-muted">产品 / 套餐</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {activeTotal} / {totalPlans}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             当前筛选范围内的产品与套餐数量。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">价格 / 国家</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-medium text-admin-text-muted dark:text-admin-text-muted">价格 / 国家</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {totalPrices} / {countryCoverage}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             当前分类的区域价格和国家覆盖。
           </div>
         </AdminCard>
 
         <AdminCard>
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">需处理服务</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+          <div className="text-sm font-medium text-admin-text-muted dark:text-admin-text-muted">需处理服务</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {issueProducts.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             当前分类需要补资料、采集、审核或修复的服务；归档 {archivedCount} 个另计。
           </div>
         </AdminCard>
@@ -525,10 +535,10 @@ export default async function AdminProductsPage({
 
       <AdminCard className="mb-6">
         <div className="mb-5 flex flex-col gap-2">
-          <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">
             分类总览
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-admin-text-muted dark:text-admin-text-muted">
             产品库后期不按大表平铺，而是先看分类资产健康度。点击卡片可快速进入对应分类。
           </p>
         </div>
@@ -542,57 +552,60 @@ export default async function AdminProductsPage({
                 key={category.value}
                 href={buildFilterHref({ category: category.value })}
                 className={[
-                  "rounded-xl border p-5 transition",
+                  "rounded-admin-card border p-4 transition-colors",
                   active
                     ? "border-blue-200 bg-blue-50 shadow-sm ring-1 ring-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:ring-blue-800"
-                    : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-800 dark:hover:bg-blue-950/50",
+                    : [
+                      "border-admin-border bg-admin-surface hover:border-blue-200 hover:bg-blue-50/50",
+                      "dark:border-admin-border-strong dark:bg-admin-surface dark:hover:border-blue-800 dark:hover:bg-blue-950/50"
+                    ].join(" "),
                 ].join(" ")}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-base font-black text-slate-950 dark:text-slate-50">
+                  <div className="min-w-0">
+                    <div className="text-base font-semibold text-admin-text dark:text-admin-text">
                       {category.label}
                     </div>
-                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                       {category.description}
                     </div>
                   </div>
 
                   {category.issueCount > 0 ? (
-                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800">
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-admin-warning-soft px-2.5 py-1 text-xs font-medium text-admin-warning">
                       问题 {category.issueCount}
                     </span>
                   ) : (
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-admin-success-soft px-2.5 py-1 text-xs font-medium text-admin-success">
                       正常
                     </span>
                   )}
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-slate-700">
-                    <div className="text-lg font-black text-slate-950 dark:text-slate-50">
+                  <div className="min-w-0 py-1 tabular-nums">
+                    <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
                       {category.productCount}
                     </div>
-                    <div className="mt-1 text-[11px] font-bold text-slate-400">
+                    <div className="mt-1 text-xs font-normal text-admin-text-faint">
                       产品
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-slate-700">
-                    <div className="text-lg font-black text-slate-950 dark:text-slate-50">
+                  <div className="min-w-0 py-1 tabular-nums">
+                    <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
                       {category.planCount}
                     </div>
-                    <div className="mt-1 text-[11px] font-bold text-slate-400">
+                    <div className="mt-1 text-xs font-normal text-admin-text-faint">
                       套餐
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 px-3 py-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-slate-700">
-                    <div className="text-lg font-black text-slate-950 dark:text-slate-50">
+                  <div className="min-w-0 py-1 tabular-nums">
+                    <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
                       {category.priceCount}
                     </div>
-                    <div className="mt-1 text-[11px] font-bold text-slate-400">
+                    <div className="mt-1 text-xs font-normal text-admin-text-faint">
                       价格
                     </div>
                   </div>
@@ -607,10 +620,10 @@ export default async function AdminProductsPage({
         <div className="mb-5 flex flex-col gap-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
+              <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">
                 产品资产列表
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
                 这里重点不是最低价，而是判断每个产品是否有套餐、是否有国家覆盖、是否缺来源、是否可以进入前台展示。
               </p>
             </div>
@@ -618,7 +631,7 @@ export default async function AdminProductsPage({
             <div className="flex flex-wrap items-center gap-3">
               <AdminLink
                 href="/admin/plans"
-                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline"
               >
                 套餐库
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
@@ -626,7 +639,7 @@ export default async function AdminProductsPage({
 
               <AdminLink
                 href="/admin/prices"
-                className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline"
               >
                 价格库
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
@@ -634,12 +647,12 @@ export default async function AdminProductsPage({
             </div>
           </div>
 
-          <div className="max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="min-w-0 max-w-full">
             <SegmentedControl
               ariaLabel="产品分类"
               value={selectedCategory.value}
               tone="blue"
-              className="min-w-[720px]"
+
               items={categoryConfigs.map((category) => ({
                 label: category.shortLabel,
                 value: category.value,
@@ -648,13 +661,12 @@ export default async function AdminProductsPage({
             />
           </div>
 
-          <div className="max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="min-w-0 max-w-full">
             <SegmentedControl
               ariaLabel="产品运营状态"
               value={selectedState}
               tone="blue"
-              className="min-w-[520px]"
-              items={[
+                items={[
                 { label: `全部 ${activeTotal}`, value: "all", href: buildFilterHref({ state: "all" }) },
                 ...(["exception", "pending", "not_started", "published"] as AdminOperationalStatus[]).map(
                   (status) => ({
@@ -668,9 +680,13 @@ export default async function AdminProductsPage({
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+        <AdminFilterBar action="/admin/products" q={productFilter.q} preserve={{product:productFilter.product,category:selectedCategory.value,state:selectedState}} clearHref="/admin/products" />
+        <AdminPagination {...list.pagination} ariaLabel="列表分页" className="mb-4" id="products-list" />
+        <div className="overflow-x-auto rounded-xl border border-admin-border dark:border-admin-border-strong">
           <div className="min-w-[1120px]">
-          <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] gap-0 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 dark:bg-slate-800">
+          <div className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px]
+            gap-0 bg-admin-surface-subtle px-5 py-3 text-xs font-semibold uppercase tracking-wide
+            text-admin-text-faint dark:bg-admin-chip">
             <div>服务</div>
             <div>分类</div>
             <div>服务商</div>
@@ -683,8 +699,8 @@ export default async function AdminProductsPage({
             <div>操作</div>
           </div>
 
-          <div className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
-            {products.map((product) => {
+          <div className="divide-y divide-admin-border bg-admin-surface dark:bg-admin-surface">
+            {list.items.map((product) => {
               const assessment = assessProduct(product);
               const category = categoryConfigs.find(
                 (item) => item.dbValue === product.category
@@ -693,50 +709,54 @@ export default async function AdminProductsPage({
               return (
                 <div
                   key={product.id}
+                  id={`products-row-${product.id}`}
                   className="grid grid-cols-[minmax(150px,1.2fr)_120px_120px_80px_80px_90px_120px_100px_100px_80px] items-center gap-0 px-5 py-4 text-sm"
                 >
-                  <div>
+                  <div className="flex min-w-0 items-start gap-3 pr-3">
+                    <AdminProductLogo slug={product.slug} name={product.name}/>
+                    <div className="min-w-0 break-words">
                     <AdminLink
-                      href={`/admin/products/${product.id}/edit`}
-                      className="font-black text-slate-950 transition hover:text-blue-700 dark:text-slate-50 dark:hover:text-blue-300"
+                      href={withAdminReturnTo(`/admin/products/${product.id}/edit`, adminListLocation("/admin/products",params,`products-row-${product.id}`))}
+                      className="font-semibold text-admin-text transition hover:text-blue-700 dark:text-admin-text dark:hover:text-blue-300"
                     >
                       {product.name}
                     </AdminLink>
-                    <div className="mt-1 font-mono text-xs text-slate-400">
+                    <div className="mt-1 font-mono text-xs text-admin-text-faint">
                       {product.slug}
                     </div>
                     {product.minPriceUsd !== null || product.maxPriceUsd !== null ? (
-                      <div className="mt-2 text-xs font-bold text-slate-400">
+                      <div className="mt-2 text-xs font-semibold text-admin-text-faint">
                         {formatUsd(product.minPriceUsd)} - {formatUsd(product.maxPriceUsd)}
                       </div>
                     ) : null}
+                    </div>
                   </div>
 
-                  <div className="text-slate-600 dark:text-slate-300">
+                  <div className="text-admin-text-secondary dark:text-admin-text-secondary">
                     {category?.shortLabel || String(product.category)}
                   </div>
 
-                  <div className="text-slate-500 dark:text-slate-400">
+                  <div className="text-admin-text-muted dark:text-admin-text-muted">
                     {product.provider || "—"}
                   </div>
 
-                  <div className="font-bold text-slate-700 dark:text-slate-200">
+                  <div className="font-semibold text-admin-text-body dark:text-admin-text-body">
                     {product.planCount}
                   </div>
 
-                  <div className="font-bold text-slate-700 dark:text-slate-200">
+                  <div className="font-semibold text-admin-text-body dark:text-admin-text-body">
                     {product.countryCount}
                   </div>
 
-                  <div className="font-bold text-slate-700 dark:text-slate-200">
+                  <div className="font-semibold text-admin-text-body dark:text-admin-text-body">
                     {product.priceCount}
                   </div>
 
-                  <div className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  <div className="text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                     {assessment?.reason}
                   </div>
 
-                  <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
                     {formatDate(product.lastCheckedAt)}
                   </div>
 
@@ -749,8 +769,8 @@ export default async function AdminProductsPage({
 
                   <div>
                     <AdminLink
-                      href={`/admin/products/${product.id}/edit`}
-                      className="text-xs font-black text-blue-700 transition hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
+                      href={withAdminReturnTo(`/admin/products/${product.id}/edit`, adminListLocation("/admin/products",params,`products-row-${product.id}`))}
+                      className={adminListActionClassName}
                     >
                       编辑
                     </AdminLink>
@@ -761,15 +781,15 @@ export default async function AdminProductsPage({
 
             {products.length === 0 ? (
               <div className="px-5 py-12 text-center">
-                <div className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                <div className="text-sm font-medium text-admin-text-muted dark:text-admin-text-muted">
                   当前分类暂无产品。
                 </div>
-                <div className="mt-2 text-sm text-slate-400">
+                <div className="mt-2 text-sm text-admin-text-faint">
                   可以手动新增产品，也可以先去发现线索里把候选产品导入产品库。
                 </div>
                 <div className="mt-5 flex justify-center gap-3">
                   <AdminLinkButton
-                    href="/admin/products/new"
+                    href={withAdminReturnTo("/admin/products/new",adminListLocation("/admin/products",params))}
                   >
                     <Plus size={16} strokeWidth={2} />
                     新增产品
@@ -786,6 +806,7 @@ export default async function AdminProductsPage({
           </div>
           </div>
         </div>
+      <AdminPagination {...list.pagination} ariaLabel="列表底部分页" className="mt-4" />
       </AdminCard>
     </div>
   );

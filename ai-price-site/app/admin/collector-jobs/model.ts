@@ -1,8 +1,10 @@
+import type { ClaudeReviewMode } from "./claude-reuse-model";
 import {
   isManuallyQueuedAppStoreJob,
   isRunningAppStoreJob,
 } from "./job-state";
-export type JobRow = {
+import type { CollectorExecutionFields } from "./execution-status";
+export type JobRow = CollectorExecutionFields & {
   id: string;
   product_id: string | null;
   product_name: string;
@@ -20,6 +22,7 @@ export type JobRow = {
   last_error: string | null;
   priority: number;
   collector_kind: string | null;
+  review_mode?: ClaudeReviewMode;
   discovery_candidate_name: string | null;
   latest_run_status: string | null;
   latest_run_started_at: Date | string | null;
@@ -44,7 +47,7 @@ export type JobRow = {
   queue_pending: boolean;
 };
 
-export type RunRow = {
+export type RunRow = CollectorExecutionFields & {
   id: string;
   job_id: string;
   product_slug: string | null;
@@ -428,6 +431,13 @@ export function productActionLabel(group: ProductJobGroup) {
 }
 
 export function autoReviewSummary(group: ProductJobGroup) {
+  if(!group.jobs.some(job=>(job.collector_kind || job.source_type)==="app_store")) {
+    return group.pendingObservationCount>0
+      ? `官网有 ${group.pendingObservationCount} 条样本等待来源专属稳定性检查；不会套用 App Store 样本规则。`
+      : group.publishedPriceCount>0
+        ? `已有 ${group.publishedPriceCount} 条正式价格，官网样本继续按来源规则验证。`
+        : "官网任务按已配置的来源规则采集和校验，尚无可确认结果。";
+  }
   if (group.pendingObservationCount === 0 && group.publishedPriceCount > 0) {
     return `已进入正式价格库：${group.publishedPriceCount} 条价格。`;
   }

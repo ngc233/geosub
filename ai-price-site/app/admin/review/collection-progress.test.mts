@@ -40,7 +40,7 @@ test("queued collection without a run keeps a visible progress panel", () => {
 
   assert.equal(state.visible, true);
   assert.equal(state.active, true);
-  assert.equal(state.progress, 18);
+  assert.equal(state.progress, null);
   assert.match(state.label, /netflix/);
 });
 
@@ -53,7 +53,7 @@ test("admin-created running row shows script startup progress", () => {
 
   assert.equal(state.visible, true);
   assert.equal(state.active, true);
-  assert.equal(state.progress, 34);
+  assert.equal(state.progress, null);
   assert.match(state.detail, /3 分钟/);
 });
 
@@ -71,7 +71,7 @@ test("spawned running row advances the visible progress", () => {
   });
 
   assert.equal(state.active, true);
-  assert.equal(state.progress, 58);
+  assert.equal(state.progress, null);
   assert.equal(state.elapsedLabel, "1 分 01 秒");
   assert.match(state.detail, /12345/);
 });
@@ -92,11 +92,12 @@ test("completed run turns the progress panel into a result panel", () => {
     ],
     collectionRun: "queued",
     collectionScope: "chatgpt",
+    collectionRunId: "run-1",
   });
 
   assert.equal(state.active, false);
   assert.equal(state.tone, "success");
-  assert.equal(state.progress, 100);
+  assert.equal(state.progress, null);
   assert.match(state.detail, /正式库/);
 });
 
@@ -111,10 +112,34 @@ test("failed run keeps the failure visible in the progress panel", () => {
     ],
     collectionRun: "queued",
     collectionScope: "chatgpt",
+    collectionRunId: "run-1",
   });
 
   assert.equal(state.active, false);
   assert.equal(state.tone, "danger");
-  assert.equal(state.progress, 100);
+  assert.equal(state.progress, null);
   assert.match(state.detail, /3 minutes/);
+});
+
+
+test("a new queued request never adopts an old successful run",()=>{
+ const state=buildCollectionProgressState({rows:[row({status:"succeeded",finished_at:new Date()})],collectionRun:"queued",collectionScope:"chatgpt"});
+ assert.equal(state.runId,null);assert.equal(state.active,true);assert.equal(state.progress,null);
+});
+test("the requested run wins over a different currently running task",()=>{
+ const state=buildCollectionProgressState({rows:[row({id:"other"}),row({id:"requested",status:"succeeded"})],collectionRun:"queued",collectionScope:"chatgpt",collectionRunId:"requested"});
+ assert.equal(state.runId,"requested");assert.equal(state.runStatus,"succeeded");assert.equal(state.active,false);
+});
+test("a run from another product is never used to report completion",()=>{
+ const state=buildCollectionProgressState({rows:[row({product_slug:"spotify",status:"succeeded"})],collectionRun:"queued",collectionScope:"chatgpt",collectionRunId:"run-1"});
+ assert.equal(state.runId,null);assert.equal(state.active,true);
+});
+test("unknown backend status does not manufacture a percentage or successful result",()=>{
+ const state=buildCollectionProgressState({rows:[row({status:"unknown"})],collectionRun:"queued",collectionScope:"chatgpt",collectionRunId:"run-1"});
+ assert.equal(state.tone,"warning");assert.equal(state.progress,null);assert.match(state.label,/待确认/);
+});
+
+test("a finished run uses recorded duration instead of growing wall-clock age",()=>{
+ const state=buildCollectionProgressState({rows:[row({status:"succeeded",duration_ms:24000,run_age_seconds:900})],collectionRun:"queued",collectionScope:"chatgpt",collectionRunId:"run-1"});
+ assert.equal(state.elapsedLabel,"24 秒");
 });

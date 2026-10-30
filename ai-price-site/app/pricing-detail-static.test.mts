@@ -167,7 +167,7 @@ test("price publishing actions invalidate public pricing caches", () => {
   assert.match(reviewActions, /getObservationProductSlug/);
   assert.match(reviewActions, /invalidatePublicPricing\(productSlug\)/);
   assert.match(reviewActions, /invalidatePublicPricing\(\)/);
-  assert.match(collectionRunner, /invalidatePublicPricing\(productSlug \|\| null\)/);
+  assert.match(collectionRunner, /invalidatePublicPricingFromRoute\(productSlug \|\| null\)/);
   assert.match(productActions, /invalidatePublicPricing\(product\.slug\)/);
   assert.match(exchangeRoute, /revalidateTag\(PUBLIC_EXCHANGE_RATE_CACHE_TAG, "max"\)/);
 });

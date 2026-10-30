@@ -1,5 +1,8 @@
 "use client";
 
+import { adminButtonClassName } from "@/components/admin/AdminButton";
+
+
 import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -38,7 +41,7 @@ export default function SystemHealthAutoRefresh() {
       type="button"
       onClick={refresh}
       disabled={isPending}
-      className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+      className={adminButtonClassName({ variant: "secondary", size: "sm", className: "" })}
       title="立即刷新任务状态"
     >
       <RefreshCw className={isPending ? "animate-spin" : ""} size={15} strokeWidth={2.2} />

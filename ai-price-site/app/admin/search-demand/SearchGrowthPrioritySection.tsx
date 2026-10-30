@@ -45,12 +45,12 @@ export function SearchGrowthPrioritySection({
       <div className="mb-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-bold text-slate-950 dark:text-slate-50">增长机会优先级</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="font-semibold text-admin-text dark:text-admin-text text-base">增长机会优先级</h2>
+            <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">
               总分由需求、缺口、套餐意向和商业转化组成。分数用于排序，判断依据始终可见。
             </p>
           </div>
-          <div className="flex flex-wrap rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20">
+          <div className="flex flex-wrap rounded-lg border border-admin-border bg-admin-surface p-1 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface dark:shadow-black/20">
             {[
               ["all", "全部"],
               ["actionable", "优先处理"],
@@ -63,10 +63,10 @@ export function SearchGrowthPrioritySection({
                 href={growthFocusHref(days, focus as SearchGrowthFocus)}
                 aria-current={growthFocus === focus ? "page" : undefined}
                 className={[
-                  "rounded-md px-3 py-2 text-xs font-bold transition",
+                  "rounded-md px-3 py-2 text-xs font-semibold transition",
                   growthFocus === focus
                     ? "bg-blue-700 text-white"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+                    : "text-admin-text-muted hover:bg-admin-chip hover:text-admin-text dark:text-admin-text-muted dark:hover:bg-admin-chip dark:hover:text-admin-text",
                 ].join(" ")}
               >
                 {label}
@@ -106,7 +106,7 @@ export function SearchGrowthPrioritySection({
                     <AdminTr key={`growth:${normalized}`}>
                       <AdminTd>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex min-w-11 justify-center rounded-md bg-slate-950 px-2 py-1 text-xs font-bold tabular-nums text-white">
+                          <span className="inline-flex min-w-11 justify-center rounded-md bg-slate-950 px-2 py-1 text-xs font-semibold tabular-nums text-white">
                             {opportunity.priorityScore}
                           </span>
                           <AdminBadge variant={priority.variant}>
@@ -115,10 +115,10 @@ export function SearchGrowthPrioritySection({
                         </div>
                       </AdminTd>
                       <AdminTd>
-                        <span className="font-bold text-slate-950 dark:text-slate-50">
+                        <span className="font-semibold text-admin-text dark:text-admin-text">
                           {opportunity.query}
                         </span>
-                        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-400">
+                        <span className="mt-1 block text-xs text-admin-text-faint dark:text-admin-text-muted">
                           {opportunity.visitorCount} 位访客 ·{" "}
                           {opportunity.locales.join(", ") || "unknown"}
                         </span>
@@ -128,7 +128,7 @@ export function SearchGrowthPrioritySection({
                           <AdminBadge variant={stage.variant}>
                             {stage.label}
                           </AdminBadge>
-                          <span className="text-xs text-slate-400 dark:text-slate-400">
+                          <span className="text-xs text-admin-text-faint dark:text-admin-text-muted">
                             无结果 {opportunity.noResultCount} · 套餐意向{" "}
                             {opportunity.planEngagementCount} · 商业点击{" "}
                             {opportunity.commercialConversionCount}
@@ -136,7 +136,7 @@ export function SearchGrowthPrioritySection({
                         </div>
                       </AdminTd>
                       <AdminTd>
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs tabular-nums text-admin-text-muted dark:text-admin-text-muted">
                           <span>需求 {opportunity.scoreBreakdown.demand}/25</span>
                           <span>缺口 {opportunity.scoreBreakdown.gap}/35</span>
                           <span>意向 {opportunity.scoreBreakdown.intent}/20</span>
@@ -146,12 +146,12 @@ export function SearchGrowthPrioritySection({
                         </div>
                       </AdminTd>
                       <AdminTd>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="font-semibold text-admin-text dark:text-admin-text-body">
                           {opportunity.recommendedAction}
                         </span>
                       </AdminTd>
                       <AdminTd>
-                        <span className="block max-w-sm text-xs leading-5 text-slate-500 dark:text-slate-400">
+                        <span className="block max-w-sm text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                           {opportunity.reason}
                         </span>
                       </AdminTd>
@@ -172,7 +172,7 @@ export function SearchGrowthPrioritySection({
                             <ArrowUpRight size={14} />
                           </AdminLinkButton>
                         ) : (
-                          <span className="text-xs font-semibold text-slate-400 dark:text-slate-400">
+                          <span className="text-xs font-semibold text-admin-text-faint dark:text-admin-text-muted">
                             继续观察
                           </span>
                         )}
@@ -184,7 +184,7 @@ export function SearchGrowthPrioritySection({
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-6 py-10 text-center text-sm text-slate-400 dark:text-slate-400"
+                    className="px-6 py-10 text-center text-sm text-admin-text-faint dark:text-admin-text-muted"
                   >
                     当前筛选下没有机会项。扩大时间范围后再查看。
                   </td>

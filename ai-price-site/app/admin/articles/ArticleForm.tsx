@@ -1,3 +1,5 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
+import { adminControlClassName } from "@/components/admin/admin-control";
 import { adminRecordVersion } from "../../../lib/admin-save";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import type { Article, ArticleCategory, ArticleTag, Locale, Product } from "@prisma/client";
@@ -44,18 +46,18 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{label}</span>
+      <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">{label}</span>
       <div className="mt-2">{children}</div>
-      {helper ? <p className="mt-2 text-xs leading-5 text-slate-400">{helper}</p> : null}
+      {helper ? <p className="mt-2 text-xs leading-5 text-admin-text-faint">{helper}</p> : null}
     </label>
   );
 }
 
-const inputClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:border-blue-800 dark:focus:ring-blue-800";
+const inputClass = `${adminControlClassName} h-11 w-full`;
 
 export default function ArticleForm({
   article,
+  returnTo = "/admin/articles",
   categories,
   tags,
   products,
@@ -71,6 +73,7 @@ export default function ArticleForm({
   searchOpportunityQuery = "",
 }: {
   article?: Article | null;
+  returnTo?:string;
   categories: ArticleCategory[];
   tags: ArticleTag[];
   products: Product[];
@@ -89,6 +92,7 @@ export default function ArticleForm({
 
   return (
     <AdminActionForm action={action} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <input type="hidden" name="returnTo" value={safeAdminReturnTo(returnTo,"/admin/articles")} />
       {article ? <><input type="hidden" name="id" value={article.id} /><input type="hidden" name="recordVersion" value={adminRecordVersion(article)} /></> : null}
       {!article && searchOpportunityQuery ? (
         <input
@@ -98,7 +102,7 @@ export default function ArticleForm({
         />
       ) : null}
 
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <section className="rounded-admin-card border border-admin-border bg-admin-surface p-6 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
         <div className="grid gap-5">
           <Field label="文章标题">
             <input
@@ -158,8 +162,8 @@ export default function ArticleForm({
       </section>
 
       <aside className="space-y-6">
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">发布</h2>
+        <section className="rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">发布</h2>
 
           <div className="mt-5 grid gap-4">
             <Field label="状态">
@@ -191,19 +195,27 @@ export default function ArticleForm({
             </Field>
 
             <div className="grid gap-3">
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              <label className="flex items-center gap-3 rounded-xl border border-admin-border px-3 py-2
+                text-sm font-semibold text-admin-text-body
+                dark:border-admin-border-strong dark:text-admin-text-body">
                 <input type="checkbox" name="isFeatured" defaultChecked={article?.isFeatured || false} />
                 推荐文章
               </label>
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              <label className="flex items-center gap-3 rounded-xl border border-admin-border px-3 py-2
+                text-sm font-semibold text-admin-text-body
+                dark:border-admin-border-strong dark:text-admin-text-body">
                 <input type="checkbox" name="tocEnabled" defaultChecked={article?.tocEnabled ?? true} />
                 启用目录
               </label>
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              <label className="flex items-center gap-3 rounded-xl border border-admin-border px-3 py-2
+                text-sm font-semibold text-admin-text-body
+                dark:border-admin-border-strong dark:text-admin-text-body">
                 <input type="checkbox" name="noindex" defaultChecked={article?.noindex || false} />
                 禁止搜索引擎收录
               </label>
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              <label className="flex items-center gap-3 rounded-xl border border-admin-border px-3 py-2
+                text-sm font-semibold text-admin-text-body
+                dark:border-admin-border-strong dark:text-admin-text-body">
                 <input type="checkbox" name="nofollow" defaultChecked={article?.nofollow || false} />
                 页面链接不传递权重
               </label>
@@ -211,8 +223,8 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">分类与展示</h2>
+        <section className="rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">分类与展示</h2>
 
           <div className="mt-5 grid gap-4">
             <Field label="文章类型">
@@ -242,7 +254,9 @@ export default function ArticleForm({
                   {tags.map((tag) => (
                     <label
                       key={tag.id}
-                      className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                      className="flex items-center gap-3 rounded-xl border border-admin-border px-3 py-2
+                        text-sm font-semibold text-admin-text-body
+                        dark:border-admin-border-strong dark:text-admin-text-body"
                     >
                       <input
                         type="checkbox"
@@ -255,7 +269,7 @@ export default function ArticleForm({
                   ))}
                 </div>
               ) : (
-                <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <p className="rounded-admin-card bg-admin-surface-subtle px-3 py-2 text-sm text-admin-text-muted dark:bg-admin-chip dark:text-admin-text-muted">
                   还没有标签，可先去分类与标签页创建。
                 </p>
               )}
@@ -271,8 +285,8 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">SEO</h2>
+        <section className="rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">SEO</h2>
 
           <div className="mt-5 grid gap-4">
             <Field label="SEO 标题">
@@ -315,20 +329,22 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="text-base font-black text-slate-950 dark:text-slate-50">内链推荐</h2>
-          <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+        <section className="rounded-admin-card border border-admin-border bg-admin-surface p-5 shadow-sm dark:border-admin-border-strong dark:bg-admin-surface">
+          <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">内链推荐</h2>
+          <p className="mt-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
             勾选后会在文章底部生成相关阅读，也方便后续自动内链和权重流向分析。
           </p>
 
           <div className="mt-5 grid gap-5">
             <Field label="关联价格页">
               {products.length > 0 ? (
-                <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2 dark:border-slate-700">
+                <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-admin-border p-2 dark:border-admin-border-strong">
                   {products.map((product) => (
                     <label
                       key={product.id}
-                      className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-semibold
+                        text-admin-text-body hover:bg-admin-surface-subtle
+                        dark:text-admin-text-body dark:hover:bg-admin-chip"
                     >
                       <input
                         type="checkbox"
@@ -340,12 +356,14 @@ export default function ArticleForm({
                         <span className="flex items-center gap-2">
                           <span className="block truncate">{product.name}</span>
                           {recommendedProductIds.includes(product.id) ? (
-                            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
+                            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px]
+                              font-semibold text-blue-700 ring-1 ring-blue-100
+                              dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
                               推荐
                             </span>
                           ) : null}
                         </span>
-                        <span className="block font-mono text-[11px] font-medium text-slate-400">
+                        <span className="block font-mono text-[11px] font-medium text-admin-text-faint">
                           /zh/ai-pricing/{product.slug}
                         </span>
                       </span>
@@ -353,7 +371,7 @@ export default function ArticleForm({
                   ))}
                 </div>
               ) : (
-                <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <p className="rounded-admin-card bg-admin-surface-subtle px-3 py-2 text-sm text-admin-text-muted dark:bg-admin-chip dark:text-admin-text-muted">
                   还没有已发布产品可关联。
                 </p>
               )}
@@ -361,11 +379,13 @@ export default function ArticleForm({
 
             <Field label="相关文章">
               {relatedArticles.length > 0 ? (
-                <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2 dark:border-slate-700">
+                <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-admin-border p-2 dark:border-admin-border-strong">
                   {relatedArticles.map((related) => (
                     <label
                       key={related.id}
-                      className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm font-semibold
+                        text-admin-text-body hover:bg-admin-surface-subtle
+                        dark:text-admin-text-body dark:hover:bg-admin-chip"
                     >
                       <input
                         className="mt-1"
@@ -378,12 +398,14 @@ export default function ArticleForm({
                         <span className="flex items-start gap-2">
                           <span className="block line-clamp-2">{related.title}</span>
                           {recommendedRelatedArticleIds.includes(related.id) ? (
-                            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
+                            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px]
+                              font-semibold text-blue-700 ring-1 ring-blue-100
+                              dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
                               推荐
                             </span>
                           ) : null}
                         </span>
-                        <span className="block font-mono text-[11px] font-medium text-slate-400">
+                        <span className="block font-mono text-[11px] font-medium text-admin-text-faint">
                           /zh/guides/{related.slug}
                         </span>
                       </span>
@@ -391,7 +413,7 @@ export default function ArticleForm({
                   ))}
                 </div>
               ) : (
-                <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <p className="rounded-admin-card bg-admin-surface-subtle px-3 py-2 text-sm text-admin-text-muted dark:bg-admin-chip dark:text-admin-text-muted">
                   暂时没有其他已发布文章可关联。
                 </p>
               )}
@@ -399,9 +421,11 @@ export default function ArticleForm({
           </div>
         </section>
 
-        <div className="sticky bottom-4 flex gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-200/80 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+        <div className="sticky bottom-4 flex gap-3 rounded-admin-card border border-admin-border
+          bg-admin-surface/95 p-3 shadow-lg shadow-admin-shadow/80 backdrop-blur
+          dark:border-admin-border-strong dark:bg-admin-surface/95">
           <AdminLinkButton
-            href="/admin/articles"
+            href={safeAdminReturnTo(returnTo,"/admin/articles")}
             variant="secondary"
             className="flex-1"
           >
@@ -411,6 +435,7 @@ export default function ArticleForm({
             <Save size={16} />
             保存
           </AdminButton>
+          <AdminButton type="submit" variant="secondary" name="saveIntent" value="return">保存并返回</AdminButton>
         </div>
       </aside>
     </AdminActionForm>

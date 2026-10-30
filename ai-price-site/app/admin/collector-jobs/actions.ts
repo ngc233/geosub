@@ -22,6 +22,15 @@ function getJobId(formData: FormData) {
 export async function runCollectorJobNow(formData: FormData) {
   const admin = await requireAdmin("manage");
   const id = getJobId(formData);
+  const guarded = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT job.id::text FROM collector_jobs job
+    JOIN products product ON product.id = job.product_id
+    WHERE job.id = ${id}::uuid AND product.slug = 'claude'
+      AND job.job_config ->> 'collector_kind' = 'pricing_page'
+  `;
+  if (guarded.length) {
+    return {ok:false,error:'请从 Claude 采集配置检查启用条件，再确认加入周期调度。'};
+  }
 
   await prisma.$queryRaw`
     UPDATE collector_jobs

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { latestObservationIdsSql } from "../../../../lib/admin-current-observations";
 import { DEFAULT_APP_STORE_COUNTRY_CODES } from "../../../../lib/app-store-country-policy";
 import { prisma } from "../../../../lib/prisma";
 import type {
@@ -10,6 +11,9 @@ import type {
 } from "./model";
 export async function getProductSummary(slug: string) {
   const rows = await prisma.$queryRaw<ProductSummaryRow[]>`
+    WITH observation_current AS MATERIALIZED (
+      ${latestObservationIdsSql(Prisma.sql`(SELECT id FROM products WHERE slug = ${slug})`)}
+    )
     SELECT
       product.id::text,
       product.slug,
@@ -34,6 +38,7 @@ export async function getProductSummary(slug: string) {
       COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
       COALESCE(observation_state.pending_anomaly_count, 0)::int AS pending_anomaly_count,
       COALESCE(observation_state.hard_anomaly_count, 0)::int AS hard_anomaly_count,
+      COALESCE(observation_history.sample_count, 0)::int AS historical_observation_count,
       observation_state.latest_observed_at
     FROM products product
     LEFT JOIN LATERAL (
@@ -149,15 +154,11 @@ export async function getProductSummary(slug: string) {
             AND observation.billing_platform = 'ios'::billing_platform
             AND (
               COALESCE(observation.anomaly_flag, FALSE)
+              OR lower(COALESCE(observation.anomaly_reason, '')) LIKE '%hard%'
               OR COALESCE(observation.raw_payload ->> 'auto_review_reason_code', '') IN (
-                'app_store_observation_anomaly',
-                'app_store_price_suspiciously_low',
                 'app_store_global_price_outlier',
-                'app_store_currency_mismatch',
-                'app_store_local_dollar_parsed_as_usd',
-                'app_store_plan_order_conflict',
-                'suspicious_low_converted_usd',
-                'suspicious_plan_order'
+                'app_store_hard_anomaly_guard',
+                'hard_price_guard'
               )
             )
         )::int AS hard_anomaly_count,
@@ -166,7 +167,14 @@ export async function getProductSummary(slug: string) {
         ) AS latest_observed_at
       FROM price_observations observation
       WHERE observation.product_id = product.id
+        AND observation.id IN (SELECT id FROM observation_current)
     ) observation_state ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::int AS sample_count
+      FROM price_observations observation
+      WHERE observation.product_id = product.id
+        AND observation.billing_platform = 'ios'::billing_platform
+    ) observation_history ON TRUE
     WHERE product.slug = ${slug}
     LIMIT 1
   `;
@@ -176,7 +184,8 @@ export async function getProductSummary(slug: string) {
 
 export async function getPlanCoverageRows(productId: string) {
   return prisma.$queryRaw<PlanCoverageRow[]>`
-    WITH target_country AS (
+    WITH observation_current AS MATERIALIZED (${latestObservationIdsSql(productId)}),
+    target_country AS (
       SELECT country.id, country.code
       FROM countries country
       WHERE country.code IN (${Prisma.join(DEFAULT_APP_STORE_COUNTRY_CODES)})
@@ -201,14 +210,6 @@ export async function getPlanCoverageRows(productId: string) {
       (
         SELECT COUNT(*)::int
         FROM target_country country
-        WHERE NOT EXISTS (
-          SELECT 1
-          FROM app_store_plan_availability_checks plan_availability
-          WHERE plan_availability.plan_id = plan.id
-            AND plan_availability.country_id = country.id
-            AND plan_availability.billing_platform = 'ios'::billing_platform
-            AND plan_availability.status = 'confirmed_absent'
-        )
       )::int AS common_country_count,
       COALESCE(price_state.common_published_country_count, 0)::int AS common_published_country_count,
       COALESCE(observation_state.pending_observation_count, 0)::int AS pending_observation_count,
@@ -264,6 +265,7 @@ export async function getPlanCoverageRows(productId: string) {
         ) AS latest_observed_at
       FROM price_observations observation
       WHERE observation.plan_id = plan.id
+        AND observation.id IN (SELECT id FROM observation_current)
     ) observation_state ON TRUE
     WHERE plan.product_id = ${productId}::uuid
       AND plan.status <> 'archived'::publish_status
@@ -273,7 +275,8 @@ export async function getPlanCoverageRows(productId: string) {
 
 export async function getMissingCountryRows(productId: string, limit = 80) {
   return prisma.$queryRaw<MissingCountryRow[]>`
-    WITH target_country AS (
+    WITH observation_current AS MATERIALIZED (${latestObservationIdsSql(productId)}),
+    target_country AS (
       SELECT
         country.id,
         country.code,
@@ -322,6 +325,7 @@ export async function getMissingCountryRows(productId: string, limit = 80) {
       SELECT COUNT(*)::int AS pending_observation_count
       FROM price_observations observation
       WHERE observation.plan_id = plan.id
+        AND observation.id IN (SELECT id FROM observation_current)
         AND observation.country_id = country.id
         AND observation.status = 'pending'::observation_status
         AND observation.billing_platform = 'ios'::billing_platform
@@ -335,7 +339,6 @@ export async function getMissingCountryRows(productId: string, limit = 80) {
       AND plan_availability.country_id = country.id
       AND plan_availability.billing_platform = 'ios'::billing_platform
     WHERE price.id IS NULL
-      AND COALESCE(plan_availability.status, '') <> 'confirmed_absent'
     ORDER BY plan.sort_order ASC, country.sort_order ASC
     LIMIT ${limit}
   `;
@@ -343,14 +346,12 @@ export async function getMissingCountryRows(productId: string, limit = 80) {
 
 export async function getPendingReasonRows(productId: string) {
   return prisma.$queryRaw<PendingReasonRow[]>`
+    WITH observation_current AS MATERIALIZED (${latestObservationIdsSql(productId)})
     SELECT
-      NULLIF(
-        COALESCE(
-          observation.raw_payload ->> 'auto_review_reason_code',
-          observation.anomaly_reason,
-          'unknown'
-        ),
-        ''
+      COALESCE(
+        NULLIF(observation.raw_payload ->> 'auto_review_reason_code', ''),
+        NULLIF(observation.anomaly_reason, ''),
+        'unknown'
       ) AS reason_code,
       COUNT(*)::int AS observation_count,
       COUNT(DISTINCT observation.plan_id)::int AS plan_count,
@@ -360,6 +361,7 @@ export async function getPendingReasonRows(productId: string) {
       MAX(observation.observed_at) AS latest_observed_at
     FROM price_observations observation
     WHERE observation.product_id = ${productId}::uuid
+      AND observation.id IN (SELECT id FROM observation_current)
       AND observation.status = 'pending'::observation_status
       AND observation.billing_platform = 'ios'::billing_platform
     GROUP BY reason_code

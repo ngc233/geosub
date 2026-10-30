@@ -1,11 +1,16 @@
+import AdminProductLogo from "@/components/admin/AdminProductLogo";
+import { adminListActionClassName } from "@/components/admin/admin-control";
+import { withAdminReturnTo, adminListLocation } from "@/lib/admin-workflow-context";
+import AdminPagination from "@/components/admin/AdminPagination";
+import { createAdminListView } from "@/lib/admin-list-params";
 import { preproductionRuntime } from "../../../lib/first-party-promotion";
 import AdminProductContext from "../../../components/admin/AdminProductContext";
 import AdminLink from "@/components/admin/AdminLink";
 import { AdminLinkButton } from "@/components/admin/AdminButton";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import { ArrowRight } from "lucide-react";
-import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
-import SegmentedControl from "../../../components/ui/SegmentedControl";
+import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
+import SegmentedControl from "../../../components/admin/AdminSegmentedControl";
 import {
   adminOperationalStatusMeta,
   assessPlanOperationalStatus,
@@ -38,7 +43,7 @@ function formatUsd(value?: number | null) {
 export default async function AdminPlansPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ state?: string; product?: string }>;
+  searchParams?: Promise<{ state?: string; product?: string; page?: string; returnTo?:string; }>;
 }) {
   const params = searchParams ? await searchParams : {};
   const selectedState = ["not_started", "pending", "exception", "published", "archived"].includes(
@@ -128,75 +133,70 @@ export default async function AdminPlansPage({
   const stateHref = (state: "all" | "archived" | AdminOperationalStatus) =>
     `/admin/plans?${new URLSearchParams({...(productSlug ? {product:productSlug} : {}),...(state === "all" ? {} : {state})})}`;
 
+  const list = createAdminListView(visiblePlans, { basePath: "/admin/plans", params: params, pageSize: 25, pageParam: "page", id: "plans-list" });
   return (
     <div>
-      {selectedProduct ? <AdminProductContext id={selectedProduct.id} slug={selectedProduct.slug} name={selectedProduct.name} /> : null}
+      {selectedProduct ? <AdminProductContext id={selectedProduct.id} slug={selectedProduct.slug} name={selectedProduct.name} returnTo={params.returnTo} /> : null}
       {productSlug ? <p className="mb-4 text-sm">{selectedProduct ? `仅显示 ${selectedProduct.name} 的套餐。` : "未找到指定产品，没有显示其他产品的数据。"} <AdminLink href="/admin/plans" className="underline">清除产品筛选</AdminLink></p> : null}
-      {preproductionRuntime() ? <p className="mb-4 rounded-lg border border-slate-200 p-4 text-sm dark:border-slate-700">本地公开数据快照未导入来源和采集记录。下方来源缺失只描述当前本地库，不能据此判断生产数据异常。</p> : null}
+      {preproductionRuntime() ? <p className="mb-4 rounded-lg border border-admin-border p-4 text-sm dark:border-admin-border-strong">本地公开数据快照未导入来源和采集记录。下方来源缺失只描述当前本地库，不能据此判断生产数据异常。</p> : null}
       <AdminPageHeader
         eyebrow="Plans"
         title="套餐库"
         description="查看套餐发布状态与数据质量。价格数和极值包含全部平台，仅作后台诊断，不作为公开价格结论。"
-        action={<AdminLinkButton href={`/admin/plans/new${productSlug ? `?product=${encodeURIComponent(productSlug)}` : ""}`}>新增套餐</AdminLinkButton>}
+        action={<AdminLinkButton href={withAdminReturnTo(
+          `/admin/plans/new${productSlug ? `?product=${encodeURIComponent(productSlug)}` : ""}`,
+          adminListLocation("/admin/plans",params)
+        )}>新增套餐</AdminLinkButton>}
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
-        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">套餐总数</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+        <AdminCard className="dark:border-admin-border dark:bg-admin-surface dark:shadow-none">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">套餐总数</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {activeTotal}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             活跃套餐数量；归档 {archivedCount} 个另计。
           </div>
         </AdminCard>
 
-        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">已发布</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+        <AdminCard className="dark:border-admin-border dark:bg-admin-surface dark:shadow-none">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">已发布</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {activePlans.filter(plan => plan.status === "PUBLISHED").length}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             套餐发布状态；不代表价格或来源质量已通过。
           </div>
         </AdminCard>
 
-        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">价格覆盖</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+        <AdminCard className="dark:border-admin-border dark:bg-admin-surface dark:shadow-none">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">价格覆盖</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {totalPrices}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             套餐下的区域价格数量。
           </div>
         </AdminCard>
 
-        <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">有价 / 无价</div>
-          <div className="mt-2 text-2xl font-black text-slate-950 dark:text-slate-50">
+        <AdminCard className="dark:border-admin-border dark:bg-admin-surface dark:shadow-none">
+          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">有价 / 无价</div>
+          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">
             {plansWithPrices.length} / {plansWithoutPrices.length}
           </div>
-          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
             无价格套餐后续优先补齐。
           </div>
         </AdminCard>
       </div>
 
-      <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">
-              套餐列表
-            </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              套餐是产品和区域价格之间的中间层，例如 ChatGPT Plus、ChatGPT Pro。
-            </p>
-          </div>
-
+      <AdminCard className="dark:border-admin-border dark:bg-admin-surface dark:shadow-none">
+        <AdminSectionHeader title="套餐列表" description="套餐是产品和区域价格之间的中间层，例如 ChatGPT Plus、ChatGPT Pro。" action={
           <div className="flex gap-4">
             <AdminLink
               href={selectedProduct ? `/admin/products/${selectedProduct.id}/edit` : "/admin/products"}
-              className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/40"
             >
               产品库
               <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
@@ -204,20 +204,19 @@ export default async function AdminPlansPage({
 
             <AdminLink
               href={selectedProduct ? `/admin/data-quality/${encodeURIComponent(selectedProduct.slug)}` : "/admin/prices"}
-              className="inline-flex items-center gap-1.5 text-sm font-black text-blue-700 hover:text-blue-900"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/40"
             >
               价格库
               <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.8} />
             </AdminLink>
           </div>
-        </div>
+        } />
 
-        <div className="mb-5 max-w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mb-4 min-w-0">
           <SegmentedControl
             ariaLabel="套餐数据质量"
             value={selectedState}
             tone="blue"
-            className="min-w-[520px]"
             items={[
               { label: `全部 ${activeTotal}`, value: "all", href: stateHref("all") },
               ...(["exception", "pending", "not_started", "published"] as AdminOperationalStatus[]).map(
@@ -232,8 +231,11 @@ export default async function AdminPlansPage({
           />
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <div className="grid min-w-[860px] grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px_70px] gap-0 bg-slate-50 dark:bg-slate-800 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400">
+        <AdminPagination {...list.pagination} ariaLabel="列表分页" className="mb-4" id="plans-list" />
+        <div className="overflow-x-auto rounded-xl border border-admin-border dark:border-admin-border-strong">
+          <div className="grid min-w-[860px] grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px_70px]
+            gap-0 bg-admin-surface-subtle dark:bg-admin-chip px-5 py-3 text-xs font-semibold uppercase
+            tracking-wide text-admin-text-faint">
             <div>产品</div>
             <div>套餐</div>
             <div>周期</div>
@@ -244,8 +246,8 @@ export default async function AdminPlansPage({
             <div>操作</div>
           </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
-            {visiblePlans.map((plan) => {
+          <div className="divide-y divide-admin-border dark:divide-admin-border bg-admin-surface dark:bg-admin-surface">
+            {list.items.map((plan) => {
               const assessment = assessPlan(plan);
               const prices = plan.regionPrices
                 .map((price) => Number(price.priceUsd))
@@ -257,31 +259,31 @@ export default async function AdminPlansPage({
               return (
                 <div
                   key={plan.id}
+                  id={`plans-row-${plan.id}`}
                   className="grid min-w-[860px] grid-cols-[minmax(140px,1fr)_minmax(120px,1fr)_100px_90px_100px_110px_110px_70px] items-center gap-0 px-5 py-4 text-sm"
                 >
-                  <div>
-                    <div className="font-black text-slate-950 dark:text-slate-50">
-                      {plan.product.name}
-                    </div>
-                    <div className="mt-1 font-mono text-xs text-slate-400">
-                      {plan.product.slug}
+                  <div className="flex min-w-0 items-start gap-3 pr-3">
+                    <AdminProductLogo slug={plan.product.slug} name={plan.product.name}/>
+                    <div className="min-w-0 break-words">
+                      <div className="font-semibold text-admin-text">{plan.product.name}</div>
+                      <div className="mt-1 font-mono text-xs text-admin-text-faint">{plan.product.slug}</div>
                     </div>
                   </div>
 
                   <div>
-                    <div className="font-black text-slate-800 dark:text-slate-200">
+                    <div className="font-semibold text-admin-text dark:text-admin-text-body">
                       {plan.name}
                     </div>
-                    <div className="mt-1 font-mono text-xs text-slate-400">
+                    <div className="mt-1 font-mono text-xs text-admin-text-faint">
                       {plan.slug}
                     </div>
                   </div>
 
-                  <div className="text-slate-600 dark:text-slate-300">
+                  <div className="text-admin-text-secondary dark:text-admin-text-secondary">
                     {cycleLabel(String(plan.billingCycle))}
                   </div>
 
-                  <div className="font-bold text-slate-700 dark:text-slate-200">
+                  <div className="font-semibold text-admin-text-body dark:text-admin-text-body">
                     {plan.regionPrices.length}
                   </div>
 
@@ -292,30 +294,33 @@ export default async function AdminPlansPage({
                       title={assessment?.reason}
                       dimension="quality"
                     />
-                    <div className="mt-1 max-w-[180px] text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    <div className="mt-1 max-w-[180px] text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
                       {assessment?.reason}
                     </div>
                   </div>
 
-                  <div className="font-black text-emerald-700">
+                  <div className="font-semibold text-emerald-700">
                     {formatUsd(minPrice)}
                   </div>
 
-                  <div className="font-black text-slate-700 dark:text-slate-200">
+                  <div className="font-semibold text-admin-text-body dark:text-admin-text-body">
                     {formatUsd(maxPrice)}
                   </div>
-                  <AdminLink href={`/admin/plans/${plan.id}/edit`} className="font-bold text-blue-700 underline-offset-2 hover:underline dark:text-blue-300">编辑</AdminLink>
+                  <AdminLink href={withAdminReturnTo(
+                    `/admin/plans/${plan.id}/edit`, adminListLocation("/admin/plans",params,`plans-row-${plan.id}`)
+                  )} className={adminListActionClassName}>编辑</AdminLink>
                 </div>
               );
             })}
 
             {visiblePlans.length === 0 ? (
-              <div className="px-5 py-12 text-center text-sm font-bold text-slate-400">
+              <div className="px-5 py-12 text-center text-sm font-semibold text-admin-text-faint">
                 暂无套餐数据。
               </div>
             ) : null}
           </div>
         </div>
+      <AdminPagination {...list.pagination} ariaLabel="列表底部分页" className="mt-4" />
       </AdminCard>
     </div>
   );

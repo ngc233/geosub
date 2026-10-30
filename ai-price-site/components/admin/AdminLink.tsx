@@ -1,18 +1,34 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
+import { LoaderCircle } from "lucide-react";
 import { useAdminPermission } from "./AdminPermissions";
 import type { ComponentProps } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 type AdminLinkProps = ComponentProps<typeof Link> & {
   prefetchOnIntent?: boolean;
+  showPending?: boolean;
 };
 
-/**
- * Admin destinations often execute database-heavy server queries. Load them
- * only after an explicit click instead of prefetching every visible link.
- */
+function NavigationPending() {
+  const { pending } = useLinkStatus();
+
+  return (
+    <span
+      aria-live="polite"
+      className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2"
+    >
+      {pending ? <>
+        <LoaderCircle aria-hidden="true" className="h-4 w-4 motion-safe:animate-spin" />
+        <span className="sr-only">正在打开页面</span>
+      </> : null}
+    </span>
+  );
+}
+
+// Large result lists stay click-only. Navigation can opt into Next's partial
+// prefetch, which stops at admin/loading.tsx instead of fetching every dataset.
 export default function AdminLink({
   children,
   href,
@@ -20,6 +36,9 @@ export default function AdminLink({
   onFocus,
   onMouseEnter,
   prefetchOnIntent = false,
+  prefetch = false,
+  showPending = false,
+  className,
   scroll,
   ...props
 }: AdminLinkProps) {
@@ -36,13 +55,16 @@ export default function AdminLink({
     if (hrefValue?.startsWith("/admin")) router.prefetch(hrefValue);
   };
 
-  if (!canManage && /\/admin\/[^?#]+\/new$/.test(destinationPathname)) return <span className={props.className} aria-disabled="true" title="仅管理员可新增">{children}</span>;
+  if (!canManage && /\/admin\/[^?#]+\/new$/.test(destinationPathname)) {
+    return <span className={className} aria-disabled="true" title="仅管理员可新增">{children}</span>;
+  }
 
   return (
     <Link
       {...props}
       href={href}
-      prefetch={false}
+      prefetch={prefetch}
+      className={showPending ? `${className || ""} relative pr-8` : className}
       scroll={scroll ?? !preserveSamePageScroll}
       onFocus={(event) => {
         prefetchDestination();
@@ -55,6 +77,7 @@ export default function AdminLink({
       onClick={onClick}
     >
       {!canManage && destinationPathname.endsWith("/edit") && children === "编辑" ? "查看" : children}
+      {showPending ? <NavigationPending /> : null}
     </Link>
   );
 }

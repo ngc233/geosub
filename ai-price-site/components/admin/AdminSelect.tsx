@@ -1,4 +1,5 @@
 "use client";
+import { adminControlClassName } from "./admin-control";
 
 import { useEffect, useRef, useState, useId } from "react";
 
@@ -60,7 +61,7 @@ export default function AdminSelect({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label htmlFor={controlId} className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+      <label htmlFor={controlId} className="mb-2 block text-sm font-medium text-admin-text-body dark:text-admin-text-body">
         {label}
       </label>
 
@@ -73,17 +74,12 @@ export default function AdminSelect({
         aria-controls={`${controlId}-options`}
         type="button"
         onClick={() => setOpen((state) => !state)}
-        className={[
-          "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition",
-          "border-slate-300 bg-white text-slate-950 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-50",
-          "hover:border-slate-400",
-          "focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10",
-        ].join(" ")}
+        className={`${adminControlClassName} flex min-h-11 w-full items-center justify-between py-2 text-left`}
       >
         <span className="flex min-w-0 flex-col">
           <span className="truncate font-medium">{selected?.label}</span>
           {selected?.description ? (
-            <span className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+            <span className="mt-1 truncate text-xs text-admin-text-muted dark:text-admin-text-muted">
               {selected.description}
             </span>
           ) : null}
@@ -91,7 +87,7 @@ export default function AdminSelect({
 
         <svg
           className={[
-            "ml-3 h-4 w-4 shrink-0 text-slate-400 transition",
+            "ml-3 h-4 w-4 shrink-0 text-admin-text-faint transition",
             open ? "rotate-180 text-blue-600" : "",
           ].join(" ")}
           viewBox="0 0 20 20"
@@ -109,11 +105,13 @@ export default function AdminSelect({
       </button>
 
       {helperText ? (
-        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{helperText}</p>
+        <p className="mt-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{helperText}</p>
       ) : null}
 
       {open ? (
-        <div id={`${controlId}-options`} className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5 dark:bg-slate-900 dark:border-slate-800">
+        <div id={`${controlId}-options`} className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg
+          border border-admin-border bg-admin-surface p-1 shadow-xl ring-1 ring-slate-950/5
+          dark:bg-admin-surface dark:border-admin-border">
           <div className="admin-scrollbar max-h-[360px] overflow-y-auto">
             {options.map((option) => {
               const active = option.value === currentValue;
@@ -131,7 +129,7 @@ export default function AdminSelect({
                     "flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm transition",
                     active
                       ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-slate-50",
+                      : "text-admin-text-body hover:bg-admin-surface-subtle hover:text-admin-text dark:text-admin-text-body dark:hover:bg-admin-chip dark:hover:text-admin-text",
                   ].join(" ")}
                 >
                   <span className="min-w-0">
@@ -142,7 +140,7 @@ export default function AdminSelect({
                       <span
                         className={[
                           "mt-1 block truncate text-xs",
-                          active ? "text-blue-500 dark:text-blue-300" : "text-slate-500 dark:text-slate-400",
+                          active ? "text-blue-500 dark:text-blue-300" : "text-admin-text-muted dark:text-admin-text-muted",
                         ].join(" ")}
                       >
                         {option.description}

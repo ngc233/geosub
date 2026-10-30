@@ -1,3 +1,4 @@
+import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 import { adminRecordVersion } from "../../../../../lib/admin-save";
 import AdminProductContext from "../../../../../components/admin/AdminProductContext";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
@@ -15,7 +16,6 @@ import AdminSelect from "../../../../../components/admin/AdminSelect";
 import BrandIcon from "../../../../../components/BrandIcon";
 import { getPricingDetailPath } from "../../../../../lib/pricing-routes";
 import { prisma } from "../../../../../lib/prisma";
-import ProductOnboardingSteps from "../../ProductOnboardingSteps";
 import {
   saveProductSeoAction,
   saveProductAppStoreSourceAction,
@@ -47,6 +47,7 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
   searchParams?: Promise<{
+    returnTo?:string;
     error?: string;
     created?: string;
     appStoreAuto?: string;
@@ -63,6 +64,7 @@ export default async function EditProductPage({
   const admin = await requireAdmin();
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
+  const returnTo=safeAdminReturnTo(query.returnTo,"/admin/products");
 
   const product = await prisma.product.findUnique({
     where: {
@@ -133,13 +135,13 @@ export default async function EditProductPage({
 
   return (
     <fieldset disabled={admin.role !== "OWNER"} className="min-w-0">
-      <AdminProductContext id={product.id} slug={product.slug} name={product.name} />
+      <AdminProductContext id={product.id} slug={product.slug} name={product.name} returnTo={returnTo} />
       <AdminPageHeader
         eyebrow="Products"
         title={`${admin.role === "OWNER" ? "编辑" : "查看"}数字服务：${product.name}`}
         description="维护产品基础资料，并继续补齐套餐、价格和审核发布流程。"
         action={
-          <AdminLinkButton href="/admin/products" variant="secondary">
+          <AdminLinkButton href={returnTo} variant="secondary">
             返回列表
           </AdminLinkButton>
         }
@@ -147,7 +149,7 @@ export default async function EditProductPage({
 
       {query?.source === "authority-coverage" ? (
         <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
-          <div className="font-bold">
+          <div className="font-semibold">
             权威覆盖任务：{query.reason?.slice(0, 120) || "完善产品资料"}
           </div>
           <p className="mt-1 leading-6 text-blue-700">
@@ -219,9 +221,8 @@ export default async function EditProductPage({
         </div>
       ) : null}
 
-      <ProductOnboardingSteps currentStep="product" productId={product.id} productSlug={product.slug} />
-
       <AdminActionForm action={updateProductAction} className="space-y-6">
+        <input type="hidden" name="returnTo" value={returnTo} />
         <input type="hidden" name="id" value={product.id} /><input type="hidden" name="recordVersion" value={adminRecordVersion(product)} />
 
         <AdminCard>
@@ -320,10 +321,10 @@ export default async function EditProductPage({
 
         <div className="flex flex-wrap gap-3">
           <AdminButton type="submit" variant="primary">
-            保存修改
+            保存并返回
           </AdminButton>
 
-          <AdminLinkButton href="/admin/products" variant="secondary">
+          <AdminLinkButton href={returnTo} variant="secondary">
             取消
           </AdminLinkButton>
         </div>
@@ -339,10 +340,10 @@ export default async function EditProductPage({
           <div className="flex items-center gap-4">
             <BrandIcon product={product} size="md" />
             <div>
-              <div className="text-sm font-bold text-slate-950 dark:text-slate-50">
+              <div className="text-sm font-semibold text-admin-text dark:text-admin-text">
                 当前前台：合规本地资产 / Simple Icons / 中性首字母
               </div>
-              <div className="mt-1 max-w-2xl text-xs leading-6 text-slate-600 dark:text-slate-300">
+              <div className="mt-1 max-w-2xl text-xs leading-6 text-admin-text-secondary dark:text-admin-text-secondary">
                 候选图只用于确认品牌身份和后续申请许可，不会因缓存成功而自动发布。
                 没有合规品牌图标时，前台显示稳定的中性首字母，不会加载第三方图片或仿制图形。
               </div>
@@ -445,21 +446,21 @@ export default async function EditProductPage({
         />
 
         <div className="mb-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100 dark:bg-slate-800">
-            <div className="text-xs font-semibold text-slate-400">来源状态</div>
-            <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+          <div className="rounded-admin-card bg-admin-surface-subtle px-4 py-3 ring-1 ring-admin-border dark:bg-admin-chip">
+            <div className="text-xs font-semibold text-admin-text-faint">来源状态</div>
+            <div className="mt-1 text-sm font-semibold text-admin-text dark:text-admin-text">
               {appStoreSource ? "已配置" : "未配置"}
             </div>
           </div>
-          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100 dark:bg-slate-800">
-            <div className="text-xs font-semibold text-slate-400">采集任务</div>
-            <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+          <div className="rounded-admin-card bg-admin-surface-subtle px-4 py-3 ring-1 ring-admin-border dark:bg-admin-chip">
+            <div className="text-xs font-semibold text-admin-text-faint">采集任务</div>
+            <div className="mt-1 text-sm font-semibold text-admin-text dark:text-admin-text">
               {latestAppStoreJob ? latestAppStoreJob.status : "未生成"}
             </div>
           </div>
-          <div className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100 dark:bg-slate-800">
-            <div className="text-xs font-semibold text-slate-400">App ID</div>
-            <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+          <div className="rounded-admin-card bg-admin-surface-subtle px-4 py-3 ring-1 ring-admin-border dark:bg-admin-chip">
+            <div className="text-xs font-semibold text-admin-text-faint">App ID</div>
+            <div className="mt-1 text-sm font-semibold text-admin-text dark:text-admin-text">
               {latestAppStoreJob?.app_store_id || "待填写"}
             </div>
           </div>

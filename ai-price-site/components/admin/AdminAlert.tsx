@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 
@@ -6,31 +6,31 @@ type AdminAlertVariant = "info" | "success" | "warning" | "danger";
 
 const variantStyles = {
   info: {
-    box: "border-blue-200 bg-blue-50",
-    icon: "bg-blue-600 text-white",
-    title: "text-blue-950",
-    text: "text-blue-900/80",
+    box: "border-admin-accent/20 bg-admin-accent-soft",
+    icon: "bg-admin-accent-soft text-admin-accent",
+    title: "text-admin-accent",
+    text: "text-admin-accent",
     Icon: Info,
   },
   success: {
-    box: "border-green-200 bg-green-50",
-    icon: "bg-green-600 text-white",
-    title: "text-green-950",
-    text: "text-green-900/80",
+    box: "border-admin-success/20 bg-admin-success-soft",
+    icon: "bg-admin-success-soft text-admin-success",
+    title: "text-admin-success",
+    text: "text-admin-success",
     Icon: CheckCircle2,
   },
   warning: {
-    box: "border-amber-200 bg-amber-50",
-    icon: "bg-amber-600 text-white",
-    title: "text-amber-950",
-    text: "text-amber-900/80",
+    box: "border-admin-warning/20 bg-admin-warning-soft",
+    icon: "bg-admin-warning-soft text-admin-warning",
+    title: "text-admin-warning",
+    text: "text-admin-warning",
     Icon: AlertTriangle,
   },
   danger: {
-    box: "border-red-200 bg-red-50",
-    icon: "bg-red-600 text-white",
-    title: "text-red-950",
-    text: "text-red-900/80",
+    box: "border-admin-danger/20 bg-admin-danger-soft",
+    icon: "bg-admin-danger-soft text-admin-danger",
+    title: "text-admin-danger",
+    text: "text-admin-danger",
     Icon: XCircle,
   },
 };
@@ -48,15 +48,15 @@ export default function AdminAlert({
   const Icon = style.Icon;
 
   return (
-    <div className={`rounded-xl border p-6 ${style.box}`}>
-      <div className="flex items-start gap-4">
+    <div className={`rounded-admin-card border p-5 ${style.box}`}>
+      <div className="flex items-start gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${style.icon}`}>
           <Icon aria-hidden="true" className="size-5" strokeWidth={1.8} />
         </div>
 
-        <div>
-          <h2 className={`font-bold ${style.title}`}>{title}</h2>
-          <div className={`mt-2 text-sm leading-7 ${style.text}`}>{children}</div>
+        <div className="min-w-0">
+          <h2 className={`text-base font-semibold ${style.title}`}>{title}</h2>
+          <div className={`mt-2 text-sm leading-6 ${style.text}`}>{children}</div>
         </div>
       </div>
     </div>

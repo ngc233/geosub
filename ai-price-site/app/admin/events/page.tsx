@@ -1,3 +1,6 @@
+import { adminButtonClassName } from "@/components/admin/AdminButton";
+import AdminPagination from "@/components/admin/AdminPagination";
+import { adminControlClassName } from "@/components/admin/admin-control";
 import AdminLink from "@/components/admin/AdminLink";
 import {
   Activity,
@@ -191,7 +194,7 @@ export default async function AdminEventsPage({
         action={
           <a
             href={exportHref}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className={adminButtonClassName({variant:"secondary",size:"md",className:""})}
           >
             <Download size={16} strokeWidth={2} />
             导出当前筛选
@@ -208,31 +211,31 @@ export default async function AdminEventsPage({
       </div>
 
       <AdminCard className="mb-6">
-        <form action="/admin/events" method="get" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-[1fr_1fr_1fr_1fr_1fr_1.2fr_1.4fr_auto]">
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+        <form key={JSON.stringify(params)} action="/admin/events" method="get" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-[1fr_1fr_1fr_1fr_1fr_1.2fr_1.4fr_auto]">
+          <label className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
             开始日期
             <input
               type="date"
               name="from"
               defaultValue={filters.from}
-              className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className={`${adminControlClassName} mt-2 h-11 w-full`}
             />
           </label>
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <label className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
             结束日期
             <input
               type="date"
               name="to"
               defaultValue={filters.to}
-              className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className={`${adminControlClassName} mt-2 h-11 w-full`}
             />
           </label>
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <label className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
             事件类型
             <select
               name="type"
               defaultValue={filters.kind}
-              className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className={`${adminControlClassName} mt-2 h-11 w-full`}
             >
               <option value="all">全部事件</option>
               <option value="view">页面访问</option>
@@ -240,12 +243,12 @@ export default async function AdminEventsPage({
               <option value="commercial">商业点击</option>
             </select>
           </label>
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <label className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
             产品
             <select
               name="product"
               defaultValue={selectedProduct?.slug || ""}
-              className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className={`${adminControlClassName} mt-2 h-11 w-full`}
             >
               <option value="">全部产品</option>
               {products.map((product) => (
@@ -253,12 +256,12 @@ export default async function AdminEventsPage({
               ))}
             </select>
           </label>
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <label className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
             设备
             <select
               name="device"
               defaultValue={filters.device}
-              className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className={`${adminControlClassName} mt-2 h-11 w-full`}
             >
               <option value="">全部设备</option>
               <option value="desktop">桌面端</option>
@@ -267,12 +270,12 @@ export default async function AdminEventsPage({
               <option value="unknown">未知设备</option>
             </select>
           </label>
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <label className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
             流量质量
             <select
               name="quality"
               defaultValue={filters.quality}
-              className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className={`${adminControlClassName} mt-2 h-11 w-full`}
             >
               <option value="all">全部质量状态</option>
               <option value="missing-session">会话 ID 缺失</option>
@@ -282,16 +285,16 @@ export default async function AdminEventsPage({
               <option value="automated">疑似自动化</option>
             </select>
           </label>
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <label className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">
             搜索
             <div className="relative mt-2">
-              <Search className="pointer-events-none absolute left-3 top-3 text-slate-400" size={17} />
+              <Search className="pointer-events-none absolute left-3 top-3 text-admin-text-faint" size={17} />
               <input
                 type="search"
                 name="q"
                 defaultValue={filters.query}
                 placeholder="事件、页面或入口"
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white pr-3 pl-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                className={`${adminControlClassName} h-11 w-full pr-3 pl-10`}
               />
             </div>
           </label>
@@ -315,10 +318,10 @@ export default async function AdminEventsPage({
       <AdminCard>
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-lg font-black text-slate-950 dark:text-slate-50">事件明细</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">共 {totalEvents} 条，当前第 {page} / {totalPages} 页。</p>
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">事件明细</h2>
+            <p className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">共 {totalEvents} 条，当前第 {page} / {totalPages} 页。</p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+          <div className="flex items-center gap-2 text-xs font-semibold text-admin-text-faint">
             <Eye size={15} />访问
             <Activity size={15} />互动
             <MousePointerClick size={15} />商业
@@ -326,12 +329,15 @@ export default async function AdminEventsPage({
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+        <AdminPagination page={page} totalPages={totalPages} total={totalEvents} pageSize={PAGE_SIZE}
+          pageHref={(next)=>`/admin/events?${buildQuery(filters,{page:next})}#event-list`}
+          ariaLabel="事件分页" id="event-list" className="mb-4" />
+        <div className="overflow-x-auto rounded-xl border border-admin-border dark:border-admin-border-strong">
           <div className="min-w-[1180px]">
-            <div className="grid grid-cols-[170px_170px_150px_minmax(220px,1fr)_160px_120px_100px] bg-slate-50 px-5 py-3 text-xs font-black text-slate-400 dark:bg-slate-800">
+            <div className="grid grid-cols-[170px_170px_150px_minmax(220px,1fr)_160px_120px_100px] bg-admin-surface-subtle px-5 py-3 text-xs font-semibold text-admin-text-faint dark:bg-admin-chip">
               <div>时间（UTC）</div><div>事件</div><div>产品</div><div>页面 / 入口</div><div>来源 / 位置</div><div>设备</div><div>访客</div>
             </div>
-            <div className="divide-y divide-slate-100 bg-white dark:bg-slate-900">
+            <div className="divide-y divide-admin-border bg-admin-surface dark:bg-admin-surface">
               {events.map((event) => {
                 const productSlug = inferEventProductSlug(event, productSlugById, knownSlugs);
                 const product = productSlug ? productBySlug.get(productSlug) : null;
@@ -339,35 +345,38 @@ export default async function AdminEventsPage({
 
                 return (
                   <div key={event.id} className="grid grid-cols-[170px_170px_150px_minmax(220px,1fr)_160px_120px_100px] items-center px-5 py-4 text-sm">
-                    <div className="font-mono text-xs text-slate-500 dark:text-slate-400">{formatUtcDateTime(event.createdAt)}</div>
+                    <div className="font-mono text-xs text-admin-text-muted dark:text-admin-text-muted">{formatUtcDateTime(event.createdAt)}</div>
                     <div>
-                      <span className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ring-1 ${eventTone(event.eventKey)}`}>
+                      <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ring-1 ${eventTone(event.eventKey)}`}>
                         {eventNameZh(event.eventKey)}
                       </span>
-                      <div className="mt-1 font-mono text-[11px] text-slate-400">{event.eventKey}</div>
+                      <div className="mt-1 font-mono text-[11px] text-admin-text-faint">{event.eventKey}</div>
                     </div>
                     <div className="min-w-0">
                       {product ? (
-                        <AdminLink href={`/admin/products/${product.id}/edit`} className="font-bold text-slate-800 hover:text-blue-700 dark:text-slate-200">{product.name}</AdminLink>
-                      ) : <span className="text-slate-400">未归属</span>}
-                      {productSlug ? <div className="mt-1 font-mono text-[11px] text-slate-400">{productSlug}</div> : null}
+                        <AdminLink href={`/admin/products/${product.id}/edit`} className="font-semibold text-admin-text hover:text-blue-700 dark:text-admin-text-body">{product.name}</AdminLink>
+                      ) : <span className="text-admin-text-faint">未归属</span>}
+                      {productSlug ? <div className="mt-1 font-mono text-[11px] text-admin-text-faint">{productSlug}</div> : null}
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-semibold text-slate-700 dark:text-slate-200">{event.pageTitle || event.pagePath || "未记录页面"}</div>
-                      {event.buttonKey ? <div className="mt-1 truncate font-mono text-[11px] text-slate-400">{event.buttonKey}</div> : null}
+                      <div className="truncate font-semibold text-admin-text-body dark:text-admin-text-body">{event.pageTitle || event.pagePath || "未记录页面"}</div>
+                      {event.buttonKey ? <div className="mt-1 truncate font-mono text-[11px] text-admin-text-faint">{event.buttonKey}</div> : null}
                     </div>
-                    <div className="min-w-0 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="min-w-0 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       <div className="truncate">{sourceNameZh(event.source)}</div>
-                      <div className="mt-1 truncate text-slate-400">{event.placement || "未标记位置"}</div>
+                      <div className="mt-1 truncate text-admin-text-faint">{event.placement || "未标记位置"}</div>
                     </div>
-                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">{deviceNameZh(event.deviceType)}<div className="mt-1 uppercase text-slate-400">{event.locale || "-"}</div></div>
-                    <div className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                    <div className="text-xs font-semibold text-admin-text-secondary dark:text-admin-text-secondary">
+                      {deviceNameZh(event.deviceType)}
+                      <div className="mt-1 uppercase text-admin-text-faint">{event.locale || "-"}</div>
+                    </div>
+                    <div className="font-mono text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {shortVisitor(event.anonymousId)}
                       {!event.sessionId ? (
-                        <div className="mt-1 font-sans text-[10px] font-bold text-amber-700">缺会话</div>
+                        <div className="mt-1 font-sans text-[10px] font-semibold text-amber-700">缺会话</div>
                       ) : null}
                       {suspectedAutomated ? (
-                        <div className="mt-1 font-sans text-[10px] font-bold text-red-600">疑似自动化</div>
+                        <div className="mt-1 font-sans text-[10px] font-semibold text-red-600">疑似自动化</div>
                       ) : null}
                     </div>
                   </div>
@@ -375,24 +384,15 @@ export default async function AdminEventsPage({
               })}
 
               {events.length === 0 ? (
-                <div className="px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">当前筛选条件下没有正式事件。</div>
+                <div className="px-6 py-16 text-center text-sm text-admin-text-muted dark:text-admin-text-muted">当前筛选条件下没有正式事件。</div>
               ) : null}
             </div>
           </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-between">
-          <p className="text-xs text-slate-400">每页 {PAGE_SIZE} 条，导出最多包含 10,000 条。</p>
-          <div className="flex items-center gap-2">
-            {page > 1 ? (
-              <AdminLink href={`/admin/events?${buildQuery(filters, { page: page - 1 })}`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">上一页</AdminLink>
-            ) : <span className="rounded-lg border border-slate-100 px-3 py-2 text-sm font-bold text-slate-300 dark:border-slate-800">上一页</span>}
-            <span className="px-2 text-sm font-semibold text-slate-500 dark:text-slate-400">{page} / {totalPages}</span>
-            {page < totalPages ? (
-              <AdminLink href={`/admin/events?${buildQuery(filters, { page: page + 1 })}`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">下一页</AdminLink>
-            ) : <span className="rounded-lg border border-slate-100 px-3 py-2 text-sm font-bold text-slate-300 dark:border-slate-800">下一页</span>}
-          </div>
-        </div>
+        <AdminPagination page={page} totalPages={totalPages} total={totalEvents} pageSize={PAGE_SIZE}
+          pageHref={(next)=>`/admin/events?${buildQuery(filters,{page:next})}#event-list`}
+          ariaLabel="事件分页" className="mt-5" />
       </AdminCard>
     </div>
   );

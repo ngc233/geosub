@@ -1,3 +1,12 @@
+import AdminProductLogo from "@/components/admin/AdminProductLogo";
+import { productWorkflowHref } from "@/lib/admin-product-next-action";
+import { withAdminReturnTo, adminListLocation } from "@/lib/admin-workflow-context";
+import { AdminLinkButton } from "@/components/admin/AdminButton";
+import AdminFilterBar from "@/components/admin/AdminFilterBar";
+import type { AdminProductFilter } from "@/lib/admin-workflow-context";
+import { adminButtonClassName } from "@/components/admin/AdminButton";
+import AdminPagination from "@/components/admin/AdminPagination";
+import { createAdminListView } from "@/lib/admin-list-params";
 import AdminLink from "@/components/admin/AdminLink";
 import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import type { AdminOperationalStatus } from "@/lib/admin-operational-status";
@@ -11,7 +20,6 @@ import {
   AdminPageHeader,
   AdminStatCard,
 } from "../../../components/admin/AdminCard";
-import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import {
   categoryLabel,
   formatDate,
@@ -29,15 +37,22 @@ import {
 
 export function DataQualityOverview({
   rows,
+  listPage,
+  listParams = {},
+  filter,
   latestRepairCycle,
   operationalCounts,
   coverageGapProductCount,
 }: {
   rows: ProductQualityRow[];
+  listPage?: string;
+  listParams?: Record<string,string|undefined>;
+  filter?: AdminProductFilter;
   latestRepairCycle: RepairCycleRow | null;
   operationalCounts: Record<AdminOperationalStatus, number>;
   coverageGapProductCount: number;
 }) {
+  const list = createAdminListView(rows, { basePath: "/admin/data-quality", params: {...listParams,page:listPage}, pageSize: 25, pageParam: "page", id: "data-quality-list" });
   return (
     <div>
       <AdminPageHeader
@@ -47,7 +62,7 @@ export function DataQualityOverview({
         action={
           <AdminLink
             href="/admin/collector-jobs"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-700 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+            className={adminButtonClassName({variant:"secondary",size:"md",className:""})}
           >
             查看采集任务
             <ArrowRight size={16} strokeWidth={2} />
@@ -63,14 +78,14 @@ export function DataQualityOverview({
         <AdminStatCard label="已发布" value={operationalCounts.published} helper="当前无需手工介入" />
       </div>
 
-      <AdminCard className="mb-6 border-blue-200 bg-blue-50/70 dark:border-blue-900 dark:bg-blue-950/30">
+      <AdminCard className="mb-6">
         <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <div className="flex gap-3">
             <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
               <DatabaseZap size={20} strokeWidth={2.2} />
             </span>
             <div>
-              <h2 className="text-base font-bold text-blue-950 dark:text-blue-100">
+              <h2 className="text-base font-semibold text-blue-950 dark:text-blue-100 text-admin-text">
               产品更新判断
               </h2>
               <p className="mt-1 max-w-4xl text-sm leading-6 text-blue-800 dark:text-blue-200">
@@ -80,47 +95,53 @@ export function DataQualityOverview({
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-blue-800 2xl:min-w-[620px] 2xl:grid-cols-4 dark:text-blue-200">
-            <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-900/70">
-              最近闭环：{latestRepairCycle ? formatRelative(latestRepairCycle.created_at) : "等待首次运行"}
+            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
+              最近质量扫描：{latestRepairCycle ? formatRelative(latestRepairCycle.created_at) : "等待首次运行"}
             </div>
-            <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-900/70">
+            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
               本轮排队：{latestRepairCycle
                 ? latestRepairCycle.anomaly_jobs_queued +
                   latestRepairCycle.stale_jobs_queued +
                   latestRepairCycle.coverage_jobs_queued
                 : 0}
             </div>
-            <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-900/70">
+            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
               本轮隔离：{latestRepairCycle
                 ? latestRepairCycle.anomaly_observations_closed +
                   latestRepairCycle.published_outliers_quarantined +
                   latestRepairCycle.stale_prices_quarantined
                 : 0}
             </div>
-            <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-900/70">
+            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
               覆盖缺口：{coverageGapProductCount} 个产品
             </div>
           </div>
         </div>
       </AdminCard>
 
-      <AdminCard className="dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20">
+      <AdminCard className="dark:border-admin-border dark:bg-admin-surface dark:shadow-black/20">
         <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-950 dark:text-slate-50">
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">
               产品级处理队列
             </h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              一行代表一个产品。覆盖、稳定样本和下次采集都在这里汇总；只有红色问题需要人工介入。
+            <p className="mt-1 text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">
+              一行代表一个产品。当前问题按套餐、地区和渠道归并；历史样本保留为证据，按具体原因选择下一步。
             </p>
           </div>
-          <p className="text-xs font-semibold text-slate-400 dark:text-slate-400">
+          <p className="text-xs font-semibold text-admin-text-faint dark:text-admin-text-muted">
             更新时间：{formatDate(new Date())}
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-          <div className="hidden grid-cols-[1.05fr_1.05fr_1fr_0.9fr_0.9fr_1.15fr_0.85fr] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500 lg:grid dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400">
+        <AdminFilterBar action="/admin/data-quality" q={filter?.q || filter?.product} searchLabel="搜索产品" searchPlaceholder="产品名称或 slug" clearHref="/admin/data-quality" />
+        {filter?.product ? <p className="mb-4 text-sm text-admin-text-muted">当前仅显示产品：{filter.product}</p> : null}
+        <AdminPagination {...list.pagination} ariaLabel="列表分页" className="mb-4" id="data-quality-list" />
+        <div className="overflow-hidden rounded-xl border border-admin-border dark:border-admin-border">
+          <div className="hidden grid-cols-[1.05fr_1.05fr_1fr_0.9fr_0.9fr_1.15fr_0.85fr] gap-4 border-b
+            border-admin-border bg-admin-surface-subtle px-4 py-3 text-xs font-semibold
+            text-admin-text-muted lg:grid dark:border-admin-border dark:bg-admin-canvas/50
+            dark:text-admin-text-muted">
             <div>产品</div>
             <div>地区覆盖</div>
             <div>自动审核</div>
@@ -130,8 +151,8 @@ export function DataQualityOverview({
             <div className="text-right">操作</div>
           </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {rows.map((row) => {
+          <div className="divide-y divide-admin-border dark:divide-admin-border">
+            {list.items.map((row) => {
               const health = getProductHealth(row);
               const operationalAssessment = getProductOperationalAssessment(row);
               const operationalStatus = operationalAssessment?.status ?? "not_started";
@@ -145,6 +166,7 @@ export function DataQualityOverview({
               return (
                 <div
                   key={row.id}
+                  id={`quality-row-${row.id}`}
                   className={[
                     "grid gap-4 px-4 py-4 text-sm lg:grid-cols-[1.05fr_1.05fr_1fr_0.9fr_0.9fr_1.15fr_0.85fr] lg:items-center",
                     classes.row,
@@ -152,28 +174,29 @@ export function DataQualityOverview({
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className={`h-2.5 w-2.5 rounded-full ${classes.dot}`} />
-                      <p className="font-bold text-slate-950 dark:text-slate-50">{row.name}</p>
+                      <AdminProductLogo slug={row.slug} name={row.name}/>
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${classes.dot}`} />
+                      <p className="font-semibold text-admin-text dark:text-admin-text">{row.name}</p>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {row.slug} · {categoryLabel(row.category)} · {row.plan_count} 个套餐
                     </p>
-                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-admin-text-faint dark:text-admin-text-muted">
                       极端价 {row.published_outlier_count} · 重复套餐 {row.duplicate_plan_group_count} · 税务缺口 {row.missing_tax_profile_count}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 lg:hidden dark:text-slate-400">地区覆盖</p>
-                    <p className="font-bold text-slate-950 dark:text-slate-50">
+                    <p className="text-[11px] font-semibold text-admin-text-faint lg:hidden dark:text-admin-text-muted">地区覆盖</p>
+                    <p className="font-semibold text-admin-text dark:text-admin-text">
                       {collection.coverageTitle}
                     </p>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-admin-chip-hover dark:bg-admin-chip-hover">
                       <div
                         className={[
                           "h-full rounded-full",
                           collection.coveragePercent === null
-                            ? "w-full bg-slate-300 dark:bg-slate-600"
+                            ? "w-full bg-admin-border-strong dark:bg-slate-600"
                             : "bg-emerald-500",
                         ].join(" ")}
                         style={
@@ -183,103 +206,98 @@ export function DataQualityOverview({
                         }
                       />
                     </div>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400" title={row.missing_country_codes || undefined}>
+                    <p className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted" title={row.missing_country_codes || undefined}>
                       {collection.coverageDetail}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 lg:hidden dark:text-slate-400">自动审核</p>
-                    <p className="font-bold text-slate-950 dark:text-slate-50">
+                    <p className="text-[11px] font-semibold text-admin-text-faint lg:hidden dark:text-admin-text-muted">自动审核</p>
+                    <p className="font-semibold text-admin-text dark:text-admin-text">
                       {collection.reviewTitle}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {collection.reviewDetail}
                     </p>
                     {isAppStoreCollection ? (
-                      <p className="mt-1 line-clamp-2 text-xs text-slate-400 dark:text-slate-400" title={formatIgnoredReasons(row.ignored_reason_codes)}>
-                        {formatIgnoredReasons(row.ignored_reason_codes)}
+                      <p className="mt-1 line-clamp-2 text-xs text-admin-text-faint dark:text-admin-text-muted" title={formatIgnoredReasons(row.ignored_reason_codes)}>
+                        历史样本：{formatIgnoredReasons(row.ignored_reason_codes)}
                       </p>
                     ) : null}
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 lg:hidden dark:text-slate-400">采集状态</p>
+                    <p className="text-[11px] font-semibold text-admin-text-faint lg:hidden dark:text-admin-text-muted">采集状态</p>
                     <AdminStatusBadge
                       status={operationalStatus}
                       title={operationalAssessment?.reason}
                     />
-                    <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{health.label}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs font-semibold text-admin-text-secondary dark:text-admin-text-secondary">{health.label}</p>
+                    <p className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {collection.taskSummary}
                       {isAppStoreCollection && row.stale_queue_count > 0 && unconsumedQueue
                         ? ` · 未消费 ${row.stale_queue_count}`
                         : ""}
                       {isAppStoreCollection && row.stale_refresh_retry_count > 0
-                        ? ` · 复采 ${row.stale_refresh_success_count}/3`
+                        ? ` · 已执行复采 ${row.stale_refresh_success_count}/3`
                         : ""}
                       {isAppStoreCollection && row.coverage_refresh_retry_count > 0
-                        ? ` · 补采 ${Math.min(row.coverage_refresh_success_count, 3)}/3`
+                        ? ` · 已执行补采 ${Math.min(row.coverage_refresh_success_count, 3)}/3`
                         : ""}
                       {isAppStoreCollection && row.anomaly_refresh_retry_count > 0
-                        ? ` · 异常复核 ${Math.min(row.anomaly_refresh_success_count, 3)}/3`
+                        ? ` · 已执行异常复采 ${Math.min(row.anomaly_refresh_success_count, 3)}/3`
                         : ""}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 lg:hidden dark:text-slate-400">下次采集</p>
-                    <p className="font-semibold text-slate-700 dark:text-slate-200">
+                    <p className="text-[11px] font-semibold text-admin-text-faint lg:hidden dark:text-admin-text-muted">下次采集</p>
+                    <p className="font-semibold text-admin-text-body dark:text-admin-text-body">
                       {collection.nextCollection}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {collection.lastCollectionLabel} {formatRelative(collection.lastCollectionAt)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-admin-text-faint dark:text-admin-text-muted">
                       价格确认 {formatRelative(row.latest_price_checked_at)}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 lg:hidden dark:text-slate-400">结论</p>
+                    <p className="text-[11px] font-semibold text-admin-text-faint lg:hidden dark:text-admin-text-muted">结论</p>
                     <p
-                      className={`${health.reasonDetail ? "line-clamp-3" : ""} break-words font-semibold text-slate-800 dark:text-slate-100`}
+                      className={`${health.reasonDetail ? "line-clamp-3" : ""} break-words font-semibold text-admin-text dark:text-admin-text`}
                       title={health.reasonDetail || undefined}
                     >
                       {health.reason}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
                       建议：{health.nextAction} · 最近运行 {row.latest_run_status || "暂无"} · {formatDuration(row.latest_run_age_seconds)}
                     </p>
                   </div>
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
-                    {collection.supportsManualCollection ? (
-                      <ManualCollectionProgressForm
-                        productSlug={row.slug}
-                        buttonLabel="采集"
-                        pendingLabel="正在采集"
-                        disabled={
-                          row.running_run_count > 0 ||
-                          row.latest_run_status === "running"
-                        }
-                      />
+                    {collection.supportsManualCollection && row.running_run_count > 0 ?
+                      <AdminLinkButton href={`/admin/collector-jobs?product=${encodeURIComponent(row.slug)}`}
+                        variant="secondary" size="sm">查看运行进度</AdminLinkButton>
+                      : collection.supportsManualCollection ? (
+                      <AdminLinkButton href={productWorkflowHref("/admin/pipeline",row.slug)} variant="secondary" size="sm">进入产品队列</AdminLinkButton>
                     ) : null}
                     <AdminLink
-                      href={`/admin/review?q=${encodeURIComponent(row.slug)}`}
-                      className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-700 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+                      href={`/admin/review?product=${encodeURIComponent(row.slug)}`}
+                      className={adminButtonClassName({variant:"secondary",size:"sm",className:""})}
                     >
                       审核
                     </AdminLink>
                     <AdminLink
-                      href={`/admin/data-quality/${encodeURIComponent(row.slug)}`}
-                      className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-700 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+                      href={withAdminReturnTo(`/admin/data-quality/${encodeURIComponent(row.slug)}`,adminListLocation("/admin/data-quality",{...listParams,page:listPage},`quality-row-${row.id}`))}
+                      className={adminButtonClassName({variant:"secondary",size:"sm",className:""})}
                     >
                       诊断
                     </AdminLink>
                     <AdminLink
-                      href={`/admin/collector-jobs?q=${encodeURIComponent(row.slug)}`}
-                      className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-700 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+                      href={`/admin/collector-jobs?product=${encodeURIComponent(row.slug)}`}
+                      className={adminButtonClassName({variant:"secondary",size:"sm",className:""})}
                     >
                       任务
                     </AdminLink>
@@ -289,19 +307,20 @@ export function DataQualityOverview({
             })}
 
             {rows.length === 0 ? (
-              <div className="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="px-4 py-12 text-center text-sm text-admin-text-muted dark:text-admin-text-muted">
                 暂无产品数据。先从线索入口添加产品，再生成采集任务。
               </div>
             ) : null}
           </div>
         </div>
 
-        <div className="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">
+        <div className="mt-4 flex items-start gap-2 rounded-admin-card bg-admin-surface-subtle px-4 py-3 text-xs leading-5 text-admin-text-muted dark:bg-admin-canvas/50 dark:text-admin-text-muted">
           <Clock3 size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
           <p>
             这页只做产品级归因，不替代明细审核。若某个产品长期处于“已排队”或“正在采集”，优先进入采集任务页查看后台脚本是否卡住。
           </p>
         </div>
+      <AdminPagination {...list.pagination} ariaLabel="列表底部分页" className="mt-4" />
       </AdminCard>
     </div>
   );

@@ -8,5 +8,16 @@ function ContentValue({content,field}:{content:OverviewContent|null;field:keyof 
 }
 export default function ContentComparison({current,draft}:{current:OverviewContent|null;draft:OverviewContent}){
  const labels={title:'搜索标题',heading:'页面主标题',description:'搜索摘要',sections:'介绍段落',faqs:'常见问题',sources:'官方来源'};
- return <details className="mb-4"><summary className="cursor-pointer py-3 font-semibold">比较当前内容与草稿</summary><p className="my-3 text-sm text-slate-500">以下展示原文；“已修改”仅表示与当前版本不同，不代表事实审核通过。</p><div className="space-y-5">{(Object.keys(labels) as Array<keyof OverviewContent>).map(field=><section key={field}><h3 className="mb-2 font-semibold">{labels[field]} · {current && JSON.stringify(current[field])===JSON.stringify(draft[field])?'未修改':'已修改'}</h3><div className="grid min-w-0 gap-3 md:grid-cols-2">{[{name:'当前内容',value:current},{name:'待发布草稿',value:draft}].map(({name,value})=><div key={name} className="min-w-0 break-words rounded-lg border border-slate-200 p-4 text-sm dark:border-slate-700"><p className="mb-3 font-semibold">{name}</p><ContentValue content={value} field={field}/></div>)}</div></section>)}</div></details>;
+ return <details className="mb-4"><summary className="cursor-pointer py-3 font-semibold">比较当前内容与草稿</summary>
+  <p className="my-3 text-sm text-admin-text-muted">以下展示原文；“已修改”仅表示与当前版本不同，不代表事实审核通过。</p>
+  <div className="space-y-5">{(Object.keys(labels) as Array<keyof OverviewContent>).map(field=>
+   <section key={field}><h3 className="mb-2 font-semibold">
+    {labels[field]} · {current && JSON.stringify(current[field])===JSON.stringify(draft[field])?'未修改':'已修改'}
+   </h3><div className="grid min-w-0 gap-3 md:grid-cols-2">
+    {[{name:'当前内容',value:current},{name:'待发布草稿',value:draft}].map(({name,value})=>
+     <div key={name} className="min-w-0 break-words rounded-lg border border-admin-border p-4 text-sm dark:border-admin-border-strong">
+      <p className="mb-3 font-semibold">{name}</p><ContentValue content={value} field={field}/>
+     </div>)}
+   </div></section>)}
+  </div></details>;
 }

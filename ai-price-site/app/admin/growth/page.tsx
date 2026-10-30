@@ -1,4 +1,4 @@
-import AdminLink from "@/components/admin/AdminLink";
+import AdminSegmentedControl from "@/components/admin/AdminSegmentedControl";
 import { AdminCard, AdminPageHeader, AdminStatCard } from "../../../components/admin/AdminCard";
 import {
   AdminTable,
@@ -35,7 +35,7 @@ function statusLabel(status: "complete" | "partial" | "unavailable") {
 function statusClass(status: "complete" | "partial" | "unavailable") {
   if (status === "complete") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
   if (status === "partial") return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300";
-  return "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400";
+  return "border-admin-border bg-admin-surface-subtle text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text-muted";
 }
 
 function sourceModeLabel(source: GrowthIntelligenceOverview["sources"]["bingWebmaster"]) {
@@ -53,41 +53,41 @@ function SourceCard({
   source: GrowthIntelligenceOverview["sources"]["bingWebmaster"];
 }) {
   return (
-    <AdminCard className="dark:bg-slate-900">
+    <AdminCard className="dark:bg-admin-surface">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-bold text-slate-950 dark:text-slate-50">{label}</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-sm font-semibold text-admin-text dark:text-admin-text">{label}</p>
+          <p className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
             {sourceModeLabel(source)}
           </p>
         </div>
-        <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${statusClass(source.status)}`}>
+        <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(source.status)}`}>
           {statusLabel(source.status)}
         </span>
       </div>
-      <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">
+      <p className="mt-4 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
         {source.totalsScope === "observed_property_days" ? "来源逐日总量（仅返回日期）" : "已捕获页面子集总量"}
       </p>
       <div className="mt-3 grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs font-semibold text-slate-400">点击</p>
-          <p className="mt-1 text-2xl font-black tabular-nums text-slate-950 dark:text-slate-50">{source.status === "unavailable" ? "—" : formatNumber(source.totals.clicks)}</p>
+          <p className="text-xs font-semibold text-admin-text-faint">点击</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-admin-text dark:text-admin-text">{source.status === "unavailable" ? "—" : formatNumber(source.totals.clicks)}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-slate-400">展示</p>
-          <p className="mt-1 text-2xl font-black tabular-nums text-slate-950 dark:text-slate-50">{source.status === "unavailable" ? "—" : formatNumber(source.totals.impressions)}</p>
+          <p className="text-xs font-semibold text-admin-text-faint">展示</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-admin-text dark:text-admin-text">{source.status === "unavailable" ? "—" : formatNumber(source.totals.impressions)}</p>
         </div>
       </div>
-      <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">
+      <p className="mt-4 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
         {source.periodStart && source.periodEnd ? `${source.periodStart} 至 ${source.periodEnd}` : "暂无有效观察期"}
       </p>
-      <p className="mt-1 break-words text-xs leading-5 text-slate-500 dark:text-slate-400">
+      <p className="mt-1 break-words text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
         最近采集：{source.collection.collectedAt ? new Date(source.collection.collectedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }) + "（北京时间）" : "暂无可用自动快照"}
       </p>
-      {source.collection.sourceTimezone && <p className="mt-1 break-words text-xs leading-5 text-slate-500 dark:text-slate-400">
+      {source.collection.sourceTimezone && <p className="mt-1 break-words text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
         来源时区：{source.collection.sourceTimezone === "unknown" ? "待确认" : source.collection.sourceTimezone} · {source.collection.searchType === "web_and_chat" ? "Web + Chat" : "Web"}
       </p>}
-      <ul className="mt-3 space-y-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+      <ul className="mt-3 space-y-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
         {source.limitations.slice(0, 3).map((limitation) => <li key={limitation}>· {limitation}</li>)}
       </ul>
     </AdminCard>
@@ -117,18 +117,7 @@ export default async function AdminGrowthPage({
         title="增长周报"
         description="把站内行为、搜索需求和搜索平台观察放在同一个只读视图里，先确认数据是否完整，再决定是否安排发布或实验。"
         action={(
-          <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            {GROWTH_INTELLIGENCE_WINDOW_DAYS.map((range) => (
-              <AdminLink
-                key={range}
-                href={`/admin/growth?days=${range}`}
-                aria-current={days === range ? "page" : undefined}
-                className={`rounded-md px-3 py-2 text-sm font-bold transition ${days === range ? "bg-blue-700 text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white dark:hover:text-slate-100"}`}
-              >
-                {range} 天
-              </AdminLink>
-            ))}
-          </div>
+<AdminSegmentedControl ariaLabel="统计周期" value={String(days)} items={GROWTH_INTELLIGENCE_WINDOW_DAYS.map(range => ({value:String(range),label:`${range} 天`,href:`/admin/growth?days=${range}`}))} />
         )}
       />
 
@@ -155,12 +144,18 @@ export default async function AdminGrowthPage({
             </AdminTableHead>
             <AdminTableBody>
               {firstParty.daily.length === 0 ? (
-                <AdminTr><td colSpan={3} className="px-6 py-5 text-slate-500 dark:text-slate-400">当前窗口没有站内记录。</td></AdminTr>
+                <AdminTr><td colSpan={3} className="px-6 py-5 text-admin-text-muted dark:text-admin-text-muted">当前窗口没有站内记录。</td></AdminTr>
               ) : firstParty.daily.map((row) => (
                 <AdminTr key={row.date}>
                   <AdminTd>{row.date}</AdminTd>
-                  <AdminTd align="right"><span className="font-bold tabular-nums">{formatNumber(row.views)}</span></AdminTd>
-                  <AdminTd><span className={`rounded-full border px-2 py-1 text-xs font-bold ${row.complete ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"}`}>{row.complete ? "完整日" : "进行中"}</span></AdminTd>
+                  <AdminTd align="right"><span className="font-semibold tabular-nums">{formatNumber(row.views)}</span></AdminTd>
+                  <AdminTd><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${row.complete ? [
+                    "border-emerald-200 bg-emerald-50 text-emerald-700",
+                    "dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  ].join(" ") : [
+                    "border-amber-200 bg-amber-50 text-amber-700",
+                    "dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                  ].join(" ")}`}>{row.complete ? "完整日" : "进行中"}</span></AdminTd>
                 </AdminTr>
               ))}
             </AdminTableBody>
@@ -177,11 +172,14 @@ export default async function AdminGrowthPage({
             </AdminTableHead>
             <AdminTableBody>
               {visibleOpportunities.length === 0 ? (
-                <AdminTr><td colSpan={3} className="px-6 py-5 text-slate-500 dark:text-slate-400">当前窗口没有达到展示门槛的机会。</td></AdminTr>
+                <AdminTr><td colSpan={3} className="px-6 py-5 text-admin-text-muted dark:text-admin-text-muted">当前窗口没有达到展示门槛的机会。</td></AdminTr>
               ) : visibleOpportunities.slice(0, 8).map((item) => (
                 <AdminTr key={`${item.query}-${item.locales.join(",")}`}>
-                  <AdminTd><span className="font-semibold text-slate-950 dark:text-slate-50">{item.query}</span><span className="mt-1 block text-xs text-slate-400">{item.locales.join("、")}</span></AdminTd>
-                  <AdminTd align="right"><span className="font-bold tabular-nums">{formatNumber(item.searchCount)}</span></AdminTd>
+                  <AdminTd>
+                    <span className="font-semibold text-admin-text dark:text-admin-text">{item.query}</span>
+                    <span className="mt-1 block text-xs text-admin-text-faint">{item.locales.join("、")}</span>
+                  </AdminTd>
+                  <AdminTd align="right"><span className="font-semibold tabular-nums">{formatNumber(item.searchCount)}</span></AdminTd>
                   <AdminTd>{item.stage}</AdminTd>
                 </AdminTr>
               ))}
@@ -190,18 +188,19 @@ export default async function AdminGrowthPage({
         </AdminTableShell>
       </div>
 
-      <AdminCard className="dark:bg-slate-900">
+      <AdminCard className="dark:bg-admin-surface">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-950 dark:text-slate-50">当前证据边界</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">本页只读展示证据，不会自动执行内容发布、采集或实验解锁。</p>
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">当前证据边界</h2>
+            <p className="mt-1 text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">本页只读展示证据，不会自动执行内容发布、采集或实验解锁。</p>
           </div>
-          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">过渡读模型</span>
+          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold
+            text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">过渡读模型</span>
         </div>
-        <ul className="mt-4 grid gap-2 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:grid-cols-2">
+        <ul className="mt-4 grid gap-2 text-sm leading-6 text-admin-text-secondary dark:text-admin-text-secondary sm:grid-cols-2">
           {overview.limitations.map((limitation) => <li key={limitation}>· {limitation}</li>)}
         </ul>
-        <p className="mt-5 text-xs text-slate-400 dark:text-slate-500">生成时间：{new Date(overview.generatedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}</p>
+        <p className="mt-5 text-xs text-admin-text-faint dark:text-admin-text-faint">生成时间：{new Date(overview.generatedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}</p>
       </AdminCard>
     </div>
   );
