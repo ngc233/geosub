@@ -120,3 +120,56 @@ test("Apple Music onboarding stays review-only and paused", async () => {
   assert.doesNotMatch(migration, /INSERT\s+INTO\s+price_observations/i);
   assert.doesNotMatch(migration, /'published'/);
 });
+
+test("Claude US Pro uses the exact monthly marker and explicit US corroboration", async () => {
+  const { parseClaudeProEvidence } = await import("./lib/claude-pro-official-web.mjs");
+  const pricing = await readFile(new URL("./fixtures/claude-pro-pricing.html", import.meta.url), "utf8");
+  const help = await readFile(new URL("./fixtures/claude-pro-help.html", import.meta.url), "utf8");
+  const market = { country_code: "US", currency: "USD", locale: "en-US", url: "https://claude.com/pricing" };
+  const changeMonthly = value => pricing.replace('data-plan="pro_monthly">$20', 'data-plan="pro_monthly">' + value);
+  const result = parseClaudeProEvidence(pricing, help, market);
+  assert.equal(result.complete, true, result.issues.join(","));
+  assert.deepEqual(result.candidates.map(row => [row.plan_slug, row.raw_price, row.currency]), [["pro",20,"USD"]]);
+  const cases = [
+    [pricing.replace('pro_monthly','pro_annual'),help,market],
+    [pricing+pricing,help,market],
+    [pricing,help.replace('$20','$25'),market],
+    [pricing,help.replace('(US)','(CA)'),market],
+    [pricing.replace('if billed monthly.','if billed annually.'),help,market],
+    [changeMonthly('From $20'),help,market],
+    [pricing.replace('if billed monthly.','first month free, if billed monthly.'),help,market],
+    [pricing,help,{...market,country_code:'CA'}],
+    [pricing,help,{...market,currency:'CAD'}],
+    [pricing,help,{...market,url:'https://example.invalid/'}],
+    [pricing,help.replace('<h1>What is the Pro plan?</h1>','<h1>Team</h1>'),market],
+  ];
+  for (const args of cases) {
+    const invalid = parseClaudeProEvidence(...args);
+    assert.equal(invalid.complete,false);
+    assert.deepEqual(invalid.candidates,[]);
+  }
+  assert.equal(parseClaudeProEvidence(changeMonthly('$25'),help.replace('$20','$25'),market).candidates[0].raw_price,25);
+  assert.equal(parseClaudeProEvidence('<script>'+pricing+'</script>',help,market).complete,false);
+});
+
+test("Claude fetches only the two reviewed documents and refuses redirects and oversized responses", async () => {
+  const { fetchClaudeProSnapshot, claudePricingUrl, claudeProHelpUrl } = await import("./lib/claude-pro-official-web.mjs");
+  const pricing = await readFile(new URL("./fixtures/claude-pro-pricing.html", import.meta.url), "utf8");
+  const help = await readFile(new URL("./fixtures/claude-pro-help.html", import.meta.url), "utf8");
+  const market = { country_code:'US',currency:'USD',locale:'en-US',url:claudePricingUrl };
+  const calls=[];
+  const snapshot = await fetchClaudeProSnapshot(market,{fetchImpl:async (url,options)=>{
+    calls.push(url);assert.equal(options.redirect,'manual');
+    return new Response(url===claudePricingUrl?pricing:help,{headers:{'content-type':'text/html'}});
+  }});
+  assert.deepEqual(calls,[claudePricingUrl,claudeProHelpUrl]);
+  assert.equal(snapshot.parser_result.complete,true);
+  assert.match(snapshot.content_hash,/^[a-f0-9]{64}$/);
+  assert.match(snapshot.support_evidence.content_hash,/^[a-f0-9]{64}$/);
+  await assert.rejects(fetchClaudeProSnapshot(market,{fetchImpl:async()=>new Response('',{
+    status:302,headers:{location:'https://example.invalid/redirect'},
+  })}),/redirected/);
+  await assert.rejects(fetchClaudeProSnapshot(market,{fetchImpl:async()=>new Response('x',{
+    headers:{'content-type':'text/html','content-length':'2000001'},
+  })}),/too_large/);
+});

@@ -153,73 +153,8 @@ function Normalize-Slug {
 }
 
 function Load-ProductPlanSpecs {
-  $specPath = Join-Path $PSScriptRoot "..\data\product-plan-specs.json"
-  $expansionPath = Join-Path $PSScriptRoot "..\data\catalog-expansion-2026-08.json"
-  $merged = [ordered]@{}
-
-  if (Test-Path -LiteralPath $expansionPath) {
-    $expansionJson = [IO.File]::ReadAllText($expansionPath, [Text.Encoding]::UTF8)
-    $expansion = $expansionJson | ConvertFrom-Json
-    $expandedProducts = @($expansion.products) + @($expansion.required_products) + @($expansion.existing_plan_specs)
-
-    foreach ($product in $expandedProducts) {
-      if ($null -eq $product.app_store -or ![bool]$product.app_store.collector_enabled) {
-        continue
-      }
-
-      $spec = [ordered]@{
-        name = [string]$product.name
-        app_store_id = [string]$product.app_store.id
-        plans = @($product.plans | ForEach-Object {
-          $plan = [ordered]@{
-            slug = [string]$_.slug
-            name = [string]$_.name
-            billing_cycle = [string]$_.billing_cycle
-            aliases = @($_.aliases)
-            sort_order = [int]$_.sort_order
-            expected_monthly_usd_min = [decimal]$_.expected_usd_min
-            expected_monthly_usd_max = [decimal]$_.expected_usd_max
-          }
-          if ($_.PSObject.Properties.Name -contains "price_selection_strategy") {
-            $plan.price_selection_strategy = [string]$_.price_selection_strategy
-          }
-          if ($_.PSObject.Properties.Name -contains "allow_recurring_consumable_terms") {
-            $plan.allow_recurring_consumable_terms = [bool]$_.allow_recurring_consumable_terms
-          }
-          [pscustomobject]$plan
-        })
-      }
-
-      if ($product.PSObject.Properties.Name -contains "match_product_name") {
-        $spec.match_product_name = [string]$product.match_product_name
-      }
-
-      if ($product.PSObject.Properties.Name -contains "excluded_aliases") {
-        $spec.excluded_aliases = @($product.excluded_aliases)
-      }
-      if ($product.PSObject.Properties.Name -contains "country_scoped_aliases") {
-        $spec.country_scoped_aliases = @($product.country_scoped_aliases)
-      }
-
-      $merged[[string]$product.slug] = [pscustomobject]$spec
-    }
-  }
-
-  # Maintained product specifications are authoritative. The expansion file
-  # supplies review-first defaults for newly introduced catalog entries.
-  if (Test-Path -LiteralPath $specPath) {
-    $specJson = [IO.File]::ReadAllText($specPath, [Text.Encoding]::UTF8)
-    $baseSpecs = $specJson | ConvertFrom-Json
-    foreach ($property in @($baseSpecs.PSObject.Properties)) {
-      $merged[$property.Name] = $property.Value
-    }
-  }
-
-  if ($merged.Count -eq 0) {
-    return $null
-  }
-
-  return [pscustomobject]$merged
+  . (Join-Path $PSScriptRoot "app-store-plan-specs.ps1")
+  return Read-AppStorePlanSpecs
 }
 
 function Get-ProductPlanSpec {
@@ -753,7 +688,7 @@ function Get-AppStoreCachePath {
 }
 
 function Get-FreshAppStoreCacheContent {
-  param([string]$Path)
+  param([string]$Path, [ref]$CapturedAt)
 
   if ($AppStoreCacheTtlMinutes -le 0 -or !(Test-Path -LiteralPath $Path)) {
     return $null
@@ -761,7 +696,7 @@ function Get-FreshAppStoreCacheContent {
 
   $cacheFile = Get-Item -LiteralPath $Path
   $cacheAge = (Get-Date).ToUniversalTime() - $cacheFile.LastWriteTimeUtc
-  if ($cacheAge.TotalMinutes -gt $AppStoreCacheTtlMinutes) {
+  if ($cacheAge.TotalMinutes -lt 0 -or $cacheAge.TotalMinutes -ge $AppStoreCacheTtlMinutes) {
     return $null
   }
 
@@ -770,13 +705,15 @@ function Get-FreshAppStoreCacheContent {
     return $null
   }
 
+  if ($null -ne $CapturedAt) { $CapturedAt.Value = $cacheFile.LastWriteTimeUtc.ToString("o") }
   return $content
 }
 
 function Set-AppStoreCacheContent {
   param(
     [string]$Path,
-    [string]$Content
+    [string]$Content,
+    [DateTime]$CapturedAt = [DateTime]::MinValue
   )
 
   if ($AppStoreCacheTtlMinutes -le 0 -or [string]::IsNullOrWhiteSpace($Content)) {
@@ -786,6 +723,9 @@ function Set-AppStoreCacheContent {
   $temporaryPath = "$Path.$([Guid]::NewGuid().ToString('N')).tmp"
   try {
     [IO.File]::WriteAllText($temporaryPath, $Content, [Text.UTF8Encoding]::new($false))
+    if ($CapturedAt -ne [DateTime]::MinValue) {
+      [IO.File]::SetLastWriteTimeUtc($temporaryPath, $CapturedAt.ToUniversalTime())
+    }
     Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
   } finally {
     Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
@@ -835,6 +775,28 @@ function Wait-AppStoreRetryBackoff {
   Start-Sleep -Milliseconds ([int]($exponentialDelayMs + $jitterMs))
 }
 
+function Assert-AppStorePageIdentity {
+  param([string]$FinalUrl, [string]$CountryCode, [string]$AppleAppId, [int]$Status)
+
+  $uri = $null
+  $pathPattern = '^/' + [regex]::Escape($CountryCode.ToLowerInvariant()) +
+    '/(?:(?:iphone|ipad|mac|vision)/)?app/(?:[^/]+/)?id' + [regex]::Escape($AppleAppId) + '/?$'
+  if (![Uri]::TryCreate($FinalUrl, [UriKind]::Absolute, [ref]$uri) -or
+      $uri.Scheme -ne 'https' -or $uri.Host -ne 'apps.apple.com' -or !$uri.IsDefaultPort -or
+      $uri.AbsolutePath -notmatch $pathPattern -or $Status -lt 200 -or $Status -ge 300) {
+    throw "App Store page identity mismatch for requested $CountryCode app $AppleAppId."
+  }
+  return $uri.GetLeftPart([UriPartial]::Path)
+}
+
+function Get-AppStoreResponseFinalUrl {
+  param([object]$Response)
+
+  if ($Response.BaseResponse.RequestMessage.RequestUri) { return [string]$Response.BaseResponse.RequestMessage.RequestUri }
+  if ($Response.BaseResponse.ResponseUri) { return [string]$Response.BaseResponse.ResponseUri }
+  return [string]$Response.FinalUrl
+}
+
 function Get-AppStoreHtml {
   param(
     [string]$CountryCode,
@@ -844,13 +806,28 @@ function Get-AppStoreHtml {
 
   $url = Get-AppStoreUrl -CountryCode $CountryCode -AppleAppId $AppleAppId -ConfiguredUrl $ConfiguredUrl
   $cachePath = Get-AppStoreCachePath -Kind "html" -Url $url
-  $cachedHtml = Get-FreshAppStoreCacheContent -Path $cachePath
-  if ($null -ne $cachedHtml) {
-    Write-Host "Using fresh App Store HTML cache for $CountryCode."
-    return [pscustomobject]@{
-      Url = $url
-      Html = $cachedHtml
-      FromCache = $true
+  $cachedJson = Get-FreshAppStoreCacheContent -Path $cachePath
+  if ($null -ne $cachedJson) {
+    try {
+      $cached = $cachedJson | ConvertFrom-Json
+      $finalUrl = Assert-AppStorePageIdentity -FinalUrl $cached.finalUrl -CountryCode $CountryCode `
+        -AppleAppId $AppleAppId -Status $cached.status
+      $captured = Get-AppStoreObservationTime -RawSnapshot $cached -RequireCapturedAt
+      if (([DateTimeOffset]::UtcNow - $captured).TotalMinutes -ge $AppStoreCacheTtlMinutes -or
+          $cached.html -isnot [string] -or [string]::IsNullOrWhiteSpace($cached.html)) {
+        throw "App Store HTML cache evidence expired or incomplete."
+      }
+      Write-Host "Using fresh App Store HTML cache for $CountryCode."
+      return [pscustomobject]@{
+        Url = $url
+        FinalUrl = $finalUrl
+        Status = [int]$cached.status
+        Html = $cached.html
+        FromCache = $true
+        CapturedAt = $captured.ToString("o")
+      }
+    } catch {
+      # Old raw HTML has no final source identity. Re-fetch rather than trust it.
     }
   }
 
@@ -865,13 +842,20 @@ function Get-AppStoreHtml {
           "User-Agent" = $AppStoreUserAgent
           "Accept-Language" = "en-US,en;q=0.9"
         }
+      $finalUrl = Assert-AppStorePageIdentity -FinalUrl (Get-AppStoreResponseFinalUrl -Response $response) `
+        -CountryCode $CountryCode -AppleAppId $AppleAppId -Status $response.StatusCode
       $html = Get-Utf8ResponseContent -Response $response
-      Set-AppStoreCacheContent -Path $cachePath -Content $html
+      $capturedAt = [DateTime]::UtcNow
+      $cacheRecord = @{html=$html;finalUrl=$finalUrl;status=[int]$response.StatusCode;capturedAt=$capturedAt.ToString("o")}
+      Set-AppStoreCacheContent -Path $cachePath -Content ($cacheRecord | ConvertTo-Json -Compress) -CapturedAt $capturedAt
 
       return [pscustomobject]@{
         Url = $url
+        FinalUrl = $finalUrl
+        Status = [int]$response.StatusCode
         Html = $html
         FromCache = $false
+        CapturedAt = $capturedAt.ToString("o")
       }
     } catch {
       if ($attempt -ge $AppStoreMaxRetries -or !(Test-RetryableAppStoreError -ErrorRecord $_)) {
@@ -898,6 +882,7 @@ function Get-AppStoreRenderedPage {
   $cachePath = Get-AppStoreCachePath -Kind "json" -Url $url
   $resultJson = Get-FreshAppStoreCacheContent -Path $cachePath
   $result = $null
+  $fromCache = $false
 
   if ($null -ne $resultJson) {
     try {
@@ -905,6 +890,13 @@ function Get-AppStoreRenderedPage {
       if (![bool]$result.ok) {
         $result = $null
       } else {
+        $null = Assert-AppStorePageIdentity -FinalUrl $result.finalUrl -CountryCode $CountryCode `
+          -AppleAppId $AppleAppId -Status $result.status
+        $captured = Get-AppStoreObservationTime -RawSnapshot $result -RequireCapturedAt
+        if (([DateTimeOffset]::UtcNow - $captured).TotalMinutes -ge $AppStoreCacheTtlMinutes) {
+          throw "app_store_rendered_cache_evidence_expired"
+        }
+        $fromCache = $true
         Write-Host "Using fresh rendered App Store cache for $CountryCode."
       }
     } catch {
@@ -952,7 +944,10 @@ function Get-AppStoreRenderedPage {
           throw "Browser-rendered App Store page unavailable. HTTP $resultStatus. Final URL: $resultFinalUrl"
         }
 
-        Set-AppStoreCacheContent -Path $cachePath -Content $resultJson
+        $null = Assert-AppStorePageIdentity -FinalUrl $result.finalUrl -CountryCode $CountryCode `
+          -AppleAppId $AppleAppId -Status $result.status
+        $captured = Get-AppStoreObservationTime -RawSnapshot $result -RequireCapturedAt
+        Set-AppStoreCacheContent -Path $cachePath -Content $resultJson -CapturedAt $captured.UtcDateTime
         break
       } catch {
         if ($attempt -ge $AppStoreMaxRetries -or !(Test-RetryableAppStoreError -ErrorRecord $_)) {
@@ -986,7 +981,8 @@ function Get-AppStoreRenderedPage {
     Ok = [bool]$result.ok
     ParserVersion = "app-store-rendered-iap-v1"
     CollectorName = "collect-app-store-prices.ps1/render-app-store-prices.mjs"
-    CapturedAt = [string]$result.capturedAt
+    CapturedAt = (Get-AppStoreObservationTime -RawSnapshot $result -RequireCapturedAt).ToString("o")
+    FromCache = $fromCache
     ParserSource = [string]$result.parserSource
     HasInAppPurchasesSection = [bool]$result.hasInAppPurchasesSection
   }
@@ -1089,6 +1085,43 @@ function Format-ObservedPriceText {
   )
 }
 
+function Get-EmbeddedAppStorePurchasePairs {
+  param([AllowNull()][object]$Value)
+
+  if ($null -eq $Value -or $Value -is [string] -or $Value -is [ValueType]) { return @() }
+  if ($Value -is [array]) {
+    foreach ($child in $Value) {
+      $found = @(Get-EmbeddedAppStorePurchasePairs -Value $child)
+      if ($found.Count -gt 0) { return $found }
+    }
+    return @()
+  }
+
+  if ($Value.title -eq 'In-App Purchases' -and $Value.items -is [array]) {
+    $items = @()
+    foreach ($item in $Value.items) {
+      if ($item.'$kind' -eq 'textPair' -and $item.leadingText -is [string] -and $item.trailingText -is [string]) {
+        if (![string]::IsNullOrWhiteSpace($item.leadingText) -and ![string]::IsNullOrWhiteSpace($item.trailingText)) {
+          $items += [pscustomobject]@{Name=$item.leadingText.Trim();PriceText=$item.trailingText.Trim()}
+        }
+      } elseif ($item.textPairs -is [array]) {
+        foreach ($pair in $item.textPairs) {
+          if (@($pair).Count -ge 2 -and $pair[0] -and $pair[1]) {
+            $items += [pscustomobject]@{Name=[string]$pair[0];PriceText=[string]$pair[1]}
+          }
+        }
+      }
+    }
+    if ($items.Count -gt 0) { return $items }
+  }
+
+  foreach ($property in $Value.PSObject.Properties) {
+    $found = @(Get-EmbeddedAppStorePurchasePairs -Value $property.Value)
+    if ($found.Count -gt 0) { return $found }
+  }
+  return @()
+}
+
 function Get-InAppPurchases {
   param([string]$Html)
 
@@ -1107,7 +1140,27 @@ function Get-InAppPurchases {
     }
   }
 
+  $hasStructuredPurchaseMetadata = $false
   if ($items.Count -eq 0) {
+    $embeddedHtml = [regex]::Replace($Html, '<!--[\s\S]*?-->', '')
+    $scripts = [regex]::Matches($embeddedHtml, '<script\b(?<attrs>[^>]*)>(?<json>[\s\S]*?)</script>', 'IgnoreCase')
+    foreach ($script in $scripts) {
+      $attrs = $script.Groups['attrs'].Value
+      if ($attrs -match '\bsrc\s*=' -or $attrs -notmatch '\btype\s*=\s*["\x27]application/json["\x27]') { continue }
+      $text = $script.Groups['json'].Value
+      if (!$text.Contains('In-App Purchases')) { continue }
+      $hasStructuredPurchaseMetadata = $true
+      try {
+        $data = $text | ConvertFrom-Json
+        $items = @(Get-EmbeddedAppStorePurchasePairs -Value $data)
+        if ($items.Count -gt 0) { break }
+      } catch {
+        # Unparseable metadata cannot supply purchase evidence.
+      }
+    }
+  }
+
+  if ($items.Count -eq 0 -and !$hasStructuredPurchaseMetadata) {
     $embeddedPattern = '"title"\s*:\s*"In-App Purchases"[\s\S]*?"textPairs"\s*:\s*(?<pairs>\[\[[\s\S]*?\]\])'
     $embeddedMatch = [regex]::Match(
       $Html,
@@ -1640,6 +1693,28 @@ function Get-AppStoreSnapshotBillingCycle {
   return "unknown"
 }
 
+function Get-AppStoreObservationTime {
+  param([object]$RawSnapshot, [switch]$RequireCapturedAt)
+
+  $captured = $RawSnapshot.capturedAt
+  $text = if ($captured -is [DateTimeOffset]) {
+    $captured.ToString("o")
+  } elseif ($captured -is [DateTime] -and $captured.Kind -ne [DateTimeKind]::Unspecified) {
+    $captured.ToUniversalTime().ToString("o")
+  } else { [string]$captured }
+  if ([string]::IsNullOrWhiteSpace($text)) {
+    if ($RequireCapturedAt -or $RawSnapshot.fromCache -eq $true) { throw "app_store_evidence_time_missing" }
+    # Legacy direct callers supplied no capture metadata. The normal collector always supplies it.
+    return [DateTimeOffset]::UtcNow
+  }
+  $parsed = [DateTimeOffset]::MinValue
+  $explicitTime = '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|[+-]\d{2}:\d{2})$'
+  if ($text -notmatch $explicitTime -or ![DateTimeOffset]::TryParse(
+    $text, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$parsed
+  ) -or $parsed -gt [DateTimeOffset]::UtcNow) { throw "app_store_evidence_time_invalid" }
+  return $parsed.ToUniversalTime()
+}
+
 function Insert-Observation {
   param(
     [string]$ProductId,
@@ -1662,6 +1737,8 @@ function Insert-Observation {
     [string]$CollectorName = "collect-app-store-prices.ps1"
   )
 
+  $observedAt = Get-AppStoreObservationTime -RawSnapshot $RawSnapshot
+  $observedAtSql = (Quote-SqlString $observedAt.ToString("o")) + "::timestamptz"
   if ($DryRun) {
     $anomalyText = if ($AnomalyFlag) { " anomaly=$AnomalyReason" } else { "" }
     Write-Host "[dry-run] $CountryCode $ItemName $ObservedPriceText -> USD $ConvertedUsd via $ParserVersion$anomalyText"
@@ -1669,18 +1746,39 @@ function Insert-Observation {
   }
 
   $existing = 0
-  if (!$Force) {
+  if (!$Force -or $RawSnapshot.fromCache -eq $true) {
     $check = Invoke-PsqlJson @"
+WITH scoped AS (
+  SELECT id, parser_version, anomaly_flag, raw_price, currency, observed_at, created_at
+  FROM price_observations
+  WHERE product_id = $(Quote-SqlString $ProductId)::uuid
+    AND plan_id = $(Quote-SqlString $PlanId)::uuid
+    AND country_id = $(Quote-SqlString $CountryId)::uuid
+    AND billing_platform = 'ios'::billing_platform
+    AND price_type = 'list_price'::price_type
+    AND source_id = $(Quote-SqlString $SourceId)::uuid
+    AND status IN ('pending', 'approved', 'ignored')
+    AND observed_at <= NOW()
+), latest AS (
+  SELECT id
+  FROM scoped
+  ORDER BY observed_at DESC, created_at DESC, id DESC
+  LIMIT 1
+)
 SELECT json_build_object('count', COUNT(*)) AS result
-FROM price_observations
-WHERE product_id = $(Quote-SqlString $ProductId)::uuid
-  AND plan_id = $(Quote-SqlString $PlanId)::uuid
-  AND country_id = $(Quote-SqlString $CountryId)::uuid
-  AND billing_platform = 'ios'::billing_platform
-  AND status = 'pending'::observation_status
+FROM scoped
+WHERE parser_version IS NOT DISTINCT FROM $(Quote-SqlString $ParserVersion)
+  AND COALESCE(anomaly_flag, FALSE) = $(if ($AnomalyFlag) { "TRUE" } else { "FALSE" })
   AND raw_price = $RawPrice
   AND currency = $(Quote-SqlString $Currency)
-  AND observed_at::date = CURRENT_DATE;
+  AND (
+    -- Replayed source events never become new independent evidence.
+    observed_at = $observedAtSql
+    OR (
+      id = (SELECT id FROM latest)
+      AND observed_at > $observedAtSql - INTERVAL '12 hours'
+    )
+  );
 "@
     $existing = [int]$check.count
   }
@@ -1744,7 +1842,7 @@ VALUES (
   $RawPrice,
   $(Quote-SqlString $Currency),
   $ConvertedUsd,
-  NOW(),
+  $observedAtSql,
   $(Quote-SqlString $SourceUrl),
   $(Quote-SqlString $CountryCode.ToLowerInvariant()),
   $(Quote-SqlString $CountryCode),
@@ -1875,14 +1973,17 @@ function Record-AppStorePlanAvailability {
     [string]$CountryId,
     [string]$CountryCode,
     [string]$PlanSlug,
-    [bool]$Found
+    [bool]$Found,
+    [object]$CapturedAt
   )
 
+  $evidenceTime = Get-AppStoreObservationTime -RawSnapshot @{capturedAt=$CapturedAt} -RequireCapturedAt
+  $evidenceTimeSql = "$(Quote-SqlString ($evidenceTime.ToString('o')))::timestamptz"
   $status = if ($Found) { "available" } else { "pending_absence" }
   $reason = if ($Found) {
     "Canonical plan was present in the latest successful App Store storefront collection."
   } else {
-    "Canonical plan was not present in the latest successful App Store storefront collection."
+    "Canonical plan was not shown on the public App Store page; the page does not establish complete plan availability."
   }
 
   if ($DryRun) {
@@ -1914,8 +2015,8 @@ VALUES (
   $(Quote-SqlString $status),
   $(if ($Found) { 0 } else { 1 }),
   $(Quote-SqlString $reason),
-  NOW(),
-  $(if ($Found) { "NOW()" } else { "NULL" }),
+  $evidenceTimeSql,
+  $(if ($Found) { $evidenceTimeSql } else { "NULL" }),
   NOW(),
   NOW()
 )
@@ -1926,19 +2027,20 @@ DO UPDATE SET
     WHEN EXCLUDED.status = 'available' THEN 0
     ELSE app_store_plan_availability_checks.consecutive_missing_count + 1
   END,
-  status = CASE
-    WHEN EXCLUDED.status = 'available' THEN 'available'
-    WHEN app_store_plan_availability_checks.consecutive_missing_count + 1 >= 3
-      THEN 'confirmed_absent'
-    ELSE 'pending_absence'
-  END,
+  status = EXCLUDED.status,
   reason = EXCLUDED.reason,
-  checked_at = NOW(),
+  checked_at = EXCLUDED.checked_at,
   last_seen_at = CASE
-    WHEN EXCLUDED.status = 'available' THEN NOW()
+    WHEN EXCLUDED.status = 'available' THEN EXCLUDED.checked_at
     ELSE app_store_plan_availability_checks.last_seen_at
   END,
-  updated_at = NOW();
+  updated_at = NOW()
+WHERE EXCLUDED.checked_at > app_store_plan_availability_checks.checked_at
+  OR (
+    EXCLUDED.checked_at = app_store_plan_availability_checks.checked_at
+    AND EXCLUDED.status = 'available'
+    AND app_store_plan_availability_checks.status <> 'available'
+  );
 "@
 }
 
@@ -2044,6 +2146,8 @@ foreach ($countryCode in $CountryCodes) {
         Url = $renderedPage.Url
         FinalUrl = $renderedPage.FinalUrl
         Status = $renderedPage.Status
+        CapturedAt = $renderedPage.CapturedAt
+        FromCache = $renderedPage.FromCache
       }
       $items = @($renderedPage.Items)
       $parserVersion = if ($renderedPage.ParserSource) {
@@ -2192,6 +2296,7 @@ foreach ($countryCode in $CountryCodes) {
           currency = [string]$_.Group[0].Currency
           rawPrice = [decimal]$_.Group[0].RawPrice
           count = [int]$_.Count
+          itemNames = @($_.Group | ForEach-Object { [string]$_.Item.Name } | Sort-Object -Unique)
           expectedFitPenalty = [decimal]$variantPenalty
         }
       })
@@ -2213,6 +2318,8 @@ foreach ($countryCode in $CountryCodes) {
         variantCount = [int]$priceVariants.Count
         expectedFitPenalty = [decimal]$selectionPenalty
         runnerUpExpectedFitPenalty = [decimal]$runnerUpPenalty
+        identityEvidence = "app_store_display_name_only"
+        billingCycle = Get-AppStoreSnapshotBillingCycle -PlanSpec $selected.PlanSpec
         variants = $priceVariants
       } -Force
       $selectedItemsBySlug[$planSlug] = $selected
@@ -2279,7 +2386,8 @@ foreach ($countryCode in $CountryCodes) {
         -CountryId $country.id `
         -CountryCode $code `
         -PlanSlug $planSlug `
-        -Found ($selectedItemsBySlug.ContainsKey($planSlug))
+        -Found ($selectedItemsBySlug.ContainsKey($planSlug)) `
+        -CapturedAt $page.CapturedAt
     }
   }
 
@@ -2333,7 +2441,9 @@ foreach ($countryCode in $CountryCodes) {
     $capturedBillingCycle = Get-AppStoreSnapshotBillingCycle -PlanSpec $capturedPlanSpec
     $rawSnapshot = @{
       snapshotSchemaVersion = 1
-      capturedAt = [DateTime]::UtcNow.ToString("o")
+      capturedAt = [string]$page.CapturedAt
+      processedAt = [DateTime]::UtcNow.ToString("o")
+      fromCache = [bool]$page.FromCache
       billingCycle = $capturedBillingCycle
       country = $code
       sourceUrl = $page.Url

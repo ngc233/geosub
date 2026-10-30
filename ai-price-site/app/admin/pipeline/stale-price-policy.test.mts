@@ -336,7 +336,7 @@ test("coverage gaps queue bounded product-level App Store rechecks", () => {
   assert.match(overview, /无需手工处理/);
 });
 
-test("regional plan differences require three successful storefront checks", () => {
+test("legacy availability storage is retained while public collector omissions stay unconfirmed", () => {
   const planAvailability = readSqlMigration("sql/068_plan_region_availability.sql");
   const collector = readRepoFile(
     "geosub-backend/scripts/collect-app-store-prices.ps1",
@@ -353,10 +353,15 @@ test("regional plan differences require three successful storefront checks", () 
     /COALESCE\(plan_availability\.status, ''\) <> 'confirmed_absent'/,
   );
   assert.match(collector, /function Record-AppStorePlanAvailability/);
+  const start = collector.indexOf("function Record-AppStorePlanAvailability");
+  const availability = collector.slice(start, collector.indexOf("$context = Get-ProductContext", start));
+  assert.match(availability, /RequireCapturedAt/);
+  assert.doesNotMatch(availability, /confirmed_absent/);
   assert.match(
-    collector,
-    /app_store_plan_availability_checks\.consecutive_missing_count \+ 1 >= 3/,
+    availability,
+    /EXCLUDED\.checked_at > app_store_plan_availability_checks\.checked_at/,
   );
+  assert.match(collector, /-CapturedAt \$page\.CapturedAt/);
   assert.match(collector, /WHEN EXCLUDED\.status = 'available' THEN 0/);
   assert.match(collector, /-Found \(\$selectedItemsBySlug\.ContainsKey\(\$planSlug\)\)/);
   assert.match(overview, /plan_availability\.status = 'confirmed_absent'/);

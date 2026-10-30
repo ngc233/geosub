@@ -84,3 +84,27 @@ test('exchange-rate wrapper keeps a gated and reversible Node cutover path', asy
   assert.match(wrapper, /RUNTIME_MODE.*legacy/);
   assert.match(wrapper, /RUNTIME_MODE.*node/);
 });
+
+
+test('current runtime inventory matches actual production wrapper sources', async () => {
+  const result = await validateRuntimeScriptManifest();
+  assert.deepEqual(result.errors, []);
+});
+
+test('delegated entrypoints require an explicit direct target and executable forwarding', async () => {
+  const manifest = validManifest();
+  manifest.productionEntrypoints.push({
+    task: 'compat', wrapper: 'deploy/linux-arm64/run-compat.sh',
+    legacyScript: 'scripts/example.ps1', replacement: 'scripts/example.mjs',
+    status: 'delegated', delegatesTo: 'example',
+  });
+  const fixture = await makeFixture(manifest);
+  const wrapper = path.join(fixture.rootDir, 'deploy/linux-arm64/run-compat.sh');
+  await writeFile(wrapper, 'exec /bin/bash "$BACKEND_DIR/deploy/linux-arm64/run-example.sh"\n');
+  assert.deepEqual((await validateRuntimeScriptManifest(fixture)).errors, []);
+  await writeFile(wrapper, 'echo "deploy/linux-arm64/run-example.sh"\n');
+  assert.match((await validateRuntimeScriptManifest(fixture)).errors.join('\n'), /Delegated wrapper/);
+  manifest.productionEntrypoints[1].delegatesTo = 'compat';
+  await writeFile(fixture.manifestPath, JSON.stringify(manifest));
+  assert.match((await validateRuntimeScriptManifest(fixture)).errors.join('\n'), /Delegated wrapper/);
+});

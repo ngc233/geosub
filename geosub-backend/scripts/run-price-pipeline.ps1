@@ -13,125 +13,49 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-
-function Get-PowerShellHost {
-  $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
-  if ($pwsh) {
-    return $pwsh.Source
-  }
-
-  $windowsPowerShell = Get-Command "powershell" -ErrorAction SilentlyContinue
-  if ($windowsPowerShell) {
-    return $windowsPowerShell.Source
-  }
-
-  $windowsPowerShellExe = Get-Command "powershell.exe" -ErrorAction SilentlyContinue
-  if ($windowsPowerShellExe) {
-    return $windowsPowerShellExe.Source
-  }
-
-  throw "PowerShell executable not found. Install PowerShell 7 or Windows PowerShell."
+if ([string]::IsNullOrWhiteSpace($ProductSlug)) {
+  throw "The compatibility entrypoint requires one explicit product slug."
 }
-
-$powerShellHost = Get-PowerShellHost
-
-function Invoke-Step {
-  param(
-    [string]$Name,
-    [string]$ScriptPath,
-    [string[]]$Arguments
-  )
-
-  Write-Host $Name
-  & $powerShellHost -ExecutionPolicy Bypass -File $ScriptPath @Arguments
-
-  if ($LASTEXITCODE -ne 0) {
-    throw "$Name failed with exit code $LASTEXITCODE."
-  }
+if ($IncludeWeb -or $IncludeGooglePlay -or $RunStrictAutoReview) {
+  throw "Legacy optional collection/review switches require separate configured collector jobs."
 }
-
-function Invoke-CollectorStep {
-  param(
-    [string]$Name,
-    [string]$ScriptPath,
-    [string[]]$Arguments
-  )
-
-  try {
-    Invoke-Step -Name $Name -ScriptPath $ScriptPath -Arguments $Arguments
-  } catch {
-    Write-Warning "$Name did not complete. The pipeline will continue with other sources."
-    Write-Warning $_.Exception.Message
-  }
-}
-
-$commonArgs = @(
-  "-ProductSlug", $ProductSlug,
-  "-ContainerName", $ContainerName,
-  "-DbName", $DbName,
-  "-DbUser", $DbUser
+$runnerArgs = @(
+  "-ProductSlug", $ProductSlug, "-CountryCodes", ($CountryCodes -join ","),
+  "-CollectorKind", "app_store", "-PrimarySourceOnly"
 )
-
-if ($DryRun) {
-  $commonArgs += "-DryRun"
-}
-
-if ($Force) {
-  $commonArgs += "-Force"
-}
-
-Invoke-CollectorStep `
-  -Name "Step 1/2: collecting App Store prices." `
-  -ScriptPath (Join-Path $scriptDir "collect-app-store-prices.ps1") `
-  -Arguments ($commonArgs + @("-CountryCodes", ($CountryCodes -join ",")))
-
-if ($IncludeWeb) {
-  Invoke-CollectorStep `
-    -Name "Optional: collecting Web price evidence." `
-    -ScriptPath (Join-Path $scriptDir "collect-web-prices.ps1") `
-    -Arguments ($commonArgs + @("-CountryCodes", "US"))
+if ($DryRun) { $runnerArgs += "-DryRun" }
+if ($Force) { $runnerArgs += "-Force" }
+if ($SkipAppStoreStabilityAutoReview) { $runnerArgs += "-SkipAutoReview" }
+$backend = Split-Path -Parent $PSScriptRoot
+if ([IO.Path]::DirectorySeparatorChar -eq '/') {
+  if (@('ContainerName','DbName','DbUser') | Where-Object { $PSBoundParameters.ContainsKey($_) }) {
+    throw "Linux compatibility uses the canonical collector database configuration; direct DB overrides are unsupported."
+  }
+  $prior = @{}
+  $overrides = @{ GEOSUB_BACKEND_DIR = $backend }
+  try {
+    foreach ($key in $overrides.Keys) {
+      $prior[$key] = [Environment]::GetEnvironmentVariable($key)
+      [Environment]::SetEnvironmentVariable($key, $overrides[$key])
+    }
+    & /bin/bash (Join-Path $backend "deploy/linux-arm64/run-collector-jobs.sh") @runnerArgs
+    if ($LASTEXITCODE -ne 0) { throw "Canonical collector runner failed with exit code $LASTEXITCODE." }
+  } finally {
+    foreach ($key in $overrides.Keys) { [Environment]::SetEnvironmentVariable($key, $prior[$key]) }
+  }
 } else {
-  Write-Host "Optional Web collection skipped. V1 official price flow uses App Store as the primary source."
+  $parameters = @{
+    ProductSlug = $ProductSlug
+    CountryCodes = $CountryCodes
+    CollectorKind = "app_store"
+    PrimarySourceOnly = $true
+    ContainerName = $ContainerName
+    DbName = $DbName
+    DbUser = $DbUser
+    DryRun = $DryRun
+    Force = $Force
+    SkipAutoReview = $SkipAppStoreStabilityAutoReview
+  }
+  & (Join-Path $PSScriptRoot "run-collector-jobs.ps1") @parameters
+  if (!$?) { throw "Canonical collector runner failed." }
 }
-
-if ($IncludeGooglePlay) {
-  Invoke-CollectorStep `
-    -Name "Optional: collecting Google Play evidence." `
-    -ScriptPath (Join-Path $scriptDir "collect-google-play-prices.ps1") `
-    -Arguments ($commonArgs + @("-CountryCodes", "US"))
-} else {
-  Write-Host "Optional Google Play collection skipped. V1 official price flow uses App Store as the primary source."
-}
-
-if ($DryRun) {
-  Write-Host "Step 2/2: skipping auto-review because this is a dry run."
-} elseif ($RunStrictAutoReview) {
-  Invoke-Step `
-    -Name "Step 2/2: running strict multi-source auto-review." `
-    -ScriptPath (Join-Path $scriptDir "run-price-auto-review.ps1") `
-    -Arguments @(
-      "-Execute",
-      "-Rule", "StrictMultiSource",
-      "-ContainerName", $ContainerName,
-      "-DbName", $DbName,
-      "-DbUser", $DbUser
-    )
-} elseif ($SkipAppStoreStabilityAutoReview) {
-  Write-Host "Step 2/2: App Store stability auto-review skipped. Review observations manually in the admin review center."
-} else {
-  Invoke-Step `
-    -Name "Step 2/2: running App Store stability auto-review." `
-    -ScriptPath (Join-Path $scriptDir "run-price-auto-review.ps1") `
-    -Arguments @(
-      "-Execute",
-      "-Rule", "AppStoreStability",
-      "-RequiredSamples", "3",
-      "-ContainerName", $ContainerName,
-      "-DbName", $DbName,
-      "-DbUser", $DbUser
-    )
-}
-
-Write-Host "Price pipeline complete."

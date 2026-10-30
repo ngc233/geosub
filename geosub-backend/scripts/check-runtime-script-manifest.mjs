@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const backendDir = path.resolve(scriptDir, '..');
 const defaultManifestPath = path.join(scriptDir, 'runtime-script-manifest.json');
-const allowedStatuses = new Set(['legacy-active', 'shadow-ready', 'active-mjs']);
+const allowedStatuses = new Set(['legacy-active', 'shadow-ready', 'active-mjs', 'delegated']);
 
 function normalize(value) {
   return value.replaceAll('\\', '/');
@@ -107,6 +107,13 @@ export async function validateRuntimeScriptManifest({
     const replacementName = path.posix.basename(normalize(entry.replacement));
     const replacementExists = await exists(path.join(rootDir, entry.replacement));
 
+    if (entry.status === 'delegated') {
+      const target = productionEntries.find(candidate => candidate.task === entry.delegatesTo);
+      if (!target || target.task === entry.task || target.status !== 'legacy-active'
+        || !wrapperSource.includes(target.wrapper) || !wrapperSource.includes('exec /bin/bash')) {
+        errors.push(`Delegated wrapper must exec a registered direct legacy target: ${entry.wrapper}`);
+      }
+    }
     if (entry.status === 'legacy-active') {
       if (!wrapperSource.includes(legacyName) || !wrapperSource.includes('pwsh')) {
         errors.push(`Legacy-active wrapper no longer invokes PowerShell: ${entry.wrapper}`);

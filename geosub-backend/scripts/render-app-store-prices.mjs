@@ -161,9 +161,12 @@ try {
         value.title === "In-App Purchases" &&
         Array.isArray(value.items)
       ) {
-        const embeddedPairs = value.items.flatMap((item) =>
-          Array.isArray(item?.textPairs) ? item.textPairs : [],
-        );
+        const embeddedPairs = value.items.flatMap((item) => {
+          if (item?.$kind === "textPair" && typeof item.leadingText === "string" && typeof item.trailingText === "string") {
+            return [[item.leadingText, item.trailingText]];
+          }
+          return Array.isArray(item?.textPairs) ? item.textPairs : [];
+        });
         const normalizedPairs = embeddedPairs
           .filter((pair) => Array.isArray(pair) && pair.length >= 2)
           .map((pair) => ({
@@ -183,7 +186,7 @@ try {
 
     for (const script of document.querySelectorAll('script[type="application/json"], script:not([src])')) {
       const text = script.textContent ?? "";
-      if (!text.includes("In-App Purchases") || !text.includes("textPairs")) continue;
+      if (!text.includes("In-App Purchases") || (!text.includes("textPairs") && !text.includes("leadingText"))) continue;
       try {
         const embeddedPairs = visit(JSON.parse(text));
         if (embeddedPairs?.length) {

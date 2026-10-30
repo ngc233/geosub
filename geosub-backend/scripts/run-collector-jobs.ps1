@@ -2,6 +2,9 @@ param(
   [int]$Limit = 5,
   [string]$JobId,
   [string]$CollectorKind,
+  [string]$ProductSlug,
+  [string[]]$CountryCodes,
+  [switch]$PrimarySourceOnly,
   [string]$ContainerName = "geosub-postgres",
   [string]$DbName = "geosub_app",
   [string]$DbUser = "geosub_admin",
@@ -14,6 +17,15 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($CountryCodes.Count -gt 0) {
+  $CountryCodes = @($CountryCodes | ForEach-Object { $_ -split '[,\s]+' } |
+    Where-Object { $_ } | ForEach-Object { $_.ToUpperInvariant() } | Select-Object -Unique)
+  if (@($CountryCodes | Where-Object { $_ -notmatch '^(ALL|DEFAULT|[A-Z]{2})$' }).Count -gt 0 -or
+      ($CountryCodes.Count -gt 1 -and @($CountryCodes | Where-Object { $_ -in @('ALL','DEFAULT') }).Count -gt 0)) {
+    throw "CountryCodes must be ISO country codes, ALL, or DEFAULT without mixed scopes."
+  }
+}
 
 $utf8Encoding = New-Object System.Text.UTF8Encoding($false)
 [Console]::InputEncoding = $utf8Encoding
@@ -110,6 +122,12 @@ function Get-DueJobs {
   } else {
     "AND COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = $(Quote-SqlString $CollectorKind)"
   }
+  $productFilterSql = if ([string]::IsNullOrWhiteSpace($ProductSlug)) { "" } else {
+    "AND product.slug = $(Quote-SqlString $ProductSlug)"
+  }
+  $primarySourceFilterSql = if ($PrimarySourceOnly) {
+    "AND job.schedule NOT IN ('anomaly_watch', 'stale_refresh', 'coverage_refresh')"
+  } else { "" }
   $currentRunFilterSql = if ([string]::IsNullOrWhiteSpace($RunId)) {
     ""
   } else {
@@ -155,6 +173,8 @@ WITH ranked_jobs AS (
     )
     $jobFilterSql
     $collectorKindFilterSql
+    $productFilterSql
+    $primarySourceFilterSql
     AND (
       $forceSql
       OR job.next_run_at IS NULL
@@ -225,6 +245,8 @@ function Get-CountryCodes {
   ) {
     return @($Config.retry_country_codes | ForEach-Object { [string]$_ })
   }
+
+  if ($script:CountryCodes.Count -gt 0) { return @($script:CountryCodes) }
 
   if ($Config -and $Config.PSObject.Properties.Name -contains "country_codes" -and $Config.country_codes) {
     return @($Config.country_codes | ForEach-Object { [string]$_ })
@@ -650,7 +672,7 @@ function Invoke-GenericWebSnapshot {
   }
 
   $hintText = if ($priceHints.Count -gt 0) { $priceHints -join ", " } else { "none" }
-  $output = "Fetched web page. diagnosis=$diagnosis; title=$title; price_hints=$hintText"
+  $output = "Source monitoring completed; no prices collected or published. diagnosis=$diagnosis; title=$title; price_hints=$hintText"
 
   return [pscustomobject]@{
     Status = "succeeded"
@@ -670,6 +692,11 @@ function Invoke-GenericWebSnapshot {
       text_snippet = $snippet
       text_length = $plainText.Length
       snapshot_only = $true
+      collection_outcome = "source_monitoring_only"
+      publication_eligible = $false
+      observed_count = 0
+      price_capability = if ($AttemptPriceHints) { "price_hints_only" } else { "snapshot_only" }
+      next_action = "configure_verified_price_adapter"
       browser_snapshot = $browserSnapshot
     }
   }
@@ -716,7 +743,7 @@ function Invoke-CollectorScript {
         ContainerName = $ContainerName
         DbName = $DbName
         DbUser = $DbUser
-        Force = $true
+        Force = $Force
       }
       $expectedIdentity = "Using App Store app id $appId for $productSlug."
 
@@ -752,6 +779,10 @@ function Invoke-CollectorScript {
           "--country-codes", ($countryCodes -join ",")
         )
         $expectedIdentity = "Using official Web source $officialWebSourceKey for $productSlug."
+        $reviewPolicy = Get-ConfigValue -Config $config -Name "official_web_review_policy"
+        if (![string]::IsNullOrWhiteSpace($reviewPolicy)) {
+          $nodeArguments += @("--review-policy", $reviewPolicy)
+        }
         if ($SkipAutoReview) { $nodeArguments += "--skip-auto-review" }
 
         if (![string]::IsNullOrWhiteSpace($ChromePath)) {
@@ -949,13 +980,14 @@ function Complete-JobRun {
   $retryableOfficialWebFailure = (
     $failedAttempt -and !$permanentFailure -and
     [string]$Result.CollectorKind -eq "pricing_page" -and
-    (Get-ConfigValue -Config $Job.job_config -Name "official_web_source_key") -in @("spotify", "apple-music")
+    (Get-ConfigValue -Config $Job.job_config -Name "official_web_source_key") -in @("spotify", "apple-music", "claude-us-pro")
   )
 
   if ($status -eq "succeeded") {
     $errorCountSql = "0"
     $lastErrorSql = "NULL"
-    $jobConfigSql = "COALESCE(job_config, '{}'::jsonb) - 'operational_state' - 'operational_note' - 'retry_attempt' - 'retry_country_codes' - 'last_failure_at' - 'last_recovered_at'"
+    $jobConfigSql = "COALESCE(job_config, '{}'::jsonb) - 'operational_state' - 'operational_note'" +
+      " - 'retry_attempt' - 'retry_country_codes' - 'last_failure_at' - 'last_recovered_at' - 'recovery_failure_count'"
   }
 
   if ($failedAttempt) {
@@ -1054,6 +1086,23 @@ jsonb_set(
 "@
   }
 
+  if ($Result.RawPayload -and $Result.RawPayload.repair_plan) {
+    $repairState = if ($Result.RawPayload.repair_resolution) {
+      [string]$Result.RawPayload.repair_resolution.state
+    } else { "unresolved" }
+    $jobConfigSql = @"
+($jobConfigSql) || jsonb_build_object(
+  'repair_policy', 'app_store_reasoned_repair_v1',
+  'repair_state', $(Quote-SqlString $repairState),
+  'repair_evaluated_at', NOW()::text
+)
+"@
+    if ($status -eq "skipped" -and !$permanentFailure) {
+      $nextRunSql = "NULL"
+      $jobStatusSql = "'paused'"
+    }
+  }
+
   $runWriteSql = if (![string]::IsNullOrWhiteSpace($RunId)) {
 @"
 UPDATE collector_job_runs
@@ -1118,6 +1167,149 @@ WHERE id = $(Quote-SqlString $Job.id)::uuid;
   Invoke-Psql ($runWriteSql + "`n" + $jobWriteSql)
 }
 
+function Get-AppStoreRepairAction {
+  param([object]$Issue)
+
+  if ($Issue.resolved -eq $true) { return "resolved" }
+  if (![string]::IsNullOrWhiteSpace([string]$Issue.product_slug)) {
+    if ($null -eq $script:AppStoreRepairSpecs) {
+      . (Join-Path $PSScriptRoot "app-store-plan-specs.ps1")
+      $script:AppStoreRepairSpecs = Read-AppStorePlanSpecs
+    }
+    $productSpec = $script:AppStoreRepairSpecs.([string]$Issue.product_slug)
+    $planSpecs = @($productSpec.plans | Where-Object slug -eq ([string]$Issue.plan_slug))
+    if ($planSpecs.Count -ne 1) { return "repair_plan_mapping" }
+    $planSpec = $planSpecs[0]
+    if ($planSpec.review_only -eq $true) { return "verify_plan_eligibility" }
+    $cycle = if ($planSpec.PSObject.Properties.Name -contains "billing_cycle") {
+      ([string]$planSpec.billing_cycle).Trim().ToLowerInvariant()
+    } else { "monthly" }
+    if (![string]::IsNullOrWhiteSpace([string]$Issue.billing_cycle) -and
+        ([string]$Issue.billing_cycle).Trim().ToLowerInvariant() -ne $cycle) {
+      return "repair_plan_mapping"
+    }
+  }
+  if ([string]$Issue.reason_code -eq "app_store_non_monthly_or_region_restricted_item") { return "repair_plan_mapping" }
+  if ([string]$Issue.anomaly_reason -eq "This new plan requires manual identity and regional price review before publication.") {
+    return "verify_plan_eligibility"
+  }
+  if ([string]$Issue.reason_code -eq "app_store_plan_order_conflict") { return "repair_plan_mapping" }
+  if ([string]$Issue.reason_code -in @(
+    "app_store_currency_mismatch", "app_store_local_dollar_parsed_as_usd"
+  )) { return "repair_currency_parser" }
+  if ([string]$Issue.anomaly_reason -like "*Multiple App Store prices matched this plan*") {
+    if ([string]$Issue.price_identity_evidence -eq "app_store_display_name_only") {
+      return "verify_sku_entitlements"
+    }
+    return "repair_plan_mapping"
+  }
+  if ([string]$Issue.anomaly_reason -match "outside.*range|expected.*range") { return "verify_price_range" }
+  if ($Issue.public_plan_not_shown -eq $true) { return "verify_source_visibility" }
+  return "collect_independent_evidence"
+}
+
+function Get-AppStoreRepairIssues {
+  param([object]$Job, [string[]]$CountryCodes)
+
+  $countriesSql = (@($CountryCodes | ForEach-Object { Quote-SqlString $_ })) -join ", "
+  if (!$countriesSql) { return @() }
+  return @(Invoke-PsqlJson @"
+WITH latest AS (
+  SELECT DISTINCT ON (observation.plan_id, observation.country_id, observation.price_type)
+    observation.*
+  FROM price_observations observation
+  JOIN countries country ON country.id = observation.country_id
+  LEFT JOIN price_sources source ON source.id = observation.source_id
+  WHERE observation.product_id = $(Quote-SqlString $Job.product_id)::uuid
+    AND observation.billing_platform = 'ios'
+    AND country.code IN ($countriesSql)
+    AND (observation.source_level = 'A' OR source.type = 'app_store')
+  ORDER BY observation.plan_id, observation.country_id, observation.price_type,
+    observation.observed_at DESC, observation.created_at DESC, observation.id DESC
+)
+SELECT COALESCE(json_agg(issue ORDER BY issue.identity_key), '[]'::json)
+FROM (
+  SELECT
+    concat_ws(':', latest.product_id, COALESCE(latest.plan_id::text, 'unknown-plan'),
+      latest.country_id, latest.billing_platform, latest.price_type) AS identity_key,
+    country.code AS country_code,
+    product.slug AS product_slug,
+    plan.slug AS plan_slug,
+    plan.billing_cycle::text AS billing_cycle,
+    CASE WHEN latest.raw_payload ->> 'auto_review_reason_code' = 'automated_anomaly_rechecks_exhausted'
+      THEN COALESCE(latest.raw_payload ->> 'previous_auto_review_reason_code', '')
+      ELSE COALESCE(latest.raw_payload ->> 'auto_review_reason_code', '')
+    END AS reason_code,
+    latest.anomaly_reason,
+    COALESCE(latest.raw_payload #>> '{raw_snapshot,priceSelection,identityEvidence}', '') AS price_identity_evidence,
+    COALESCE(
+      plan_availability.status IN ('pending_absence', 'confirmed_absent')
+      AND plan_availability.checked_at > latest.observed_at
+      AND plan_availability.checked_at <= NOW(),
+      FALSE
+    ) AS public_plan_not_shown,
+    COALESCE(
+      NOT latest.anomaly_flag
+      AND (latest.status = 'approved' OR (latest.status = 'ignored'
+        AND latest.raw_payload ->> 'auto_review_reason_code' = 'superseded_by_published_price'))
+      AND price.status = 'published' AND price.data_quality = 'verified'
+      AND price.currency = latest.currency AND price.local_price = latest.raw_price
+      AND price.last_checked_at >= latest.observed_at
+      AND price.last_checked_at >= NOW() - INTERVAL '14 days'
+      AND price.last_checked_at <= NOW() AND latest.observed_at <= NOW(),
+      FALSE
+    ) AS resolved
+  FROM latest
+  JOIN countries country ON country.id = latest.country_id
+  JOIN products product ON product.id = latest.product_id
+  LEFT JOIN plans plan ON plan.id = latest.plan_id AND plan.product_id = latest.product_id
+  LEFT JOIN app_store_plan_availability_checks plan_availability
+    ON plan_availability.plan_id = latest.plan_id
+    AND plan_availability.country_id = latest.country_id
+    AND plan_availability.billing_platform = latest.billing_platform
+  LEFT JOIN region_prices price ON price.product_id = latest.product_id
+    AND price.plan_id = latest.plan_id AND price.country_id = latest.country_id
+    AND price.billing_platform = latest.billing_platform AND price.price_type = latest.price_type
+) issue;
+"@)
+}
+
+function New-AppStoreRepairPlan {
+  param([object[]]$Issues)
+
+  $targets = @($Issues | Where-Object { $_.resolved -ne $true } | ForEach-Object {
+    [pscustomobject]@{
+      identity_key = $_.identity_key
+      country_code = $_.country_code
+      action = Get-AppStoreRepairAction -Issue $_
+    }
+  })
+  return @{
+    policy = "app_store_reasoned_repair_v1"
+    targets = $targets
+    country_codes = @($targets | Where-Object action -eq "collect_independent_evidence" |
+      ForEach-Object country_code | Sort-Object -Unique)
+  }
+}
+
+function Measure-AppStoreRepairResolution {
+  param([object[]]$Targets, [object[]]$CurrentIssues)
+
+  $current = @{}
+  foreach ($issue in $CurrentIssues) { $current[[string]$issue.identity_key] = $issue }
+  $unresolved = @($Targets | Where-Object {
+    !$current.ContainsKey([string]$_.identity_key) -or
+      $current[[string]$_.identity_key].resolved -ne $true
+  })
+  return @{
+    target_count = $Targets.Count
+    resolved_count = $Targets.Count - $unresolved.Count
+    unresolved_count = $unresolved.Count
+    # Missing evidence or an empty plan never proves a repair.
+    state = if ($Targets.Count -eq 0) { "no_open_targets" }
+      elseif ($unresolved.Count -eq 0) { "resolved" } else { "unresolved" }
+  }
+}
 function Get-AppStoreReviewOutcome {
   param(
     [object]$Job,
@@ -1158,8 +1350,10 @@ FROM (
       FROM region_prices price
       WHERE price.product_id = $(Quote-SqlString $Job.product_id)::uuid
         AND price.status = 'published'::publish_status
-        AND price.last_checked_at >= $startedAtSql::timestamptz
-        AND price.last_checked_at <= NOW() + INTERVAL '1 minute'
+        AND price.billing_platform = 'ios'::billing_platform
+        AND price.data_quality = 'verified'::data_quality
+        AND price.updated_at >= $startedAtSql::timestamptz
+        AND price.updated_at <= NOW() + INTERVAL '1 minute'
     ) AS published_price_count,
     (
       SELECT COUNT(DISTINCT availability.country_id)::int
@@ -1192,8 +1386,9 @@ FROM (
     NOW() AS captured_at
   FROM price_observations observation
   WHERE observation.product_id = $(Quote-SqlString $Job.product_id)::uuid
-    AND observation.observed_at >= $startedAtSql::timestamptz
-    AND observation.observed_at <= NOW() + INTERVAL '1 minute'
+    AND observation.billing_platform = 'ios'::billing_platform
+    AND observation.created_at >= $startedAtSql::timestamptz
+    AND observation.created_at <= NOW() + INTERVAL '1 minute'
 ) outcome;
 "@
 }
@@ -1235,6 +1430,27 @@ function Add-AppStoreReviewOutcome {
   $Result = Add-AppStoreRunEvidence -Job $Job -Result $Result -StartedAt $StartedAt
   $Result.RawPayload["auto_review_status"] = "succeeded"
   $Result.RawPayload["review_outcome"] = $Result.RawPayload["collection_evidence"]
+  if ($Result.RawPayload["repair_plan"]) {
+    $plan = $Result.RawPayload["repair_plan"]
+    $countries = @($plan.targets | ForEach-Object country_code | Sort-Object -Unique)
+    $current = @(Get-AppStoreRepairIssues -Job $Job -CountryCodes $countries)
+    $Result.RawPayload["repair_resolution"] = Measure-AppStoreRepairResolution `
+      -Targets $plan.targets -CurrentIssues $current
+  }
+  # Execution success alone is not proof that every original issue was resolved.
+  $evidence = $Result.RawPayload["collection_evidence"]
+  $Result.RawPayload["repair_outcome"] = if ([int]$evidence.anomaly_count -gt 0) {
+    "isolated_unresolved"
+  } elseif ([int]$evidence.pending_stability_count -gt 0) {
+    "waiting_for_evidence"
+  } elseif ([int]$evidence.published_price_count -gt 0) {
+    "published_evidence_updated"
+  } else {
+    "no_verified_replacement"
+  }
+  if ($Result.RawPayload["repair_resolution"]) {
+    $Result.RawPayload["repair_outcome"] = $Result.RawPayload["repair_resolution"].state
+  }
   return $Result
 }
 
@@ -1277,7 +1493,30 @@ foreach ($job in $jobs) {
   Write-Host "Running collector job: $($job.id) product=$($job.product_slug)"
 
   try {
-    $result = Invoke-CollectorScript -Job $job
+    $repairPlan = $null
+    if (!$DryRun -and $job.schedule -eq "anomaly_watch" -and
+        (Get-ConfigValue -Config $job.job_config -Name "collector_kind") -eq "app_store") {
+      $issues = @(Get-AppStoreRepairIssues -Job $job -CountryCodes (Get-CountryCodes -Config $job.job_config))
+      $repairPlan = New-AppStoreRepairPlan -Issues $issues
+    }
+    if ($null -ne $repairPlan -and $repairPlan.country_codes.Count -eq 0) {
+      $result = [pscustomobject]@{
+        Status = "skipped"
+        CollectorKind = "app_store"
+        Output = "No evidence-only repair is applicable. See repair_plan for the next action."
+        Error = $null
+        RawPayload = @{ repair_plan = $repairPlan }
+      }
+      $result.RawPayload["repair_resolution"] = Measure-AppStoreRepairResolution `
+        -Targets $repairPlan.targets -CurrentIssues $issues
+    } else {
+      if ($null -ne $repairPlan) {
+        # Narrow this one execution; the persisted configured country scope is retained.
+        $job.job_config.country_codes = @($repairPlan.country_codes)
+      }
+      $result = Invoke-CollectorScript -Job $job
+      if ($null -ne $repairPlan) { $result.RawPayload["repair_plan"] = $repairPlan }
+    }
     if (!$SkipAutoReview -and $result.CollectorKind -eq "pricing_page" -and $result.RawPayload -and
         ($result.Status -eq "succeeded" -or [int]$result.RawPayload.published_price_count -gt 0) -and
         [string]$result.RawPayload.source_key -in @("spotify", "apple-music")) {
@@ -1313,6 +1552,9 @@ foreach ($job in $jobs) {
       error = $failureText
       collector_kind = Get-ConfigValue -Config $job.job_config -Name "collector_kind" -Fallback "unknown"
       requested_country_codes = @(Get-CountryCodes -Config $job.job_config)
+    }
+    if ($null -ne $repairPlan) {
+      $failurePayload["repair_plan"] = $repairPlan
     }
     if ($null -ne $collectionResult) {
       foreach ($property in $collectionResult.PSObject.Properties) {
@@ -1394,6 +1636,9 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
           collector_payload = $completion.Result.RawPayload
           auto_review_status = "failed"
         }
+      }
+      if ($completion.Result.RawPayload.repair_plan) {
+        $failedResult.RawPayload["repair_plan"] = $completion.Result.RawPayload.repair_plan
       }
       Complete-JobRun `
         -Job $completion.Job `
