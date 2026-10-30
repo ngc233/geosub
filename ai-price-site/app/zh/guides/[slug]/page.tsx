@@ -9,6 +9,7 @@ import {
   renderArticleMarkdown,
 } from "../../../../lib/articles";
 import { sanitizeArticleHtml } from "../../../../lib/content-safety";
+import { getArticleSchemaOrgType } from "../../../../lib/article-structured-data";
 import { serializeJsonLd } from "../../../../lib/json-ld";
 import { stripGeoSubTitleSuffix } from "../../../../lib/pricing-routes";
 
@@ -94,12 +95,13 @@ export default async function GuideArticlePage({
   );
   const url = article.canonicalUrl || absoluteUrl(`/zh/guides/${article.slug}`);
   const image = article.ogImageUrl || article.coverImageUrl || undefined;
+  const schemaOrgType = getArticleSchemaOrgType(article.structuredDataType);
   const structuredData =
-    article.structuredDataType === "NONE"
+    schemaOrgType === null
       ? null
       : {
           "@context": "https://schema.org",
-          "@type": article.structuredDataType.replace("_", ""),
+          "@type": schemaOrgType,
           headline: article.title,
           description: article.seoDescription || article.excerpt || undefined,
           image,
