@@ -15,7 +15,13 @@ function source(page, engine = 'Google Search Console') { return page.getByRole(
 async function openForm(page, clicks = 1, engine, start = '2026-09-24', rows) {
   const section = source(page, engine);
   const details = section.locator('details').filter({ has: page.getByText('导入新的完整页面报表', { exact: true }) });
-  if ((await details.getAttribute('open')) === null) await details.locator('summary').first().click();
+  if ((await details.getAttribute('open')) === null) {
+    const summary = details.locator('summary').first();
+    await summary.focus();
+    await expect(summary).toBeFocused();
+    await summary.click();
+  }
+  await expect(details).toHaveAttribute('open', '');
   const form = details.locator('form');
   await form.getByLabel('报表开始日期').fill(start);
   await form.getByLabel('报表结束日期').fill('2026-10-21');
