@@ -191,6 +191,24 @@ test('v2 exact contracts bind both file scopes and per-target token capability',
   rmSync(join(from,'gate'));symlinkSync(join(from,'reader'),join(from,'gate'));
   assert.throws(()=>fingerprint(from,files));
 });
+test('missing files in another retained scope do not hide a later exact pair', async t => {
+  const {fingerprint,rollbackPlan}=await import('./content-release-contract.cjs').then(m=>m.default);
+  const r=fixture(t),from=join(r,'next'),to=join(r,'old');
+  writeFileSync(join(from,'reader'),'current');writeFileSync(join(to,'reader'),'retained');
+  const pair={
+    format:2,from:fingerprint(from,['reader']),to:fingerprint(to,['reader']),toFiles:['reader'],
+    targets:[{id:'overview:en:chatgpt',facts:false}],reason:'Exact synthetic pair',evidence:'local test',
+  };
+  const other={...pair,toFiles:['reader','absent-in-this-release']};
+  const policy={files:['reader'],approvedPairs:[other,pair]};
+  assert.deepEqual(rollbackPlan(from,to,policy).targets,pair.targets);
+  assert.equal(rollbackPlan(from,to,{...policy,approvedPairs:[other]}).mode,'code-default-required');
+  writeFileSync(join(to,'reader'),'changed');
+  assert.equal(rollbackPlan(from,to,policy).mode,'code-default-required');
+  rmSync(join(to,'reader'));
+  assert.equal(rollbackPlan(from,to,policy).mode,'code-default-required');
+});
+
 test('controller gates precede every switch and finalization uses all-target read-only verification', () => {
   const code=readFileSync(new URL('./rolling-release.mjs',import.meta.url),'utf8');
   assert.ok(code.includes("contentGate(old, ['upgrade'])"));

@@ -22,7 +22,11 @@ function rollbackPlan(from, to, policy) {
   try {
     const source = fingerprint(from, policy.files);
     for (const pair of policy.approvedPairs || []) {
-      if (pair.from !== source || pair.to !== fingerprint(to, pair.toFiles || policy.files)) continue;
+      if (pair.from !== source) continue;
+      let retained;
+      try { retained = fingerprint(to, pair.toFiles || policy.files); }
+      catch { continue; }
+      if (pair.to !== retained) continue;
       if (pair.format!==undefined && pair.format!==1 && pair.format!==2) return strict;
       if (pair.format !== 2) return {mode:'audited-compatible-readers', targets:[{id:targets[0].id, facts:false}], pair:{from:source,to:pair.to}};
       if (!Array.isArray(pair.targets) || !pair.targets.length || !pair.reason || !pair.evidence ||

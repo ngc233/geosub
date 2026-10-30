@@ -16,6 +16,7 @@ const root=path.resolve('..'),retained='ead5051bb786a6cc16d0791ad463667e9fe1b0b4
 const exported=fs.mkdtempSync(path.join(os.tmpdir(),'geosub-exact-content-'));
 const policy=JSON.parse(fs.readFileSync('../geosub-backend/deploy/linux-arm64/rolling-content-compatibility.json','utf8'));
 const retainedSources=JSON.parse(fs.readFileSync('scripts/fixtures/retained-content-contracts.json','utf8'));
+Object.assign(retainedSources,JSON.parse(fs.readFileSync('scripts/fixtures/production-content-contract.json','utf8')));
 function retainedSource(ref,file) {
  const fixture=retainedSources[ref]?.[file];
  assert(fixture,'Historical content fixture missing: '+ref+':'+file);
@@ -23,25 +24,31 @@ function retainedSource(ref,file) {
  assert.equal(contract.hash(content),fixture.sha256,'Historical source hash mismatch');
  return content.toString('utf8');
 }
-function modules(ref) {
+function modules(ref,client=isolated) {
  const cache=new Map();
  function load(file) {
   if(cache.has(file))return cache.get(file);
   const source=ref?retainedSource(ref,'ai-price-site/'+file):fs.readFileSync(file,'utf8');
   const module={exports:{}};cache.set(file,module.exports);
-  const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
+  const code=ts.transpileModule(source,{compilerOptions:{
+   module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true,jsx:ts.JsxEmit.ReactJSX,
+  }}).outputText;
   const req=createRequire(path.resolve(file));
   new Function('require','exports','module',code)(name=>{
    if(name==='server-only')return {};
-   if(name==='./prisma')return {prisma:isolated};
+   if(name==='./prisma')return {prisma:client};
    if(name==='react')return {cache:f=>f};
    if(name==='next/cache')return {unstable_cache:f=>f};
+   if(name.endsWith('.module.css'))return {scope:'managed-content'};
    if(name.startsWith('.'))return load(path.posix.normalize(path.posix.join(path.posix.dirname(file),name.replace(/\.ts$/,'')+'.ts')));
    return req(name);
   },module.exports,module);
   cache.set(file,module.exports);return module.exports;
  }
- return {core:load('lib/managed-content.ts'),store:load('lib/managed-content-store.ts'),facts:()=>load('lib/managed-content-facts.ts')};
+ return {
+  core:load('lib/managed-content.ts'),store:load('lib/managed-content-store.ts'),
+  facts:()=>load('lib/managed-content-facts.ts'),editorial:()=>load('components/OverviewEditorialSections.tsx').default,
+ };
 }
 (async()=>{
  let checks=0;
@@ -74,6 +81,117 @@ function modules(ref) {
    const proof={checkedAt:new Date().toISOString(),htmlHash:contract.hash('MOCK HTTP'),version:String(version),modeGeneration:String(generation),cacheStatus:null,outputHashes,...(factsHash?{factsHash}:{})};
    return {status:'verified',stage:'complete',origin:proof,public:structuredClone(proof),purge:{acceptedAt:new Date().toISOString(),url:canonical}};
   }
+  async function productionReaderCompatibility(){
+   const ref='a3e1cf78ffe4f163384dfd578846feb4ba36a50f';
+   const mainPair=policy.approvedPairs.find(p=>p.format===2&&p.retainedCommit===ref&&p.from===contract.fingerprint(root,policy.files));
+   assert(mainPair,'Reviewed production reader pair missing');
+   assert.deepEqual(mainPair.targets,[{id:ids[0],facts:false}],'Retained production supports plain English ChatGPT only');
+   const mainRoot=path.join(exported,'production');
+   for(const file of mainPair.toFiles){
+    const p=path.join(mainRoot,file);fs.mkdirSync(path.dirname(p),{recursive:true});
+    fs.writeFileSync(p,retainedSource(ref,file));
+   }
+   const options={from:root,to:mainRoot,policy};
+   assert.equal(contract.rollbackPlan(root,mainRoot,policy).mode,'audited-compatible-readers');
+   const mainSchema=schema+'_production';
+   const mainDb=new PrismaClient({adapter:new PrismaPg({connectionString:url.href},{schema:mainSchema})});
+   let scenarios=0;
+   try {
+    await db.$executeRawUnsafe(`CREATE SCHEMA "${mainSchema}"`);
+    for(const table of ['site_settings','admin_users','audit_logs']){
+     await db.$executeRawUnsafe(`CREATE TABLE "${mainSchema}"."${table}" (LIKE public."${table}" INCLUDING ALL)`);
+    }
+    await mainDb.$executeRawUnsafe(
+     `INSERT INTO "${mainSchema}".admin_users(id,email,password_hash,status,updated_at)
+      VALUES($1::uuid,$2,'unusable','active'::public.admin_status,now())`,actor,randomUUID()+'@invalid.example',
+    );
+    const legacy=modules(ref,mainDb),candidate=modules(undefined,mainDb);
+    const key=prefix(ids[0]);
+    const mainRows=()=>mainDb.siteSetting.findMany({orderBy:{settingKey:'asc'}});
+    async function publish(store,version){
+     let state=await store.readContentState();
+     const content={...legacy.core.pilotDraft,heading:'Synthetic compatibility revision '+version};
+     state=await store.mutateContent(state.generation,actor,{type:'draft',content});
+     state=await store.mutateContent(state.generation,actor,{type:'publish',reason:'Synthetic exact-reader rehearsal'});
+     const a=await store.claimContentDistribution(state.version,state.attemptId);
+     assert.equal(await store.recordContentDistribution(a.id,a.owner,receipt(ids[0],state.version,a.fenceGeneration,false)),true);
+     return state;
+    }
+    // Reproduce the production version number with synthetic text, never copied production rows.
+    for(let version=1;version<=4;version++)await publish(legacy.store,version);
+    await legacy.store.setContentAdmission(0,actor,'closed');
+    const before=await mainRows();
+    for(let version=1;version<=4;version++){
+     assert.deepEqual(await candidate.store.readRevision(version),await legacy.store.readRevision(version));
+    }
+    assert.deepEqual(await candidate.store.getPublishedContent('en','chatgpt'),await legacy.store.getPublishedContent('en','chatgpt'));
+    assert.equal((await candidate.store.readContentState()).version,4);
+    assert.deepEqual(await mainRows(),before,'Both retained and candidate reads must preserve all rows');scenarios++;
+    const React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
+    const content=(await candidate.store.readRevision(4)).content;
+    assert.deepEqual(candidate.core.parseOverviewContent(content),legacy.core.parseOverviewContent(content));
+    assert.deepEqual(candidate.facts().renderFactContent(content,ids[0],{slug:'chatgpt'}).content,content);
+    const html=reader=>renderToStaticMarkup(React.createElement(reader.editorial(),{content}));
+    assert.equal(html(candidate),html(legacy),'English editorial sections and source links must render identically');scenarios++;
+    assert.equal((await checkRollback(mainDb,options)).mode,'audited-compatible-readers');
+    assert.deepEqual(await mainRows(),before,'Production-shaped rollback preflight must be read-only');scenarios++;
+    for(const invalid of [{...options,policy:{...policy,approvedPairs:[]}},{...options,from:mainRoot,to:root}]){
+     await assert.rejects(checkRollback(mainDb,invalid),/Rollback blocked/);
+     assert.deepEqual(await mainRows(),before);
+    }
+    const changed=path.join(mainRoot,'VERSION'),original=fs.readFileSync(changed);
+    try {
+     fs.appendFileSync(changed,'\nchanged');
+     await assert.rejects(checkRollback(mainDb,options),/Rollback blocked/);
+     assert.deepEqual(await mainRows(),before);
+    } finally {fs.writeFileSync(changed,original);}
+    scenarios++;
+    // New plain-text writes remain readable by the retained writer/reader after rollback.
+    await candidate.store.setContentAdmission(1,actor,'open');
+    await publish(candidate.store,5);
+    const revision=await candidate.store.readRevision(5);
+    assert.deepEqual(await legacy.store.readRevision(5),revision);
+    assert.deepEqual(await legacy.store.getPublishedContent('en','chatgpt'),await candidate.store.getPublishedContent('en','chatgpt'));
+    assert.equal((await checkRollback(mainDb,options)).mode,'audited-compatible-readers');scenarios++;
+    const stateRow=await mainDb.siteSetting.findUnique({where:{settingKey:key+'state'}});
+    await mainDb.siteSetting.update({where:{id:stateRow.id},data:{valueJson:{...stateRow.valueJson,receipt:'pending'}}});
+    const pending=await mainRows();
+    await assert.rejects(checkRollback(mainDb,options),/Rollback blocked/);
+    assert.deepEqual(await mainRows(),pending);
+    await mainDb.siteSetting.update({where:{id:stateRow.id},data:{valueJson:stateRow.valueJson,updatedAt:stateRow.updatedAt}});
+    scenarios++;
+    const revisionRow=await mainDb.siteSetting.findUnique({where:{settingKey:key+'revision:5'}});
+    await mainDb.siteSetting.update({where:{id:revisionRow.id},data:{valueJson:{...revisionRow.valueJson,hash:'0'.repeat(64)}}});
+    const corrupt=await mainRows();
+    await assert.rejects(checkRollback(mainDb,options),/identity\/hash/);
+    await assert.rejects(candidate.store.readRevision(5),/校验/);
+    await assert.rejects(legacy.store.readRevision(5),/校验/);
+    assert.deepEqual(await mainRows(),corrupt);
+    await mainDb.siteSetting.update({where:{id:revisionRow.id},data:{valueJson:revisionRow.valueJson,updatedAt:revisionRow.updatedAt}});
+    scenarios++;
+    const beforeClose=await mainRows();
+    const closed=await pause(mainDb,'rollback',undefined,options);
+    assert.equal(closed.rollbackPolicy.mode,'audited-compatible-readers');
+    const history=rows=>rows.filter(r=>!r.settingKey.endsWith(':fence'));
+    assert.deepEqual(history(await mainRows()),history(beforeClose),'Rollback retains pointers, receipts and immutable revisions');
+    assert.deepEqual((await legacy.store.getPublishedContent('en','chatgpt')).content,revision.content);
+    assert.equal((await candidate.store.readContentState()).version,5);
+    assert.equal((await verify(mainDb,{production:true})).claudeActivation,false);scenarios++;
+    // No permission is inferred for the additional target namespaces or their fact tokens.
+    const claude=candidate.store.contentStore(ids[1]);let state=await claude.readContentState();
+    state=await claude.mutateContent(state.generation,actor,{type:'draft',content:candidate.core.initialContentDraft(ids[1])});
+    state=await claude.mutateContent(state.generation,actor,{type:'publish',reason:'Synthetic unsupported retained target'});
+    const attempt=await claude.claimContentDistribution(state.version,state.attemptId);
+    assert.equal(await claude.recordContentDistribution(attempt.id,attempt.owner,receipt(ids[1],state.version,attempt.fenceGeneration,false)),true);
+    const unsupported=await mainRows();
+    await assert.rejects(checkRollback(mainDb,options),/Rollback blocked/);
+    assert.deepEqual(await mainRows(),unsupported);scenarios++;
+    return scenarios;
+   } finally {
+    await mainDb.$disconnect();await db.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${mainSchema}" CASCADE`);
+   }
+  }
+  const productionReaderScenarios=await productionReaderCompatibility();
   async function publish(id,tokens=false,rollback=false){
    const s=current.store.contentStore(id);let state=await s.readContentState();
    if(!rollback){const draft=current.core.initialContentDraft(id);if(tokens){draft.title='{{product.name}} plans';draft.heading='{{pro.name}} facts';draft.description='{{pro.price_range}}; {{pro.regions}}';draft.sections=[{heading:'Formal facts',body:['product.name',...['pro','max-5x','max-20x'].flatMap(p=>['name','price_range','regions','price_date','fx_date'].map(f=>p+'.'+f))].map(t=>'{{'+t+'}}').join('; ')}];draft.faqs=[{q:'What is the coverage?',a:'{{pro.regions}}; {{pro.price_date}}'}];}state=await s.mutateContent(state.generation,actor,{type:'draft',content:draft});}
@@ -180,7 +298,11 @@ function modules(ref) {
    assert.equal((await pause(legacyDb,'upgrade')).targets.length,3);
    assert.deepEqual(await db.$queryRawUnsafe(`SELECT * FROM "${legacySchema}".audit_logs WHERE id=$1::uuid`,legacyAudit[0].id),legacyAudit);checks++;
   } finally {await legacyDb.$disconnect();await db.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${legacySchema}" CASCADE`);}
-  console.log(JSON.stringify({passed:checks,retainedCommit:retained,unsupportedTokenReader:plain,scope:'local real PG; Next cache mocked; receipt proofs explicitly MOCK; no production activation',historyPreserved:true}));
+  console.log(JSON.stringify({
+   passed:checks,productionReaderScenarios,retainedProductionCommit:'a3e1cf78ffe4f163384dfd578846feb4ba36a50f',
+   retainedCommit:retained,unsupportedTokenReader:plain,
+   scope:'local real PG; Next cache mocked; receipt proofs explicitly MOCK; no production activation',historyPreserved:true,
+  }));
  } finally {
   await isolated.$disconnect();await db.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);fs.rmSync(exported,{recursive:true,force:true});
  }
