@@ -389,6 +389,56 @@
       ],
       "reason": "Unified 2.22.0 local candidate to the exact retained phase4 reader/schema fixture. Immutable revisions, target namespaces, formal fact tokens and additive audit columns are unchanged; merged public price/map fixes and admin UI do not grant production admission. No compatibility pair is granted to current production readers.",
       "evidence": "test-content-release-gates.cjs against SHA-256 checked exact historical source fixtures on a disposable local PG16; docs/rfc-admin-information-architecture-2026-10-28.md section 54. Receipt HTTP proofs are MOCK, not production evidence."
+    },
+    {
+      "format": 2,
+      "from": "4cde6fa06c34dfe058bf9eae23419c0f093f4760080a1f53ae682b0418101aa6",
+      "to": "520d60c216f452aa66e169ec832497d87f60256cca2267a7b69e1e6bbad77127",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ead5051bb786a6cc16d0791ad463667e9fe1b0b4",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "Local lock-timeout fix to the same retained phase4 reader. Audit bridge scopes its timeout inside DO; reader/schema compatibility is unchanged. No production admission.",
+      "evidence": "Local migration rehearsal and test-content-release-gates.cjs; RFC section 55; synthetic data and MOCK receipts only."
     }
   ]
 }

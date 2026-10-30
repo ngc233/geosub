@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { Client } = require('pg');
 const { randomUUID } = require('node:crypto');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const sql = fs.readFileSync('../geosub-backend/sql/schema/059_audit_actor_compatibility.sql', 'utf8');
 assert.equal(sql, fs.readFileSync('prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql', 'utf8'));
 const url = new URL(process.env.DATABASE_URL);
@@ -52,4 +54,8 @@ assert(['127.0.0.1', 'localhost'].includes(url.hostname) && /^\/geosub_release_\
       } finally { await db.query('ROLLBACK'); }
     }
   } finally { await db.end(); }
+  const lockTest = spawnSync(process.execPath, [path.join(__dirname, 'test-audit-lock-timeout.cjs')], {
+    env: process.env, stdio: 'inherit',
+  });
+  assert.equal(lockTest.status, 0, 'Standalone SQL runner lock timeout regression');
 })().catch(error => { console.error(error); process.exitCode = 1; });

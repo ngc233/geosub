@@ -1,9 +1,9 @@
 -- Additive bridge for SQL actor TEXT and Prisma actor_id UUID installations.
 -- Never infer account identities from historical text, rename, or backfill rows.
-SET LOCAL lock_timeout = '5s';
 DO $$
 DECLARE col RECORD; actor_key SMALLINT; admin_key SMALLINT; fk RECORD;
 BEGIN
+  PERFORM set_config('lock_timeout', '5s', true);
   LOCK TABLE public.audit_logs IN SHARE ROW EXCLUSIVE MODE;
   FOR col IN
     SELECT attname, atttypid, attnotnull FROM pg_attribute

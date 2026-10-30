@@ -704,7 +704,7 @@
       "legacyBaseline": false,
       "legacyFile": "sql/schema/059_audit_actor_compatibility.sql",
       "legacyChecksums": [
-        "3539a92c675dc353de286eecdd6a120d43d571f17b87cf7ab16f233ed26d552a"
+        "2ef1f35b47461096ad4756a2f90ef3654d8c1ad6c6c16221093cbf00afc980e1"
       ]
     }
   ],
