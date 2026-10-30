@@ -91,11 +91,13 @@ test("admin can log in and approve a pending observation", async ({ page }) => {
     .last()
     .locator("xpath=ancestor::details[1]");
   await overrideDetails.locator("summary").click();
-  await observationInput
+  const approveButton = observationInput
     .last()
     .locator("xpath=ancestor::form[1]")
-    .getByRole("button", { name: "覆盖入库", exact: true })
-    .click();
+    .getByRole("button", { name: "覆盖入库", exact: true });
+  await approveButton.focus();
+  await expect(approveButton).toBeFocused();
+  await approveButton.click();
 
   await expect.poll(readFixtureState).toEqual({
     observation_status: "approved",
