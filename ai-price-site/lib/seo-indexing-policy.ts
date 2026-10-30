@@ -6,9 +6,10 @@ export const seoIndexableLocales = ["zh", "en"] as const satisfies readonly Site
 export const seoIndexableLocaleBudget = 2;
 
 export const seoSitemapBudgets = {
-  total: 148,
-  productPlanPages: 98,
+  total: 192,
+  productPlanPages: 130,
   countryPages: 6,
+  countryHubPages: 10,
   guideDetailPages: 24,
   currencyPairPages: 16,
 } as const;
@@ -28,6 +29,12 @@ export const seoPlanSitemapProductSlugs = [
   "perplexity",
   "suno",
   "youtube-premium",
+  "crunchyroll",
+  "viki",
+  "poe",
+  "kimi",
+  "leonardo-ai",
+  "captions",
 ] as const;
 
 export function isPlanSitemapPromotedProduct(

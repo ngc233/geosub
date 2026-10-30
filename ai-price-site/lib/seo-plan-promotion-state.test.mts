@@ -22,16 +22,16 @@ test("plan promotion changes are normalized audited and reversible", () => {
     current: baseline,
     nextActiveSlugs: baseline.activeSlugs
       .filter((slug) => slug !== removedSlug)
-      .concat("captions"),
+      .concat("sample-plan-product"),
     id: "change-1",
     changedAt: "2026-08-14T06:00:00.000Z",
     actorLabel: "admin@example.com",
-    reason: "Captions reached the reviewed promotion threshold.",
+    reason: "Sample product reached the reviewed promotion threshold.",
   });
 
-  assert.ok(changed.activeSlugs.includes("captions"));
+  assert.ok(changed.activeSlugs.includes("sample-plan-product"));
   assert.ok(!changed.activeSlugs.includes(removedSlug));
-  assert.deepEqual(changed.revisions[0].addedSlugs, ["captions"]);
+  assert.deepEqual(changed.revisions[0].addedSlugs, ["sample-plan-product"]);
   assert.deepEqual(changed.revisions[0].removedSlugs, [removedSlug]);
 
   const restored = rollbackLatestPlanSitemapPromotionRevision({
@@ -45,14 +45,14 @@ test("plan promotion changes are normalized audited and reversible", () => {
   assert.deepEqual(restored.activeSlugs, baseline.activeSlugs);
   assert.equal(restored.revisions.at(-1)?.kind, "rollback");
   assert.deepEqual(restored.revisions.at(-1)?.addedSlugs, [removedSlug]);
-  assert.deepEqual(restored.revisions.at(-1)?.removedSlugs, ["captions"]);
+  assert.deepEqual(restored.revisions.at(-1)?.removedSlugs, ["sample-plan-product"]);
 });
 
 test("plan promotion rollback rejects stale browser state", () => {
   const baseline = getDefaultPlanSitemapPromotionState();
   const changed = createPlanSitemapPromotionRevision({
     current: baseline,
-    nextActiveSlugs: baseline.activeSlugs.concat("captions"),
+    nextActiveSlugs: baseline.activeSlugs.concat("sample-plan-product"),
     id: "change-1",
     changedAt: "2026-08-14T06:00:00.000Z",
     actorLabel: "admin@example.com",

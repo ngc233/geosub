@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Locale, ProductCategory, PublishStatus } from "@prisma/client";
+import { getCountryHub } from "../lib/country-hubs-data.ts";
+import { getIndexableCountryHubPaths } from "../lib/country-hub-indexing.ts";
 import { getFeaturedCurrencyPairs } from "../lib/currency-pairs.ts";
 import { getPlanEditorialIndexingStatus } from "../lib/product-editorial-content.ts";
 import {
@@ -197,9 +199,10 @@ const converterPaths = seoIndexableLocales.flatMap((locale) => [
 const countryPagePaths = getIndexApprovedCountryPagePilots().flatMap((pilot) =>
   seoIndexableLocales.map((locale) => getCountryPagePilotPath(pilot, locale)),
 );
-const [productPlanPages, articlePaths] = await Promise.all([
+const [productPlanPages, articlePaths, countryHubPaths] = await Promise.all([
   getProductPaths(),
   getArticlePaths(new Date()),
+  getIndexableCountryHubPaths(getCountryHub),
 ]);
 const rawPaths = [
   ...literalPaths,
@@ -207,6 +210,7 @@ const rawPaths = [
   ...converterPaths,
   ...productPlanPages,
   ...countryPagePaths,
+  ...countryHubPaths,
   ...articlePaths,
 ];
 const paths = [...new Set(rawPaths)];
@@ -231,6 +235,7 @@ const budgetSummary = {
   converterPages: converterPaths.length,
   productPlanPages: `${productPlanPages.length}/${seoSitemapBudgets.productPlanPages}`,
   countryPages: `${countryPagePaths.length}/${seoSitemapBudgets.countryPages}`,
+  countryHubPages: `${countryHubPaths.length}/${seoSitemapBudgets.countryHubPages}`,
   articleTaxonomyPages: articlePaths.length,
   guideDetailPages: `${guideDetailPages.length}/${seoSitemapBudgets.guideDetailPages}`,
   currencyPairPages: `${currencyPairPages.length}/${seoSitemapBudgets.currencyPairPages}`,
@@ -265,6 +270,10 @@ assert.equal(
   countryPagePaths.length,
   seoSitemapBudgets.countryPages,
   `Sitemap must contain exactly ${seoSitemapBudgets.countryPages} approved country pages; found ${countryPagePaths.length}.`,
+);
+assert.ok(
+  countryHubPaths.length <= seoSitemapBudgets.countryHubPages,
+  `Sitemap has ${countryHubPaths.length} country hub URLs; budget is ${seoSitemapBudgets.countryHubPages}.`,
 );
 assert.ok(
   guideDetailPages.length <= seoSitemapBudgets.guideDetailPages,

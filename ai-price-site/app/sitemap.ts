@@ -37,6 +37,8 @@ import {
   getCountryPagePilotPath,
   getIndexApprovedCountryPagePilots,
 } from "../lib/country-page-pilot";
+import { loadCountryHub } from "../lib/cached-country-hub";
+import { getIndexableCountryHubPaths, isCountryHubIndexPreview } from "../lib/country-hub-indexing";
 import { latestSitemapDate } from "../lib/sitemap-lastmod";
 import {
   resolveSitemapWithLastKnownGood,
@@ -441,10 +443,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const generateCompleteSitemap = async () => {
-    const [productRoutes, articleRoutes, countryPageRoutes] = await Promise.all([
+    const [productRoutes, articleRoutes, countryPageRoutes, countryHubPaths] = await Promise.all([
       getProductRoutes(),
       getArticleRoutes(),
       getCountryPageRoutes(),
+      getIndexableCountryHubPaths(loadCountryHub),
     ]);
 
     return dedupeRoutes([
@@ -452,6 +455,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...productRoutes,
       ...articleRoutes,
       ...countryPageRoutes,
+      ...countryHubPaths.map(path => route(path, "daily", 0.65)),
     ]);
   };
 
@@ -459,7 +463,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (process.env.NODE_ENV === "production") {
       const result = await resolveSitemapWithLastKnownGood({
         generate: generateCompleteSitemap,
-        snapshotPath: process.env.GEOSUB_SITEMAP_LKG_PATH?.trim() || undefined,
+        // A local evidence preview cannot consume or overwrite the public URL snapshot.
+        snapshotPath: isCountryHubIndexPreview() ? undefined : process.env.GEOSUB_SITEMAP_LKG_PATH?.trim() || undefined,
         siteOrigin: new URL(siteUrl).origin,
         now,
         totalBudget: seoSitemapBudgets.total,

@@ -9,12 +9,12 @@ import CountryIdentity from "./CountryIdentity";
 import { DataNote, MetricItem, MetricStrip, PublicSection, PublicSectionHeader } from "./ui/PublicPage";
 import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import type { ProductPlan } from "../lib/public-pricing-model";
-import { getCountryHub } from "../lib/country-hubs-data";
+import { loadCountryHub } from "../lib/cached-country-hub";
 import { getPriorityCountry, priorityCountries, type HubLocale } from "../lib/country-hubs";
 import { getEvidencePlanHref, getPriceEvidencePreview } from "../lib/price-evidence-preview";
 import { getPriceHistorySummary } from "../lib/price-records";
 import { getPriceRecordProducts, getPriceSnapshotById, getProductPriceRecords } from "../lib/price-records-data";
-import { PUBLIC_PRICING_CACHE_TAG, PUBLIC_EXCHANGE_RATE_CACHE_TAG, PUBLIC_PRICING_REVALIDATE_SECONDS } from "../lib/public-pricing-cache";
+import { PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_REVALIDATE_SECONDS } from "../lib/public-pricing-cache";
 import styles from "./PriceEvidencePages.module.css";
 
 const pageClass = `${styles.page} mx-auto max-w-6xl px-5 py-12 md:py-14`;
@@ -26,9 +26,6 @@ const gridClass = "my-6 grid gap-5 md:grid-cols-2";
 const pillClass = "inline-flex items-center rounded-md bg-[var(--color-bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]";
 
 const previewCacheScope = () => getPriceEvidencePreview()?.capturedAt || "public";
-const loadHub = (code: string) => unstable_cache(() => getCountryHub(code), ["country-hub-v2", code, previewCacheScope()], {
-  revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS, tags: [PUBLIC_PRICING_CACHE_TAG, PUBLIC_EXCHANGE_RATE_CACHE_TAG],
-})();
 const loadRecords = (slug: string) => unstable_cache(async () => {
   const result = await getProductPriceRecords(slug);
   return { ...getPriceHistorySummary(result.records), truncated: result.truncated };
@@ -199,7 +196,7 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
 }
 
 export async function CountryIndexPage({ locale }: { locale: HubLocale }) {
-  const coverage = await Promise.allSettled(priorityCountries.map(country => loadHub(country.code)));
+  const coverage = await Promise.allSettled(priorityCountries.map(country => loadCountryHub(country.code)));
   return <main className={pageClass}>
     <PageHeading centered locale={locale} title={locale === "zh" ? "按国家找订阅" : "Browse subscriptions by country"}
       description={locale === "zh" ? "集中查看重点地区已核验的 App Store 月付订阅，比较当地标价、美国同套餐基准与采集记录。" : "Explore verified monthly App Store subscriptions in selected countries, with local prices, same-plan US comparisons and source records."} />
@@ -224,7 +221,7 @@ export async function CountryHubPage({ countrySlug, locale }: { countrySlug: str
   const country = getPriorityCountry(countrySlug);
   if (!country) notFound();
   let rows;
-  try { rows = await loadHub(country.code); } catch {
+  try { rows = await loadCountryHub(country.code); } catch {
     return <main className={pageClass}><PageHeading locale={locale} title={`${country[locale]}${locale === "zh" ? "订阅价格" : " subscription prices"}`} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
   }
   const productCount = new Set(rows.map(row => row.productSlug)).size;
