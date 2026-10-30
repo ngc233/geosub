@@ -39,9 +39,9 @@ async function undo(page, engine, first = false) {
 }
 test.beforeAll(async () => {
   await db.connect();
-  // Fresh SQL-baseline fixtures retain actor TEXT; production uses Prisma actor_id.
-  // Shape this disposable local E2E fixture only, never alter production schema.
-  await db.query('ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS actor_id uuid REFERENCES admin_users(id) ON DELETE SET NULL');
+  // Standard migrations must supply audit support, without fixture repair SQL.
+  const columns = await db.query("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='audit_logs' AND column_name IN ('actor','actor_id')");
+  expect(columns.rows.map(row => row.column_name).sort()).toEqual(['actor','actor_id']);
   await db.query('DELETE FROM site_settings WHERE setting_key=$1', [key]);
   await db.query("DELETE FROM audit_logs WHERE action IN ('import_seo_search_page_observations','rollback_seo_search_page_observations')");
 });

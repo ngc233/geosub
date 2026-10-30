@@ -1,4 +1,7 @@
 {
   "geosub-backend/sql/schema/057_first_party_promotion_foundation.sql": "9b65043d26d8eeceb4f278b0a6eb6356b7224b46c8e0892c02b10a79223942c7",
-  "geosub-backend/sql/schema/058_automatic_identity_ambiguity_lifecycle.sql": "e5c9c4354eb1e7ba3f60423c991115f36a31f150c13e48d4e00c03188f06a27f"
+  "geosub-backend/sql/schema/058_automatic_identity_ambiguity_lifecycle.sql": "e5c9c4354eb1e7ba3f60423c991115f36a31f150c13e48d4e00c03188f06a27f",
+  "geosub-backend/sql/schema/059_audit_actor_compatibility.sql": "3539a92c675dc353de286eecdd6a120d43d571f17b87cf7ab16f233ed26d552a",
+  "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql": "3539a92c675dc353de286eecdd6a120d43d571f17b87cf7ab16f233ed26d552a",
+  "ai-price-site/prisma/migrations/20261028090000_admin_trusted_devices/migration.sql": "da083b69b30be829f6d58ac3b52d5f6feb077f97434c2690c2c6a4c8addcf1b9"
 }

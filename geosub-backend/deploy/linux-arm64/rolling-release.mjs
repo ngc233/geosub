@@ -4,8 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, contentRollbackCompatible, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
+import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
 import { migrationPlan, executeMigrationPlan, webRuntime, webRuntimeEnv, ownedTaskTimers } from './component-release-lib.mjs';
+import contentContract from './content-release-contract.cjs';
 import { finalizeExistingCandidate } from './rolling-finalize-lib.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const run = (bin, args = [], options = {}) => execFileSync(bin, args, {
@@ -205,14 +206,20 @@ function identity(release) {
   if (fs.readFileSync(path.join(release.app, release.dist, 'BUILD_ID'), 'utf8').trim() !== release.buildId) throw Error('Retained build identity changed');
   for (const a of release.assets) if (digest(path.join(assets, a.file)) !== a.hash) throw Error('Retained static asset changed');
 }
+function contentGate(release, args) {
+  // Use the audited controller's protocol with the retained app's Prisma runtime.
+  // An N-1 app-local script might know only ChatGPT and silently miss Claude.
+  const modulePath = path.join(here, 'content-release-fence.cjs');
+  const code = `require(${JSON.stringify(modulePath)}).runCli(readOnly=>new(require('@prisma/client').PrismaClient)({adapter:new(require('@prisma/adapter-pg').PrismaPg)({connectionString:process.env.DATABASE_URL,...(readOnly?{options:'-c default_transaction_read_only=on'}:{})})}),process.argv.slice(1))`;
+  user(release, 'node', ['-e', code, ...args]);
+}
 function rollbackFence(from, to) {
-  const policy = json(path.join(here, 'rolling-content-compatibility.json'));
-  const compatible = contentRollbackCompatible(from.dir, to.dir, policy);
-  // Both operations close admission under the same DB lock. Only an exact reviewed
-  // reader/schema pair may retain non-default content when switching application code.
-  attempt.contentRollbackPolicy = compatible ? 'audited-compatible-readers' : 'code-default-required';
+  const policyFile = path.join(here, 'rolling-content-compatibility.json');
+  const plan = contentContract.rollbackPlan(from.dir, to.dir, json(policyFile));
+  attempt.contentRollbackPolicy = plan;
   evidence('content_fence');
-  user(from, 'node', ['scripts/content-deploy-fence.cjs', compatible ? 'upgrade' : 'rollback']);
+  contentGate(from, ['rollback', '--from-root', from.dir, '--to-root', to.dir, '--policy', policyFile]);
+  contentGate(from, ['verify-closed', '--production']);
 }
 function record(release) {
   atomic(path.join(root, 'current.env'), `GEOSUB_VERSION=${release.version}\nGEOSUB_COMMIT=${release.commit}\nGEOSUB_BRANCH=rolling-v1\nGEOSUB_DEPLOYED_AT=${new Date().toISOString()}\n`);
@@ -263,7 +270,9 @@ try {
         if (fs.readFileSync(path.join(release.dir, 'VERSION'), 'utf8').trim() !== release.version) throw Error('Candidate version changed');
         await health(release);
         await proxyHealth(release);
-        user(release, 'node', ['-e', `const {PrismaClient}=require('@prisma/client'),{PrismaPg}=require('@prisma/adapter-pg');const db=new PrismaClient({adapter:new PrismaPg({connectionString:process.env.DATABASE_URL,options:'-c default_transaction_read_only=on'})});(async()=>{const rows=await db.siteSetting.findMany({where:{settingKey:{in:['content-pilot:en:chatgpt:fence','content-pilot:en:chatgpt:state']}},select:{settingKey:true,valueJson:true}});const fence=rows.find(x=>x.settingKey.endsWith(':fence'))?.valueJson,state=rows.find(x=>x.settingKey.endsWith(':state'))?.valueJson;if((state||fence)&&fence?.admission!=='closed')throw Error('Content admission must stay closed');if(state?.version&&state.receipt!=='verified')throw Error('Content receipt is not verified');console.log('Existing content fence and receipt verified read-only');})().catch(()=>{console.error('Content state verification failed');process.exitCode=1;}).finally(()=>db.$disconnect());`]);
+        contentGate(release, ['verify-closed', '--production']);
+        contentGate(release, ['verify-origin', `http://127.0.0.1:${release.port}`, '--production']);
+        contentGate(release, ['check-rollback', '--from-root', release.dir, '--to-root', prior.previous.dir, '--policy', path.join(here, 'rolling-content-compatibility.json')]);
         run('bash', [path.join(here, 'post-deploy-check.sh')], { env: { ...envFor(release), PGOPTIONS: '-c default_transaction_read_only=on' } });
         // Recheck pointers after the potentially long verification. No switch,
         // service start/stop, task install, migration or content write is allowed.
@@ -413,8 +422,12 @@ try {
       });
       run('chown', ['-R', 'geosub:geosub', path.join(release.app, '.next/cache')]);
       validateTaskUnits(release);
+      // Reject a missing exact rollback contract before closing content or pausing tasks.
+      evidence('content_rollback_preflight');
+      contentGate(old, ['check-rollback', '--from-root', release.dir, '--to-root', old.dir, '--policy', path.join(here, 'rolling-content-compatibility.json')]);
       evidence('content_fence');
-      user(old, 'node', ['scripts/content-deploy-fence.cjs', 'upgrade']);
+      contentGate(old, ['upgrade']);
+      contentGate(old, ['verify-closed', '--production']);
       await executeMigrationPlan(databasePlan, {
         pause: pauseTimers,
         backup: async () => {
@@ -462,6 +475,8 @@ try {
       run('systemctl', ['start', attempt.target.unit]);
       await health(attempt.target);
     }
+    contentGate(attempt.target, ['verify-closed', '--production']);
+    contentGate(attempt.target, ['verify-origin', `http://127.0.0.1:${attempt.target.port}`, '--production']);
     evidence('switch');
     switched = true;
     proxySwitch(attempt.target);
@@ -489,6 +504,7 @@ try {
     try {
       if (switched) {
         rollbackFence(attempt.target, old);
+        contentGate(old, ['verify-origin', `http://127.0.0.1:${old.port}`, '--production']);
         proxySwitch(old);
         await proxyHealth(old);
         point(old.dir);

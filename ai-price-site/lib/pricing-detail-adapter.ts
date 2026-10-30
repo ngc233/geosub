@@ -41,6 +41,9 @@ type PricingDetailRow = {
   country_name_en: string | null;
   is_reference: boolean | null;
 
+  price_record_id: string;
+  price_type: string;
+  formal_fx_rate_date: string | null;
   local_price: unknown;
   currency: string | null;
   price_usd: unknown;
@@ -279,6 +282,9 @@ function buildProductFromRows(
 
     planMap.get(planSlug)?.regions.push({
       rank: 0,
+      priceRecordId: row.price_record_id,
+      priceType: row.price_type,
+      formalFxRateDate: row.formal_fx_rate_date || undefined,
       country: getCountryName(
         countryCode,
         row.country_name_zh,
@@ -408,6 +414,7 @@ function buildProductFromRows(
 export async function getPricingDetailProduct(
   productSlug: string,
   locale: DetailLocale = "zh",
+  includeFormalFacts = false,
 ) {
   const rows = await prisma.$queryRaw<PricingDetailRow[]>`
     SELECT
@@ -430,6 +437,9 @@ export async function getPricingDetailProduct(
       c.name_en AS country_name_en,
       c.is_reference AS is_reference,
 
+      rp.id AS price_record_id,
+      rp.price_type::text AS price_type,
+      formal_observation.raw_payload ->> 'fx_rate_date' AS formal_fx_rate_date,
       rp.local_price,
       rp.currency,
       rp.price_usd,
@@ -514,6 +524,15 @@ export async function getPricingDetailProduct(
       ORDER BY po.observed_at DESC, po.created_at DESC
       LIMIT 1
     ) latest_observation ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT po.raw_payload FROM price_observations po
+      WHERE ${includeFormalFacts} AND p.slug='claude' AND po.product_id=rp.product_id AND po.plan_id=rp.plan_id
+        AND po.country_id=rp.country_id AND po.billing_platform=rp.billing_platform
+        AND po.price_type=rp.price_type AND po.raw_price=rp.local_price AND po.currency=rp.currency
+        AND po.source_id=rp.primary_source_id AND po.observed_at=rp.last_checked_at
+        AND po.status='approved' AND NOT po.anomaly_flag AND po.confidence_score>=80
+      ORDER BY po.created_at DESC LIMIT 1
+    ) formal_observation ON TRUE
     LEFT JOIN LATERAL (
       SELECT COUNT(*) AS pending_observation_count
       FROM price_observations po

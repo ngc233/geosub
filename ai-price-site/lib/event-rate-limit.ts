@@ -1,9 +1,9 @@
+import { getTrustedClientIp, type HeaderReader } from "./client-ip.ts";
+
 export const EVENT_RATE_LIMIT_REQUESTS = 60;
 export const EVENT_RATE_LIMIT_WINDOW_MS = 60_000;
 export const EVENT_RATE_LIMIT_RETENTION_DAYS = 2;
 export const EVENT_RATE_LIMIT_MAX_MEMORY_KEYS = 10_000;
-
-const DEFAULT_CLIENT_IP_HEADER = "x-real-ip";
 
 export type EventRateLimitState = {
   requestCount: number;
@@ -29,16 +29,6 @@ type EventRateLimitStoreOptions = {
   windowMs?: number;
 };
 
-type HeaderReader = {
-  get(name: string): string | null;
-};
-
-function normalizeClientIp(value: string | null) {
-  const normalized = value?.trim().replace(/[\u0000-\u001f\u007f]/g, "");
-
-  return normalized ? normalized.slice(0, 120) : "unknown";
-}
-
 export function isEventRateLimitEnabled(
   value = process.env.GEOSUB_EVENTS_RATE_LIMIT_ENABLED,
 ) {
@@ -49,24 +39,10 @@ export function isEventRateLimitEnabled(
 
 export function getTrustedEventClientIp(
   headers: HeaderReader,
-  configuredHeader = process.env.GEOSUB_EVENTS_CLIENT_IP_HEADER,
+  configuredHeader = process.env.GEOSUB_EVENTS_CLIENT_IP_HEADER ||
+    process.env.GEOSUB_CLIENT_IP_HEADER,
 ) {
-  const headerName = configuredHeader?.trim().toLowerCase() || DEFAULT_CLIENT_IP_HEADER;
-
-  if (headerName === "x-forwarded-for-rightmost") {
-    const forwarded = headers.get("x-forwarded-for")
-      ?.split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-    return normalizeClientIp(forwarded?.at(-1) || null);
-  }
-
-  if (headerName === "cf-connecting-ip") {
-    return normalizeClientIp(headers.get("cf-connecting-ip"));
-  }
-
-  return normalizeClientIp(headers.get(DEFAULT_CLIENT_IP_HEADER));
+  return getTrustedClientIp(headers, configuredHeader);
 }
 
 export function buildEventRateLimitDecision({

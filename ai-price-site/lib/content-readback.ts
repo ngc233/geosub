@@ -1,22 +1,25 @@
 import { createHash } from "node:crypto";
 import sanitizeHtml from "sanitize-html";
-import { CONTENT_PATH, type OverviewContent } from "./managed-content.ts";
+import { CONTENT_PATH, LEGACY_CONTENT_TARGET, getRegisteredContentTarget, type OverviewContent } from "./managed-content.ts";
 
 export const CONTENT_CANONICAL = `https://geosub.org${CONTENT_PATH}`;
 export type ReadbackExpected = {
   title?: string; description?: string; heading?: string;
   version: string; modeGeneration: string;
   content?: OverviewContent | null;
+  factsHash?: string;
 };
 export type ReadbackEvidence = {
   checkedAt: string; htmlHash: string; outputHashes: Record<string, string>;
-  version: string; modeGeneration: string; cacheStatus: string | null;
+  version: string; modeGeneration: string; cacheStatus: string | null; factsHash?: string;
 };
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 const normalize = (text: string) => text.replace(/\s+/gu, " ").trim();
 
 /** Parse actual HTML, never strings embedded inside React/script payloads. */
-export function verifyContentHtml(html: string, expected: ReadbackExpected): ReadbackEvidence {
+export function verifyContentHtml(html: string, expected: ReadbackExpected, targetId: string = LEGACY_CONTENT_TARGET): ReadbackEvidence {
+  const targetDefinition = getRegisteredContentTarget(targetId);
+  const canonical = `https://geosub.org${targetDefinition.canonicalPath}`;
   const values: Record<string, string[]> = {};
   const add = (key: string, value: string) => (values[key] ??= []).push(value);
   let editorialDepth = 0;
@@ -43,6 +46,7 @@ export function verifyContentHtml(html: string, expected: ReadbackExpected): Rea
         add("version", attrs["data-content-version"] ?? "");
         add("modeGeneration", attrs["data-content-mode-generation"] ?? "");
         add("kind", attrs["data-content-kind"] ?? "");
+        if (attrs["data-content-facts-hash"]) add("factsHash", attrs["data-content-facts-hash"]);
       }
     },
     onCloseTag() {
@@ -72,9 +76,10 @@ export function verifyContentHtml(html: string, expected: ReadbackExpected): Rea
   const target: Record<string, string> = {
     title: normalize(expected.title ?? values.title?.[0] ?? ""), h1: normalize(expected.heading ?? values.h1?.[0] ?? ""),
     description: expected.description ?? values.description?.[0] ?? "", "og:description": expected.description ?? values.description?.[0] ?? "",
-    "twitter:description": expected.description ?? values.description?.[0] ?? "", canonical: CONTENT_CANONICAL,
+    "twitter:description": expected.description ?? values.description?.[0] ?? "", canonical,
     version: expected.version, modeGeneration: expected.modeGeneration,
   };
+  if (expected.factsHash) target.factsHash = expected.factsHash;
   if (expected.content === null) {
     target.kind = "fallback";
     if (editorial.length || sources.length || questions.length || answers.length) throw new Error("Content readback mismatch: fallback contains managed content");
@@ -98,7 +103,7 @@ export function verifyContentHtml(html: string, expected: ReadbackExpected): Rea
   }
   const mismatches = Object.keys(target).filter((key) => !target[key] || values[key]?.length !== 1 || values[key][0] !== target[key]);
   if (mismatches.length) throw new Error(`Content readback mismatch: ${mismatches.join(", ")}`);
-  return { checkedAt: new Date().toISOString(), htmlHash: hash(html), outputHashes: Object.fromEntries(Object.entries(target).map(([key, value]) => [key, hash(value)])), version: expected.version, modeGeneration: expected.modeGeneration, cacheStatus: null };
+  return { ...(expected.factsHash ? {factsHash:expected.factsHash} : {}), checkedAt: new Date().toISOString(), htmlHash: hash(html), outputHashes: Object.fromEntries(Object.entries(target).map(([key, value]) => [key, hash(value)])), version: expected.version, modeGeneration: expected.modeGeneration, cacheStatus: null };
 }
 
 export type HttpClient = typeof fetch;
@@ -120,33 +125,35 @@ async function boundedText(response: Response, limit: number) {
 }
 
 /** Configuration belongs to the server, not the admin form. No arbitrary URLs. */
-export async function readContentEndpoint(kind: "origin" | "public", originPort: number, expected: ReadbackExpected, http: HttpClient = fetch) {
+export async function readContentEndpoint(kind: "origin" | "public", originPort: number, expected: ReadbackExpected, http: HttpClient = fetch, targetId: string = LEGACY_CONTENT_TARGET) {
   if (!Number.isSafeInteger(originPort) || originPort < 1024 || originPort > 65535) throw new Error("Invalid origin port");
-  const url = kind === "origin" ? `http://127.0.0.1:${originPort}${CONTENT_PATH}` : CONTENT_CANONICAL;
+  const target = getRegisteredContentTarget(targetId);
+  const url = kind === "origin" ? `http://127.0.0.1:${originPort}${target.canonicalPath}` : `https://geosub.org${target.canonicalPath}`;
   try {
     const response = await http(url, {
       redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000),
       headers: kind === "origin" ? { Host: "geosub.org", Accept: "text/html" } : { Accept: "text/html" },
     });
     if (response.status !== 200 || !response.headers.get("content-type")?.toLowerCase().includes("text/html")) throw new Error("Invalid HTML response");
-    const evidence = verifyContentHtml(await boundedText(response, 3_000_000), expected);
+    const evidence = verifyContentHtml(await boundedText(response, 3_000_000), expected, targetId);
     return { ...evidence, cacheStatus: response.headers.get("cf-cache-status") };
   } catch { throw new Error(`${kind} content readback failed`); }
 }
 
 /** Only usable after the single-URL/no-custom-key cache policy has been audited. */
-export async function purgeContentUrl(config: { zoneId: string; token: string; cachePolicy: "unverified" | "audited-single-url" }, http: HttpClient = fetch) {
+export async function purgeContentUrl(config: { zoneId: string; token: string; cachePolicy: "unverified" | "audited-single-url" }, http: HttpClient = fetch, targetId: string = LEGACY_CONTENT_TARGET) {
+  const canonical = `https://geosub.org${getRegisteredContentTarget(targetId).canonicalPath}`;
   if (config.cachePolicy !== "audited-single-url" || !/^[a-f0-9]{32}$/i.test(config.zoneId) || !config.token || /[\r\n]/.test(config.token)) throw new Error("Content purge configuration is not ready");
   try {
     const response = await http(`https://api.cloudflare.com/client/v4/zones/${config.zoneId}/purge_cache`, {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${config.token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ files: [CONTENT_CANONICAL] }),
+      body: JSON.stringify({ files: [canonical] }),
     });
     if (response.status !== 200) throw new Error("Purge rejected");
     const result = JSON.parse(await boundedText(response, 64_000));
     if (result.success !== true) throw new Error("Purge rejected");
-    return { acceptedAt: new Date().toISOString(), url: CONTENT_CANONICAL };
+    return { acceptedAt: new Date().toISOString(), url: canonical };
   } catch { throw new Error("Content CDN purge failed"); }
 }
 
@@ -164,10 +171,23 @@ export type DistributionResult = {
   origin?: ReadbackEvidence; public?: ReadbackEvidence;
   purge?: { acceptedAt: string; url: string };
 };
+/** A complete receipt must belong to this exact target, version and fence. */
+export function matchesContentDistributionEvidence(evidence: DistributionResult | undefined, version: number, generation: number, targetId: string, requireFacts = false) {
+  const target = getRegisteredContentTarget(targetId);
+  return Boolean(evidence?.status === "verified" && evidence.stage === "complete" &&
+    evidence.purge?.url === `https://geosub.org${target.canonicalPath}` &&
+    evidence.origin?.version === String(version) && evidence.public?.version === String(version) &&
+    evidence.origin?.modeGeneration === String(generation) && evidence.public?.modeGeneration === String(generation) &&
+    evidence.origin?.outputHashes && evidence.public?.outputHashes &&
+    Object.keys(evidence.origin.outputHashes).length >= 8 &&
+    (!requireFacts || /^[a-f0-9]{64}$/.test(evidence.origin.factsHash ?? "") && evidence.origin.factsHash === evidence.public.factsHash && evidence.origin.outputHashes.factsHash === hash(evidence.origin.factsHash!) && evidence.public.outputHashes.factsHash === evidence.origin.outputHashes.factsHash) &&
+    (target.id === LEGACY_CONTENT_TARGET || evidence.origin.outputHashes.canonical === hash(`https://geosub.org${target.canonicalPath}`)) &&
+    Object.entries(evidence.origin.outputHashes).every(([key, value]) => value === evidence.public?.outputHashes[key]));
+}
 /** The caller must persist this evidence under the same lease/fence transaction.
  * A returned verified result alone is not a committed publish receipt.
  */
-export async function verifyContentDistribution(checks: DistributionChecks): Promise<DistributionResult> {
+export async function verifyContentDistribution(checks: DistributionChecks, targetId: string = LEGACY_CONTENT_TARGET): Promise<DistributionResult> {
   const result: DistributionResult = { status: "failed", stage: "admission" };
   const current = async () => {
     try { await checks.assertCurrent(); return true; }
@@ -183,7 +203,7 @@ export async function verifyContentDistribution(checks: DistributionChecks): Pro
     if (!await current()) return result;
     result.stage = "purge";
     result.purge = await checks.purge();
-    if (result.purge.url !== CONTENT_CANONICAL) throw new Error("Unexpected purge scope");
+    if (result.purge.url !== `https://geosub.org${getRegisteredContentTarget(targetId).canonicalPath}`) throw new Error("Unexpected purge scope");
     if (!await current()) return result;
     result.stage = "public";
     result.public = await checks.public();

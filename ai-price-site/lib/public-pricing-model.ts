@@ -20,6 +20,10 @@ export type RegionPrice = {
   riskNote?: string;
   riskRequirements?: string;
   riskFactors?: string;
+  /** Read-only provenance from the published price row; never editorial input. */
+  priceRecordId?: string;
+  priceType?: string;
+  formalFxRateDate?: string;
   billingPlatform?: string;
   billingPlatformLabel?: string;
   lastCheckedAt?: string;

@@ -8,7 +8,26 @@
     "ai-price-site/components/PricingDetailPage.tsx",
     "ai-price-site/components/OverviewEditorialSections.tsx",
     "ai-price-site/prisma/schema.prisma",
-    "ai-price-site/scripts/content-deploy-fence.cjs"
+    "ai-price-site/scripts/content-deploy-fence.cjs",
+    "ai-price-site/lib/content-target-registry.ts",
+    "ai-price-site/lib/content-effects.ts",
+    "ai-price-site/lib/content-effects-store.ts",
+    "ai-price-site/lib/content-recovery.ts",
+    "ai-price-site/lib/content-recovery-auth.ts",
+    "ai-price-site/app/api/internal/content/recover/route.ts",
+    "ai-price-site/scripts/recover-content-local.cjs",
+    "ai-price-site/lib/content-fact-tokens.ts",
+    "ai-price-site/lib/managed-content-facts.ts",
+    "ai-price-site/lib/managed-content-fact-view.ts",
+    "ai-price-site/lib/pricing-product-store.ts",
+    "ai-price-site/lib/public-pricing-model.ts",
+    "ai-price-site/lib/pricing-detail-adapter.ts",
+    "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+    "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+    "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+    "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+    "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+    "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
   ],
   "approvedPairs": [
     {
@@ -152,6 +171,156 @@
       "reason": "2.21.1 to retained website 2.20.0: all registered content readers, renderers, validators and schema files are byte-identical except VERSION. Apple Music only adds its approved local app icon and provenance, without changing existing assets or runtime content/data contracts. Collector 2.21.0 remains independent; no database migration."
     },
     {
+      "format": 2,
+      "from": "83536d03c33ea383a84d0425cfcfeadf4cdf0111699dbdc362569d912c20c9dd",
+      "to": "520d60c216f452aa66e169ec832497d87f60256cca2267a7b69e1e6bbad77127",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ead5051bb786a6cc16d0791ad463667e9fe1b0b4",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "Exact local candidate to retained phase4 reader/schema: immutable JSON revisions and actor/actor_id retained; Claude fixed fact tokens and target namespaces are supported. This approves reader compatibility only; production Claude admission, recovery and CDN canary stay disabled.",
+      "evidence": "ai-price-site/scripts/test-content-release-gates.cjs (real local PG, retained Git readers, MOCK HTTP proof); docs/geosub-six-modules-current-state-and-backlog-2026-10-26.md section 14"
+    },
+    {
+      "format": 2,
+      "from": "e7dcf8fcca86e60643e0108ef0adad11f78e87ada4ec640d3c7ccbe2056343d9",
+      "to": "520d60c216f452aa66e169ec832497d87f60256cca2267a7b69e1e6bbad77127",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ead5051bb786a6cc16d0791ad463667e9fe1b0b4",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "Admin trusted-device candidate to the same retained phase4 reader/schema: the only contract-scope change is schema.prisma adding the AdminTrustedDevice model and its AdminUser relation (additive admin_trusted_devices table). Content, site_settings, admin_users columns and audit_logs models are byte-identical, so the retained reader is unaffected. Pending product-owner review before release; approves reader compatibility only.",
+      "evidence": "ai-price-site/scripts/test-content-release-gates.cjs and test-admin-trusted-devices.cjs on a fresh db:migrate local PG16 (retained Git readers, MOCK HTTP proof)"
+    },
+    {
+      "format": 2,
+      "from": "5a436c47c84168d2eec288d275d727219a6b11b9b018d1a90bbad7d45577345b",
+      "to": "520d60c216f452aa66e169ec832497d87f60256cca2267a7b69e1e6bbad77127",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ead5051bb786a6cc16d0791ad463667e9fe1b0b4",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "Cloudflare real-IP candidate on top of the trusted-device candidate: the only additional contract-scope change is rolling-release-lib.mjs route(), which now emits server-level set_real_ip_from for the published Cloudflare edge ranges and real_ip_header CF-Connecting-IP. Locations, proxy headers, cache policy and every content reader, store and schema file are unchanged, so the retained reader is unaffected. Pending product-owner review before release; approves reader compatibility only.",
+      "evidence": "geosub-backend/deploy/linux-arm64/rolling-release.test.mjs; behavioural check of the generated route on 1panel/openresty:1.27.1.2-5-1-focal (spoofed CF-Connecting-IP from a non-edge peer ignored; edge-supplied visitor IP restored); ai-price-site/scripts/test-content-release-gates.cjs"
+    },
+    {
       "from": "2d7968107dbbcb184b098d267734d03f0bf95a696220811920a18c0a54185abe",
       "to": "cd8b0167b1e815a7ad10e727e48973e5a7f116ed68eec007eae99565550fec03",
       "reason": "2.21.2 to retained website 2.21.1: registered content readers, renderers, validators and schema byte-identical except VERSION. Stable HK/MO localized short labels fix Apple Music hydration; calendar-date text preserves collector FX evidence. No database input, content contract, pricing threshold or SEO promotion changes; retain corrected factual evidence on code rollback."
@@ -170,6 +339,56 @@
       "from": "356052cd10f04487509a07484d5afac754b578b4a40124213d5ea82d7ae2ad20",
       "to": "4e6fa727546280a9e8710f16a689f700e495b87569624964d44e48bd9801a379",
       "reason": "2.21.5 to retained website2.21.3: registered content readers, renderers, validators and schema byte-identical except VERSION. Global detail/share map identities and pointer selection fixed; actual drags retain capture while taps reach country paths. No database input, canonical price, collector, layout or SEO policy change. Candidate2.21.4 was not deployed."
+    },
+    {
+      "format": 2,
+      "from": "83dcbb933c42fa6265fb0356f3230e73577f2cf86e7223165db3d49925eed2ba",
+      "to": "520d60c216f452aa66e169ec832497d87f60256cca2267a7b69e1e6bbad77127",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ead5051bb786a6cc16d0791ad463667e9fe1b0b4",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "Unified 2.22.0 local candidate to the exact retained phase4 reader/schema fixture. Immutable revisions, target namespaces, formal fact tokens and additive audit columns are unchanged; merged public price/map fixes and admin UI do not grant production admission. No compatibility pair is granted to current production readers.",
+      "evidence": "test-content-release-gates.cjs against SHA-256 checked exact historical source fixtures on a disposable local PG16; docs/rfc-admin-information-architecture-2026-10-28.md section 54. Receipt HTTP proofs are MOCK, not production evidence."
     }
   ]
 }

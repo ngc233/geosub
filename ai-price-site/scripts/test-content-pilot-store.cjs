@@ -18,12 +18,15 @@ function load(file, mocks) {
   return module.exports;
 }
 (async () => {
-  const core = load(path.resolve('lib/managed-content.ts'), {});
+  const tokens = load(path.resolve('lib/content-fact-tokens.ts'), {});
+  const registry = load(path.resolve('lib/content-target-registry.ts'), {});
+  const core = load(path.resolve('lib/managed-content.ts'), { './content-target-registry.ts': registry, './content-fact-tokens.ts':tokens });
+  const readbackModule = load(path.resolve('lib/content-readback.ts'), {'./managed-content.ts':core});
   const sentinel = new Error('intentional integration rollback');
   let completed = false;
   try {
     await db.$transaction(async (tx) => {
-      const store = load(path.resolve('lib/managed-content-store.ts'), { 'server-only': {}, react: { cache: (f) => f }, 'next/cache': { unstable_cache: (f) => f }, './prisma': { prisma: { ...tx, $transaction: (f) => f(tx) } }, './managed-content': core });
+      const store = load(path.resolve('lib/managed-content-store.ts'), { 'server-only': {}, react: { cache: (f) => f }, 'next/cache': { unstable_cache: (f) => f }, './prisma': { prisma: { ...tx, $transaction: (f) => f(tx) } }, './managed-content': core, './content-readback':readbackModule, './content-fact-tokens':tokens });
       const actor = await tx.adminUser.create({ data: { email: 'content-test@invalid.example', passwordHash: 'unusable-test-hash', status: 'ACTIVE' } });
       const before = await store.readContentState();
       const draft = await store.mutateContent(before.generation, actor.id, { type: 'draft', content: core.pilotDraft });
@@ -57,7 +60,7 @@ function load(file, mocks) {
     for (const table of ['site_settings', 'admin_users', 'audit_logs']) {
       await db.$executeRawUnsafe(`CREATE TABLE "${schema}"."${table}" (LIKE public."${table}" INCLUDING ALL)`);
     }
-    const store = load(path.resolve('lib/managed-content-store.ts'), { 'server-only': {}, react: { cache: (f) => f }, 'next/cache': { unstable_cache: (f) => f }, './prisma': { prisma: isolated }, './managed-content': core });
+    const store = load(path.resolve('lib/managed-content-store.ts'), { 'server-only': {}, react: { cache: (f) => f }, 'next/cache': { unstable_cache: (f) => f }, './prisma': { prisma: isolated }, './managed-content': core, './content-readback':readbackModule, './content-fact-tokens':tokens });
     const [actor] = await isolated.$queryRawUnsafe(`INSERT INTO "${schema}".admin_users (id, email, password_hash, status, updated_at) VALUES ($1::uuid, 'isolated-content-test@invalid.example', 'unusable-test-hash', 'disabled'::public.admin_status, now()) RETURNING id`, require('node:crypto').randomUUID());
     const drafts = await Promise.allSettled([
       store.mutateContent(0, actor.id, { type: 'draft', content: { ...core.pilotDraft, title: 'First contender' } }),
@@ -140,7 +143,7 @@ function load(file, mocks) {
     assert.equal((await store.readDistributionAttempt(upgraded.attemptId)).number, 1);
     let failCache = true;
     const invalidations = [];
-    const distribution = load(path.resolve('lib/content-distribution.ts'), { 'server-only': {}, './managed-content': core, './managed-content-store': store, './content-readback': {} });
+    const distribution = load(path.resolve('lib/content-distribution.ts'), { 'server-only': {}, './managed-content': core, './managed-content-store': store, './content-fact-tokens':tokens, './content-readback': {} });
     const actions = load(path.resolve('app/admin/content/actions.ts'), {
       '../../../lib/admin-auth': { requireAdmin: async () => ({ id: actor.id }) },
       '../../../lib/managed-content': core,
@@ -213,7 +216,7 @@ function load(file, mocks) {
     assert.equal((await store.readDistributionAttempt(badLease.id)).status,'failed');
     console.log('PASS: persistent dual-end evidence, exact lease identity, stale proof rejection and per-publication cache epoch. Mock endpoint evidence does not certify production.');
     const readback = load(path.resolve('lib/content-readback.ts'), {'./managed-content.ts':core});
-    const wired = load(path.resolve('lib/content-distribution.ts'), {'server-only':{},'./managed-content':core,'./managed-content-store':store,'./content-readback':readback});
+    const wired = load(path.resolve('lib/content-distribution.ts'), {'server-only':{},'./managed-content':core,'./managed-content-store':store,'./content-fact-tokens':tokens,'./content-readback':readback});
     assert.equal(wired.contentDistributionConfig({DATABASE_URL:process.env.DATABASE_URL}),null);
     assert.throws(()=>wired.contentDistributionConfig({DATABASE_URL:process.env.DATABASE_URL,GEOSUB_CONTENT_DISTRIBUTION:'cloudflare'}),/本地数据库/);
     assert.throws(()=>wired.contentDistributionConfig({DATABASE_URL:'postgresql://localhost/geosub_app',GEOSUB_CONTENT_DISTRIBUTION:'cloudflare'}),/未就绪/);

@@ -105,9 +105,9 @@ function assertCiStepOrder(jobName: string, stepNames: string[]) {
 test("clean CI jobs generate Prisma Client before Prisma-dependent checks", () => {
   assert.equal(
     ciWorkflow.match(/- name: Generate Prisma Client/g)?.length,
-    4,
+    5,
   );
-  assert.equal(ciWorkflow.match(/run: npx prisma generate/g)?.length, 4);
+  assert.equal(ciWorkflow.match(/run: npx prisma generate/g)?.length, 5);
 
   assertCiStepOrder("code", [
     "Install dependencies",
@@ -125,6 +125,14 @@ test("clean CI jobs generate Prisma Client before Prisma-dependent checks", () =
     "Generate Prisma Client",
     "Apply migrations",
   ]);
+  assertCiStepOrder("content-release", [
+    "Install dependencies",
+    "Generate Prisma Client",
+    "Apply canonical schema without backfills",
+    "Test exact rollback and all-target admission",
+  ]);
+  assert.match(getCiJob("content-release"), /fetch-depth: 0/);
+  assert.match(getCiJob("content-release"), /npm run test:content-release && npm run test:content-store/);
   assertCiStepOrder("e2e", [
     "Install dependencies",
     "Generate Prisma Client",

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "recordedDate": "2026-10-26",
+  "timezone": "Asia/Shanghai",
+  "purpose": "Establish routine-operation measurement definitions before cutover; historical examples are not a representative denominator.",
+  "metrics": {
+    "sourceChangeShare": {
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "definition": "completed routine changes requiring a source commit / all completed routine changes in the same recorded window"
+    },
+    "websiteDeployCount": {
+      "value": null,
+      "definition": "actual website upgrades required by those changes; collector-only upgrades recorded separately"
+    },
+    "publicConfirmationSeconds": {
+      "value": null,
+      "definition": "first saved operator change to persisted matching origin/public receipt, including failed attempts and retries"
+    }
+  },
+  "operations": [
+    {
+      "kind": "product_editorial",
+      "currentPath": "product-editorial-content.ts / product-editorial-expansion.ts; only English ChatGPT overview has an existing hot-publish path",
+      "evidence": [
+        "ai-price-site/lib/product-editorial-content.ts",
+        "docs/rfc-content-pilot-2026-10-11.md"
+      ],
+      "historicalExampleCommit": "6c0e90383002633ce1d5f7dd51e0d90b6d082990",
+      "observedSourceChange": true,
+      "measuredWebsiteDeploys": null,
+      "measuredPublicConfirmationSeconds": null
+    },
+    {
+      "kind": "plan_display_name",
+      "currentPath": "Admin can save the name, but Ensure-Plan may overwrite it on collection",
+      "evidence": [
+        "ai-price-site/app/admin/plans/actions.ts",
+        "geosub-backend/scripts/collect-app-store-prices.ps1"
+      ],
+      "historicalExampleCommit": null,
+      "observedSourceChange": null,
+      "measuredWebsiteDeploys": null,
+      "measuredPublicConfirmationSeconds": null
+    },
+    {
+      "kind": "source_mapping",
+      "currentPath": "repository plan/source specifications and configured collector jobs",
+      "evidence": [
+        "geosub-backend/data/product-plan-specs.json",
+        "geosub-backend/data/official-web-price-sources.json"
+      ],
+      "historicalExampleCommit": "c8b5ee89a8c31002d20173a9a789c7bc5f0d77c8",
+      "observedSourceChange": true,
+      "measuredWebsiteDeploys": null,
+      "measuredPublicConfirmationSeconds": null
+    },
+    {
+      "kind": "new_product_existing_capability",
+      "currentPath": "Admin draft/plan/source/review entries exist, but no full recorded source-free onboarding acceptance yet",
+      "evidence": [
+        "docs/prd-admin-software-plan-onboarding-2026-10-17.md",
+        "ai-price-site/app/admin/products/ProductOnboardingSteps.tsx"
+      ],
+      "historicalExampleCommit": null,
+      "observedSourceChange": null,
+      "measuredWebsiteDeploys": null,
+      "measuredPublicConfirmationSeconds": null
+    }
+  ],
+  "measurementStatus": "unmeasured_business_denominator_and_lead_times",
+  "measurementProtocol": [
+    "Record a routine-operation ID, type, start/save time and actor class without private identifiers.",
+    "Link source commit when required; link actual web/collector release receipts separately.",
+    "Link all failed/retry attempts and the final public receipt.",
+    "Compare equal windows and the same operation mix; null never means zero."
+  ]
+}

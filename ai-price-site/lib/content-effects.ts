@@ -1,6 +1,12 @@
+import { getRegisteredContentTarget } from './content-target-registry.ts';
 import type { SeoSearchPageImportBatch } from './seo-search-observation-import';
 export const EFFECT_PATH='/en/ai-pricing/chatgpt';
-export type EffectLink={id:string;version:number;revisionHash:string;opportunityId:string;query:string;hypothesis:string;engine:'google'|'bing';timezone:string;publishedAt:string;createdAt:string;actor:string;attemptId:string;path:typeof EFFECT_PATH};
+export type EffectLink={id:string;targetId?:string;factsHash?:string;version:number;revisionHash:string;opportunityId:string;query:string;hypothesis:string;engine:'google'|'bing';timezone:string;publishedAt:string;createdAt:string;actor:string;attemptId:string;path:string};
+export function effectTarget(link: Pick<EffectLink, 'targetId' | 'path'>) {
+ const target=getRegisteredContentTarget(link.targetId ?? 'overview:en:chatgpt');
+ if(link.path!==target.canonicalPath)throw Error('效果记录的目标与页面不匹配。');
+ return target;
+}
 export function effectWindows(publishedAt:string,timezone:string){
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(publishedAt));
  const get=(key:string)=>parts.find(p=>p.type===key)!.value;
@@ -11,6 +17,7 @@ export function effectWindows(publishedAt:string,timezone:string){
 export function assessContentEffect(link:EffectLink,batches:SeoSearchPageImportBatch[],currentVersion:number,now=new Date()){
  const windows=effectWindows(link.publishedAt,link.timezone);
  const blocked=(reason:string)=>({status:'insufficient' as const,reason,windows,before:null,after:null,clickDelta:null});
+ try { effectTarget(link); } catch { return blocked('效果记录的目标与页面不匹配。'); }
  if(currentVersion!==link.version)return blocked('内容版本已切换或回退，本观察受到其他版本影响。');
  const localToday=effectWindows(now.toISOString(),link.timezone).before.end;
  if(localToday<windows.after.end)return blocked('14个完整观察日尚未结束。');

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { assertLocalContentDatabase, isContentTarget, parseOverviewContent, pilotDraft, requireGeneration } from './managed-content.ts';
-test('scope excludes every plan, Chinese Plus and other products', () => {
+test('scope includes registered overviews and excludes every plan and Chinese Plus', () => {
   assert.equal(isContentTarget('en', 'chatgpt'), true);
-  for (const [locale, slug, plan] of [['zh','chatgpt'],['zh','chatgpt','plus'],['en','chatgpt','pro-5x'],['en','claude']]) assert.equal(isContentTarget(locale, slug, plan), false);
+  for (const [locale, slug, plan] of [['zh','chatgpt'],['zh','chatgpt','plus'],['en','chatgpt','pro-5x']]) assert.equal(isContentTarget(locale, slug, plan), false);
 });
 test('local pilot refuses production DB even when hosted on loopback', () => {
   assert.doesNotThrow(() => assertLocalContentDatabase('postgresql://localhost/geosub_release_20260917'));

@@ -4,9 +4,10 @@ import { AdminActionForm, useAdminActionState } from '../../../../components/adm
 import { AdminButton } from '../../../../components/admin/AdminButton';
 import { effectAction } from './actions';
 const input='block w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-3 text-[var(--color-text-primary)]';
-export default function EffectForm({id,version,opportunities=[]}:{id?:string;version?:number;opportunities?:{id:string;query:string}[]}){
+export default function EffectForm({targetId,id,version,opportunities=[]}:{targetId:string;id?:string;version?:number;opportunities?:{id:string;query:string}[]}){
  const [,action,pending]=useAdminActionState(effectAction,{message:''});
  return <AdminActionForm action={action} className="space-y-4">
+  <input type="hidden" name="targetId" value={targetId}/>
   <input type="hidden" name="operation" value={id?'capture':'link'}/>
   {id?<input type="hidden" name="id" value={id}/>:<>
    <input type="hidden" name="version" value={version}/>

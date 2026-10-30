@@ -71,3 +71,15 @@ sudo -u geosub env GEOSUB_ENV_FILE=/opt/geosub/releases/task.env \
 后续：采集器升级只运行 collector-release.sh，网站升级只运行 upgrade.sh。二者共享部署互斥锁，禁止并发改运行指针。采集器无法通过此入口执行数据库迁移；数据库契约不一致时拒绝发布。采集候选准备失败不暂停定时器；在途任务超过 120 秒不强制结束，恢复定时器并拒绝切换。
 
 无迁移网站发布的日志/回执必须明确 skipped；仍执行只读数据库健康和上线账本检查。新增迁移、Prisma schema/清单/迁移器变化进入原迁移路径，不能用手动 skip 标记绕过。
+
+## Claude 双语独立内容：精确回退与应用发布门禁（本地已准备，生产未激活）
+
+部署控制器使用自己随提交保留的 `content-release-fence.cjs`，通过当前应用的 Prisma 运行时访问数据库。不会调用 N-1 应用中只识别 ChatGPT 的旧围栏实现。三个目标是旧 `overview:en:chatgpt`、`overview:zh:claude`、`overview:en:claude`；新目标必须先登记，未知 v2 state/fence 拒绝。
+
+升级完成构建后，先用候选 → 实际保留版本做只读 `check-rollback`，不兼容时在关闭入口/暂停任务/迁移/切换之前拒绝。通过后在共享事务锁 721091101 内原子关闭全部已存在目标、递增各自 generation/epoch 并退休在途 attempt；任一目标不合格不提交部分写入。切换之前和 finalize 再执行 `verify-closed --production` 与 `verify-origin <回环实例地址> --production`。后者在连接级只读权限下检查全部指针、修订 hash、当前完整回执与推广关闭状态；不发布草稿、不改内容版本、不重开入口。失败仍按原操作账本留证，未知结果仍用 geosub_ops status，不重发。
+
+兼容表 v2 每条精确对独立登记保留版本的文件范围、SHA-256 组合及各目标是否能解释事实 token；当前候选文件范围从策略顶层读取。双方文件/版本任一变化、缺文件、反向或未知组合均撤销匹配。历史 v1 对只证明旧 ChatGPT，不据此推断 Claude。对不支持当前模板的保留读者，须先在现应用通过正常内容操作追加 code-default 回退修订并完成真实分发验收，再关闭围栏/切回应用；原 token 修订、旧回执和所有效果/审计保留，不改指针、不删记录。关闭围栏不能把本地 origin_invalidated 升格成 verified。
+
+本地可使用专属 `geosub_release_YYYYMMDD` 回环库执行 `npm run test:content-release` 与 `npm run test:content-store`。新增 CI job `Content rollback and admission safety` 使用相同标准迁移和检查，Git checkout 保留祖先供精确 Git reader 演练；配置已准备不等于远端 CI 已运行。当前登记的候选 → ead5051 本地兼容对只证明读者/追加 schema 兼容，HTTP/CDN 回执是明确 MOCK。为真实新版本准备发布时，仍需版本递增、用最终源文件重算并复验精确候选 → 实际保留版本的组合、标准 release-check/preflight:full、远端 CI、备份/迁移窗口与真实源站/CDN 验收，不能复用开发指纹或合成证据。
+
+Claude 的生产 runtime guard、恢复服务接入和 admission 继续关闭。`verify-closed --production` 会拒绝 Claude 非默认内容；旧 ChatGPT 的 `resume <generation>` 仍需原生产配置和精确 generation，不能借这个命令打开 Claude。059 actor/actor_id 的 SQL 与 Prisma 文件哈希已列入候选的 additive migration 审查表；这不执行生产迁移，也不批准删除历史列、回填身份或数据库恢复。

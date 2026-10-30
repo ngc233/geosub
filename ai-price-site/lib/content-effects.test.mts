@@ -18,3 +18,14 @@ test('imports captured before window completes cannot support comparison',()=>{c
 test('future evidence timestamps cannot support comparison',()=>{const b=structuredClone(evidence);b[1].importedAt='2027-01-01T00:00:00Z';assert.equal(assessContentEffect(link,b,1,now).status,'insufficient');});
 
 test('real import parser preserves evidence accepted by effect assessment',async()=>{const {parseSeoSearchPageImportState}=await import('./seo-search-observation-import.ts');const parsed=parseSeoSearchPageImportState(JSON.stringify({version:1,batches:evidence}));assert.equal(parsed.batches.length,2);assert.equal(assessContentEffect(link,parsed.batches,1,now).clickDelta,10);});
+
+test('Claude observations are isolated by exact language path even at equal versions',()=>{
+ const zh={...link,targetId:'overview:zh:claude',path:'/zh/ai-pricing/claude'};
+ const en={...link,targetId:'overview:en:claude',path:'/en/ai-pricing/claude'};
+ const data=structuredClone(evidence);
+ for(const b of data)b.observations[0].path=zh.path;
+ assert.equal(assessContentEffect(zh,data,1,now).clickDelta,10);
+ assert.equal(assessContentEffect(en,data,1,now).status,'insufficient');
+ assert.equal(assessContentEffect({...zh,path:en.path},data,1,now).status,'insufficient');
+ assert.equal(assessContentEffect({...link,path:zh.path},data,1,now).status,'insufficient','Legacy rows cannot silently infer Claude identity');
+});

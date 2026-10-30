@@ -19,6 +19,15 @@ test("admin login has persistent throttling and no public default credentials", 
   assert.match(auth, /FROM admin_login_attempts/);
   assert.match(action, /getAdminLoginThrottle/);
   assert.match(action, /recordAdminLoginFailure/);
+  assert.match(action, /getTrustedClientIp\(requestHeaders\)/);
+  assert.doesNotMatch(action, /x-forwarded-for|cf-connecting-ip|x-real-ip/i);
+  // Trusted devices relax only the account-scope lock; the IP scope stays mandatory.
+  assert.match(auth, /TRUSTED_DEVICE_MAX_FAILURES = 5/);
+  assert.match(auth, /!\(trustedDevice && key\.scope === "account"\)/);
+  assert.match(auth, /tx\.adminTrustedDevice\.deleteMany/);
+  assert.match(action, /user\?\.status === "ACTIVE" \? await findTrustedDevice\(user\.id\)/);
+  assert.match(action, /recordTrustedDeviceFailure\(trustedDevice\.id\)/);
+  assert.match(readProjectFile("scripts/set-admin-password.cjs"), /adminTrustedDevice\.deleteMany/);
   assert.match(page, /error === "throttled"/);
   assert.doesNotMatch(page, /GeosubAdmin_2026!/);
   assert.doesNotMatch(page, /defaultValue="admin@geosub\.local"/);

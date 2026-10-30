@@ -1,7 +1,7 @@
 // Real database verification; every fixture and observation is rolled back.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict'),{createHash,randomUUID}=require('node:crypto'),ts=require('typescript');
 const u=new URL(process.env.DATABASE_URL||'');
-if(u.hostname!=='127.0.0.1'||!/^\/geosub_promotion_preprod_/.test(u.pathname))throw Error('Dedicated loopback preproduction DB required');
+if(u.hostname!=='127.0.0.1'||!/^\/(?:geosub_promotion_preprod_[a-z0-9_]+|geosub_release_\d{8})$/.test(u.pathname))throw Error('Dedicated loopback preproduction DB required');
 const {PrismaClient}=require('@prisma/client'),{PrismaPg}=require('@prisma/adapter-pg');
 const prisma=new PrismaClient({adapter:new PrismaPg({connectionString:process.env.DATABASE_URL})});
 function load(file,db){const full=path.resolve(__dirname,'../lib',file+'.ts'),mod={exports:{}};const js=ts.transpileModule(fs.readFileSync(full,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;vm.runInThisContext('(function(require,module,exports){'+js+'\n})',{filename:full})(name=>name==='server-only'?{}:name==='./prisma'?{prisma:db}:name.startsWith('.')?load(name.replace(/^\.\//,'').replace(/\.ts$/,''),db):require(name),mod,mod.exports);return mod.exports;}
@@ -19,7 +19,8 @@ try{await prisma.$transaction(async tx=>{
  const input={version,opportunityId:oid,hypothesis:'本地事务验收，不是真实效果',engine:'google',timezone:'UTC'};
  await assert.rejects(()=>store.linkContentEffect(actor.id,input));passed++;
  await setting(prefix+'revision:'+version,{version,hash:createHash('sha256').update(JSON.stringify(pilotDraft)).digest('hex'),content:pilotDraft});
- await setting(prefix+'attempt:'+aid,{version,status:'verified',evidence:{status:'verified',stage:'complete',public:{version:String(version),checkedAt:'2026-09-15T12:00:00Z'}}});
+ const proof={version:String(version),modeGeneration:'0',checkedAt:'2026-09-15T12:00:00Z',outputHashes:Object.fromEntries(['title','h1','description','canonical','faq','editorial','sources','version'].map(k=>[k,k]))};
+ await setting(prefix+'attempt:'+aid,{id:aid,version,status:'verified',evidence:{status:'verified',stage:'complete',origin:proof,public:proof,purge:{url:'https://geosub.org/en/ai-pricing/chatgpt'}}});
  await setting(prefix+'state',{...state,receipt:'verified'});
  const link=await store.linkContentEffect(actor.id,input);assert.equal(link.opportunityId,oid);passed++;
  await assert.rejects(()=>store.linkContentEffect(actor.id,input));passed++;
