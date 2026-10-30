@@ -164,7 +164,7 @@ jobs:
       - name: Test additive audit bridge and content target isolation on a canonical fresh DB
         env:
           PGPASSWORD: geosub_ci_password
-          DATABASE_URL: postgresql://geosub:geosub_ci_password@localhost:5432/geosub_release_20261026
+          DATABASE_URL: postgresql://geosub:geosub_ci_password@127.0.0.1:5432/geosub_release_20261026
           GEOSUB_SCHEMA_MODE: complete-schema
         run: |
           createdb --host=localhost --username=geosub geosub_release_20261026
@@ -259,7 +259,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://geosub:geosub_ci_password@localhost:5432/geosub_release_20261027
+      DATABASE_URL: postgresql://geosub:geosub_ci_password@127.0.0.1:5432/geosub_release_20261027
     steps:
       - name: Check out exact candidate and retained ancestors
         uses: actions/checkout@v4
