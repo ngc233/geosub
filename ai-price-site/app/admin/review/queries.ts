@@ -4,7 +4,6 @@ import { measureAdminWorkload } from "../../../lib/admin-performance";
 import type {
   AutoReviewReasonRow,
   AutoReviewRunRow,
-  CollectorStatusRow,
   EvidenceHealthRow,
   EvidenceSummaryRow,
   HistoryStatsRow,
@@ -266,7 +265,7 @@ async function getReviewPageDataUnmeasured({
             ), FALSE) AS has_fresh_success
           FROM products product
           JOIN collector_jobs job ON job.product_id = product.id
-          JOIN price_sources source ON source.id = job.source_id
+          LEFT JOIN price_sources source ON source.id = job.source_id
           LEFT JOIN collector_job_runs run ON run.job_id = job.id
           WHERE product.slug IN (${Prisma.join(pendingProductSlugs)})
             AND COALESCE(
@@ -518,37 +517,6 @@ async function getReviewPageDataUnmeasured({
     ORDER BY selected.updated_at DESC, selected.id DESC
   `;
 
-  const getCollectorStatusRows = () => prisma.$queryRaw<CollectorStatusRow[]>`
-    SELECT
-      job.status,
-      job.next_run_at,
-      job.last_run_at,
-      job.success_count,
-      job.error_count,
-      latest.status AS latest_run_status,
-      latest.started_at AS latest_run_started_at,
-      latest.output_excerpt AS latest_run_output,
-      latest.error_message AS latest_run_error
-    FROM collector_jobs job
-    JOIN price_sources source ON source.id = job.source_id
-    LEFT JOIN LATERAL (
-      SELECT status, started_at, output_excerpt, error_message
-      FROM collector_job_runs
-      WHERE job_id = job.id
-      ORDER BY started_at DESC
-      LIMIT 1
-    ) latest ON TRUE
-    WHERE COALESCE(
-      job.job_config ->> 'collector_kind',
-      source.type::text,
-      'unknown'
-    ) = 'app_store'
-      AND job.job_type IN ('ai_pricing', 'streaming_pricing')
-      AND job.status <> 'archived'
-    ORDER BY job.updated_at DESC
-    LIMIT 1
-  `;
-
   const getCollectorRunRows = () => getCollectorRunHistoryRows(productQuery,12,{product:exactProduct});
 
   const getLatestAutoReviewRows = () => prisma.$queryRaw<AutoReviewRunRow[]>`
@@ -611,7 +579,6 @@ async function getReviewPageDataUnmeasured({
   const [
     historyStatsRows,
     historyRows,
-    collectorStatusRows,
     collectorRunHistoryRows,
     latestAutoReviewRows,
     autoReviewReasonRows,
@@ -619,7 +586,6 @@ async function getReviewPageDataUnmeasured({
     Promise.all([
       getHistoryStatsRows(),
       getHistoryRows(),
-      getCollectorStatusRows(),
       getCollectorRunRows(),
       getLatestAutoReviewRows(),
       getAutoReviewReasonRows(),
@@ -631,7 +597,6 @@ async function getReviewPageDataUnmeasured({
   const approvedCount = Number(historyStatsRows[0]?.approved_count ?? 0);
   const ignoredCount = Number(historyStatsRows[0]?.ignored_count ?? 0);
   const rejectedCount = Number(historyStatsRows[0]?.rejected_count ?? 0);
-  const collectorStatus = collectorStatusRows[0] ?? null;
   const latestAutoReview = latestAutoReviewRows[0] ?? null;
   const selectedProductCollector = selectedProductCollectorRows[0] ?? null;
   const selectedProductName =
@@ -740,7 +705,6 @@ async function getReviewPageDataUnmeasured({
     approvedCount,
     ignoredCount,
     rejectedCount,
-    collectorStatus,
     collectorRunHistoryRows,
     latestAutoReview,
     selectedProductCollector,

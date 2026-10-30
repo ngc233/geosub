@@ -358,9 +358,13 @@ export default function CollectorJobsView({
                                 approved_observation_count:
                                   group.latestJob.latest_approved_count,
                                 pending_observation_count:
-                                  group.latestJob.latest_pending_stability_count,
+                                  group.latestJob.latest_pending_count,
+                                ignored_observation_count:
+                                  group.latestJob.latest_ignored_count,
+                                rejected_observation_count:
+                                  group.latestJob.latest_rejected_count,
                                 anomaly_observation_count:
-                                  group.latestJob.latest_isolated_count,
+                                  group.latestJob.latest_anomaly_count,
                                 published_price_count:
                                   group.latestJob.latest_published_price_count,
                               }}

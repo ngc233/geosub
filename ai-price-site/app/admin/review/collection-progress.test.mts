@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildCollectionProgressState } from "./collection-progress.ts";
+import { buildCollectionProgressState, buildCollectorRunOutcomeChips } from "./collection-progress.ts";
 import type { CollectorRunHistoryRow } from "./types.ts";
 
 function row(overrides: Partial<CollectorRunHistoryRow> = {}): CollectorRunHistoryRow {
@@ -142,4 +142,53 @@ test("unknown backend status does not manufacture a percentage or successful res
 test("a finished run uses recorded duration instead of growing wall-clock age",()=>{
  const state=buildCollectionProgressState({rows:[row({status:"succeeded",duration_ms:24000,run_age_seconds:900})],collectionRun:"queued",collectionScope:"chatgpt",collectionRunId:"run-1"});
  assert.equal(state.elapsedLabel,"24 秒");
+});
+
+test("matching published prices do not turn ignored observations into isolation", () => {
+  const chips = buildCollectorRunOutcomeChips(row({
+    status: "succeeded",
+    observed_count: 15,
+    ignored_observation_count: 15,
+    published_price_count: 15,
+  }));
+  assert.deepEqual(chips.find((chip) => chip.label === "异常"), {
+    label: "异常", value: 0, kind: "warn",
+  });
+  assert.deepEqual(chips.find((chip) => chip.label === "已忽略"), {
+    label: "已忽略", value: 15, kind: "neutral",
+  });
+  assert.equal(chips.find((chip) => chip.label === "正式更新")?.value, 15);
+  assert.equal(chips.some((chip) => chip.label === "隔离"), false);
+});
+
+test("pending anomalous prices are not described as waiting only for stable samples", () => {
+  const chips = buildCollectorRunOutcomeChips(row({
+    observed_count: 4,
+    pending_observation_count: 4,
+    anomaly_observation_count: 4,
+  }));
+  assert.equal(chips.find((chip) => chip.label === "待处理")?.value, 4);
+  assert.equal(chips.find((chip) => chip.label === "异常")?.value, 4);
+  assert.equal(chips.find((chip) => chip.label === "正式更新")?.value, 0);
+  assert.equal(chips.some((chip) => chip.label === "待稳定"), false);
+});
+
+test("ignored anomalies and rejected observations retain their independent flags", () => {
+  const chips = buildCollectorRunOutcomeChips(row({
+    ignored_observation_count: 3,
+    rejected_observation_count: 2,
+    anomaly_observation_count: 4,
+  }));
+  assert.equal(chips.find((chip) => chip.label === "异常")?.value, 4);
+  assert.equal(chips.find((chip) => chip.label === "已忽略")?.value, 3);
+  assert.deepEqual(chips.find((chip) => chip.label === "已拒绝"), {
+    label: "已拒绝", value: 2, kind: "bad",
+  });
+});
+
+test("empty results do not invent outcomes or add empty ignored and rejected chips", () => {
+  const chips = buildCollectorRunOutcomeChips({});
+  assert.ok(chips.every((chip) => chip.value === 0));
+  assert.equal(chips.length, 5);
+  assert.equal(chips.some((chip) => ["已忽略", "已拒绝"].includes(chip.label)), false);
 });

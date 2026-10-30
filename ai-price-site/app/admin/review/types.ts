@@ -43,18 +43,6 @@ export type HistoryRow = PendingRow & {
   updated_at: Date | string;
 };
 
-export type CollectorStatusRow = {
-  status: string;
-  next_run_at: Date | string | null;
-  last_run_at: Date | string | null;
-  success_count: number;
-  error_count: number;
-  latest_run_status: string | null;
-  latest_run_started_at: Date | string | null;
-  latest_run_output: string | null;
-  latest_run_error: string | null;
-};
-
 export type CollectorRunHistoryRow = {
   id: string;
   product_slug: string | null;

@@ -8,7 +8,7 @@ import AdminLink from "@/components/admin/AdminLink";
 import ManualCollectionProgressForm from "./ManualCollectionProgressForm";
 import ObservationReviewActions from "./ObservationReviewActions";
 import { diagnosePendingProductGroup } from "./pending-product-diagnosis";
-import type { CollectorStatusRow, PendingProductGroup } from "./types";
+import type { PendingProductGroup } from "./types";
 import {
   PriceEvidencePanel,
   formatDate,
@@ -19,7 +19,6 @@ import {
 import { reviewReasonAction, reviewReasonLabel } from "./review-reason-copy";
 
 type PendingProductReviewSectionProps = {
-  collectorStatus: CollectorStatusRow | null;
   productQuery: string;
   pendingPage: number;
   pendingTotalPages: number;
@@ -35,7 +34,6 @@ type PendingProductReviewSectionProps = {
 };
 
 export function PendingProductReviewSection({
-  collectorStatus,
   productQuery,
   pendingPage,
   pendingTotalPages,
@@ -79,9 +77,6 @@ export function PendingProductReviewSection({
         </div>
         <p className="text-xs text-admin-text-muted">
           {pendingProductTotal} 个产品 · {pendingTotal} 条待处理
-          {collectorStatus
-            ? ` · 采集服务${collectorStatus.status === "active" ? "正常" : "状态：" + collectorStatus.status}`
-            : ""}
         </p>
       </div>
       <AdminPagination

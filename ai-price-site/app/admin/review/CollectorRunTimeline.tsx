@@ -3,6 +3,7 @@ import {
   type CollectorRunTimelineInput,
   type CollectorRunTimelineStepState,
 } from "../collector-jobs/job-state";
+import { buildCollectorRunOutcomeChips } from "./collection-progress";
 
 type Props = {
   run: CollectorRunTimelineInput;
@@ -62,22 +63,10 @@ function outcomeChipClassName(kind: "neutral" | "pending" | "ok" | "warn" | "bad
 
 export function CollectorRunOutcomeSummary({ run, compact = false }: OutcomeProps) {
   const observed = numberValue(run.observed_count);
-  const pending = numberValue(run.pending_observation_count);
-  const approved = numberValue(run.approved_observation_count);
-  const ignored = numberValue(run.ignored_observation_count);
-  const rejected = numberValue(run.rejected_observation_count);
-  const anomaly = numberValue(run.anomaly_observation_count);
   const published = numberValue(run.published_price_count);
   const total = observed + published;
   const note = outcomeNote(run, total);
-  const isolated = Math.max(anomaly, ignored + rejected);
-  const chips = [
-    { label: "采集", value: observed, kind: "neutral" as const },
-    { label: "自动通过", value: approved, kind: "ok" as const },
-    { label: "待稳定", value: pending, kind: "pending" as const },
-    { label: "隔离", value: isolated, kind: "warn" as const },
-    { label: "正式更新", value: published, kind: "ok" as const },
-  ];
+  const chips = buildCollectorRunOutcomeChips(run);
 
   return (
     <div className="rounded-lg border border-admin-border bg-admin-surface px-3 py-2 dark:border-admin-border-strong dark:bg-admin-surface">

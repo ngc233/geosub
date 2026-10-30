@@ -213,10 +213,7 @@ test("collector dashboard prefers persisted outcomes and shows a product summary
   assert.match(page, /本轮检查/);
   assert.match(page, /下次计划/);
   assert.match(page, /已到期，等待执行器/);
-  assert.match(timelineComponent, /自动通过/);
-  assert.match(timelineComponent, /待稳定/);
-  assert.match(timelineComponent, /隔离/);
-  assert.match(timelineComponent, /正式更新/);
+  assert.match(timelineComponent, /buildCollectorRunOutcomeChips\(run\)/);
 });
 
 test("automatic review failure remains failed without a successful outcome", () => {
