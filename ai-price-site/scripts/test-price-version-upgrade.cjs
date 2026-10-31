@@ -8,7 +8,7 @@ const { Client } = require("pg");
 const { PrismaPg } = require("@prisma/adapter-pg");
 const app = path.resolve(__dirname, "..");
 const root = path.resolve(app, "..");
-const baseline = "ccb66ca6d1bbfd9a21c108c5afafde58a49229cf";
+const baseline = "d4f80b96f59b443e297a15f956e6bde776b7e9eb";
 const url = new URL(process.env.GEOSUB_VERSION_UPGRADE_DATABASE_URL);
 assert(["127.0.0.1", "localhost"].includes(url.hostname));
 assert(/^\/geosub_price_version_test_[a-z0-9_]+_e2e$/.test(url.pathname));
@@ -80,11 +80,20 @@ async function main() {
     assert.equal((await db.query("SELECT to_regclass('public.products') AS name")).rows[0].name, null);
     fs.mkdirSync(old);
     const archive = spawnSync("git", [
-      "-C", root, "archive", baseline, "geosub-backend", "ai-price-site/scripts", "ai-price-site/prisma",
+      "-C", root, "archive", baseline, "VERSION", "geosub-backend", "ai-price-site/scripts", "ai-price-site/prisma",
+      "ai-price-site/lib", "ai-price-site/components", "ai-price-site/app/api/internal/content/recover/route.ts",
       "ai-price-site/prisma.config.ts", "ai-price-site/package.json", "ai-price-site/package-lock.json",
     ], { maxBuffer: 128 * 1024 * 1024 });
     assert.equal(archive.status, 0, "Exact retained source unavailable; fetch complete history");
     assert.equal(spawnSync("tar", ["-x", "-C", old], { input: archive.stdout }).status, 0);
+    const policy = require(path.join(root, "geosub-backend/deploy/linux-arm64/rolling-content-compatibility.json"));
+    const contract = require(path.join(root, "geosub-backend/deploy/linux-arm64/content-release-contract.cjs"));
+    const plan = contract.rollbackPlan(root, old, policy);
+    assert.equal(plan.mode, "audited-compatible-readers");
+    assert.deepEqual(plan.targets, [{ id: "overview:en:chatgpt", facts: false }]);
+    for (const file of policy.files.filter(file => file !== "ai-price-site/prisma/schema.prisma")) {
+      assert.equal(sha(fs.readFileSync(path.join(root, file))), sha(fs.readFileSync(path.join(old, file))), file);
+    }
     fs.symlinkSync(path.join(app, "node_modules"), path.join(old, "ai-price-site/node_modules"));
     fs.symlinkSync(path.join(app, "node_modules"), path.join(temp, "node_modules"));
     run(process.execPath, ["scripts/migrate-database.cjs"], path.join(old, "ai-price-site"));
