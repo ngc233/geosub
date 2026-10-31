@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
-import { safePath, taskUnitText } from './rolling-release-lib.mjs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import { atomic, safePath, taskUnitText } from './rolling-release-lib.mjs';
 
 // Include executable migration inputs, not just newly added SQL filenames.
 export function isDatabaseInput(file) {
@@ -40,6 +42,49 @@ export function ownedTaskTimers(all, independentCollector) {
 }
 export function sourceHash(bytes) {
   return createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+}
+
+export function collectorVersionMetadata(release, operation, deployedAt) {
+  if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(release.version || '')
+      || !/^[a-f0-9]{40}$/.test(release.commit || '')
+      || !['upgrade', 'rollback'].includes(operation)
+      || typeof deployedAt !== 'string'
+      || !Number.isFinite(Date.parse(deployedAt))) throw Error('Invalid collector version metadata');
+  return {
+    schemaVersion: 1, component: 'collector', version: release.version,
+    commit: release.commit, deployedAt, operation,
+  };
+}
+
+export function collectorRecordPaths(root) {
+  safePath(root);
+  return {
+    state: path.join(root, 'collector-state.json'),
+    current: path.join(root, 'collector-current.env'),
+    version: path.join(root, 'collector-version.json'),
+  };
+}
+
+export function snapshotCollectorRecords(root) {
+  return Object.fromEntries(Object.entries(collectorRecordPaths(root))
+    .map(([key, file]) => [key, existsSync(file) ? readFileSync(file, 'utf8') : null]));
+}
+
+export function writeCollectorRecords(root, state, operation, deployedAt, setGroup) {
+  const files = collectorRecordPaths(root);
+  const metadata = collectorVersionMetadata(state.active, operation, deployedAt);
+  atomic(files.state, JSON.stringify(state, null, 2)+'\n');
+  atomic(files.current, `GEOSUB_VERSION=${metadata.version}\nGEOSUB_COMMIT=${metadata.commit}\nGEOSUB_DEPLOYED_AT=${deployedAt}\n`);
+  atomic(files.version, JSON.stringify(metadata)+'\n', 0o640);
+  setGroup(files.version);
+}
+
+export function restoreCollectorRecords(root, previous, setGroup) {
+  for (const [key, file] of Object.entries(collectorRecordPaths(root))) {
+    if (previous[key] === null) rmSync(file, { force: true });
+    else atomic(file, previous[key], key === 'version' ? 0o640 : 0o600);
+  }
+  if (previous.version !== null) setGroup(collectorRecordPaths(root).version);
 }
 
 // Only these collector-scoped actions are available to the transaction. There
