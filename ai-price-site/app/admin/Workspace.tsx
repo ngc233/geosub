@@ -6,14 +6,17 @@ import { withAdminReturnTo, adminListLocation } from "@/lib/admin-workflow-conte
 import AdminPagination from '@/components/admin/AdminPagination';
 import { adminButtonClassName } from '@/components/admin/AdminButton';
 import { createAdminListView } from '@/lib/admin-list-params';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSegmentedControl from '../../components/admin/AdminSegmentedControl';
 import { ArrowRight, Activity, Clock3, ShieldCheck } from 'lucide-react';
 import AdminLink from '../../components/admin/AdminLink';
 import { workspaceStatus, type WorkspaceRow } from '../../lib/admin-workspace-model';
 import styles from './Workspace.module.css';
-type Props={rows:WorkspaceRow[];partial:boolean;failed:boolean;role:string;readAt:string;denied:boolean;initialPage?:string;initialFilter:string};
+type Props={
+ rows:WorkspaceRow[];partial:boolean;failed:boolean;role:string;readAt:string;denied:boolean;
+ initialPage?:string;initialFilter:string;versionOverview?:ReactNode;
+};
 type Tone='success'|'warning'|'danger'|'info'|'neutral';
 // Pill tones come from the row's own fields, never from matching display text.
 function tones(row:WorkspaceRow,partial:boolean):{publication:Tone;quality:Tone;collection:Tone}{
@@ -24,7 +27,7 @@ function tones(row:WorkspaceRow,partial:boolean):{publication:Tone;quality:Tone;
   collection:partial?'neutral':row.running_count>0?'info':row.failed_count>0?'danger':row.queued_count>0?'info':'neutral',
  };
 }
-export default function Workspace({rows,partial,failed,role,readAt,denied,initialFilter,initialPage}:Props){
+export default function Workspace({rows,partial,failed,role,readAt,denied,initialFilter,initialPage,versionOverview}:Props){
  const router=useRouter();
  const [filter,setFilterState]=useState(initialFilter);
  const [page,setPage]=useState(initialPage);
@@ -51,6 +54,7 @@ export default function Workspace({rows,partial,failed,role,readAt,denied,initia
   <AdminLink className={adminButtonClassName({variant:"secondary"})} href="/admin/analytics">查看流量看板 <ArrowRight size={15}/></AdminLink>
  </div>
  <p className={styles.source}>{partial?'真实公开价格快照：采集任务、来源与运营历史未导入；缺失记录不计为生产异常。':'状态来自当前数据库，只读查询；查看详情后再决定是否执行操作。'}</p>
+ {versionOverview}
  <div className={styles.stats}>{stats.map(({id,icon:Icon,label,value,unit,hint})=>
   <button key={id} aria-pressed={filter===id} onClick={()=>setFilter(id)}>
    <span className={styles.statIcon}><Icon size={18}/></span>
