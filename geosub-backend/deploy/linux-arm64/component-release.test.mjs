@@ -6,6 +6,95 @@ import path from 'node:path';
 import {spawn,spawnSync} from 'node:child_process';
 import {runInNewContext} from 'node:vm';
 import {migrationPlan,executeMigrationPlan,collectorEnvironment,collectorUnit,ownedTaskTimers,switchCollector,webRuntime,webRuntimeEnv} from './component-release-lib.mjs';
+import {collectorVersionMetadata} from './component-release-lib.mjs';
+import {
+ collectorRecordPaths,snapshotCollectorRecords,writeCollectorRecords,restoreCollectorRecords,
+} from './component-release-lib.mjs';
+
+test('collector metadata is a minimal installed identity, never a copy of private state',()=>{
+ const release={version:'2.22.1',commit:'a'.repeat(40),dir:'/private',token:'never expose'};
+ const value=collectorVersionMetadata(release,'rollback','2026-10-31T01:02:03Z');
+ assert.deepEqual(Object.keys(value),['schemaVersion','component','version','commit','deployedAt','operation']);
+ assert.equal(value.operation,'rollback');
+ assert.throws(()=>collectorVersionMetadata({...release,commit:'main'},'upgrade','2026-10-31'));
+ assert.throws(()=>collectorVersionMetadata(release,'failed','2026-10-31'));
+});
+
+test('collector metadata is restored together with private records when resume fails',async()=>{
+ let metadata='old',resumes=0;
+ const io={
+  snapshot:async()=>({metadata}),
+  pause:async()=>{},drain:async()=>{},acquire:async()=>async()=>{},activate:async()=>{},verify:async()=>{},
+  record:async()=>{metadata='new';},
+  resume:async()=>{if(++resumes===1)throw Error('resume failed');},
+  restore:async snapshot=>{metadata=snapshot.metadata;},
+ };
+ await assert.rejects(switchCollector(io,{},{}),/resume failed/);
+ assert.equal(metadata,'old');
+ const cli=fs.readFileSync(new URL('./collector-release.mjs',import.meta.url),'utf8');
+ assert.match(cli,/restoreCollectorRecords\(root,priorRecords/);
+ assert.match(cli,/writeCollectorRecords\(root,state,operation/);
+});
+
+test('actual collector records cover upgrade, rollback, partial writes and resume failure',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'geosub-collector-records-'));
+ t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const paths=collectorRecordPaths(root),old={version:'2.22.0',commit:'a'.repeat(40),private:'not-public'};
+ const next={version:'2.22.1',commit:'b'.repeat(40),private:'not-public'};
+ const group=file=>assert.equal(file,paths.version);
+ writeCollectorRecords(root,{active:old},'upgrade','2026-10-30T01:00:00Z',group);
+ const before=snapshotCollectorRecords(root);
+ for(const fail of ['verify','record','resume',null]){
+  const previous=snapshotCollectorRecords(root);let resumed=false;
+  const io={
+   snapshot:async()=>({previous}),
+   pause:async()=>{},drain:async()=>{},acquire:async()=>async()=>{},
+   activate:async()=>{},verify:async()=>{if(fail==='verify')throw Error('verify failed');},
+   record:async state=>writeCollectorRecords(root,state,'upgrade','2026-10-31T01:00:00Z',file=>{
+    group(file);if(fail==='record')throw Error('group update failed');
+   }),
+   resume:async()=>{if(fail==='resume'&&!resumed){resumed=true;throw Error('resume failed');}},
+   restore:async snapshot=>restoreCollectorRecords(root,snapshot.previous,group),
+  };
+  if(fail){
+   await assert.rejects(switchCollector(io,next,old));
+   assert.deepEqual(snapshotCollectorRecords(root),before);
+  }else await switchCollector(io,next,old);
+ }
+ const current=JSON.parse(fs.readFileSync(paths.version));
+ assert.equal(current.version,'2.22.1');assert.equal(current.commit,next.commit);
+ assert.equal(fs.statSync(paths.version).mode&0o777,0o640);
+ assert.equal(fs.statSync(paths.current).mode&0o777,0o600);
+ assert(!fs.readFileSync(paths.version,'utf8').includes('private'));
+ writeCollectorRecords(root,{active:old,previous:next},'rollback','2026-10-31T02:00:00Z',group);
+ const rollback=JSON.parse(fs.readFileSync(paths.version));
+ assert.equal(rollback.version,'2.22.0');assert.equal(rollback.operation,'rollback');
+ fs.unlinkSync(paths.version);
+ const legacy=snapshotCollectorRecords(root);
+ writeCollectorRecords(root,{active:next,previous:old},'upgrade','2026-10-31T03:00:00Z',group);
+ restoreCollectorRecords(root,legacy,group);
+ assert(!fs.existsSync(paths.version));assert.deepEqual(snapshotCollectorRecords(root),legacy);
+});
+
+test('collector version summary remains group-readable under restrictive umask',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'geosub-collector-umask-'));
+ const paths=collectorRecordPaths(root),release={version:'2.24.0',commit:'a'.repeat(40)};
+ const original=process.umask(0o077);
+ try{
+  const group=file=>assert.equal(file,paths.version);
+  writeCollectorRecords(root,{active:release},'upgrade','2026-10-31T01:00:00Z',group);
+  assert.equal(fs.statSync(paths.version).mode&0o777,0o640);
+  assert.equal(fs.statSync(paths.state).mode&0o777,0o600);
+  assert.equal(fs.statSync(paths.current).mode&0o777,0o600);
+  const previous=snapshotCollectorRecords(root);
+  writeCollectorRecords(root,{active:release},'rollback','2026-10-31T02:00:00Z',group);
+  restoreCollectorRecords(root,previous,group);
+  assert.equal(fs.statSync(paths.version).mode&0o777,0o640);
+  assert.deepEqual(snapshotCollectorRecords(root),previous);
+ }finally{
+  process.umask(original);fs.rmSync(root,{recursive:true,force:true});
+ }
+});
 
 test('database detection covers deletions, Prisma-only edits, manifest and runner changes',()=>{
  for(const file of ['geosub-backend/sql/schema/058.sql','geosub-backend/sql/migration-layout.json','ai-price-site/prisma/schema.prisma','ai-price-site/prisma/migrations/a/migration.sql','ai-price-site/scripts/prepare-prisma-baseline.cjs','geosub-backend/scripts/migration-manifest.cjs','geosub-backend/deploy/linux-arm64/db-apply-sql.sh'])

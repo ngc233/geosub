@@ -23,6 +23,7 @@ import {
 import type { AutomationTask } from "../../../lib/system-task-monitor";
 import type { OperationalRecoveryOverview } from "../../../lib/system-task-monitor";
 import SystemHealthAutoRefresh from "./SystemHealthAutoRefresh";
+import AdminVersionOverview from "../../../components/admin/AdminVersionOverview";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
 
 export const dynamic = "force-dynamic";
@@ -321,6 +322,8 @@ export default async function AdminSystemPage() {
           </div>
         }
       />
+
+      <AdminVersionOverview />
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <AdminCard>

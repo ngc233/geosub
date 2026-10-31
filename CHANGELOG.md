@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.24.0 - Unreleased
+
+- Show independent website, collector, formal-price and per-page content versions in the admin overview.
+- Record formal-price versions in the publishing transaction; preserve same-price checks without adding versions.
+- Persist a minimal collector version receipt, enforce its group-readable mode, and restore it after switch failures.
+- Prepare additive schema 060 and retained-reader compatibility; production migration and rollout remain separate approvals.
+
 ## 2.23.1 - Unreleased
 
 - Separate representative pricing cards by actual billing period and align search with overview plan scope, including legacy-only fallback.

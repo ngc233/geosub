@@ -182,7 +182,8 @@ test("admin navigation remains usable on mobile", () => {
   const source = readProjectFile("components/admin/AdminSidebar.tsx");
   const layout = readProjectFile("app/admin/layout.tsx");
 
-  assert.match(source, /当前版本/);
+  assert.match(source, /网站版本/);
+  assert.match(source, /href="\/admin\/system#versions" onClick=\{\(\) => setMobileOpen\(false\)\}/);
   assert.match(source, /v\{version\}/);
   assert.match(layout, /import packageJson from "\.\.\/\.\.\/package\.json"/);
   assert.match(layout, /version=\{packageJson\.version\}/);

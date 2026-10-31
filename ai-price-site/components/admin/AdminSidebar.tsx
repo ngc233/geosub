@@ -248,9 +248,13 @@ export default function AdminSidebar({
           </button>
         </AdminActionForm>
         <p className="flex items-center justify-between px-3 pt-2 text-xs text-admin-text-faint">
-          <span>当前版本</span>
+          <span>网站版本</span>
           <span className="tabular-nums">v{version}</span>
         </p>
+        <AdminLink href="/admin/system#versions" onClick={() => setMobileOpen(false)}
+          className="block px-3 pt-2 text-xs text-admin-accent hover:underline">
+          版本总览
+        </AdminLink>
       </div>
     </>
   );

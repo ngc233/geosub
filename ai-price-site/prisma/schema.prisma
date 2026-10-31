@@ -1480,6 +1480,30 @@ model ContactTicket {
   @@map("contact_tickets")
 }
 
+model PriceDatasetVersion {
+  revision     BigInt   @id
+  recordedAt   DateTime @map("recorded_at") @db.Timestamptz(6)
+  fingerprint  String
+  priceCount   BigInt   @map("price_count")
+  productCount BigInt   @map("product_count")
+  iosCount     BigInt   @map("ios_count")
+  webCount     BigInt   @map("web_count")
+
+  @@map("price_dataset_versions")
+}
+
+model PriceDatasetVersionState {
+  singleton       Boolean @id @default(true)
+  revision        BigInt  @default(0)
+  fingerprint     String?
+  lastTransaction BigInt? @map("last_transaction")
+  baseRevision    BigInt? @map("base_revision")
+  baseFingerprint String? @map("base_fingerprint")
+  lastMarker      BigInt? @map("last_marker")
+
+  @@map("price_dataset_version_state")
+}
+
 model CountryConsumerBenchmark {
   id BigInt @id @default(autoincrement())
 

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { atomic, safePath, taskIsBusy } from './rolling-release-lib.mjs';
 import { migrationPlan, webRuntime, webRuntimeEnv, collectorEnvironment, collectorUnit, sourceHash, switchCollector } from './component-release-lib.mjs';
+import { snapshotCollectorRecords, writeCollectorRecords, restoreCollectorRecords } from './component-release-lib.mjs';
 const run = (bin,args=[],options={}) => execFileSync(bin,args,{stdio:'inherit',...options});
 const read = (bin,args=[]) => run(bin,args,{stdio:['ignore','pipe','pipe'],encoding:'utf8'}).trim();
 const json = f => JSON.parse(fs.readFileSync(f,'utf8'));
@@ -15,7 +16,7 @@ const stateFile=path.join(root,'collector-state.json'), currentFile=path.join(ro
 const unitFile='/etc/systemd/system/geosub-collector-jobs.service', timer='geosub-collector-jobs.timer', service='geosub-collector-jobs.service';
 const collectorEnv=path.join(root,'collector.env'), live=path.join(root,'collector-live');
 const [operation,...args]=process.argv.slice(2);
-let attempt, locked=false, priorState, priorCurrent;
+let attempt, locked=false, priorRecords;
 const enabled=()=>{const r=spawnSync('systemctl',['is-enabled',timer],{encoding:'utf8'});const value=r.stdout.trim();if(!['enabled','disabled','static','indirect','enabled-runtime'].includes(value))throw Error('Unknown collector timer enablement');return value;};
 const git=(...args)=>read('git',['-c',`safe.directory=${repo}`,'-C',repo,...args]);
 const evidence=(step,status='running',detail='')=>{attempt={...attempt,step,status,detail,updatedAt:new Date().toISOString()};save(path.join(root,'collector-attempts',attempt.id+'.json'),attempt);};
@@ -61,7 +62,7 @@ try {
   const web=json(path.join(root,'rolling-state.json')).active;
   const prior=fs.existsSync(stateFile)?json(stateFile):null;
   const previous=prior?.active || {id:'web-baseline-'+web.id,dir:web.dir,commit:web.commit,version:web.version,source:'web'};
-  priorState=snapshotFile(stateFile);priorCurrent=snapshotFile(currentFile);
+  priorRecords=snapshotCollectorRecords(root);
   const params=Object.fromEntries(Array.from({length:args.length/2},(_,i)=>[args[i*2],args[i*2+1]]));
   if(args.length!==Object.keys(params).length*2)throw Error('Invalid or duplicate arguments');
   let target,commit;
@@ -123,11 +124,15 @@ try {
       if(!read('systemctl',['show',service,'--property=Environment','--value']).includes(`GEOSUB_ENV_FILE=${collectorEnv}`))throw Error('Collector environment did not switch');
       if(json(path.join(root,'rolling-state.json')).active.id!==web.id || spawnSync('systemctl',['is-active','--quiet',web.unit]).status!==0)throw Error('Website changed during collector release');
     },
-    record:async state=>{save(stateFile,state);atomic(currentFile,`GEOSUB_VERSION=${state.active.version}\nGEOSUB_COMMIT=${state.active.commit}\nGEOSUB_DEPLOYED_AT=${new Date().toISOString()}\n`);},
+    record:async state=>{
+      writeCollectorRecords(root,state,operation,new Date().toISOString(),
+        file=>run('chown',['root:geosub',file]));
+    },
     restore:async snapshot=>{
       if(snapshot.link===null)fs.rmSync(live,{force:true});else point(snapshot.link);
       restoreFile(collectorEnv,snapshot.env,0o640);if(snapshot.env!==null)run('chown',['root:geosub',collectorEnv]);
-      restoreFile(unitFile,snapshot.unit,0o644);restoreFile(stateFile,priorState,0o600);restoreFile(currentFile,priorCurrent,0o600);
+      restoreFile(unitFile,snapshot.unit,0o644);
+      restoreCollectorRecords(root,priorRecords,file=>run('chown',['root:geosub',file]));
       run('systemctl',['daemon-reload']);
     },
     resume:async snapshot=>{run('systemctl',[snapshot.active?'start':'stop',timer]);if(enabled()!==snapshot.enabled)throw Error('Collector timer enabled state changed');}
