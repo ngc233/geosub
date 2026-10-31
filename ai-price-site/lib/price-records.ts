@@ -139,7 +139,15 @@ export function getPriceHistorySummary(records: PriceObservationRecord[]) {
     if (snapshot) snapshots.push(summarize(snapshot));
     if (snapshots.length === 12) break;
   }
+  const observedTimes = records.map(row => row.observedAt).sort();
   return {
+    coverage: {
+      recordCount: records.length,
+      observedDays: new Set(records.map(row => row.observedAt.slice(0, 10))).size,
+      countryCount: new Set(records.map(row => row.countryCode)).size,
+      firstObservedAt: observedTimes[0] || null,
+      lastObservedAt: observedTimes[observedTimes.length - 1] || null,
+    },
     eventCount: changes.length,
     events: changes.slice(0, 100).map(event => ({
       before: summarize(event.before), after: summarize(event.after),

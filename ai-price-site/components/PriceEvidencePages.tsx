@@ -29,7 +29,7 @@ const previewCacheScope = () => getPriceEvidencePreview()?.capturedAt || "public
 const loadRecords = (slug: string) => unstable_cache(async () => {
   const result = await getProductPriceRecords(slug);
   return { ...getPriceHistorySummary(result.records), truncated: result.truncated };
-}, ["price-records-v2", slug, previewCacheScope()], {
+}, ["price-records-v3", slug, previewCacheScope()], {
   revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS, tags: [PUBLIC_PRICING_CACHE_TAG],
 })();
 const loadProducts = () => unstable_cache(getPriceRecordProducts, ["price-record-products-v1", previewCacheScope()], {
@@ -166,7 +166,23 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
           className={`inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-medium ${slug === item.slug ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]" : "border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]"}`}>{item.name}</Link>)}</div>
       </details>
     </PublicSection>
-    {unavailable ? <Unavailable locale={locale} /> : product && !events.length ? <EmptyState title={locale === "zh" ? "尚无可确认的调价事件" : "No confirmed price-change events yet"}>
+    {result && result.coverage.recordCount > 0 ? <PublicSection className="mb-6 p-5 md:p-6">
+      <h2 className={headingClass}>{locale === "zh" ? "观察覆盖" : "Observation coverage"}</h2>
+      <p className={`mt-2 ${mutedClass}`}>
+        {locale === "zh"
+          ? `${result.coverage.observedDays} 个采样日 · ${result.coverage.countryCount} 个曾观测地区 · ${result.coverage.recordCount.toLocaleString()} 条观测`
+          : `${result.coverage.observedDays} sampled days · ${result.coverage.countryCount} observed regions · ${result.coverage.recordCount.toLocaleString()} observations`}
+      </p>
+      <p className={`mt-2 ${metaClass}`}>
+        {dateTime(result.coverage.firstObservedAt!, locale)} → {dateTime(result.coverage.lastObservedAt!, locale)}
+      </p>
+      <p className={`mt-2 ${metaClass}`}>{locale === "zh"
+        ? "以上为读取到的原始观测覆盖，包含未通过核验的记录；不代表连续监测、当前可购买或整个窗口内价格不变。"
+        : "Coverage describes the retrieved raw observations, including unverified records. It does not establish continuous monitoring, current availability or unchanged prices throughout the window."}</p>
+    </PublicSection> : null}
+    {unavailable ? <Unavailable locale={locale} /> : product && !events.length ? <EmptyState title={result?.truncated
+      ? (locale === "zh" ? "观察窗口未读取完整" : "Observation window is incomplete")
+      : (locale === "zh" ? "尚无可确认的调价事件" : "No confirmed price-change events yet")}>
       {locale === "zh" ? "这不代表价格从未变化。旧记录可能未保存计费周期；我们保留原始观测，不补造缺失历史。" : "This does not mean prices have never changed. Older observations may lack a retained billing period. We preserve observations without inventing missing history."}
     </EmptyState> : null}
     {events.length ? <section className="mt-8" aria-label={locale === "zh" ? "已确认的调价" : "Confirmed price changes"}>
@@ -189,7 +205,7 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
       </Link>)}</div>
     </PublicSection> : null}
     {result ? <div className={`mt-6 ${metaClass}`}>
-      <p>{locale === "zh" ? "观察窗口：最近 120 天，最多读取最近 5,000 条观测；不推断两次采集之间的生效时刻。" : "Window: the last 120 days, up to 5,000 recent observations. Observation times do not establish exactly when a change took effect."}{result.truncated ? (locale === "zh" ? " 本次已触及读取上限，以下不是完整历史。" : " The read limit was reached; this is not a complete history.") : ""}</p>
+      <p>{locale === "zh" ? "观察窗口：最近 120 天，分页读取，安全上限为最近 50,000 条观测；不推断两次采集之间的生效时刻。" : "Window: the last 120 days, paginated with a safety limit of 50,000 recent observations. Observation times do not establish exactly when a change took effect."}{result.truncated ? (locale === "zh" ? " 本次已触及读取上限，当前结果不是完整历史。" : " The read limit was reached; this is not a complete history.") : ""}</p>
       <p className="mt-2">{locale === "zh" ? "缺少周期身份、审核中断或来源改变时，不连接两次价格。" : "Missing period identity, review interruptions and source changes break the comparison."}</p>
     </div> : null}
   </main>;

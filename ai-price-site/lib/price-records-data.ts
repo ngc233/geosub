@@ -3,9 +3,13 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getPublicPriceSnapshot, isObservationId, type PriceObservationRecord } from "./price-records";
 
-type RecordRow = Omit<PriceObservationRecord, "amount"> & { amount: unknown };
+
+
+import { readPriceRecordWindow } from "./price-record-window";
+
+type RecordRow = Omit<PriceObservationRecord, "amount"> & { amount: unknown; cursorAt: string };
 const recordSelect = Prisma.sql`
-  SELECT po.id, p.slug AS "productSlug", p.name AS "productName", p.category::text AS category,
+  SELECT po.observed_at::text AS "cursorAt", po.id, p.slug AS "productSlug", p.name AS "productName", p.category::text AS category,
     pl.slug AS "planSlug", pl.name AS "planName", c.code AS "countryCode", po.source_id AS "sourceId",
     po.source_url AS "sourceUrl",
     to_char(po.observed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "observedAt",
@@ -13,7 +17,12 @@ const recordSelect = Prisma.sql`
     po.price_type::text AS "priceType", po.raw_price AS amount, po.currency,
     po.status::text AS status, po.confidence_score AS confidence, po.anomaly_flag AS anomaly,
     po.raw_payload ->> 'auto_review_reason_code' AS "reviewReason",
-    po.raw_payload -> 'raw_snapshot' AS snapshot, po.raw_payload ->> 'item_name' AS "itemName",
+    jsonb_build_object(
+      'country', po.raw_payload #> '{raw_snapshot,country}',
+      'planSpecSlug', po.raw_payload #> '{raw_snapshot,planSpecSlug}',
+      'billingCycle', po.raw_payload #> '{raw_snapshot,billingCycle}',
+      'inAppPurchases', po.raw_payload #> '{raw_snapshot,inAppPurchases}'
+    ) AS snapshot, po.raw_payload ->> 'item_name' AS "itemName",
     po.raw_payload #>> '{raw_snapshot,originalObservedPriceText}' AS "originalPriceText"
   FROM price_observations po
   JOIN products p ON p.id = po.product_id AND p.status = 'published'
@@ -34,10 +43,19 @@ export async function getProductPriceRecords(productSlug: string) {
   if (!/^[a-z0-9-]{1,80}$/.test(productSlug)) return { records: [], truncated: false };
   // Include review failures as sequence boundaries, rather than filtering them
   // out and accidentally joining two incomparable prices across the gap.
-  const rows = await prisma.$queryRaw<RecordRow[]>(Prisma.sql`${recordSelect}
-    AND p.slug = ${productSlug} AND po.observed_at >= NOW() - INTERVAL '120 days'
-    ORDER BY po.observed_at DESC, po.id DESC LIMIT 5001`);
-  return { records: rows.slice(0, 5000).map(toRecord), truncated: rows.length > 5000 };
+  // One read-only snapshot fixes the time window and membership across pages.
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SET TRANSACTION READ ONLY`;
+    const result = await readPriceRecordWindow<RecordRow>((cursor, limit) => {
+      const boundary = cursor
+        ? Prisma.sql`AND (po.observed_at, po.id) < (${cursor.cursorAt}::timestamptz, ${cursor.id}::uuid)`
+        : Prisma.empty;
+      return tx.$queryRaw<RecordRow[]>(Prisma.sql`${recordSelect}
+        AND p.slug = ${productSlug} AND po.observed_at >= NOW() - INTERVAL '120 days'
+        ${boundary} ORDER BY po.observed_at DESC, po.id DESC LIMIT ${limit}`);
+    });
+    return { records: result.records.map(toRecord), truncated: result.truncated };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30_000 });
 }
 
 export async function getPriceRecordProducts() {

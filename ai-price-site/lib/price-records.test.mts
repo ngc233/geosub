@@ -89,6 +89,29 @@ test("history cache stays bounded for large raw snapshots while preserving event
   assert.doesNotMatch(JSON.stringify(summary), /inAppPurchases|items|html|private-source-page|sourceId/);
   assert.equal(getPublicPriceSnapshot(records[127])!.items.length, 2);
   assert.deepEqual(getPriceHistorySummary([record(1, 999, { status: "pending" })]), {
+    coverage: { recordCount: 1, observedDays: 1, countryCount: 1,
+      firstObservedAt: "2026-10-01T12:00:00Z", lastObservedAt: "2026-10-01T12:00:00Z" },
     eventCount: 0, events: [], snapshots: [],
   });
+});
+
+test("coverage counts observed days rather than inventing continuous monitoring", () => {
+  const summary = getPriceHistorySummary([record(1), record(10), record(10, 999, { countryCode: "US", status: "pending" })]);
+  assert.equal(summary.coverage.observedDays, 2);
+  assert.equal(summary.coverage.countryCount, 2);
+  assert.equal(summary.coverage.recordCount, 3);
+  assert.equal(getPriceHistorySummary([]).coverage.firstObservedAt, null);
+});
+
+test("a confirmed baseline beyond 5000 routine observations still yields its real change", () => {
+  const records = Array.from({ length: 6103 }, (_, index) => record(1, index === 6102 ? 1099 : 999, {
+    id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+    observedAt: new Date(Date.UTC(2026, 9, 1) + index * 60_000).toISOString(),
+    status: index === 0 || index === 6102 ? "approved" : "ignored",
+    reviewReason: "superseded_by_published_price",
+  }));
+  const events = getPriceChanges(records);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].before.id, records[0].id);
+  assert.equal(events[0].after.id, records[6102].id);
 });
