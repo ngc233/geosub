@@ -56,6 +56,8 @@
         "test:country-pages": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/country-page-pilot.test.mts lib/country-page-readiness.test.mts",
         "test:runtime-scripts": "node --test ../geosub-backend/scripts/check-runtime-script-manifest.test.mjs ../geosub-backend/scripts/collector-reliability.test.mjs ../geosub-backend/scripts/exchange-rate-sync-core.test.mjs ../geosub-backend/scripts/exchange-rate-shadow-core.test.mjs ../geosub-backend/scripts/official-web-price-parser.test.mjs ../geosub-backend/scripts/official-web-automation.test.mjs ../geosub-backend/scripts/refresh-collected-reports.test.mjs ../geosub-backend/scripts/check-business-field-ownership.test.mjs",
         "test:content-store": "node scripts/test-audit-actor-compatibility.cjs && node scripts/test-content-pilot-store.cjs && node scripts/test-content-target-store.cjs && node scripts/test-content-effects-recovery.cjs && node scripts/test-content-facts-store.cjs && node scripts/test-content-release-gates.cjs",
+        "test:price-version": "node scripts/test-price-dataset-version.cjs",
+        "test:price-version-upgrade": "node scripts/test-price-version-upgrade.cjs",
         "test:content-browser": "node scripts/test-content-target-browser.cjs",
         "test:admin-trusted-devices": "node scripts/test-admin-trusted-devices.cjs",
         "test:e2e": "node scripts/run-e2e.cjs",

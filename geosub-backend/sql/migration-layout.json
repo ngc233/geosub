@@ -706,6 +706,15 @@
       "legacyChecksums": [
         "2ef1f35b47461096ad4756a2f90ef3654d8c1ad6c6c16221093cbf00afc980e1"
       ]
+    },
+    {
+      "id": "schema:060",
+      "file": "sql/schema/060_formal_price_versions.sql",
+      "legacyBaseline": false,
+      "legacyFile": "sql/schema/060_formal_price_versions.sql",
+      "legacyChecksums": [
+        "1a9557ebb42c62b12bcee1df27ac3b57b7df8b6a9be384dac5711f70c4a41b2f"
+      ]
     }
   ],
   "backfill": [
