@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { atomic, safePath, taskUnitText } from './rolling-release-lib.mjs';
 
@@ -76,6 +76,7 @@ export function writeCollectorRecords(root, state, operation, deployedAt, setGro
   atomic(files.state, JSON.stringify(state, null, 2)+'\n');
   atomic(files.current, `GEOSUB_VERSION=${metadata.version}\nGEOSUB_COMMIT=${metadata.commit}\nGEOSUB_DEPLOYED_AT=${deployedAt}\n`);
   atomic(files.version, JSON.stringify(metadata)+'\n', 0o640);
+  chmodSync(files.version, 0o640);
   setGroup(files.version);
 }
 
@@ -84,7 +85,11 @@ export function restoreCollectorRecords(root, previous, setGroup) {
     if (previous[key] === null) rmSync(file, { force: true });
     else atomic(file, previous[key], key === 'version' ? 0o640 : 0o600);
   }
-  if (previous.version !== null) setGroup(collectorRecordPaths(root).version);
+  if (previous.version !== null) {
+    const file = collectorRecordPaths(root).version;
+    chmodSync(file, 0o640);
+    setGroup(file);
+  }
 }
 
 // Only these collector-scoped actions are available to the transaction. There

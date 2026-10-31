@@ -76,6 +76,26 @@ test('actual collector records cover upgrade, rollback, partial writes and resum
  assert(!fs.existsSync(paths.version));assert.deepEqual(snapshotCollectorRecords(root),legacy);
 });
 
+test('collector version summary remains group-readable under restrictive umask',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'geosub-collector-umask-'));
+ const paths=collectorRecordPaths(root),release={version:'2.24.0',commit:'a'.repeat(40)};
+ const original=process.umask(0o077);
+ try{
+  const group=file=>assert.equal(file,paths.version);
+  writeCollectorRecords(root,{active:release},'upgrade','2026-10-31T01:00:00Z',group);
+  assert.equal(fs.statSync(paths.version).mode&0o777,0o640);
+  assert.equal(fs.statSync(paths.state).mode&0o777,0o600);
+  assert.equal(fs.statSync(paths.current).mode&0o777,0o600);
+  const previous=snapshotCollectorRecords(root);
+  writeCollectorRecords(root,{active:release},'rollback','2026-10-31T02:00:00Z',group);
+  restoreCollectorRecords(root,previous,group);
+  assert.equal(fs.statSync(paths.version).mode&0o777,0o640);
+  assert.deepEqual(snapshotCollectorRecords(root),previous);
+ }finally{
+  process.umask(original);fs.rmSync(root,{recursive:true,force:true});
+ }
+});
+
 test('database detection covers deletions, Prisma-only edits, manifest and runner changes',()=>{
  for(const file of ['geosub-backend/sql/schema/058.sql','geosub-backend/sql/migration-layout.json','ai-price-site/prisma/schema.prisma','ai-price-site/prisma/migrations/a/migration.sql','ai-price-site/scripts/prepare-prisma-baseline.cjs','geosub-backend/scripts/migration-manifest.cjs','geosub-backend/deploy/linux-arm64/db-apply-sql.sh'])
   for(const status of ['A','M','D']) assert.equal(migrationPlan([{path:file,status}]).required,true,file);
