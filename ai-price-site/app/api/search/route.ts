@@ -1,3 +1,4 @@
+import { selectCurrentOrLegacyPlans } from "../../../lib/current-plan-scope";
 import { ArticleStatus, Locale, Prisma, ProductCategory, PublishStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
@@ -14,6 +15,7 @@ import {
   type PreparedSiteLocale,
 } from "../../../lib/site-locale";
 import { prisma } from "../../../lib/prisma";
+import { getPlanEditorialIndexingStatus } from "../../../lib/product-editorial-content";
 import { getActiveSearchAliases } from "../../../lib/search-aliases";
 
 export const dynamic = "force-dynamic";
@@ -215,7 +217,10 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      for (const plan of product.plans) {
+      const searchablePlans = selectCurrentOrLegacyPlans(product.plans, (plan) =>
+        getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
+      );
+      for (const plan of searchablePlans) {
         const planScore = scoreSearchText(query, [
           plan.name,
           plan.slug,

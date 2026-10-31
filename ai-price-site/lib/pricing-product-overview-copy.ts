@@ -1,3 +1,4 @@
+import { selectCurrentOrLegacyPlans } from "./current-plan-scope.ts";
 import type { SiteLocale } from "./site-locale.ts";
 import {
   formatUsd,
@@ -43,12 +44,9 @@ export function getProductOverviewDecisionPlans(
   const publishedPlans = product.plans
     .map((plan) => ({ ...plan, regions: getDefaultPlanRegions(plan) }))
     .filter((plan) => plan.regions.length > 0);
-  const currentPlans = publishedPlans.filter(
-    (plan) =>
-      getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
+  return selectCurrentOrLegacyPlans(publishedPlans, (plan) =>
+    getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
   );
-
-  return currentPlans.length > 0 ? currentPlans : publishedPlans;
 }
 
 export function getProductOverviewRegionCount(product: SubscriptionProduct) {
