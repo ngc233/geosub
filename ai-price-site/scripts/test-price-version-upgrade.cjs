@@ -91,9 +91,11 @@ async function main() {
     const plan = contract.rollbackPlan(root, old, policy);
     assert.equal(plan.mode, "audited-compatible-readers");
     assert.deepEqual(plan.targets, [{ id: "overview:en:chatgpt", facts: false }]);
-    for (const file of policy.files.filter(file => file !== "ai-price-site/prisma/schema.prisma")) {
+    for (const file of policy.files.filter(file => !["VERSION", "ai-price-site/prisma/schema.prisma"].includes(file))) {
       assert.equal(sha(fs.readFileSync(path.join(root, file))), sha(fs.readFileSync(path.join(old, file))), file);
     }
+    run(process.execPath, [path.join(root, "scripts/check-release-version.mjs"),
+      "--root", root, "--baseline-ref", baseline]);
     fs.symlinkSync(path.join(app, "node_modules"), path.join(old, "ai-price-site/node_modules"));
     fs.symlinkSync(path.join(app, "node_modules"), path.join(temp, "node_modules"));
     run(process.execPath, ["scripts/migrate-database.cjs"], path.join(old, "ai-price-site"));
