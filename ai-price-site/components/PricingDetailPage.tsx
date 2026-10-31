@@ -274,14 +274,16 @@ function getReferenceRegion(plan: ProductPlan) {
   );
 }
 
-function PricePositionSection({
+export function PricePositionSection({
   plan,
   bigMacBenchmarks = [],
   locale,
+  preserveEmptyBenchmarks = false,
 }: {
   plan: ProductPlan;
   bigMacBenchmarks: BigMacBenchmark[];
   locale: SiteLocale;
+  preserveEmptyBenchmarks?: boolean;
 }) {
   const copy = getPricingPressureCopy(locale).position;
   const intlLocale = getSiteLocaleDefinition(locale).intlLocale;
@@ -290,6 +292,9 @@ function PricePositionSection({
   const referencePrice = referenceRegion.priceUsd;
   const bigMacByCountry = new Map(
     bigMacBenchmarks.map((benchmark) => [benchmark.countryCode.toUpperCase(), benchmark]),
+  );
+  const showBigMac = preserveEmptyBenchmarks || sortedRegions.some(
+    (region) => bigMacByCountry.has(region.code.toUpperCase()),
   );
   const latestBigMacObservation = bigMacBenchmarks
     .map((benchmark) => benchmark.observedOn)
@@ -384,11 +389,11 @@ function PricePositionSection({
               </div>
             </div>
             <div className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">{helper}</div>
-            <div className="mt-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            {showBigMac ? <div className="mt-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
               {row.bigMac
                 ? copy.bigMac(new Intl.NumberFormat(intlLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(row.region.priceUsd / row.bigMac.priceUsd), row.bigMac.usesRegionalReference)
                 : copy.noBigMac}
-            </div>
+            </div> : null}
           </div>
         ))}
       </div>
@@ -451,9 +456,9 @@ function PricePositionSection({
                     <div className="text-[10px] font-medium tabular-nums text-zinc-500 dark:text-zinc-400">{getDiffText(diff)}</div>
                   </div>
 
-                  <div className="col-start-2 col-end-4 -mt-1 text-[10px] text-zinc-400 sm:hidden">
+                  {showBigMac ? <div className="col-start-2 col-end-4 -mt-1 text-[10px] text-zinc-400 sm:hidden">
                     {bigMac ? copy.bigMac(new Intl.NumberFormat(intlLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(region.priceUsd / bigMac.priceUsd), bigMac.usesRegionalReference) : copy.noBigMac}
-                  </div>
+                  </div> : null}
                 </div>
               );
             })}
@@ -466,9 +471,9 @@ function PricePositionSection({
           </p>
         ) : null}
       </div>
-      <div className="border-t border-zinc-100 px-5 py-4 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:px-6">
+      {showBigMac ? <div className="border-t border-zinc-100 px-5 py-4 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:px-6">
         {copy.source(latestBigMacDate)}{" "}<a className="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-800 dark:hover:text-zinc-200" href="https://github.com/TheEconomist/big-mac-data" target="_blank" rel="noreferrer">GitHub</a>
-      </div>
+      </div> : <p className="border-t border-[var(--color-border-default)] px-5 py-4 text-xs text-[var(--color-text-muted)] md:px-6">{copy.noBigMac}</p>}
     </section>
   );
 }
@@ -1495,6 +1500,7 @@ export default async function PricingDetailPage({
                   plan={getPricePositionPlan(contentPlan)}
                   bigMacBenchmarks={affordability.bigMacBenchmarks}
                   locale={locale}
+                  preserveEmptyBenchmarks={locale === "zh" && product.slug === "chatgpt" && activePlan.slug === "plus"}
                 />
               )}
               burdenView={affordability.rows.length > 0 ? (
