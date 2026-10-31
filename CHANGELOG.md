@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.23.1 - Unreleased
+
+- Separate representative pricing cards by actual billing period and align search with overview plan scope, including legacy-only fallback.
+- Read the 120-day observation window in bounded, consistent pages and show raw coverage without claiming continuous monitoring.
+- Collapse unavailable consumption references on non-frozen pages; retain the Chinese Plus experiment output.
+- Prepare exact content-reader rollback to 2.23.0. No database migrations or collector rollout.
+
 ## 2.10.4 - Unreleased
 
 - Correct ChatGPT Pro 100/200 identity mapping while preserving existing URLs.
