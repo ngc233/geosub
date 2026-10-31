@@ -49,6 +49,13 @@ export function getDefaultPlan(product: DbPricingProduct) {
   );
 }
 
+export function groupPricingProductsByCycle(products: DbPricingProduct[]) {
+  const cycles = [...new Set(products.map(product => getDefaultPlan(product)?.billingCycle || "UNKNOWN"))];
+  return cycles.sort((a, b) => Number(b === "MONTHLY") - Number(a === "MONTHLY"))
+    .map(cycle => ({ cycle, products: products.filter(product =>
+      (getDefaultPlan(product)?.billingCycle || "UNKNOWN") === cycle) }));
+}
+
 export function getPlanSpread(plan: DbPricingPlan) {
   if (plan.regions.length <= 1) {
     return 0;

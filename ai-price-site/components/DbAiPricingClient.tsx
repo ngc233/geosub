@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import DbPricingCard from "./DbPricingCard";
+import { groupPricingProductsByCycle } from "../lib/db-pricing-types";
+import { getBillingCycleLabel } from "../lib/billing-cycle-label";
+import type { ProductPlan } from "../lib/public-pricing-model";
 import SegmentedControl from "./ui/SegmentedControl";
 import type {
   DbPricingCategory,
@@ -100,9 +103,7 @@ export default function DbAiPricingClient({
             <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
               {activeTab.label}
             </h2>
-            <span className="rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700">
-              {copy.defaultPlanHint}
-            </span>
+
           </div>
 
           <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
@@ -117,15 +118,15 @@ export default function DbAiPricingClient({
 
       {filteredProducts.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 gap-5 overflow-visible xl:grid-cols-2">
-            {filteredProducts.map((product) => (
-              <DbPricingCard
-                key={product.slug}
-                product={product}
-                locale={locale}
-              />
-            ))}
-          </div>
+          {groupPricingProductsByCycle(filteredProducts)
+            .map(({ cycle, products: cycleProducts }) => <section key={cycle} className="mb-8">
+              <h3 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
+                {getBillingCycleLabel(cycle.toLowerCase() as ProductPlan["billing"], locale)}
+              </h3>
+              <div className="grid grid-cols-1 gap-5 overflow-visible xl:grid-cols-2">
+                {cycleProducts.map(product => <DbPricingCard key={product.slug} product={product} locale={locale} />)}
+              </div>
+            </section>)}
 
           {directoryCopy ? (
             <nav
