@@ -3,6 +3,7 @@ import {
   type CollectorRunTimelineInput,
   type CollectorRunTimelineStepState,
 } from "../collector-jobs/job-state";
+import { isCollectorReviewFailure } from "../collector-jobs/execution-status";
 
 type Props = {
   run: CollectorRunTimelineInput;
@@ -46,6 +47,7 @@ function numberValue(value: number | null | undefined) {
 
 function outcomeNote(run: CollectorRunOutcomeInput, total: number) {
   if (total > 0) return null;
+  if (isCollectorReviewFailure(run)) return "采集已完成，审核失败；当前没有可确认的正式价格更新。";
   if (run.status === "running") return "等待采集脚本写回价格结果。";
   if (run.status === "failed") return "本轮失败，没有产生可归因的价格结果。";
   if (run.status === "skipped") return "本轮被跳过，没有新增价格结果。";

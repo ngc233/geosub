@@ -1679,6 +1679,13 @@
         "audit_logs",
         "region_prices"
       ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/061_app_store_review_isolation.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "price_observations"
+      ]
     }
   ],
   "resolvedConflicts": [

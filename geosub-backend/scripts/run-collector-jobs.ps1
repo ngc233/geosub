@@ -935,6 +935,22 @@ WHERE id = $(Quote-SqlString $RunId)::uuid
 "@
 }
 
+function New-AppStoreReviewFailure {
+  param([object]$Result, [string]$Reason)
+  return [pscustomobject]@{
+    Status = "failed"
+    CollectorKind = "app_store"
+    Output = $Result.Output
+    Error = "Automatic review failed after collection: $Reason"
+    RawPayload = @{
+      collector_status = "succeeded"
+      collector_payload = $Result.RawPayload
+      auto_review_status = "failed"
+      failure_stage = "review"
+    }
+  }
+}
+
 function Complete-JobRun {
   param(
     [object]$Job,
@@ -961,6 +977,8 @@ function Complete-JobRun {
   $permanentFailure = Test-PermanentCollectorFailure -Job $Job -Result $Result
   $unsupportedFailure = $status -eq "skipped" -and $permanentFailure
   $failedAttempt = $status -eq "failed" -or $unsupportedFailure
+  $reviewFailed = $Result.RawPayload -and $Result.RawPayload.auto_review_status -eq "failed" -and
+    $Result.RawPayload.collector_status -eq "succeeded"
   $collectionOutcome = if ($Result.RawPayload) { [string]$Result.RawPayload.collection_outcome } else { "" }
   $retryCountryCodes = if ($Result.RawPayload -and $Result.RawPayload.transient_country_codes) {
     @($Result.RawPayload.transient_country_codes | ForEach-Object { [string]$_ } | Select-Object -Unique)
@@ -987,7 +1005,8 @@ function Complete-JobRun {
     $errorCountSql = "0"
     $lastErrorSql = "NULL"
     $jobConfigSql = "COALESCE(job_config, '{}'::jsonb) - 'operational_state' - 'operational_note'" +
-      " - 'retry_attempt' - 'retry_country_codes' - 'last_failure_at' - 'last_recovered_at' - 'recovery_failure_count'"
+      " - 'retry_attempt' - 'retry_country_codes' - 'last_failure_at' - 'last_recovered_at' - 'recovery_failure_count'" +
+      " - 'review_retry' - 'review_retry_attempt'"
   }
 
   if ($failedAttempt) {
@@ -1101,6 +1120,20 @@ jsonb_set(
       $nextRunSql = "NULL"
       $jobStatusSql = "'paused'"
     }
+  }
+
+  if ($reviewFailed) {
+    $reviewAttempt = 1 + [int](Get-ConfigValue -Config $Job.job_config -Name "review_retry_attempt" -Fallback 0)
+    $nextRunSql = Get-FailureNextRunSql -Attempt ([Math]::Min($reviewAttempt, 3))
+    $jobStatusSql = "'active'"
+    $errorCountSql = "error_count"
+    $jobConfigSql = @"
+COALESCE(job_config, '{}'::jsonb) || jsonb_build_object(
+  'review_retry', TRUE, 'review_retry_attempt', $reviewAttempt,
+  'operational_state', 'review_retry_scheduled',
+  'operational_note', 'Collection succeeded; retry automatic review without collecting again.'
+)
+"@
   }
 
   $runWriteSql = if (![string]::IsNullOrWhiteSpace($RunId)) {
@@ -1427,7 +1460,11 @@ function Add-AppStoreReviewOutcome {
     [datetime]$StartedAt
   )
 
-  $Result = Add-AppStoreRunEvidence -Job $Job -Result $Result -StartedAt $StartedAt
+  $evidenceStartedAt = $StartedAt
+  if ($Result.RawPayload["collection_started_at"]) {
+    $evidenceStartedAt = [datetime]$Result.RawPayload["collection_started_at"]
+  }
+  $Result = Add-AppStoreRunEvidence -Job $Job -Result $Result -StartedAt $evidenceStartedAt
   $Result.RawPayload["auto_review_status"] = "succeeded"
   $Result.RawPayload["review_outcome"] = $Result.RawPayload["collection_evidence"]
   if ($Result.RawPayload["repair_plan"]) {
@@ -1494,6 +1531,33 @@ foreach ($job in $jobs) {
 
   try {
     $repairPlan = $null
+    if (!$DryRun -and !$SkipAutoReview -and
+        (Get-ConfigValue -Config $job.job_config -Name "review_retry") -eq "true") {
+      $previous = Invoke-PsqlJson @"
+SELECT (raw_payload -> 'collector_payload') || jsonb_build_object(
+  'collection_started_at', COALESCE(
+    raw_payload -> 'collector_payload' ->> 'collection_started_at', started_at::text
+  )
+)
+FROM collector_job_runs
+WHERE job_id = $(Quote-SqlString $job.id)::uuid
+  AND raw_payload ->> 'collector_status' = 'succeeded'
+  AND raw_payload ->> 'auto_review_status' = 'failed'
+ORDER BY started_at DESC LIMIT 1;
+"@
+      if ($null -eq $previous) { throw "Review retry has no successful collection evidence." }
+      $result = [pscustomobject]@{
+        Status = "succeeded"; CollectorKind = "app_store"
+        Output = "Retrying automatic review using previously collected evidence."
+        Error = $null; RawPayload = @{}
+      }
+      foreach ($property in $previous.PSObject.Properties) { $result.RawPayload[$property.Name] = $property.Value }
+      $pendingAppStoreCompletions += [pscustomobject]@{
+        Job = $job; Result = $result; StartedAt = $startedAt; RunId = $jobRunId
+      }
+      $summary.succeeded += 1
+      continue
+    }
     if (!$DryRun -and $job.schedule -eq "anomaly_watch" -and
         (Get-ConfigValue -Config $job.job_config -Name "collector_kind") -eq "app_store") {
       $issues = @(Get-AppStoreRepairIssues -Job $job -CountryCodes (Get-CountryCodes -Config $job.job_config))
@@ -1534,6 +1598,7 @@ foreach ($job in $jobs) {
       $result.Status -eq "succeeded" -and
       $result.CollectorKind -eq "app_store"
     ) {
+      $result.RawPayload["collection_started_at"] = $startedAt.ToUniversalTime().ToString("o")
       Set-JobRunAwaitingReview -RunId $jobRunId -Result $result
       $pendingAppStoreCompletions += [pscustomobject]@{
         Job = $job
@@ -1585,13 +1650,14 @@ if (!$SkipAutoReview -and $pendingAppStoreCompletions.Count -gt 0) {
   $completedIdentityProductsSql = (@($pendingAppStoreCompletions | ForEach-Object {
     Quote-SqlString ([string]$_.Job.product_slug)
   } | Select-Object -Unique)) -join ", "
+  $reviewBatchError = $null
   try {
+    Invoke-Psql "SELECT refresh_matching_app_store_prices() AS revalidated_prices;"
+    $reviewResults = @(Invoke-PsqlJson @"
+SELECT COALESCE(json_agg(review), '[]'::json)
+FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14) review;
+"@)
     Invoke-Psql @"
-SELECT refresh_matching_app_store_prices() AS revalidated_prices;
-
-SELECT *
-FROM run_app_store_stability_auto_review(FALSE, 3, 80, 14);
-
 SELECT reconcile_app_store_identity_ambiguities(completed.product_slug) AS identity_quarantined
 FROM unnest(ARRAY[$completedIdentityProductsSql]::TEXT[]) AS completed(product_slug);
 
@@ -1606,8 +1672,19 @@ SELECT refresh_plan_affordability_metrics() AS refreshed_rows;
 
 SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
 "@
+  } catch {
+    $reviewBatchError = $_.Exception.Message
+  }
 
-    foreach ($completion in $pendingAppStoreCompletions) {
+  foreach ($completion in $pendingAppStoreCompletions) {
+    try {
+      $reviewErrors = @($reviewResults | Where-Object {
+        $_.product_slug -eq $completion.Job.product_slug -and $_.reason_code -eq "app_store_review_failed"
+      })
+      if ($reviewBatchError -or $reviewErrors.Count -gt 0) {
+        $reason = if ($reviewBatchError) { $reviewBatchError } else { "A price group needs review retry." }
+        throw $reason
+      }
       $completedResult = Add-AppStoreReviewOutcome `
         -Job $completion.Job `
         -Result $completion.Result `
@@ -1617,26 +1694,11 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
         -Result $completedResult `
         -StartedAt $completion.StartedAt `
         -RunId $completion.RunId
-    }
-    $reportRefreshProducts = @(@($reportRefreshProducts) + @($pendingAppStoreCompletions | ForEach-Object { [string]$_.Job.product_slug }) | Select-Object -Unique)
-  } catch {
-    $reviewError = $_.Exception.Message
-    $summary.succeeded -= $pendingAppStoreCompletions.Count
-    $summary.failed += $pendingAppStoreCompletions.Count
-
-    foreach ($completion in $pendingAppStoreCompletions) {
-      $failedResult = [pscustomobject]@{
-        Status = "failed"
-        CollectorKind = "app_store"
-        Output = $completion.Result.Output
-        Error = "Automatic review failed after collection: $reviewError"
-        RawPayload = @{
-          error = $reviewError
-          collector_status = $completion.Result.Status
-          collector_payload = $completion.Result.RawPayload
-          auto_review_status = "failed"
-        }
-      }
+    } catch {
+      $reviewError = $_.Exception.Message
+      $summary.succeeded -= 1
+      $summary.failed += 1
+      $failedResult = New-AppStoreReviewFailure -Result $completion.Result -Reason $reviewError
       if ($completion.Result.RawPayload.repair_plan) {
         $failedResult.RawPayload["repair_plan"] = $completion.Result.RawPayload.repair_plan
       }
@@ -1645,10 +1707,10 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
         -Result $failedResult `
         -StartedAt $completion.StartedAt `
         -RunId $completion.RunId
+      Write-Host "App Store review failed for $($completion.Job.product_slug); scheduled review-only retry."
     }
-
-    Write-Host "App Store auto-review failed. Affected jobs were scheduled for retry: $reviewError"
   }
+  $reportRefreshProducts = @(@($reportRefreshProducts) + @($pendingAppStoreCompletions | ForEach-Object { [string]$_.Job.product_slug }) | Select-Object -Unique)
 }
 
 # Scheduled runs also refresh report origin/edge caches, with no human queue.

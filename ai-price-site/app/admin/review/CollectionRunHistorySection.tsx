@@ -12,6 +12,7 @@ import { buildCollectionProgressState, type CollectionProgressState } from "./co
 import CollectorRunTimeline, { CollectorRunOutcomeSummary } from "./CollectorRunTimeline";
 import { formatDate } from "./review-display";
 import type { CollectorRunHistoryRow } from "./types";
+import { isCollectorReviewFailure } from "../collector-jobs/execution-status";
 
 type Props = {
   pendingCount?:number;
@@ -35,7 +36,7 @@ function statusLabel(status: string) {
   const labels: Record<string, string> = {
     running: "运行中",
     succeeded: "成功",
-    failed: "失败",
+    failed: "采集失败",
     skipped: "跳过",
   };
 
@@ -128,6 +129,9 @@ function runOutput(row: CollectorRunHistoryRow) {
 }
 
 function runSummary(row: CollectorRunHistoryRow) {
+  if (isCollectorReviewFailure(row)) {
+    return "采集已完成，自动审核失败；修复审核错误后复用已有证据重试。";
+  }
   if (row.status === "running") {
     return runnerStateLabel(row) ?? "正在采集价格";
   }
@@ -399,7 +403,7 @@ export default function CollectionRunHistorySection({
                       <span
                         className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClassName(row.status)}`}
                       >
-                        {statusLabel(row.status)}
+                        {isCollectorReviewFailure(row) ? "采集成功，审核失败" : statusLabel(row.status)}
                       </span>
                     </div>
                     <p className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{runSummary(row)}</p>

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { isCollectorReviewFailure } from "../collector-jobs/execution-status.ts";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import test from "node:test";
@@ -52,6 +53,7 @@ async function pollResult(status: string, requested = true, product = "fixture",
       }
       if (name === "next/navigation") return { useRouter: () => router };
       if (name === "./collection-progress") return { buildCollectionProgressState };
+      if (name === "../collector-jobs/execution-status") return { isCollectorReviewFailure };
       if (name === "./review-display") return { formatDate: () => "fixture date" };
       if (name.includes("AdminButton")) return { adminButtonClassName: () => "fixture" };
       if (name.includes("AdminLink") || name.includes("AdminProductLogo") || name.includes("CollectorRunTimeline")) return {};

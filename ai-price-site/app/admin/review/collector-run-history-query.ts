@@ -207,6 +207,8 @@ export async function getCollectorRunHistoryRows(productQuery: string, limit = 1
         product_name: row.product?.name ?? null,
         source_type: sourceTypeText(row.source?.type),
         status: row.status,
+        collector_status: getPayloadText(row.rawPayload, "collector_status"),
+        auto_review_status: getPayloadText(row.rawPayload, "auto_review_status"),
         collector_kind: row.collectorKind,
         started_at: row.startedAt,
         finished_at: row.finishedAt,

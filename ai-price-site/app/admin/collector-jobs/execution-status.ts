@@ -1,4 +1,6 @@
 export type CollectorExecutionFields = {
+  collector_status?: string | null;
+  auto_review_status?: string | null;
   collection_outcome?: string | null;
   collected_count?: number | null;
   skipped_count?: number | null;
@@ -48,6 +50,13 @@ function failureReason(input: CollectorExecutionInput) {
 export function assessCollectorExecution(input: CollectorExecutionInput): Assessment {
   if (input.status === 'running') {
     return { label: '正在执行', variant: 'neutral', reason: '后台已有本轮运行记录。', next: '等待执行器写回本轮结果。' };
+  }
+  if (isCollectorReviewFailure(input)) {
+    return { label: '采集成功，审核失败', variant: 'danger',
+      reason: '价格证据已采集，自动审核未完成，不能据此确认正式价格已更新。',
+      next: input.operational_state === 'review_retry_scheduled'
+        ? '系统将重试审核，复用已有证据。'
+        : '查看审核错误；重复采集不能修复审核程序问题。' };
   }
   if (input.repair_state === 'unresolved' && input.status === 'skipped') {
     return { label: '需要处理规则', variant: 'review', reason: '本轮问题无法通过重复采集解决。',
@@ -103,4 +112,9 @@ export function assessCollectorExecution(input: CollectorExecutionInput): Assess
   }
   return { label: input.is_due ? '等待执行' : '按计划采集', variant: 'neutral', reason: '尚无本轮采集结果。',
     next: input.is_due ? '已到期，等待执行器接管。' : '系统按已配置的计划运行。' };
+}
+
+export function isCollectorReviewFailure(input: CollectorExecutionFields & { error_message?: string | null }) {
+  return (input.collector_status === 'succeeded' && input.auto_review_status === 'failed')
+    || Boolean(input.error_message?.startsWith('Automatic review failed after collection:'));
 }

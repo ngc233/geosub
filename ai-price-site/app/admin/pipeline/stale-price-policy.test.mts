@@ -280,7 +280,7 @@ test("App Store runs become successful only after automatic review completes", (
   assert.match(runner, /foreach \(\$completion in \$pendingAppStoreCompletions\)[\s\S]*Complete-JobRun/);
   assert.match(runner, /Automatic review failed after collection/);
   assert.match(runner, /auto_review_status = "failed"/);
-  assert.match(runner, /Affected jobs were scheduled for retry/);
+  assert.match(runner, /scheduled review-only retry/);
 });
 
 test("coverage gaps queue bounded product-level App Store rechecks", () => {

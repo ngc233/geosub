@@ -31,6 +31,19 @@
   ],
   "approvedPairs": [
     {
+      "format": 2,
+      "from": "81025472d38ea63e95c63c0a72090a627fd0d9229e06799238a850ee62477d40",
+      "to": "d6525289078c80f1c27966c6c606f01932f49870b06d357829cfb685160fb129",
+      "retainedCommit": "3b2f2ea1f0075f7e5bb5c209e7ffd6764c059274",
+      "targets": [
+        { "id": "overview:en:chatgpt", "facts": false },
+        { "id": "overview:zh:claude", "facts": true },
+        { "id": "overview:en:claude", "facts": true }
+      ],
+      "reason": "2.24.1 to retained 2.24.0: registered content contract files are byte-identical except VERSION; collector review function and admin status changes do not alter content readers.",
+      "evidence": "Exact retained-file comparison and isolated database rollback/reapply; RFC section 66."
+    },
+    {
       "from": "cdc407abac5487616eead63f13b71374ee8e13c9cee0959f33db7b0455461203",
       "to": "c6b3407f8a8f7ba6f480fe31531e7a4d397212d0649c5960e7485a5ec9bc783c",
       "reason": "2.12.0 to 2.11.0: same published content schema, validator and renderer; store changes only strengthen revision integrity checks."

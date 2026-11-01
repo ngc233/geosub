@@ -1,4 +1,5 @@
 import type { CollectorRunHistoryRow } from "./types";
+import { isCollectorReviewFailure } from "../collector-jobs/execution-status.ts";
 
 export type CollectionProgressTone = "info" | "success" | "warning" | "danger" | "neutral";
 
@@ -138,8 +139,10 @@ export function buildCollectionProgressState({
       visible: true,
       active: false,
       tone: "danger",
-      label: "采集失败",
-      detail: run.error_message || "本轮采集没有成功完成，请查看下方运行记录和输出摘要。",
+      label: isCollectorReviewFailure(run) ? "采集成功，审核失败" : "采集失败",
+      detail: isCollectorReviewFailure(run)
+        ? "已有采集证据，自动审核未完成；修复审核错误后复用证据重试。"
+        : run.error_message || "本轮采集没有成功完成，请查看下方运行记录和输出摘要。",
       progress: null,
       elapsedLabel,
       runStatus: run.status,

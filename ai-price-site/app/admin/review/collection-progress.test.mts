@@ -31,6 +31,21 @@ function row(overrides: Partial<CollectorRunHistoryRow> = {}): CollectorRunHisto
   };
 }
 
+test("review failure preserves collection success in the scoped progress panel", () => {
+  for (const evidence of [
+    { collector_status: "succeeded", auto_review_status: "failed" },
+    { error_message: "Automatic review failed after collection: synthetic error" },
+  ]) {
+    const state = buildCollectionProgressState({
+      rows: [row({ status: "failed", ...evidence })],
+      collectionRun: "queued", collectionScope: "chatgpt", collectionRunId: "run-1",
+    });
+    assert.equal(state.label, "采集成功，审核失败");
+    assert.equal(state.active, false);
+    assert.match(state.detail, /复用证据/);
+  }
+});
+
 test("queued collection without a run keeps a visible progress panel", () => {
   const state = buildCollectionProgressState({
     rows: [],

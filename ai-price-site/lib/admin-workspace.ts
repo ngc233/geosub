@@ -7,7 +7,8 @@ export async function readWorkspaceProducts(){
  scope.billing_platform,
  COALESCE(pr.price_count,0)::int AS price_count,COALESCE(pr.stale_count,0)::int AS stale_count,pr.latest_checked::text,
  COALESCE(j.job_count,0)::int AS job_count,COALESCE(j.running_count,0)::int AS running_count,
- COALESCE(j.failed_count,0)::int AS failed_count,COALESCE(j.queued_count,0)::int AS queued_count
+ COALESCE(j.failed_count,0)::int AS failed_count,COALESCE(j.queued_count,0)::int AS queued_count,
+ COALESCE(j.review_failed_count,0)::int AS review_failed_count
  FROM products p
  LEFT JOIN LATERAL(
   SELECT
@@ -34,11 +35,15 @@ export async function readWorkspaceProducts(){
   SELECT count(*) AS job_count,
    count(*) FILTER(WHERE latest.status='running') AS running_count,
    count(*) FILTER(WHERE latest.status='failed') AS failed_count,
+   count(*) FILTER(WHERE latest.status='failed' AND (
+    (latest.raw_payload->>'collector_status'='succeeded' AND latest.raw_payload->>'auto_review_status'='failed')
+    OR latest.error_message LIKE 'Automatic review failed after collection:%'
+   )) AS review_failed_count,
    count(*) FILTER(WHERE latest.status IS DISTINCT FROM 'running' AND jobs.next_run_at<=NOW()) AS queued_count
   FROM collector_jobs jobs
   LEFT JOIN price_sources source ON source.id=jobs.source_id
   LEFT JOIN LATERAL(
-   SELECT status FROM collector_job_runs WHERE job_id=jobs.id ORDER BY started_at DESC LIMIT 1
+   SELECT status,raw_payload,error_message FROM collector_job_runs WHERE job_id=jobs.id ORDER BY started_at DESC LIMIT 1
   ) latest ON true
   WHERE jobs.product_id=p.id AND jobs.status='active'
    AND CASE WHEN scope.billing_platform='web'

@@ -56,6 +56,8 @@ export type CollectorStatusRow = {
 };
 
 export type CollectorRunHistoryRow = {
+  collector_status?: string | null;
+  auto_review_status?: string | null;
   id: string;
   product_slug: string | null;
   product_name: string | null;
