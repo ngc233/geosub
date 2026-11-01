@@ -159,9 +159,13 @@ async function main() {
     const initial = await latest(); assert.equal(initial.revision, "1");
     after = await registry();
     assert.deepEqual(after.sql.filter(row => !beforeRegistry.sql.some(oldRow => oldRow.id === row.id))
-      .map(row => row.filename), ["sql/schema/060_formal_price_versions.sql"]);
+      .map(row => row.filename), [
+        "sql/schema/060_formal_price_versions.sql", "sql/schema/061_app_store_review_isolation.sql",
+      ]);
     assert.deepEqual(after.prisma.filter(row => !beforeRegistry.prisma.some(oldRow => oldRow.id === row.id))
-      .map(row => row.migration_name), ["20261031090000_formal_price_versions"]);
+      .map(row => row.migration_name), [
+        "20261031090000_formal_price_versions", "20261101110000_app_store_review_isolation",
+      ]);
     for (const row of beforeRegistry.sql) assert(after.sql.some(value => JSON.stringify(value) === JSON.stringify(row)));
     for (const row of beforeRegistry.prisma) assert(after.prisma.some(value => JSON.stringify(value) === JSON.stringify(row)));
     checks++;
