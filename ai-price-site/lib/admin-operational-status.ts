@@ -112,7 +112,7 @@ export function assessProductOperationalStatus({
   if (isArchivedPublishStatus(normalizedStatus)) return null;
 
   if (normalizedRunStatus === "failed") {
-    return { status: "exception", reason: "最近一次采集失败，需要查看运行记录。" };
+    return { status: "exception", reason: "最近一次任务执行失败，需要查看采集或审核阶段的运行记录。" };
   }
   if (blockedCount > 0 || hardIssueCount > 0) {
     return { status: "exception", reason: "存在会阻止自动发布的硬异常。" };

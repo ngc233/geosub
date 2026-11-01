@@ -2,9 +2,15 @@ export type WorkspaceRow = {
  id:string;slug:string;name:string;publish_status:string;billing_platform?:'ios'|'web';
  price_count:number;stale_count:number;latest_checked:string|null;
  job_count:number;running_count:number;failed_count:number;queued_count:number;
+ review_failed_count?:number;
 };
 export function workspaceStatus(row:WorkspaceRow, partial:boolean){
- const collection=partial?'未导入采集记录':row.running_count>0?'采集执行中':row.failed_count>0?'最近采集失败':row.queued_count>0?'等待调度':row.job_count>0?'已配置采集':'未配置采集';
+ const reviewFailed=row.review_failed_count??0;
+ const failure=reviewFailed>0
+  ?row.failed_count>reviewFailed?'采集和审核均有失败':'采集成功，审核失败'
+  :'最近采集失败';
+ const collection=partial?'未导入采集记录':row.running_count>0?'采集执行中':row.failed_count>0?failure:
+  row.queued_count>0?'等待调度':row.job_count>0?'已配置采集':'未配置采集';
  // A running task must not obscure an independently stale price dataset.
  const needsAction=(row.publish_status.toLowerCase()==='published'&&row.price_count===0)||row.stale_count>0||(!partial&&row.failed_count>0);
  const progress=!partial&&(row.running_count>0||row.queued_count>0);

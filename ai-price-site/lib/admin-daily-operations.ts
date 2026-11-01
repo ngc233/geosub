@@ -70,7 +70,7 @@ function systemSummary(
   state: DailyOperationState,
   collector?: CollectorProductStateRow,
 ) {
-  if (state === "failed") return "最近一轮采集失败，需要检查运行记录";
+  if (state === "failed") return "最近一轮任务失败，需要检查采集或审核阶段的运行记录";
   if (state === "running") return "采集器正在运行，无需重复点击";
   if (state === "queued") return "系统已经排队，等待采集器执行";
   if (collector?.scheduled_due) {

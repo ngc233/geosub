@@ -1,3 +1,5 @@
+import { isCollectorReviewFailure, type CollectorExecutionFields } from "./execution-status.ts";
+
 export type CollectorJobStateInput = {
   source_type: string | null;
   collector_kind: string | null;
@@ -8,7 +10,7 @@ export type CollectorJobStateInput = {
   latest_run_status: string | null;
 };
 
-export type CollectorRunTimelineInput = {
+export type CollectorRunTimelineInput = CollectorExecutionFields & {
   status: string;
   runner_state: string | null;
   process_id: string | null;
@@ -76,6 +78,7 @@ export function buildCollectorRunTimeline(run: CollectorRunTimelineInput): Colle
   const isSucceeded = run.status === "succeeded";
   const isSkipped = run.status === "skipped";
   const isFailed = run.status === "failed";
+  const reviewFailed = isCollectorReviewFailure(run);
   const processStarted = hasProcessStarted(run);
   const awaitingReview = isRunning && run.runner_state === "collected_waiting_review";
   const spawnFailed = isFailed && run.runner_state === "spawn_failed";
@@ -114,7 +117,7 @@ export function buildCollectorRunTimeline(run: CollectorRunTimelineInput): Colle
     {
       key: "collect",
       label: "采集结果",
-      detail: isSucceeded || awaitingReview
+      detail: isSucceeded || awaitingReview || reviewFailed
         ? "采集结果已写回，页面可查看输出摘要。"
         : isSkipped
           ? "脚本判断本轮无需采集或该来源暂不支持。"
@@ -124,7 +127,7 @@ export function buildCollectorRunTimeline(run: CollectorRunTimelineInput): Colle
               ? `等待采集结果写回${elapsedText ? `，已运行 ${elapsedText}` : ""}。`
               : "等待采集结果。",
       state:
-        isSucceeded || awaitingReview
+        isSucceeded || awaitingReview || reviewFailed
           ? "done"
           : isSkipped
             ? "skipped"
@@ -135,12 +138,14 @@ export function buildCollectorRunTimeline(run: CollectorRunTimelineInput): Colle
     {
       key: "review",
       label: "审核入库",
-      detail: isSucceeded
+      detail: reviewFailed
+        ? "采集已完成，自动审核失败；正式价格更新尚未确认。"
+        : isSucceeded
         ? "结果已进入后续自动审核；稳定样本会进入正式价格库，异常会留在审核中心。"
         : awaitingReview
           ? "本产品已采集完成，正在等待本轮统一自动审核和正式价格更新。"
         : "采集成功后才会进入自动审核和正式价格入库。",
-      state: isSucceeded ? "done" : awaitingReview ? "active" : "waiting",
+      state: reviewFailed ? "failed" : isSucceeded ? "done" : awaitingReview ? "active" : "waiting",
     },
   ];
 }

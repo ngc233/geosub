@@ -42,7 +42,7 @@ export default function Workspace({rows,partial,failed,role,readAt,denied,initia
  const list=createAdminListView(displayed,{basePath:"/admin",params:{page,view:filter},pageSize:10,id:"workspace-list"});
  const latest=rows.map(r=>r.latest_checked).filter((s):s is string=>Boolean(s)).sort().at(-1);
  const stats=[
-  {id:'action',icon:Activity,label:'需要处理',value:failed?'—':attention.length,unit:'个产品',hint:'价格缺失、时效问题与采集失败'},
+  {id:'action',icon:Activity,label:'需要处理',value:failed?'—':attention.length,unit:'个产品',hint:'价格缺失、时效问题与采集或审核失败'},
   {id:'progress',icon:Clock3,label:'系统执行中',value:failed||partial?'—':progress.length,unit:'个产品',hint:partial?'本地快照不包含任务运行记录':'运行中或等待调度，无需重复提交'},
   {id:'all',icon:ShieldCheck,label:'当前产品',value:failed?'—':items.length,unit:'个',hint:'查看发布、价格与采集的独立状态'},
  ];
@@ -69,7 +69,7 @@ export default function Workspace({rows,partial,failed,role,readAt,denied,initia
   <div id="workspace-list" className={styles.count}>{failed?'读取失败':`${displayed.length} 个产品`}</div>
   {!displayed.length?<div className={styles.empty}>{
    failed?'暂时无法读取待办。':partial&&filter==='progress'?'当前快照未导入运行记录，无法判断生产采集进度。':
-   filter==='action'?'当前数据范围内，没有发现正式价格缺失、超期或已知采集失败。':'当前筛选下没有产品。'
+   filter==='action'?'当前数据范围内，没有发现正式价格缺失、超期或已知采集、审核失败。':'当前筛选下没有产品。'
   }</div>:list.items.map(r=>
   <article className={styles.task} key={r.id} id={`workspace-row-${r.id}`}>
    <AdminProductLogo slug={r.slug} name={r.name} />
@@ -77,7 +77,9 @@ export default function Workspace({rows,partial,failed,role,readAt,denied,initia
     <h3>{r.name}</h3>
     <p>{r.price_count===0?`尚无 ${r.billing_platform==='web'?'官网':'App Store'} 正式价格，请核对是否需要补齐。`:
      r.stale_count>0?`${r.stale_count} 条 ${r.billing_platform==='web'?'官网':'App Store'} 正式价格超过 14 天未核验或缺少核验时间。`:
-     r.failed_count>0&&!partial?'已配置任务最近一次运行失败，请检查采集记录。':
+     r.failed_count>0&&!partial?(r.review_failed_count??0)>0
+      ?'已有采集证据，但自动审核失败，请检查失败阶段。'
+      :'已配置任务最近一次采集失败，请检查运行记录。':
      `${r.price_count} 条 ${r.billing_platform==='web'?'官网':'App Store'} 正式价格。`}</p>
     <div className={styles.tags}>
      <span data-tone={r.tone.publication}>发布：{r.state.publication}</span>

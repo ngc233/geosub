@@ -29,6 +29,7 @@ import { measureAdminWorkload } from "../../../lib/admin-performance";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
 import { prisma } from "../../../lib/prisma";
 import BatchCollectionPanel from "./BatchCollectionPanel";
+import { isCollectorReviewFailure } from "../collector-jobs/execution-status";
 import AdminSegmentedControl from "../../../components/admin/AdminSegmentedControl";
 import AdminFilterBar from "../../../components/admin/AdminFilterBar";
 import AdminPagination from "../../../components/admin/AdminPagination";
@@ -63,7 +64,7 @@ const pipelineStages: Array<{
   description: string;
 }> = [
   { value: "all", label: "全部产品", description: "查看完整流水线" },
-  { value: "exception", label: "需要介入", description: "采集失败或硬异常" },
+  { value: "exception", label: "需要介入", description: "采集、审核失败或硬异常" },
   { value: "pending", label: "系统处理中", description: "等待采集、审核或复采" },
   { value: "not_started", label: "未开始", description: "还没有受支持的采集任务" },
   { value: "published", label: "正式价可用", description: "正式价格当前可用" },
@@ -87,6 +88,8 @@ type PipelineProductRow = {
   latest_run_status: string | null;
   latest_run_started_at: Date | string | null;
   latest_run_error: string | null;
+  collector_status?: string | null;
+  auto_review_status?: string | null;
   latest_success_at: Date | string | null;
   has_fresh_success: boolean | null;
   pending_observation_count: unknown;
@@ -198,7 +201,8 @@ function getPipelineState(row: PipelineProductRow) {
   if (row.latest_run_status === "failed") {
     return {
       key: "failed",
-      label: "采集失败",
+      label: isCollectorReviewFailure({ ...row, error_message: row.latest_run_error })
+        ? "采集成功，审核失败" : "采集失败",
       detail: row.latest_run_error || "查看采集任务页确认失败原因。",
       className: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800",
       icon: AlertTriangle,
@@ -293,7 +297,8 @@ function getPublishReadiness(row: PipelineProductRow) {
   return {
     completed,
     total: checks.length,
-    nextAction: checks.find((check) => !check.ready)?.missing || "保持定期复采",
+    nextAction: isCollectorReviewFailure({ ...row, error_message: row.latest_run_error })
+      ? "修复自动审核" : checks.find((check) => !check.ready)?.missing || "保持定期复采",
   };
 }
 
@@ -342,6 +347,8 @@ async function getPipelineRows({ q, category, product }: { q: string; category: 
       latest_run.status AS latest_run_status,
       latest_run.started_at AS latest_run_started_at,
       latest_run.error_message AS latest_run_error,
+      latest_run.raw_payload ->> 'collector_status' AS collector_status,
+      latest_run.raw_payload ->> 'auto_review_status' AS auto_review_status,
       latest_success.latest_success_at,
       COALESCE(latest_success.has_fresh_success, FALSE) AS has_fresh_success,
       COALESCE(observation_stats.pending_observation_count, 0)::int AS pending_observation_count,
@@ -384,7 +391,7 @@ async function getPipelineRows({ q, category, product }: { q: string; category: 
     ) job_stats ON TRUE
     ${webPilotScope}
     LEFT JOIN LATERAL (
-      SELECT run.status, run.started_at, run.error_message
+      SELECT run.status, run.started_at, run.error_message, run.raw_payload
       FROM collector_jobs scoped_job
       JOIN collector_job_runs run ON run.job_id = scoped_job.id
       WHERE scoped_job.product_id = product.id
@@ -586,8 +593,8 @@ function getPipelineRecommendation(stats: PipelineStats) {
 
   if (stats.failedCount > 0) {
     return {
-      title: "先处理采集失败",
-      body: `${stats.failedCount} 个产品最近采集失败。优先看失败原因，否则后续审核会一直缺样本。`,
+      title: "先处理运行失败",
+      body: `${stats.failedCount} 个产品最近运行失败。查看具体失败阶段，采集和审核需要分别处理。`,
       href: "/admin/collector-jobs",
       action: "查看失败任务",
       className: "border-red-200 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
@@ -709,6 +716,7 @@ function ProductPipelineCard({
 }) {
   const state = getPipelineState(row);
   const readiness = getPublishReadiness(row);
+  const reviewFailed = isCollectorReviewFailure({ ...row, error_message: row.latest_run_error });
   const pendingCount = toNumber(row.pending_observation_count);
   const blockedCount = toNumber(row.blocked_observation_count);
   const appStoreJobs = toNumber(row.app_store_job_count);
@@ -744,7 +752,9 @@ function ProductPipelineCard({
           {next.kind === "collect" ?
             <ManualCollectionProgressForm productSlug={row.product_slug} buttonLabel={next.label} pendingLabel="正在提交采集请求"/>
             : <AdminLinkButton href={withAdminReturnTo(next.href,returnTo)} size="sm">{next.label}</AdminLinkButton>}
-          <p className="text-xs leading-5 text-admin-text-muted">{next.detail}</p>
+          <p className="text-xs leading-5 text-admin-text-muted">
+            {reviewFailed ? "已有采集证据；修复审核错误后复用证据重试，无需重复采集。" : next.detail}
+          </p>
           {appStoreJobs > 0 && next.kind !== "collect" && next.kind !== "progress" ? <details>
             <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-xs text-admin-text-muted">
               需要重新采集？
@@ -766,9 +776,9 @@ function ProductPipelineCard({
           </div>
         </div>
         <div className="rounded-admin-card bg-admin-surface-subtle p-3 dark:bg-admin-chip">
-          <div className="text-xs font-semibold text-admin-text-faint">最近采集</div>
+          <div className="text-xs font-semibold text-admin-text-faint">最近运行</div>
           <div className="mt-1 text-sm font-semibold text-admin-text dark:text-admin-text">
-            {runStatusLabel(row.latest_run_status)}
+            {reviewFailed ? "采集成功，审核失败" : runStatusLabel(row.latest_run_status)}
           </div>
           <div className="mt-1 text-xs text-admin-text-muted dark:text-admin-text-muted">
             {formatDate(row.latest_run_started_at)}
@@ -1082,7 +1092,7 @@ export default async function AdminPipelinePage({
         <AdminCard>
           <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">失败</div>
           <div className="mt-2 text-2xl font-semibold text-red-700 dark:text-red-300">{stats.failedCount}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">最近采集失败。</div>
+          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">最近运行失败，包含采集或审核阶段。</div>
         </AdminCard>
         <AdminCard>
           <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">复采提醒</div>

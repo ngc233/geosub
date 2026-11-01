@@ -29,4 +29,11 @@ for (const route of ['pipeline/collect','review/collect','search-demand/authorit
 }
 test('review publication is not mislabeled as a draft',()=>assert.equal(workspaceStatus({...row,publish_status:'review'},false).publication,'审核中'));
 
+test('workspace separates review failures from collection and mixed failures',()=>{
+ const failed={...row,running_count:0,failed_count:1,review_failed_count:1};
+ assert.equal(workspaceStatus(failed,false).collection,'采集成功，审核失败');
+ assert.equal(workspaceStatus({...failed,failed_count:2},false).collection,'采集和审核均有失败');
+ assert.equal(workspaceStatus({...failed,review_failed_count:0},false).collection,'最近采集失败');
+});
+
 test('published product with no prices needs review, draft without prices does not',()=>{assert.equal(workspaceStatus({...row,price_count:0,stale_count:0},true).needsAction,true);assert.equal(workspaceStatus({...row,publish_status:'draft',price_count:0,stale_count:0},true).needsAction,false);});

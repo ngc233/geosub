@@ -715,6 +715,15 @@
       "legacyChecksums": [
         "1a9557ebb42c62b12bcee1df27ac3b57b7df8b6a9be384dac5711f70c4a41b2f"
       ]
+    },
+    {
+      "id": "schema:061",
+      "file": "sql/schema/061_app_store_review_isolation.sql",
+      "legacyBaseline": false,
+      "legacyFile": "sql/schema/061_app_store_review_isolation.sql",
+      "legacyChecksums": [
+        "6d636bc25e6335aab326a4bdf8bd25d7dc40b1f19548446a073e617595c0f283"
+      ]
     }
   ],
   "backfill": [

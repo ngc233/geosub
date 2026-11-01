@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.24.1 - Unreleased
+
+- Skip previously approved App Store observations and isolate review failures by price group.
+- Retry automatic review using existing collection evidence without increasing collection error counters.
+- Distinguish collection failures from review failures throughout admin run status and progress.
+- Add schema 061; upgrade website/database before the collector, with retained function rollback.
+
 ## 2.24.0 - Unreleased
 
 - Show independent website, collector, formal-price and per-page content versions in the admin overview.
