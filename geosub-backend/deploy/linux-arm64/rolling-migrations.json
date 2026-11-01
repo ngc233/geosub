@@ -1,4 +1,6 @@
 {
+  "geosub-backend/sql/schema/061_app_store_review_isolation.sql": "6d636bc25e6335aab326a4bdf8bd25d7dc40b1f19548446a073e617595c0f283",
+  "ai-price-site/prisma/migrations/20261101110000_app_store_review_isolation/migration.sql": "6d636bc25e6335aab326a4bdf8bd25d7dc40b1f19548446a073e617595c0f283",
   "geosub-backend/sql/schema/057_first_party_promotion_foundation.sql": "9b65043d26d8eeceb4f278b0a6eb6356b7224b46c8e0892c02b10a79223942c7",
   "geosub-backend/sql/schema/058_automatic_identity_ambiguity_lifecycle.sql": "e5c9c4354eb1e7ba3f60423c991115f36a31f150c13e48d4e00c03188f06a27f",
   "geosub-backend/sql/schema/059_audit_actor_compatibility.sql": "2ef1f35b47461096ad4756a2f90ef3654d8c1ad6c6c16221093cbf00afc980e1",
