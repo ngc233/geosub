@@ -1,0 +1,26 @@
+# Generated from .github/protected-files.json; do not edit by hand.
+# Regenerate: node scripts/check-protected-files.mjs --generate-codeowners > .github/CODEOWNERS
+# Isolation applies only to the first layer; SQL/spec changes may include tests.
+
+# Must be isolated from all files outside this layer
+/AGENTS.md @ngc233
+/ai-price-site/AGENTS.md @ngc233
+/docs/PRODUCT.md @ngc233
+/docs/WORKFLOW.md @ngc233
+/docs/ENGINEERING_RULES.md @ngc233
+/docs/DATA_POLICY.md @ngc233
+/docs/SEO_POLICY.md @ngc233
+/docs/TESTING.md @ngc233
+/docs/RELEASE.md @ngc233
+/docs/APPROVALS.md @ngc233
+/docs/RULES-SUMMARY.md @ngc233
+/ai-price-site/lib/seo-experiment-locks.ts @ngc233
+/.github/protected-files.json @ngc233
+/scripts/check-protected-files.mjs @ngc233
+/.github/CODEOWNERS @ngc233
+/.github/workflows/ci.yml @ngc233
+
+# Ownership only (no PR isolation)
+/geosub-backend/sql/ @ngc233
+/geosub-backend/data/product-plan-specs.json @ngc233
+/geosub-backend/data/catalog-expansion-2026-08.json @ngc233
