@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "owner": "@ngc233",
+  "isolate": [
+    "AGENTS.md",
+    "ai-price-site/AGENTS.md",
+    "docs/PRODUCT.md",
+    "docs/WORKFLOW.md",
+    "docs/ENGINEERING_RULES.md",
+    "docs/DATA_POLICY.md",
+    "docs/SEO_POLICY.md",
+    "docs/TESTING.md",
+    "docs/RELEASE.md",
+    "docs/APPROVALS.md",
+    "docs/RULES-SUMMARY.md",
+    "ai-price-site/lib/seo-experiment-locks.ts",
+    ".github/protected-files.json",
+    "scripts/check-protected-files.mjs",
+    ".github/CODEOWNERS",
+    ".github/workflows/ci.yml"
+  ],
+  "codeownersOnly": [
+    "geosub-backend/sql/",
+    "geosub-backend/data/product-plan-specs.json",
+    "geosub-backend/data/catalog-expansion-2026-08.json"
+  ]
+}
