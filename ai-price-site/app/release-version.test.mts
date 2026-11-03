@@ -128,8 +128,9 @@ test("maintenance upgrade rejects a repeated version before any service or backu
   execFileSync("git", ["init", "--bare", remote], { stdio: "ignore" });
   f.git("remote", "add", "origin", remote);
   f.git("push", "origin", "HEAD:main");
+  const candidate = f.git("rev-parse", "HEAD");
   for (const skipPull of ["true", "false"]) {
-    const result = spawnSync("bash", [upgrade], { encoding: "utf8", env: {
+    const result = spawnSync("bash", [upgrade, "--commit", candidate], { encoding: "utf8", env: {
     ...process.env, PATH: `${bin}:${dirname(process.execPath)}:${process.env.PATH}`,
     GEOSUB_ENV_FILE: join(f.root, "absent.env"), GEOSUB_REPO_DIR: f.root,
     GEOSUB_BACKEND_DIR: join(f.root, "geosub-backend"), GEOSUB_FRONTEND_DIR: join(f.root, "ai-price-site"),
