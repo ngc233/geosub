@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Validate before reading configuration or starting either deployment mode.
+if [[ $# -ne 2 || "${1:-}" != "--commit" || ! "${2:-}" =~ ^[a-f0-9]{40}$ ]]; then
+  echo "Upgrade requires --commit with an exact 40-character candidate SHA" >&2
+  exit 1
+fi
+readonly EXPECTED_CANDIDATE_COMMIT="$2"
+
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run as root: sudo bash deploy/linux-arm64/upgrade.sh"
   exit 1
@@ -185,6 +192,10 @@ preflight_release_version() {
     sudo -u geosub git -C "$REPO_DIR" merge-base --is-ancestor HEAD "$PINNED_COMMIT"
   else
     PINNED_COMMIT="$(sudo -u geosub git -C "$REPO_DIR" rev-parse HEAD)"
+  fi
+  if [[ "$PINNED_COMMIT" != "$EXPECTED_CANDIDATE_COMMIT" ]]; then
+    echo "Candidate commit mismatch: expected $EXPECTED_CANDIDATE_COMMIT; fetched $PINNED_COMMIT" >&2
+    return 1
   fi
   node "$REPO_DIR/scripts/check-release-version.mjs" --root "$REPO_DIR" \
     --ref "$PINNED_COMMIT" --current "$RELEASE_DIR/current.env"

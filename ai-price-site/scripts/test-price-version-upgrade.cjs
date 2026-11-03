@@ -9,6 +9,19 @@ const { PrismaPg } = require("@prisma/adapter-pg");
 const app = path.resolve(__dirname, "..");
 const root = path.resolve(app, "..");
 const baseline = "d4f80b96f59b443e297a15f956e6bde776b7e9eb";
+// T03a intentionally changes only these two registered controller files.
+// Pin both sides: neither arbitrary controller edits nor retained-source drift
+// may pass the migration/retained-client test. Reader equality stays mandatory.
+const controllerChanges = {
+  "geosub-backend/deploy/linux-arm64/rolling-release.mjs": {
+    retained: "50d61a4296d677a88da3ddc568acbefd62dd5c61627fac42f0818c0f467468f7",
+    candidate: "43856ca901bbb2a55be4316ed3416ddd883ce0d62f58a4105eba74dc2a0f46fb",
+  },
+  "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs": {
+    retained: "f26003d4a85c44b5052e9d3d7f3b76655fd4c0c5f16dad225ffce78fd328bab0",
+    candidate: "62c461fc28f0e7bd65966d6b1bd3c35cbfeb6193d6cde9a09e83cdd0fbe5dd76",
+  },
+};
 const url = new URL(process.env.GEOSUB_VERSION_UPGRADE_DATABASE_URL);
 assert(["127.0.0.1", "localhost"].includes(url.hostname));
 assert(/^\/geosub_price_version_test_[a-z0-9_]+_e2e$/.test(url.pathname));
@@ -91,8 +104,17 @@ async function main() {
     const plan = contract.rollbackPlan(root, old, policy);
     assert.equal(plan.mode, "audited-compatible-readers");
     assert.deepEqual(plan.targets, [{ id: "overview:en:chatgpt", facts: false }]);
+    for (const file of Object.keys(controllerChanges)) assert(policy.files.includes(file));
     for (const file of policy.files.filter(file => !["VERSION", "ai-price-site/prisma/schema.prisma"].includes(file))) {
-      assert.equal(sha(fs.readFileSync(path.join(root, file))), sha(fs.readFileSync(path.join(old, file))), file);
+      const candidateHash = sha(fs.readFileSync(path.join(root, file)));
+      const retainedHash = sha(fs.readFileSync(path.join(old, file)));
+      const expected = controllerChanges[file];
+      if (expected) {
+        assert.equal(retainedHash, expected.retained, `${file}: retained controller changed`);
+        assert.equal(candidateHash, expected.candidate, `${file}: unexpected controller change`);
+      } else {
+        assert.equal(candidateHash, retainedHash, file);
+      }
     }
     run(process.execPath, [path.join(root, "scripts/check-release-version.mjs"),
       "--root", root, "--baseline-ref", baseline]);
