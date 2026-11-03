@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import './release-candidate.test.mjs';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';

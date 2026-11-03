@@ -4,6 +4,17 @@ import { readFileSync, readdirSync, lstatSync, existsSync, mkdirSync, copyFileSy
 import { join, dirname } from 'node:path';
 export const timers = ['exchange-rate-sync', 'price-pipeline', 'collector-jobs', 'discovery-scan', 'analytics-aggregation', 'operations-brief', 'db-backup', 'event-retention'].map(x => `geosub-${x}.timer`);
 export const digest = file => createHash('sha256').update(readFileSync(file)).digest('hex');
+export function parseUpgradeCommit(args) {
+  if (args.length !== 2 || args[0] !== '--commit' || typeof args[1] !== 'string' || args[1].length !== 40 || !/^[a-f0-9]{40}$/.test(args[1])) {
+    throw Error('Upgrade requires --commit with an exact 40-character candidate SHA');
+  }
+  return args[1];
+}
+export function verifyUpgradeCommit(expected, fetched) {
+  parseUpgradeCommit(['--commit', expected]);
+  if (fetched !== expected) throw Error(`Candidate commit mismatch: expected ${expected}; fetched ${fetched}`);
+  return fetched;
+}
 export function atomic(file, text, mode = 0o600) {
   mkdirSync(dirname(file), {
     recursive: true

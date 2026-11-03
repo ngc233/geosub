@@ -42,7 +42,7 @@ def private_create(path, value):
         out.write('\n')
 
 
-def validate_request(req):
+def validate_request(req, action='start'):
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,55}', req['id']):
         raise ValueError('Invalid request ID')
     if not re.fullmatch(r'[a-f0-9]{40}', req['controllerCommit']):
@@ -54,8 +54,9 @@ def validate_request(req):
         raise ValueError('Unknown release operation')
     if (req['kind'].endswith('rollback') or req['kind'] == 'web-finalize') and not re.fullmatch(r'\d{8}T\d{6}Z(?:-\d{3})?', req.get('attempt', '')):
         raise ValueError('Rollback requires an exact native attempt ID')
-    if req['kind'] in ('collector-upgrade', 'web-finalize') and not re.fullmatch(r'[a-f0-9]{40}', req.get('candidateCommit', '')):
-        raise ValueError('Collector upgrade requires a full candidate commit')
+    needs_candidate = req['kind'] in ('collector-upgrade', 'web-finalize') or (req['kind'] == 'web-upgrade' and action == 'start')
+    if needs_candidate and not re.fullmatch(r'[a-f0-9]{40}', req.get('candidateCommit') or ''):
+        raise ValueError('Upgrade/finalize requires a full candidate commit (--candidate-commit)')
 
 
 # Executed by systemd, never by the SSH session. Completion is durable even if
@@ -78,7 +79,7 @@ sys.exit(0 if code==0 else 1)
 def release_argv(req):
     controller = req['releaseRoot'] + '/controllers/' + req['controllerCommit']
     if req['kind'] == 'web-upgrade':
-        return ['/bin/bash', controller + '/upgrade.sh']
+        return ['/bin/bash', controller + '/upgrade.sh', '--commit', req['candidateCommit']]
     if req['kind'] == 'collector-upgrade':
         return ['/bin/bash', controller + '/collector-release.sh', 'upgrade', '--commit', req['candidateCommit']]
     if req['kind'] == 'web-finalize':
@@ -89,7 +90,7 @@ def release_argv(req):
 
 def server_request(action, req):
     """Root-only, idempotent dispatch; status is strictly read-only."""
-    validate_request(req)
+    validate_request(req, action)
     if os.geteuid() != 0:
         raise ValueError('Release transport requires root; no implicit sudo')
     root = Path(req['releaseRoot']).resolve()
@@ -258,7 +259,7 @@ def main():
             p.add_argument('--host', required=True)
             p.add_argument('--controller-commit', required=True)
             p.add_argument('--kind', choices=['web-upgrade', 'collector-upgrade', 'web-rollback', 'collector-rollback', 'web-finalize'], required=True)
-            p.add_argument('--candidate-commit')
+            p.add_argument('--candidate-commit', help='Full 40-character candidate SHA; required for upgrades and finalize')
             p.add_argument('--attempt')
             p.add_argument('--release-root', default='/opt/geosub/releases')
     p = sub.add_parser('observe')
@@ -285,7 +286,7 @@ def main():
         private_create(args.receipt, req)
     else:
         req = json.loads(Path(args.receipt).read_text())
-        validate_request(req)
+        validate_request(req, 'status')
         args.host = req['host']
     result = ssh_request(args, args.command, req)
     print(json.dumps(result))

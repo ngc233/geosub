@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, taskUnitText, taskLaunch, taskIsBusy } from './rolling-release-lib.mjs';
+import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, taskUnitText, taskLaunch, taskIsBusy, parseUpgradeCommit, verifyUpgradeCommit } from './rolling-release-lib.mjs';
 import { migrationPlan, executeMigrationPlan, webRuntime, webRuntimeEnv, ownedTaskTimers } from './component-release-lib.mjs';
 import contentContract from './content-release-contract.cjs';
 import { finalizeExistingCandidate } from './rolling-finalize-lib.mjs';
@@ -251,6 +251,7 @@ function checkedConfig() {
   lock = true;
 }
 try {
+  const expectedUpgradeCommit = operation === 'upgrade' ? parseUpgradeCommit(args) : null;
   checkedConfig();
   if (operation === 'finalize') {
     const opt = Object.fromEntries(Array.from({ length: args.length / 2 }, (_, i) => [args[i * 2], args[i * 2 + 1]]));
@@ -341,10 +342,9 @@ try {
     await health(old);
     let pinned, databasePlan;
     if (operation === 'upgrade') {
-      if (args.length) throw Error('Upgrade takes no positional arguments');
       if (read('git', ['-c', `safe.directory=${repo}`, '-C', repo, 'status', '--porcelain', '--untracked-files=normal'])) throw Error('Release repository must be clean');
       run('sudo', ['-u', 'geosub', 'git', '-C', repo, 'fetch', 'origin', env.GEOSUB_GIT_BRANCH || 'main']);
-      const commit = read('git', ['-c', `safe.directory=${repo}`, '-C', repo, 'rev-parse', 'FETCH_HEAD']);
+      const commit = verifyUpgradeCommit(expectedUpgradeCommit, read('git', ['-c', `safe.directory=${repo}`, '-C', repo, 'rev-parse', 'FETCH_HEAD']));
       run('node', [path.join(repo, 'scripts/check-release-version.mjs'), '--root', repo, '--ref', commit, '--current', path.join(root, 'current.env')]);
       const changes = read('git', ['-c', `safe.directory=${repo}`, '-C', repo, 'diff', '--name-status', '--no-renames', old.commit, commit]).split('\n').filter(Boolean).map(line => {
         const [status, p] = line.split('\t');

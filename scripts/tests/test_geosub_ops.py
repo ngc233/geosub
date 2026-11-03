@@ -1,5 +1,6 @@
 import argparse
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -17,6 +18,66 @@ spec.loader.exec_module(ops)
 
 
 class OpsTest(unittest.TestCase):
+    def test_web_upgrade_passes_exact_candidate_to_controller(self):
+        req = dict(id='pinned', controllerCommit='a'*40, candidateCommit='b'*40,
+                   releaseRoot='/opt/geosub/releases', kind='web-upgrade')
+        ops.validate_request(req)
+        self.assertEqual(ops.release_argv(req), [
+            '/bin/bash', '/opt/geosub/releases/controllers/'+'a'*40+'/upgrade.sh',
+            '--commit', 'b'*40])
+        for value in (None, '', 'main', 'b'*39, 'b'*41, 'B'*40, 'b'*40+'\n'):
+            with self.subTest(candidate=value), self.assertRaises(ValueError):
+                ops.validate_request({**req, 'candidateCommit': value})
+
+    def test_missing_web_candidate_is_rejected_before_receipt_or_dispatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            receipt = Path(temp)/'receipt.json'
+            command = [str(SCRIPT), 'start', '--kind', 'web-upgrade',
+                       '--controller-commit', 'a'*40, '--host', 'test-host',
+                       '--identity', 'unused', '--known-hosts', 'unused',
+                       '--receipt', str(receipt)]
+            result = subprocess.run([sys.executable, *command], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('full candidate commit', result.stderr)
+            self.assertFalse(receipt.exists())
+
+    def test_web_start_records_and_dispatches_the_same_candidate(self):
+        with tempfile.TemporaryDirectory() as temp:
+            receipt = Path(temp)/'receipt.json'
+            args = [str(SCRIPT), 'start', '--kind', 'web-upgrade',
+                    '--controller-commit', 'a'*40, '--candidate-commit', 'b'*40,
+                    '--host', 'test-host', '--identity', 'unused', '--known-hosts', 'unused',
+                    '--receipt', str(receipt)]
+            with patch.object(sys, 'argv', args), patch.object(ops, 'ssh_request', return_value={'state': 'running'}) as ssh, patch('sys.stdout', new_callable=io.StringIO):
+                self.assertEqual(ops.main(), 3)
+            req = json.loads(receipt.read_text())
+            self.assertEqual(req['candidateCommit'], 'b'*40)
+            self.assertEqual(req['controllerCommit'], 'a'*40)
+            self.assertEqual(ssh.call_args.args[1:], ('start', req))
+            self.assertEqual(ops.release_argv(req)[-2:], ['--commit', 'b'*40])
+
+    def test_legacy_web_receipt_remains_queryable_but_cannot_start(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            req = dict(id='legacy', host='test-host', controllerCommit='a'*40,
+                       candidateCommit=None, releaseRoot=str(root), kind='web-upgrade')
+            folder = root/'operator-requests'/'legacy'
+            folder.mkdir(parents=True)
+            ops.private_create(folder/'request.json', req)
+            ops.private_create(folder/'completion.json', {'state': 'succeeded', 'exitCode': 0})
+            with patch.object(ops.os, 'geteuid', return_value=0), patch.object(ops.subprocess, 'run') as run:
+                self.assertEqual(ops.server_request('status', req)['state'], 'succeeded')
+                with self.assertRaises(ValueError):
+                    ops.server_request('start', req)
+                run.assert_not_called()
+            receipt = root/'local.json'
+            ops.private_create(receipt, req)
+            args = [str(SCRIPT), 'status', '--receipt', str(receipt),
+                    '--identity', 'unused', '--known-hosts', 'unused']
+            with patch.object(sys, 'argv', args), patch.object(ops, 'ssh_request', return_value={'state': 'succeeded'}) as ssh, patch('sys.stdout', new_callable=io.StringIO):
+                self.assertEqual(ops.main(), 0)
+                self.assertEqual(ssh.call_args.args[1:], ('status', req))
+
     def test_failure_phase_preserves_http_200_body_timeout(self):
         data = dict(http_code=200, time_connect=.1, time_appconnect=.2, time_starttransfer=.3, url_effective='https://example.org')
         self.assertEqual(ops.failure_stage(data, 28), 'body')
@@ -72,7 +133,7 @@ class OpsTest(unittest.TestCase):
             control.mkdir(parents=True); (root/'control').symlink_to(control)
             marker = root/'called'
             (control/'upgrade.sh').write_text('echo called >> '+str(marker)+'\n')
-            req = dict(id='test-run', controllerCommit=commit, releaseRoot=str(root), kind='web-upgrade')
+            req = dict(id='test-run', controllerCommit=commit, candidateCommit='b'*40, releaseRoot=str(root), kind='web-upgrade')
             real_run, real_stat = subprocess.run, Path.stat
             calls = []
             def stat(path, *a, **kw):
@@ -95,7 +156,7 @@ class OpsTest(unittest.TestCase):
     def test_unknown_reservation_never_redispatches_or_claims_success(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); folder=root/'operator-requests'/'test-run';folder.mkdir(parents=True)
-            req=dict(id='test-run',controllerCommit='a'*40,releaseRoot=str(root),kind='web-upgrade')
+            req=dict(id='test-run',controllerCommit='a'*40,candidateCommit='b'*40,releaseRoot=str(root),kind='web-upgrade')
             with patch.object(ops.os,'geteuid',return_value=0),patch.object(ops.subprocess,'run') as run:
                 self.assertEqual(ops.server_request('start',req)['state'],'unknown')
                 run.assert_not_called()
@@ -105,7 +166,7 @@ class OpsTest(unittest.TestCase):
             self.assertEqual(result['state'],'unknown');self.assertFalse(result['retryAllowed'])
 
     def test_validation_and_rollback_are_explicit(self):
-        req=dict(id='safe',controllerCommit='a'*40,releaseRoot='/opt/geosub/releases',kind='web-upgrade')
+        req=dict(id='safe',controllerCommit='a'*40,candidateCommit='b'*40,releaseRoot='/opt/geosub/releases',kind='web-upgrade')
         for bad in [{'id':'../oops'},{'controllerCommit':'main'},{'releaseRoot':'/opt/../etc'},{'kind':'restart'}]:
             with self.assertRaises(ValueError):ops.validate_request({**req,**bad})
         with self.assertRaises(ValueError):ops.validate_request({**req,'kind':'web-rollback'})
