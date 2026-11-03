@@ -82,6 +82,63 @@ npm run preflight:full
 
 旧停站升级保留为明确选择的 `GEOSUB_DEPLOY_MODE=maintenance-v1`，不允许缺少滚动配置时静默降级。非兼容迁移和数据恢复不属于滚动发布；仍需独立授权与窗口。
 
+### 5.1 新控制器与操作工具的使用顺序
+
+先按滚动发布手册，从**包含 T03a（候选提交绑定）和 T03（CI 检查）的已审核提交**安装并核验新控制器，再使用该版本的 `scripts/geosub_ops.py` 发起升级。控制器安装仍需满足原有授权、远端 CI 和版本门禁；不能把任意文档提交当作可安装的发布候选。旧网站控制器会忽略 `--commit` 参数，仅更新本地操作工具不能保证服务器发布的就是已检查 CI 的提交。
+
+`--controller-commit` 是服务器已安装且由 `control` 指向的控制器完整 40 位 SHA；`--candidate-commit` 是本次要发布的网站或采集组件完整 40 位 SHA，两者分别核验、记录，不能相互代替。新版工具把候选 SHA 传给控制器的 `--commit`；新版控制器校验实际拉取结果，不一致时拒绝发布。
+
+### 5.2 正常升级示例
+
+下列变量须来自已核验的受控配置。`RELEASE_REQUEST_ID` 为本次操作指定唯一标识；每次新操作使用未占用的回执路径，查询同一操作时保持路径不变。示例不会替代发布授权。
+
+```bash
+mkdir -p .ops-evidence
+python3 scripts/geosub_ops.py start \
+  --host "$GEOSUB_SSH_HOST" --identity "$GEOSUB_SSH_IDENTITY" \
+  --known-hosts "$GEOSUB_KNOWN_HOSTS" \
+  --controller-commit "$VERIFIED_CONTROLLER_SHA" \
+  --kind web-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA" \
+  --receipt ".ops-evidence/web-${RELEASE_REQUEST_ID}.json"
+
+python3 scripts/geosub_ops.py status \
+  --identity "$GEOSUB_SSH_IDENTITY" --known-hosts "$GEOSUB_KNOWN_HOSTS" \
+  --receipt ".ops-evidence/web-${RELEASE_REQUEST_ID}.json"
+```
+
+采集升级使用独立回执和已核验的采集候选 SHA：
+
+```bash
+python3 scripts/geosub_ops.py start \
+  --host "$GEOSUB_SSH_HOST" --identity "$GEOSUB_SSH_IDENTITY" \
+  --known-hosts "$GEOSUB_KNOWN_HOSTS" \
+  --controller-commit "$VERIFIED_CONTROLLER_SHA" \
+  --kind collector-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA" \
+  --receipt ".ops-evidence/collector-${RELEASE_REQUEST_ID}.json"
+```
+
+两类升级均在创建回执和 SSH 派发前，通过 GitHub API 确认候选可从仓库 `main` 到达，并要求该候选上名称为 `CI` 的最新一次运行（含重跑）已完成且结论为 `success`，不能选择较早的一次成功。`web-rollback`、`collector-rollback` 不检查 CI；`web-finalize` 仍需候选 SHA，但不重复检查 CI。`status` 只查询已有请求，不重新检查或派发。
+
+### 5.3 CI 查询不可用时的批准例外
+
+只有**已通过 API 确认候选属于 main，随后首次 CI 列表请求因网络不可达或 GitHub HTTP 5xx 失败**时，才可按已取得的批准成对使用 `--allow-unverified-ci --approval-id "$CI_EXCEPTION_APPROVAL_ID"`。批准编号须为实际取得的 `APR-…` 编号；参数本身不产生授权。
+
+以下命令是网站升级的例外替代示例，不是在正常升级之后追加执行的步骤。仅在确认请求尚未派发时使用；已派发或结果未知时仍查询原回执，不能换路径重发。采集升级仅将 kind 改为 `collector-upgrade` 并使用独立回执。
+
+```bash
+python3 scripts/geosub_ops.py start \
+  --host "$GEOSUB_SSH_HOST" --identity "$GEOSUB_SSH_IDENTITY" \
+  --known-hosts "$GEOSUB_KNOWN_HOSTS" \
+  --controller-commit "$VERIFIED_CONTROLLER_SHA" \
+  --kind web-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA" \
+  --allow-unverified-ci --approval-id "$CI_EXCEPTION_APPROVAL_ID" \
+  --receipt ".ops-evidence/web-ci-exception-${RELEASE_REQUEST_ID}.json"
+```
+
+候选不在 main 或无法确认其归属、CI 失败/取消/运行中/排队/查不到、HTTP 3xx/4xx（含 401/403/404/429）、TLS 校验失败、响应异常、分页中断或最终复查失败，均不能用例外放行。完全无法访问 GitHub 时也无法确认 main 归属，因此不放行。回退和 finalize 不接受这两个例外参数。
+
+可通过受控环境提供可选的 `GITHUB_TOKEN`（私有仓库需具备 Actions、Contents 读取权限），不要把令牌写进命令示例、提交或日志。回执的 `ciCheck` 记录候选与 main SHA、运行 ID/编号/attempt、结论、检查时间、是否请求/使用例外及批准编号；使用例外时终端输出醒目警告，无法取得的运行信息保留为 null。CI 门禁拒绝时退出码为 2，不创建回执、不派发 SSH；这与已派发请求的未知状态不同。
+
 ## 6. 发布后验证
 
 公网验收使用标准 `geosub_ops.py observe` 保留分阶段日志；观察不完整不能计为成功。至少检查：
@@ -142,7 +199,7 @@ CDN 可能保留短缓存。必须区分源站与公网响应，并在宣布完�
 依据 [组件发布 RFC](rfc-component-release-2026-10-20.md)，仓库版本表示候选包；网站与采集器独立记录实际版本，允许不同。采集发布不修改网站的 current.env，不要求网站跟随组件升级。
 
 - 网站：标准 rolling upgrade。先比较数据库输入；无变更时记录 migration_skipped，跳过 SQL、Prisma 和 baseline 迁移执行，不为此暂停全部定时器或创建迁移备份。首次组件接入只等待采集任务完成以建立共享锁；后续网站更新保留采集组件。存在数据库变更时保留原备份和精确兼容门禁。
-- 采集：`sudo bash "$GEOSUB_RELEASE_DIR/control/collector-release.sh" upgrade --commit <完整已推送SHA>`。必须通过 CI。只安装 backend 依赖，不构建网站；候选数据库输入必须与现网站一致。只暂停采集定时器，等待批次和共享锁，不中止采集进程。关闭的定时器保持关闭。
-- 采集回退：同一入口 `rollback --attempt <采集发布ID> --confirm <同一ID>`。校验当前组件、源文件和数据库兼容，恢复保留组件，不回退网站或数据库。
+- 采集：按第 5.2 节使用 `geosub_ops.py start --kind collector-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA"`，其余连接、控制器及回执参数也须完整提供；服务器内部执行器接收 `collector-release.sh upgrade --commit <完整候选SHA>`。必须通过 CI，批准例外仅按第 5.3 节使用。只安装 backend 依赖，不构建网站；候选数据库输入必须与现网站一致。只暂停采集定时器，等待批次和共享锁，不中止采集进程。关闭的定时器保持关闭。
+- 采集回退：操作工具使用 `start --kind collector-rollback --attempt <采集发布ID>` 并提供连接、控制器及独立回执参数；工具向服务器内部执行器传递 `rollback --attempt <采集发布ID> --confirm <同一ID>`。校验当前组件、源文件和数据库兼容，恢复保留组件，不回退网站或数据库。
 - 无数据库变更的应用回退使用保留构建，不要求该次生成迁移备份；历史迁移发布仍校验原备份。常规定时数据库备份不变。
 - 控制目录、网站、采集器的提交必须分别记录。首次将当前网站内采集程序提取成独立目录允许相同提交/版本，之后升级必须递增组件版本。
