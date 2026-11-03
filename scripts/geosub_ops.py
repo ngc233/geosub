@@ -4,6 +4,8 @@ import argparse
 import base64
 import concurrent.futures
 import datetime
+import errno
+import http.client
 import ipaddress
 import json
 import os
@@ -11,11 +13,16 @@ from pathlib import Path
 import platform
 import re
 import shlex
+import socket
+import ssl
 import subprocess
+import sys
 import tempfile
 import time
 from contextlib import contextmanager
 from urllib.parse import urlsplit
+from urllib.error import HTTPError, URLError
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 import uuid
 
 
@@ -57,6 +64,157 @@ def validate_request(req, action='start'):
     needs_candidate = req['kind'] in ('collector-upgrade', 'web-finalize') or (req['kind'] == 'web-upgrade' and action == 'start')
     if needs_candidate and not re.fullmatch(r'[a-f0-9]{40}', req.get('candidateCommit') or ''):
         raise ValueError('Upgrade/finalize requires a full candidate commit (--candidate-commit)')
+
+
+class CIError(RuntimeError):
+    """A definitive rejection or an unverifiable API response; never bypassable."""
+
+
+class CIUnavailable(CIError):
+    """Only network reachability failures and GitHub HTTP 5xx."""
+
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Never forward the optional credential to a redirect target.
+        return None
+
+
+def github_json(path):
+    headers = {'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+               'User-Agent': 'geosub-release-ci-gate'}
+    token = os.environ.get('GITHUB_TOKEN')
+    if token:
+        if not re.fullmatch(r'[A-Za-z0-9_]+', token):
+            raise CIError('Invalid GITHUB_TOKEN format')
+        headers['Authorization'] = 'Bearer ' + token
+    try:
+        request = Request('https://api.github.com/repos/ngc233/geosub' + path, headers=headers)
+        with build_opener(NoRedirect()).open(request, timeout=20) as response:
+            if response.status != 200:
+                raise CIError('Unexpected GitHub response status')
+            raw = response.read(4 * 1024 * 1024 + 1)
+        if len(raw) > 4 * 1024 * 1024:
+            raise CIError('GitHub response exceeds size limit')
+        data = json.loads(raw)
+        if not isinstance(data, dict):
+            raise CIError('Invalid GitHub response object')
+        return data
+    except HTTPError as error:
+        error.close()
+        kind = CIUnavailable if 500 <= error.code <= 599 else CIError
+        raise kind('GitHub HTTP ' + str(error.code)) from None
+    except (URLError, OSError) as error:
+        reason = error.reason if isinstance(error, URLError) else error
+        unreachable = (not isinstance(reason, ssl.SSLError) and (
+            isinstance(reason, (socket.gaierror, TimeoutError, ConnectionError)) or
+            getattr(reason, 'errno', None) in (errno.ENETUNREACH, errno.EHOSTUNREACH, errno.ENETDOWN)))
+        kind = CIUnavailable if unreachable else CIError
+        raise kind('GitHub network unreachable' if unreachable else 'GitHub transport rejected') from None
+    except (ValueError, http.client.HTTPException):
+        # Never print response bodies, exception text, headers or credentials.
+        raise CIError('Invalid GitHub response') from None
+
+
+def ci_timestamp(value):
+    try:
+        date = datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        if date.tzinfo is None:
+            raise ValueError()
+        return date
+    except (AttributeError, TypeError, ValueError):
+        raise CIError('Invalid CI run timestamp') from None
+
+
+def ci_run(run, candidate):
+    """Validate only known fields; never copy arbitrary API text into receipts."""
+    if not isinstance(run, dict) or run.get('name') != 'CI' or run.get('head_sha') != candidate:
+        raise CIError('CI run does not match the candidate and workflow')
+    for key in ('id', 'run_number', 'run_attempt'):
+        if type(run.get(key)) is not int or run[key] < 1:
+            raise CIError('Invalid CI run identifier')
+    status, conclusion = run.get('status'), run.get('conclusion')
+    if status not in ('completed', 'queued', 'in_progress', 'requested', 'waiting', 'pending'):
+        raise CIError('Unknown CI run status')
+    if conclusion not in (None, 'success', 'failure', 'cancelled', 'timed_out', 'action_required',
+                           'neutral', 'skipped', 'stale', 'startup_failure'):
+        raise CIError('Unknown CI run conclusion')
+    created = ci_timestamp(run.get('created_at'))
+    started = created if run.get('run_started_at') is None and status != 'completed' else ci_timestamp(run.get('run_started_at'))
+    updated = ci_timestamp(run.get('updated_at'))
+    # run_started_at belongs to the current attempt, not the original run ID.
+    # A queued rerun can retain its previous start time: its update blocks release.
+    latest = max(created, started, updated if status != 'completed' else started)
+    return latest, {'runId': run['id'], 'runNumber': run['run_number'],
+                    'runAttempt': run['run_attempt'], 'status': status, 'conclusion': conclusion}
+
+
+def check_ci(candidate, allow_unverified=False, approval_id=None):
+    """Check main ancestry first, then the latest CI attempt, before receipt/SSH."""
+    if allow_unverified != bool(approval_id) or (approval_id and not re.fullmatch(r'APR-[A-Z0-9]+(?:-[A-Z0-9]+)*', approval_id)):
+        raise CIError('--allow-unverified-ci requires --approval-id APR-... (and vice versa)')
+    try:
+        main = github_json('/git/ref/heads/main').get('object', {})
+        main_sha = main.get('sha') if isinstance(main, dict) else None
+        if not isinstance(main_sha, str) or not re.fullmatch(r'[a-f0-9]{40}', main_sha) or main.get('type') != 'commit':
+            raise CIError('Invalid GitHub main reference')
+        comparison = github_json('/compare/' + candidate + '...' + main_sha + '?per_page=1')
+        base, merge_base = comparison.get('base_commit'), comparison.get('merge_base_commit')
+        if not isinstance(base, dict) or not isinstance(merge_base, dict):
+            raise CIError('Invalid GitHub ancestry comparison')
+        if comparison.get('status') not in ('ahead', 'identical') or merge_base.get('sha') != candidate or base.get('sha') != candidate:
+            raise CIError('Candidate is not reachable from origin/main')
+    except CIUnavailable:
+        # The CI exception never substitutes for positive main-membership evidence.
+        raise CIError('Cannot verify candidate reachability from origin/main; CI exception is not applicable') from None
+    evidence = {'workflow': 'CI', 'candidateCommit': candidate, 'mainCommit': main_sha,
+                'reachableFromMain': True, 'runId': None, 'runNumber': None, 'runAttempt': None,
+                'status': None, 'conclusion': None, 'overrideRequested': allow_unverified,
+                'overrideUsed': False, 'approvalId': approval_id}
+    runs, total = [], None
+    try:
+        for page in range(1, 11):
+            data = github_json('/actions/runs?head_sha=' + candidate + '&per_page=100&page=' + str(page))
+            count, batch = data.get('total_count'), data.get('workflow_runs')
+            if type(count) is not int or not 0 <= count <= 1000 or not isinstance(batch, list):
+                raise CIError('Invalid or truncated CI run listing')
+            if total is not None and total != count:
+                raise CIError('CI run listing changed during pagination; retry the check')
+            total = count
+            if len(batch) != min(100, total - len(runs)):
+                raise CIError('Incomplete CI run listing')
+            runs.extend(batch)
+            if len(runs) == total:
+                break
+    except CIUnavailable as error:
+        # A partial listing could already contain a definitive rejection. Never
+        # turn a pagination failure into permission to ignore that evidence.
+        if not allow_unverified or total is not None:
+            raise CIError(str(error) + '; CI unverified, release refused') from None
+        return {**evidence, 'checkedAt': utc(), 'overrideUsed': True, 'reason': str(error)}
+    seen, candidates = set(), []
+    for run in runs:
+        if not isinstance(run, dict) or type(run.get('id')) is not int or run['id'] in seen or run.get('head_sha') != candidate:
+            raise CIError('Inconsistent CI run listing')
+        seen.add(run['id'])
+        if run.get('name') == 'CI':
+            candidates.append(ci_run(run, candidate))
+    if not candidates:
+        raise CIError('CI not_found for candidate')
+    newest = max(stamp for stamp, _ in candidates)
+    latest = [run for stamp, run in candidates if stamp == newest]
+    # Timestamp ties cannot establish an ordering: every tied latest run must pass.
+    for run in latest:
+        if run['status'] != 'completed' or run['conclusion'] != 'success':
+            raise CIError('Latest CI run ' + str(run['runId']) + ' attempt ' + str(run['runAttempt']) +
+                          ' is ' + run['status'] + '/' + str(run['conclusion']) + '; release refused')
+    selected = max(latest, key=lambda run: run['runId'])
+    # Detect a rerun/status change between listing and dispatch. A later lookup
+    # failure cannot override an already returned CI result.
+    _, current = ci_run(github_json('/actions/runs/' + str(selected['runId'])), candidate)
+    if current != selected:
+        raise CIError('CI run changed during verification; retry the check')
+    return {**evidence, **selected, 'checkedAt': utc()}
 
 
 # Executed by systemd, never by the SSH session. Completion is durable even if
@@ -262,6 +420,8 @@ def main():
             p.add_argument('--candidate-commit', help='Full 40-character candidate SHA; required for upgrades and finalize')
             p.add_argument('--attempt')
             p.add_argument('--release-root', default='/opt/geosub/releases')
+            p.add_argument('--allow-unverified-ci', action='store_true', help='Upgrades only: allow CI network/5xx failure after main membership is verified; requires --approval-id')
+            p.add_argument('--approval-id', help='APR- approval number for --allow-unverified-ci')
     p = sub.add_parser('observe')
     p.add_argument('--site', default='https://geosub.org')
     p.add_argument('--observer', required=True)
@@ -283,6 +443,15 @@ def main():
                'kind': args.kind, 'candidateCommit': args.candidate_commit, 'attempt': args.attempt,
                'releaseRoot': args.release_root, 'createdAt': utc()}
         validate_request(req)
+        if args.kind in ('web-upgrade', 'collector-upgrade'):
+            try:
+                req['ciCheck'] = check_ci(args.candidate_commit, args.allow_unverified_ci, args.approval_id)
+            except CIError as error:
+                raise CIError('CI rejected for candidate ' + args.candidate_commit + ': ' + str(error)) from None
+            label = 'WARNING: UNVERIFIED CI EXCEPTION' if req['ciCheck']['overrideUsed'] else 'CI verified'
+            print(label + ': ' + json.dumps(req['ciCheck']), file=sys.stderr)
+        elif args.allow_unverified_ci or args.approval_id:
+            raise ValueError('CI exception options apply only to web-upgrade and collector-upgrade')
         private_create(args.receipt, req)
     else:
         req = json.loads(Path(args.receipt).read_text())
@@ -294,10 +463,13 @@ def main():
     return 0 if result['state'] == 'succeeded' else 1 if result['state'] == 'failed' else 3
 
 
-if __name__ == '__main__':
-    import sys
+def cli():
     try:
-        sys.exit(main())
+        return main()
     except (ValueError, RuntimeError, OSError, subprocess.TimeoutExpired) as error:
         print(str(error), file=sys.stderr)
-        sys.exit(2)
+        return 2
+
+
+if __name__ == '__main__':
+    sys.exit(cli())
