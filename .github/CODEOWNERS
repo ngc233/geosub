@@ -19,6 +19,7 @@
 /scripts/check-protected-files.mjs @ngc233
 /.github/CODEOWNERS @ngc233
 /.github/workflows/ci.yml @ngc233
+/.github/workflows/protected-files.yml @ngc233
 
 # Ownership only (no PR isolation)
 /geosub-backend/sql/ @ngc233
