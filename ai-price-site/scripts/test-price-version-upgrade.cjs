@@ -91,7 +91,16 @@ async function main() {
     const plan = contract.rollbackPlan(root, old, policy);
     assert.equal(plan.mode, "audited-compatible-readers");
     assert.deepEqual(plan.targets, [{ id: "overview:en:chatgpt", facts: false }]);
+    const reviewedRenderer = require("./fixtures/public-r2-content-contract.json");
+    assert.equal(contract.fingerprint(root, policy.files), reviewedRenderer.from);
     for (const file of policy.files.filter(file => !["VERSION", "ai-price-site/prisma/schema.prisma"].includes(file))) {
+      if (file === reviewedRenderer.file) {
+        assert.equal(sha(fs.readFileSync(path.join(root, file))), reviewedRenderer.candidateSha256,
+          "Only the exact reviewed R2 renderer is compatible");
+        assert.equal(sha(fs.readFileSync(path.join(old, file))), reviewedRenderer.retainedSha256,
+          "The retained renderer must still match the reviewed historical bytes");
+        continue;
+      }
       assert.equal(sha(fs.readFileSync(path.join(root, file))), sha(fs.readFileSync(path.join(old, file))), file);
     }
     run(process.execPath, [path.join(root, "scripts/check-release-version.mjs"),

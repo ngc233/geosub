@@ -33,7 +33,9 @@ test("visitor can move from home to an AI detail and switch language", async ({
 
   const detailPath = `/zh/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`;
   const productLink = page.locator(`a[href="${detailPath}"]`);
-  await expect(productLink).toContainText(fixture.productName);
+  const productCard = page.locator(`[data-catalog-product="${fixture.productSlug}"]`);
+  await expect(productCard.getByRole("heading")).toContainText(fixture.productName);
+  await expect(productLink).toHaveAccessibleName("查看地区价格与来源证据");
   await productLink.click();
 
   await expect(page).toHaveURL(new RegExp(`${detailPath}$`));
