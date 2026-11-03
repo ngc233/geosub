@@ -58,9 +58,9 @@ export function getProductOverviewChannel(product: SubscriptionProduct) {
   return regions.length > 0 && regions.every(region => region.billingPlatform === 'web') ? 'Web' : 'App Store';
 }
 
-export function getProductOverviewPriceFact(
+export function getProductOverviewLowestQuote(
   product: SubscriptionProduct,
-): ProductOverviewPriceFact | null {
+) {
   const decisionPlans = getProductOverviewDecisionPlans(product);
   const monthlyPlans = decisionPlans.filter(
     (plan) => plan.billing === "monthly",
@@ -74,6 +74,11 @@ export function getProductOverviewPriceFact(
         left.stats.minRegion.priceUsd - right.stats.minRegion.priceUsd,
     )[0];
 
+  return lowest || null;
+}
+
+export function getProductOverviewPriceFact(product: SubscriptionProduct): ProductOverviewPriceFact | null {
+  const lowest = getProductOverviewLowestQuote(product);
   if (!lowest) return null;
 
   return {

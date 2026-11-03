@@ -1,81 +1,50 @@
 import { expect, test } from "@playwright/test";
 
-async function getRenderedBackgroundRgb(locator) {
-  return locator.evaluate((element) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1;
-    canvas.height = 1;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context) {
-      throw new Error("Canvas context is unavailable.");
-    }
-    context.fillStyle = getComputedStyle(element).backgroundColor;
-    context.fillRect(0, 0, 1, 1);
-    return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
-  });
-}
+for (const width of [1280, 390]) {
+  for (const theme of ["light", "dark"]) {
+    test(`approved homepage and search: ${width}px ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 720 });
+      await page.emulateMedia({ colorScheme: theme });
+      const errors = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto("/zh");
+      const rejectAnalytics = page.getByRole("button", { name: "拒绝统计" });
+      if (await rejectAnalytics.isVisible()) await rejectAnalytics.click();
 
-test("homepage and search remain usable across desktop mobile light and dark states", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.emulateMedia({ colorScheme: "light" });
-  await page.goto("/zh");
+      const pageColor = theme === "light" ? "rgb(244, 245, 240)" : "rgb(20, 25, 28)";
+      const surfaceColor = theme === "light" ? "rgb(255, 255, 255)" : "rgb(29, 36, 39)";
+      await expect(page.locator(".gs-public-shell")).toHaveCSS("background-color", pageColor);
+      const products = page.locator(".gs-home-products");
+      await expect(products.getByRole("heading", { name: "按产品找价格" })).toBeVisible();
+      await expect(products).toHaveCSS("background-color", surfaceColor);
+      const aiLink = products.getByRole("link", { name: "AI 订阅", exact: true });
+      await expect(aiLink).toHaveAttribute("href", "/zh/ai-pricing");
+      await page.keyboard.press("Tab");
+      await aiLink.focus();
+      await expect(aiLink).toHaveCSS("outline-style", "solid");
+      await expect(aiLink).toHaveCSS("outline-width", "2px");
 
-  const rejectAnalytics = page.getByRole("button", { name: "拒绝统计" });
-  if (await rejectAnalytics.isVisible()) {
-    await rejectAnalytics.click();
+      const searchButton = page.locator("[data-public-header]").getByRole("button", { name: "搜索", exact: true });
+      await searchButton.click();
+      const searchDialog = page.getByRole("dialog", { name: "搜索 GeoSub" });
+      await expect(searchDialog).toBeVisible();
+      await expect(searchDialog).toHaveCSS("background-color", surfaceColor);
+      await expect(searchDialog.getByRole("textbox")).toBeFocused();
+      await page.keyboard.press("Shift+Tab");
+      expect(await searchDialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+      await page.keyboard.press("Escape");
+      await expect(searchDialog).toBeHidden();
+      await expect(searchButton).toBeFocused();
+
+      if (width === 390) {
+        await page.getByRole("button", { name: "打开菜单" }).click();
+        const close = page.getByRole("button", { name: "关闭菜单" });
+        await expect(close).toHaveAttribute("aria-expanded", "true");
+        await close.click();
+        await expect(page.getByRole("button", { name: "打开菜单" })).toHaveAttribute("aria-expanded", "false");
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+      expect(errors).toEqual([]);
+    });
   }
-
-  const categoryCard = page
-    .getByRole("heading", { name: "AI 订阅", level: 3 })
-    .locator("xpath=ancestor::a[1]");
-  await expect(categoryCard).toBeVisible();
-  await expect(page.locator("body")).toHaveCSS(
-    "background-color",
-    "rgb(247, 248, 250)",
-  );
-  await expect(categoryCard).toHaveCSS("background-color", "rgb(255, 255, 255)");
-
-  await categoryCard.hover();
-  await expect
-    .poll(() => categoryCard.evaluate((element) => getComputedStyle(element).translate))
-    .not.toBe("none");
-  await categoryCard.focus();
-  await expect
-    .poll(() => categoryCard.evaluate((element) => getComputedStyle(element).boxShadow))
-    .not.toBe("none");
-
-  await page.emulateMedia({ colorScheme: "dark" });
-  await expect(page.locator("body")).toHaveCSS(
-    "background-color",
-    "rgb(9, 9, 11)",
-  );
-  await expect(categoryCard).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await expect(categoryCard).not.toHaveCSS("color", "rgb(0, 0, 0)");
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ colorScheme: "light" });
-  await page.reload();
-  await page.getByRole("button", { name: "搜索" }).click();
-  const searchDialog = page.getByRole("dialog", { name: "搜索 GeoSub" });
-  await expect(searchDialog).toBeVisible();
-  await expect(searchDialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await page.keyboard.press("Escape");
-  await expect(searchDialog).toBeHidden();
-
-  await page.emulateMedia({ colorScheme: "dark" });
-  await page.getByRole("button", { name: "搜索" }).click();
-  await expect(searchDialog).toBeVisible();
-  expect(await getRenderedBackgroundRgb(searchDialog)).toEqual([9, 9, 11]);
-  await page.keyboard.press("Escape");
-
-  const menuButton = page.getByRole("button", { name: "打开菜单" });
-  await menuButton.click();
-  const closeMenuButton = page.getByRole("button", { name: "关闭菜单" });
-  await expect(closeMenuButton).not.toHaveCSS(
-    "background-color",
-    "rgb(255, 255, 255)",
-  );
-  await closeMenuButton.click();
-});
+}

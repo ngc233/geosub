@@ -6,8 +6,14 @@ import {
   type SiteLocale,
 } from "./site-locale.ts";
 
+export function isCodexResetPath(pathname: string) {
+  const path = stripSiteLocale(pathname.split(/[?#]/, 1)[0]);
+  return /^\/tools\/codex-reset(?:\/rss\.xml)?\/?$/.test(path);
+}
+
 export function isBilingualEvidencePath(pathname: string) {
-  return /^\/(?:countries|price-history|price-records)(?:\/|$)/.test(stripSiteLocale(pathname));
+  return isCodexResetPath(pathname)
+    || /^\/(?:countries|price-history|price-records)(?:\/|$)/.test(stripSiteLocale(pathname));
 }
 
 export function getLanguageSwitchHref(

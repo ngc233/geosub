@@ -1,3 +1,4 @@
+import { PublicFxNote } from "./PricingDisplayContext";
 import { ProductCategory } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { getDbAiPricingProducts } from "../lib/db-ai-pricing";
@@ -10,6 +11,8 @@ import {
 } from "../lib/public-pricing-cache";
 import type { SiteLocale } from "../lib/site-locale";
 import DbAiPricingClient from "./DbAiPricingClient";
+import GlobalSearch from "./GlobalSearch";
+import SegmentedControl from "./ui/SegmentedControl";
 
 const dbCategoryByPublicCategory: Record<
   PublicProductCategory,
@@ -48,8 +51,8 @@ export default async function PricingListPage({
   const copy = getPricingListCopy(locale).pages[category];
 
   return (
-    <main className="mx-auto max-w-6xl overflow-visible px-5 py-12 md:py-14">
-      <div className="mb-9 text-center">
+    <main data-gs-catalog={locale === "zh" ? "list" : undefined} className="mx-auto max-w-6xl overflow-visible px-5 py-12 md:py-14">
+      <div className={locale === "zh" ? "gs-catalog-intro mb-9 text-center" : "mb-9 text-center"}>
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700">
           {copy.eyebrow}
         </p>
@@ -63,6 +66,15 @@ export default async function PricingListPage({
         </p>
       </div>
 
+      {locale === "zh" && <div className="gs-catalog-toolbar">
+        <SegmentedControl animated motionIdentity="catalog-categories" variant="public" ariaLabel="订阅分类" value={category} items={[
+          {value:"ai",label:"AI 订阅",href:"/zh/ai-pricing"},
+          {value:"streaming",label:"流媒体",href:"/zh/streaming-pricing"},
+        ]} />
+        <GlobalSearch locale={locale} appearance="public" presentation="inline" />
+      </div>}
+
+      {locale === "zh" && <PublicFxNote />}
       <DbAiPricingClient products={products} locale={locale} />
     </main>
   );

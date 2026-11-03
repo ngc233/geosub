@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import PublicHomePriceMap from "./PublicHomePriceMap";
 import { ArrowRight, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { PublicIconButton, PublicSelect } from "./ui/PublicControls";
 import { geoNaturalEarth1, geoPath, type GeoPermissibleObjects } from "d3-geo";
 import { feature } from "topojson-client";
 import worldAtlas from "world-atlas/countries-110m.json";
@@ -29,6 +31,8 @@ type HomeHeroMapProps = {
   productName: string;
   planName: string;
   href: string;
+  planHref?: string;
+  appearance?: "public";
 };
 
 type MapFeature = {
@@ -101,19 +105,36 @@ function selectionLabel(
 
 function diffTextColor(diffPercent?: number) {
   if (typeof diffPercent !== "number") return "text-zinc-400 dark:text-zinc-500";
-  if (diffPercent > 0) return "text-[#a24b3a] dark:text-[#f0a08f]";
-  if (diffPercent < 0) return "text-[#4f7f2a] dark:text-[#bef264]";
+  if (diffPercent > 0) return "gs-data-high text-[#a24b3a] dark:text-[#f0a08f]";
+  if (diffPercent < 0) return "gs-data-low text-[#4f7f2a] dark:text-[#bef264]";
   return "text-zinc-600 dark:text-zinc-300";
 }
 
-export default function HomeHeroMap({
+function LegacyHomeHeroMap({
   locale = "zh",
   regions,
   productName,
   planName,
   href,
+  appearance,
 }: HomeHeroMapProps) {
   const [selection, setSelection] = useState<MapSelection | null>(null);
+  const noDataPattern = useId();
+  const unified = appearance === "public";
+  const CloseButton = unified ? PublicIconButton : "button";
+  const locked = Boolean(selection?.locked);
+  useEffect(() => {
+    if (!unified || !locked) return;
+    const trigger = document.activeElement;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelection(null);
+    };
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("keydown", close);
+      if ((trigger instanceof HTMLElement || trigger instanceof SVGElement) && trigger.isConnected) trigger.focus();
+    };
+  }, [unified, locked]);
   const homepageCopy = getHomepageCopy(locale);
   const copy = homepageCopy.map;
 
@@ -176,20 +197,43 @@ export default function HomeHeroMap({
   const crossRegionSpread = pricing.lowest && pricing.highest
     ? Math.round(((pricing.highest.priceUsd - pricing.lowest.priceUsd) / pricing.lowest.priceUsd) * 100)
     : 0;
+  const highlights = [
+    { key: "lowest", label: copy.lowest, region: pricing.lowest },
+    { key: "reference", label: copy.reference, region: pricing.reference },
+    { key: "highest", label: copy.highest, region: pricing.highest },
+  ];
   return (
     <div
       data-home-geo-pricing
-      className="grid overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 lg:grid-cols-[minmax(0,1fr)_280px]"
+      className={unified ? "gs-home-price-card" : "grid overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 lg:grid-cols-[minmax(0,1fr)_280px]"}
     >
-      <div className="relative min-w-0 overflow-hidden bg-[#fafbfa] dark:bg-zinc-950">
+      {unified && <>
+        <div className="gs-home-price-heading"><h2>{productName} · {planName}</h2><span>App Store · {copy.convertedMonthly}</span><Link href={href}>{copy.viewDetails}<ArrowRight aria-hidden="true" /></Link></div>
+        <div className="gs-home-summary" data-home-price-summary>
+          {highlights.map(item => <section key={item.key} className={`gs-home-metric gs-home-metric-${item.key}`}>
+            <p>{item.label} · {item.region?.countryName || copy.noData}</p>
+            <strong>{item.region ? formatUsd(item.region.priceUsd) : "—"}</strong>
+            <p>{item.region?.localPrice || "—"}</p><p>{item.region?.tax || copy.noData}</p>
+            {item.key === "lowest" && <span className="gs-home-saving">{maximumSaving ? diffLabel(-maximumSaving, locale, copy) : copy.same}</span>}
+          </section>)}
+        </div>
+        <div className="gs-home-map-heading"><h2>{copy.mapLabel}</h2><span>{copy.verifiedRegions} {pricing.sorted.length}{copy.regionsSuffix} · {homepageCopy.maxSpread} {crossRegionSpread}%</span></div>
+        <div className="gs-home-region-picker"><PublicSelect label="选择地区" value={selection?.region?.code || ""}
+          options={[{value:"",label:"选择地区，查看价格与税费"},...pricing.sorted.map(region => ({value:region.code,label:region.countryName}))]}
+          onChange={value => {const region=pricing.sorted.find(item => item.code===value);setSelection(region ? {name:region.countryName,region,diffPercent:pricing.reference ? getGeoPriceDifference(region.priceUsd,pricing.reference.priceUsd) : undefined,locked:true} : null);}} /></div>
+      </>}
+      <div className={unified ? "gs-home-map-canvas" : "relative min-w-0 overflow-hidden bg-[#fafbfa] dark:bg-zinc-950"}>
         <div className="relative">
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="block h-auto w-full"
-          role="img"
+          role={unified ? "group" : "img"}
           aria-label={`${productName} ${planName} ${copy.mapLabel}`}
           onClick={() => setSelection(null)}
         >
+          {unified && <defs><pattern id={noDataPattern} patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="var(--gs-map-no-data)" /><line x1="0" y1="0" x2="0" y2="6" stroke="var(--gs-map-no-data-pattern)" strokeWidth="1" />
+          </pattern></defs>}
           <g>
             {mapData.features.map((country, index) => {
               const numericCode = Number(country.id);
@@ -206,8 +250,8 @@ export default function HomeHeroMap({
                   key={`${country.id}-${index}`}
                   data-home-map-country={region?.code || "no-data"}
                   d={path}
-                  fill={getGeoPriceFill(diffPercent)}
-                  stroke={GEO_PRICING_MAP_COLORS.outline}
+                  fill={unified && typeof diffPercent !== "number" ? `url(#${noDataPattern})` : getGeoPriceFill(diffPercent)}
+                  stroke={unified ? "var(--gs-border)" : GEO_PRICING_MAP_COLORS.outline}
                   strokeWidth="0.85"
                   className={region
                     ? "cursor-pointer transition-opacity duration-200 hover:opacity-75"
@@ -228,6 +272,7 @@ export default function HomeHeroMap({
           </g>
 
           {markers.map((marker) => {
+            const number = marker.kind === "lowest" ? 1 : marker.kind === "reference" ? 2 : 3;
             const pinColor = marker.kind === "lowest"
               ? GEO_PRICING_MAP_COLORS.savingPin
               : marker.kind === "highest"
@@ -241,13 +286,15 @@ export default function HomeHeroMap({
               : marker.kind === "highest"
                 ? copy.highest
                 : copy.reference;
+            const labelWidth = Math.max(188, Array.from(`${markerLabel} · ${marker.region.countryName}`).length * 16 + 24);
+            const labelX = marker.kind === "reference" || marker.x > WIDTH * 0.75 ? -labelWidth - 16 : 16;
             return (
               <g
                 key={`${marker.kind}-${marker.region.code}`}
                 data-home-map-pin={marker.kind}
                 data-home-map-touch-target
                 transform={`translate(${marker.x} ${marker.y})`}
-                className={marker.kind === "highest"
+                className={unified ? "gs-home-map-pin hidden cursor-pointer sm:block" : marker.kind === "highest"
                   ? "hidden"
                   : "hidden cursor-pointer outline-none sm:block"}
                 role="button"
@@ -281,7 +328,13 @@ export default function HomeHeroMap({
                 }}
               >
                 <circle r="30" fill="transparent" pointerEvents="all" />
-                <circle r="8" fill={pinColor} stroke="#ffffff" strokeWidth="3" pointerEvents="none" />
+                {unified ? <g className="gs-home-map-callout" pointerEvents="none">
+                  <line x1="0" y1="0" x2={labelX > 0 ? labelX : labelX+labelWidth} y2="-20" />
+                  <rect x={labelX} y="-48" width={labelWidth} height="56" rx="8" />
+                  <text x={labelX+12} y="-27">{markerLabel} · {marker.region.countryName}</text>
+                  <text x={labelX+12} y="-7" className="gs-home-map-callout-price">{formatUsd(marker.region.priceUsd)}</text>
+                  <circle r="12" /><text className="gs-home-map-number" x="0" y="0">{number}</text>
+                </g> : <circle r="8" fill={pinColor} stroke="#ffffff" strokeWidth="3" pointerEvents="none" />}
               </g>
             );
           })}
@@ -322,10 +375,10 @@ export default function HomeHeroMap({
                 })}
               >
                 <span
-                  className="size-5 rounded-full border-[3px] border-white shadow-[0_2px_7px_rgba(15,23,42,0.22)] dark:border-zinc-950 dark:shadow-black/40"
+                  className="gs-home-pin-number size-5 rounded-full border-[3px] border-white shadow-[0_2px_7px_rgba(15,23,42,0.22)] dark:border-zinc-950 dark:shadow-black/40"
                   style={{ backgroundColor: pinColor }}
                   aria-hidden="true"
-                />
+                >{unified ? marker.kind === "lowest" ? 1 : marker.kind === "reference" ? 2 : 3 : null}</span>
               </button>
             );
           })}
@@ -348,14 +401,14 @@ export default function HomeHeroMap({
                 ) : null}
               </div>
               {selection.locked ? (
-                <button
+                <CloseButton
                   type="button"
                   onClick={() => setSelection(null)}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
+                  className={unified ? "gs-home-map-close" : "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"}
                   aria-label={copy.close}
                 >
                   <X size={14} strokeWidth={2.4} />
-                </button>
+                </CloseButton>
               ) : null}
             </div>
             {selection.region ? (
@@ -379,7 +432,11 @@ export default function HomeHeroMap({
         ) : null}
       </div>
 
-      <aside className="flex flex-col border-t border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70 sm:p-5 lg:border-s lg:border-t-0">
+      {unified && <div className="gs-home-map-legend"><span><i data-map-tone="low" />{copy.lower}</span><span><i data-map-tone="high" />{copy.higher}</span><span><i data-map-tone="reference" />{copy.reference}</span><span><i data-map-tone="empty" />{copy.noData}</span></div>}
+      {unified && <dl className="gs-home-map-key">{highlights.map((item,index) => <div key={item.key} data-map-key={item.key}>
+        <dt><span>{index+1}</span>{item.label} · {item.region?.countryName || copy.noData}</dt><dd>{item.region ? formatUsd(item.region.priceUsd) : "—"}</dd>
+      </div>)}</dl>}
+      {!unified && <aside className="flex flex-col border-t border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70 sm:p-5 lg:border-s lg:border-t-0">
         <div className="border-b border-zinc-100 pb-4 dark:border-zinc-800">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-500">{copy.currentComparison}</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-950 dark:text-white">{productName}</h2>
@@ -434,7 +491,12 @@ export default function HomeHeroMap({
                 ? `${copy.viewDetails} ${productName}`
                 : `${productName} ${copy.viewDetails}`} <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
         </Link>
-      </aside>
+      </aside>}
     </div>
   );
+}
+
+// Other locales retain the existing presentation until their rollout is approved.
+export default function HomeHeroMap(props: HomeHeroMapProps) {
+  return props.appearance === "public" ? <PublicHomePriceMap {...props} /> : <LegacyHomeHeroMap {...props} />;
 }

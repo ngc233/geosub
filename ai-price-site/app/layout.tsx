@@ -2,6 +2,20 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 import "./globals.css";
+import "./public-tokens.css";
+import "./public-design.css";
+import "./public-unified.css";
+import "./public-home.css";
+import "./public-catalog.css";
+import "./public-countries.css";
+import "./public-guides.css";
+import "./public-evidence.css";
+import "./public-product-country.css";
+import "./public-snapshot.css";
+import "./public-auxiliary.css";
+import "./public-states.css";
+import "./public-plan-motion.css";
+import "./public-refinement.css";
 import AnalyticsConsentBanner from "../components/analytics/AnalyticsConsentBanner";
 import AggregatePageViewProvider from "../components/analytics/AggregatePageViewProvider";
 import AnalyticsProvider from "../components/analytics/AnalyticsProvider";
@@ -9,6 +23,7 @@ import DocumentLocaleSync from "../components/DocumentLocaleSync";
 import GoogleAnalyticsScripts from "../components/analytics/GoogleAnalyticsScripts";
 import RouteProgressBar from "../components/RouteProgressBar";
 import SiteChrome from "../components/SiteChrome";
+import { LOCAL_STYLE_PREVIEW_PATH } from "../lib/local-style-preview";
 import { isAnalyticsConsentRequired } from "../lib/analytics-consent";
 import { serializeJsonLd } from "../lib/json-ld";
 import { launchedMirroredStaticPaths } from "../lib/public-launch-routes";
@@ -271,7 +286,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getCurrentLocale();
-  const nonce = (await headers()).get("x-nonce") || undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") || undefined;
+  const previewPath = requestHeaders.get("x-pathname");
+  const isStylePreview = previewPath === LOCAL_STYLE_PREVIEW_PATH || previewPath === `${LOCAL_STYLE_PREVIEW_PATH}/codex-reset`;
   const localeDefinition = getSiteLocaleDefinition(locale);
   const siteUrl = getSiteUrl();
   const analyticsConsentRequired = isAnalyticsConsentRequired();
@@ -307,6 +325,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen text-slate-950 antialiased">
+        {isStylePreview ? children : <>
         <Suspense fallback={null}>
           <RouteProgressBar />
         </Suspense>
@@ -322,6 +341,7 @@ export default async function RootLayout({
         <AnalyticsProvider />
         <SiteChrome>{children}</SiteChrome>
         <AnalyticsConsentBanner consentRequired={analyticsConsentRequired} />
+        </>}
       </body>
     </html>
   );

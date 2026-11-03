@@ -1,3 +1,4 @@
+import { PublicCard } from "./ui/PublicControls";
 import type { Metadata } from "next";
 import Link from "next/link";
 import SubscriptionCurrencyConverter, {
@@ -230,21 +231,22 @@ export default async function CurrencyConverterPage({
     },
   ];
 
+  const unified=locale==="zh", Box=unified?PublicCard:"article";
   return (
-    <main className="min-h-screen bg-[#faf8f3]">
+    <main data-gs-aux={unified?"converter":undefined} className={unified?"gs-aux-page":"min-h-screen bg-[#faf8f3]"}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
-      <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 md:py-14">
-        <header className="mb-7 max-w-3xl">
-          <p className="text-sm font-semibold text-lime-700">
+      <div className={unified?"gs-aux-container":"mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 md:py-14"}>
+        <header className={unified?"gs-aux-header":"mb-7 max-w-3xl"}>
+          <p className={unified?"gs-aux-small gs-aux-emphasis":"text-sm font-semibold text-lime-700"}>
             {pairCopy?.eyebrow || copy.eyebrow}
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-zinc-950 md:text-4xl">
+          <h1 className={unified?"gs-aux-emphasis":"mt-2 text-3xl font-bold text-zinc-950 md:text-4xl"}>
             {pageTitle}
           </h1>
-          <p className="mt-4 text-base leading-7 text-zinc-600">
+          <p className={unified?"gs-aux-block":"mt-4 text-base leading-7 text-zinc-600"}>
             {pageDescription}
           </p>
         </header>
@@ -259,12 +261,12 @@ export default async function CurrencyConverterPage({
 
         {pair && pairCopy && pairPresentation ? (
           <>
-            <section className="mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-[0.9fr_1.1fr]">
-              <article>
-                <h2 className="text-base font-semibold text-zinc-950">
+            <section className={unified?"gs-aux-section gs-aux-grid gs-aux-grid-two":"mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-[0.9fr_1.1fr]"}>
+              <Box>
+                <h2 className={unified?"gs-aux-emphasis":"text-base font-semibold text-zinc-950"}>
                   {pairCopy.currentRate}
                 </h2>
-                <p className="mt-3 text-3xl font-bold tabular-nums text-zinc-950">
+                <p className={unified?"gs-aux-rate":"mt-3 text-3xl font-bold tabular-nums text-zinc-950"}>
                   {pairRate === null
                     ? copy.unavailable
                     : `1 ${pair.from} = ${new Intl.NumberFormat(
@@ -275,30 +277,30 @@ export default async function CurrencyConverterPage({
                         },
                       ).format(pairRate)} ${pair.to}`}
                 </p>
-                <p className="mt-2 text-sm text-zinc-500">
+                <p className={unified?"gs-aux-small":"mt-2 text-sm text-zinc-500"}>
                   {pairRateDate
                     ? `${copy.rateBasis} ${pairRateDate}`
                     : copy.pending}
                 </p>
-              </article>
+              </Box>
 
-              <article>
-                <h2 className="text-base font-semibold text-zinc-950">
+              <Box>
+                <h2 className={unified?"gs-aux-emphasis":"text-base font-semibold text-zinc-950"}>
                   {pairCopy.examplesTitle}
                 </h2>
-                <p className="mt-1 text-sm leading-6 text-zinc-500">
+                <p className={unified?"gs-aux-small":"mt-1 text-sm leading-6 text-zinc-500"}>
                   {pairCopy.examplesDescription(pair.from, pair.to)}
                 </p>
-                <div className="mt-3 divide-y divide-zinc-100 border-y border-zinc-100">
+                <div className={unified?"gs-aux-rate-list":"mt-3 divide-y divide-zinc-100 border-y border-zinc-100"}>
                   {[5, 10, 20, 50, 100].map((amount) => (
                     <div
                       key={amount}
-                      className="flex min-h-10 items-center justify-between gap-4 py-2 text-sm"
+                      className={unified?"gs-aux-rate-row":"flex min-h-10 items-center justify-between gap-4 py-2 text-sm"}
                     >
-                      <span className="text-zinc-500">
+                      <span className={unified?"gs-aux-block":"text-zinc-500"}>
                         {formatCurrency(amount, pair.from, locale)}
                       </span>
-                      <strong className="tabular-nums text-zinc-950">
+                      <strong className={unified?"gs-aux-number":"tabular-nums text-zinc-950"}>
                         {pairRate === null
                           ? copy.unavailableShort
                           : formatCurrency(
@@ -310,47 +312,47 @@ export default async function CurrencyConverterPage({
                     </div>
                   ))}
                 </div>
-              </article>
+              </Box>
             </section>
 
-            <section className="mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-2">
-              <article>
-                <h2 className="text-sm font-semibold text-zinc-950">
+            <section className={unified?"gs-aux-section gs-aux-grid gs-aux-grid-two":"mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-2"}>
+              <Box>
+                <h2 className={unified?"gs-aux-small gs-aux-emphasis":"text-sm font-semibold text-zinc-950"}>
                   {pairCopy.methodologyTitle}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className={unified?"gs-aux-small":"mt-2 text-sm leading-6 text-zinc-500"}>
                   {pairCopy.methodology}
                 </p>
-              </article>
-              <article>
-                <h2 className="text-sm font-semibold text-zinc-950">
+              </Box>
+              <Box>
+                <h2 className={unified?"gs-aux-small gs-aux-emphasis":"text-sm font-semibold text-zinc-950"}>
                   {pairCopy.paymentTitle}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className={unified?"gs-aux-small":"mt-2 text-sm leading-6 text-zinc-500"}>
                   {pairCopy.paymentNote}
                 </p>
-              </article>
+              </Box>
             </section>
 
-            <section className="mt-8 border-t border-zinc-200 pt-7">
-              <h2 className="text-sm font-semibold text-zinc-950">
+            <section className={unified?"gs-aux-section":"mt-8 border-t border-zinc-200 pt-7"}>
+              <h2 className={unified?"gs-aux-small gs-aux-emphasis":"text-sm font-semibold text-zinc-950"}>
                 {pairCopy.popularPairs}
               </h2>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className={unified?"gs-aux-inline":"mt-3 flex flex-wrap gap-2"}>
                 {getFeaturedCurrencyPairs(locale)
                   .filter((item) => item.slug !== pair.slug)
                   .map((item) => (
                     <Link
                       key={item.slug}
                       href={`${basePath}/${item.slug}`}
-                      className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
+                      className={unified?"gs-aux-link":"rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"}
                     >
                       {item.from}/{item.to}
                     </Link>
                   ))}
                 <Link
                   href={basePath}
-                  className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950"
+                  className={unified?"gs-aux-link":"rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950"}
                 >
                   {pairCopy.backToConverter}
                 </Link>
@@ -358,16 +360,16 @@ export default async function CurrencyConverterPage({
             </section>
           </>
         ) : (
-          <section className="mt-8 border-t border-zinc-200 pt-7">
-            <h2 className="text-sm font-semibold text-zinc-950">
+          <section className={unified?"gs-aux-section":"mt-8 border-t border-zinc-200 pt-7"}>
+            <h2 className={unified?"gs-aux-small gs-aux-emphasis":"text-sm font-semibold text-zinc-950"}>
               {getCurrencyPairCopy(locale).popularPairs}
             </h2>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className={unified?"gs-aux-inline":"mt-3 flex flex-wrap gap-2"}>
               {getFeaturedCurrencyPairs(locale).map((item) => (
                 <Link
                   key={item.slug}
                   href={`${basePath}/${item.slug}`}
-                  className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
+                  className={unified?"gs-aux-link":"rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"}
                 >
                   {item.from}/{item.to}
                 </Link>
@@ -376,17 +378,17 @@ export default async function CurrencyConverterPage({
           </section>
         )}
 
-        <section className="mt-8 border-t border-zinc-200 pt-7">
-          <div className="grid gap-x-8 gap-y-7 md:grid-cols-3">
+        <section className={unified?"gs-aux-section":"mt-8 border-t border-zinc-200 pt-7"}>
+          <div className={unified?"gs-aux-grid gs-aux-grid-three":"grid gap-x-8 gap-y-7 md:grid-cols-3"}>
             {pairQuestions.map((item) => (
-              <article key={item.question}>
-                <h2 className="text-sm font-semibold text-zinc-950">
+              <Box key={item.question}>
+                <h2 className={unified?"gs-aux-small gs-aux-emphasis":"text-sm font-semibold text-zinc-950"}>
                   {item.question}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className={unified?"gs-aux-small":"mt-2 text-sm leading-6 text-zinc-500"}>
                   {item.answer}
                 </p>
-              </article>
+              </Box>
             ))}
           </div>
         </section>

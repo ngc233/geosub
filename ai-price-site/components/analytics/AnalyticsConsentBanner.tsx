@@ -2,6 +2,7 @@
 
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { usesUnifiedPublicStyle } from "../../lib/public-style-rollout";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -19,6 +20,7 @@ import {
   withSiteLocale,
 } from "../../lib/site-locale";
 import { useAnalyticsConsent } from "./useAnalyticsConsent";
+import { PublicConsentNotice, PublicLink } from "../ui/PublicControls";
 
 function shouldHideOnPath(pathname: string) {
   return pathname.startsWith("/admin") || pathname.startsWith("/api");
@@ -71,8 +73,13 @@ export default function AnalyticsConsentBanner({
     setPreferencesOpen(false);
   }
 
+  if (usesUnifiedPublicStyle(pathname)) return <section data-gs-public-surface data-gs-public-unified className="gs-unified-consent" role="dialog" aria-live="polite" aria-label={copy.title}>
+    <PublicConsentNotice title={copy.title} description={copy.description} privacyLink={<PublicLink href={withSiteLocale("/privacy", locale)}>{copy.privacy}</PublicLink>} acceptLabel={copy.accept} rejectLabel={copy.reject} onAccept={() => chooseConsent(ANALYTICS_CONSENT_GRANTED)} onReject={() => chooseConsent(ANALYTICS_CONSENT_DENIED)} />
+  </section>;
+
   return (
     <section
+      data-gs-public-surface
       className="fixed inset-x-3 bottom-3 z-[120] mx-auto max-w-5xl rounded-xl border border-zinc-200 bg-white/95 p-3.5 text-zinc-950 shadow-[0_16px_40px_rgba(15,23,42,0.12)] backdrop-blur md:bottom-4 md:p-4 dark:border-zinc-800 dark:bg-zinc-950/95 dark:text-white"
       role="dialog"
       aria-live="polite"

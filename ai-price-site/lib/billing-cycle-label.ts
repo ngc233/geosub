@@ -85,3 +85,11 @@ export function getBillingCycleLabel(cycle: BillingCycle, locale: SiteLocale) {
 export function getBillingCycleSuffix(cycle: BillingCycle, locale: SiteLocale) {
   return getCopy(cycle, locale).suffix;
 }
+
+/** The legacy price adapter appends the monthly suffix even to non-monthly quotes. */
+export function formatLocalPriceForBillingCycle(localPrice: string, cycle: BillingCycle, locale: SiteLocale) {
+  const monthlySuffix = getBillingCycleSuffix("monthly", locale);
+  return localPrice.endsWith(monthlySuffix)
+    ? `${localPrice.slice(0, -monthlySuffix.length)}${getBillingCycleSuffix(cycle, locale)}`
+    : localPrice;
+}

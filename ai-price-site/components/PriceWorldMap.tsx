@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import PublicPriceMap from "./PublicPriceMap";
 import { Minus, Plus, RotateCcw, X } from "lucide-react";
 import { geoNaturalEarth1, geoPath, type GeoPermissibleObjects } from "d3-geo";
 import { feature } from "topojson-client";
@@ -24,6 +25,8 @@ import {
 } from "../lib/geo-pricing-map";
 
 type PriceWorldMapProps = {
+  variant?: "classic" | "r2";
+  onSelectRegion?: (region: RegionPrice) => void;
   plan: ProductPlan;
   locale?: DetailLocale;
   compact?: boolean;
@@ -150,11 +153,13 @@ function getSummaryLabel({
   return copy.recorded;
 }
 
-export default function PriceWorldMap({
+function LegacyPriceWorldMap({
   plan,
   locale = "zh",
   compact = false,
   formatPrice = formatUsd,
+  onSelectRegion,
+  variant = "classic",
 }: PriceWorldMapProps) {
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const [view, setView] = useState<ViewState>(getInitialViewState);
@@ -284,6 +289,50 @@ export default function PriceWorldMap({
   const resetView = () => {
     setView(getInitialViewState());
   };
+
+  if (variant === "r2") {
+    const points = [
+      { kind: "min", label: locale === "zh" ? "最低" : "Lowest", region: minRegion },
+      { kind: "reference", label: locale === "zh" ? "基准" : "Baseline", region: usRegion },
+      { kind: "max", label: locale === "zh" ? "最高" : "Highest", region: maxRegion },
+    ].flatMap((item, index) => {
+      if (!item.region) return [];
+      const geo = mapData.features.find(shape => getCountryCodeForMapFeature(shape) === item.region!.code);
+      if (!geo) return [];
+      const [x, y] = mapData.pathGenerator.centroid(geo as unknown as GeoPermissibleObjects);
+      return Number.isFinite(x) && Number.isFinite(y) ? [{ ...item, region: item.region, index: index + 1, x, y }] : [];
+    });
+    return <div className="gs-r2-geo-map" data-detail-geo-pricing>
+      {!usRegion && <p className="gs-r2-region-notice">{locale === "zh" ? "美国基准缺失，地图仅显示已有价格的地区，不显示相对美国色阶。" : "US baseline unavailable. The map shows coverage without relative-price colors."}</p>}
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={mapCopy.mapAria(plan.name)}>
+        <defs><pattern id="r2-map-no-data" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="var(--color-bg-page)" /><path d="M-1 1L1 -1M0 7L7 0M6 8L8 6" stroke="var(--color-border-default)" strokeWidth="1" /></pattern></defs>
+        {mapData.features.map((geo, index) => {
+          const code = getCountryCodeForMapFeature(geo);
+          const region = code ? regionByCode.get(code) : undefined;
+          const difference = region && usRegion ? getGeoPriceDifference(region.priceUsd, usRegion.priceUsd) : null;
+          const fill = !region ? "url(#r2-map-no-data)" : region.code === "US" || difference === null || difference === 0 ? "var(--color-map-baseline)" : difference < 0 ? "var(--color-map-low)" : "var(--color-map-high)";
+          return <path key={`${geo.id ?? code ?? "unmapped"}-${index}`} d={mapData.pathGenerator(geo as unknown as GeoPermissibleObjects) || undefined} fill={fill} stroke="var(--color-bg-surface)" strokeWidth="1" data-map-region={region?.code}
+            role={region ? "button" : undefined} tabIndex={region ? 0 : undefined} aria-label={region ? `${region.country} · ${formatPrice(region.priceUsd)}` : undefined}
+            onClick={() => { if (region) onSelectRegion?.(region); }} onKeyDown={event => { if (region && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelectRegion?.(region); } }} />;
+        })}
+        {points.map(point => {
+          const labelX = Math.max(4, Math.min(WIDTH - 174, point.x + (point.kind === "min" ? 18 : -188)));
+          const labelY = Math.max(4, point.y - 34);
+          const color = point.kind === "min" ? "var(--color-price-low)" : point.kind === "max" ? "var(--color-price-high)" : "var(--color-map-baseline)";
+          return <g key={point.kind} data-detail-map-pin={point.kind}>
+            <circle cx={point.x} cy={point.y} r="7" fill={color} stroke="var(--color-bg-surface)" strokeWidth="2" />
+            <g className="gs-r2-map-label"><path d={`M${point.x},${point.y} L${labelX + (labelX < point.x ? 170 : 0)},${labelY + 34}`} stroke={color} fill="none" strokeWidth="1.5" />
+              <rect x={labelX} y={labelY} width="170" height="64" rx="8" fill={point.kind === "min" ? "var(--color-accent-soft)" : "var(--color-bg-surface)"} stroke={color} />
+              <text x={labelX + 12} y={labelY + 23} fontSize="14" fill="var(--color-text-secondary)">{point.label} · {point.region.country}</text>
+              <text x={labelX + 12} y={labelY + 49} fontSize="22" fontWeight="600" fontFamily="IBM Plex Mono, monospace" fill={point.kind === "max" ? color : "var(--color-text-primary)"}>{formatPrice(point.region.priceUsd)}</text>
+            </g>
+          </g>;
+        })}
+      </svg>
+      <div className="gs-r2-map-mobile-labels">{points.map(point => <span key={point.kind}>{point.label} · {point.region.country} <strong>{formatPrice(point.region.priceUsd)}</strong></span>)}</div>
+      <div className="gs-r2-map-legend">{usRegion ? <><span><i className="gs-map-low" />{locale === "zh" ? "低于美国" : "Below US"}</span><span><i className="gs-map-high" />{locale === "zh" ? "高于美国" : "Above US"}</span><span><i className="gs-map-baseline" />{locale === "zh" ? "美国基准" : "US baseline"}</span></> : <span><i className="gs-map-baseline" />{locale === "zh" ? "已有价格" : "Covered region"}</span>}<span><i className="gs-map-no-data" />{locale === "zh" ? "暂无数据" : "No data"}</span></div>
+    </div>;
+  }
 
   return (
     <section
@@ -488,6 +537,10 @@ export default function PriceWorldMap({
                   }}
                   onClick={(event) => {
                     event.stopPropagation();
+                    if (region && onSelectRegion) {
+                      onSelectRegion(region);
+                      return;
+                    }
 
                     setHoverInfo({
                       x: event.clientX,
@@ -717,4 +770,12 @@ export default function PriceWorldMap({
       </div>
     </section>
   );
+}
+
+export default function PriceWorldMap(props: PriceWorldMapProps) {
+  if (props.variant === "r2" && (props.locale || "zh") === "zh") return <div data-detail-geo-pricing><PublicPriceMap refined
+    regions={props.plan.regions} label={`${props.plan.name} 全球价格分布`} formatPrice={props.formatPrice || formatUsd}
+    onSelectRegion={props.onSelectRegion ? region => { const original = props.plan.regions.find(r => r.code === region.code); if (original) props.onSelectRegion?.(original); } : undefined}
+  /></div>;
+  return <LegacyPriceWorldMap {...props} />;
 }

@@ -1,4 +1,5 @@
 import type { SiteLocale } from "../lib/site-locale";
+import { PublicCard } from "./ui/PublicControls";
 
 type DisclosureCopy = {
   updated: string;
@@ -131,6 +132,7 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
 
 export default function PrivacyDisclosure({ locale }: { locale: SiteLocale }) {
   const text = copy[locale];
+  if(locale==="zh") return <section className="gs-aux-disclosure"><p className="gs-aux-caption">{text.updated}</p><div className="gs-aux-stack">{text.sections.map((section,index)=><PublicCard key={section.title} className="gs-aux-card"><span className="gs-aux-caption">{String(index+1).padStart(2,"0")}</span><h2>{section.title}</h2><p>{section.body}</p></PublicCard>)}</div></section>;
 
   return (
     <section className="mt-10">

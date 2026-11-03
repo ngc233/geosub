@@ -26,6 +26,31 @@ export type CountryPagePilot = {
 
 export const countryPagePilots: CountryPagePilot[] = [
   {
+    productSlug: "chatgpt",
+    category: "ai",
+    countryCode: "TR",
+    countrySlug: "turkey",
+    countryName: { zh: "土耳其", en: "Turkey" },
+    title: { zh: "ChatGPT 在土耳其的价格与税费", en: "ChatGPT prices and taxes in Turkey" },
+    description: {
+      zh: "比较土耳其 App Store 已发布的 ChatGPT 月付套餐、本币标价与同档美国参考，分别核对税费和价格日期。",
+      en: "Compare published monthly ChatGPT App Store plans in Turkey, with local prices, matching US references, tax notes and collection dates.",
+    },
+    decisionSummary: {
+      zh: "先选择相同套餐，再核对土耳其里拉标价、美国同档参考和价格采集日期。折算变化不等于本币调价，不能只按价格倍数推断套餐权益。",
+      en: "Select the same tier before comparing the Turkish-lira list price, matching US reference and collection date. A conversion change is not a local price change, and price multiples do not establish plan benefits.",
+    },
+    localContext: {
+      zh: "土耳其页将本币标价、美元参考、展示币种与各自汇率日期分开呈现；所列范围仅为已发布的 App Store 月付项目，不与官网或其他平台混用。",
+      en: "The Turkey view separates local list prices, USD references and display-currency conversions with their respective rate dates. It covers published monthly App Store items only, without mixing website or other-platform offers.",
+    },
+    availabilityCaution: {
+      zh: "当地商店列出标价不代表其他地区账号可购买。订阅前仍须在自己的账号中确认可见套餐、付款条件与最终税费，未知条件不作购买保证。",
+      en: "A local storefront price does not establish eligibility for an account from another region. Confirm the visible plans, payment requirements and final tax in your own account; unknown conditions are not a purchase guarantee.",
+    },
+    evidenceKind: "regional_price",
+  },
+  {
     productSlug: "claude",
     category: "ai",
     countryCode: "KR",

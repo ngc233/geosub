@@ -2,7 +2,7 @@
 
 import { getDefaultPlanRegions } from "../lib/public-pricing-model";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { ChevronDown, Map } from "lucide-react";
@@ -33,6 +33,14 @@ import {
 import SharePriceModal, {
   type SharePriceProduct,
 } from "./SharePriceModal";
+import { Clock3 } from "lucide-react";
+import { dateRange, priceDifference, taxSummary } from "../lib/pricing-r2";
+import { usePublicPricingDisplay, useRegisterPricingDisplay } from "./PricingDisplayContext";
+import AnimatedDisclosure from "./ui/AnimatedDisclosure";
+import IncomeWorkComparison from "./IncomeWorkComparison";
+
+import type { WorkIncome } from "../lib/income-work-time";
+import { formatLocalPriceForBillingCycle, getBillingCycleLabel } from "../lib/billing-cycle-label";
 
 function MapLoadingPlaceholder() {
   return (
@@ -54,14 +62,29 @@ const PriceWorldMap = dynamic(() => import("./PriceWorldMap"), {
   loading: MapLoadingPlaceholder,
 });
 
+class PriceMapBoundary extends Component<{ children: ReactNode; locale: SiteLocale }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    const en = this.props.locale === "en";
+    return <div role="alert" className="gs-r2-empty"><p>{en ? "Map unavailable. The price table remains available." : "地图暂不可用，仍可继续查看价格表。"}</p>
+      <button type="button" onClick={() => window.location.reload()} className="gs-r2-more">{en ? "Reload and retry" : "重新加载并重试"}</button></div>;
+  }
+}
+
 function DeferredPriceWorldMap({
   plan,
   locale,
   formatPrice,
+  onSelectRegion,
+  variant = "classic",
 }: {
   plan: ProductPlan;
   locale: SiteLocale;
   formatPrice: (value: number) => string;
+  onSelectRegion?: (region: RegionPrice) => void;
+  variant?: "classic" | "r2";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shouldRender, setShouldRender] = useState(false);
@@ -105,6 +128,8 @@ function DeferredPriceWorldMap({
           locale={locale}
           compact
           formatPrice={formatPrice}
+          onSelectRegion={onSelectRegion}
+          variant={variant}
         />
       ) : (
         <MapLoadingPlaceholder />
@@ -126,6 +151,10 @@ type CurrencyExchangeRate = {
 };
 
 type PricingPlatformViewProps = {
+  heading?: string;
+  tabs?: ReactNode;
+  incomes?: WorkIncome[];
+  variant?: "classic" | "r2";
   productName: string;
   shareProduct: SharePriceProduct;
   plan: ProductPlan;
@@ -135,6 +164,14 @@ type PricingPlatformViewProps = {
 };
 
 const UNAVAILABLE_EXCHANGE_RATE = 0;
+
+function subscribeDesktopMap(callback: () => void) {
+  const media = window.matchMedia("(min-width: 768px)");
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+function isDesktopMap() { return window.matchMedia("(min-width: 768px)").matches; }
+function serverMapClosed() { return false; }
 
 function getPlatform(region: RegionPrice) {
   const platform = (region.billingPlatform || "unknown").toLowerCase();
@@ -274,6 +311,7 @@ function formatDisplayPrice(
   exchangeRate: number,
   locale: SiteLocale,
 ) {
+  if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) return "—";
   if (currency === "USD") {
     return formatUsd(value);
   }
@@ -469,6 +507,7 @@ function CurrencySelect({
           {createPortal(
             <div
               ref={mobileMenuRef}
+              data-gs-public-surface
               className="fixed inset-x-4 bottom-4 z-[70] max-h-[min(65dvh,32rem)] w-auto overflow-y-auto overscroll-contain rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl shadow-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/30 sm:hidden"
               role="menu"
             >
@@ -727,18 +766,40 @@ function PriceDistribution({
   plan,
   locale,
   formatPrice,
+  onSelectRegion,
+  variant = "classic",
+  displayCurrency,
+  displayFxDate,
+  appearance,
+  hideActions = false,
 }: {
   productName: string;
   shareProduct: SharePriceProduct;
   plan: ProductPlan;
   locale: SiteLocale;
   formatPrice: (value: number) => string;
+  onSelectRegion?: (region: RegionPrice) => void;
+  variant?: "classic" | "r2";
+  displayCurrency?: string;
+  displayFxDate?: string | null;
+  appearance?: "public";
+  hideActions?: boolean;
 }) {
   const sortedRegions = getSortedRegions(plan);
   const referenceRegion = getReferenceRegion(plan);
   const cheapRegions = sortedRegions.slice(0, 5);
   const expensiveRegions = sortedRegions.slice(-5).reverse();
   const copy = getPricingPlatformCopy(locale);
+
+  if (variant === "r2") return <div className="gs-r2-map-content">
+    {!hideActions && <div className="gs-r2-map-actions"><SharePriceModal appearance={appearance} product={shareProduct} plan={plan} stats={getPlanStats(plan)} locale={locale} formatDisplayPrice={formatPrice} displayCurrency={displayCurrency} displayFxDate={displayFxDate} /></div>}
+    <DeferredPriceWorldMap variant="r2" plan={plan} locale={locale} formatPrice={formatPrice} onSelectRegion={onSelectRegion} />
+    {appearance === "public" ? null : <label className="gs-r2-map-region-picker">{locale === "zh" ? "选择地区可定位价格并展开证据" : "Choose a region to find its price and evidence"}
+      <select defaultValue="" onChange={e => { const region = plan.regions.find(r => r.code === e.target.value); if (region) onSelectRegion?.(region); e.target.value = ""; }}>
+        <option value="">{locale === "zh" ? "选择地区" : "Choose region"}</option>{plan.regions.map(region => <option key={region.code} value={region.code}>{region.country} · {formatPrice(region.priceUsd)}</option>)}
+      </select>
+    </label>}
+  </div>;
 
   return (
     <PublicSection>
@@ -761,8 +822,13 @@ function PriceDistribution({
           plan={plan}
           locale={locale}
           formatPrice={formatPrice}
+          onSelectRegion={onSelectRegion}
         />
       </div>
+      {onSelectRegion && <label className="gs-r2-map-region-picker">{locale === "zh" ? "定位地区并查看证据" : "Find region and open evidence"}
+        <select defaultValue="" onChange={e => { const region = plan.regions.find(r => r.code === e.target.value); if (region) onSelectRegion(region); e.target.value = ""; }}>
+          <option value="">{locale === "zh" ? "选择地区" : "Choose a region"}</option>{plan.regions.map(r => <option key={r.code} value={r.code}>{r.country} · {formatPrice(r.priceUsd)}</option>)}
+        </select></label>}
 
       <div className="grid gap-6 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800 lg:grid-cols-2">
         <RankingList
@@ -791,6 +857,10 @@ export default function PricingPlatformView({
   defaultCurrency,
   exchangeRates,
   locale = "zh",
+  variant = "classic",
+  heading,
+  tabs,
+  incomes = [],
 }: PricingPlatformViewProps) {
   const platform = useMemo<PlatformFilter>(() => {
     const availablePlatforms = new Set(plan.regions.map(getPlatform));
@@ -802,16 +872,21 @@ export default function PricingPlatformView({
   }, [plan]);
   const [currencyPreference, setCurrencyPreference] =
     useState<DisplayCurrency>(defaultCurrency);
+  const desktopMap = useSyncExternalStore(subscribeDesktopMap, isDesktopMap, serverMapClosed);
+  const [mapPreference, setMapPreference] = useState<boolean | null>(null);
+  const mapOpen = mapPreference ?? desktopMap;
+  const publicDisplay = usePublicPricingDisplay();
+  const unified = variant === "r2" && locale === "zh";
   const preferredExchangeRate = exchangeRates[currencyPreference];
-  const displayCurrency =
+  const displayCurrency = unified ? publicDisplay.currency :
     currencyPreference !== "USD" &&
     (!preferredExchangeRate ||
       preferredExchangeRate.isFallback ||
       preferredExchangeRate.isExpired)
       ? "USD"
       : currencyPreference;
-  const selectedExchangeRate = exchangeRates[displayCurrency] || {
-    rate: UNAVAILABLE_EXCHANGE_RATE,
+  const selectedExchangeRate = (unified ? publicDisplay.rates[displayCurrency] : exchangeRates[displayCurrency]) || {
+    rate: unified && displayCurrency === "USD" ? 1 : UNAVAILABLE_EXCHANGE_RATE,
     isFallback: true,
     isStale: true,
   };
@@ -828,7 +903,7 @@ export default function PricingPlatformView({
     [exchangeRates],
   );
 
-  const handleCurrencyChange = (currency: DisplayCurrency) => {
+  const handleCurrencyChange = useCallback((currency: DisplayCurrency) => {
     const exchangeRate = exchangeRates[currency];
     if (
       !exchangeRate ||
@@ -840,18 +915,67 @@ export default function PricingPlatformView({
     }
 
     setCurrencyPreference(currency);
-  };
+  }, [exchangeRates]);
+  const registerDisplay = useRegisterPricingDisplay();
+  useEffect(() => {
+    if (variant !== "r2") return;
+    registerDisplay({ currency: displayCurrency, currencies: supportedDisplayCurrencies.map(code => ({ code, disabled: disabledCurrencies.includes(code) })), change: handleCurrencyChange });
+    return () => registerDisplay(null);
+  }, [variant, displayCurrency, disabledCurrencies, handleCurrencyChange, registerDisplay]);
 
   const filteredPlan = useMemo<ProductPlan>(() => {
-    if (platform === "all") return plan;
-
+    if (platform === "all" && !(variant === "r2" && locale === "zh")) return plan;
+    const regions = platform === "all" ? plan.regions : getDefaultPlanRegions(plan);
     return {
       ...plan,
-      regions: getDefaultPlanRegions(plan),
+      regions: variant === "r2" && locale === "zh" && plan.billing !== "monthly"
+        ? regions.map(region => ({ ...region, localPrice: formatLocalPriceForBillingCycle(region.localPrice, plan.billing, locale) }))
+        : regions,
     };
-  }, [plan, platform]);
+  }, [plan, platform, variant, locale]);
 
   const platformLabel = getPlatformLabel(platform, locale);
+  if (variant === "r2") {
+    const en = locale === "en";
+    const regions = filteredPlan.regions;
+    const billingLabel=getBillingCycleLabel(plan.billing,locale);
+    const headingContent = <div className="gs-r2-heading"><div><h1>{heading}</h1><div className="gs-r2-scope">{regions.length ? `${platformLabel} · ${billingLabel} · ${displayCurrency} ${en ? "equivalent" : "折算"}` : `${billingLabel} · ${en ? "No publishable prices" : "暂无可发布价格"}`}</div></div><div className="gs-r2-plan-tabs">{tabs}</div></div>;
+    if (!regions.length) return <div className="gs-r2-prices">{headingContent}<EmptyPriceState platformLabel={platformLabel} locale={locale} /></div>;
+    const sorted = getSortedRegions(filteredPlan);
+    const us = regions.find(r => r.code.toUpperCase() === "US");
+    const format = unified ? publicDisplay.format : (value: number) => formatDisplayPrice(value, displayCurrency, selectedRate, locale);
+    const summaryContent = <>
+      <section className="gs-r2-summary" aria-label={en ? "Price summary" : "价格摘要"}>
+        {[{ kind: "lowest", label: en ? "Lowest" : "最低", region: sorted[0] }, { kind: "baseline", label: en ? "US baseline" : "美国基准", region: us }, { kind: "highest", label: en ? "Highest" : "最高", region: sorted.at(-1) }].map(({ kind, label, region }) =>
+          <div className={`gs-r2-metric gs-r2-${kind}`} key={kind} data-price-summary={kind}>
+            <div>{label}{region && kind !== "baseline" ? ` · ${region.country}` : ""}</div>
+            <strong>{region ? format(region.priceUsd) : "—"}</strong>
+            <p>{region ? `${region.localPrice} · ${taxSummary(region, en)}` : (en ? "US price unavailable" : "暂无美国价格")}</p>
+            {region && kind !== "baseline" && us && <p className={region.priceUsd < us.priceUsd ? "gs-price-low" : region.priceUsd > us.priceUsd ? "gs-price-high" : ""}>{en ? "vs US" : "较美国"} {priceDifference(region.priceUsd, us.priceUsd)! > 0 ? "+" : ""}{priceDifference(region.priceUsd, us.priceUsd)}%</p>}
+          </div>)}
+      </section>
+      <div className="gs-r2-provenance"><span className="gs-r2-review-note"><Clock3 size={16} aria-hidden="true" />{en ? "Review status unconfirmed" : "复核状态待确认"}</span><span title={dateRange(regions.map(r => r.lastCheckedAt))}>{en ? "Collected" : "价格采集"} {dateRange(regions.map(r => r.lastCheckedAt)).replace(/\b\d{4}-/g, "")}</span><span title={dateRange(regions.map(r => r.fxRateDate))}>{en ? "FX" : "汇率"} {dateRange(regions.map(r => r.fxRateDate)).replace(/\b\d{4}-/g, "")}</span><span>{regions.length} {en ? "regions" : "个地区"}</span>
+        {displayCurrency !== "USD" && <details className="gs-r2-fx-details"><summary>{selectedExchangeRate.isStale ? (en ? "Older FX rate" : "汇率较旧") : (en ? "FX details" : "汇率说明")}</summary><p>{getExchangeRateNote(selectedExchangeRate, selectedRate, displayCurrency, locale)}</p></details>}
+      </div>
+    </>;
+    return <div className="gs-r2-prices">
+      {headingContent}
+      {unified ? <section className="gs-r2-summary-card" aria-label="价格与复核摘要">{summaryContent}</section> : summaryContent}
+      {(unified ? publicDisplay.currency !== publicDisplay.preference : displayCurrency === "USD" && defaultCurrency !== "USD" && disabledCurrencies.includes(defaultCurrency)) && <p className="gs-r2-fx-note">{en ? "Display-currency exchange rate unavailable or expired. Showing published USD prices." : "展示币种汇率缺失或已过期，当前显示已发布美元折算价。"}</p>}
+      <ExpandableRegionPriceTable key={`${plan.slug}-${displayCurrency}`} variant="r2" appearance={unified ? "public" : undefined} plan={filteredPlan} locale={locale} displayCurrency={displayCurrency} displayCurrencyLabel={displayCurrency} formatDisplayPrice={format} showPlatformFilter={false} />
+      {!unified && <IncomeWorkComparison plan={filteredPlan} name={getPlanDisplayName(productName, plan.name)} incomes={incomes} english={en} />}
+      {unified ? <AnimatedDisclosure className="gs-r2-map-details" open={mapOpen} onOpenChange={setMapPreference} lazy title="全球价格分布"
+        actions={<SharePriceModal appearance="public" product={shareProduct} plan={filteredPlan} stats={getPlanStats(filteredPlan)} locale={locale} formatDisplayPrice={format} displayCurrency={displayCurrency} displayFxDate={selectedExchangeRate.rateDate} />}>
+        <PriceMapBoundary locale={locale}><PriceDistribution variant="r2" appearance="public" hideActions productName={productName} shareProduct={shareProduct} plan={filteredPlan} locale={locale} formatPrice={format} displayCurrency={displayCurrency} displayFxDate={selectedExchangeRate.rateDate}
+          onSelectRegion={region => window.dispatchEvent(new CustomEvent("geosub:price-region", { detail: { planSlug: plan.slug, code: region.code } }))} /></PriceMapBoundary>
+      </AnimatedDisclosure> : <>      <details className="gs-r2-map-details" open={mapOpen} onToggle={e => setMapPreference(e.currentTarget.open)}><summary><Map size={20} aria-hidden="true" />{en ? "Global price distribution" : "全球价格分布"}<ChevronDown size={18} aria-hidden="true" /></summary>
+        {mapOpen && <PriceMapBoundary locale={locale}><PriceDistribution variant="r2" appearance={unified ? "public" : undefined} productName={productName} shareProduct={shareProduct} plan={filteredPlan} locale={locale} formatPrice={format} displayCurrency={displayCurrency} displayFxDate={selectedExchangeRate.rateDate}
+          onSelectRegion={region => window.dispatchEvent(new CustomEvent("geosub:price-region", { detail: { planSlug: plan.slug, code: region.code } }))} /></PriceMapBoundary>}
+      </details>
+      </>}
+      {unified && plan.billing === "monthly" && <IncomeWorkComparison enhanced plan={filteredPlan} name={getPlanDisplayName(productName, plan.name)} incomes={incomes} english={en} />}
+    </div>;
+  }
   return (
     <div className="space-y-5">
       {filteredPlan.regions.length === 0 ? (

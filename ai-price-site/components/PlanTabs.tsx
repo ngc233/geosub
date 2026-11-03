@@ -126,6 +126,9 @@ export default function PlanTabs({
   return (
     <div className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <SegmentedControl
+        variant={locale === "zh" ? "public" : "legacy"}
+        animated={locale === "zh"}
+        motionIdentity={`${basePath}/${productSlug}:${plans.map(plan => plan.slug).join(",")}`}
         ariaLabel={copy.ariaLabel}
         value={activePlanSlug}
         size="sm"

@@ -2,6 +2,7 @@
 
 import { ArrowLeftRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import SiteLogo from "./SiteLogo";
 import { usePathname } from "next/navigation";
 import {
   getAnalyticsConsentCopy,
@@ -184,8 +185,45 @@ export default function Footer({
   const copy = footerCopy[currentLocale];
   const consentCopy = getAnalyticsConsentCopy(currentLocale);
 
+  if (getSiteLocaleFromPath(pathname) === "zh") {
+    const links = new Map<string, SiteNavigationItem>();
+    for (const group of footerItems) {
+      for (const item of [group, ...(group.children || [])]) {
+        if (item.href) links.set(item.href, item);
+      }
+    }
+    for (const item of [
+      { name: copy.converterLabel, href: "/tools/currency-converter" },
+      { name: "价格历史", href: "/price-history" },
+    ]) {
+      if (!links.has(item.href)) links.set(item.href, item);
+    }
+    return <footer className="gs-shared-footer" data-public-footer>
+      <div className="gs-footer-intro">
+        <Link className="gs-footer-brand" href="/zh" aria-label="GeoSub"><SiteLogo /></Link>
+        <p>{copy.description}</p><p className="gs-footer-independence">{copy.independence}</p>
+      </div>
+      <nav className="gs-footer-links" aria-label="页脚导航">
+        {[...links.values()].map(item=><Link key={item.href} href={item.external ? item.href : withSiteLocale(item.href, currentLocale)}>{item.name}</Link>)}
+        <button type="button" onClick={openAnalyticsConsentPreferences}><ShieldCheck aria-hidden="true" />{consentCopy.settings}</button>
+      </nav>
+      <div className="gs-footer-bottom"><span>© {currentYear} GeoSub · {copy.rights}</span><p>{copy.note}</p></div>
+    </footer>;
+  }
+
+  if (/^\/(zh|en)\/ai-pricing\/chatgpt\/plus\/?$/.test(pathname)) return <footer className="gs-r2-footer" data-public-footer>
+    <span>© {currentYear} GeoSub · {copy.rights}</span>
+    <nav aria-label="Footer navigation">
+      <Link href={`/${currentLocale}/data-sources`}>Data sources</Link>
+      <Link href={`/${currentLocale}/methodology`}>Methodology</Link>
+      <Link href={`/${currentLocale}/price-history`}>Price history</Link>
+      <Link href={`/${currentLocale}/privacy`}>Privacy</Link>
+      <button type="button" onClick={openAnalyticsConsentPreferences}>{consentCopy.settings}</button>
+    </nav>
+  </footer>;
+
   return (
-    <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">
+    <footer data-public-footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-10 lg:grid-cols-[1.25fr_2fr]">
           <div>
@@ -194,11 +232,13 @@ export default function Footer({
               className="inline-flex items-center gap-2 text-zinc-950 transition hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
               aria-label="GeoSub"
             >
+              {currentLocale === "zh" ? <SiteLogo /> : <>
               <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-zinc-950 text-sm font-black text-white shadow-sm shadow-zinc-950/20 dark:bg-white dark:text-zinc-950">
                 G
                 <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-lime-500 dark:border-zinc-950" />
               </span>
               <span className="text-xl font-black tracking-tight">GeoSub</span>
+              </>}
             </Link>
 
             <p className="mt-4 max-w-sm text-sm leading-7 text-zinc-500 dark:text-zinc-400">
@@ -228,6 +268,9 @@ export default function Footer({
               <ShieldCheck aria-hidden="true" className="size-4" />
               {consentCopy.settings}
             </button>
+            {(currentLocale === "zh" || currentLocale === "en") && <Link href={`/${currentLocale}/price-history`} className="mt-3 flex min-h-11 items-center text-sm font-medium">
+              {currentLocale === "zh" ? "价格历史" : "Price history"}
+            </Link>}
 
             <p className="mt-6 text-xs font-medium text-zinc-400 dark:text-zinc-500">
               © {currentYear} GeoSub. {copy.rights}

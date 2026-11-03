@@ -1,13 +1,17 @@
-﻿"use client";
+"use client";
 
-import Image from "next/image";
+import AnimatedDisclosure from "./ui/AnimatedDisclosure";
+import CountryFlag from "./CountryFlag";
 import Link from "next/link";
 import { Check, ChevronDown, ExternalLink, Plus, Scale, Search, X } from "lucide-react";
 import type { FocusEvent, MouseEvent, ReactNode } from "react";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { matchesRelation, priceDifference, pricePreview, taxSummary, type PriceRelation } from "../lib/pricing-r2";
+import { useDesktopLayout } from "./useDesktopLayout";
 import type { ProductPlan, RegionPrice } from "../lib/public-pricing-model";
 import { formatUsd } from "../lib/public-pricing-model";
 import AppleStyleExpandableRows from "./AppleStyleExpandableRows";
+import { PublicButton, PublicCheckbox, PublicFilters, PublicIconButton, PublicInput, PublicSelect, PublicTextButton } from "./ui/PublicControls";
 import { PublicSection, PublicSectionHeader } from "./ui/PublicPage";
 import { getLocalizedRegionName } from "../lib/locale-format";
 import { getRegionPriceTableCopy } from "../lib/region-price-table-copy";
@@ -34,6 +38,8 @@ import {
 type PlatformFilter = "ios" | "web" | "android" | "all";
 
 type Props = {
+  variant?: "classic" | "r2";
+  appearance?: "public";
   plan: ProductPlan;
   initialVisibleCount?: number;
   locale?: PreparedSiteLocale;
@@ -135,8 +141,8 @@ function getDiffTextByLocale(
 }
 
 function getDiffTone(diffPercent: number) {
-  if (diffPercent < -5) return "text-[#3f7d20] dark:text-[#bef264]";
-  if (diffPercent > 5) return "text-[#a24b3a] dark:text-[#f0a08f]";
+  if (diffPercent < -5) return "gs-data-low text-[#3f7d20] dark:text-[#bef264]";
+  if (diffPercent > 5) return "gs-data-high text-[#a24b3a] dark:text-[#f0a08f]";
   return "text-zinc-500 dark:text-zinc-400";
 }
 
@@ -324,32 +330,6 @@ function TaxTooltip({
   );
 }
 
-function CountryFlag({ code }: { code: string }) {
-  const countryCode = code.toUpperCase();
-  const isIso2 = /^[A-Z]{2}$/.test(countryCode);
-  const [imageFailed, setImageFailed] = useState(false);
-
-  if (isIso2 && !imageFailed) {
-    return (
-      <Image
-        src={`/flags/${countryCode.toLowerCase()}.svg`}
-        alt=""
-        width={28}
-        height={20}
-        unoptimized
-        onError={() => setImageFailed(true)}
-        className="h-5 w-7 rounded-[4px] object-cover shadow-[0_0_0_1px_rgba(24,24,27,0.08)]"
-      />
-    );
-  }
-
-  return (
-    <span className="flex h-5 w-7 items-center justify-center rounded-[4px] bg-zinc-100 text-[10px] font-semibold text-zinc-500 shadow-[0_0_0_1px_rgba(24,24,27,0.08)] dark:bg-zinc-800 dark:text-zinc-300">
-      {countryCode}
-    </span>
-  );
-}
-
 function HeaderHelp({
   label,
   help,
@@ -516,7 +496,7 @@ function RegionComparisonToggle({
   );
 }
 
-function RegionEvidencePanel({
+export function RegionEvidencePanel({
   region,
   referencePrice,
   hasUsReference,
@@ -524,6 +504,8 @@ function RegionEvidencePanel({
   formatDisplayPrice,
   locale,
   panelId,
+  compact = false,
+  animated = false,
 }: {
   region: RegionPrice;
   referencePrice: number;
@@ -532,6 +514,8 @@ function RegionEvidencePanel({
   formatDisplayPrice: (value: number) => string;
   locale: PreparedSiteLocale;
   panelId: string;
+  compact?: boolean;
+  animated?: boolean;
 }) {
   const decisionCopy = getRegionPriceDecisionCopy(locale);
   const accessCopy = getSubscriptionAccessCopy(locale);
@@ -540,6 +524,14 @@ function RegionEvidencePanel({
     getLocalizedRegionName(region.code, locale) || region.country;
   const diffPercent = getDiffPercent(region, referencePrice);
   const taxDisplay = formatTaxDisplay(region, locale);
+
+  if (compact) return <div id={panelId} className="gs-r2-compact-evidence">
+    <span>{locale === "en" ? "Tax: " : "税费："}{region.taxFrontendNote || region.tax || taxDisplay}</span>
+    <span>{getTaxConfidenceLabel(region, locale)}</span>
+    <span>{locale === "en" ? "Source: " : "来源："}{region.sourceName || getRegionPlatformLabel(region)}</span>
+    {region.sourceUrl ? <a href={region.sourceUrl} target="_blank" rel="noreferrer">{locale === "en" ? "Original source" : "查看原始来源"}<ExternalLink size={14} aria-hidden="true" /></a> : <span>{decisionCopy.sourceUnavailable}</span>}
+    {animated ? <AnimatedDisclosure className="gs-r2-full-evidence" headingLevel={3} title="完整证据"><RegionEvidencePanel region={region} referencePrice={referencePrice} hasUsReference={hasUsReference} displayCurrencyLabel={displayCurrencyLabel} formatDisplayPrice={formatDisplayPrice} locale={locale} panelId={`${panelId}-full`} /></AnimatedDisclosure> : <details><summary>{locale === "en" ? "More evidence" : "完整证据"}<ChevronDown size={14} aria-hidden="true" /></summary><RegionEvidencePanel region={region} referencePrice={referencePrice} hasUsReference={hasUsReference} displayCurrencyLabel={displayCurrencyLabel} formatDisplayPrice={formatDisplayPrice} locale={locale} panelId={`${panelId}-full`} /></details>}
+  </div>;
 
   return (
     <div
@@ -574,7 +566,7 @@ function RegionEvidencePanel({
           [decisionCopy.convertedPrice, `${formatDisplayPrice(region.priceUsd)} · ${displayCurrencyLabel}`],
           [
             decisionCopy.referenceDifference,
-            getDiffTextByLocale(diffPercent, locale, hasUsReference),
+            referencePrice > 0 ? getDiffTextByLocale(diffPercent, locale, hasUsReference) : "—",
           ],
           [decisionCopy.taxStatus, `${taxDisplay} · ${getTaxConfidenceLabel(region, locale)}`],
           [decisionCopy.priceDate, region.lastCheckedAt || "—"],
@@ -715,7 +707,7 @@ function RegionComparisonPanel({
                   {region.localPrice} · {displayCurrencyLabel}
                 </div>
                 <div className={`mt-2 text-xs font-semibold tabular-nums ${getDiffTone(diffPercent)}`}>
-                  {getDiffTextByLocale(diffPercent, locale, hasUsReference)}
+                  {referencePrice > 0 ? getDiffTextByLocale(diffPercent, locale, hasUsReference) : "—"}
                 </div>
                 <div className="mt-3 border-t border-zinc-200 pt-2 text-xs leading-5 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                   <div>{formatTaxDisplay(region, locale)}</div>
@@ -1032,7 +1024,160 @@ function RegionPriceRow({
   );
 }
 
-export default function ExpandableRegionPriceTable({
+export default function ExpandableRegionPriceTable(props: Props) {
+  return props.variant === "r2" ? <R2RegionPriceTable {...props} /> : <ClassicRegionPriceTable {...props} />;
+}
+
+function R2RegionPriceTable({ plan, locale = "zh", displayCurrencyLabel = "USD", formatDisplayPrice = formatUsd, appearance }: Props) {
+  const unified = appearance === "public";
+  const MoreButton = unified ? PublicTextButton : "button";
+  const en = locale === "en";
+  const copy = getRegionPriceDecisionCopy(locale);
+  const [query, setQuery] = useState("");
+  const [relation, setRelation] = useState<PriceRelation>("all");
+  const [descending, setDescending] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState<string | null>();
+  const desktop = useDesktopLayout();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const compareRef = useRef<HTMLButtonElement>(null);
+  const [comparing, setComparing] = useState(false);
+  const [regionNotice, setRegionNotice] = useState("");
+  const [opened, setOpened] = useState<string[]>([]);
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (highlightTimer.current) clearTimeout(highlightTimer.current); }, []);
+  const baseline = plan.regions.find(r => r.code.toUpperCase() === "US")?.priceUsd;
+  const regions = plan.regions.filter(r => matchesRelation(r, baseline, relation)
+    && `${getLocalizedRegionName(r.code, locale)} ${r.country} ${r.code}`.toLowerCase().includes(query.trim().toLowerCase()))
+    .sort((a, b) => descending ? b.priceUsd - a.priceUsd : a.priceUsd - b.priceUsd);
+  const isPreview = visibleCount === 5 && relation === "all" && !query.trim();
+  const visibleRegions = isPreview ? pricePreview(regions) : regions.slice(0, visibleCount);
+  const selectedRegions = selected.map(key => plan.regions.find(r => getRegionComparisonKey(r) === key)).filter((r): r is RegionPrice => Boolean(r));
+  const labels: Record<PriceRelation, string> = {
+    all: en ? "All" : "全部", lower: en ? "Below US" : "低于美国", same: en ? "Same as US" : "与美国相同", higher: en ? "Above US" : "高于美国",
+  };
+  const name = (r: RegionPrice) => getLocalizedRegionName(r.code, locale) || r.country;
+  const diff = (r: RegionPrice) => {
+    const value = priceDifference(r.priceUsd, baseline);
+    return value === null ? (en ? "US unavailable" : "美国基准缺失") : r.code === "US" ? (en ? "Baseline" : "基准") : `${value > 0 ? "+" : ""}${value}%`;
+  };
+  function closeComparison() {
+    dialogRef.current?.close();
+    setComparing(false);
+    compareRef.current?.focus();
+  }
+  useEffect(() => {
+    if (!comparing) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [comparing]);
+  const toggle = (r: RegionPrice) => setSelected(current => toggleRegionComparison(current, getRegionComparisonKey(r)));
+  useEffect(() => {
+    function showRegion(event: Event) {
+      const detail = (event as CustomEvent<{ planSlug: string; code: string }>).detail;
+      if (detail?.planSlug !== plan.slug) return;
+      const region = plan.regions.find(r => r.code === detail.code);
+      if (!region) return;
+      setQuery(""); setRelation("all"); setVisibleCount(plan.regions.length);
+      const key = getRegionComparisonKey(region);
+      setExpanded(key);
+      if (unified) {
+        setOpened(current => current.includes(key) ? current : [...current,key]);
+        setHighlighted(region.code);
+        if (highlightTimer.current) clearTimeout(highlightTimer.current);
+        const duration = Number.parseFloat(getComputedStyle(document.querySelector("[data-gs-plan-motion]") || document.documentElement).getPropertyValue("--gs-motion-highlight")) || 0;
+        highlightTimer.current = setTimeout(() => setHighlighted(null), duration);
+      }
+      const country = getLocalizedRegionName(region.code, locale) || region.country;
+      setRegionNotice(locale === "en" ? `Showing all regions and opening evidence for ${country}.` : `已显示全部地区，并定位到${country}的价格证据。`);
+      requestAnimationFrame(() => {
+        const button = document.querySelector<HTMLButtonElement>(`[data-region-price-row="${region.code}"] .gs-r2-row-button`);
+        button?.scrollIntoView({ block: "center", ...(unified ? { behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" as const : "smooth" as const } : {}) }); button?.focus({ preventScroll: true });
+      });
+    }
+    window.addEventListener("geosub:price-region", showRegion);
+    function showLinkedRegion() {
+      if (!unified) return;
+      const code = window.location.hash.match(/^#region-([A-Z]{2})$/)?.[1];
+      if (code) showRegion(new CustomEvent("geosub:price-region", { detail: { planSlug: plan.slug, code } }));
+    }
+    window.addEventListener("hashchange", showLinkedRegion);
+    showLinkedRegion();
+    return () => { window.removeEventListener("geosub:price-region", showRegion); window.removeEventListener("hashchange", showLinkedRegion); };
+  }, [plan, locale, unified]);
+
+  return (
+    <section className="gs-r2-table" data-uniform-review={unified ? "" : undefined} aria-label={en ? "Region prices" : "地区价格"}>
+      <div className="gs-r2-table-toolbar">
+        <h2>{en ? "Region prices" : "地区价格"}</h2>
+        {unified ? <PublicFilters animated className="gs-unified-filters" items={(Object.keys(labels) as PriceRelation[]).map(key => ({value:key,label:`${labels[key]} ${plan.regions.filter(r => matchesRelation(r, baseline, key)).length}`,disabled:key !== "all" && baseline === undefined}))} value={relation} onChange={value => {setRelation(value as PriceRelation);setVisibleCount(5);setRegionNotice("");}} /> : <div className="gs-r2-filters" aria-label={en ? "Price filters" : "价格筛选"}>
+          {(Object.keys(labels) as PriceRelation[]).map(key => <button key={key} type="button" aria-pressed={relation === key}
+            disabled={key !== "all" && baseline === undefined} onClick={() => { setRelation(key); setVisibleCount(5); setRegionNotice(""); }}>
+            {labels[key]} <span>{plan.regions.filter(r => matchesRelation(r, baseline, key)).length}</span>
+          </button>)}
+        </div>}
+        {unified ? <PublicInput label="查找地区" hideLabel startIcon={<Search aria-hidden="true" />} type="search" value={query} placeholder="搜索地区" onChange={e => {setQuery(e.target.value);setVisibleCount(5);setRegionNotice("");}} /> : <label className="gs-r2-search"><Search size={16} aria-hidden="true" /><span className="sr-only">{en ? "Find a region" : "查找地区"}</span>
+          <input type="search" value={query} placeholder={en ? "Search regions" : "搜索地区"} onChange={e => { setQuery(e.target.value); setVisibleCount(5); setRegionNotice(""); }} /></label>}
+        {unified ? <PublicSelect label="价格排序" hideLabel value={descending ? "desc" : "asc"} onChange={value => setDescending(value === "desc")} options={[{value:"asc",label:"价格从低到高"},{value:"desc",label:"价格从高到低"}]} /> : <label><span className="sr-only">{en ? "Price order" : "价格排序"}</span><select value={descending ? "desc" : "asc"} onChange={e => setDescending(e.target.value === "desc")}>
+          <option value="asc">{en ? "Price: low to high" : "价格从低到高"}</option><option value="desc">{en ? "Price: high to low" : "价格从高到低"}</option>
+        </select></label>}
+      </div>
+      {regionNotice && <p role="status" className="gs-r2-region-notice">{regionNotice}</p>}
+      <div className="gs-r2-table-head" aria-hidden="true"><span /><span>{en ? "Region" : "地区"}</span><span>{`${en ? "Converted" : "折算价"} ${getBillingCycleSuffix(plan.billing,locale).replace("/", "/ ")}`}</span><span>{`${en ? "Local" : "当地标价"} ${getBillingCycleSuffix(plan.billing,locale).replace("/", "/ ")}`}</span><span>{en ? "vs US" : "较美国"}</span><span>{en ? "Tax" : "税费"}</span><span>{en ? "Collected" : "价格日期"}</span><span>{en ? "FX date" : "汇率日期"}</span>{!unified && <span>{en ? "Review" : "复核状态"}</span>}<span /></div>
+      <div aria-live="polite" className="sr-only">{en ? `${regions.length} regions` : `${regions.length} 个地区`}</div>
+      <PlanRows animated={unified} changeKey={`${relation}-${query}-${descending}`}>
+      {visibleRegions.map(r => {
+        const key = getRegionComparisonKey(r);
+        const isSelected = selected.includes(key);
+        const isExpanded = (expanded === undefined && desktop && visibleRegions[0] ? getRegionComparisonKey(visibleRegions[0]) : expanded) === key;
+        const panelId = `r2-evidence-${r.code}-${r.billingPlatform || "unknown"}`;
+        return <div key={key} className="gs-r2-record" data-map-highlight={unified && highlighted === r.code ? "" : undefined} data-region-price-row={r.code}>
+          <div className="gs-r2-price-row">
+            {unified ? <PublicCheckbox animated className="gs-unified-checkbox" label={isSelected ? copy.removeRegion(name(r)) : copy.selectRegion(name(r))} hideLabel checked={isSelected} disabled={!isSelected && selected.length >= REGION_COMPARISON_LIMIT} onChange={() => toggle(r)} /> : <label className="gs-r2-checkbox"><input type="checkbox" checked={isSelected} disabled={!isSelected && selected.length >= REGION_COMPARISON_LIMIT}
+              aria-label={isSelected ? copy.removeRegion(name(r)) : copy.selectRegion(name(r))} onChange={() => toggle(r)} /></label>}
+            <button type="button" className="gs-r2-row-button" onClick={() => { if (unified) setOpened(current => current.includes(key) ? current : [...current,key]); setExpanded(isExpanded ? null : key); }} aria-expanded={isExpanded} aria-controls={unified ? `${panelId}-region` : panelId}>
+              <span className="gs-r2-region"><CountryFlag code={r.code} /><strong>{name(r)}</strong></span>
+              <strong className="gs-r2-row-price" data-region-price-converted>{formatDisplayPrice(r.priceUsd)}</strong>
+              <span className="gs-r2-local">{r.localPrice}<span className="gs-r2-inline-tax"> · {taxSummary(r, en)}</span></span>
+              <span data-us-reference={unified && r.code === "US" ? "" : undefined} className={`gs-r2-diff ${(priceDifference(r.priceUsd, baseline) || 0) < 0 ? "gs-price-low" : (priceDifference(r.priceUsd, baseline) || 0) > 0 ? "gs-price-high" : ""}`}>{diff(r)}</span>
+              <span className="gs-r2-tax">{taxSummary(r, en)}</span>
+              <time className="gs-r2-dates" dateTime={r.lastCheckedAt} title={r.lastCheckedAt}>{r.lastCheckedAt?.slice(5) || "—"}</time>
+              <time className="gs-r2-dates" dateTime={r.fxRateDate} title={r.fxRateDate}>{r.fxRateDate?.slice(5) || "—"}</time>
+              {!unified && <span className="gs-r2-review" title={r.reviewedAt || (en ? "No independently confirmed review" : "尚无独立确认的复核状态")}>{en ? "Unconfirmed" : "待确认"}</span>}
+              <ChevronDown size={16} className={unified ? "gs-r2-row-chevron" : isExpanded ? "rotate-180" : ""} aria-hidden="true" />
+              <span className="sr-only">{isExpanded ? copy.hideEvidence : copy.evidence}</span>
+            </button>
+          </div>
+          {unified ? <div id={`${panelId}-region`} className="gs-r2-evidence" data-open={isExpanded} aria-hidden={!isExpanded} inert={!isExpanded}><div className="gs-r2-evidence-inner">{(isExpanded || opened.includes(key)) && <RegionEvidencePanel compact animated region={r} referencePrice={baseline || 0} hasUsReference={baseline !== undefined}
+            displayCurrencyLabel={displayCurrencyLabel} formatDisplayPrice={formatDisplayPrice} locale={locale} panelId={panelId} />}</div></div> : <>          {isExpanded && <div className="gs-r2-evidence"><RegionEvidencePanel compact region={r} referencePrice={baseline || 0} hasUsReference={baseline !== undefined}
+            displayCurrencyLabel={displayCurrencyLabel} formatDisplayPrice={formatDisplayPrice} locale={locale} panelId={panelId} /></div>}</>}
+
+        </div>;
+      })}
+      </PlanRows>
+      {regions.length === 0 && <div className="gs-r2-empty">{en ? "No matching publishable prices. Clear the search or change the filter." : "暂无符合条件的可发布价格。请清空搜索或切换筛选。"}</div>}
+      {regions.length > visibleCount && <MoreButton type="button" className="gs-r2-more" onClick={() => setVisibleCount(count => count === 5 ? 20 : count + 20)}>{isPreview ? (en ? `Show all ${regions.length} regions` : `显示全部 ${regions.length} 个地区`) : (en ? `Show more · ${regions.length - visibleCount} remaining` : `继续显示 · 剩余 ${regions.length - visibleCount} 个地区`)}<ChevronDown size={16} /></MoreButton>}
+      {isPreview && regions.length > 5 && <p className="gs-r2-preview-note">{en ? (baseline === undefined ? "Preview includes the highest price; US unavailable." : "Preview includes the US baseline and highest price.") : (baseline === undefined ? "预览包含最高价；暂无美国基准。" : "预览包含美国基准与最高价。")}</p>}
+      {(unified || selectedRegions.length > 0) && <aside className="gs-r2-compare-bar" data-active={unified ? selectedRegions.length > 0 : undefined} aria-hidden={unified && selectedRegions.length === 0 ? true : undefined} inert={unified && selectedRegions.length === 0 ? true : undefined} aria-label={copy.comparisonTitle}>
+        <span role="status">{copy.selected(selectedRegions.length)}{selectedRegions.length === REGION_COMPARISON_LIMIT ? (en ? " · Limit reached" : " · 已满额") : ""}</span>
+        <div className="gs-r2-selected">{selectedRegions.map(r => unified ? <PublicButton key={getRegionComparisonKey(r)} variant="secondary" onClick={() => toggle(r)} aria-label={copy.removeRegion(name(r))}>{name(r)}<X size={14} /></PublicButton> : <button key={getRegionComparisonKey(r)} type="button" onClick={() => toggle(r)} aria-label={copy.removeRegion(name(r))}>{name(r)}<X size={14} /></button>)}</div>
+        {unified ? <PublicButton ref={compareRef} disabled={selectedRegions.length < 2} onClick={() => {dialogRef.current?.showModal();setComparing(true);}}>开始比较</PublicButton> : <button type="button" className="gs-primary" ref={compareRef} disabled={selectedRegions.length < 2} onClick={() => { dialogRef.current?.showModal(); setComparing(true); }}>{en ? "Compare" : "开始比较"}</button>}
+        {unified ? <PublicTextButton onClick={() => setSelected([])}>{copy.clearComparison}</PublicTextButton> : <button type="button" onClick={() => setSelected([])}>{copy.clearComparison}</button>}
+      </aside>}
+      <dialog ref={dialogRef} className="gs-r2-dialog" aria-label={copy.comparisonTitle} onCancel={e => { e.preventDefault(); closeComparison(); }} onClick={e => { if (e.target === e.currentTarget) closeComparison(); }}>
+        <div className="gs-r2-dialog-content"><div className="gs-r2-dialog-title"><h2>{copy.comparisonTitle}</h2>{unified ? <PublicIconButton onClick={closeComparison} aria-label="关闭比较" autoFocus><X aria-hidden="true" /></PublicIconButton> : <button type="button" onClick={closeComparison} aria-label={en ? "Close comparison" : "关闭比较"} autoFocus><X size={20} /></button>}</div>
+          <RegionComparisonPanel regions={selectedRegions} referencePrice={baseline || 0} hasUsReference={baseline !== undefined} displayCurrencyLabel={displayCurrencyLabel} formatDisplayPrice={formatDisplayPrice} locale={locale}
+            onRemove={r => { if (selectedRegions.length <= 2) closeComparison(); toggle(r); }} onClear={() => { closeComparison(); setSelected([]); }} />
+        </div>
+      </dialog>
+    </section>
+  );
+}
+
+function ClassicRegionPriceTable({
   plan,
   initialVisibleCount = 8,
   locale = "zh",
@@ -1420,4 +1565,8 @@ export default function ExpandableRegionPriceTable({
       </div>
     </PublicSection>
   );
+}
+
+function PlanRows({ animated, changeKey, children }: { animated: boolean; changeKey: string; children: ReactNode }) {
+  return animated ? <div className="gs-r2-row-list" key={changeKey}>{children}</div> : <>{children}</>;
 }

@@ -1,0 +1,231 @@
+/* Approved staged rollout: Chinese home, Plus, and explicit public overlays.
+   Other routes and admin retain their UI. See lib/public-style-rollout.ts. */
+@font-face { font-family:"GeoSub Review Noto Sans SC"; src:url("../assets/fonts/web/noto-sans-sc-400.woff2") format("woff2"); font-weight:400; font-display:swap; }
+@font-face { font-family:"GeoSub Review Noto Sans SC"; src:url("../assets/fonts/web/noto-sans-sc-500.woff2") format("woff2"); font-weight:500; font-display:swap; }
+@font-face { font-family:"GeoSub Review Noto Sans SC"; src:url("../assets/fonts/web/noto-sans-sc-700.woff2") format("woff2"); font-weight:700; font-display:swap; }
+.gs-public-unified,[data-gs-public-unified] { --gs-font-body:var(--gs-font-review-body); --gs-font-hero:var(--gs-font-body); --foreground:var(--gs-text); --background:var(--gs-page); font-family:var(--gs-font-body); font-size:var(--gs-body-size); font-weight:var(--gs-body-weight); color:var(--gs-text); }
+
+/* Retained evidence, comparison and navigation markup consumes the same roles.
+   The selectors deliberately stop at the rollout boundary, not the theme root. */
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="text-zinc-"],[class*="text-slate-"],[class*="text-gray-"],[class*="text-emerald-"],[class*="text-lime-"],[class*="text-blue-"]) { color:var(--gs-text-secondary); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="text-zinc-950"],[class*="text-zinc-900"],[class*="text-slate-950"],[class*="dark:text-white"]) { color:var(--gs-text); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="text-rose-"],[class*="text-red-"]) { color:var(--gs-high); }
+:is(.gs-public-unified,[data-gs-public-unified]) [class*="text-green-"] { color:var(--gs-low); }
+.gs-public-unified [class*="scope"] { --color-bg-surface:var(--gs-surface); --color-bg-subtle:var(--gs-subtle); --color-border-default:var(--gs-border); --color-text-primary:var(--gs-text); --color-text-secondary:var(--gs-text-secondary); --color-focus:var(--gs-focus); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="bg-zinc-"],[class*="bg-slate-"],[class*="bg-lime-"],[class*="bg-emerald-"]) { background-color:var(--gs-subtle); }
+:is(.gs-public-unified,[data-gs-public-unified]) [class*="bg-white"] { background-color:var(--gs-surface); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="border-zinc-"],[class*="border-slate-"],[class*="border-lime-"],[class*="border-emerald-"]) { border-color:var(--gs-border); }
+/* Geometry belongs to component roles, never to a substring in a utility class. */
+:is(.gs-public-unified,[data-gs-public-unified]) :is(a,button,input:not([type="checkbox"]),select,textarea,summary) { border-radius:var(--gs-radius-control); }
+:is(.gs-public-unified,[data-gs-public-unified]) input[type="checkbox"] { border-radius:var(--gs-radius-small); }
+:is(.gs-public-unified,[data-gs-public-unified]) [data-gs-brand-size] { border-radius:var(--gs-radius-control); }
+:is(.gs-public-unified,[data-gs-public-unified]) [data-gs-brand-size="xs"] { border-radius:var(--gs-radius-small); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="shadow"],[class*="ring-"]) { box-shadow:none; }
+:is(.gs-public-unified,[data-gs-public-unified]) :is(.font-semibold,.font-bold,.font-black) { font-weight:var(--gs-weight-emphasis); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="text-[10px]"],[class*="text-[11px]"]) { font-size:var(--gs-noncritical-caption-size); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is([class*="text-[13px]"],[class*="text-[22px]"]) { font-size:var(--gs-metadata-size); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is(h1,h2,h3) { font-weight:var(--gs-h1-weight); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is(h1,h2,h3)[class] { font-weight:var(--gs-h1-weight); }
+:is(.gs-public-unified,[data-gs-public-unified]) a { color:var(--gs-link); min-height:var(--gs-touch-target); font-size:var(--gs-metadata-size); font-weight:var(--gs-body-weight); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is(button,input:not([type="checkbox"]),select) { font-family:var(--gs-font-body); }
+:is(.gs-public-unified,[data-gs-public-unified]) :is(button:not(.gs-r2-row-button),input:not([type="checkbox"]),select) { min-height:var(--gs-touch-target); }
+:is(.gs-public-unified,[data-gs-public-unified]) :focus-visible { outline:var(--gs-focus-width) solid var(--gs-focus); outline-offset:var(--gs-focus-offset); }
+:is(.gs-public-unified,[data-gs-public-unified]) button:disabled { opacity:var(--gs-disabled-opacity); cursor:not-allowed; }
+.gs-public-unified .gs-price-low { color:var(--gs-low)!important; }
+.gs-public-unified .gs-price-high { color:var(--gs-high)!important; }
+.gs-public-unified .gs-data-low { color:var(--gs-low); }
+.gs-public-unified .gs-data-high { color:var(--gs-high); }
+
+.gs-public-unified .gs-unified-layout { width:100%; }
+.gs-public-unified [data-public-footer] .grid > div > a:first-child { display:inline-flex; align-items:center; }
+.gs-public-unified [data-public-header] { border-radius:0; background:var(--gs-surface); box-shadow:none; backdrop-filter:none; }
+.gs-public-unified [data-public-header] > div:first-child { max-width:var(--gs-max-content-width); height:var(--gs-desktop-header-height); padding-inline:var(--gs-desktop-page-padding); }
+.gs-public-unified [data-public-header] a[aria-label*="GeoSub"] { color:var(--gs-text); border-radius:var(--gs-radius-control); }
+.gs-public-unified [data-public-header] a[aria-label*="GeoSub"] > span:first-child { background:var(--gs-text); color:var(--gs-surface); border-radius:50%; font-weight:var(--gs-h1-weight); }
+.gs-public-unified [data-public-header] a[aria-label*="GeoSub"] > span:first-child > span { background:var(--gs-accent); border-color:var(--gs-surface); border-radius:50%; }
+.gs-public-unified [data-public-header] a[aria-label*="GeoSub"] > span:last-child { font-size:var(--gs-h2-mobile); font-weight:var(--gs-h1-weight); }
+.gs-public-unified [data-public-header] nav { color:var(--gs-text-secondary); font-weight:var(--gs-body-weight); }
+.gs-public-unified [data-public-header] nav,
+.gs-public-unified [data-public-header] nav > div > button[aria-haspopup="menu"] + div { border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-header-language > button > span:first-child,
+.gs-public-unified .gs-header-language [role="menu"] a > span:first-child > span:first-child { border-radius:var(--gs-radius-small); }
+.gs-public-unified [data-public-header] nav[class] { background:transparent; }
+.gs-public-unified [data-public-header] nav > div > :is(button,a) { position:relative; background:transparent; }
+.gs-public-unified [data-public-header] nav > [data-gs-nav-active="true"] > :is(button,a)::after { content:""; position:absolute; inset-inline:var(--gs-space-12); bottom:0; height:var(--gs-focus-width); background:var(--gs-accent); }
+.gs-public-unified [data-public-header] nav > div > :is(button,a) { font-size:var(--gs-metadata-size); }
+.gs-public-unified [data-public-header] :is(button,a):hover { color:var(--gs-text); }
+.gs-public-unified .gs-header-actions > button { width:var(--gs-touch-target); height:var(--gs-touch-target); color:var(--gs-text); font-size:var(--gs-metadata-size); }
+.gs-public-unified .gs-header-actions > button:hover { background:var(--gs-subtle); }
+.gs-public-unified .gs-header-currency { width:calc(var(--gs-touch-target) * 2); }
+.gs-public-unified .gs-header-currency:before { content:none; }
+.gs-public-unified .gs-header-language > button { color:var(--gs-text); }
+.gs-public-unified [role="menu"] { box-shadow:var(--gs-shadow-floating); border-radius:var(--gs-radius-control); }
+.gs-public-unified [role="menu"] :is(a,button) { min-height:var(--gs-touch-target); font-size:var(--gs-metadata-size); font-weight:var(--gs-body-weight); }
+
+.gs-public-unified .gs-r2-plan { width:100%; max-width:var(--gs-max-content-width); margin-inline:auto; padding:var(--gs-space-8) var(--gs-desktop-page-padding) var(--gs-space-32); }
+.gs-public-unified .gs-r2-content { gap:var(--gs-space-16); }
+.gs-public-unified .gs-r2-breadcrumb { color:var(--gs-text-secondary); }
+.gs-public-unified .gs-r2-heading { margin:0 0 var(--gs-space-16); }
+.gs-public-unified .gs-r2-plan-tabs { min-width:calc(var(--gs-touch-target) * 7); }
+.gs-public-unified .gs-r2-plan-tabs [role="tablist"] { border:0; overflow:visible; }
+.gs-public-unified .gs-r2-plan-tabs [role="tab"] { font-weight:var(--gs-body-weight); padding-block:0; }
+.gs-public-unified .gs-r2-plan-tabs [role="tab"][aria-selected="true"] { font-weight:var(--gs-weight-emphasis); }
+.gs-public-unified .gs-r2-plan-tabs [role="tab"]::before { content:none; }
+.gs-public-unified .gs-r2-summary { border-radius:var(--gs-radius-card)!important; }
+.gs-public-unified .gs-r2-metric { padding:var(--gs-space-16) var(--gs-desktop-card-padding); }
+.gs-public-unified .gs-r2-metric > strong { font-family:var(--gs-font-hero); font-size:var(--gs-price-hero-desktop); font-weight:var(--gs-price-hero-weight); font-variant-numeric:var(--gs-numeric-variant); letter-spacing:0; }
+.gs-public-unified .gs-r2-provenance { margin-top:var(--gs-space-8); padding:var(--gs-space-12) var(--gs-space-16); border:var(--gs-border-width) solid var(--gs-border); border-radius:var(--gs-radius-card); background:var(--gs-surface); }
+.gs-public-unified .gs-r2-fx-details summary { display:inline-flex; align-items:center; min-height:var(--gs-touch-target); border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-r2-fx-details[open] p { box-shadow:var(--gs-shadow-floating); }
+
+.gs-public-unified .gs-r2-table { margin-top:var(--gs-space-24); padding:var(--gs-desktop-card-padding); border:var(--gs-border-width) solid var(--gs-border); border-radius:var(--gs-radius-card); background:var(--gs-surface); }
+.gs-public-unified .gs-r2-table-toolbar { grid-template-columns:auto minmax(0,1fr) 176px 160px; }
+.gs-public-unified .gs-unified-filters { gap:0; flex-wrap:nowrap; overflow-x:auto; padding:var(--gs-space-4); scrollbar-width:none; }
+.gs-public-unified .gs-unified-filters > button { flex:none; padding-inline:var(--gs-space-8); }
+.gs-public-unified .gs-r2-table-head { min-height:var(--gs-desktop-table-row-min); }
+.gs-public-unified .gs-r2-table-head > span:first-child { width:var(--gs-checkbox-size); height:var(--gs-checkbox-size); border-radius:var(--gs-radius-small); }
+.gs-public-unified .gs-r2-record { border-inline:0; }
+.gs-public-unified .gs-r2-price-row { padding-inline:0; }
+.gs-public-unified .gs-r2-row-button { border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-r2-row-button:hover { background:var(--gs-subtle); }
+.gs-public-unified .gs-r2-region strong { font-weight:var(--gs-weight-emphasis); }
+.gs-public-unified .gs-r2-local { font-family:var(--gs-font-price); font-weight:var(--gs-price-row-weight); }
+.gs-public-unified .gs-r2-inline-tax { font-family:var(--gs-font-body); font-weight:var(--gs-body-weight); }
+.gs-public-unified .gs-r2-region img { border-radius:var(--gs-radius-flag); }
+.gs-public-unified .gs-r2-review { padding-block:0; border:0; font-size:var(--gs-noncritical-caption-size); font-weight:var(--gs-weight-emphasis); }
+.gs-public-unified .gs-r2-compact-evidence { margin-inline:0; padding:var(--gs-space-12) var(--gs-space-16); }
+.gs-public-unified .gs-r2-compact-evidence > details > summary { border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-r2-evidence :is(a,summary) { color:var(--gs-link); font-weight:var(--gs-body-weight); }
+.gs-public-unified .gs-r2-evidence a { display:inline-flex; align-items:center; }
+.gs-public-unified .gs-r2-evidence > div > details > div { border-radius:var(--gs-radius-card); }
+.gs-public-unified .gs-r2-more { border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-r2-compare-bar { box-shadow:var(--gs-shadow-floating); }
+.gs-public-unified .gs-r2-compare-bar [data-gs-ui="button"] { background:var(--gs-text); color:var(--gs-surface); }
+.gs-public-unified .gs-r2-selected [data-gs-ui="button"] { background:var(--gs-subtle); color:var(--gs-text); }
+.gs-public-unified .gs-r2-dialog { box-shadow:var(--gs-shadow-floating); }
+.gs-public-unified .gs-r2-dialog::backdrop { background:var(--gs-overlay); }
+.gs-public-unified .gs-r2-dialog-content :is(button,a) { min-width:var(--gs-touch-target); min-height:var(--gs-touch-target); border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-r2-dialog-content .text-lg { font-family:var(--gs-font-price); font-size:var(--gs-price-row-mobile); font-weight:var(--gs-price-row-weight); }
+
+.gs-public-unified :is(.gs-r2-map-details,.gs-r2-work) { margin-top:var(--gs-space-24); }
+.gs-public-unified :is(.gs-r2-map-details,.gs-r2-work) > summary { padding:var(--gs-desktop-card-padding); border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-r2-map-details > summary { padding-right:calc(var(--gs-touch-target) * 5); }
+.gs-public-unified .gs-r2-map-content { padding:0 var(--gs-desktop-card-padding) var(--gs-desktop-card-padding); }
+.gs-public-unified .gs-r2-map-actions { top:var(--gs-space-16); right:var(--gs-desktop-card-padding); }
+.gs-public-unified .gs-unified-region-picker { max-width:calc(var(--gs-touch-target) * 8); margin:var(--gs-space-16) auto 0; }
+.gs-public-unified .gs-r2-map-label text:last-child { font-size:var(--gs-price-row-desktop); font-weight:var(--gs-price-row-weight); }
+.gs-public-unified .gs-r2-geo-map path[role="button"]:focus { stroke-width:var(--gs-focus-width); }
+.gs-public-unified .gs-r2-map-legend i { border-radius:var(--gs-radius-small); }
+.gs-public-unified .gs-r2-work-content { padding:0 var(--gs-desktop-card-padding) var(--gs-desktop-card-padding); }
+.gs-public-unified .gs-r2-work-duration { font-family:var(--gs-font-price); font-weight:var(--gs-price-row-weight); }
+.gs-public-unified .gs-r2-income-source a { display:inline-flex; align-items:center; }
+.gs-public-unified .gs-r2-secondary { height:var(--gs-control-height); background:var(--gs-surface); border:var(--gs-border-width) solid var(--gs-border-strong); font-weight:var(--gs-weight-emphasis); }
+.gs-public-unified .gs-r2-secondary:hover { background:var(--gs-subtle); }
+.gs-public-unified [aria-labelledby="pricing-pressure-title"] > div:first-child { border-radius:var(--gs-radius-card); }
+.gs-public-unified .gs-r2-faq { padding:var(--gs-desktop-card-padding); border:var(--gs-border-width) solid var(--gs-border)!important; border-radius:var(--gs-radius-card); }
+.gs-public-unified .gs-r2-faq > div:last-child { border:0; }
+.gs-public-unified .gs-r2-faq details { border-radius:var(--gs-radius-control); padding-inline:0; }
+.gs-public-unified .gs-r2-faq summary { color:var(--gs-text); border-radius:var(--gs-radius-control); font-weight:var(--gs-body-weight); }
+.gs-public-unified .gs-r2-faq summary:hover { background:var(--gs-subtle); }
+.gs-public-unified .gs-r2-supplement { padding:var(--gs-desktop-card-padding); border:var(--gs-border-width) solid var(--gs-border); border-radius:var(--gs-radius-card); background:var(--gs-surface); }
+.gs-public-unified [data-public-footer] { max-width:var(--gs-max-content-width); margin-inline:auto; padding-inline:var(--gs-desktop-page-padding); border-radius:0; background:transparent; }
+.gs-public-unified [data-public-footer] a[aria-label="GeoSub"] > span:first-child { border-radius:var(--gs-radius-control); }
+.gs-public-unified [data-public-footer] a[aria-label="GeoSub"] > span:first-child > span { border-radius:50%; }
+.gs-public-unified .gs-shared-footer { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr); gap:var(--gs-space-24) var(--gs-space-32); width:100%; padding-block:var(--gs-space-24); border-top:var(--gs-border-width) solid var(--gs-border); }
+.gs-footer-intro { display:grid; align-content:start; gap:var(--gs-space-8); }
+.gs-footer-intro>p { margin:0; font-size:var(--gs-metadata-size); line-height:var(--gs-body-line-height); color:var(--gs-text-secondary); }
+.gs-footer-intro>.gs-footer-independence { font-size:var(--gs-noncritical-caption-size); }
+.gs-footer-links { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--gs-space-4) var(--gs-space-16); align-content:start; }
+.gs-footer-links :is(a,button) { display:inline-flex; align-items:center; gap:var(--gs-space-8); min-height:var(--gs-touch-target); text-align:start; font-size:var(--gs-metadata-size); color:var(--gs-link); }
+.gs-footer-links svg { width:var(--gs-space-16); height:var(--gs-space-16); flex:none; }
+.gs-footer-bottom { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--gs-space-8) var(--gs-space-24); border-top:var(--gs-border-width) solid var(--gs-border); padding-top:var(--gs-space-16); color:var(--gs-text-secondary); font-size:var(--gs-noncritical-caption-size); }
+.gs-footer-bottom>p { margin:0; }
+
+/* One Chinese public reduced-motion guard replaces the scattered page guards.
+   No timing or hover/press animation is introduced before refinement step 3. */
+@media(prefers-reduced-motion:reduce) {
+  :is(.gs-public-unified,[data-gs-public-unified],.gs-style-review) * { transition-duration:0s!important; animation:none!important; scroll-behavior:auto!important; }
+  :is(.gs-public-unified,[data-gs-public-unified],.gs-style-review) :is(a,button) { translate:none!important; scale:none!important; transform:none!important; }
+  :is(.gs-public-unified,[data-gs-public-unified],.gs-style-review) :is(a,button) * { translate:none!important; scale:none!important; }
+}
+
+[data-gs-public-unified][data-global-search-overlay],.gs-public-unified [data-gs-overlay] { background:var(--gs-overlay); backdrop-filter:none; }
+[data-gs-public-unified][data-global-search-overlay] > [role="dialog"] { background:var(--gs-surface); border:var(--gs-border-width) solid var(--gs-border); border-radius:var(--gs-radius-card); box-shadow:var(--gs-shadow-floating); }
+[data-gs-public-unified][data-global-search-overlay] :is(input,button) { min-height:var(--gs-control-height); font-size:var(--gs-metadata-size); }
+[data-gs-public-unified][data-global-search-overlay] :is(a,button) { border-radius:var(--gs-radius-control); }
+[data-gs-public-unified][data-global-search-overlay] :is(a,button):hover { background:var(--gs-subtle); }
+.gs-public-unified [data-gs-overlay] > [role="dialog"] { background:var(--gs-surface); box-shadow:var(--gs-shadow-floating); border-radius:var(--gs-radius-card); }
+.gs-public-unified [data-share-price-card] { background:var(--gs-surface); padding:var(--gs-desktop-card-padding); }
+.gs-public-unified [data-share-price-card] :is([class*="text-[9px]"],[class*="text-[10px]"]) { font-size:var(--gs-noncritical-caption-size); }
+.gs-public-unified [data-share-price-card] h2 { font-size:var(--gs-h2-desktop); font-weight:var(--gs-h2-weight); }
+.gs-public-unified [data-share-price-card] [class*="text-[#"] { color:var(--gs-high); }
+.gs-public-unified [data-share-price-card] [class*="border-[#"] { border-color:var(--gs-border); }
+.gs-public-unified [data-share-price-card] > .grid-cols-3 > [class*="bg-[#"] { background-color:var(--gs-subtle); }
+.gs-public-unified [data-share-price-card] .text-lg { font-family:var(--gs-font-price); font-size:var(--gs-price-row-desktop); font-weight:var(--gs-price-row-weight); }
+.gs-public-unified [data-gs-overlay] :is(button,a) { min-height:var(--gs-touch-target); border-radius:var(--gs-radius-control); }
+.gs-public-unified [data-gs-overlay] button[aria-label] { min-width:var(--gs-touch-target); }
+.gs-public-unified [data-gs-overlay] [data-track-event="download_share_image"] { background:var(--gs-text); color:var(--gs-surface); }
+.gs-unified-consent { position:fixed; z-index:120; inset-inline:var(--gs-space-16); bottom:var(--gs-space-16); max-width:var(--gs-max-content-width); margin-inline:auto; }
+.gs-unified-consent a { min-height:var(--gs-touch-target); display:inline-flex; align-items:center; }
+
+@media(max-width:1099px) {
+  .gs-public-unified .gs-r2-table-toolbar { grid-template-columns:minmax(0,1fr) 146px; }
+  .gs-public-unified .gs-unified-filters { grid-column:1/-1; }
+}
+@media(max-width:767px) {
+  .gs-public-unified [data-public-header] > div:first-child { height:var(--gs-mobile-header-height); padding-inline:var(--gs-mobile-page-padding); }
+  .gs-public-unified .gs-header-currency { display:none; }
+  .gs-public-unified .gs-r2-plan { padding:var(--gs-space-4) var(--gs-mobile-page-padding) var(--gs-space-24); }
+  .gs-public-unified .gs-r2-content { gap:var(--gs-space-12); }
+  .gs-public-unified .gs-r2-heading { margin-bottom:var(--gs-space-16); }
+  .gs-public-unified .gs-r2-plan-tabs { min-width:0; }
+  .gs-public-unified .gs-r2-metric { padding:var(--gs-space-8) var(--gs-mobile-card-padding); }
+  .gs-public-unified .gs-r2-metric > strong { font-size:var(--gs-price-hero-mobile); letter-spacing:0; }
+  .gs-public-unified .gs-r2-provenance { padding:var(--gs-space-8) var(--gs-space-12); }
+  .gs-public-unified .gs-r2-table { padding:var(--gs-mobile-card-padding); margin-top:var(--gs-mobile-section-gap); }
+  .gs-public-unified .gs-r2-table-toolbar { grid-template-columns:minmax(0,1fr) 146px; gap:var(--gs-space-8); }
+  .gs-public-unified .gs-unified-filters { padding-inline:var(--gs-space-4); margin-inline:calc(-1 * var(--gs-space-8)); }
+  .gs-public-unified .gs-r2-row-button { padding-inline:var(--gs-space-4); }
+  .gs-public-unified .gs-r2-review { display:none; }
+  .gs-public-unified [data-share-price-card] { padding:var(--gs-mobile-card-padding); }
+  .gs-public-unified [data-share-price-card] > .grid-cols-3 { grid-template-columns:minmax(0,1fr); }
+  .gs-public-unified .gs-r2-compact-evidence { padding:var(--gs-space-12); }
+  .gs-public-unified :is(.gs-r2-map-details,.gs-r2-work) > summary { padding:var(--gs-mobile-card-padding); }
+  .gs-public-unified :is(.gs-r2-map-content,.gs-r2-work-content) { padding:0 var(--gs-mobile-card-padding) var(--gs-mobile-card-padding); }
+  .gs-public-unified .gs-r2-faq,.gs-public-unified .gs-r2-supplement { padding:var(--gs-mobile-card-padding); }
+  .gs-public-unified [data-public-footer] { padding-inline:var(--gs-mobile-page-padding); }
+  .gs-public-unified .gs-shared-footer { grid-template-columns:minmax(0,1fr); gap:var(--gs-space-16); }
+  .gs-footer-links { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .gs-unified-consent { inset-inline:var(--gs-space-12); bottom:var(--gs-space-12); }
+}
+
+/* Shared flags keep intrinsic dimensions regardless of their surrounding page. */
+.gs-public-unified [data-gs-flag][aria-hidden],
+.gs-public-unified [data-gs-flag][aria-hidden] img { width:28px; height:20px; min-width:28px; max-width:28px; flex:none; box-sizing:border-box; border-radius:var(--gs-radius-flag); }
+.gs-public-unified [data-gs-flag][aria-hidden] { display:inline-flex; align-items:center; justify-content:center; overflow:hidden; border:var(--gs-border-width) solid var(--gs-border); background:var(--gs-subtle); color:var(--gs-text-secondary); font-size:var(--gs-noncritical-caption-size); }
+.gs-public-unified [data-gs-flag][aria-hidden] img { width:100%; height:100%; min-width:0; object-fit:cover; border:0; border-radius:0; }
+.gs-public-unified .gs-public-fx-note { margin:var(--gs-space-12) 0; color:var(--gs-text-secondary); font-size:var(--gs-noncritical-caption-size); line-height:var(--gs-body-line-height); overflow-wrap:anywhere; }
+.gs-public-unified .gs-home-price-card > .gs-public-fx-note { padding-inline:var(--gs-space-16); }
+/* One semantic palette and one renderer for the two public maps. */
+.gs-public-unified .gs-public-price-map { --gs-map-lower:var(--gs-map-low); --gs-map-higher:var(--gs-map-high); --gs-map-same:var(--gs-subtle); --gs-map-covered:var(--gs-subtle); --gs-map-reference:var(--gs-map-baseline); color:var(--gs-text); position:relative; }
+.gs-public-unified .gs-public-price-map > svg { width:100%; height:auto; display:block; }
+.gs-public-unified .gs-public-price-map path[role="button"] { cursor:pointer; }
+.gs-public-unified .gs-public-price-map path[role="button"]:focus-visible { stroke:var(--gs-focus); stroke-width:3; outline:none; }
+.gs-public-unified .gs-public-price-map .gs-r2-map-label text:first-of-type { font-family:var(--gs-font-body); }
+.gs-public-unified .gs-public-price-map .gs-r2-map-legend { display:flex; flex-wrap:wrap; gap:var(--gs-space-12); padding:var(--gs-space-12) var(--gs-space-16); color:var(--gs-text-secondary); font-size:var(--gs-noncritical-caption-size); }
+.gs-public-unified .gs-public-price-map .gs-r2-map-legend span { display:inline-flex; align-items:center; gap:var(--gs-space-4); }
+.gs-public-unified .gs-public-price-map .gs-r2-map-legend i { width:var(--gs-space-12); height:var(--gs-space-12); border:var(--gs-border-width) solid var(--gs-border); border-radius:var(--gs-radius-flag); }
+.gs-public-unified .gs-public-price-map .gs-r2-map-mobile-labels { display:none; }
+.gs-public-unified .gs-public-price-map .gs-unified-region-picker { margin:var(--gs-space-12) var(--gs-space-16) var(--gs-space-16); }
+.gs-public-unified .gs-public-map-selection { position:absolute; top:var(--gs-space-12); left:var(--gs-space-16); width:min(320px,calc(100% - var(--gs-space-32))); z-index:1; display:flex; align-items:center; justify-content:space-between; gap:var(--gs-space-8); padding:var(--gs-space-8) var(--gs-space-12); background:var(--gs-subtle); border:var(--gs-border-width) solid var(--gs-border); border-radius:var(--gs-radius-card); }
+.gs-public-unified .gs-public-map-selection span { display:block; color:var(--gs-text-secondary); font-size:var(--gs-metadata-size); }
+.gs-public-unified [data-gs-logo-mark] { position:relative; display:flex; align-items:center; justify-content:center; width:var(--gs-space-32); height:var(--gs-space-32); min-width:var(--gs-space-32); border:0; border-radius:50%!important; background:var(--gs-text)!important; color:var(--gs-surface)!important; }
+.gs-public-unified [data-gs-logo-mark] > [data-gs-logo-letter] { color:var(--gs-surface); background:transparent; font-size:var(--gs-metadata-size); font-weight:var(--gs-h1-weight); }
+.gs-public-unified [data-gs-logo-mark] > [data-gs-logo-dot] { position:absolute; right:-2px; top:-2px; width:10px; height:10px; background:var(--gs-accent); border:2px solid var(--gs-surface); border-radius:50%; }
+.gs-public-unified [data-gs-logo-word] { color:var(--gs-text); font-size:var(--gs-h2-mobile); font-weight:var(--gs-h1-weight); }
+.gs-public-unified .gs-footer-brand { display:inline-flex; align-items:center; gap:var(--gs-space-8); }
+@media (max-width:639px) {
+  .gs-public-unified .gs-public-price-map .gs-r2-map-label { display:none; }
+  .gs-public-unified .gs-public-price-map .gs-r2-map-mobile-labels { display:flex; flex-wrap:wrap; gap:var(--gs-space-8); padding-inline:var(--gs-space-16); font-size:var(--gs-noncritical-caption-size); }
+  .gs-public-unified .gs-public-price-map .gs-r2-map-mobile-labels strong { display:block; font-family:var(--gs-font-price); }
+}

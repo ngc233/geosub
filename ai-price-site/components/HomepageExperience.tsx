@@ -10,11 +10,17 @@ import {
   Gauge,
   ShieldCheck,
   WalletCards,
+  History,
 } from "lucide-react";
 
 import BrandIcon from "./BrandIcon";
+import {priorityCountries} from "../lib/priority-countries";
+import CountryIdentity from "./CountryIdentity";
 import HomePromotion from "./HomePromotion";
 import HomeHeroMap, { type HomeMapRegion } from "./HomeHeroMap";
+import GlobalSearch from "./GlobalSearch";
+import SegmentedControl from "./ui/SegmentedControl";
+import { PublicCard } from "./ui/PublicControls";
 import { getHomepageCopy } from "../lib/homepage-copy";
 import { siteLocaleDefinitions, type SiteLocale } from "../lib/site-locale";
 
@@ -24,6 +30,7 @@ export type HomepageProduct = {
   category: "ai" | "streaming";
   planName: string;
   href: string;
+  planHref?: string;
   updatedAt: string;
   logoUrl?: string;
   regions: HomeMapRegion[];
@@ -165,6 +172,45 @@ export default function HomepageExperience({
     ];
   }, [copy, localeRoot, products]);
 
+  if (locale === "zh") return (
+    <main className="gs-home-unified">
+      <header className="gs-home-intro">
+        <p className="gs-home-eyebrow">{copy.eyebrow}</p>
+        <h1>{copy.title}</h1>
+        <p>{copy.description}</p>
+        <GlobalSearch locale={locale} appearance="public" presentation="inline" />
+      </header>
+      {active ? <section aria-label={copy.productTabs} className="gs-home-pricing">
+        <SegmentedControl animated motionIdentity="homepage-products" variant="public" className="gs-home-tabs" ariaLabel={copy.productTabs} value={active.slug}
+          items={products.map(product => ({ value: product.slug, label: product.slug === "chatgpt" ? `${product.name} ${product.planName.replace(/^ChatGPT\s*/, "")}` : product.name, icon: <BrandIcon product={product} size="xs" />,
+            ariaLabel: `${copy.switchProduct} ${product.name}, ${copy.maxSpread} ${getSpread(product)}%` }))}
+          onChange={slug => setActiveIndex(products.findIndex(product => product.slug === slug))} />
+        <div role="tabpanel" aria-label={`${active.name} ${active.planName}`} key={active.slug}>
+          <HomeHeroMap locale={locale} regions={active.regions} productName={active.name} planName={active.planName} href={active.href} planHref={active.planHref} appearance="public" />
+        </div>
+        <p className="gs-home-provenance"><Database aria-hidden="true" /><span><strong>{evidence.prices}</strong> {copy.pricesVerified} · {copy.source} App Store · {copy.updated} {formatDate(evidence.updatedAt, locale)}</span></p>
+      </section> : <PublicCard className="gs-home-empty" role="status">{copy.unavailable}</PublicCard>}
+
+      <div className="gs-home-discovery">
+        <PublicCard className="gs-home-products">
+          <div className="gs-home-section-heading"><h2>按产品找价格</h2><Link href={`${localeRoot}/ai-pricing/`}>AI 订阅<ArrowRight aria-hidden="true" /></Link><Link href={`${localeRoot}/streaming-pricing/`}>流媒体<ArrowRight aria-hidden="true" /></Link></div>
+          {products.map(product => <Link className="gs-home-product-row" key={product.slug} href={product.href}><BrandIcon product={product} size="xs" /><span>{product.name}</span><ArrowRight aria-hidden="true" /></Link>)}
+          {!products.length && <p>{copy.unavailable}</p>}
+        </PublicCard>
+        <PublicCard>
+          <div className="gs-home-section-heading"><h2>按国家看订阅</h2><Link href={`${localeRoot}/countries`}>查看全部<ArrowRight aria-hidden="true" /></Link></div>
+          <div className="gs-home-country-links">{priorityCountries.map(country=><Link key={country.code} href={`/zh/countries/${country.slug}`}><CountryIdentity code={country.code}/><span>{country.zh}</span><ArrowRight aria-hidden="true"/></Link>)}</div>
+        </PublicCard>
+      </div>
+      <HomePromotion />
+      <nav className="gs-home-reference-links" aria-label="数据与方法">{[
+        {icon:Database,title:"数据来源",text:"查看采集来源与证据",href:"/zh/data-sources"},
+        {icon:Gauge,title:"比较方法",text:"汇率、税费与基准说明",href:"/zh/guides/methodology"},
+        {icon:History,title:"价格历史",text:"查看已记录的价格变化",href:"/zh/price-history/chatgpt"},
+      ].map(item=><Link key={item.href} href={item.href}><item.icon aria-hidden="true"/><span><strong>{item.title}</strong><small>{item.text}</small></span><ArrowRight aria-hidden="true"/></Link>)}</nav>
+    </main>
+  );
+
   return (
     <main className="min-h-screen bg-[var(--background)] text-zinc-950 dark:text-white">
       <section className="border-b border-zinc-200/80 bg-[var(--background)] dark:border-zinc-800/80">
@@ -174,13 +220,7 @@ export default function HomepageExperience({
               {copy.eyebrow}
             </p>
             <h1 className="mt-3 text-[34px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#182230] sm:text-[40px] lg:text-[46px] dark:text-white">
-              {locale === "zh" ? (
-                <>
-                  <span className="block sm:inline">别只看标价，</span>
-                  <span className="block text-zinc-950 sm:inline dark:text-white">看清数字订阅的</span>
-                  <span className="block text-zinc-950 sm:inline dark:text-white">真实地区成本</span>
-                </>
-              ) : copy.title}
+              {copy.title}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-zinc-600 md:text-[15px] dark:text-zinc-300">
               {copy.description}
@@ -314,8 +354,6 @@ export default function HomepageExperience({
           </div>
         </div>
       </section>
-
-      {locale === "zh" ? <HomePromotion /> : null}
 
       <section className="border-t border-zinc-200 bg-[var(--background)] px-4 py-14 sm:px-6 sm:py-16 lg:px-8 dark:border-zinc-800">
         <div className="mx-auto max-w-[1120px]">

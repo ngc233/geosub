@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import DbPricingCard from "./DbPricingCard";
+import { PublicCard } from "./ui/PublicControls";
 import { groupPricingProductsByCycle } from "../lib/db-pricing-types";
 import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import type { ProductPlan } from "../lib/public-pricing-model";
@@ -97,7 +98,7 @@ export default function DbAiPricingClient({
         </div>
       ) : null}
 
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div data-gs-catalog-summary={locale === "zh" ? "" : undefined} className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
@@ -119,12 +120,12 @@ export default function DbAiPricingClient({
       {filteredProducts.length > 0 ? (
         <>
           {groupPricingProductsByCycle(filteredProducts)
-            .map(({ cycle, products: cycleProducts }) => <section key={cycle} className="mb-8">
+            .map(({ cycle, products: cycleProducts }) => <section key={cycle} data-catalog-cycle={cycle} className="mb-8">
               <h3 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
                 {getBillingCycleLabel(cycle.toLowerCase() as ProductPlan["billing"], locale)}
               </h3>
-              <div className="grid grid-cols-1 gap-5 overflow-visible xl:grid-cols-2">
-                {cycleProducts.map(product => <DbPricingCard key={product.slug} product={product} locale={locale} />)}
+              <div className="gs-catalog-grid grid grid-cols-1 gap-5 overflow-visible xl:grid-cols-2">
+                {cycleProducts.map(product => <DbPricingCard key={product.slug} product={product} locale={locale} appearance={locale === "zh" ? "public" : undefined} />)}
               </div>
             </section>)}
 
@@ -154,7 +155,7 @@ export default function DbAiPricingClient({
           ) : null}
         </>
       ) : (
-        <div className="rounded-3xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center text-sm font-bold text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-500">
+        locale === "zh" ? <PublicCard role="status">{copy.empty}</PublicCard> : <div className="rounded-3xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center text-sm font-bold text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-500">
           {copy.empty}
         </div>
       )}

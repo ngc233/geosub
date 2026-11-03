@@ -26,7 +26,9 @@ test("guide hubs keep reviewed core guides discoverable without duplicating CMS 
   assert.match(hub, /!state\?\.managed \|\| state\.published/);
   assert.match(hub, /"tool-review"/);
   assert.match(hub, /guideHubExcludedArticleSlugs/);
-  assert.match(chineseHub, /beforeArticles=\{<CoreGuideHub locale="zh" \/>\}/);
+  assert.match(chineseHub, /getCoreGuideDirectoryEntries\(\)/);
+  assert.match(chineseHub, /coreEntries=\{coreEntries\.map/);
+  assert.match(hub, /!states\.get\(slug\)\?\.managed\|\|states\.get\(slug\)\?\.published/);
   assert.match(englishHub, /beforeArticles=\{<CoreGuideHub locale="en" \/>\}/);
   assert.match(chineseHub, /guideHubExcludedArticleSlugs\.has\(article\.slug\)/);
   assert.match(englishHub, /guideHubExcludedArticleSlugs\.has\(article\.slug\)/);
@@ -52,11 +54,12 @@ test("public guides keep long-form copy at a readable measure", () => {
 
 test("country flags are decorative beside the localized country name", () => {
   const source = readComponent("ExpandableRegionPriceTable.tsx");
+  const flag = readComponent("CountryFlag.tsx");
 
-  assert.match(source, /alt=""/);
-  assert.match(source, /aria-hidden="true"/);
+  assert.match(flag, /alt=""/);
+  assert.match(flag, /aria-hidden="true"/);
   assert.match(source, /\{localizedCountry\}/);
-  assert.doesNotMatch(source, /alt=\{countryCode\}/);
+  assert.doesNotMatch(flag, /alt=\{countryCode\}/);
 });
 
 test("regional prices use a dedicated mobile reading order with touch-accessible evidence", () => {

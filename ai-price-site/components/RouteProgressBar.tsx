@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ROUTE_PROGRESS_START_EVENT } from "../lib/route-progress";
+import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 
 const START_DELAY_MS = 120;
 const FINISH_DELAY_MS = 180;
@@ -175,6 +176,7 @@ export default function RouteProgressBar() {
     <div
       aria-hidden="true"
       data-route-progress
+      data-gs-public-unified={usesUnifiedPublicStyle(pathname) ? "" : undefined}
       className={`pointer-events-none fixed inset-x-0 top-0 z-[200] h-0.5 transition-opacity duration-150 motion-reduce:transition-none ${
         visible ? "opacity-100" : "opacity-0"
       }`}

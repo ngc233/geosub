@@ -62,6 +62,9 @@ function loadPage(locale: string, structuredDataType: string) {
           return load(resolve(filename, "..", `${id}.ts`));
         }
         if (id === "react/jsx-runtime") return require(id);
+        // The display template is outside this schema-contract test's boundary.
+        if (id.endsWith("/components/GuideArticleLayout")) return {default:()=>null};
+        if (id.endsWith("/guide-display")) return load(resolve(filename,"..",`${id}.ts`));
         throw new Error(`Unexpected dependency: ${id}`);
       },
     });

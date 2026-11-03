@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import ArticleCollectionView from "../../../components/ArticleCollectionView";
-import CoreGuideHub, {
+import {
   guideHubExcludedArticleSlugs,
+  getCoreGuideDirectoryEntries,
 } from "../../../components/CoreGuideHub";
 import {
   getPublishedArticleCategories,
   getPublishedArticleTags,
   getPublishedArticles,
+  getArticleTypeLabel,
 } from "../../../lib/articles";
+import {publicGuideTypeLabel} from "../../../lib/guide-display";
 
 export const metadata: Metadata = {
   title: "数字订阅价格、支付与账号指南",
@@ -16,10 +19,11 @@ export const metadata: Metadata = {
 };
 
 export default async function GuidesPage() {
-  const [articles, categories, tags] = await Promise.all([
+  const [articles, categories, tags, coreEntries] = await Promise.all([
     getPublishedArticles("ZH"),
     getPublishedArticleCategories("ZH"),
     getPublishedArticleTags("ZH"),
+    getCoreGuideDirectoryEntries(),
   ]);
   const editorialArticles = articles.filter(
     (article) => !guideHubExcludedArticleSlugs.has(article.slug),
@@ -36,7 +40,10 @@ export default async function GuidesPage() {
       emptyText="暂无其他已发布内容。"
       locale="zh"
       showBack={false}
-      beforeArticles={<CoreGuideHub locale="zh" />}
+      coreEntries={coreEntries.map(entry=>{
+        const article=articles.find(item=>`/zh/guides/${item.slug}`===entry.href);
+        return article ? {...entry,articleType:article.articleType,label:publicGuideTypeLabel(article.articleType,getArticleTypeLabel(article.articleType,"zh")),updated:article.updatedAt.toISOString().slice(0,10)} : entry;
+      })}
     />
   );
 }

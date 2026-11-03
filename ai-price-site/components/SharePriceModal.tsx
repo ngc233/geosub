@@ -10,6 +10,8 @@ import { getPlanDisplayName } from '../lib/pricing-labels';
 import type { SiteLocale } from '../lib/site-locale';
 import { shareCopy } from './SharePriceCopy';
 import ShareMiniMap, { getDiffPercent, getReadableDiffByLocale } from './SharePriceMap';
+import { PublicButton } from './ui/PublicControls';
+import { getBillingCycleSuffix } from '../lib/billing-cycle-label';
 
 export type SharePriceProduct = {
   name: string;
@@ -19,10 +21,14 @@ export type SharePriceProduct = {
 };
 
 type SharePriceModalProps = {
+  appearance?: 'public';
   product: SharePriceProduct;
   plan: ProductPlan;
   stats: PlanStats;
   locale?: SiteLocale;
+  formatDisplayPrice?: (value: number) => string;
+  displayCurrency?: string;
+  displayFxDate?: string | null;
 };
 
 function SocialBrandIcon({ icon }: { icon: { path: string } }) {
@@ -38,6 +44,10 @@ export default function SharePriceModal({
   plan,
   stats,
   locale = 'zh',
+  formatDisplayPrice = formatUsd,
+  displayCurrency = 'USD',
+  displayFxDate,
+  appearance,
 }: SharePriceModalProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -48,6 +58,7 @@ export default function SharePriceModal({
   const [copyText, setCopyText] = useState(text.copyLink);
   const [downloading, setDownloading] = useState(false);
   const planDisplayName = getPlanDisplayName(product.name, plan.name);
+  const billingSuffix = appearance === 'public' ? getBillingCycleSuffix(plan.billing, locale) : text.monthlySuffix;
 
   const sortedRegions = useMemo(
     () => [...plan.regions].sort((a, b) => a.priceUsd - b.priceUsd),
@@ -76,7 +87,7 @@ export default function SharePriceModal({
   const highestRegionNames = highestRegions.map((region) => region.country).join(regionSeparator);
   const verifiedDate = plan.freshness?.pageUpdatedAt || product.updatedAt;
   const sourceLabel = plan.freshness?.sourceLabel || referenceRegion.sourceName || 'App Store';
-  const fxRateDate = plan.freshness?.fxRateDate || referenceRegion.fxRateDate;
+  const fxRateDate = displayFxDate || plan.freshness?.fxRateDate || referenceRegion.fxRateDate;
 
   useEffect(() => {
     if (!open) {
@@ -168,7 +179,7 @@ export default function SharePriceModal({
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 3,
-        backgroundColor: '#f7f8fa',
+        backgroundColor: appearance === 'public' ? getComputedStyle(cardRef.current).getPropertyValue('--gs-surface').trim() : '#f7f8fa',
       });
 
       const link = document.createElement('a');
@@ -185,8 +196,8 @@ export default function SharePriceModal({
     const text = encodeURIComponent(
       shareCopy[locale].shareText(
         planDisplayName,
-        formatUsd(stats.minRegion.priceUsd),
-        formatUsd(stats.maxRegion.priceUsd),
+        formatDisplayPrice(stats.minRegion.priceUsd),
+        formatDisplayPrice(stats.maxRegion.priceUsd),
         stats.spreadPercent
       )
     );
@@ -203,7 +214,7 @@ export default function SharePriceModal({
 
   return (
     <>
-      <button
+      {appearance === 'public' ? <PublicButton variant="secondary" ref={triggerRef} onClick={() => setOpen(true)} data-share-price-trigger data-track-event="open_share_modal" data-track-name="Open price share modal" data-track-button={`${product.slug}:${plan.slug}`} data-track-placement="share_modal"><Share size={16} aria-hidden="true" />{text.button}</PublicButton> : <button
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
@@ -216,10 +227,11 @@ export default function SharePriceModal({
       >
         <Share aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
         <span>{text.button}</span>
-      </button>
+      </button>}
 
       {open && (
         <div
+          data-gs-overlay={appearance === 'public' ? '' : undefined}
           className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/55 px-3 py-4 backdrop-blur-md sm:px-4 sm:py-8"
           onClick={() => setOpen(false)}
         >
@@ -259,8 +271,8 @@ export default function SharePriceModal({
 
                 <div className="mt-3 inline-flex max-w-full items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-zinc-700">
                   {referenceRegion.code.toUpperCase() === 'US'
-                    ? text.planBadge(planDisplayName, formatUsd(referenceRegion.priceUsd))
-                    : `${planDisplayName} · ${referenceRegion.country} ${formatUsd(referenceRegion.priceUsd)}`}
+                    ? text.planBadge(planDisplayName, formatDisplayPrice(referenceRegion.priceUsd))
+                    : `${planDisplayName} · ${referenceRegion.country} ${formatDisplayPrice(referenceRegion.priceUsd)}`}
                 </div>
 
                 <ShareMiniMap
@@ -280,10 +292,12 @@ export default function SharePriceModal({
                       {lowestRegionNames}
                     </div>
                     <div className="mt-2 text-lg font-semibold leading-none text-lime-700">
-                      {formatUsd(stats.minRegion.priceUsd)}
+                      {formatDisplayPrice(stats.minRegion.priceUsd)}
                     </div>
                     <div className="mt-1 text-[9px] text-zinc-500">
-                      {getReadableDiffByLocale(cheapDiff, locale)}
+                      {appearance === 'public' && locale === 'zh' && referenceRegion.code.toUpperCase() !== 'US'
+                        ? '暂无美国基准'
+                        : getReadableDiffByLocale(cheapDiff, locale)}
                     </div>
                   </div>
 
@@ -295,9 +309,9 @@ export default function SharePriceModal({
                       {referenceRegion.country}
                     </div>
                     <div className="mt-2 text-lg font-semibold leading-none text-zinc-950">
-                      {formatUsd(referenceRegion.priceUsd)}
+                      {formatDisplayPrice(referenceRegion.priceUsd)}
                     </div>
-                    <div className="mt-1 text-[9px] text-zinc-500">{text.monthlySuffix}</div>
+                    <div className="mt-1 text-[9px] text-zinc-500">{billingSuffix}</div>
                   </div>
 
                   <div className="rounded-lg border border-[#e6c4bc] bg-[#f8eeeb] p-3">
@@ -308,9 +322,9 @@ export default function SharePriceModal({
                       {highestRegionNames}
                     </div>
                     <div className="mt-2 text-lg font-semibold leading-none text-[#a24b3a]">
-                      {formatUsd(stats.maxRegion.priceUsd)}
+                      {formatDisplayPrice(stats.maxRegion.priceUsd)}
                     </div>
-                    <div className="mt-1 text-[9px] text-zinc-500">{text.monthlySuffix}</div>
+                    <div className="mt-1 text-[9px] text-zinc-500">{billingSuffix}</div>
                   </div>
                 </div>
 
@@ -320,7 +334,7 @@ export default function SharePriceModal({
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-zinc-200 pt-3 text-[9px] leading-4 text-zinc-500">
-                  <span>{text.priceSource}: <strong className="font-semibold text-zinc-700">{sourceLabel}</strong></span>
+                  <span>{text.priceSource}: <strong className="font-semibold text-zinc-700">{sourceLabel} · {displayCurrency}</strong></span>
                   <span>{text.coverage(plan.regions.length)}</span>
                   {fxRateDate ? <span>{text.fxDate}: <strong className="font-semibold text-zinc-700">{fxRateDate}</strong></span> : <span />}
                   <span>GeoSub · {text.verifiedAt(verifiedDate).replace(/^GeoSub\s*[·・]\s*/, '')}</span>

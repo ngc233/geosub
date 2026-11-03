@@ -144,6 +144,7 @@ export default function BrandIcon({
           ? "border-admin-border bg-admin-surface-subtle text-admin-text-secondary"
           : "border-zinc-200/80 bg-white dark:border-zinc-700 dark:bg-zinc-900"} ${sizeClass.box} ${className}`}
       data-brand-source={approvedLocalAsset && !localAssetFailed ? "approved-local" : icon ? "simple-icons" : "neutral"}
+      data-gs-brand-size={appearance === "public" ? size : undefined}
       title={product.name || product.slug}
     >
       {approvedLocalAsset && !localAssetFailed ? (

@@ -27,6 +27,7 @@ import { getAnalyticsSessionId } from "../lib/client-analytics-session";
 import type { PublicSearchResult, PublicSearchResultKind } from "../lib/public-search";
 import type { PreparedSiteLocale } from "../lib/site-locale";
 import BrandIcon from "./BrandIcon";
+import { PublicButton, PublicInput } from "./ui/PublicControls";
 
 type SearchCopy = {
   button: string;
@@ -339,13 +340,16 @@ function trackSearchResult(query: string, result: PublicSearchResult) {
   }
 }
 
-export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale }) {
+export default function GlobalSearch({ locale, appearance, presentation }: { locale: PreparedSiteLocale; appearance?: "public"; presentation?: "inline" }) {
   const router = useRouter();
   const copy = copyByLocale[locale];
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLElement | null>(null);
   const trackedQueryRef = useRef("");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [draft, setDraft] = useState("");
   const [results, setResults] = useState<PublicSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
@@ -353,6 +357,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
   const [resultKind, setResultKind] = useState<PublicSearchResultKind | "all">("all");
   const [popularTerms, setPopularTerms] = useState<string[]>([]);
   const [popularLoaded, setPopularLoaded] = useState(false);
+  const [searchAttempt, setSearchAttempt] = useState(0);
 
   const quickLinks = useMemo(() => [
     { title: copy.ai, href: `/${locale}/ai-pricing`, icon: Bot },
@@ -373,18 +378,33 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
+    const trigger = triggerRef.current;
     document.body.style.overflow = "hidden";
     window.setTimeout(() => inputRef.current?.focus(), 20);
 
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
+      if (event.key === "Tab" && appearance === "public") {
+        const dialog = dialogRef.current;
+        const controls = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        )).filter(element => element.getClientRects().length > 0) : [];
+        const first = controls[0], last = controls.at(-1);
+        if (first && last && (event.shiftKey
+          ? document.activeElement === first || !dialog?.contains(document.activeElement)
+          : document.activeElement === last || !dialog?.contains(document.activeElement))) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        }
+      }
     }
     document.addEventListener("keydown", closeOnEscape);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
+      if (appearance === "public") trigger?.focus();
     };
-  }, [open]);
+  }, [open, appearance]);
 
   useEffect(() => {
     if (!open || popularLoaded) return;
@@ -456,7 +476,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [locale, query]);
+  }, [locale, query, searchAttempt]);
 
   function closeSearch() {
     setOpen(false);
@@ -500,7 +520,11 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
 
   return (
     <>
-      <button
+      {presentation === "inline" ? <form className="gs-home-search" role="search" onSubmit={event => { event.preventDefault(); updateQuery(draft); setOpen(true); }}>
+        <PublicInput label={copy.placeholder} hideLabel startIcon={<Search aria-hidden="true" />} value={draft} placeholder={copy.placeholder} onChange={event => setDraft(event.target.value)} />
+        <PublicButton type="submit" ref={triggerRef}>{copy.button}</PublicButton>
+      </form> : <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-600 shadow-sm transition-all duration-200 ease-out hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950 active:bg-zinc-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-white dark:active:bg-zinc-700 dark:focus-visible:ring-offset-zinc-950"
@@ -509,17 +533,20 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
       >
         <Search className="h-4 w-4" aria-hidden="true" />
         <span className="hidden xl:inline">{copy.button}</span>
-      </button>
+      </button>}
 
       {open ? createPortal(
         <div
           data-global-search-overlay
+          data-gs-public-surface
+          data-gs-public-unified={appearance === "public" ? "" : undefined}
           className="fixed inset-0 z-[100] flex min-h-dvh items-start justify-center bg-zinc-950/45 p-0 backdrop-blur-sm sm:p-6 sm:pt-[10vh]"
           onClick={(event) => {
             if (event.target === event.currentTarget) closeSearch();
           }}
         >
           <section
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={copy.title}
@@ -533,6 +560,7 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                 onChange={(event) => updateQuery(event.target.value)}
                 onKeyDown={handleInputKeyDown}
                 placeholder={copy.placeholder}
+                aria-label={appearance === "public" ? copy.placeholder : undefined}
                 className="min-w-0 flex-1 bg-transparent text-base font-semibold text-zinc-950 outline-none placeholder:font-normal placeholder:text-zinc-400 dark:text-white"
                 autoComplete="off"
                 spellCheck={false}
@@ -596,8 +624,14 @@ export default function GlobalSearch({ locale }: { locale: PreparedSiteLocale })
                     })}
                   </div>
                 </div>
+              ) : loading && appearance === "public" ? (
+                <div className="gs-search-state" role="status" aria-live="polite"><p>{copy.loading}</p></div>
+              ) : unavailable && appearance === "public" ? (
+                <div className="gs-search-state"><p role="alert">{copy.unavailable}</p><PublicButton variant="secondary" onClick={() => setSearchAttempt(attempt => attempt + 1)}>重新搜索</PublicButton></div>
               ) : unavailable ? (
                 <div className="py-14 text-center text-sm text-zinc-500 dark:text-zinc-400">{copy.unavailable}</div>
+              ) : !loading && results.length === 0 && appearance === "public" ? (
+                <div className="gs-search-state"><p role="status">{copy.empty}</p><PublicButton variant="secondary" onClick={() => { updateQuery(""); inputRef.current?.focus(); }}>清空搜索</PublicButton></div>
               ) : !loading && results.length === 0 ? (
                 <div className="py-14 text-center">
                   <Search className="mx-auto h-7 w-7 text-zinc-300 dark:text-zinc-600" aria-hidden="true" />

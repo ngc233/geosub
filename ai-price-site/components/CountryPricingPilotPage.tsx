@@ -6,6 +6,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink, ShieldCheck } from "lucide-react";
 import BrandIcon from "./BrandIcon";
 import TrackedLink from "./analytics/TrackedLink";
+import ProductCountryPageView from "./ProductCountryPageView";
+import { productCountryRows } from "../lib/product-country-display";
+import { getPriorityCountry } from "../lib/country-hubs";
 import {
   getCountryPagePilot,
   getCountryPageCopy,
@@ -200,7 +203,7 @@ export default async function CountryPricingPilotPage({
         .filter((value): value is string => Boolean(value)),
     ),
   ];
-  const exchangeRates = await getLatestUsdExchangeRates(currencyCodes);
+  const exchangeRates = await getLatestUsdExchangeRates(locale === "zh" ? [...new Set([...currencyCodes, "CNY"])] : currencyCodes);
   const primaryRegion = plans[0].region!;
   const currencyCode = primaryRegion.currencyCode;
   const exchangeRate = currencyCode ? exchangeRates[currencyCode] : undefined;
@@ -215,6 +218,18 @@ export default async function CountryPricingPilotPage({
   const eventPlanName = pilot.priceEvent
     ? plans.find((plan) => plan.slug === pilot.priceEvent?.planSlug)?.name
     : undefined;
+
+  if (locale === "zh") return <ProductCountryPageView key={`${slug}:${country}`}
+    productName={product.name} productSlug={product.slug} productPath={productPath}
+    countryName={pilot.countryName.zh} countryCode={pilot.countryCode} countrySlug={pilot.countrySlug}
+    countryHref={getPriorityCountry(pilot.countrySlug) ? `/zh/countries/${pilot.countrySlug}` : undefined}
+    title={pilot.title.zh} description={pageCopy.description} decisionSummary={pageCopy.decisionSummary}
+    localContext={pilot.localContext.zh} availabilityCaution={pilot.availabilityCaution.zh} dataNote={copy.dataNoteBody}
+    rows={productCountryRows(plans)} displayRate={exchangeRates.CNY} sourceRate={exchangeRate}
+    sourceLabel={sourceLabel} sourceUrl={sourceUrl} officialUrl={product.officialUrl}
+    priceEvent={pilot.priceEvent} eventPlanName={eventPlanName}
+    eligibility={<PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={plans} />}
+  />;
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-8 sm:py-12">

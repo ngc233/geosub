@@ -1,4 +1,8 @@
+import { PublicMoney, PublicCurrencyLabel, PublicFxNote, PublicPriceCopy } from "./PricingDisplayContext";
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { PublicEvidence } from "./ui/PublicControls";
+import CountryIdentity from "./CountryIdentity";
 import { ArrowRight } from "lucide-react";
 import { formatUsd, getPlanStats, type SubscriptionProduct } from "../lib/public-pricing-model";
 import { getPricingPlanPath } from "../lib/pricing-routes";
@@ -7,23 +11,35 @@ import {
   getProductOverviewDecisionPlans,
   getProductOverviewRegionCount,
   getProductOverviewPriceFact,
+  getProductOverviewLowestQuote,
 } from "../lib/pricing-product-overview-copy";
 import type { SiteLocale } from "../lib/site-locale";
 import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import { getProductEditorialContent } from "../lib/product-editorial-content";
 import { hasPlanComparison } from "../lib/plan-comparison";
+import ProductRegionComparison from "./ProductRegionComparison";
+import {getPlanTabLabel} from "../lib/pricing-labels";
+import {taxSummary} from "../lib/pricing-r2";
+import {countryPagePilots,getCountryPagePilotPath} from "../lib/country-page-pilot";
 import PublishedPlanComparison from "./PublishedPlanComparison";
 import styles from "./ManagedContent.module.css";
 import { claudeOverviewEvidence, hasClaudeOverviewDecision } from "../lib/claude-overview-decision";
 import { disneyOverviewEvidence, hasDisneyOverviewDecision } from "../lib/disney-overview-decision";
 
+function PlanNotes({ unified, children }: { unified: boolean; children: ReactNode }) {
+  return unified ? <PublicEvidence animated title="价格范围与套餐说明">{children}</PublicEvidence> : children;
+}
+
 export default function ProductPlanOverview({
   product,
   locale,
+  appearance,
 }: {
   product: SubscriptionProduct;
   locale: SiteLocale;
+  appearance?: "public";
 }) {
+  const unified = appearance === "public";
   const decisionPlans = getProductOverviewDecisionPlans(product).filter(
     (plan) => plan.regions.length > 0,
   );
@@ -70,13 +86,13 @@ export default function ProductPlanOverview({
   }
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/60">
+    <section data-gs-overview={unified ? "" : undefined} className="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/60">
       <h2 className="text-xl font-semibold text-zinc-950 dark:text-white">
         {copy.heading}
       </h2>
       {!singlePlan ? (
         <p className="mt-2 max-w-4xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-          {copy.intro}
+          {unified ? <PublicPriceCopy text={copy.intro} value={getProductOverviewLowestQuote(product)?.stats.minRegion.priceUsd} /> : copy.intro}
         </p>
       ) : null}
       {!singlePlan && overviewEditorial ? (
@@ -103,7 +119,9 @@ export default function ProductPlanOverview({
         </p>
       ) : null}
 
+      {unified && <PublicFxNote />}
       <div
+        data-gs-plan-count={unified ? decisionPlans.length : undefined} data-gs-plan-cards={unified ? "" : undefined}
         className={singlePlan
           ? "mt-5"
           : `mt-5 grid gap-3 md:grid-cols-2 ${
@@ -136,18 +154,24 @@ export default function ProductPlanOverview({
                 <div className="min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-base font-semibold text-zinc-950 dark:text-white">
-                      {plan.name}
+                      {unified ? getPlanTabLabel(product.name,plan.name) : plan.name}
                     </h3>
                     <span className="shrink-0 rounded-md bg-white px-2 py-1 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300">
                       {getBillingCycleLabel(plan.billing, locale)}
                     </span>
                   </div>
 
+                  {unified && <div className="gs-overview-lowest">
+                    <p><span className="gs-overview-lowest-full-label">最低地区价格 · <PublicCurrencyLabel /></span><span className="gs-overview-lowest-short-label">最低价</span></p><strong><PublicMoney value={stats.minRegion.priceUsd} /></strong>
+                    <span><CountryIdentity code={stats.minRegion.code} />{stats.minRegion.country}</span>
+                  </div>}
+
+                  <PlanNotes unified={unified}>
                   <div className={`mt-4 grid gap-4 text-sm ${singlePlan ? "sm:grid-cols-3" : "grid-cols-2"}`}>
                     <div className={singlePlan ? "" : "col-span-2"}>
-                      <div className="text-xs text-zinc-400">{copy.priceRange}</div>
-                      <div className="mt-1 font-semibold text-zinc-950 dark:text-white">
-                        {formatUsd(stats.minRegion.priceUsd)} – {formatUsd(stats.maxRegion.priceUsd)}
+                      <div className="text-xs text-zinc-400">{unified ? <><PublicCurrencyLabel /> 价格范围</> : copy.priceRange}</div>
+                      <div data-gs-overview-range={unified ? "" : undefined} className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                        {unified ? <><PublicMoney value={stats.minRegion.priceUsd} /> – <PublicMoney value={stats.maxRegion.priceUsd} /></> : <>{formatUsd(stats.minRegion.priceUsd)} – {formatUsd(stats.maxRegion.priceUsd)}</>}
                       </div>
                       <div className="mt-1 text-xs text-zinc-400">
                         {stats.minRegion.country} – {stats.maxRegion.country}
@@ -187,6 +211,7 @@ export default function ProductPlanOverview({
                       ) : null}
                     </div>
                   ) : null}
+                  </PlanNotes>
                 </div>
 
                 <Link
@@ -210,6 +235,7 @@ export default function ProductPlanOverview({
           );
         })}
       </div>
+      {unified && <ProductRegionComparison plans={decisionPlans.map(plan=>({slug:plan.slug,name:getPlanTabLabel(product.name,plan.name),billing:plan.billing,platform:plan.regions[0]?.billingPlatform||"unknown",href:getPricingPlanPath("zh",product.category,product.slug,plan.slug),regions:plan.regions.map(region=>({code:region.code,country:region.country,priceUsd:region.priceUsd,localPrice:region.localPrice,tax:taxSummary(region),lastCheckedAt:region.lastCheckedAt,fxRateDate:region.fxRateDate,observationId:region.observationId}))}))} regionLinks={Object.fromEntries(countryPagePilots.filter(pilot=>pilot.productSlug===product.slug&&pilot.category===product.category&&!pilot.releaseBlockers?.length).map(pilot=>[pilot.countryCode,getCountryPagePilotPath(pilot,"zh")]))}/>}
     </section>
   );
 }

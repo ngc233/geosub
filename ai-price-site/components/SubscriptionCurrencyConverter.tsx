@@ -13,6 +13,7 @@ import {
   type SiteLocale,
 } from "../lib/site-locale";
 import type { CurrencyConverterCopy } from "../lib/currency-converter-copy";
+import UnifiedCurrencyConverterView from "./UnifiedCurrencyConverterView";
 
 export type ConverterRate = {
   currency: DisplayCurrency;
@@ -323,6 +324,17 @@ export default function SubscriptionCurrencyConverter({
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
   }
+
+  if(locale==="zh") return <UnifiedCurrencyConverterView copy={copy} amount={amount} from={fromCurrency} to={toCurrency}
+    options={supportedDisplayCurrencies.map(currency=>({value:currency,label:`${getCurrencySymbol(currency,locale)} ${getCurrencyName(currency,locale)} ${currency}`,disabled:disabledCurrencies.includes(currency)}))}
+    onAmount={setAmount} onFrom={setFromCurrency} onTo={setToCurrency} onSwap={swapCurrencies}
+    lead={numericAmount===null?copy.invalidAmount:`${formatCurrency(numericAmount,fromCurrency,locale)} ${copy.approximately}`}
+    result={convertedAmount===null?copy.unavailable:formatCurrency(convertedAmount,toCurrency,locale)}
+    rateLine={pairRate!==null?`1 ${fromCurrency} = ${formatRate(pairRate,locale)} ${toCurrency}`:null}
+    quick={quickAmounts.map(value=>({value,label:formatCurrency(value,initialFromCurrency,locale)}))}
+    onQuick={value=>{setAmount(new Intl.NumberFormat(localeDefinition.intlLocale,{minimumFractionDigits:2,maximumFractionDigits:2}).format(value));setFromCurrency(initialFromCurrency);}}
+    rows={comparisonCurrencies.filter(currency=>currency!==fromCurrency).slice(0,5).map(currency=>{const value=numericAmount===null?null:convert(numericAmount,fromCurrency,currency);return{currency,name:getCurrencyName(currency,locale),value:value===null?copy.unavailableShort:formatCurrency(value,currency,locale)};})}
+    foot={pairIsStale?copy.stale:`${copy.rateBasis} ${rateDate||copy.pending}`}/>;
 
   return (
     <div className="overflow-visible rounded-lg border border-zinc-200 bg-white shadow-sm shadow-zinc-950/[0.04]">

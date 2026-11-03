@@ -2,10 +2,12 @@ import type { ReactNode } from "react";
 import ClientSiteChrome from "./ClientSiteChrome";
 import HeaderShell from "./HeaderShell";
 import FooterShell from "./FooterShell";
+import { getCachedPublicDisplayRates } from "../lib/public-display-rates";
 
-export default function SiteChrome({ children }: { children: ReactNode }) {
+export default async function SiteChrome({ children }: { children: ReactNode }) {
+  const displayRates = await getCachedPublicDisplayRates();
   return (
-    <ClientSiteChrome header={<HeaderShell />} footer={<FooterShell />}>
+    <ClientSiteChrome displayRates={displayRates} header={<HeaderShell />} footer={<FooterShell />}>
       {children}
     </ClientSiteChrome>
   );

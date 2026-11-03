@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { getLanguageSwitchHref, isBilingualEvidencePath } from "../lib/language-switch-route";
 import { shouldHideFromPublicNavigation } from "../lib/public-launch-routes";
 import {
@@ -16,6 +17,8 @@ import {
   type SiteLocale,
 } from "../lib/site-locale";
 import GlobalSearch from "./GlobalSearch";
+import SiteLogo from "./SiteLogo";
+import { HeaderCurrencyControl } from "./PricingDisplayContext";
 
 export type NavChild = {
   name: string;
@@ -482,6 +485,7 @@ function isCountryPagePilotPath(pathname: string) {
 
 function isNavItemActive(item: NavItem, pathname: string) {
   if (item.external) return false;
+  if (pathname.startsWith("/zh/") && isCountryPagePilotPath(pathname)) return item.href === "/countries";
 
   const currentPath = stripSiteLocale(pathname);
 
@@ -517,14 +521,24 @@ function MenuIcon({ open }: { open: boolean }) {
   return <Icon aria-hidden="true" className="size-5" strokeWidth={1.8} />;
 }
 
+function subscribeHeaderScroll(change: () => void) {
+  window.addEventListener("scroll",change,{passive:true});
+  return () => window.removeEventListener("scroll",change);
+}
+function headerScrolled() { return window.scrollY > 0; }
+function headerServerScroll() { return false; }
+
 export default function Header({
   initialNavItemsByLocale = {},
 }: {
   initialNavItemsByLocale?: Partial<Record<SiteLocale, NavItem[]>>;
 }) {
   const pathname = usePathname();
+  const unified = usesUnifiedPublicStyle(pathname);
+  const scrolled = useSyncExternalStore(subscribeHeaderScroll,headerScrolled,headerServerScroll);
   const navDropdownRef = useRef<HTMLDivElement | null>(null);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopDropdown, setDesktopDropdown] = useState<string | null>(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
@@ -548,7 +562,14 @@ export default function Header({
       { href: "/countries", name: currentLocaleCode === "zh" ? "国家价格" : "Countries", match: ["/countries"] },
       { href: "/price-history", name: currentLocaleCode === "zh" ? "价格历史" : "Price history", match: ["/price-history"] },
     ].filter(item => !baseNavItems.some(existing => stripSiteLocale(existing.href) === item.href)) : [];
-  const navItems = [...baseNavItems.slice(0, 2), ...discoveryItems, ...baseNavItems.slice(2)];
+  const navItems: NavItem[] = currentLocaleCode === "zh" || currentLocaleCode === "en" ? [
+    { name: currentLocaleCode === "zh" ? "按产品" : "Products", href: "/ai-pricing", match: ["/ai-pricing", "/streaming-pricing"],
+      children: baseNavItems.flatMap(item => item.children || []).filter(child => /pricing/.test(child.href))
+        .concat([{ name: currentLocaleCode === "zh" ? "AI 订阅" : "AI subscriptions", href: "/ai-pricing" }, { name: currentLocaleCode === "zh" ? "流媒体订阅" : "Streaming subscriptions", href: "/streaming-pricing" }])
+        .filter((child, index, items) => items.findIndex(other => other.href === child.href) === index) },
+    { name: currentLocaleCode === "zh" ? "按国家" : "Countries", href: "/countries", match: ["/countries"] },
+    { name: currentLocaleCode === "zh" ? "指南" : "Guides", href: "/guides", match: ["/guides", "/articles"] },
+  ] : [...baseNavItems.slice(0, 2), ...discoveryItems, ...baseNavItems.slice(2)];
 
   const activeItemName = navItems.find((item) => isNavItemActive(item, pathname))?.name || "";
 
@@ -575,6 +596,12 @@ export default function Header({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        if (unified && document.activeElement?.getAttribute("role") === "combobox" && document.activeElement?.getAttribute("aria-expanded") === "true") return;
+        if (unified) {
+          if (mobileToggleRef.current?.getAttribute("aria-expanded") === "true") mobileToggleRef.current.focus();
+          else if (languageMenuRef.current?.contains(document.activeElement)) languageMenuRef.current.querySelector<HTMLButtonElement>("button")?.focus();
+          else if (navDropdownRef.current?.contains(document.activeElement)) navDropdownRef.current.querySelector<HTMLButtonElement>('button[aria-expanded="true"]')?.focus();
+        }
         setDesktopDropdown(null);
         setLanguageMenuOpen(false);
         setMobileOpen(false);
@@ -592,21 +619,23 @@ export default function Header({
       document.removeEventListener("focusin", handlePointerOutside, true);
       document.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, []);
+  }, [unified]);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-white/85 shadow-sm shadow-zinc-950/[0.03] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/85">
+    <header data-public-header data-gs-scrolled={scrolled} data-gs-evidence-nav={unified && (pathname==="/zh/data-sources"||pathname==="/zh/price-history") ? "" : undefined} data-gs-guide-nav={unified && /^\/zh\/guides(?:\/|$)/.test(pathname) ? "" : undefined} data-gs-country-nav={unified && /^\/zh\/countries(?:\/|$)/.test(pathname) ? "" : undefined} className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-white/85 shadow-sm shadow-zinc-950/[0.03] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-6">
         <Link
           href={`/${currentLocaleCode}/`}
           className="group inline-flex items-center gap-2 rounded-full pr-3 text-zinc-950 transition duration-200 ease-out hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
           aria-label={copy.homeLinkLabel}
         >
+          {unified ? <SiteLogo /> : <>
           <span className="relative flex h-8 w-8 items-center justify-center rounded-2xl bg-zinc-950 text-sm font-black text-white shadow-sm shadow-zinc-950/20 transition duration-200 ease-out group-hover:scale-[1.03] dark:bg-white dark:text-zinc-950">
             G
             <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-lime-500 dark:border-zinc-950" />
           </span>
           <span className="text-xl font-black tracking-tight">GeoSub</span>
+          </>}
         </Link>
 
         <nav
@@ -623,7 +652,7 @@ export default function Header({
             const dropdownOpen = desktopDropdown === item.name;
 
             return (
-              <div key={item.name} className="relative">
+              <div key={item.name} className="relative" data-gs-nav-active={active}>
                 {hasChildren ? (
                   <button
                     type="button"
@@ -640,6 +669,7 @@ export default function Header({
                     ].join(" ")}
                     aria-haspopup="menu"
                     aria-expanded={dropdownOpen}
+                    aria-current={active ? "true" : undefined}
                   >
                     <span>{item.name}</span>
                     <ChevronIcon open={dropdownOpen} />
@@ -654,6 +684,7 @@ export default function Header({
                   <Link
                     href={href}
                     onClick={() => setDesktopDropdown(null)}
+                    aria-current={active ? "page" : undefined}
                     className={[
                       "group relative inline-flex h-9 items-center rounded-lg px-3.5 transition-all duration-200 ease-out",
                       active
@@ -708,10 +739,10 @@ export default function Header({
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <GlobalSearch locale={currentLocaleCode} />
+        <div className="gs-header-actions flex items-center gap-2">
+          <GlobalSearch locale={currentLocaleCode} appearance={unified ? "public" : undefined} />
 
-          <div ref={languageMenuRef} className="relative hidden sm:block">
+          <div ref={languageMenuRef} className="gs-header-language relative hidden sm:block">
             <button
               type="button"
               onClick={() => setLanguageMenuOpen((open) => !open)}
@@ -781,9 +812,11 @@ export default function Header({
             </div>
           </div>
 
+          <HeaderCurrencyControl english={currentLocaleCode === "en"} appearance={unified ? "public" : undefined} />
           <button
             type="button"
             onClick={() => setMobileOpen((value) => !value)}
+            ref={mobileToggleRef}
             className={[
               "inline-flex h-10 w-10 items-center justify-center rounded-xl border text-zinc-700 shadow-sm transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:text-zinc-300 dark:focus-visible:ring-offset-zinc-950 md:hidden",
               mobileOpen
@@ -800,6 +833,7 @@ export default function Header({
 
       {mobileOpen ? (
         <div className="border-t border-zinc-200 bg-white px-5 py-4 shadow-xl shadow-zinc-950/5 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
+          <HeaderCurrencyControl english={currentLocaleCode === "en"} mobile appearance={unified ? "public" : undefined} />
           <div className="mb-3 text-xs font-bold text-zinc-400">
             {copy.currentSectionLabel} {activeItemName || copy.home}
           </div>

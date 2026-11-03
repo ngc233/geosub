@@ -1,3 +1,7 @@
+import type { ReactNode } from "react";
+import AnimatedDisclosure from "./ui/AnimatedDisclosure";
+import { PublicPriceCopy } from "./PricingDisplayContext";
+import { getPlanWorkIncome } from "../lib/work-income-store";
 import { getPricingPagePlan, getPricingChannelLabel, getPricePositionPlan } from "../lib/pricing-page-facts";
 import { getPurchaseEligibility } from "../lib/purchase-eligibility";
 import PurchaseEligibilityNote from "./PurchaseEligibilityNote";
@@ -64,9 +68,10 @@ import {
   getProductOverviewDecisionPlans,
   getProductOverviewRegionCount,
   getProductOverviewPriceFact,
+  getProductOverviewLowestQuote,
   getProductOverviewChannel,
 } from "../lib/pricing-product-overview-copy";
-import { getPlanDisplayName } from "../lib/pricing-labels";
+import { getPlanDisplayName, getPlanTabLabel } from "../lib/pricing-labels";
 import { getPlanSearchIntentCopy } from "../lib/plan-search-intent";
 import { getProductOverviewSearchFaqs } from "../lib/product-overview-search-intent";
 import {
@@ -604,17 +609,26 @@ function getAffordabilityUnavailableReason(quality: AffordabilityQuality, locale
   return copy.generic;
 }
 
+function PlanSupplement({ enhanced, title, children }: { enhanced: boolean; title: string; children: ReactNode }) {
+  return enhanced ? <AnimatedDisclosure className="gs-r2-supplement" title={title}>{children}</AnimatedDisclosure>
+    : <details className="gs-r2-supplement"><summary>{title}<ChevronDown size={16} aria-hidden="true" /></summary>{children}</details>;
+}
+
 function FaqSection({
   title,
   faqs,
   managed = false,
+  compact = false,
+  animated = false,
 }: {
   title: string;
   faqs: PricingFaq[];
   managed?: boolean;
+  compact?: boolean;
+  animated?: boolean;
 }) {
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
+    <section className={compact ? "gs-r2-faq" : "rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50"}>
       <div className="border-b border-zinc-100 px-5 py-4 md:px-6 dark:border-zinc-800">
         <h2 className="text-xl font-semibold leading-tight text-zinc-950 dark:text-white">
           {title}
@@ -622,11 +636,11 @@ function FaqSection({
       </div>
 
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-        {faqs.map((faq, index) => (
+        {faqs.map((faq, index) => animated ? <AnimatedDisclosure key={faq.q} className="gs-plan-faq-item" headingLevel={3} title={<span data-managed-faq-question={managed ? "true" : undefined}>{faq.q}</span>}><p data-managed-faq-answer={managed ? "true" : undefined}>{faq.a}</p></AnimatedDisclosure> : (
           <details
             key={faq.q}
             className="group px-5 py-4 md:px-6"
-            open={index === 0}
+            open={!compact && index === 0}
           >
             <summary data-managed-faq-question={managed ? "true" : undefined} className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-zinc-950 dark:text-white">
               {faq.q}
@@ -1066,6 +1080,7 @@ export default async function PricingDetailPage({
 
   if (!routePlanSlug) {
     if (contentPreview !== undefined) await requireAdmin();
+    const unifiedOverview = locale === "zh" && contentPreview === undefined;
     const revision = await getPublishedContent(locale, product.slug);
     const template = isContentTarget(locale, product.slug)
       ? contentPreview !== undefined ? contentPreview : revision?.content
@@ -1116,7 +1131,7 @@ export default async function PricingDetailPage({
     });
 
     return (
-      <main data-content-facts-hash={rendered?.factsHash} data-content-kind={managed ? "managed" : "fallback"} data-content-mode-generation={revision?.modeGeneration} data-content-version={contentPreview !== undefined ? "preview" : revision?.version || "baseline"} className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
+      <main data-gs-catalog={unifiedOverview ? "overview" : undefined} data-content-facts-hash={rendered?.factsHash} data-content-kind={managed ? "managed" : "fallback"} data-content-mode-generation={revision?.modeGeneration} data-content-version={contentPreview !== undefined ? "preview" : revision?.version || "baseline"} className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
@@ -1126,6 +1141,7 @@ export default async function PricingDetailPage({
           currentSlug={product.slug}
           basePath={detailBasePath}
           locale={locale}
+          appearance={unifiedOverview ? "public" : undefined}
         />
 
         <div className="min-w-0 flex-1 space-y-4">
@@ -1143,6 +1159,7 @@ export default async function PricingDetailPage({
               currentSlug={product.slug}
               basePath={detailBasePath}
               locale={locale}
+              appearance={unifiedOverview ? "public" : undefined}
             />
           </div>
 
@@ -1166,7 +1183,7 @@ export default async function PricingDetailPage({
                   {pageTitle}
                 </h1>
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
-                  {pageDescription}
+                  {unifiedOverview ? <PublicPriceCopy text={pageDescription} value={getProductOverviewLowestQuote(product)?.stats.minRegion.priceUsd} /> : pageDescription}
                 </p>
                 <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={publishedPlans} pageKind="overview" />
 
@@ -1189,7 +1206,7 @@ export default async function PricingDetailPage({
             </div>
           </section>
 
-          <ProductPlanOverview product={product} locale={locale} />
+          <ProductPlanOverview product={product} locale={locale} appearance={unifiedOverview ? "public" : undefined} />
           {managed ? <OverviewEditorialSections content={managed} locale={locale} /> : null}
 
           <CountryAnalysisLinks
@@ -1226,7 +1243,7 @@ export default async function PricingDetailPage({
   );
   const defaultCurrency =
     getSiteLocaleDefinition(locale).defaultCurrency;
-  const [affordability, latestExchangeRates] = await Promise.all([
+  const [affordability, latestExchangeRates, workIncomes] = await Promise.all([
     activePlan.billing === "monthly"
       ? getCachedPlanAffordability(product.slug, activePlan.slug)
       : Promise.resolve({
@@ -1244,6 +1261,7 @@ export default async function PricingDetailPage({
           },
         }),
     getCachedPublicExchangeRates(),
+    locale === "zh" || (product.slug === "chatgpt" && activePlan.slug === "plus" && locale === "en") ? getPlanWorkIncome(activePlan) : Promise.resolve([]),
   ]);
   const exchangeRates = Object.fromEntries(
     supportedDisplayCurrencies.map((currency) => [
@@ -1349,8 +1367,79 @@ export default async function PricingDetailPage({
     faqs: effectiveFaqs,
   });
 
+  const useR2 = locale === "zh" || (product.slug === "chatgpt" && activePlan.slug === "plus" && locale === "en");
+
+  const priceReportLink = (
+    <TrackedLink
+      href={`/reports/${locale}/${product.slug}-global-pricing.pdf`}
+      eventKey="download_price_report"
+      eventName="Download global pricing report"
+      buttonKey={product.slug}
+      placement="product_hero"
+      download={`${product.slug}-${locale}-global-pricing.pdf`}
+      className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+    >
+      <Download aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
+      {reportDownloadLabel[locale]}
+    </TrackedLink>
+  );
+
+  const detailedPriceContent = stats ? <>
+            <CountryAnalysisLinks
+              locale={locale}
+              productSlug={product.slug}
+              category={product.category}
+            />
+
+            <PlanDecisionGuidance product={product} locale={locale} planSlug={activePlan.slug} />
+
+            {editorialContent ? (
+              <ProductEditorialSection
+                productSlug={product.slug}
+                planName={activePlan.name}
+                locale={locale}
+                content={editorialContent}
+                billingContent={billingContent}
+              />
+            ) : null}
+
+            <PricingPressureSwitcher
+              locale={locale}
+              productName={product.name}
+              priceView={(
+                <PricePositionSection
+                  plan={getPricePositionPlan(contentPlan)}
+                  bigMacBenchmarks={affordability.bigMacBenchmarks}
+                  locale={locale}
+                  preserveEmptyBenchmarks={locale === "zh" && product.slug === "chatgpt" && activePlan.slug === "plus"}
+                />
+              )}
+              burdenView={affordability.rows.length > 0 ? (
+                <AffordabilityComparison
+                  productName={product.name}
+                  planName={activePlan.name}
+                  summary={affordability.summary}
+                  rows={affordability.rows}
+                  locale={locale}
+                  embedded
+                />
+              ) : undefined}
+              matrixView={affordability.rows.length > 0 ? (
+                <PriceBurdenMatrix rows={affordability.rows} locale={locale} />
+              ) : undefined}
+              unavailableReason={getAffordabilityUnavailableReason(affordability.quality, locale, getPricingChannelLabel(contentPlan))}
+            />
+  </> : null;
+  const relatedPlans = (
+        <RelatedPlanChoices
+          locale={locale}
+          product={product}
+          currentPlanSlug={activePlan.slug}
+        />
+  );
+
   return (
-    <main className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
+    <main className={useR2 ? "gs-r2-plan" : "mx-auto flex max-w-6xl gap-5 px-5 py-6"}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
@@ -1362,15 +1451,16 @@ export default async function PricingDetailPage({
         locale={locale}
       />
 
-      <div className="min-w-0 flex-1 space-y-4">
-        <div className="space-y-3">
+      <div className={useR2 ? "gs-r2-content" : "min-w-0 flex-1 space-y-4"}>
+        <div className={useR2 ? "gs-r2-breadcrumb" : "space-y-3"}>
           <Link
             href={detailBasePath}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
           >
             <ArrowLeft aria-hidden="true" className="size-3.5 shrink-0 rtl:rotate-180" strokeWidth={1.8} />
-            {pageCopy.backToPricing}
+            {useR2 ? (product.category === "streaming" ? (locale === "zh" ? "流媒体订阅" : "Streaming subscriptions") : (locale === "zh" ? "AI 订阅" : "AI subscriptions")) : pageCopy.backToPricing}
           </Link>
+          {useR2 && <span className="gs-r2-breadcrumb-trail"> / <Link href={productCanonicalPath}>{product.name}</Link> / {getPlanTabLabel(product.name, activePlan.name)}</span>}
 
           <MobileProductSwitcher
             products={sidebarProducts}
@@ -1380,7 +1470,8 @@ export default async function PricingDetailPage({
           />
         </div>
 
-        <section className="border-b border-zinc-200 pb-4 dark:border-zinc-800">
+        {!useR2 && <>
+        <section className={useR2 ? "gs-r2-hero border-b border-zinc-200 pb-4 dark:border-zinc-800" : "border-b border-zinc-200 pb-4 dark:border-zinc-800"}>
           <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-3">
               <BrandIcon
@@ -1426,18 +1517,7 @@ export default async function PricingDetailPage({
                 ) : null}
               </div>
             </div>
-            <TrackedLink
-              href={`/reports/${locale}/${product.slug}-global-pricing.pdf`}
-              eventKey="download_price_report"
-              eventName="Download global pricing report"
-              buttonKey={product.slug}
-              placement="product_hero"
-              download={`${product.slug}-${locale}-global-pricing.pdf`}
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
-            >
-              <Download aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
-              {reportDownloadLabel[locale]}
-            </TrackedLink>
+            {!useR2 && priceReportLink}
           </div>
 
           <div className="mt-4 flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center">
@@ -1457,9 +1537,15 @@ export default async function PricingDetailPage({
           </div>
         </section>
 
-        {stats ? (
+        </>}
+
+        {stats || useR2 ? (
           <>
             <PricingPlatformView
+              variant={useR2 ? "r2" : "classic"}
+              heading={locale === "zh" ? (product.slug === "chatgpt" && activePlan.slug === "plus" ? `${getPlanDisplayName(product.name, activePlan.name)} 各地区价格` : pageTitle) : `${getPlanDisplayName(product.name, activePlan.name)} regional prices`}
+              tabs={<PlanTabs productName={product.name} productSlug={product.slug} plans={product.plans} activePlanSlug={activePlan.slug} basePath={detailBasePath} locale={locale} />}
+              incomes={workIncomes}
               key={`${locale}-${activePlan.slug}`}
               productName={product.name}
               shareProduct={{
@@ -1474,65 +1560,29 @@ export default async function PricingDetailPage({
               locale={locale}
             />
 
-            <CountryAnalysisLinks
-              locale={locale}
-              productSlug={product.slug}
-              category={product.category}
-            />
-
-            <PlanDecisionGuidance product={product} locale={locale} planSlug={activePlan.slug} />
-
-            {editorialContent ? (
-              <ProductEditorialSection
-                productSlug={product.slug}
-                planName={activePlan.name}
-                locale={locale}
-                content={editorialContent}
-                billingContent={billingContent}
-              />
-            ) : null}
-
-            <PricingPressureSwitcher
-              locale={locale}
-              productName={product.name}
-              priceView={(
-                <PricePositionSection
-                  plan={getPricePositionPlan(contentPlan)}
-                  bigMacBenchmarks={affordability.bigMacBenchmarks}
-                  locale={locale}
-                  preserveEmptyBenchmarks={locale === "zh" && product.slug === "chatgpt" && activePlan.slug === "plus"}
-                />
-              )}
-              burdenView={affordability.rows.length > 0 ? (
-                <AffordabilityComparison
-                  productName={product.name}
-                  planName={activePlan.name}
-                  summary={affordability.summary}
-                  rows={affordability.rows}
-                  locale={locale}
-                  embedded
-                />
-              ) : undefined}
-              matrixView={affordability.rows.length > 0 ? (
-                <PriceBurdenMatrix rows={affordability.rows} locale={locale} />
-              ) : undefined}
-              unavailableReason={getAffordabilityUnavailableReason(affordability.quality, locale, getPricingChannelLabel(contentPlan))}
-            />
+            {!useR2 && detailedPriceContent}
           </>
         ) : (
           <NoPublishedPricesSection copy={pageCopy.empty} />
         )}
 
-        <RelatedPlanChoices
-          locale={locale}
-          product={product}
-          currentPlanSlug={activePlan.slug}
-        />
+        {!useR2 && relatedPlans}
 
         <FaqSection
-          title={pageCopy.faqTitle}
+          title={useR2 ? (locale === "zh" ? "常见问题" : "Frequently asked questions") : pageCopy.faqTitle}
+          compact={useR2}
+          animated={useR2 && locale === "zh"}
           faqs={effectiveFaqs}
         />
+        {useR2 && <PlanSupplement enhanced={locale === "zh"} title={locale === "zh" ? "套餐说明、官方入口与相关套餐" : "Plan details, official sources and related plans"}><div>
+          <p>{heroDescription}</p>
+          <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={[contentPlan]} />
+          {product.officialUrl && <a href={product.officialUrl} target="_blank" rel="noreferrer">{pageCopy.visitOfficial}<ExternalLink size={14} aria-hidden="true" /></a>}
+          {priceReportLink}
+            {detailedPriceContent}
+        {relatedPlans}
+        </div></PlanSupplement>}
+
       </div>
     </main>
   );

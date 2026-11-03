@@ -17,6 +17,7 @@ type MobileProductSwitcherProps = {
   currentSlug: string;
   basePath?: string;
   locale?: SiteLocale;
+  appearance?: "public";
 };
 
 function categoryLabel(
@@ -33,9 +34,11 @@ export default function MobileProductSwitcher({
   currentSlug,
   basePath,
   locale = "zh",
+  appearance,
 }: MobileProductSwitcherProps) {
   const copy = getProductNavigationCopy(locale);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const currentProduct =
     products.find((product) => product.slug === currentSlug) || products[0];
@@ -56,6 +59,7 @@ export default function MobileProductSwitcher({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
+        if (appearance === "public" && open) triggerRef.current?.focus();
       }
     }
 
@@ -68,7 +72,7 @@ export default function MobileProductSwitcher({
       document.removeEventListener("focusin", handleOutside, true);
       document.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, []);
+  }, [appearance, open]);
 
   if (!currentProduct) {
     return null;
@@ -87,6 +91,7 @@ export default function MobileProductSwitcher({
   return (
     <div ref={containerRef} className="lg:hidden">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white/90 px-4 py-3 text-left shadow-sm shadow-zinc-950/[0.04] backdrop-blur transition-all duration-200 ease-out active:scale-[0.99] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/15 dark:border-zinc-800 dark:bg-zinc-900/90 dark:shadow-black/20"

@@ -76,7 +76,11 @@
         "check:ownership": "node ../geosub-backend/scripts/check-business-field-ownership.mjs",
         "report:publication-boundaries": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/report-publication-boundaries.mts",
         "content:recover:local": "node scripts/recover-content-local.cjs",
-        "test:content-release": "node --test ../geosub-backend/deploy/linux-arm64/rolling-release.test.mjs ../geosub-backend/deploy/linux-arm64/component-release.test.mjs"
+        "test:content-release": "node --test ../geosub-backend/deploy/linux-arm64/rolling-release.test.mjs ../geosub-backend/deploy/linux-arm64/component-release.test.mjs",
+        "tokens:public": "node scripts/public-design-tokens.cjs",
+        "check:public-tokens": "node scripts/public-design-tokens.cjs --check",
+        "predev": "npm run check:public-tokens",
+        "prebuild": "npm run check:public-tokens"
     },
     "dependencies": {
         "@fontsource/noto-sans": "^5.2.8",

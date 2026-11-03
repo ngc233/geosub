@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import SlidingSelection from "./SlidingSelection";
+import publicStyles from "./PublicControls.module.css";
 
 export type SegmentedControlItem = {
   label: string;
@@ -9,6 +11,7 @@ export type SegmentedControlItem = {
   value: string;
   href?: string;
   icon?: ReactNode;
+  ariaLabel?: string;
   disabled?: boolean;
   tracking?: {
     event: string;
@@ -28,6 +31,11 @@ type SegmentedControlProps = {
   className?: string;
   prefetch?: boolean;
   onChange?: (value: string) => void;
+  variant?: "legacy" | "public";
+  disabled?: boolean;
+  previewState?: "hover" | "focus";
+  animated?: boolean;
+  motionIdentity?: string;
 };
 
 function getToneClasses(tone: "green" | "blue") {
@@ -63,7 +71,13 @@ export default function SegmentedControl({
   className = "",
   prefetch,
   onChange,
+  variant = "legacy",
+  disabled = false,
+  previewState,
+  animated = false,
+  motionIdentity,
 }: SegmentedControlProps) {
+  const isPublic = variant === "public";
   const toneClasses = getToneClasses(tone);
   const activeIndex = Math.max(
     0,
@@ -78,7 +92,7 @@ export default function SegmentedControl({
   const thumbRadius = "rounded-md";
 
   const sharedClassName = (active: boolean, disabled?: boolean) =>
-    [
+    isPublic ? publicStyles.segmentItem : [
       "relative z-10 inline-flex min-w-0 items-center justify-center gap-2 rounded-md font-bold outline-none transition-colors duration-200 ease-out",
       sizeClasses,
       active
@@ -111,7 +125,7 @@ export default function SegmentedControl({
   return (
     <div
       className={[
-        "relative inline-grid rounded-lg bg-zinc-100/85 p-1 text-sm shadow-inner shadow-white/80 ring-1 ring-zinc-950/[0.04] backdrop-blur dark:bg-zinc-900/80 dark:shadow-black/20 dark:ring-white/[0.06]",
+        isPublic ? publicStyles.segment : "relative inline-grid rounded-lg bg-zinc-100/85 p-1 text-sm shadow-inner shadow-white/80 ring-1 ring-zinc-950/[0.04] backdrop-blur dark:bg-zinc-900/80 dark:shadow-black/20 dark:ring-white/[0.06]",
         className,
       ].join(" ")}
       style={{
@@ -119,8 +133,21 @@ export default function SegmentedControl({
       }}
       role="tablist"
       aria-label={ariaLabel}
+      data-gs-ui={isPublic ? "segment-group" : undefined}
+      data-gs-animated={animated ? "" : undefined}
+      onKeyDown={isPublic ? event => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        const tabs = [...event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]:not(:disabled)')];
+        const index = tabs.indexOf(event.target as HTMLElement);
+        if (index < 0 || tabs.length === 0) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
+        tabs[next].focus();
+        if (tabs[next].tagName === "BUTTON") tabs[next].click();
+      } : undefined}
     >
-      <span
+      {isPublic && animated && <SlidingSelection kind="plan" value={value} identity={motionIdentity} />}
+      {!isPublic && <span
         aria-hidden="true"
         className={[
           "absolute left-1 top-1 bottom-1 transition-transform duration-200 ease-out",
@@ -131,7 +158,7 @@ export default function SegmentedControl({
           width: `calc((100% - 0.5rem) / ${items.length})`,
           transform: `translateX(${activeIndex * 100}%)`,
         }}
-      />
+      />}
 
       {items.map((item) => {
         const active = item.value === value;
@@ -146,7 +173,7 @@ export default function SegmentedControl({
             }
           : {};
 
-        if (item.href && !item.disabled) {
+        if (item.href && !item.disabled && !disabled) {
           return (
             <Link
               key={item.value}
@@ -155,8 +182,12 @@ export default function SegmentedControl({
               {...trackingProps}
               className={className}
               role="tab"
+              aria-label={item.ariaLabel}
               aria-selected={active}
               aria-current={active ? "page" : undefined}
+              tabIndex={isPublic ? active ? 0 : -1 : undefined}
+              data-gs-ui={isPublic ? "segment-item" : undefined}
+              data-preview-state={isPublic && item.value === items[0].value ? previewState : undefined}
             >
               {content(item)}
             </Link>
@@ -170,8 +201,12 @@ export default function SegmentedControl({
             {...trackingProps}
             className={className}
             role="tab"
+            aria-label={item.ariaLabel}
             aria-selected={active}
-            disabled={item.disabled}
+            disabled={item.disabled || disabled}
+            tabIndex={isPublic ? active ? 0 : -1 : undefined}
+            data-gs-ui={isPublic ? "segment-item" : undefined}
+            data-preview-state={isPublic && item.value === items[0].value ? previewState : undefined}
             onClick={() => onChange?.(item.value)}
           >
             {content(item)}

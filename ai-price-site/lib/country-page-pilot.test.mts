@@ -15,7 +15,7 @@ import {
 const root = process.cwd();
 
 test("country page pilot keeps a bounded manually reviewed batch", () => {
-  assert.equal(countryPagePilots.length, 7);
+  assert.equal(countryPagePilots.length, 8);
   assert.equal(
     new Set(countryPagePilots.map((pilot) => `${pilot.productSlug}:${pilot.countryCode}`)).size,
     countryPagePilots.length,
@@ -35,6 +35,11 @@ test("country page pilot keeps a bounded manually reviewed batch", () => {
 });
 
 test("country page pilot paths are stable and category aware", () => {
+  const turkey = getCountryPagePilot("chatgpt", "turkey", "ai");
+  assert.ok(turkey);
+  assert.equal(isCountryPagePilotIndexApproved(turkey), false);
+  assert.equal(getCountryPagePilotLanguageAlternates(turkey), undefined);
+  assert.equal(getCountryPagePilotPath(turkey, "zh"), "/zh/ai-pricing/chatgpt/regions/turkey");
   const claude = getCountryPagePilot("claude", "south-korea", "ai");
   const netflix = getCountryPagePilot("netflix", "india", "streaming");
   assert.ok(claude);

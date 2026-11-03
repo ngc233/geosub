@@ -1,0 +1,15 @@
+/* Approved components, scoped to Chinese public recovery and search surfaces. */
+.gs-public-unified .gs-page-state { max-width:var(--gs-article-max-width); margin-inline:auto; padding:var(--gs-space-32) var(--gs-desktop-page-padding); }
+.gs-public-unified .gs-page-state-card { display:grid; gap:var(--gs-space-24); }
+.gs-public-unified .gs-page-state h1 { margin:0; font-size:var(--gs-h1-desktop); font-weight:var(--gs-h1-weight); line-height:var(--gs-h1-line-height); }
+.gs-public-unified .gs-page-state p { margin:0; font-size:var(--gs-body-size); line-height:var(--gs-body-line-height); color:var(--gs-text-secondary); }
+.gs-public-unified .gs-page-state .gs-page-state-code { font-family:var(--gs-font-price); font-size:var(--gs-h2-desktop); font-weight:var(--gs-price-row-weight); }
+.gs-public-unified .gs-page-state-actions { display:flex; align-items:center; flex-wrap:wrap; gap:var(--gs-space-16); }
+[data-gs-public-unified][data-global-search-overlay] .gs-search-state { display:grid; justify-items:center; gap:var(--gs-space-16); padding:var(--gs-space-32) var(--gs-space-16); text-align:center; color:var(--gs-text-secondary); font-size:var(--gs-metadata-size); }
+[data-gs-public-unified][data-global-search-overlay] .gs-search-state p { margin:0; }
+[data-gs-public-unified][data-global-search-overlay] input:focus-visible { outline:var(--gs-focus-width) solid var(--gs-focus); outline-offset:var(--gs-focus-offset); border-radius:var(--gs-radius-control); }
+[data-route-progress][data-gs-public-unified]>div { background:var(--gs-accent); box-shadow:none; }
+@media(max-width:767px) {
+  .gs-public-unified .gs-page-state { padding:var(--gs-space-24) var(--gs-mobile-page-padding); }
+  .gs-public-unified .gs-page-state h1 { font-size:var(--gs-h1-mobile); }
+}

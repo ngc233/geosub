@@ -7,6 +7,8 @@ import {
   type ArticleListItem,
 } from "../lib/articles";
 import type { SiteLocale } from "../lib/site-locale";
+import GuideDirectoryView from "./GuideDirectoryView";
+import {publicGuideTypeLabel, type GuideDirectoryEntry} from "../lib/guide-display";
 
 export default function ArticleCollectionView({
   eyebrow,
@@ -19,6 +21,7 @@ export default function ArticleCollectionView({
   categories = [],
   tags = [],
   beforeArticles,
+  coreEntries = [],
 }: {
   eyebrow: string;
   title: string;
@@ -30,7 +33,12 @@ export default function ArticleCollectionView({
   categories?: Array<{ id: string; slug: string; name: string }>;
   tags?: Array<{ id: string; slug: string; name: string }>;
   beforeArticles?: ReactNode;
+  coreEntries?: GuideDirectoryEntry[];
 }) {
+  if(locale==="zh") {
+    const entries:GuideDirectoryEntry[]=[...coreEntries,...articles.map(article=>({id:article.id,href:`/zh/guides/${article.slug}`,title:article.title,description:article.excerpt||"",label:publicGuideTypeLabel(article.articleType,getArticleTypeLabel(article.articleType,locale)),articleType:article.articleType,core:false,updated:formatArticleDate(article.updatedAt,locale)}))];
+    return <main data-gs-guides="directory" className="gs-guide-page"><header className="gs-guide-directory-header">{showBack&&<Link href="/zh/guides">返回指南</Link>}<p>{eyebrow==="Guides" ? "指南" : eyebrow==="Category" ? "分类" : eyebrow==="Tag" ? "标签" : eyebrow}</p><h1>{title}</h1>{description&&<p>{description}</p>}</header>{categories.length>0||tags.length>0 ? <nav className="gs-guide-taxonomy" aria-label="指南分类与标签">{categories.map(category=><Link key={category.id} href={`/zh/guides/category/${category.slug}`}>{category.name}</Link>)}{tags.slice(0,18).map(tag=><Link key={tag.id} href={`/zh/guides/tag/${tag.slug}`}>#{tag.name}</Link>)}</nav> : null}<GuideDirectoryView entries={entries} emptyText={emptyText} /></main>;
+  }
   const featured = articles[0] || null;
   const rest = featured ? articles.slice(1) : articles;
   const guidesPath = `/${locale}/guides`;

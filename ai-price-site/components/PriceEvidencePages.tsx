@@ -6,6 +6,10 @@ import { unstable_cache } from "next/cache";
 import { ArrowLeft, ArrowRight, ChevronDown, Database, ExternalLink, Globe2, History, Search } from "lucide-react";
 import BrandIcon from "./BrandIcon";
 import CountryIdentity from "./CountryIdentity";
+import {CountryDirectoryView, CountryPlansView} from "./CountryHubViews";
+import { countryPagePilots, getCountryPagePilotPath } from "../lib/country-page-pilot";
+import {countryDisplaySummary} from "../lib/country-hub-display";
+import {PublicCard} from "./ui/PublicControls";
 import { DataNote, MetricItem, MetricStrip, PublicSection, PublicSectionHeader } from "./ui/PublicPage";
 import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import type { ProductPlan } from "../lib/public-pricing-model";
@@ -16,6 +20,8 @@ import { getPriceHistorySummary } from "../lib/price-records";
 import { getPriceRecordProducts, getPriceSnapshotById, getProductPriceRecords } from "../lib/price-records-data";
 import { PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_REVALIDATE_SECONDS } from "../lib/public-pricing-cache";
 import styles from "./PriceEvidencePages.module.css";
+import HistoryExplorer from "./HistoryExplorer";
+import SnapshotRecordView, { SnapshotUnavailable } from "./SnapshotRecordView";
 
 const pageClass = `${styles.page} mx-auto max-w-6xl px-5 py-12 md:py-14`;
 const mutedClass = "text-sm leading-6 text-[var(--color-text-secondary)]";
@@ -24,8 +30,13 @@ const headingClass = "text-xl font-semibold tracking-tight text-[var(--color-tex
 const linkClass = "inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]";
 const gridClass = "my-6 grid gap-5 md:grid-cols-2";
 const pillClass = "inline-flex items-center rounded-md bg-[var(--color-bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]";
+const countryUsesPublicStyle = (locale: HubLocale): boolean => locale === "zh";
+const snapshotUsesPublicStyle = (locale: HubLocale): boolean => locale === "zh";
 
 const previewCacheScope = () => getPriceEvidencePreview()?.capturedAt || "public";
+// Read a server-side view input outside React's render calculation. This never
+// changes the canonical observation window or the cached history summary.
+const readHistoryViewClock = () => Date.now();
 const loadRecords = (slug: string) => unstable_cache(async () => {
   const result = await getProductPriceRecords(slug);
   return { ...getPriceHistorySummary(result.records), truncated: result.truncated };
@@ -100,10 +111,16 @@ function Unavailable({ locale }: { locale: HubLocale }) {
 export async function SnapshotPage({ id, locale }: { id: string; locale: HubLocale }) {
   let snapshot;
   try { snapshot = await getPriceSnapshotById(id); } catch {
+    if (snapshotUsesPublicStyle(locale)) return <SnapshotUnavailable id={id}><PageLinks locale={locale} /></SnapshotUnavailable>;
     return <main className={pageClass}><PageHeading locale={locale} title={locale === "zh" ? "原始价格快照" : "Original price snapshot"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
   }
   if (!snapshot) notFound();
   const path = getEvidencePlanHref(`/${locale}/${snapshot.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${snapshot.productSlug}/${snapshot.planSlug}`);
+  if (snapshotUsesPublicStyle(locale)) return <SnapshotRecordView snapshot={snapshot}
+    title={`${snapshot.productName} · ${countryName(snapshot.countryCode, locale)}原始价格快照`}
+    observedPrice={money(snapshot.amount, snapshot.currency, locale)} observedTime={dateTime(snapshot.observedAt, locale)}
+    billingLabel={snapshot.billingCycle ? getBillingCycleLabel(snapshot.billingCycle as ProductPlan["billing"], locale) : "历史记录未保存周期"}
+    planPath={path}><PageLinks locale={locale} /></SnapshotRecordView>;
   return <main className={pageClass}>
     <div className="mb-6 flex flex-wrap gap-x-6">
       <Link className={linkClass} href={path}><ArrowLeft size={16} aria-hidden="true" />{locale === "zh" ? "返回套餐价格" : "Back to plan prices"}</Link>
@@ -144,7 +161,7 @@ export async function SnapshotPage({ id, locale }: { id: string; locale: HubLoca
 export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: string }) {
   let products;
   try { products = await loadProducts(); } catch {
-    return <main className={pageClass}><PageHeading locale={locale} title={locale === "zh" ? "价格变化记录" : "Price change records"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
+    return <main className={pageClass} data-gs-evidence-page={locale === "zh" ? "history" : undefined}><PageHeading locale={locale} title={locale === "zh" ? "价格变化记录" : "Price change records"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
   }
   const product = slug ? products.find(item => item.slug === slug) : null;
   if (slug && !product) notFound();
@@ -155,6 +172,7 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
   }
   const events = result?.events || [];
   const snapshots = result?.snapshots || [];
+  if(countryUsesPublicStyle(locale)) return <main className={`${pageClass} gs-evidence-page`} data-gs-evidence-page="history"><PageHeading locale={locale} title={`${product ? `${product.name} ` : ""}价格变化记录`} description="追踪同一套餐、地区与计费周期的 App Store 本币标价变化。每条变化均可回溯采集记录；汇率折算波动不计为调价。" /><HistoryExplorer key={product?.slug||"index"} products={products} product={product||null} result={result} unavailable={unavailable} asOf={readHistoryViewClock()} /><PageLinks locale={locale} active="history" /></main>;
   return <main className={pageClass}>
     <PageHeading centered locale={locale} title={`${product ? `${product.name} ` : ""}${locale === "zh" ? "价格变化记录" : "Price change records"}`}
       description={locale === "zh" ? "追踪同一套餐、地区与计费周期的 App Store 本币标价变化。每条变化均可回溯采集记录；汇率折算波动不计为调价。" : "Track local App Store price changes for the same plan, country and billing period. Each change links to its source records. Exchange-rate movements are not price changes."} />
@@ -213,6 +231,14 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
 
 export async function CountryIndexPage({ locale }: { locale: HubLocale }) {
   const coverage = await Promise.allSettled(priorityCountries.map(country => loadCountryHub(country.code)));
+  if (countryUsesPublicStyle(locale)) return <main className={pageClass} data-gs-countries="index">
+    <PageHeading locale={locale} title="按国家找订阅" description="集中查看重点地区已核验的 App Store 月付订阅，比较当地标价、美国同套餐基准与采集记录。" />
+    <h2 id="country-directory-title" className="sr-only">重点国家与地区</h2>
+    <CountryDirectoryView countries={priorityCountries.map((country,index)=>{const result=coverage[index];return {...country,summary:result.status==="fulfilled" ? countryDisplaySummary(result.value) : null};})} />
+    <PublicCard className="gs-country-product-links"><div><h2>你也可以按产品比较</h2><p>选择产品，查看各国价格与税费差异。</p></div><Link href="/zh/ai-pricing">AI 订阅<ArrowRight aria-hidden="true" /></Link><Link href="/zh/streaming-pricing">流媒体订阅<ArrowRight aria-hidden="true" /></Link></PublicCard>
+    <PublicCard className="gs-country-footnote"><p>收录范围：App Store · 月付 · 已核验。逐个套餐与美国相同套餐比较，不发布国家综合指数，也不保证跨区购买资格。</p></PublicCard>
+    <PageLinks locale={locale} active="countries" />
+  </main>;
   return <main className={pageClass}>
     <PageHeading centered locale={locale} title={locale === "zh" ? "按国家找订阅" : "Browse subscriptions by country"}
       description={locale === "zh" ? "集中查看重点地区已核验的 App Store 月付订阅，比较当地标价、美国同套餐基准与采集记录。" : "Explore verified monthly App Store subscriptions in selected countries, with local prices, same-plan US comparisons and source records."} />
@@ -238,14 +264,21 @@ export async function CountryHubPage({ countrySlug, locale }: { countrySlug: str
   if (!country) notFound();
   let rows;
   try { rows = await loadCountryHub(country.code); } catch {
-    return <main className={pageClass}><PageHeading locale={locale} title={`${country[locale]}${locale === "zh" ? "订阅价格" : " subscription prices"}`} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
+    return <main className={pageClass} data-gs-countries={locale === "zh" ? "unavailable" : undefined}><PageHeading locale={locale} title={`${country[locale]}${locale === "zh" ? "订阅价格" : " subscription prices"}`} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
   }
   const productCount = new Set(rows.map(row => row.productSlug)).size;
   const comparable = rows.filter(row => row.difference !== null);
+  if (countryUsesPublicStyle(locale)) return <main className={pageClass} data-gs-countries="detail">
+    <Link className={linkClass} href="/zh/countries"><ArrowLeft size={16} aria-hidden="true" />全部国家与地区</Link>
+    <PageHeading locale={locale} identity={<CountryIdentity code={country.code} />} title={`${country.zh}订阅价格`} description="查看当地已核验的 App Store 月付套餐，逐个比较本币标价、折算价和美国同套餐价格。" />
+    <CountryPlansView countryName={country.zh} details={countryPagePilots.filter(pilot=>pilot.countryCode===country.code&&rows.some(row=>row.productSlug===pilot.productSlug&&row.category===pilot.category)).map(pilot=>({href:getCountryPagePilotPath(pilot,"zh"),name:rows.find(row=>row.productSlug===pilot.productSlug)!.productName}))} rows={rows.map(row=>({productSlug:row.productSlug,productName:row.productName,category:row.category,planSlug:row.planSlug,planName:row.planName,countryCode:row.countryCode,amount:row.amount,currency:row.currency,checkedAt:row.checkedAt,sourceUrl:row.sourceUrl,observationId:row.observationId,usd:row.usd,fxDate:row.fxDate,difference:row.difference,
+      planHref:getEvidencePlanHref(`/zh/${row.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${row.productSlug}/${row.planSlug}`)}))} />
+    <PageLinks locale={locale} active="countries" />
+  </main>;
   return <main className={pageClass}>
     <Link className={`${linkClass} mb-6`} href={`/${locale}/countries`}><ArrowLeft size={16} aria-hidden="true" />{locale === "zh" ? "全部国家与地区" : "All countries and regions"}</Link>
     <PageHeading locale={locale} identity={<CountryIdentity code={country.code} />} title={`${country[locale]}${locale === "zh" ? "订阅价格" : " subscription prices"}`}
-      description={locale === "zh" ? "查看当地已核验的 App Store 月付套餐，逐个比较本币标价、美元参考和美国同套餐价格。" : "Explore verified local monthly App Store plans, with local prices, USD references and same-plan US comparisons."} />
+      description={locale === "zh" ? "查看当地已核验的 App Store 月付套餐，逐个比较本币标价、折算价和美国同套餐价格。" : "Explore verified local monthly App Store plans, with local prices, USD references and same-plan US comparisons."} />
     <PageLinks locale={locale} active="countries" />
     <PublicSection>
       <PublicSectionHeader title={locale === "zh" ? "已核验价格概况" : "Verified price coverage"} actions={<span className={pillClass}>App Store · {locale === "zh" ? "月付" : "Monthly"}</span>} />

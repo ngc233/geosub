@@ -14,6 +14,7 @@ import {
   getCoreGuideDefinition,
   type CoreGuideLocale,
 } from "../lib/core-guide-content";
+import type {GuideDirectoryEntry} from "../lib/guide-display";
 
 const guideIcons = {
   "price-guide": BadgeDollarSign,
@@ -38,6 +39,14 @@ export const guideHubExcludedArticleSlugs = new Set<string>([
   ...coreGuideSlugs,
   "tool-review",
 ]);
+
+export async function getCoreGuideDirectoryEntries():Promise<GuideDirectoryEntry[]> {
+  const states=await loadCoreGuideHubStates("zh");
+  return [...coreGuideSlugs.filter(slug=>!states.get(slug)?.managed||states.get(slug)?.published).map(slug=>{
+    const definition=getCoreGuideDefinition("zh",slug);
+    return {id:slug,href:`/zh/guides/${slug}`,title:definition.title,description:definition.description,label:slug==="methodology" ? "方法" : definition.eyebrow,articleType:definition.articleType,core:true,updated:null};
+  }),{id:"tool-review",href:"/zh/guides/tool-review",title:toolReviewCopy.zh.title,description:toolReviewCopy.zh.description,label:"测评",articleType:"REVIEW",core:true,updated:null}];
+}
 
 export default async function CoreGuideHub({
   locale,

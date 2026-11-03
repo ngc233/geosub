@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublicGuidePage from "./PublicGuidePage";
-import { getArticleTypeLabel } from "../lib/articles";
+import { estimateReadingTime, getArticleTypeLabel } from "../lib/articles";
 import { loadCoreGuideCmsState } from "../lib/core-guide-cms";
 import {
   getCoreGuideDefinition,
@@ -12,6 +12,7 @@ import {
 } from "../lib/core-guide-content";
 import { stripGeoSubTitleSuffix } from "../lib/pricing-routes";
 import { serializeJsonLd } from "../lib/json-ld";
+import {publicGuideTypeLabel} from "../lib/guide-display";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
@@ -160,6 +161,11 @@ export default async function CmsBackedGuidePage({
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
       <PublicGuidePage
+        unified={locale==="zh"}
+        priceContext={locale==="zh"&&(slug==="price-guide"||slug==="methodology")?{productSlug:"chatgpt",planSlug:"plus",category:"ai"}:undefined}
+        updated={article?.updatedAt.toISOString().slice(0,10)}
+        readingTime={article?.readingTime||estimateReadingTime(parsed.sections.map(section=>section.body).join(" "))}
+        articleLabel={publicGuideTypeLabel(article?.articleType||definition.articleType,getArticleTypeLabel(article?.articleType||definition.articleType,locale))}
         eyebrow={
           article
             ? getArticleTypeLabel(article.articleType, locale)

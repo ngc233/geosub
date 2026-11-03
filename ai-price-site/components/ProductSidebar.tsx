@@ -18,6 +18,7 @@ type ProductSidebarProps = {
   currentSlug: string;
   basePath?: string;
   locale?: SiteLocale;
+  appearance?: "public";
 };
 
 const categoryOrder: ProductNavCategory[] = ["ai", "streaming"];
@@ -38,6 +39,7 @@ export default function ProductSidebar({
   currentSlug,
   basePath,
   locale = "zh",
+  appearance,
 }: ProductSidebarProps) {
   const copy = getProductNavigationCopy(locale);
   const categoryLabels: Record<ProductNavCategory, string> = {
@@ -84,6 +86,7 @@ export default function ProductSidebar({
                       <Link
                         key={product.slug}
                         href={getProductHref(product, basePath)}
+                        aria-current={appearance === "public" && active ? "page" : undefined}
                         data-track-event="click_digital_service_sidebar"
                         data-track-name="Switch digital service"
                         data-track-button={product.slug}

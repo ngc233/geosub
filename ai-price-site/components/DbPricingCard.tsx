@@ -1,6 +1,11 @@
+import { PublicMoney, PublicCurrencyLabel } from "./PricingDisplayContext";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock3 } from "lucide-react";
 import BrandIcon from "./BrandIcon";
+import CountryIdentity from "./CountryIdentity";
+import { PublicCard, PublicEvidence } from "./ui/PublicControls";
+import { taxSummary } from "../lib/pricing-r2";
+import { getPricingDetailPath } from "../lib/pricing-routes";
 import {
   formatUsd,
   getDefaultPlan,
@@ -20,6 +25,7 @@ import {
 type DbPricingCardProps = {
   product: DbPricingProduct;
   locale: PreparedSiteLocale;
+  appearance?: "public";
 };
 
 type CardCopy = PricingListCopy["card"];
@@ -40,7 +46,7 @@ function comparisonPercent(price: number, referencePrice: number) {
   return Math.round(((price - referencePrice) / referencePrice) * 100);
 }
 
-export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
+export default function DbPricingCard({ product, locale, appearance }: DbPricingCardProps) {
   const defaultPlan = getDefaultPlan(product);
 
   if (!defaultPlan) {
@@ -80,6 +86,36 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
     product.slug,
     defaultPlan.slug,
   );
+
+  if (appearance === "public") {
+    const preview = [uniqueRegions[0],referenceRegion,maxRegion].filter((region,index,items): region is NonNullable<typeof region> => Boolean(region) && items.findIndex(item => item?.code===region?.code)===index);
+    return <PublicCard className="gs-catalog-card" data-catalog-product={product.slug} data-gs-motion-card="product">
+      <div className="gs-catalog-card-heading"><BrandIcon product={product} size="md" /><div><h2>{product.name} {copy.titleSuffix}</h2><p>{defaultPlan.name} · <PublicCurrencyLabel /> {priceSuffix(copy,defaultPlan.billingCycle)}</p></div></div>
+      <div className="gs-catalog-preview" aria-label={`${product.name} 地区价格摘要`}>
+        {preview.map(region => {
+          const low=minimumDisplayPrice!==null && roundedPriceCents(region.priceUsd)===minimumDisplayPrice;
+          const high=maxRegion?.code===region.code && region.rank===maxRegion.rank;
+          const difference=comparisonReference ? comparisonPercent(region.priceUsd,comparisonReference.priceUsd) : null;
+          return <div key={region.code} className={`gs-catalog-quote${low ? " gs-catalog-quote-low" : ""}`}>
+            <div className="gs-catalog-country"><CountryIdentity code={region.code} /><span>{region.countryName}<small>{region.isReference ? copy.base : low ? copy.lowest : high ? copy.highest : ""}</small></span></div>
+            <div className={`gs-catalog-price${low ? " gs-catalog-low" : high ? " gs-catalog-high" : ""}`}><PublicMoney value={region.priceUsd} /><small>{region.localPrice}</small></div>
+            <span className="gs-catalog-local">{region.localPrice}</span>
+            <span className={difference!==null&&difference<0 ? "gs-catalog-low" : difference!==null&&difference>0 ? "gs-catalog-high" : undefined}>{difference===null||difference===0 ? "—" : `${difference>0?"+":"−"}${Math.abs(difference)}%`}</span>
+            <span className="gs-catalog-tax">{taxSummary(region)}</span>
+          </div>;
+        })}
+      </div>
+      <div className="gs-catalog-card-bottom">
+        <p className="gs-catalog-date"><Clock3 aria-hidden="true"/>{copy.updated}: {product.updatedAt}</p>
+        <PublicEvidence animated title="证据">
+          <p>{product.description}</p><p>{defaultPlan.name} · {regionCount} {copy.regions} · {copy.spread} {spread}%</p>
+          <dl className="gs-catalog-evidence">{displayRegions.map(region=><div key={region.code}><dt>{region.countryName}</dt><dd><span className="gs-catalog-data"><PublicMoney value={region.priceUsd}/></span> · {region.localPrice}<br/>{region.taxFrontendNote||region.taxNote}</dd></div>)}</dl>
+          <Link href={detailHref}>查看地区价格与来源证据<ArrowRight aria-hidden="true"/></Link>
+        </PublicEvidence>
+        <Link className="gs-catalog-primary-link" href={getPricingDetailPath(locale,product.category,product.slug)} data-track-event="click_digital_service_card" data-track-name="Open digital service pricing" data-track-button={product.slug} data-track-placement="pricing_card">查看全部套餐<ArrowRight aria-hidden="true"/></Link>
+      </div>
+    </PublicCard>;
+  }
 
   return (
     <Link

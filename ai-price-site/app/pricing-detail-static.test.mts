@@ -473,7 +473,7 @@ test("product navigation points to the self-canonical product overview", () => {
   const topicLinks = readAppFile("..", "components", "PricingTopicLinks.tsx");
   const planOverview = readAppFile("..", "components", "ProductPlanOverview.tsx");
 
-  assert.match(detailPage, /<ProductPlanOverview product=\{product\} locale=\{locale\} \/>/);
+  assert.match(detailPage, /<ProductPlanOverview product=\{product\} locale=\{locale\}(?: [^>]+)? \/>/);
   assert.match(detailPage, /<ProductOverviewLink[\s\S]*?href=\{productCanonicalPath\}/);
   assert.match(detailPage, /<RelatedPricingProducts[\s\S]*?products=\{sidebarProducts\}/);
   assert.doesNotMatch(detailPage, /defaultPlanSlug:/);

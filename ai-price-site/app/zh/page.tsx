@@ -7,6 +7,7 @@ import {
   getDbAiPricingProducts,
   getDbHomepagePricingEvidence,
 } from "../../lib/db-ai-pricing";
+import {getPricingPlanPath} from "../../lib/pricing-routes";
 import { getDefaultPlan } from "../../lib/db-pricing-types";
 
 const FEATURED_PRODUCT_SLUGS = [
@@ -46,6 +47,7 @@ async function loadHomepageData() {
         category: product.category,
         planName: plan.name,
         href: getProductHref(product.category, product.slug),
+        planHref: getPricingPlanPath("zh",product.category,product.slug,plan.slug),
         updatedAt: product.updatedAt,
         logoUrl: product.logoUrl,
         regions: plan.regions.map((region) => ({

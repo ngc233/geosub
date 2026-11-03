@@ -63,7 +63,7 @@ test("every launched locale has complete homepage copy", async () => {
   }
 });
 
-test("Chinese homepage remains the visual baseline while visible copy is localized", () => {
+test("homepage copy and legacy locale layout remain stable during the staged public rollout", () => {
   const zhRoute = readAppFile("zh", "page.tsx");
   const home = readRootFile("components", "HomepageExperience.tsx");
   const map = readRootFile("components", "HomeHeroMap.tsx");
@@ -72,7 +72,8 @@ test("Chinese homepage remains the visual baseline while visible copy is localiz
 
   assert.match(zhRoute, /getDbAiPricingProducts/);
   assert.match(home, /locale === "zh"/);
-  assert.match(home, /别只看标价/);
+  assert.match(copy, /别只看标价/);
+  assert.match(home, /\{copy\.title\}/);
   assert.match(home, /getHomepageCopy\(locale\)/);
   assert.match(copy, /开始比较价格/);
   assert.match(copy, /数据如何核验/);

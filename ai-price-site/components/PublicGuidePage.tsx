@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type {GuidePriceContext} from "../lib/guide-price-block";
+import GuideArticleLayout from "./GuideArticleLayout";
 
 type GuideSection = {
   title: string;
@@ -13,6 +15,11 @@ export default function PublicGuidePage({
   note,
   relatedLabel,
   relatedLinks = [],
+  unified = false,
+  updated,
+  readingTime = 1,
+  articleLabel = "指南",
+  priceContext,
 }: {
   eyebrow: string;
   title: string;
@@ -25,7 +32,13 @@ export default function PublicGuidePage({
     title: string;
     description?: string | null;
   }>;
+  unified?:boolean;
+  updated?:string|null;
+  readingTime?:number;
+  articleLabel?:string;
+  priceContext?:GuidePriceContext;
 }) {
+  if(unified) return <GuideArticleLayout priceContext={priceContext} title={title} label={articleLabel} contextLabel={eyebrow==="方法论" ? "方法" : eyebrow==="Tool Review" ? "工具测评" : eyebrow} summary={description} updated={updated} readingTime={readingTime} note={note} relatedLinks={relatedLinks} contents={sections.map((section,index)=>({id:`guide-section-${index+1}`,title:section.title}))}>{sections.map((section,index)=><section id={`guide-section-${index+1}`} key={`${index}:${section.title}`}><h2>{section.title}</h2><p>{section.body}</p></section>)}</GuideArticleLayout>;
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
       <section className="mx-auto max-w-4xl">

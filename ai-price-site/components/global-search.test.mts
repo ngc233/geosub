@@ -64,7 +64,8 @@ test("global search is shared by the header and supports every launched locale",
     source("lib/site-locale.ts"),
   ]);
 
-  assert.match(header, /<GlobalSearch locale=\{currentLocaleCode\}\s*\/>/);
+  // The shared search may receive presentation props while retaining locale.
+  assert.match(header, /<GlobalSearch\b[^>]*\blocale=\{currentLocaleCode\}[^>]*\/>/);
   assert.match(search, /Record<PreparedSiteLocale,\s*SearchCopy>/);
   assert.match(search, /role="dialog"/);
   assert.match(search, /createPortal\(/);
