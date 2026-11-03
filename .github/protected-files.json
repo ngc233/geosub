@@ -17,7 +17,8 @@
     ".github/protected-files.json",
     "scripts/check-protected-files.mjs",
     ".github/CODEOWNERS",
-    ".github/workflows/ci.yml"
+    ".github/workflows/ci.yml",
+    ".github/workflows/protected-files.yml"
   ],
   "codeownersOnly": [
     "geosub-backend/sql/",
