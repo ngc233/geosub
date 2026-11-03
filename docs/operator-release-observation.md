@@ -16,7 +16,7 @@
 
 ### 发布示例（需已批准且 CI 通过）
 
-先按滚动发布手册安装并验证指定控制器。下列值必须来自自己的受控配置；不得复制示例作为真实凭据。
+先按 [RELEASE.md 第 5.1 节](RELEASE.md#51-新控制器与操作工具的使用顺序) 和滚动发布手册，安装并核验包含 T03a/T03 的新控制器，再使用新版操作工具；旧网站控制器会忽略 `--commit`，只更新本地工具不能保证发布提交一致。控制器安装仍须满足原有授权、CI 和版本门禁。下列值必须来自自己的受控配置；不得复制示例作为真实凭据。`RELEASE_REQUEST_ID` 是本次操作的唯一标识，每次新操作使用未占用的回执路径，查询同一操作时保持路径不变。
 
 ```bash
 mkdir -p .ops-evidence
@@ -24,20 +24,52 @@ python3 scripts/geosub_ops.py start \
   --host "$GEOSUB_SSH_HOST" --identity "$GEOSUB_SSH_IDENTITY" \
   --known-hosts "$GEOSUB_KNOWN_HOSTS" \
   --controller-commit "$VERIFIED_CONTROLLER_SHA" \
-  --kind web-upgrade --receipt .ops-evidence/web-request.json
+  --kind web-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA" \
+  --receipt ".ops-evidence/web-${RELEASE_REQUEST_ID}.json"
 
 python3 scripts/geosub_ops.py status \
   --identity "$GEOSUB_SSH_IDENTITY" --known-hosts "$GEOSUB_KNOWN_HOSTS" \
-  --receipt .ops-evidence/web-request.json
+  --receipt ".ops-evidence/web-${RELEASE_REQUEST_ID}.json"
 ```
 
-`--controller-commit` 指已安装控制器的完整 SHA；网站候选仍由原 rolling 控制器按受控分支 fetch 并固定，不能把控制器 SHA 冒充最终网站 SHA。发布前核对分支 CI，发布后核对原生回执的目标提交。
+`--controller-commit` 指服务器已安装且由 `control` 指向的控制器完整 40 位 SHA；`--candidate-commit` 指本次网站或采集组件的候选完整 40 位 SHA，不能相互代替。新版工具把候选传给控制器的 `--commit`，控制器核对实际拉取结果，不一致时拒绝。发布后仍核对原生回执的目标提交。
 
-采集升级改为 `--kind collector-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA"`。网站和采集回退分别用 `web-rollback` / `collector-rollback`，同时提供原生成功升级回执的 `--attempt`；工具将同一 ID 传给原控制器的 attempt/confirm 检查。
+采集升级使用已核验的采集候选 SHA 和独立回执：
 
-首次调用先保存本地请求文件，再向服务器提交，文件存在时拒绝覆盖。服务器在 `operator-requests/<id>/` 独占预留请求，保存参数与完成记录；同一请求只能派发一次。即使预留后断线、systemd 单元已回收或状态未知，也不重新启动。
+```bash
+python3 scripts/geosub_ops.py start \
+  --host "$GEOSUB_SSH_HOST" --identity "$GEOSUB_SSH_IDENTITY" \
+  --known-hosts "$GEOSUB_KNOWN_HOSTS" \
+  --controller-commit "$VERIFIED_CONTROLLER_SHA" \
+  --kind collector-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA" \
+  --receipt ".ops-evidence/collector-${RELEASE_REQUEST_ID}.json"
+```
 
-退出码：0 = 原控制器退出成功并保存完成记录；1 = 已有明确失败记录；2 = 输入/连接错误；3 = 已提交、运行中或未知。2/3 **均不代表发布失败或成功**，先查询同一 receipt。服务器执行上限 20 分钟、CPU 200%、内存 3500 MiB，沿用本机已验证部署资源边界；超时后查询原生回执，不能盲目重发或强停已有任务。
+两类升级都在创建回执及 SSH 派发前，通过 GitHub API 确认候选可从仓库 main 到达，并要求名称为 `CI` 的最新一次运行（含重跑）已完成且结论为 `success`，不能选择较早的成功结果。网站和采集回退分别用 `web-rollback` / `collector-rollback`，同时提供原生成功升级回执的 `--attempt`；工具将同一 ID 传给原控制器的 attempt/confirm 检查。两类回退不检查 CI；`web-finalize` 仍需候选 SHA，但不重复检查 CI。`status` 不重新检查或派发。
+
+### CI 查询故障的批准例外
+
+只有已通过 API 确认候选属于 main，随后首次 CI 列表查询遇网络不可达或 GitHub HTTP 5xx，才可按实际取得的批准成对使用以下参数。`CI_EXCEPTION_APPROVAL_ID` 必须是实际批准的 `APR-…` 编号；参数本身不是授权。以下是正常升级的替代示例，只能在确认尚未派发时使用，不能在已派发或结果未知后换回执路径重发。
+
+```bash
+python3 scripts/geosub_ops.py start \
+  --host "$GEOSUB_SSH_HOST" --identity "$GEOSUB_SSH_IDENTITY" \
+  --known-hosts "$GEOSUB_KNOWN_HOSTS" \
+  --controller-commit "$VERIFIED_CONTROLLER_SHA" \
+  --kind web-upgrade --candidate-commit "$VERIFIED_CANDIDATE_SHA" \
+  --allow-unverified-ci --approval-id "$CI_EXCEPTION_APPROVAL_ID" \
+  --receipt ".ops-evidence/web-ci-exception-${RELEASE_REQUEST_ID}.json"
+```
+
+采集升级的例外仅改用 `collector-upgrade`、已核验的采集候选及独立回执。候选不在 main 或归属无法确认、CI 失败/取消/运行中/排队/查不到、HTTP 3xx/4xx（含 401/403/404/429）、TLS 校验失败、响应异常、分页中断或最终复查失败，均不能豁免；完全无法访问 GitHub 时也不放行。回退和 finalize 不接受例外参数。完整限制见 [RELEASE.md 第 5.3 节](RELEASE.md#53-ci-查询不可用时的批准例外)。
+
+可通过受控环境提供可选 `GITHUB_TOKEN`；私有仓库需要 Actions、Contents 读取权限，令牌不得进入输出、回执、日志或提交。回执 `ciCheck` 保存候选/main SHA、运行 ID/编号/attempt、结论、检查时间、是否请求/使用例外及批准编号。使用例外时终端输出醒目警告，无法取得的运行信息保持 null。
+
+### 回执与退出状态
+
+升级通过 CI 门禁或满足批准例外后，工具先保存本地请求文件，再向服务器提交，文件存在时拒绝覆盖。门禁拒绝时不创建请求文件、不派发 SSH。服务器在 `operator-requests/<id>/` 独占预留请求，保存参数与完成记录；同一请求只能派发一次。即使预留后断线、systemd 单元已回收或状态未知，也不重新启动。
+
+退出码：0 = 原控制器退出成功并保存完成记录；1 = 已有明确失败记录；2 = 输入校验、CI 门禁拒绝或连接等错误；3 = 已提交、运行中或未知。明确的 CI 拒绝输出会包含候选 SHA 和原因，表示本次尚未派发，不应查询不存在的回执；若已经派发或连接结果未知，则 2/3 均不能证明生产发布成功或失败，必须查询同一 receipt，不能仅凭退出码重发。服务器执行上限 20 分钟、CPU 200%、内存 3500 MiB，沿用本机已验证部署资源边界；超时后查询原生回执，不能盲目重发或强停已有任务。
 
 成功后仍执行 RELEASE.md 要求的生产验收。未知状态需要核对 `systemctl show geosub-op-<id>`、该单元 journal 和 `attempts/<id>/rolling.json` / `collector-attempts/<id>.json`；操作请求 ID 与原生发布 ID 是不同标识。
 
@@ -66,6 +98,8 @@ python3 scripts/geosub_ops.py observe \
 - 已安装控制器保持原样。新入口可调用其标准执行器；它不要求更新生产应用才能使用。
 - 原任务工作区的旧发布/探测脚本停用，提示迁移到此入口，防止今后继续使用分叉副本。
 - 回退工具改动只回退此提交；不回退网站、数据库或既有发布回执。正在服务器运行的请求必须先核对状态，不能以工具回退为由重发。
+
+- 2026-11-03 起，上述“已安装控制器保持原样”的历史说明不再适用于新版工具的网站升级：T03a（PR #8）和 T03（PR #9）要求网站升级传入候选提交，旧网站控制器会忽略该参数。使用新版操作工具前，必须先安装并核验包含这两项改动的控制器，见 [RELEASE.md 第 5.1 节](RELEASE.md#51-新控制器与操作工具的使用顺序)。原 2.14.0 验收记录保留。
 
 ## 已切换但成功账本未登记的恢复
 
