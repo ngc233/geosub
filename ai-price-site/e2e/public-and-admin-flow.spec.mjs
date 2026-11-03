@@ -23,7 +23,7 @@ function readFixtureState() {
   );
 }
 
-test("visitor can move from home to an AI detail and switch language", async ({
+test("visitor can move from home to an overview and plan then switch language", async ({
   page,
 }) => {
   await page.goto("/zh");
@@ -32,11 +32,13 @@ test("visitor can move from home to an AI detail and switch language", async ({
   await expect(page).toHaveURL(/\/zh\/ai-pricing$/);
 
   const detailPath = `/zh/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`;
-  const productLink = page.locator(`a[href="${detailPath}"]`);
   const productCard = page.locator(`[data-catalog-product="${fixture.productSlug}"]`);
-  await expect(productCard.getByRole("heading")).toContainText(fixture.productName);
-  await expect(productLink).toHaveAccessibleName("查看地区价格与来源证据");
-  await productLink.click();
+  await expect(productCard.getByRole("heading", { level: 2 })).toContainText(fixture.productName);
+  await productCard.getByRole("link", { name: "查看全部套餐", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/zh/ai-pricing/${fixture.productSlug}$`));
+  const planLink = page.locator(`a[href="${detailPath}"]`).first();
+  await expect(planLink).toBeVisible();
+  await planLink.click();
 
   await expect(page).toHaveURL(new RegExp(`${detailPath}$`));
   await expect(page.locator("h1").first()).toContainText(fixture.productName);
