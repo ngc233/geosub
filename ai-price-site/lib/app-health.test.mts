@@ -121,7 +121,7 @@ test("each legacy empty-data condition and unavailable inspection keeps its orig
 
 test("missing or invalid public build identifiers are null without changing health", async () => {
   for (const candidate of [undefined, {}, { version: "", commit: "" },
-    { version: "postgres://private:secret@internal/db", commit: "abcdef0" },
+    { version: "postgres://private:secret@internal.invalid/db", commit: "abcdef0" },
     { version: "2.24.1\nprivate", commit: "z".repeat(40) }]) {
     const result = await checkAppHealth({ pingDatabase: async () => 1,
       inspectBusinessData: async () => business, build: candidate });
@@ -139,14 +139,14 @@ test("missing or invalid public build identifiers are null without changing heal
 test("optional freshness failure returns unknown observations without changing legacy health", async () => {
   const result = await checkAppHealth({ pingDatabase: async () => 1,
     inspectBusinessData: async () => business,
-    inspectFreshness: async () => { throw new Error("postgres://private:password@internal/db\nstack trace"); } });
+    inspectFreshness: async () => { throw new Error("postgres://private:password@internal.invalid/db\nstack trace"); } });
   assert.equal(result.httpStatus, 200);
   assert.equal(result.payload.status, "ok");
   assert.deepEqual(result.payload.data, { lastSuccessfulCollectionAt: null, pricesNotCheckedOver3Days: null });
 });
 
 test("response allowlist excludes totals, injected fields and exception details", async () => {
-  const sensitive = { DATABASE_URL: "postgres://private:password@internal/db", stack: "private stack", token: "private-key" };
+  const sensitive = { DATABASE_URL: "postgres://private:password@internal.invalid/db", stack: "private stack", token: "private-key" };
   for (const fail of [false, true]) {
     const result = await checkAppHealth({
       pingDatabase: async () => { if (fail) throw Object.assign(new Error(sensitive.DATABASE_URL), sensitive); return 1; },
