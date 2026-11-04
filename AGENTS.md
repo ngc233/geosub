@@ -6,10 +6,11 @@ These rules apply to the whole repository. More specific nested `AGENTS.md` file
 
 Before changing any file, read:
 
-1. `docs/WORKFLOW.md`
-2. `docs/PRODUCT.md`
-3. `docs/ENGINEERING_RULES.md`
-4. The scope-specific documents listed in `docs/README.md`
+1. `docs/RULES-SUMMARY.md`
+2. `docs/WORKFLOW.md`
+3. `docs/PRODUCT.md`
+4. `docs/ENGINEERING_RULES.md`
+5. The scope-specific documents listed in `docs/README.md`
 
 For Next.js work under `ai-price-site`, also follow `ai-price-site/AGENTS.md` and read the relevant installed Next.js documentation before relying on remembered APIs.
 
