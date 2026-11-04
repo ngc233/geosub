@@ -54,8 +54,8 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
-      - name: Check approval references (warning only)
-        run: node ../scripts/check-approvals.mjs --mode=warn
+      - name: Check approval references
+        run: node ../scripts/check-approvals.mjs --mode=error
       - name: Test protected-file isolation with committed Git fixtures
         run: node --test ../scripts/tests/protected-files.test.mjs
       - name: Test collector scheduling and monitoring
