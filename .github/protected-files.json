@@ -16,6 +16,8 @@
     "ai-price-site/lib/seo-experiment-locks.ts",
     ".github/protected-files.json",
     "scripts/check-protected-files.mjs",
+    "scripts/check-approvals.mjs",
+    "ai-price-site/scripts/check-approvals.test.mts",
     ".github/CODEOWNERS",
     ".github/workflows/ci.yml",
     ".github/workflows/protected-files.yml"
