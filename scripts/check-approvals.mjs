@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// T05: classification and references only; neither a marker nor a pending
-// historical record grants permission. Human review establishes classification.
+// T05: check classification, references and ratification metadata. Neither a
+// marker nor a historical ratification record grants new permission.
 import { readFileSync, realpathSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -11,6 +11,31 @@ const COLUMNS = ['编号', '日期', '原话', '范围', '不包括', '关联 PR
 const KEYWORD = /批准|授权|approved|authorized/i;
 const VALID_ID = /^APR-H-\d{4,}$/;
 const isHistoricalId = value => VALID_ID.test(value) && /[1-9]/.test(value);
+
+function isCalendarDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1];
+}
+
+function ratificationIssue(status, authorizationDate) {
+  if (status === '待追认') return null;
+  const match = /^已追认（(\d{4}-\d{2}-\d{2})）$/.exec(status);
+  if (!match || !isCalendarDate(match[1])) {
+    return { code: 'invalid-ratification-status', message: '追认状态只能为“待追认”或“已追认（YYYY-MM-DD）”，追认日期必须是合法公历日期。' };
+  }
+  if (!isCalendarDate(authorizationDate)) {
+    return { code: 'invalid-authorization-date', message: '已追认记录的“日期”栏必须是合法的 YYYY-MM-DD 授权日期，才能核对追认先后。' };
+  }
+  // Both dates are canonical YYYY-MM-DD, so lexical order is chronological.
+  if (match[1] < authorizationDate) {
+    return { code: 'ratification-before-authorization', message: `追认日期 ${match[1]} 不得早于授权日期 ${authorizationDate}。` };
+  }
+  return null;
+}
 
 // Preserve line numbers while removing comments, including commented markers.
 function visibleLines(markdown) {
@@ -108,9 +133,12 @@ function readRegister(markdown) {
       const id = cells[0].replace(/^`([^`]+)`$/, '$1');
       if (cells.length !== COLUMNS.length || cells.some(cell => !cell) || !isHistoricalId(id)) {
         findings.push({ file: REGISTER, line: lines[i].line, code: 'invalid-record', message: '登记行必须有八个非空字段，编号须为 APR-H-0001 起的历史编号。' });
-      } else if (ids.has(id)) {
-        findings.push({ file: REGISTER, line: lines[i].line, code: 'duplicate-id', message: `重复历史编号：${id}` });
-      } else ids.add(id);
+      } else {
+        if (ids.has(id)) findings.push({ file: REGISTER, line: lines[i].line, code: 'duplicate-id', message: `重复历史编号：${id}` });
+        else ids.add(id);
+        const issue = ratificationIssue(cells[6], cells[1]);
+        if (issue) findings.push({ file: REGISTER, line: lines[i].line, ...issue });
+      }
     }
   }
   if (tables === 0) findings.push({ file: REGISTER, line: 1, code: 'invalid-register', message: '未找到包含编号、日期、原话、范围、不包括、关联 PR、追认状态、关联提交的登记表。' });

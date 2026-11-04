@@ -12,8 +12,9 @@ const SEO = "docs/SEO_POLICY.md";
 const REGISTER = "docs/APPROVALS.md";
 const SCRIPT = fileURLToPath(new URL("../../scripts/check-approvals.mjs", import.meta.url));
 const header = "| 编号 | 日期 | 原话 | 范围 | 不包括 | 关联 PR | 追认状态 | 关联提交 |\n| --- | --- | --- | --- | --- | --- | --- | --- |";
-const row = (id = "APR-H-0001", scope = "仅指定试点") =>
-  `| ${id} | 2026-10-25 | 历史记录，原话缺失 | ${scope} | 其他范围 | 未找到 | 待追认 | 未找到 |`;
+const row = (id = "APR-H-0001", scope = "仅指定试点", status = "待追认", date = "2026-10-25") =>
+  `| ${id} | ${date} | 历史记录，原话缺失 | ${scope} | 其他范围 | 未找到 | ${status} | 未找到 |`;
+const statusRow = (status: string, date = "2026-10-25") => row("APR-H-0001", "仅指定试点", status, date);
 const registry = (...rows: string[]) => `${header}\n${rows.join("\n")}\n`;
 const docs = (data = "普通说明。", seo = "普通说明。") => ({ [DATA]: data, [SEO]: seo });
 const check = (data: string, register: string | null = null) => checkApprovals(docs(data), register);
@@ -59,6 +60,74 @@ test("a pending historical record resolves without pretending it is ratified", (
   assert.deepEqual(check("用户批准指定试点。APR-H-0001", registry(row())), []);
   assert.deepEqual(check("User authorized a pilot. [APR-H-0001]", registry(row())), []);
   assert.deepEqual(check("批准此项。`APR-H-0001`", registry(row("`APR-H-0001`"))), []);
+});
+
+test("ratification accepts pending, the authorization date and later valid dates", () => {
+  for (const status of ["待追认", "已追认（2026-10-25）", "已追认（2026-11-04）", "已追认（2027-01-01）"]) {
+    assert.deepEqual(check("批准。APR-H-0001", registry(statusRow(status))), [], status);
+  }
+});
+
+test("ratification validates Gregorian leap years without normalizing invalid dates", () => {
+  for (const date of ["0001-01-01", "2000-02-29", "2024-02-29", "2026-02-28", "2026-04-30", "9999-12-31"]) {
+    assert.deepEqual(check("批准。APR-H-0001", registry(statusRow(`已追认（${date}）`, date))), [], date);
+  }
+  for (const date of ["0000-01-01", "1900-02-29", "2026-02-29", "2026-04-31", "2026-00-01", "2026-13-01", "2026-01-00", "2026-01-32"]) {
+    const findings = check("批准。APR-H-0001", registry(statusRow(`已追认（${date}）`, "0001-01-01")));
+    assert.equal(findings.length, 1, date);
+    assert.equal(findings[0].code, "invalid-ratification-status", date);
+  }
+});
+
+test("ratification rejects other wording and noncanonical date or parentheses formats", () => {
+  for (const status of ["已确认", "已追认", "待追认中", "已追认(2026-11-04)", "已追认（2026-1-04）", "已追认（2026/11/04）", "已追认（2026-11-04T00:00:00Z）", "已追认（2026-11-04）附注"]) {
+    // Even an unreferenced register row must be checked.
+    const findings = check("普通说明。", registry(statusRow(status)));
+    assert.equal(findings.length, 1, status);
+    assert.equal(findings[0].code, "invalid-ratification-status", status);
+    assert.equal(findings[0].file, REGISTER);
+    assert.equal(findings[0].line, 3);
+  }
+});
+
+test("ratification cannot predate its own row's authorization date", () => {
+  for (const [authorized, ratified] of [["2026-10-25", "2026-10-24"], ["2026-12-31", "2026-01-01"], ["2026-01-01", "2025-12-31"]]) {
+    const register = registry(row("APR-H-0002", "较早授权", "已追认（2026-11-04）", "2020-01-01"), statusRow(`已追认（${ratified}）`, authorized));
+    const findings = check("批准。APR-H-0001", register);
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].code, "ratification-before-authorization");
+    assert.equal(findings[0].file, REGISTER);
+    assert.equal(findings[0].line, 4);
+    assert.ok(findings[0].message.includes(authorized));
+    assert.ok(findings[0].message.includes(ratified));
+  }
+});
+
+test("ratified rows with an invalid authorization date fail instead of bypassing chronology", () => {
+  for (const date of ["未找到", "2026-02-30", "2026-1-01"]) {
+    const findings = check("批准。APR-H-0001", registry(statusRow("已追认（2026-11-04）", date)));
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].code, "invalid-authorization-date");
+  }
+});
+
+test("CLI enforces ratification status, calendar validity and chronology in error mode", t => {
+  const f = fixture(t, "批准。APR-H-0001", "未来批准。[REQ]", registry(statusRow("已追认（2026-11-04）")));
+  assert.equal(f.cli("--mode=error").status, 0);
+  for (const [status, code] of [
+    ["已确认", "invalid-ratification-status"],
+    ["已追认（2026-02-29）", "invalid-ratification-status"],
+    ["已追认（2026-10-24）", "ratification-before-authorization"],
+  ]) {
+    f.write(REGISTER, registry(statusRow(status)));
+    const result = f.cli("--mode=error");
+    assert.equal(result.status, 1);
+    assert.ok(result.stdout.includes(`ERROR ${REGISTER}:3 [${code}]`));
+    assert.match(result.stdout, /1 issue\(s\); mode=error/);
+    const warn = f.cli("--mode=warn");
+    assert.equal(warn.status, 0);
+    assert.ok(warn.stdout.includes(`WARNING ${REGISTER}:3 [${code}]`));
+  }
 });
 
 test("every historical ID needs a corresponding record, including alongside REQ", () => {
