@@ -115,6 +115,7 @@ function readRegister(markdown) {
   return { ids, findings };
 }
 
+/** @param {string | null} registerMarkdown */
 export function checkApprovals(documents, registerMarkdown = null) {
   const { ids, findings } = readRegister(registerMarkdown);
   for (const file of POLICY_FILES) {
