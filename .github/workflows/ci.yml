@@ -29,7 +29,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U geosub -d geosub_code_ci"
+          --health-cmd "pg_isready -h 127.0.0.1 -U geosub -d geosub_code_ci"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -90,7 +90,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U geosub -d geosub_content_ci"
+          --health-cmd "pg_isready -h 127.0.0.1 -U geosub -d geosub_content_ci"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -141,7 +141,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U geosub -d geosub_database_ci"
+          --health-cmd "pg_isready -h 127.0.0.1 -U geosub -d geosub_database_ci"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -231,7 +231,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U geosub -d geosub_e2e"
+          --health-cmd "pg_isready -h 127.0.0.1 -U geosub -d geosub_e2e"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -274,7 +274,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U geosub -d geosub_release_20261027"
+          --health-cmd "pg_isready -h 127.0.0.1 -U geosub -d geosub_release_20261027"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
