@@ -1,0 +1,60 @@
+name: Protected file isolation
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: protected-files-target-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  protected-files:
+    name: Protected files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TRUSTED_SHA: ${{ github.sha }}
+      PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      # pull_request_target supplies the default-branch workflow and SHA.
+      # Never check out a PR head/merge ref, or execute files from those commits.
+      - name: Check out the trusted default-branch commit
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use production Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fetch exact PR objects without checking them out
+        shell: bash
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for sha in "$TRUSTED_SHA" "$PR_BASE_SHA" "$PR_HEAD_SHA"; do
+            [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid commit SHA'; exit 1; }
+          done
+          [[ "$(git rev-parse HEAD)" == "$TRUSTED_SHA" ]] || { echo 'Untrusted checkout'; exit 1; }
+          # Only the built-in read-only token is used. The header exists solely
+          # in the fetch process environment, never in Git config or arguments.
+          GIT_AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_READ_TOKEN" | base64 | tr -d '\n')" \
+            git --config-env=http.extraheader=GIT_AUTH_HEADER fetch --no-tags --no-recurse-submodules origin "$PR_BASE_SHA" "$PR_HEAD_SHA"
+          git cat-file -e "${PR_BASE_SHA}^{commit}"
+          git cat-file -e "${PR_HEAD_SHA}^{commit}"
+          [[ "$(git rev-parse HEAD)" == "$TRUSTED_SHA" ]]
+          printf 'Trusted checker: %s\nPR base: %s\nPR head: %s\n' "$TRUSTED_SHA" "$PR_BASE_SHA" "$PR_HEAD_SHA"
+      - name: Check isolation with the trusted checker and PR base policy
+        shell: bash
+        run: node scripts/check-protected-files.mjs --base "$PR_BASE_SHA" --head "$PR_HEAD_SHA"
+      - name: Check candidate CODEOWNERS as data with the trusted checker
+        shell: bash
+        run: node scripts/check-protected-files.mjs --check-codeowners "$PR_HEAD_SHA"
