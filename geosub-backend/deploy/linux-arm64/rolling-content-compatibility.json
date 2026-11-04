@@ -32,6 +32,28 @@
   "approvedPairs": [
     {
       "format": 2,
+      "from": "b8d4f092a72ab1d894db2cffd5b37a822813847fc69052b8dc3ddba08cd3c249",
+      "to": "81025472d38ea63e95c63c0a72090a627fd0d9229e06799238a850ee62477d40",
+      "retainedCommit": "9b356cdb860ddb40ce1064bf09327b6817e70ab2",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.25.0 traffic screening release: all content readers, schemas and fence contracts are byte-identical to retained 2.24.1. Only VERSION and previously reviewed T03a exact candidate binding differ in the fingerprint scope.",
+      "evidence": "docs/release-readiness-2.25.0.md; exact retained Git file comparison and rolling/content regression gates. No content admission or historical data changes."
+    },
+    {
+      "format": 2,
       "from": "81025472d38ea63e95c63c0a72090a627fd0d9229e06799238a850ee62477d40",
       "to": "2f1e0ffdc9d0cd88b9e0dd8f0e35a414f1cd318d2a99d12f4ab419609d84f1c2",
       "retainedCommit": "d4f80b96f59b443e297a15f956e6bde776b7e9eb",

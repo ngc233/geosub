@@ -6,6 +6,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import * as aggregate from "../lib/aggregate-page-views.ts";
 import * as measurement from "../lib/page-view-measurement.ts";
+import * as screening from "../lib/page-view-screening.ts";
 
 const require = createRequire(import.meta.url);
 const { NextRequest, NextResponse } = require("next/server") as typeof import("next/server");
@@ -22,6 +23,7 @@ function handler() {
       if (name === "next/server") return { NextRequest, NextResponse };
       if (name.endsWith("/aggregate-page-views")) return aggregate;
       if (name.endsWith("/page-view-measurement")) return measurement;
+      if (name.endsWith("/page-view-screening")) return screening;
       if (name.endsWith("/prisma")) return { prisma: {
         dailyStat: { upsert: (write: Write) => write },
         $transaction: async (writes: Write[]) => { transactions.push(writes); },
@@ -42,8 +44,8 @@ for (const population of ["eligible", "internal", "automation", "unclassified"] 
   test(`real POST keeps legacy PV and atomically writes only ${population} v2 counters`, async () => {
     const h = handler(); const response = await h.POST(request({ pagePath: path, measurementVersion: measurement.PAGE_VIEW_MEASUREMENT_VERSION, population, account: "must-not-be-stored" }));
     assert.equal(response.status, 204); assert.equal(h.transactions.length, 1);
-    const writes = h.transactions[0]; assert.equal(writes.length, 4);
-    assert.deepEqual(Array.from(writes, (x) => x.create.metricKey), [aggregate.AGGREGATE_PAGE_VIEW_METRIC, aggregate.AGGREGATE_PAGE_VIEW_METRIC, measurement.PAGE_VIEW_POPULATION_METRICS[population], measurement.PAGE_VIEW_POPULATION_METRICS[population]]);
+    const writes = h.transactions[0]; assert.equal(writes.length, 6);
+    assert.deepEqual(Array.from(writes, (x) => x.create.metricKey), [aggregate.AGGREGATE_PAGE_VIEW_METRIC, aggregate.AGGREGATE_PAGE_VIEW_METRIC, measurement.PAGE_VIEW_POPULATION_METRICS[population], measurement.PAGE_VIEW_POPULATION_METRICS[population], screening.SCREENED_PAGE_VIEW_METRICS[population], screening.SCREENED_PAGE_VIEW_METRICS[population]]);
     for (let i = 0; i < writes.length; i += 2) {
       assert.equal(writes[i].create.dimensionKey, "global"); assert.equal(writes[i + 1].create.dimensionKey, path);
     }
@@ -59,6 +61,16 @@ test("old cached clients are classified separately; explicit automation header o
     const h = handler(); assert.equal((await h.POST(request(payload, headers))).status, 204);
     assert.equal(h.transactions[0][2].create.metricKey, measurement.PAGE_VIEW_POPULATION_METRICS[expected]);
   }
+});
+test("server evidence overrides eligible without deleting legacy counts or accepting client v3 claims", async () => {
+  const h = handler();
+  const response = await h.POST(request({pagePath:path, measurementVersion:measurement.PAGE_VIEW_MEASUREMENT_VERSION, population:"eligible", screenedPopulation:"eligible", screeningReason:"none"}, {"user-agent":"Mozilla/5.0 (compatible; ExampleBot/1.0)","x-real-ip":"192.0.2.4"}));
+  assert.equal(response.status,204);
+  const writes=h.transactions[0];
+  assert.equal(writes[2].create.metricKey,measurement.PAGE_VIEW_POPULATION_METRICS.eligible);
+  assert.equal(writes[4].create.metricKey,screening.SCREENED_PAGE_VIEW_METRICS.suspected);
+  assert.equal(writes[5].create.metricKey,screening.SCREENED_PAGE_VIEW_METRICS.suspected);
+  assert.doesNotMatch(JSON.stringify(writes),/ExampleBot|192\.0\.2\.4|screeningReason|screenedPopulation/);
 });
 test("cross-origin, wrong referer and invalid public paths never write even with an acceptance marker", async () => {
   for (const [pagePath, headers] of [

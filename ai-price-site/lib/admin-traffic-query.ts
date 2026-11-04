@@ -10,15 +10,19 @@ events AS MATERIALIZED (
 ),
 counters AS (
  SELECT stat_date, SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views') AS raw,
- SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_eligible_v2') AS eligible,
- SUM(metric_value) FILTER(WHERE metric_key IN ('cookieless_page_views_eligible_v2','cookieless_page_views_internal_v2','cookieless_page_views_automation_v2','cookieless_page_views_unclassified_v2')) AS classified,
- SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_unclassified_v2') AS unknown
+ SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_eligible_v3') AS eligible,
+ SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_suspected_v3') AS suspected,
+ SUM(metric_value) FILTER(WHERE metric_key IN ('cookieless_page_views_eligible_v3','cookieless_page_views_suspected_v3','cookieless_page_views_internal_v3','cookieless_page_views_automation_v3','cookieless_page_views_unclassified_v3')) AS classified,
+ SUM(metric_value) FILTER(WHERE metric_key IN ('cookieless_page_views_internal_v3','cookieless_page_views_automation_v3','cookieless_page_views_unclassified_v3')) AS excluded
  FROM daily_stats,clock WHERE stat_date >= (today AT TIME ZONE 'UTC')::date-180 AND stat_date <= (today AT TIME ZONE 'UTC')::date
  AND dimension_type='global' AND dimension_key='global' AND metric_key LIKE 'cookieless_page_views%' GROUP BY stat_date
 ),
 days AS (
  SELECT to_char(d AT TIME ZONE 'UTC','YYYY-MM-DD') AS date,
- CASE WHEN c.classified IS NOT NULL AND c.classified=c.raw AND COALESCE(c.unknown,0)=0 THEN COALESCE(c.eligible,0) ELSE NULL END AS pv,
+ CASE WHEN c.classified IS NOT NULL AND c.classified<=c.raw THEN COALESCE(c.eligible,0) ELSE NULL END AS pv,
+ CASE WHEN c.classified IS NOT NULL AND c.classified<=c.raw THEN COALESCE(c.suspected,0) ELSE NULL END AS suspected,
+ CASE WHEN c.classified IS NOT NULL AND c.classified<=c.raw THEN COALESCE(c.excluded,0) ELSE NULL END AS excluded_views,
+ CASE WHEN c.classified IS NOT NULL AND c.classified<=c.raw THEN c.classified ELSE NULL END AS screened_views,
  CASE WHEN (SELECT min(created_at) FROM events)<d+INTERVAL '1 day' THEN COUNT(DISTINCT NULLIF(e.anonymous_id,'')) ELSE NULL END AS uv,
  CASE WHEN (SELECT min(created_at) FROM events)<d+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(NULLIF(e.session_id,''))=0) THEN COUNT(DISTINCT NULLIF(e.session_id,'')) ELSE NULL END AS sessions,
  COUNT(e.created_at) AS consented_views, COUNT(e.created_at) FILTER(WHERE NULLIF(e.session_id,'') IS NULL) AS missing_session,
@@ -26,7 +30,7 @@ days AS (
  FROM clock CROSS JOIN LATERAL generate_series(today-INTERVAL '180 days',today,INTERVAL '1 day') d
  LEFT JOIN counters c ON c.stat_date=(d AT TIME ZONE 'UTC')::date
  LEFT JOIN events e ON e.created_at>=d AND e.created_at<d+INTERVAL '1 day'
- GROUP BY d,c.classified,c.raw,c.unknown,c.eligible
+ GROUP BY d,c.classified,c.raw,c.excluded,c.eligible,c.suspected
 ),
 windows AS (
  SELECT n AS range, side, today - (n * (side+1)) * INTERVAL '1 day' AS start_at,today-(n*side)*INTERVAL '1 day' AS end_at FROM clock CROSS JOIN (VALUES(7),(30),(90)) r(n) CROSS JOIN (VALUES(0),(1)) s(side)
@@ -36,10 +40,14 @@ totals AS (
  SELECT w.range,w.side,to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AS start,
  to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD') AS end,
  (SELECT CASE WHEN COUNT(pv)=w.range THEN SUM(pv) ELSE NULL END FROM days WHERE date>=to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AND date<=to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD')) AS pv,
+ (SELECT CASE WHEN COUNT(suspected)=w.range THEN SUM(suspected) ELSE NULL END FROM days WHERE date>=to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AND date<=to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD')) AS suspected,
+ (SELECT CASE WHEN COUNT(excluded_views)=w.range THEN SUM(excluded_views) ELSE NULL END FROM days WHERE date>=to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AND date<=to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD')) AS excluded_views,
+ (SELECT CASE WHEN COUNT(screened_views)=w.range THEN SUM(screened_views) ELSE NULL END FROM days WHERE date>=to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AND date<=to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD')) AS screened_views,
+ (SELECT CASE WHEN COUNT(raw_views)=w.range THEN SUM(raw_views) ELSE NULL END FROM days WHERE date>=to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AND date<=to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD')) AS raw_views,
  CASE WHEN (SELECT min(created_at) FROM events)<w.start_at+INTERVAL '1 day' THEN COUNT(DISTINCT NULLIF(e.anonymous_id,'')) ELSE NULL END AS uv,
  CASE WHEN (SELECT min(created_at) FROM events)<w.start_at+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(NULLIF(e.session_id,''))=0) THEN COUNT(DISTINCT NULLIF(e.session_id,'')) ELSE NULL END AS sessions,
  COUNT(e.created_at) AS consented_views,COUNT(e.created_at) FILTER(WHERE NULLIF(e.session_id,'') IS NULL) AS missing_session
  FROM windows w LEFT JOIN events e ON e.created_at>=w.start_at AND e.created_at<w.end_at GROUP BY w.range,w.side,w.start_at,w.end_at
 )
-SELECT json_build_object('version',1,'capturedAt',(SELECT captured FROM clock),'timezone','UTC','days',(SELECT json_agg(days ORDER BY date) FROM days),'totals',(SELECT json_agg(totals ORDER BY range,side) FROM totals)) AS data
+SELECT json_build_object('version',2,'capturedAt',(SELECT captured FROM clock),'timezone','UTC','days',(SELECT json_agg(days ORDER BY date) FROM days),'totals',(SELECT json_agg(totals ORDER BY range,side) FROM totals)) AS data
 `;
