@@ -10,6 +10,34 @@ cleanup() {
   rm -rf "$T"
 }
 trap cleanup EXIT
+readiness_failure() {
+  printf 'PostgreSQL readiness failed: %s\n' "$*" >&2
+  docker logs "$GEOSUB_GUARD_CONTAINER" >&2 || true
+  return 1
+}
+wait_ready() {
+  local phase=$1 deadline=$((SECONDS + 30)) state status health
+  while ((SECONDS < deadline)); do
+    if ! state=$(docker inspect -f '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' "$GEOSUB_GUARD_CONTAINER"); then
+      readiness_failure "$phase: cannot inspect container"
+      return 1
+    fi
+    read -r status health <<< "$state"
+    case "$status" in
+      exited|dead)
+        readiness_failure "$phase: container is $status"
+        return 1
+        ;;
+    esac
+    if [[ "$status" = running && "$health" = healthy ]]; then
+      printf 'PostgreSQL ready after %s (TCP healthcheck).\n' "$phase"
+      return 0
+    fi
+    sleep 1
+  done
+  readiness_failure "$phase: timed out after 30 seconds (last state: ${state:-unknown})"
+  return 1
+}
 cat > "$T/docker-compose.yml" <<YAML
 name: $GEOSUB_GUARD_CONTAINER
 services:
@@ -22,21 +50,19 @@ services:
     volumes:
       - ./data:/var/lib/postgresql/data
     healthcheck:
-      test: [CMD-SHELL, "pg_isready -U postgres"]
+      # The initialization-only server listens on a socket, never on TCP.
+      test: [CMD-SHELL, "pg_isready -h 127.0.0.1 -U postgres"]
       interval: 1s
       timeout: 1s
       retries: 30
 YAML
 docker compose -f "$T/docker-compose.yml" up -d
-for ((i=0;i<30;i++)); do
-  [[ "$(docker inspect -f '{{.State.Health.Status}}' "$GEOSUB_GUARD_CONTAINER")" = healthy ]] && break
-  sleep 1
-done
+wait_ready 'initial start'
 docker exec "$GEOSUB_GUARD_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -c 'CREATE TABLE guard_sentinel (id integer PRIMARY KEY); INSERT INTO guard_sentinel VALUES(42);'
 ID=$(docker exec "$GEOSUB_GUARD_CONTAINER" sh -c 'LC_ALL=C pg_controldata "$PGDATA"' | sed -n 's/^Database system identifier:[[:space:]]*//p')
 bash "$ROOT/geosub-backend/deploy/linux-arm64/install-postgres-guard.sh" apply "$T/state" "$ID" INSTALL_EXISTING_CLUSTER_GUARD
 docker restart "$GEOSUB_GUARD_CONTAINER" >/dev/null
-sleep 3
+wait_ready 'restart'
 [[ "$(docker exec "$GEOSUB_GUARD_CONTAINER" psql -U postgres -Atc 'SELECT * FROM guard_sentinel')" = 42 ]]
 bash "$ROOT/geosub-backend/deploy/linux-arm64/install-postgres-guard.sh" rollback "$T/state" "$ID" ROLLBACK_EXISTING_CLUSTER_GUARD
 [[ "$(docker exec "$GEOSUB_GUARD_CONTAINER" psql -U postgres -Atc 'SELECT * FROM guard_sentinel')" = 42 ]]
