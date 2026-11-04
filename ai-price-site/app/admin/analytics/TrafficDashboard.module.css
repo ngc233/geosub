@@ -51,3 +51,5 @@
  .chartControls+svg{margin-top:0}
 }
 @media(prefers-reduced-motion:reduce){.chart *{transition:none}}
+
+.metricNote{display:block;margin-top:6px;line-height:1.7;overflow-wrap:anywhere}

@@ -12,34 +12,60 @@ counters AS (
  SELECT stat_date, SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views') AS raw,
  SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_eligible_v2') AS eligible,
  SUM(metric_value) FILTER(WHERE metric_key IN ('cookieless_page_views_eligible_v2','cookieless_page_views_internal_v2','cookieless_page_views_automation_v2','cookieless_page_views_unclassified_v2')) AS classified,
- SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_unclassified_v2') AS unknown
+ SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_unclassified_v2') AS unknown,
+ SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_automation_v2') AS automation,
+ SUM(metric_value) FILTER(WHERE metric_key='cookieless_page_views_internal_v2') AS internal
  FROM daily_stats,clock WHERE stat_date >= (today AT TIME ZONE 'UTC')::date-180 AND stat_date <= (today AT TIME ZONE 'UTC')::date
  AND dimension_type='global' AND dimension_key='global' AND metric_key LIKE 'cookieless_page_views%' GROUP BY stat_date
 ),
 days AS (
  SELECT to_char(d AT TIME ZONE 'UTC','YYYY-MM-DD') AS date,
- CASE WHEN c.classified IS NOT NULL AND c.classified=c.raw AND COALESCE(c.unknown,0)=0 THEN COALESCE(c.eligible,0) ELSE NULL END AS pv,
- CASE WHEN (SELECT min(created_at) FROM events)<d+INTERVAL '1 day' THEN COUNT(DISTINCT NULLIF(e.anonymous_id,'')) ELSE NULL END AS uv,
- CASE WHEN (SELECT min(created_at) FROM events)<d+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(NULLIF(e.session_id,''))=0) THEN COUNT(DISTINCT NULLIF(e.session_id,'')) ELSE NULL END AS sessions,
+ CASE WHEN c.classified IS NOT NULL AND c.classified=c.raw THEN COALESCE(c.eligible,0) ELSE NULL END AS pv,
+ CASE WHEN c.raw IS NULL THEN 'missing_raw' WHEN c.classified IS NULL THEN 'missing_classification' WHEN c.classified<>c.raw THEN 'classification_mismatch' ELSE NULL END AS pv_reason,
+ CASE WHEN c.classified=c.raw THEN COALESCE(c.automation,0) ELSE NULL END AS automation_views,
+ CASE WHEN c.classified=c.raw THEN COALESCE(c.internal,0) ELSE NULL END AS internal_views,
+ CASE WHEN c.classified=c.raw THEN COALESCE(c.unknown,0) ELSE NULL END AS unclassified_views,
+ CASE WHEN (SELECT min(created_at) FROM events)<d+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL)=0)
+ THEN COUNT(DISTINCT e.anonymous_id) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL) ELSE NULL END AS uv,
+ CASE WHEN (SELECT min(created_at) FROM events)<d+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL)=0)
+ THEN COUNT(DISTINCT (e.anonymous_id,e.session_id)) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL) ELSE NULL END AS sessions,
+ COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL) AS sample_views,
+ COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NULL OR NULLIF(e.session_id,'') IS NULL) AS missing_identity,
  COUNT(e.created_at) AS consented_views, COUNT(e.created_at) FILTER(WHERE NULLIF(e.session_id,'') IS NULL) AS missing_session,
  c.raw AS raw_views
  FROM clock CROSS JOIN LATERAL generate_series(today-INTERVAL '180 days',today,INTERVAL '1 day') d
  LEFT JOIN counters c ON c.stat_date=(d AT TIME ZONE 'UTC')::date
  LEFT JOIN events e ON e.created_at>=d AND e.created_at<d+INTERVAL '1 day'
- GROUP BY d,c.classified,c.raw,c.unknown,c.eligible
+ GROUP BY d,c.classified,c.raw,c.unknown,c.eligible,c.automation,c.internal
 ),
 windows AS (
  SELECT n AS range, side, today - (n * (side+1)) * INTERVAL '1 day' AS start_at,today-(n*side)*INTERVAL '1 day' AS end_at FROM clock CROSS JOIN (VALUES(7),(30),(90)) r(n) CROSS JOIN (VALUES(0),(1)) s(side)
  UNION ALL SELECT 1,0,today,captured FROM clock
 ),
+period_pv AS (
+ SELECT w.range,w.side,SUM(d.pv) AS pv,
+ SUM(d.automation_views) FILTER(WHERE d.pv IS NOT NULL) AS automation_views,
+ SUM(d.internal_views) FILTER(WHERE d.pv IS NOT NULL) AS internal_views,
+ SUM(d.unclassified_views) FILTER(WHERE d.pv IS NOT NULL) AS unclassified_views
+ FROM windows w LEFT JOIN days d
+ ON d.date>=to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD')
+ AND d.date<=to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD')
+ GROUP BY w.range,w.side
+),
 totals AS (
  SELECT w.range,w.side,to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AS start,
  to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD') AS end,
- (SELECT CASE WHEN COUNT(pv)=w.range THEN SUM(pv) ELSE NULL END FROM days WHERE date>=to_char(w.start_at AT TIME ZONE 'UTC','YYYY-MM-DD') AND date<=to_char((CASE WHEN w.range=1 THEN w.end_at ELSE w.end_at-INTERVAL '1 second' END) AT TIME ZONE 'UTC','YYYY-MM-DD')) AS pv,
- CASE WHEN (SELECT min(created_at) FROM events)<w.start_at+INTERVAL '1 day' THEN COUNT(DISTINCT NULLIF(e.anonymous_id,'')) ELSE NULL END AS uv,
- CASE WHEN (SELECT min(created_at) FROM events)<w.start_at+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(NULLIF(e.session_id,''))=0) THEN COUNT(DISTINCT NULLIF(e.session_id,'')) ELSE NULL END AS sessions,
+ p.pv,p.automation_views,p.internal_views,p.unclassified_views,
+ CASE WHEN (SELECT min(created_at) FROM events)<w.start_at+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL)=0)
+ THEN COUNT(DISTINCT e.anonymous_id) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL) ELSE NULL END AS uv,
+ CASE WHEN (SELECT min(created_at) FROM events)<w.start_at+INTERVAL '1 day' AND NOT(COUNT(e.created_at)>0 AND COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL)=0)
+ THEN COUNT(DISTINCT (e.anonymous_id,e.session_id)) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL) ELSE NULL END AS sessions,
+ COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NOT NULL AND NULLIF(e.session_id,'') IS NOT NULL) AS sample_views,
+ COUNT(e.created_at) FILTER(WHERE NULLIF(e.anonymous_id,'') IS NULL OR NULLIF(e.session_id,'') IS NULL) AS missing_identity,
  COUNT(e.created_at) AS consented_views,COUNT(e.created_at) FILTER(WHERE NULLIF(e.session_id,'') IS NULL) AS missing_session
- FROM windows w LEFT JOIN events e ON e.created_at>=w.start_at AND e.created_at<w.end_at GROUP BY w.range,w.side,w.start_at,w.end_at
+ FROM windows w JOIN period_pv p ON p.range=w.range AND p.side=w.side
+ LEFT JOIN events e ON e.created_at>=w.start_at AND e.created_at<w.end_at
+ GROUP BY w.range,w.side,w.start_at,w.end_at,p.pv,p.automation_views,p.internal_views,p.unclassified_views
 )
-SELECT json_build_object('version',1,'capturedAt',(SELECT captured FROM clock),'timezone','UTC','days',(SELECT json_agg(days ORDER BY date) FROM days),'totals',(SELECT json_agg(totals ORDER BY range,side) FROM totals)) AS data
+SELECT json_build_object('version',2,'capturedAt',(SELECT captured FROM clock),'timezone','UTC','days',(SELECT json_agg(days ORDER BY date) FROM days),'totals',(SELECT json_agg(totals ORDER BY range,side) FROM totals)) AS data
 `;

@@ -10,7 +10,7 @@ const ts:typeof import('typescript')=require('typescript');
 test('comparison distinguishes zero, missing and a measured change',()=>{assert.equal(trafficDelta(0,10),-100);assert.equal(trafficDelta(10,0),null);assert.equal(trafficDelta(null,10),null);assert.equal(trafficDelta(15,10),50);});
 test('missing chart observations split paths and zero remains a point',()=>{const p=trafficPaths([{x:0,y:2},{x:10,y:0},{x:20,y:null},{x:30,y:4}]);assert.equal(p.length,2);assert.match(p[0],/10,0$/);assert.equal(p[1],'M30,4');});
 test('smooth line cannot invent a peak at a turning point',()=>{const p=trafficPaths([{x:0,y:0},{x:3,y:9},{x:6,y:0}])[0];assert.equal(p,'M0,0 C1,3 2,9 3,9 C4,9 5,3 6,0');});
-test('invalid or duplicate snapshot data is rejected',()=>{assert.throws(()=>validateTrafficSnapshot({}));assert.throws(()=>validateTrafficSnapshot({version:1,timezone:'UTC',capturedAt:'2026-10-15',totals:[],days:[{date:'2026-10-15',pv:-1}]}));});
+test('invalid or duplicate snapshot data is rejected',()=>{assert.throws(()=>validateTrafficSnapshot({}));assert.throws(()=>validateTrafficSnapshot({version:2,timezone:'UTC',capturedAt:'2026-10-15',totals:[],days:[{date:'2026-10-15',pv:-1}]}));});
 function files(dir:string):string[]{return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
 test('all admin mutation forms use the shared capability boundary, read filters stay native',()=>{
  let writes=0,reads=0;
