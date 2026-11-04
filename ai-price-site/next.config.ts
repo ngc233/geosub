@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import { readAppBuildMetadata } from "./lib/app-build-metadata.ts";
+
+const healthBuild = readAppBuildMetadata(__dirname);
 
 const securityHeaders = [
   {
@@ -35,6 +38,12 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const nextConfig: NextConfig = {
+  // Next substitutes these two explicit references at build time. Do not
+  // spread process.env or accept runtime overrides for the built identity.
+  env: {
+    GEOSUB_HEALTH_BUILD_VERSION: healthBuild.version ?? "",
+    GEOSUB_HEALTH_BUILD_COMMIT: healthBuild.commit ?? "",
+  },
   distDir: process.env.GEOSUB_NEXT_DIST_DIR || ".next",
   allowedDevOrigins: ["127.0.0.1"],
   trailingSlash: false,
