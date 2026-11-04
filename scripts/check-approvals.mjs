@@ -95,12 +95,14 @@ function readRegister(markdown) {
   const lines = visibleLines(markdown);
   let tables = 0;
   for (let i = 0; i < lines.length; i++) {
+    if (lines[i].quoted || /^(?: {4}|\t)/.test(lines[i].text)) continue;
     const header = tableCells(lines[i].text);
     if (!header || header.length !== COLUMNS.length || !header.every((cell, n) => cell === COLUMNS[n]) ||
         !isSeparator(tableCells(lines[i + 1]?.text ?? ''))) continue;
     tables++;
     i += 2;
     for (; i < lines.length; i++) {
+      if (lines[i].quoted || /^(?: {4}|\t)/.test(lines[i].text)) break;
       const cells = tableCells(lines[i].text);
       if (!cells) break;
       const id = cells[0].replace(/^`([^`]+)`$/, '$1');

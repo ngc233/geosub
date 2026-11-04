@@ -142,8 +142,12 @@ test("only the registry ID column establishes a historical reference", () => {
   assert.equal(findings[0].code, "unregistered-id");
 });
 
-test("prose, comments and fenced registry examples cannot create records", () => {
-  for (const text of ["APR-H-0001", `<!--\n${registry(row())}-->`, `\`\`\`md\n${registry(row())}\`\`\``]) {
+test("prose, comments, quoted and code registry examples cannot create records", () => {
+  for (const text of [
+    "APR-H-0001", `<!--\n${registry(row())}-->`, `\`\`\`md\n${registry(row())}\`\`\``,
+    registry(row()).split("\n").map(line => "    " + line).join("\n"),
+    registry(row()).split("\n").map(line => "> " + line).join("\n"),
+  ]) {
     const findings = check("批准。APR-H-0001", text);
     assert.ok(findings.some(f => f.code === "invalid-register"));
     assert.ok(findings.some(f => f.code === "unregistered-id"));
