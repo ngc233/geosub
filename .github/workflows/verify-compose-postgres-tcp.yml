@@ -1,0 +1,112 @@
+name: Temporary Compose PostgreSQL initialization
+
+on:
+  pull_request:
+    branches: [fix/compose-postgres-tcp-health]
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-postgres:
+    name: Fresh Compose postgres initialization
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out exact formal PR candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 4220fbca2918dbd7d9b783cdc7cd538b6626fcc1
+          persist-credentials: false
+      - name: Initialize isolated empty data directory and clean up
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 4220fbca2918dbd7d9b783cdc7cd538b6626fcc1
+          export COMPOSE_DISABLE_ENV_FILE=true
+          unset COMPOSE_FILE COMPOSE_ENV_FILES COMPOSE_PROFILES POSTGRES_USER POSTGRES_DB POSTGRES_PASSWORD
+          TEST_ROOT=$(mktemp -d "$RUNNER_TEMP/geosub-compose-test.XXXXXX")
+          export TEST_ROOT
+          chmod 700 "$TEST_ROOT"
+          TEST_CONTAINER="geosub-fresh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          export TEST_CONTAINER
+          dc() {
+            docker compose --project-directory "$TEST_ROOT" --env-file "$TEST_ROOT/fixture.env" -f "$TEST_ROOT/compose.json" -p "$TEST_CONTAINER" "$@"
+          }
+          cleanup() {
+            local result=$?
+            trap - EXIT
+            set +e
+            if docker container inspect "$TEST_CONTAINER" >/dev/null 2>&1; then
+              dc down --volumes --remove-orphans || result=1
+            fi
+            if docker container inspect "$TEST_CONTAINER" >/dev/null 2>&1; then
+              echo 'FAIL: test container remains'
+              result=1
+            fi
+            if [[ "$TEST_ROOT" == "$RUNNER_TEMP"/geosub-compose-test.* ]]; then
+              sudo rm -rf -- "$TEST_ROOT" || result=1
+            else
+              echo 'FAIL: unexpected temporary path; refusing cleanup'
+              result=1
+            fi
+            if [[ -e "$TEST_ROOT" ]]; then
+              echo 'FAIL: temporary data directory remains'
+              result=1
+            fi
+            if [[ "$result" == 0 ]]; then
+              echo 'PASS: test container, data directory and generated fixture environment removed'
+            fi
+            exit "$result"
+          }
+          trap cleanup EXIT
+          ruby -ryaml -rjson -rsecurerandom <<'RUBY'
+          source = YAML.safe_load(File.read('geosub-backend/docker-compose.yml'))
+          service = source.fetch('services').fetch('postgres')
+          expected = {
+            'test' => ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U ${POSTGRES_USER} -d ${POSTGRES_DB}'],
+            'interval' => '10s', 'timeout' => '5s', 'retries' => 5
+          }
+          abort 'Unexpected source healthcheck' unless service.fetch('healthcheck') == expected
+          abort 'Unexpected image' unless service.fetch('image') == 'postgres:16-alpine'
+          abort 'Unexpected env_file' if service.key?('env_file')
+          root = ENV.fetch('TEST_ROOT')
+          data = File.join(root, 'data')
+          Dir.mkdir(data)
+          abort 'Data directory not empty' unless Dir.empty?(data)
+          # Only isolation fields change; image, environment and healthcheck come from the formal candidate.
+          service['container_name'] = ENV.fetch('TEST_CONTAINER')
+          service['restart'] = 'no'
+          service.delete('ports')
+          service['network_mode'] = 'none'
+          service['volumes'] = ["#{data}:/var/lib/postgresql/data"]
+          File.write(File.join(root, 'compose.json'), JSON.pretty_generate({'services' => {'postgres' => service}}))
+          File.write(File.join(root, 'fixture.env'), "POSTGRES_USER=geosub_fixture\nPOSTGRES_DB=geosub_fixture\nPOSTGRES_PASSWORD=#{SecureRandom.hex(24)}\n", perm: 0600)
+          puts 'PASS: source healthcheck preserved exactly (TCP, interval 10s, timeout 5s, retries 5)'
+          puts 'PASS: fresh empty directory; generated fixture variables; no real .env read or copied'
+          RUBY
+          dc up -d --pull always postgres
+          deadline=$((SECONDS + 120))
+          while true; do
+            state=$(docker inspect --format '{{.State.Status}}' "$TEST_CONTAINER")
+            health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$TEST_CONTAINER")
+            if [[ "$state" == exited || "$state" == dead ]]; then
+              echo "FAIL: container state=$state"
+              docker logs "$TEST_CONTAINER"
+              exit 1
+            fi
+            if [[ "$health" == healthy ]]; then
+              break
+            fi
+            if ((SECONDS >= deadline)); then
+              echo "FAIL: readiness timeout (state=$state health=$health)"
+              docker logs "$TEST_CONTAINER"
+              exit 1
+            fi
+            sleep 1
+          done
+          test "$(docker exec "$TEST_CONTAINER" cat /var/lib/postgresql/data/PG_VERSION)" = 16
+          test "$(docker exec "$TEST_CONTAINER" psql -h 127.0.0.1 -U geosub_fixture -d geosub_fixture -Atqc 'SELECT 1')" = 1
+          docker logs "$TEST_CONTAINER" 2>&1 | grep -F 'PostgreSQL init process complete; ready for start up.'
+          docker inspect --format 'Actual healthcheck: {{json .Config.Healthcheck}}' "$TEST_CONTAINER"
+          echo 'PASS: empty directory initialized (PG_VERSION=16), postgres healthy, TCP SELECT 1=1'
