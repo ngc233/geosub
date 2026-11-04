@@ -45,8 +45,6 @@ jobs:
           fi
       - name: Check generated CODEOWNERS against candidate configuration
         run: node scripts/check-protected-files.mjs --check-codeowners "$PR_HEAD_SHA"
-      - name: Test protected-file isolation with committed Git fixtures
-        run: node --test scripts/tests/protected-files.test.mjs
 
   code:
     name: Code quality
@@ -90,6 +88,8 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Test protected-file isolation with committed Git fixtures
+        run: node --test ../scripts/tests/protected-files.test.mjs
       - name: Test collector scheduling and monitoring
         run: node --test ../geosub-backend/scripts/collector-reliability.test.mjs ../geosub-backend/scripts/collector-monitor-database.test.mjs
       - name: Test PostgreSQL existing-cluster guard
