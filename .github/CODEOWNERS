@@ -17,6 +17,8 @@
 /ai-price-site/lib/seo-experiment-locks.ts @ngc233
 /.github/protected-files.json @ngc233
 /scripts/check-protected-files.mjs @ngc233
+/scripts/check-approvals.mjs @ngc233
+/ai-price-site/scripts/check-approvals.test.mts @ngc233
 /.github/CODEOWNERS @ngc233
 /.github/workflows/ci.yml @ngc233
 /.github/workflows/protected-files.yml @ngc233
