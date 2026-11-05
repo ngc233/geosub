@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.26.0 - Unreleased
+
+- Prepare T10 backups: consistent read-only snapshots, verified S3-compatible uploads and isolated restore drills.
+- Keep existing daily scheduling and 14-day local retention; remote upload remains disabled until the owner configures it after a separately approved release.
+- Preserve exact retained-reader rollback scopes and register the current 2.25.1 production build; no database migration or collector upgrade.
+
 ## 2.25.1 - Unreleased
 
 - Release the admin traffic dashboard fix from PR #35: show eligible cookieless PV and date coverage, and count consented sessions per visitor.
