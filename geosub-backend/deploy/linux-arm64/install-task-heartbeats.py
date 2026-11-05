@@ -53,11 +53,13 @@ def snapshot(path):
     st = path.lstat()
     if not stat.S_ISREG(st.st_mode) or st.st_uid != os.geteuid() or st.st_mode & 0o022:
         raise InstallError("Managed file must be an owner-controlled regular file")
-    return {"data": base64.b64encode(path.read_bytes()).decode(), "mode": stat.S_IMODE(st.st_mode)}
+    return {"data": base64.b64encode(path.read_bytes()).decode(), "mode": stat.S_IMODE(st.st_mode),
+            "uid": st.st_uid, "gid": st.st_gid}
 
 
 def content(data, mode):
-    return {"data": base64.b64encode(data).decode(), "mode": mode}
+    return {"data": base64.b64encode(data).decode(), "mode": mode,
+            "uid": os.geteuid(), "gid": os.getegid()}
 
 
 def write(path, value):
@@ -68,6 +70,7 @@ def write(path, value):
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(base64.b64decode(value["data"], validate=True))
+            os.fchown(f.fileno(), value["uid"], value["gid"])
             os.fchmod(f.fileno(), value["mode"])
             f.flush()
             os.fsync(f.fileno())

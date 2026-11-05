@@ -91,7 +91,7 @@
 sudo python3 <审核过的检出目录>/geosub-backend/deploy/linux-arm64/install-task-heartbeats.py install --source <同一检出目录> --commit <完整40位SHA> --helper-sha256 <审核过的64位SHA256>
 ```
 
-安装器仅写四个 `.service.d/50-geosub-heartbeat.conf`、固定提交 helper 和私有安装状态。旧文件及权限以原始字节保存于 `/var/lib/geosub/task-heartbeats/`，每次事务留独立回执。安装前验证服务类型及空闲状态；拒绝软链接、非受控目录、权限过宽凭据文件、篡改的已安装文件。重复同一安装只核验，不追加重复钩子。通知文件与备份凭据文件均不被安装器读取或改写。
+安装器仅写四个 `.service.d/50-geosub-heartbeat.conf`、固定提交 helper 和私有安装状态。旧文件内容、权限、属主和属组以原始值保存于 `/var/lib/geosub/task-heartbeats/`，每次事务留独立回执。安装前验证服务类型及空闲状态；拒绝软链接、非受控目录、权限过宽凭据文件、篡改的已安装文件。重复同一安装只核验，不追加重复钩子。通知文件与备份凭据文件均不被安装器读取或改写。
 
 失败时按事务前状态恢复已知文件并 daemon-reload。中断遗留 transaction.json 时拒绝重装；人工先检查私有状态，再单独决定 `recover`。recover 只恢复本次事务已知的前/后文件状态；发现第三方修改即拒绝覆盖。禁止盲目删除 transaction.json 重试。
 

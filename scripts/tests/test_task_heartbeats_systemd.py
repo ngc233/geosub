@@ -136,6 +136,13 @@ elif task=='exchange-rate-sync':
 ''')
         for unit, task in zip(cls.units, TASKS):
             unit.write_text(cls.base_unit(task))
+        # A prior managed file may have a non-default group. Uninstall must restore
+        # the bytes, mode AND ownership, not silently recreate it as root:root.
+        cls.original_dropin = cls.units[1].with_name(cls.units[1].name + '.d') / '50-geosub-heartbeat.conf'
+        cls.original_dropin.parent.mkdir()
+        cls.original_dropin.write_bytes(b'[Service]\nNice=9\n')
+        cls.original_dropin.chmod(0o640)
+        os.chown(cls.original_dropin, 0, 65534)
         run(['systemctl', 'daemon-reload'])
         cls.commit = run(['git', '-c', 'safe.directory=' + str(ROOT), '-C', str(ROOT), 'rev-parse', 'HEAD']).stdout.strip()
         cls.helper_hash = hashlib.sha256((DEPLOY / 'task-heartbeat.py').read_bytes()).hexdigest()
@@ -234,6 +241,9 @@ elif task=='exchange-rate-sync':
         self.assertEqual(len(self.received), before)
         run(['python3', str(DEPLOY / 'install-task-heartbeats.py'), 'uninstall'])
         self.assertEqual(self.envfile.read_bytes(), self.envbytes)
+        self.assertEqual(self.original_dropin.read_bytes(), b'[Service]\nNice=9\n')
+        self.assertEqual(stat.S_IMODE(self.original_dropin.stat().st_mode), 0o640)
+        self.assertEqual(self.original_dropin.stat().st_gid, 65534)
         for unit in self.units:
             post = run(['systemctl', 'show', unit.name, '-p', 'ExecStartPost', '--value']).stdout
             self.assertNotIn('task-heartbeat.py', post)
