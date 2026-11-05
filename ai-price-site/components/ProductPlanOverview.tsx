@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { formatUsd, getPlanStats, type SubscriptionProduct } from "../lib/public-pricing-model";
 import { getPricingPlanPath } from "../lib/pricing-routes";
 import {
@@ -82,6 +82,15 @@ export default function ProductPlanOverview({
       {!singlePlan && overviewEditorial ? (
         <p className="mt-2 max-w-4xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
           {overviewEditorial.summary}
+        </p>
+      ) : null}
+      {locale === "zh" && product.slug === "chatgpt" ? (
+        <p role="note" aria-label="GPT-6.1 Terra 更新说明" className={`${styles.scope} mt-2 max-w-4xl text-sm leading-6 text-[var(--color-text-secondary)]`}>
+          2026年10月26日，OpenAI 开始向 Plus、Pro 等付费套餐推出用于 Work 和 Codex 的 GPT-6.1 Terra。此次更新不改变套餐整体用量上限，具体可用性以账号实际开放情况为准。{" "}
+          <a href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]">
+            OpenAI 官方更新说明
+            <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" />
+          </a>
         </p>
       ) : null}
       {locale === "en" && product.slug === "grok" && decisionPlans.some((plan) => plan.slug === "super") ? (
