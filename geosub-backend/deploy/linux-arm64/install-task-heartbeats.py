@@ -84,7 +84,7 @@ def json_value(value):
 
 
 def dropin(task, commit):
-    helper = "/opt/geosub/task-heartbeats/" + commit + "/task-heartbeat.py"
+    helper = "/opt/geosub-task-heartbeats/" + commit + "/task-heartbeat.py"
     return ("# Managed by install-task-heartbeats.py; no task schedule or ExecStart override.\n"
             "[Service]\nEnvironmentFile=-/etc/geosub/task-heartbeats.env\n"
             "Environment=GEOSUB_TASK_HEARTBEAT_TASK=" + task + "\n"
@@ -129,7 +129,7 @@ def reload(root):
 def verify_effective(root, commit):
     if root != Path("/"):
         return
-    helper = "/opt/geosub/task-heartbeats/" + commit + "/task-heartbeat.py"
+    helper = "/opt/geosub-task-heartbeats/" + commit + "/task-heartbeat.py"
     for task in TASKS:
         post = systemctl(["show", "geosub-" + task + ".service", "-p", "ExecStartPost", "--value"])
         if post.count(helper + " send " + task) != 1:
@@ -188,7 +188,7 @@ def install(root, source, commit, expected):
     for name, expected_file in state["files"].items():
         if snapshot(checked_path(root, name)) != expected_file:
             raise InstallError("Installed file has drifted; no overwrite performed")
-    desired = {"opt/geosub/task-heartbeats/" + commit + "/task-heartbeat.py": content(helper, 0o444)}
+    desired = {"opt/geosub-task-heartbeats/" + commit + "/task-heartbeat.py": content(helper, 0o444)}
     desired.update({"etc/systemd/system/geosub-" + task + ".service.d/50-geosub-heartbeat.conf":
                     content(dropin(task, commit), 0o644) for task in TASKS})
     if all(snapshot(checked_path(root, p, parents=True)) == v for p, v in desired.items()) and state.get("commit") == commit:

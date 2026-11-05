@@ -191,7 +191,7 @@ class UploadProof(unittest.TestCase):
             record.assert_not_called()
 
     def test_receipt_helper_failure_does_not_erase_verified_upload(self):
-        helper = '/opt/geosub/task-heartbeats/' + 'a' * 40 + '/task-heartbeat.py'
+        helper = '/opt/geosub-task-heartbeats/' + 'a' * 40 + '/task-heartbeat.py'
         with patch.dict(os.environ, {'GEOSUB_TASK_HEARTBEAT_HELPER': helper, 'GEOSUB_TASK_HEARTBEAT_TASK': 'db-backup'}), patch.object(remote.subprocess, 'run', side_effect=OSError('secret')):
             log = io.StringIO()
             with contextlib.redirect_stderr(log):

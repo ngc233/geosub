@@ -63,7 +63,7 @@ test('real web taskUnits and collector activation/restoration preserve every ins
 });
 
 test('Node FX completion records only a fully successful real sync, never partial or dry-run', () => {
-  const env = { GEOSUB_TASK_HEARTBEAT_TASK: 'exchange-rate-sync', GEOSUB_TASK_HEARTBEAT_HELPER: '/opt/geosub/task-heartbeats/' + 'a'.repeat(40) + '/task-heartbeat.py' };
+  const env = { GEOSUB_TASK_HEARTBEAT_TASK: 'exchange-rate-sync', GEOSUB_TASK_HEARTBEAT_HELPER: '/opt/geosub-task-heartbeats/' + 'a'.repeat(40) + '/task-heartbeat.py' };
   const calls = [];
   const run = (...args) => { calls.push(args); return { status: 0 }; };
   for (const status of ['partial', 'failed']) recordCompleteSync({ status, dryRun: false }, env, run);

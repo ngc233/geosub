@@ -236,7 +236,7 @@ WHERE id = $(Quote-SqlString $runId)::uuid;
   # A partial sync historically exits 0. Only a complete sync may prove heartbeat success.
   # Receipt failures must not change the existing database result or process semantics.
   if ($finalStatus -eq "succeeded" -and $env:GEOSUB_TASK_HEARTBEAT_TASK -eq "exchange-rate-sync" -and
-      $env:GEOSUB_TASK_HEARTBEAT_HELPER -cmatch '^/opt/geosub/task-heartbeats/[a-f0-9]{40}/task-heartbeat\.py$') {
+      $env:GEOSUB_TASK_HEARTBEAT_HELPER -cmatch '^/opt/geosub-task-heartbeats/[a-f0-9]{40}/task-heartbeat\.py$') {
     try {
       & /usr/bin/python3 $env:GEOSUB_TASK_HEARTBEAT_HELPER record exchange-rate-sync 2>$null | Out-Null
       if ($LASTEXITCODE -ne 0) { Write-Warning "Exchange-rate heartbeat receipt unavailable." }

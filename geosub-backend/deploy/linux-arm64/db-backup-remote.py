@@ -178,7 +178,7 @@ def record_uploaded_backup():
     if not helper:
         return
     if (os.environ.get("GEOSUB_TASK_HEARTBEAT_TASK") != "db-backup"
-            or not re.fullmatch(r"/opt/geosub/task-heartbeats/[a-f0-9]{40}/task-heartbeat\.py", helper)):
+            or not re.fullmatch(r"/opt/geosub-task-heartbeats/[a-f0-9]{40}/task-heartbeat\.py", helper)):
         print("WARNING: backup heartbeat helper configuration invalid", file=sys.stderr)
         return
     try:

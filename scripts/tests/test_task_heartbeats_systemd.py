@@ -38,7 +38,7 @@ class RealSystemd(unittest.TestCase):
                 or not Path('/run/systemd/system').is_dir()):
             raise RuntimeError('Requires disposable GitHub Linux runner with real systemd and root')
         # Never run where a real GeoSub installation could exist.
-        if any(Path(p).exists() for p in ['/opt/geosub', '/etc/geosub', '/var/lib/geosub']):
+        if any(Path(p).exists() for p in ['/opt/geosub', '/opt/geosub-task-heartbeats', '/etc/geosub', '/var/lib/geosub']):
             raise RuntimeError('GeoSub paths already exist; refusing test environment')
         cls.units = [Path('/etc/systemd/system/geosub-' + t + '.service') for t in TASKS]
         if any(p.exists() or p.with_name(p.name + '.d').exists() for p in cls.units):
@@ -50,6 +50,12 @@ class RealSystemd(unittest.TestCase):
         cls.hosts = Path('/etc/hosts').read_bytes()
         cls.addClassCleanup(lambda: Path('/etc/hosts').write_bytes(cls.hosts))
         cls.addClassCleanup(cls.cleanup_install)
+        # Match production: the application directory belongs to an application user.
+        # The independent root-owned helper must not live beneath or chmod this tree.
+        application = Path('/opt/geosub')
+        application.mkdir()
+        (application / 'owner-sentinel').write_text('preserve application ownership')
+        os.chown(application, 65534, 65534)
         # Hosted runners may make /opt runner-writable for tool installation. The real
         # installer correctly refuses that. Secure this disposable VM's fixture parent,
         # then restore its metadata; never relax the production ownership check.
@@ -163,7 +169,7 @@ elif task=='exchange-rate-sync':
             subprocess.run(['systemctl', 'stop', unit.name], capture_output=True)
             unit.unlink(missing_ok=True)
             shutil.rmtree(unit.with_name(unit.name + '.d'), ignore_errors=True)
-        for p in ['/opt/geosub', '/etc/geosub', '/var/lib/geosub']:
+        for p in ['/opt/geosub', '/opt/geosub-task-heartbeats', '/etc/geosub', '/var/lib/geosub']:
             shutil.rmtree(p, ignore_errors=True)
         subprocess.run(['systemctl', 'daemon-reload'], capture_output=True)
 
@@ -244,6 +250,8 @@ elif task=='exchange-rate-sync':
         self.assertEqual(self.original_dropin.read_bytes(), b'[Service]\nNice=9\n')
         self.assertEqual(stat.S_IMODE(self.original_dropin.stat().st_mode), 0o640)
         self.assertEqual(self.original_dropin.stat().st_gid, 65534)
+        self.assertEqual(Path('/opt/geosub').stat().st_uid, 65534)
+        self.assertEqual(Path('/opt/geosub/owner-sentinel').read_text(), 'preserve application ownership')
         for unit in self.units:
             post = run(['systemctl', 'show', unit.name, '-p', 'ExecStartPost', '--value']).stdout
             self.assertNotIn('task-heartbeat.py', post)

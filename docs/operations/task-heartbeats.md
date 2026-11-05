@@ -83,7 +83,7 @@
 
 ## 5. 开发者安装、回退与异常处理
 
-安装源必须是审核过的精确提交。安装器从本地 Git 对象取 helper，不拉取网络；核对自身与指定提交一致，并核对负责人清单中的 helper SHA-256。安装到 `/opt/geosub/task-heartbeats/<完整SHA>/task-heartbeat.py`（只读），不修改 control/live/collector-live。
+安装源必须是审核过的精确提交。安装器从本地 Git 对象取 helper，不拉取网络；核对自身与指定提交一致，并核对负责人清单中的 helper SHA-256。生产只读核查发现 `/opt/geosub` 归应用用户所有，因此不把独立程序放在该目录下，不修改其权限。改用 root 控制的独立目录，安装到 `/opt/geosub-task-heartbeats/<完整SHA>/task-heartbeat.py`（只读），不修改 control/live/collector-live。
 
 以下 `<…>` 均须由开发者在获批安装清单中替换为精确值，不是可直接照抄执行的生产命令：
 
