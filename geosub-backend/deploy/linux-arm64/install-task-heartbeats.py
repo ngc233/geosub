@@ -123,6 +123,16 @@ def reload(root):
         systemctl(["daemon-reload"])
 
 
+def verify_effective(root, commit):
+    if root != Path("/"):
+        return
+    helper = "/opt/geosub/task-heartbeats/" + commit + "/task-heartbeat.py"
+    for task in TASKS:
+        post = systemctl(["show", "geosub-" + task + ".service", "-p", "ExecStartPost", "--value"])
+        if post.count(helper + " send " + task) != 1:
+            raise InstallError("Effective completion hook is missing or duplicated: " + task)
+
+
 def git_bytes(source, commit, file):
     r = subprocess.run(["git", "-c", "safe.directory=" + str(source), "-C", str(source),
                         "show", commit + ":" + file], capture_output=True)
@@ -143,14 +153,18 @@ def recover(root, journal):
     journal.unlink()
 
 
-def transact(root, after, journal):
+def transact(root, after, journal, verify=lambda: None):
     before = {name: snapshot(checked_path(root, name, parents=True)) for name in after}
     data = {"before": before, "after": after}
     write(journal, json_value(data))
     try:
         for name, value in after.items():
             write(checked_path(root, name), value)
+        for name, value in after.items():
+            if snapshot(checked_path(root, name)) != value:
+                raise InstallError("Installed bytes or permissions failed readback verification")
         reload(root)
+        verify()
     except Exception:
         recover(root, journal)
         raise
@@ -175,6 +189,7 @@ def install(root, source, commit, expected):
     desired.update({"etc/systemd/system/geosub-" + task + ".service.d/50-geosub-heartbeat.conf":
                     content(dropin(task, commit), 0o644) for task in TASKS})
     if all(snapshot(checked_path(root, p, parents=True)) == v for p, v in desired.items()) and state.get("commit") == commit:
+        verify_effective(root, commit)
         print("Heartbeat installation already verified: " + commit)
         return
     for name in desired:
@@ -183,7 +198,7 @@ def install(root, source, commit, expected):
     state["files"].update(desired)
     state.update(commit=commit, helper_sha256=expected)
     desired[STATE + "/installation.json"] = json_value(state)
-    transact(root, desired, root / STATE / "transaction.json")
+    transact(root, desired, root / STATE / "transaction.json", lambda: verify_effective(root, commit))
     print("Heartbeat installation verified: " + commit + " helper_sha256=" + expected)
 
 

@@ -5,6 +5,7 @@ import os
 import secrets
 import shutil
 import ssl
+import stat
 import subprocess
 import sys
 import tempfile
@@ -22,7 +23,11 @@ VARIABLES = ['GEOSUB_COLLECTOR_HEARTBEAT_URL', 'GEOSUB_BACKUP_HEARTBEAT_URL',
 
 
 def run(args, **kwargs):
-    return subprocess.run(args, text=True, capture_output=True, check=True, timeout=60, **kwargs)
+    result = subprocess.run(args, text=True, capture_output=True, timeout=60, **kwargs)
+    if result.returncode:
+        # These tests use synthetic inputs only; installer errors are already redacted.
+        raise RuntimeError(str(args[0]) + ' failed: ' + result.stderr[-2000:])
+    return result
 
 
 @unittest.skipUnless(os.environ.get('GEOSUB_RUN_HEARTBEAT_SYSTEMD') == '1', 'explicit disposable Linux runner required')
@@ -45,6 +50,17 @@ class RealSystemd(unittest.TestCase):
         cls.hosts = Path('/etc/hosts').read_bytes()
         cls.addClassCleanup(lambda: Path('/etc/hosts').write_bytes(cls.hosts))
         cls.addClassCleanup(cls.cleanup_install)
+        # Hosted runners may make /opt runner-writable for tool installation. The real
+        # installer correctly refuses that. Secure this disposable VM's fixture parent,
+        # then restore its metadata; never relax the production ownership check.
+        opt = Path('/opt')
+        opt_stat = opt.stat()
+        def restore_opt():
+            os.chown(opt, opt_stat.st_uid, opt_stat.st_gid)
+            opt.chmod(stat.S_IMODE(opt_stat.st_mode))
+        cls.addClassCleanup(restore_opt)
+        os.chown(opt, 0, 0)
+        opt.chmod(stat.S_IMODE(opt_stat.st_mode) & ~0o022)
         cls.tokens = {t: secrets.token_hex(16) for t in TASKS}
         cls.received = []
         cls.http_status = 200
