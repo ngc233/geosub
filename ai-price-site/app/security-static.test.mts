@@ -111,6 +111,9 @@ test("global responses carry baseline production security headers", () => {
 
 test("deployment installs verified backups and safe analytics retention", () => {
   const backup = readProjectFile("../geosub-backend/deploy/linux-arm64/db-backup.sh");
+  const backupSnapshot = readProjectFile(
+    "../geosub-backend/deploy/linux-arm64/db-backup-snapshot.py"
+  );
   const restore = readProjectFile("../geosub-backend/deploy/linux-arm64/db-restore.sh");
   const restoreDrill = readProjectFile(
     "../geosub-backend/deploy/linux-arm64/db-restore-drill.sh"
@@ -130,7 +133,12 @@ test("deployment installs verified backups and safe analytics retention", () => 
   assert.match(backup, /pg_restore --list/);
   assert.match(backup, /\.partial/);
   assert.match(backup, /GEOSUB_BACKUP_MIRROR_DIR/);
-  assert.match(backup, /db-restore-counts\.sql/);
+  assert.match(backup, /python3 .*db-backup-snapshot\.py.*"\$partial_file" "\$counts_partial_file"/);
+  assert.match(backupSnapshot, /db-restore-counts\.sql/);
+  assert.match(backupSnapshot, /pg_export_snapshot\(\)/);
+  assert.match(backupSnapshot, /REPEATABLE READ READ ONLY/);
+  assert.match(backupSnapshot, /--snapshot=/);
+  assert.match(backupSnapshot, /SET TRANSACTION SNAPSHOT/);
   assert.match(backup, /mirror_hash/);
   assert.match(backup, /-mmin \+"\$retention_minutes"/);
   assert.match(restore, /Checking backup catalog before destructive restore/);

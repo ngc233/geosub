@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
+set +x
 set -euo pipefail
 umask 077
+
+# Preserve the calling process settings without making ENV_FILE assignments fail.
+# Apply them only inside the upload subprocess, after the local backup is verified.
+backup_remote_environment=(
+  "GEOSUB_BACKUP_REMOTE_URL=${GEOSUB_BACKUP_REMOTE_URL:-}"
+  "GEOSUB_BACKUP_S3_ENDPOINT=${GEOSUB_BACKUP_S3_ENDPOINT:-}"
+  "GEOSUB_BACKUP_S3_REGION=${GEOSUB_BACKUP_S3_REGION:-}"
+  "GEOSUB_BACKUP_S3_ACCESS_KEY_ID=${GEOSUB_BACKUP_S3_ACCESS_KEY_ID:-}"
+  "GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY=${GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY:-}"
+  "GEOSUB_BACKUP_S3_SESSION_TOKEN=${GEOSUB_BACKUP_S3_SESSION_TOKEN:-}"
+)
 
 ENV_FILE="${GEOSUB_ENV_FILE:-/etc/geosub/geosub.env}"
 if [[ -f "$ENV_FILE" ]]; then
@@ -53,7 +65,8 @@ if ! geosub_db_ready; then
 fi
 
 echo "Creating backup: $backup_file"
-geosub_db_exec pg_dump -U "$DB_USER" -d "$DB_NAME" -Fc > "$partial_file"
+export GEOSUB_DB_CONTAINER="$DB_CONTAINER" GEOSUB_DB_NAME="$DB_NAME" GEOSUB_DB_USER="$DB_USER"
+python3 "$(dirname "$0")/db-backup-snapshot.py" "$partial_file" "$counts_partial_file"
 
 if [[ ! -s "$partial_file" ]]; then
   echo "Backup is empty: $partial_file"
@@ -75,18 +88,6 @@ for required_entry in \
     exit 1
   fi
 done
-
-echo "Recording key table row counts"
-geosub_db_exec psql \
-  -U "$DB_USER" \
-  -d "$DB_NAME" \
-  -X \
-  -v ON_ERROR_STOP=1 \
-  -At \
-  -F $'\t' \
-  -f - \
-  < "$(dirname "$0")/db-restore-counts.sql" \
-  > "$counts_partial_file"
 
 backup_hash="$(sha256sum "$partial_file" | cut -d ' ' -f1)"
 counts_hash="$(sha256sum "$counts_partial_file" | cut -d ' ' -f1)"
@@ -136,6 +137,12 @@ if [[ -n "$MIRROR_DIR" ]]; then
   find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.counts.tsv" -mmin +"$retention_minutes" -print -delete
   find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.txt" -mmin +"$retention_minutes" -print -delete
 fi
+
+(
+  # export is a shell builtin: credentials never become an external command's argv.
+  export "${backup_remote_environment[@]}"
+  python3 "$(dirname "$0")/db-backup-remote.py" upload "$backup_file"
+)
 
 echo "Backup complete:"
 echo "$backup_file"
