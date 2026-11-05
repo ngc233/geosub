@@ -1,0 +1,31 @@
+{
+  "status": "Retained R2 dark, map and surface values; scoped to the inactive U1 boundary.",
+  "source": "app/public-design.css at 683de8b; preserved without new visual choices",
+  "mapLight": {
+    "low": "#B9DCA9",
+    "high": "#EDB4A9"
+  },
+  "dark": {
+    "page": "#14191C",
+    "surface": "#1D2427",
+    "subtle": "#293135",
+    "text": "#F4F5F0",
+    "text-secondary": "#C2CBC8",
+    "border": "#424E50",
+    "border-strong": "#8B999D",
+    "accent-soft": "#2D3C22",
+    "low": "#8ADBB4",
+    "high": "#FFA699",
+    "link": "#9ABEFF",
+    "focus": "#F4F5F0",
+    "map-low": "#78A66B",
+    "map-high": "#C48073",
+    "map-baseline": "#8B999D"
+  },
+  "effects": {
+    "legacy-frame": "0 2px 12px #14191c05",
+    "legacy-popover": "0 8px 24px #0002",
+    "legacy-compare": "0 8px 32px #0002",
+    "legacy-backdrop": "#0009"
+  }
+}

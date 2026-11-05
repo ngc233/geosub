@@ -1,0 +1,20 @@
+/* Local licensed resources: declarations do not load fonts until a scoped role uses them. */
+@font-face { font-family:"Noto Sans SC"; src:url("../assets/fonts/web/noto-sans-sc-400.woff2") format("woff2"); font-weight:400; font-display:swap; }
+@font-face { font-family:"Noto Sans SC"; src:url("../assets/fonts/web/noto-sans-sc-500.woff2") format("woff2"); font-weight:500; font-display:swap; }
+@font-face { font-family:"Noto Sans SC"; src:url("../assets/fonts/web/noto-sans-sc-700.woff2") format("woff2"); font-weight:700; font-display:swap; }
+@font-face { font-family:"IBM Plex Mono"; src:url("../assets/fonts/web/IBMPlexMono-Regular-Latin1.woff2") format("woff2"); font-weight:400; font-display:swap; }
+@font-face { font-family:"IBM Plex Mono"; src:url("../assets/fonts/web/IBMPlexMono-SemiBold-Latin1.woff2") format("woff2"); font-weight:600; font-display:swap; }
+
+.gs-public-unified { min-width:0; background:var(--gs-page); color:var(--gs-text); font-family:var(--gs-font-body); font-size:var(--gs-body-size); line-height:var(--gs-body-line-height); }
+.gs-public-unified *, .gs-public-unified *::before, .gs-public-unified *::after { box-sizing:border-box; }
+.gs-public-unified :is(h1,h2,h3,p) { overflow-wrap:anywhere; }
+.gs-public-unified h1 { font-size:var(--gs-h1-desktop); line-height:var(--gs-h1-line-height); font-weight:var(--gs-h1-weight); }
+.gs-public-unified h2 { font-size:var(--gs-h2-desktop); line-height:var(--gs-h2-line-height); font-weight:var(--gs-h2-weight); }
+.gs-public-unified :is(button,input,select,textarea) { font-family:inherit; }
+.gs-public-unified :is(a,button,input:not([type="checkbox"]),select,summary,[role="button"]) { min-height:var(--gs-touch-target); }
+.gs-public-unified :focus-visible { outline:var(--gs-focus-width) solid var(--gs-focus); outline-offset:var(--gs-focus-offset); }
+.gs-public-unified :is([data-gs-price],time) { font-variant-numeric:var(--gs-numeric-variant); }
+@media (max-width:767px) {
+  .gs-public-unified h1 { font-size:var(--gs-h1-mobile); }
+  .gs-public-unified h2 { font-size:var(--gs-h2-mobile); }
+}

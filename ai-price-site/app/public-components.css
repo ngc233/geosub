@@ -1,0 +1,103 @@
+/* Shared primitives. Each page supplies its own layout when its rollout begins. */
+.gs-public-unified :is([data-gs-ui="button"], [data-gs-ui="icon-button"], [data-gs-ui="input"], [data-gs-ui="select"]) {
+  min-height: var(--gs-control-height);
+  min-width: var(--gs-touch-target);
+  border: var(--gs-border-width) solid var(--gs-border-strong);
+  border-radius: var(--gs-radius-control);
+  background: var(--gs-surface);
+  color: var(--gs-text);
+  font-size: var(--gs-metadata-size);
+  line-height: var(--gs-metadata-line-height);
+}
+
+.gs-public-unified :is([data-gs-ui="button"], [data-gs-ui="icon-button"]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gs-space-8);
+  cursor: pointer;
+}
+
+.gs-public-unified [data-gs-ui="button"] {
+  padding-inline: var(--gs-space-16);
+  font-weight: var(--gs-weight-emphasis);
+}
+
+.gs-public-unified [data-gs-ui="button"][data-gs-variant="primary"] {
+  background: var(--gs-text);
+  color: var(--gs-surface);
+}
+
+.gs-public-unified :is([data-gs-ui="input"], [data-gs-ui="select"]) {
+  max-width: 100%;
+  padding-inline: var(--gs-space-12);
+}
+
+.gs-public-unified [data-gs-ui="segment-item"] {
+  color: var(--gs-text-secondary);
+}
+
+.gs-public-unified [data-gs-ui="segment-item"][aria-selected="true"] {
+  color: var(--gs-text);
+}
+
+.gs-public-unified [data-gs-ui="card"] {
+  min-width: 0;
+  padding: var(--gs-desktop-card-padding);
+  border: var(--gs-border-width) solid var(--gs-border);
+  border-radius: var(--gs-radius-card);
+  background: var(--gs-surface);
+  color: var(--gs-text);
+}
+
+.gs-public-unified table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--gs-table-size);
+  line-height: var(--gs-table-line-height);
+}
+
+.gs-public-unified :is(th, td) {
+  padding: var(--gs-space-8) var(--gs-space-12);
+  border-bottom: var(--gs-border-width) solid var(--gs-border);
+  text-align: start;
+}
+
+.gs-public-unified th {
+  background: var(--gs-subtle);
+  color: var(--gs-text-secondary);
+  font-weight: var(--gs-weight-emphasis);
+}
+
+.gs-public-unified [data-gs-ui="tag"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--gs-tag-height);
+  padding-inline: var(--gs-space-8);
+  border-radius: var(--gs-radius-tag);
+  background: var(--gs-subtle);
+  color: var(--gs-text-secondary);
+  font-size: var(--gs-noncritical-caption-size);
+  line-height: var(--gs-noncritical-caption-line-height);
+}
+
+.gs-public-unified [data-gs-ui]:is(:disabled, [aria-disabled="true"]) {
+  opacity: var(--gs-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.gs-public-unified [data-gs-checkbox-mark] {
+  display: grid;
+  place-items: center;
+  opacity: 0;
+}
+
+.gs-public-unified [data-gs-checkbox-mark][data-checked="true"] {
+  opacity: 1;
+}
+
+@media (max-width: 767px) {
+  .gs-public-unified [data-gs-ui="card"] {
+    padding: var(--gs-mobile-card-padding);
+  }
+}
