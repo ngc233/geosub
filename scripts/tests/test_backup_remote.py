@@ -4,6 +4,7 @@ import hmac
 import importlib.util
 import os
 import secrets
+import shlex
 import shutil
 import subprocess
 import sys
@@ -341,6 +342,45 @@ INSERT INTO exchange_rates(base_currency,quote_currency,rate,rate_date) VALUES('
         self.assert_clean_logs(out + err)
         dump = next((self.base / "local-only").glob("*.dump"))
         remote.verify(dump.parent, dump.stem)
+
+    def test_main_environment_remote_assignments_cannot_block_local_backup(self):
+        keys = ["GEOSUB_BACKUP_REMOTE_URL", "GEOSUB_BACKUP_S3_ENDPOINT",
+                "GEOSUB_BACKUP_S3_REGION", "GEOSUB_BACKUP_S3_ACCESS_KEY_ID",
+                "GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY", "GEOSUB_BACKUP_S3_SESSION_TOKEN"]
+        valid = {key: self.env.get(key, "") for key in keys}
+        valid["GEOSUB_BACKUP_REMOTE_URL"] = "s3://backup-test/environment-regression"
+        invalid = {key: "invalid\n\"\\" + secrets.token_hex(16) for key in keys}
+        empty = dict.fromkeys(keys, "")
+        cases = [
+            # systemd injects values that the shell then sources again.
+            ("duplicated", valid, valid, 0, "Remote backup complete"),
+            ("empty", empty, empty, 0, "remote backup is not configured"),
+            # File-only values must not replace the calling process configuration.
+            ("file-only-invalid", empty, invalid, 0, "remote backup is not configured"),
+            ("file-overrides-invalid", valid, invalid, 0, "Remote backup complete"),
+            # Invalid inherited settings fail only in the upload stage.
+            ("inherited-invalid", invalid, invalid, 1, "invalid remote backup URL"),
+        ]
+        for name, inherited, sourced, expected_code, message in cases:
+            with self.subTest(name=name):
+                inherited, sourced = dict(inherited), dict(sourced)
+                for settings in (inherited, sourced):
+                    if settings["GEOSUB_BACKUP_REMOTE_URL"] == valid["GEOSUB_BACKUP_REMOTE_URL"]:
+                        settings["GEOSUB_BACKUP_REMOTE_URL"] += "-" + name
+                env_file = self.base / (name + ".env")
+                env_file.write_text("".join(key + "=" + shlex.quote(value) + "\n"
+                                            for key, value in sourced.items()))
+                backup = self.backup(name, {**inherited, "GEOSUB_ENV_FILE": str(env_file)})
+                out, err = backup.communicate(timeout=180)
+                self.assertEqual(backup.returncode, expected_code, out + err)
+                self.assertIn(message, out + err)
+                self.assertNotIn("readonly variable", out + err)
+                self.assert_clean_logs(out + err)
+                for value in invalid.values():
+                    self.assertNotIn(value, out + err)
+                dump = next((self.base / name).glob("*.dump"))
+                remote.verify(dump.parent, dump.stem)
+                self.assertEqual(len(list((self.base / name).iterdir())), 4)
 
 
 if __name__ == "__main__":

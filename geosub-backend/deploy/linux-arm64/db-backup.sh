@@ -3,19 +3,16 @@ set +x
 set -euo pipefail
 umask 077
 
-# Remote settings come only from the calling process environment.
-readonly GEOSUB_BACKUP_REMOTE_URL="${GEOSUB_BACKUP_REMOTE_URL:-}"
-export GEOSUB_BACKUP_REMOTE_URL
-readonly GEOSUB_BACKUP_S3_ENDPOINT="${GEOSUB_BACKUP_S3_ENDPOINT:-}"
-export GEOSUB_BACKUP_S3_ENDPOINT
-readonly GEOSUB_BACKUP_S3_REGION="${GEOSUB_BACKUP_S3_REGION:-}"
-export GEOSUB_BACKUP_S3_REGION
-readonly GEOSUB_BACKUP_S3_ACCESS_KEY_ID="${GEOSUB_BACKUP_S3_ACCESS_KEY_ID:-}"
-export GEOSUB_BACKUP_S3_ACCESS_KEY_ID
-readonly GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY="${GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY:-}"
-export GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY
-readonly GEOSUB_BACKUP_S3_SESSION_TOKEN="${GEOSUB_BACKUP_S3_SESSION_TOKEN:-}"
-export GEOSUB_BACKUP_S3_SESSION_TOKEN
+# Preserve the calling process settings without making ENV_FILE assignments fail.
+# Apply them only inside the upload subprocess, after the local backup is verified.
+backup_remote_environment=(
+  "GEOSUB_BACKUP_REMOTE_URL=${GEOSUB_BACKUP_REMOTE_URL:-}"
+  "GEOSUB_BACKUP_S3_ENDPOINT=${GEOSUB_BACKUP_S3_ENDPOINT:-}"
+  "GEOSUB_BACKUP_S3_REGION=${GEOSUB_BACKUP_S3_REGION:-}"
+  "GEOSUB_BACKUP_S3_ACCESS_KEY_ID=${GEOSUB_BACKUP_S3_ACCESS_KEY_ID:-}"
+  "GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY=${GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY:-}"
+  "GEOSUB_BACKUP_S3_SESSION_TOKEN=${GEOSUB_BACKUP_S3_SESSION_TOKEN:-}"
+)
 
 ENV_FILE="${GEOSUB_ENV_FILE:-/etc/geosub/geosub.env}"
 if [[ -f "$ENV_FILE" ]]; then
@@ -141,7 +138,11 @@ if [[ -n "$MIRROR_DIR" ]]; then
   find "$MIRROR_DIR" -type f -name "${DB_NAME}_*.txt" -mmin +"$retention_minutes" -print -delete
 fi
 
-python3 "$(dirname "$0")/db-backup-remote.py" upload "$backup_file"
+(
+  # export is a shell builtin: credentials never become an external command's argv.
+  export "${backup_remote_environment[@]}"
+  python3 "$(dirname "$0")/db-backup-remote.py" upload "$backup_file"
+)
 
 echo "Backup complete:"
 echo "$backup_file"
