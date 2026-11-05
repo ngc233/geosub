@@ -51,7 +51,7 @@ test("hover lifts the card and deepens its shadow, press feedback stays local", 
   await card.hover();
   await expect(card).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, -2)");
   await expect.poll(() => card.evaluate(element => getComputedStyle(element).boxShadow)).not.toBe(before);
-  await expect(card).toHaveCSS("transition-duration", "0.2s, 0.2s, 0.2s");
+  await expect(card).toHaveCSS("transition-duration", "0.12s, 0.12s, 0.12s");
   await page.locator("#button").hover();
   await page.mouse.down();
   await expect(page.locator("#button")).toHaveCSS("scale", "0.98");
