@@ -28,7 +28,9 @@ test("visitor can move from home to an AI detail and switch language", async ({
 }) => {
   await page.goto("/zh");
 
-  await page.locator('a[href="/zh/ai-pricing"]').first().click();
+  const nav = page.getByRole("navigation", { name: "主导航", exact: true });
+  await nav.getByRole("button", { name: "数字订阅", exact: true }).click();
+  await nav.getByRole("link", { name: "AI 订阅", exact: true }).click();
   await expect(page).toHaveURL(/\/zh\/ai-pricing$/);
 
   const detailPath = `/zh/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`;
@@ -39,7 +41,7 @@ test("visitor can move from home to an AI detail and switch language", async ({
   await expect(page).toHaveURL(new RegExp(`${detailPath}$`));
   await expect(page.locator("h1").first()).toContainText(fixture.productName);
 
-  await page.locator('header button[aria-haspopup="menu"]').last().click();
+  await page.locator("header .gs-desktop-language summary").click();
   const englishPath = `/en/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`;
   await page.locator(`header a[href="${englishPath}"]`).click();
 

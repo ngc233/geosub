@@ -58,7 +58,7 @@ test("homepage and search remain usable across desktop mobile light and dark sta
   await page.emulateMedia({ colorScheme: "light" });
   await page.reload();
   await page.getByRole("button", { name: "搜索" }).click();
-  const searchDialog = page.getByRole("dialog", { name: "搜索 GeoSub" });
+  const searchDialog = page.getByRole("dialog", { name: "搜索", exact: true });
   await expect(searchDialog).toBeVisible();
   await expect(searchDialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await page.keyboard.press("Escape");
@@ -67,7 +67,7 @@ test("homepage and search remain usable across desktop mobile light and dark sta
   await page.emulateMedia({ colorScheme: "dark" });
   await page.getByRole("button", { name: "搜索" }).click();
   await expect(searchDialog).toBeVisible();
-  expect(await getRenderedBackgroundRgb(searchDialog)).toEqual([9, 9, 11]);
+  expect(await getRenderedBackgroundRgb(searchDialog)).toEqual([26, 29, 32]);
   await page.keyboard.press("Escape");
 
   const menuButton = page.getByRole("button", { name: "打开菜单" });
