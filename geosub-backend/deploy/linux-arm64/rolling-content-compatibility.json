@@ -1527,6 +1527,20 @@
       ],
       "reason": "2.25.1 admin traffic release. Only VERSION changed in the content contract relative to 2.25.0. Preserve the reviewed reader scope for this exact retained build.",
       "evidence": "PR #36: repository fingerprint() over exact retained bytes; isolated PostgreSQL reader and rollback rehearsal, including rejection on fingerprint mismatch."
+    },
+    {
+      "format": 2,
+      "from": "31255a489de7b20738b1163193dbdc25dfca7e7aae99a577c35af4b9f72751ca",
+      "to": "2f1e0ffdc9d0cd88b9e0dd8f0e35a414f1cd318d2a99d12f4ab419609d84f1c2",
+      "retainedCommit": "d4f80b96f59b443e297a15f956e6bde776b7e9eb",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        }
+      ],
+      "reason": "2.25.1 formal-price migration rehearsal against the exact d4f80b96 retained build. Preserve the reviewed plain English ChatGPT reader only.",
+      "evidence": "PR #36: repository fingerprint() on candidate and exact retained Git blobs; test-price-version-upgrade.cjs checks the retained reader, migration and permissions on isolated PostgreSQL."
     }
   ]
 }
