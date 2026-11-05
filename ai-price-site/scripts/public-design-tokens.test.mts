@@ -74,6 +74,43 @@ test("CLI checks exactly four U1 files, fails on constructed cancellation and su
     const passed = execute();
     assert.equal(passed.status, 0, passed.stderr);
     // There are deliberately no PublicControls/StyleReview/Codex component files.
-    assert.match(passed.stdout, /four U1 stylesheets/);
+    assert.match(passed.stdout, /four foundation stylesheets/);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("transforms cannot escape the single motion file", () => {
+  for (const declaration of ["transform:translateY(-2px)", "translate:0 4px", "scale:.98", "rotate:180deg", "animation-name:enter", "transition:opacity 120ms"]) {
+    assert.ok(inspect(`.gs-public-unified .item { ${declaration}; }`, "public-components.css").length, declaration);
+    assert.deepEqual(inspect(`.gs-public-unified .item { ${declaration}; }`), []);
+  }
+});
+
+test("ink backgrounds fail for cards and aliases but pass for buttons and tags", () => {
+  for (const target of [".card", "section", '.card, button', '[data-gs-ui="button"], .panel', '[data-gs-ui="button"] .panel', ':not([data-gs-ui="button"])', ':is([data-gs-ui="button"], .panel)']) {
+    assert.ok(inspect(`.gs-public-unified { --alias:var(--gs-text); } .gs-public-unified ${target} { background:var(--alias); }`).some((issue: string) => issue.includes("Main text background")), target);
+  }
+  for (const target of ['button', '[data-gs-ui="button"]', '[data-gs-ui="tag"]', ':is([data-gs-ui="button"], [data-gs-ui="tag"])']) {
+    assert.deepEqual(inspect(`.gs-public-unified ${target} { background:var(--gs-text); }`), []);
+  }
+});
+
+test("contrast rulings fail closed for text, standalone graphs and unsupported exemptions", async () => {
+  const { checkContrastUse, CONTRAST_ALLOWLIST } = await import("./public-design-tokens.cjs");
+  const palette = Object.fromEntries(Object.entries(tokens.colors).map(([k, v]) => [k.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`), v]));
+  const check = (category: string, foreground: string, background: string, role = "", support = "") => checkContrastUse(palette, { category, foreground, background, role, support });
+  assert.equal(check("text", "low", "subtle", "pulse-ring", "visible-text").pass, false);
+  assert.equal(check("text", "low", "surface").pass, true);
+  assert.equal(check("graphic-only", "bar-low", "surface").pass, true);
+  for (const background of ["page", "subtle"]) assert.equal(check("graphic-only", "bar-low", background).pass, false);
+  for (const background of ["page", "surface", "subtle"]) {
+    assert.equal(check("graphic-only", "graphic", background).pass, false);
+    assert.equal(check("redundant", "graphic", background, "nav-underline", "aria-current").pass, true);
+    assert.equal(check("redundant", "graphic", background, "nav-underline").pass, false);
+    assert.equal(check("redundant", "graphic", background, "map-minimum", "visible-text").pass, false);
+  }
+  for (const [role, entry] of Object.entries(CONTRAST_ALLOWLIST) as Array<[string, {tokens: string[]; support: string[]; reason: string}]>) {
+    const result = check("redundant", entry.tokens[0], "page", role, entry.support[0]);
+    assert.equal(result.pass, true); assert.ok(result.reason.length > 20);
+    assert.equal(check("redundant", entry.tokens[0], "page", role, "unrelated-label").pass, false);
+  }
 });
