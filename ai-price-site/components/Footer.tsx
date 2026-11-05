@@ -2,6 +2,8 @@
 
 import { ArrowLeftRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import PublicFooter from "./PublicFooter";
+import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 import { usePathname } from "next/navigation";
 import {
   getAnalyticsConsentCopy,
@@ -183,6 +185,8 @@ export default function Footer({
   const currentYear = new Date().getFullYear();
   const copy = footerCopy[currentLocale];
   const consentCopy = getAnalyticsConsentCopy(currentLocale);
+
+  if (usesUnifiedPublicStyle(pathname)) return <PublicFooter items={footerItems} copy={copy} settings={consentCopy.settings} />;
 
   return (
     <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">

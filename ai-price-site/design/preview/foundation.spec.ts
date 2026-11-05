@@ -16,7 +16,7 @@ for (const colorScheme of ["light", "dark"] as const) {
       const number = page.locator('[aria-label="数字滚动"] [data-size="hero"]');
       await expect(number.locator('[aria-hidden="true"]')).toHaveText("¥ 12.34");
       expect(fonts.length).toBe(2);
-      expect(fonts.every(font => font.url.startsWith("http://127.0.0.1:3140/") && font.url.endsWith(".woff2"))).toBe(true);
+      expect(fonts.every(font => new URL(font.url).origin === new URL(page.url()).origin && font.url.endsWith(".woff2"))).toBe(true);
       expect((await Promise.all(fonts.map(font => font.bytes))).reduce((sum, size) => sum + size, 0)).toBeLessThanOrEqual(50000);
       await page.getByRole("button", { name: "切换为 98.76", exact: true }).click();
       await expect(number.locator('[aria-hidden="true"]')).toHaveText("¥ 98.76");

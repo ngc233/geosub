@@ -1,3 +1,4 @@
+import "../../../../app/globals.css";
 // These imports belong only to the isolated local app, not ai-price-site/app.
 import "../../../../app/public-tokens.css";
 import "../../../../app/public-base.css";

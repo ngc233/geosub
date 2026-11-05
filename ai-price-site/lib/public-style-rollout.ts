@@ -1,5 +1,6 @@
-/** U1 only supplies the foundation. Page activation belongs to U2. */
+/** V2 activates only Chinese chrome. Remove the Plus exception in V8. */
 export function usesUnifiedPublicStyle(pathname: string): boolean {
-  void pathname;
-  return false;
+  const path = pathname.split(/[?#]/)[0].replace(/\/+$/, "");
+  if (path === "/zh/ai-pricing/chatgpt/plus") return false;
+  return path === "/zh" || path.startsWith("/zh/");
 }

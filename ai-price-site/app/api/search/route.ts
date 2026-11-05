@@ -1,3 +1,7 @@
+import { getPublicPricingProduct } from "../../../lib/pricing-product-store";
+import { getCountryHub } from "../../../lib/country-hubs-data";
+import { priorityCountries } from "../../../lib/country-hubs";
+import { minimumSearchPrice, type ChromeSearchResult } from "../../../lib/public-chrome-search";
 import { selectCurrentOrLegacyPlans } from "../../../lib/current-plan-scope";
 import { ArticleStatus, Locale, Prisma, ProductCategory, PublishStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -279,6 +283,28 @@ export async function GET(request: NextRequest) {
         href: `/${locale}${resource.path}`,
         score: resource.score,
       });
+    }
+
+    if (locale === "zh" && request.nextUrl.searchParams.get("view") === "chrome") {
+      const candidates = ["product", "plan"].flatMap(kind => results.filter(result => result.kind === kind)
+        .sort((a,b)=>b.score-a.score).slice(0,3));
+      const slugs = [...new Set(candidates.map(result=>result.logoSlug!))];
+      const details = new Map(await Promise.all(slugs.map(async slug=>[slug,await getPublicPricingProduct(slug,"zh")] as const)));
+      const priced: ChromeSearchResult[] = candidates.flatMap(result => {
+        const product = details.get(result.logoSlug!);
+        const plan = result.kind === "plan" ? products.find(p=>p.id===result.productId)?.plans.find(p=>p.id===result.planId)?.slug : undefined;
+        const minimum = product && minimumSearchPrice(product,plan);
+        return minimum ? [{id:result.id,kind:result.kind as "product"|"plan",title:result.title,href:result.href,
+          subtitle:`${minimum.plan} · 最低 · ${minimum.country}`,minimumUsd:minimum.usd,cycle:minimum.cycle}] : [];
+      });
+      const countries = priorityCountries.filter(country=>scoreSearchText(query,[country.zh,country.en,country.code,country.slug])>0).slice(0,3);
+      for (const country of countries) {
+        const rows = (await getCountryHub(country.code)).filter(row=>row.usd!==null && row.checkedAt && Date.now()-Date.parse(row.checkedAt)<=7*86400000);
+        const minimum = rows.sort((a,b)=>a.usd!-b.usd!)[0];
+        if (minimum) priced.push({id:`country:${country.code}`,kind:"country",title:country.zh,href:`/zh/countries/${country.slug}`,
+          subtitle:`${minimum.productName} ${minimum.planName} 起`,minimumUsd:minimum.usd!,cycle:"monthly"});
+      }
+      return json({query,results:priced});
     }
 
     const uniqueResults = [...new Map(

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import PublicHeader from "./PublicHeader";
+import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -593,6 +595,8 @@ export default function Header({
       document.removeEventListener("keydown", handleKeyDown, true);
     };
   }, []);
+
+  if (usesUnifiedPublicStyle(pathname)) return <PublicHeader items={navItems} active={activeItemName} pathname={pathname} languages={availableLanguages} />;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-white/85 shadow-sm shadow-zinc-950/[0.03] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/85">

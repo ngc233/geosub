@@ -114,3 +114,16 @@ test("contrast rulings fail closed for text, standalone graphs and unsupported e
     assert.equal(check("redundant", entry.tokens[0], "page", role, "unrelated-label").pass, false);
   }
 });
+
+ test("standalone graphic tokens require the approved panel and still enforce 3:1", async () => {
+  const { checkContrastUse } = await import("./public-design-tokens.cjs");
+  const light = Object.fromEntries(Object.entries(tokens.colors).map(([k,v]) => [k.replace(/[A-Z]/g,c=>`-${c.toLowerCase()}`),v]));
+  for (const palette of [light, { ...light, ...compatibility.dark }]) {
+    for (const foreground of ["bar-low", "low", "bar-high", "baseline"]) {
+      const check = (background: string) => checkContrastUse(palette,{ category:"graphic-only",foreground,background });
+      assert.equal(check("surface").pass,true,foreground);
+      for (const background of ["page","subtle","accent-soft"]) assert.equal(check(background).pass,false);
+      assert.equal(checkContrastUse({...palette,[foreground]:palette.surface},{category:"graphic-only",foreground,background:"surface"}).pass,false);
+    }
+  }
+});
