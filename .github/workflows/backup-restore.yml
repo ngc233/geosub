@@ -1,0 +1,37 @@
+name: Backup restore drill
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-restore-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backup-restore:
+    name: Backup restore drill
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Use Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pull local-only test services
+        run: |
+          docker pull postgres:16-alpine
+          docker pull motoserver/moto:5.1.16
+      - name: Check backup shell syntax
+        run: bash -n geosub-backend/deploy/linux-arm64/db-backup.sh
+      - name: Test snapshots, S3 upload and isolated restore
+        env:
+          GEOSUB_RUN_BACKUP_INTEGRATION: '1'
+        run: python3 -m unittest discover -s scripts/tests -p test_backup_remote.py -v
