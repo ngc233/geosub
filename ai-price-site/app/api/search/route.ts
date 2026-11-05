@@ -1,7 +1,7 @@
 import { getPublicPricingProduct } from "../../../lib/pricing-product-store";
-import { getCountryHub } from "../../../lib/country-hubs-data";
+import { loadCountryHub } from "../../../lib/cached-country-hub";
 import { priorityCountries } from "../../../lib/country-hubs";
-import { minimumSearchPrice, type ChromeSearchResult } from "../../../lib/public-chrome-search";
+import { minimumSearchPrice, minimumCountrySearchPrice, selectChromeSearchCandidates, type ChromeSearchResult } from "../../../lib/public-chrome-search";
 import { selectCurrentOrLegacyPlans } from "../../../lib/current-plan-scope";
 import { ArticleStatus, Locale, Prisma, ProductCategory, PublishStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -26,6 +26,10 @@ export const dynamic = "force-dynamic";
 
 const MAX_QUERY_LENGTH = 80;
 const MAX_RESULTS = 10;
+
+// Chrome uses the same bounded alias catalogue across keystrokes; legacy search is unchanged.
+const getChromeSearchAliases = unstable_cache(getActiveSearchAliases,
+  ["public-chrome-search-aliases-v1"], { revalidate: 300 });
 
 const getPublishedSearchProducts = unstable_cache(
   async () => prisma.product.findMany({
@@ -169,7 +173,8 @@ export async function GET(request: NextRequest) {
     return json({ query, results: [] });
   }
 
-  const articleLocale = getArticleLocale(locale);
+  const chrome = locale === "zh" && request.nextUrl.searchParams.get("view") === "chrome";
+  const articleLocale = chrome ? null : getArticleLocale(locale);
 
   try {
     const [products, articles, controlledAliases] = await Promise.all([
@@ -177,7 +182,7 @@ export async function GET(request: NextRequest) {
       articleLocale
         ? getPublishedSearchArticles(articleLocale)
         : Promise.resolve([]),
-      getActiveSearchAliases(locale),
+      chrome ? getChromeSearchAliases(locale) : getActiveSearchAliases(locale),
     ]);
 
     const normalizedLocale = normalizeSiteLocale(locale);
@@ -285,9 +290,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (locale === "zh" && request.nextUrl.searchParams.get("view") === "chrome") {
-      const candidates = ["product", "plan"].flatMap(kind => results.filter(result => result.kind === kind)
-        .sort((a,b)=>b.score-a.score).slice(0,3));
+    if (chrome) {
+      const candidates = selectChromeSearchCandidates(results);
       const slugs = [...new Set(candidates.map(result=>result.logoSlug!))];
       const details = new Map(await Promise.all(slugs.map(async slug=>[slug,await getPublicPricingProduct(slug,"zh")] as const)));
       const priced: ChromeSearchResult[] = candidates.flatMap(result => {
@@ -299,8 +303,7 @@ export async function GET(request: NextRequest) {
       });
       const countries = priorityCountries.filter(country=>scoreSearchText(query,[country.zh,country.en,country.code,country.slug])>0).slice(0,3);
       for (const country of countries) {
-        const rows = (await getCountryHub(country.code)).filter(row=>row.usd!==null && row.checkedAt && Date.now()-Date.parse(row.checkedAt)<=7*86400000);
-        const minimum = rows.sort((a,b)=>a.usd!-b.usd!)[0];
+        const minimum = minimumCountrySearchPrice(await loadCountryHub(country.code));
         if (minimum) priced.push({id:`country:${country.code}`,kind:"country",title:country.zh,href:`/zh/countries/${country.slug}`,
           subtitle:`${minimum.productName} ${minimum.planName} 起`,minimumUsd:minimum.usd!,cycle:"monthly"});
       }
