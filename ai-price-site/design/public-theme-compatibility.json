@@ -1,31 +1,25 @@
 {
-  "status": "Retained R2 dark, map and surface values; scoped to the inactive U1 boundary.",
-  "source": "app/public-design.css at 683de8b; preserved without new visual choices",
-  "mapLight": {
-    "low": "#B9DCA9",
-    "high": "#EDB4A9"
-  },
+  "status": "V2 taskbook approved dark palette, 2026-11-05; system preference only.",
   "dark": {
-    "page": "#14191C",
-    "surface": "#1D2427",
-    "subtle": "#293135",
-    "text": "#F4F5F0",
-    "text-secondary": "#C2CBC8",
-    "border": "#424E50",
-    "border-strong": "#8B999D",
-    "accent-soft": "#2D3C22",
-    "low": "#8ADBB4",
-    "high": "#FFA699",
-    "link": "#9ABEFF",
-    "focus": "#F4F5F0",
-    "map-low": "#78A66B",
-    "map-high": "#C48073",
-    "map-baseline": "#8B999D"
-  },
-  "effects": {
-    "legacy-frame": "0 2px 12px #14191c05",
-    "legacy-popover": "0 8px 24px #0002",
-    "legacy-compare": "0 8px 32px #0002",
-    "legacy-backdrop": "#0009"
+    "page": "#111315",
+    "surface": "#1A1D20",
+    "subtle": "#23272B",
+    "border": "#2A2E33",
+    "border-strong": "#353A40",
+    "text": "#EDEEEF",
+    "text-secondary": "#C9CED6",
+    "text-muted": "#A9AFB8",
+    "graphic": "#84CC16",
+    "bar-low": "#84CC16",
+    "low": "#A3E635",
+    "low-on-soft": "#BEF264",
+    "accent-soft": "#1C2410",
+    "accent-border": "#3F6212",
+    "tag-low": "#26330F",
+    "high": "#FB923C",
+    "bar-high": "#EA580C",
+    "high-soft": "#3A1F14",
+    "high-on-soft": "#FDBA74",
+    "baseline": "#A9AFB8"
   }
 }

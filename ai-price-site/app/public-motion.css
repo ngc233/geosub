@@ -1,20 +1,31 @@
-/* The only motion definitions. No opacity entrance animation on prices or table rows.
- * All timing uses 120/200/400ms and the single token curve. Activation is deferred. */
+/* All motion lives here. Numeric interpolation reads the same duration/easing tokens.
+ * Entrance moves position only; prices are visible in the first server-rendered frame. */
 .gs-public-unified :is(a,button,input,select,textarea,summary,[role="option"]) { transition:color var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease); }
-.gs-public-unified [data-gs-motion-card] { transition:transform var(--gs-motion-base) var(--gs-motion-ease),box-shadow var(--gs-motion-base) var(--gs-motion-ease),border-color var(--gs-motion-base) var(--gs-motion-ease); }
-.gs-public-unified :is([data-gs-ui="button"],[data-gs-ui="icon-button"]) { transition:scale var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease); }
-.gs-public-unified :is([data-gs-ui="button"],[data-gs-ui="icon-button"]):enabled:active { scale:.98; }
-.gs-public-unified a > .lucide-arrow-right { transition:transform var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified [data-gs-motion-card] { transition:transform var(--gs-motion-fast) var(--gs-motion-ease),box-shadow var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified :is([data-gs-ui="button"],[data-gs-ui="icon-button"]) { transition:scale var(--gs-motion-fast) var(--gs-motion-ease),transform var(--gs-motion-fast) var(--gs-motion-ease),box-shadow var(--gs-motion-fast) var(--gs-motion-ease),color var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified :is([data-gs-ui="button"],[data-gs-ui="icon-button"]):enabled:active,
+.gs-public-unified [data-gs-motion-card]:active { scale:var(--gs-motion-press); }
 .gs-public-unified .gs-disclosure-chevron { transition:rotate var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified [data-gs-disclosure][data-open="true"] > .gs-disclosure-header .gs-disclosure-chevron { rotate:180deg; }
 .gs-public-unified .gs-disclosure-grid { transition:grid-template-rows var(--gs-motion-base) var(--gs-motion-ease); }
-.gs-public-unified :is([role="menu"],[role="listbox"]) { animation:gs-u1-menu-in var(--gs-motion-base) var(--gs-motion-ease); }
-@keyframes gs-u1-menu-in { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+.gs-public-unified [data-gs-motion="switch"] { transition:transform var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified [data-gs-initial] { transition:none; }
+.gs-public-unified :is([role="menu"],[role="listbox"]) { animation:gs-menu-in var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified [data-gs-enter="a"] { animation:gs-enter-a var(--gs-motion-enter) var(--gs-motion-ease) var(--gs-stagger,0ms) both; }
+.gs-public-unified [data-gs-enter="b"] { animation:gs-enter-b var(--gs-motion-enter) var(--gs-motion-ease) var(--gs-stagger,0ms) both; }
+.gs-public-unified [data-gs-pulse]::after { content:""; position:absolute; inset:0; border:var(--gs-pulse-border) solid currentColor; border-radius:inherit; pointer-events:none; }
+.gs-public-unified [data-gs-pulse="a"]::after { animation:gs-pulse-a var(--gs-motion-pulse) var(--gs-motion-ease) var(--gs-motion-pulse-count) forwards; }
+.gs-public-unified [data-gs-pulse="b"]::after { animation:gs-pulse-b var(--gs-motion-pulse) var(--gs-motion-ease) var(--gs-motion-pulse-count) forwards; }
+@keyframes gs-menu-in { from { opacity:0; transform:translateY(var(--gs-motion-lift)); } to { opacity:1; transform:translateY(0); } }
+@keyframes gs-enter-a { from { transform:translateY(var(--gs-motion-enter-offset)); } to { transform:translateY(0); } }
+@keyframes gs-enter-b { from { transform:translateY(var(--gs-motion-enter-offset)); } to { transform:translateY(0); } }
+@keyframes gs-pulse-a { from { transform:scale(1); opacity:var(--gs-pulse-opacity); } to { transform:scale(var(--gs-motion-pulse-scale)); opacity:0; } }
+@keyframes gs-pulse-b { from { transform:scale(1); opacity:var(--gs-pulse-opacity); } to { transform:scale(var(--gs-motion-pulse-scale)); opacity:0; } }
 @media (hover:hover) and (pointer:fine) {
-  .gs-public-unified [data-gs-motion-card]:hover { transform:translateY(-2px); box-shadow:var(--gs-shadow-card-hover); border-color:var(--gs-border-strong); }
-  .gs-public-unified a:hover > .lucide-arrow-right { transform:translateX(2px); }
+  .gs-public-unified [data-gs-motion-card]:hover { transform:translateY(var(--gs-motion-lift)); box-shadow:var(--gs-shadow-card-hover); border-color:var(--gs-border-strong); }
 }
 @media (prefers-reduced-motion:reduce) {
   .gs-public-unified, .gs-public-unified *, .gs-public-unified *::before, .gs-public-unified *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
-  .gs-public-unified :is(a,button,[data-gs-motion-card]), .gs-public-unified a > .lucide-arrow-right { transform:none !important; scale:none !important; translate:none !important; }
+  .gs-public-unified :is(a,button,[data-gs-motion-card],[data-gs-enter],[data-gs-motion]), .gs-public-unified [data-gs-pulse]::after { transform:none !important; scale:none !important; translate:none !important; }
+  .gs-public-unified [data-gs-pulse]::after { opacity:0; }
 }
