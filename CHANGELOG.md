@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.25.1 - Unreleased
+
+- Release the admin traffic dashboard fix from PR #35: show eligible cookieless PV and date coverage, and count consented sessions per visitor.
+
 ## 2.24.1 - Unreleased
 
 - Skip previously approved App Store observations and isolate review failures by price group.
