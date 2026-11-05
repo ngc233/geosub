@@ -173,3 +173,19 @@ UI 变更提交前必须提供或记录：
 - 新组件与相邻页面使用相同 token 和组件语义。
 
 “看起来更现代”不是验收标准；必须指出层级、可读性、任务效率或一致性改善。
+
+## R2 U1 样式底座（尚未启用）
+
+U1 将 R2 参考分支的公开样式整理为 `public-tokens.css`、`public-base.css`、
+`public-components.css` 和 `public-motion.css`。所有选择器限于
+`.gs-public-unified`；字体资源仅供该作用域使用。U1 由浏览器测试直接读取 CSS，U2 仅在中文布局引入。当前
+`usesUnifiedPublicStyle` 对所有路径返回 false，页面外观保持 main 基线。
+
+动效集中在 `public-motion.css`：快 120ms、标准 200ms、慢 400ms，统一使用
+`cubic-bezier(0.2, 0, 0, 1)`。减少动态效果时禁用动画和过渡；价格与表格行
+不使用入场透明度动画。颜色、字号和阴影通过 token 引用；检查脚本拒绝
+悬停效果被后续规则重置为 none，减少动态效果的显式保护除外。
+
+日期工具仅提供能力，不替换现有页面文字：同年显示“11月4日”，跨年显示
+“2025年12月30日”，同时返回 `<time dateTime>` 所需的完整日期。缺失值返回
+null。详细文件职责与本地检查命令见 [U1 说明](../ai-price-site/design/README.md)。
