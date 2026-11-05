@@ -173,6 +173,23 @@ class Store:
                 seen.add(continuation)
 
 
+def record_uploaded_backup():
+    helper = os.environ.get("GEOSUB_TASK_HEARTBEAT_HELPER", "")
+    if not helper:
+        return
+    if (os.environ.get("GEOSUB_TASK_HEARTBEAT_TASK") != "db-backup"
+            or not re.fullmatch(r"/opt/geosub/task-heartbeats/[a-f0-9]{40}/task-heartbeat\.py", helper)):
+        print("WARNING: backup heartbeat helper configuration invalid", file=sys.stderr)
+        return
+    try:
+        result = subprocess.run([sys.executable, helper, "record", "db-backup"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        if result.returncode:
+            raise OSError("receipt unavailable")
+    except Exception:
+        print("WARNING: backup heartbeat receipt unavailable; upload remains verified", file=sys.stderr)
+
+
 def upload(dump):
     if not os.environ.get("GEOSUB_BACKUP_REMOTE_URL"):
         print("WARNING: remote backup is not configured; local backup retained")
@@ -192,6 +209,9 @@ def upload(dump):
         for member in parts(stem):  # dump, counts, checksum, metadata (completion marker) LAST.
             store.put_verified(generation + member, stage / member, temp)
     print("Remote backup complete: " + stem)
+    # Only after all four remote members, including the final marker, were read back.
+    # This records proof; systemd sends only after the entire main process succeeds.
+    record_uploaded_backup()
 
 
 def download_latest(destination):

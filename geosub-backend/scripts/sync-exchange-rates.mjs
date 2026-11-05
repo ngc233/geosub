@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -203,6 +204,18 @@ export async function runExchangeRateSync(options) {
   }
 }
 
+export function recordCompleteSync(result, env = process.env, run = spawnSync) {
+  if (result.dryRun || result.status !== "succeeded" || env.GEOSUB_TASK_HEARTBEAT_TASK !== "exchange-rate-sync") return;
+  const helper = env.GEOSUB_TASK_HEARTBEAT_HELPER || "";
+  if (!/^\/opt\/geosub\/task-heartbeats\/[a-f0-9]{40}\/task-heartbeat\.py$/.test(helper)) return;
+  try {
+    const receipt = run("/usr/bin/python3", [helper, "record", "exchange-rate-sync"], { stdio: "ignore", timeout: 5000 });
+    if (receipt.error || receipt.status !== 0) console.warn("WARN Exchange-rate heartbeat receipt unavailable.");
+  } catch {
+    console.warn("WARN Exchange-rate heartbeat receipt unavailable.");
+  }
+}
+
 export async function runCli(
   argv = process.argv.slice(2),
   io = {
@@ -214,6 +227,7 @@ export async function runCli(
   await loadEnvFiles();
   const options = parseArgs(argv);
   const result = await runExchangeRateSync(options);
+  recordCompleteSync(result);
 
   if (options.json) {
     await io.writeJson(`${JSON.stringify(result)}\n`);
