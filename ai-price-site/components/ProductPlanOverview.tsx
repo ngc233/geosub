@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { formatUsd, getPlanStats, type SubscriptionProduct } from "../lib/public-pricing-model";
 import { getPricingPlanPath } from "../lib/pricing-routes";
 import {
@@ -14,7 +14,7 @@ import { getProductEditorialContent } from "../lib/product-editorial-content";
 import { hasPlanComparison } from "../lib/plan-comparison";
 import PublishedPlanComparison from "./PublishedPlanComparison";
 import styles from "./ManagedContent.module.css";
-import { claudeOverviewEvidence, hasClaudeOverviewDecision } from "../lib/claude-overview-decision";
+import { claudeOverviewEvidence, getClaudeDuetOverviewNotice, hasClaudeOverviewDecision } from "../lib/claude-overview-decision";
 import { disneyOverviewEvidence, hasDisneyOverviewDecision } from "../lib/disney-overview-decision";
 
 export default function ProductPlanOverview({
@@ -28,6 +28,7 @@ export default function ProductPlanOverview({
     (plan) => plan.regions.length > 0,
   );
   const singlePlan = decisionPlans.length === 1;
+  const duetNotice = getClaudeDuetOverviewNotice(locale, product.slug);
   const regionCount = getProductOverviewRegionCount(product);
   const copy = getPricingProductOverviewCopy({
     locale,
@@ -210,6 +211,24 @@ export default function ProductPlanOverview({
           );
         })}
       </div>
+      {duetNotice ? (
+        <aside aria-labelledby="claude-duet-notice-title" className={`${styles.scope} mt-5 border-t border-[var(--color-border-default)] pt-4 text-sm leading-6 text-[var(--color-text-secondary)]`}>
+          <h3 id="claude-duet-notice-title" className="text-base font-semibold text-[var(--color-text-primary)]">
+            {duetNotice.title}
+          </h3>
+          <p className="mt-2">{duetNotice.description}</p>
+          <ul className="mt-2 flex flex-col items-start">
+            {duetNotice.sources.map((source) => (
+              <li key={source.href}>
+                <a href={source.href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1.5 rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]">
+                  {source.label}
+                  <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      ) : null}
     </section>
   );
 }
