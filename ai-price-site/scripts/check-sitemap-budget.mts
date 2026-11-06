@@ -15,7 +15,7 @@ import {
   isProductIndexReleaseHeld,
 } from "../lib/product-seo-indexing-policy.ts";
 import { getProductSeoQualityAudits } from "../lib/product-seo-quality-data.ts";
-import { indexableStaticGuidePaths } from "../lib/public-launch-routes.ts";
+import { indexableStaticGuidePaths, retiredGuideSlugs } from "../lib/public-launch-routes.ts";
 import { prisma } from "../lib/prisma.ts";
 import {
   isPlanSitemapPromotedProduct,
@@ -43,6 +43,7 @@ function publishedArticleWhere(locale: Locale, now: Date) {
   return {
     locale,
     noindex: false,
+    slug: { notIn: [...retiredGuideSlugs] },
     deletedAt: null,
     OR: [
       { status: "PUBLISHED" as const },

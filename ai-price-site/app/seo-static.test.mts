@@ -70,7 +70,7 @@ test("language switching never links staged locales to unpublished guide details
   );
   assert.equal(
     getLanguageSwitchHref("/zh/guides/gift-card-guide", "en"),
-    "/en/guides/gift-card-guide",
+    "/en/guides",
   );
   assert.equal(
     getLanguageSwitchHref("/zh/ai-pricing/chatgpt/plus", "ja"),
@@ -105,7 +105,7 @@ test("known legacy Search Console URLs resolve without creating thin pages", () 
 
   assert.match(
     traditionalGiftCardGuide,
-    /permanentRedirect\("\/zh\/guides\/gift-card-guide"\)/,
+    /notFound\(\)/,
   );
   assert.match(launchPolicy, /"\/gaming-steam"/);
   assert.match(launchPolicy, /"\/gift-cards"/);
@@ -118,13 +118,13 @@ test("known legacy Search Console URLs resolve without creating thin pages", () 
   assert.match(sitemap, /productRoutes/);
   assert.doesNotMatch(pricingDetail, /maandabonnement/);
   assert.match(rootLayout, /canonical: canonicalPath/);
-  assert.match(chineseGiftCardGuide, /CmsBackedGuidePage/);
+  assert.match(chineseGiftCardGuide, /notFound\(\)/);
   assert.equal(
     getCoreGuideDefinition("zh", "gift-card-guide").title,
     "数字礼品卡购买前检查",
   );
   assert.match(sitemap, /indexableStaticGuidePaths\.map/);
-  assert.ok(indexableStaticGuidePaths.includes("/guides/gift-card-guide"));
+  assert.ok(!(indexableStaticGuidePaths as readonly string[]).includes("/guides/gift-card-guide"));
   assert.match(nextConfig, /value:\s*"www\.geosub\.org"/);
   assert.match(nextConfig, /destination:\s*"https:\/\/geosub\.org\/zh"/);
   assert.doesNotMatch(sitemap, /route\("\/(?:zh|en)\/gaming-steam"/);

@@ -1,3 +1,4 @@
+import { retiredGuideSlugs } from "../../../lib/public-launch-routes";
 import { getPublicPricingProduct } from "../../../lib/pricing-product-store";
 import { loadCountryHub } from "../../../lib/cached-country-hub";
 import { priorityCountries } from "../../../lib/country-hubs";
@@ -76,6 +77,7 @@ const getPublishedSearchArticles = unstable_cache(
   async (articleLocale: Locale) => prisma.article.findMany({
     where: {
       locale: articleLocale,
+      slug: { notIn: [...retiredGuideSlugs] },
       status: ArticleStatus.PUBLISHED,
       noindex: false,
       deletedAt: null,

@@ -6,11 +6,14 @@ export const unreleasedPublicPaths = [
   "/vpn",
 ] as const;
 
+// Retired content stays in the CMS for history, but has no public entry point.
+export const retiredGuideSlugs: readonly string[] = ["gift-card-guide"];
+const retiredPublicPaths = retiredGuideSlugs.map((slug) => `/guides/${slug}`);
+
 export const internalTestPaths = ["/cms-test", "/tracking-test"] as const;
 
 // Promote a small, reviewed guide set instead of multiplying every locale.
 export const indexableStaticGuidePaths = [
-  "/guides/gift-card-guide",
   "/guides/methodology",
   "/guides/payment-account",
   "/guides/price-guide",
@@ -54,6 +57,10 @@ export function isInternalTestPath(pathname: string) {
   return matchesPathList(pathname, internalTestPaths);
 }
 
+export function isRetiredPublicPath(pathname: string) {
+  return matchesPathList(pathname, retiredPublicPaths);
+}
+
 export function shouldHideFromPublicNavigation(pathname: string) {
-  return isUnreleasedPublicPath(pathname) || isInternalTestPath(pathname);
+  return isUnreleasedPublicPath(pathname) || isInternalTestPath(pathname) || isRetiredPublicPath(pathname);
 }

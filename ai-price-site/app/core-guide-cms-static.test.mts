@@ -3,13 +3,14 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { retiredGuideSlugs } from "../lib/public-launch-routes.ts";
 import { coreGuideSlugs } from "../lib/core-guide-content.ts";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
 test("promoted guide routes are thin CMS-backed shells", () => {
   for (const locale of ["zh", "en"] as const) {
-    for (const slug of coreGuideSlugs) {
+    for (const slug of coreGuideSlugs.filter(slug => !retiredGuideSlugs.includes(slug))) {
       const source = readFileSync(resolve(appDir, locale, "guides", slug, "page.tsx"), "utf8");
 
       assert.match(source, /CmsBackedGuidePage/);
