@@ -1,0 +1,41 @@
+// 2026-11-06 产品负责人确认的代表套餐，共 34 个。
+// 规则：选官网主推、大多数人会买的个人月付档；覆盖 ≥10 个地区即合格，
+// 覆盖多少不作为首要依据。这是人工确认的配置，不按价格或覆盖数自动换档。
+// 配置套餐失去有效美国价或不足 10 个地区时，首页隐藏该产品并记录告警；
+// 必须由产品负责人重新确认后才能改选。Boomplay 没有美国价，不写入配置。
+export const HOMEPAGE_REPRESENTATIVE_PLANS: Readonly<Record<string, string>> = Object.freeze({
+  anghami: "plus",
+  captions: "max",
+  "character-ai": "plus",
+  chatgpt: "plus",
+  claude: "pro",
+  crunchyroll: "mega-fan",
+  deezer: "premium",
+  disney: "premium",
+  dramabox: "membership",
+  "f1-tv": "access",
+  gemini: "pro",
+  grok: "super",
+  "hbo-max": "standard",
+  heygen: "starter",
+  "invideo-ai": "plus",
+  kimi: "moderato",
+  "kling-ai": "pro",
+  "le-chat": "pro",
+  "leonardo-ai": "essential",
+  manus: "basic",
+  "microsoft-copilot": "personal",
+  mubi: "monthly",
+  netflix: "standard",
+  perplexity: "pro",
+  podimo: "premium",
+  poe: "basic",
+  "pollo-ai": "pro",
+  reelshort: "subscription",
+  runwayml: "standard",
+  soundcloud: "go-plus",
+  suno: "pro",
+  viki: "plus",
+  "x-premium": "premium",
+  "youtube-premium": "individual",
+});
