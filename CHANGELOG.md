@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.26.0 - Unreleased
+
+- Release the reviewed V1/V2 Chinese public design foundation, navigation, footer and shared controls (PR #40/#42); retain the legacy English and frozen Chinese Plus framework.
+- Retire the gift-card guide and its public entry points (PR #45/#46). The approved Plus exception removes only the shared footer gift-card-guide link.
+- Register exact content-reader rollback compatibility to production 2.25.1 (`ed3ec9b`); no database input changes or collector deployment.
+
 ## 2.25.1 - Unreleased
 
 - Release the admin traffic dashboard fix from PR #35: show eligible cookieless PV and date coverage, and count consented sessions per visitor.
