@@ -2,7 +2,7 @@
 
 ## 登记说明
 
-本表登记已核对的 11 条历史授权，来源限于 `DATA_POLICY.md` 与 `SEO_POLICY.md`。历史记录不等于本次新授权，全部初始为“待追认”；追认由产品负责人逐条确认后另开 PR 更新。
+本表“历史授权”部分登记已核对的 11 条历史授权，来源限于 `DATA_POLICY.md` 与 `SEO_POLICY.md`。历史记录不等于本次新授权，全部初始为“待追认”；追认由产品负责人逐条确认后另开 PR 更新。
 
 “原话”统一记为“历史记录，原话缺失”，不将政策中的转述冒充用户原话。“日期”采用原文记载的授权日期，不以 Git 提交日期替代。“关联提交”指引入该政策授权记录的提交；查不到时写“未找到”。已查询这些提交的 GitHub 关联 PR，均未找到，因此“关联 PR”统一写“未找到”。
 
@@ -45,3 +45,16 @@
 | APR-H-0009 | ChatGPT Pro 实验中止 | [docs/SEO_POLICY.md:139](https://github.com/ngc233/geosub/blob/14f8fbe96cddba33f919dc4396e2ce4c6e71c128/docs/SEO_POLICY.md#L139) |
 | APR-H-0010 | ChatGPT 套餐 URL 登记 | [docs/SEO_POLICY.md:143](https://github.com/ngc233/geosub/blob/14f8fbe96cddba33f919dc4396e2ce4c6e71c128/docs/SEO_POLICY.md#L143) |
 | APR-H-0011 | Pro 200 事实纠正例外 | [docs/SEO_POLICY.md:147](https://github.com/ngc233/geosub/blob/14f8fbe96cddba33f919dc4396e2ce4c6e71c128/docs/SEO_POLICY.md#L147-L149) |
+
+## 当期明确批准
+
+### 2026-11-06 礼品卡教程合规下线：Plus 页脚一次性例外
+
+2026-11-06 产品负责人批准：因合规下线礼品卡教程，Plus 页页脚同步移除该链接，属于 SEO_POLICY 第 9 节的一次性例外。
+
+- 来源：产品负责人在本轮开发会话中的明确裁定，原话：“只移除 Plus 页页脚里的‘礼品卡教程’链接，Plus 的标题、描述、正文和其他内链全部不变。”
+- 理由：教程下线是合规要求，优先于观察期的内链冻结；全站共用页脚同步移除，避免留下指向 404 的入口，不是 Plus 页单独改内容。
+- 唯一允许的 Plus 变更：页脚中指向 `/zh/guides/gift-card-guide` 的“礼品卡教程”链接。title、description、H1、正文、其余链接文本/顺序/href/rel、URL、canonical、hreflang、robots、价格与结构化数据均不变，实验锁不解除。
+- 实现 PR：[礼品卡教程下线 #45](https://github.com/ngc233/geosub/pull/45)。合并前必须提供 Plus 页全部链接前后差异，证明仅少这一条。
+- 实验记录：`ai-price-site/docs/seo/2026-08-25-bing-chatgpt-plus-metadata-experiment.md`，记录批准日期及实际部署后的生效时间；以后分析数据须考虑这次内链干扰。
+- 状态：产品负责人已明确批准（2026-11-06），不是待追认的历史转述。此登记不代表已经部署，不授权生产部署、生产数据写入、其他内容变更或实验解冻。
