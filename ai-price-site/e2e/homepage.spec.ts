@@ -10,6 +10,7 @@ test("homepage keeps SEO text and source contains no retired guide URL",async({p
   const response=await request.get("/zh");expect(response.status()).toBe(200);
   expect(await response.text()).not.toContain("/guides/gift-card-guide");
   await page.goto("/zh");
+  await expect(page.getByRole("main")).toHaveCount(1);
   await expect(page.getByRole("heading",{level:1})).toHaveText("别只看标价，看清数字订阅的真实地区成本");
   await expect(page.getByText("比较经过核验的地区价格、税费、汇率与本地购买力，快速判断哪里更便宜，数据是否仍然可信。",{exact:true})).toBeVisible();
   await expect(page.getByRole("heading",{name:"最近变价"})).toHaveCount(0);

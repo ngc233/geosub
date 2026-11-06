@@ -26,7 +26,7 @@ export default async function ZhHomePage() {
   const stats=homepageStatistics(rows), countries=homepageCountries(rows);
   const updated=formatPublicDate(stats?.updatedAt), copy=getHomepageCopy("zh");
   const articles=(["price-guide","payment-account","methodology"] as const).filter(slug=>!guides.get(slug)?.managed||guides.get(slug)?.published);
-  return <main className="gs-public-unified gs-home"><div className="gs-home-container">
+  return <div className="gs-public-unified gs-home"><div className="gs-home-container">
     {isHomepageFixtureEnabled()&&<aside className="gs-home-test-data" role="note">虚构测试数据 · 仅用于本地界面验收，不代表实际价格</aside>}
     <section data-gs-enter="a" className="gs-home-intro"><p>{copy.eyebrow}</p><h1>{copy.title}</h1><p className="gs-home-description">{copy.description}</p><PublicSearch variant="hero"/>
       {stats&&<p className="gs-home-statistics" aria-label="收录统计"><span><strong><PublicPriceNumber value={stats.products} fractionDigits={0} initialValue={0} changeKey="count-in"/></strong> 个产品</span><span><strong><PublicPriceNumber value={stats.regions} fractionDigits={0} initialValue={0} changeKey="count-in"/></strong> 个地区</span><span><strong><PublicPriceNumber value={stats.prices} fractionDigits={0} initialValue={0} changeKey="count-in"/></strong> 条已核验价格</span>{updated&&<span><time dateTime={updated.dateTime}>{updated.text}</time>核验更新</span>}</p>}
@@ -38,5 +38,5 @@ export default async function ZhHomePage() {
     {!!articles.length&&<section data-gs-enter="a" className="gs-home-section" aria-labelledby="home-guides"><h2 id="home-guides">买之前先看</h2><div className="gs-home-guides">{articles.map(slug=>{const guide=getCoreGuideDefinition("zh",slug);return <Link key={slug} href={`/zh/guides/${slug}`} className="gs-home-card" data-gs-motion-card><PublicIcon name="BookOpen"/><h3>{guide.eyebrow}</h3><p>{guide.description}</p><span>查看指南 <PublicIcon name="ArrowRight" size={16}/></span></Link>;})}</div></section>}
     <nav className="gs-home-resources" aria-label="价格与数据说明"><Link href="/zh/ai-pricing/">{copy.start}</Link><Link href="/zh/data-sources/">{copy.verify}</Link><Link href="/zh/tools/currency-converter/">订阅汇率工具</Link><Link href="/zh/guides/">订阅指南</Link><Link href="/zh/ai-pricing/chatgpt/plus/">查看 ChatGPT Plus 地区成本</Link></nav>
     <p className="gs-home-disclaimer">{copy.disclaimer}</p>
-  </div></main>;
+  </div></div>;
 }

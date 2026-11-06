@@ -27,37 +27,25 @@ test("homepage and search remain usable across desktop mobile light and dark sta
     await rejectAnalytics.click();
   }
 
-  const categoryCard = page
-    .getByRole("heading", { name: "AI 订阅", level: 3 })
-    .locator("xpath=ancestor::a[1]");
-  await expect(categoryCard).toBeVisible();
-  await expect(page.locator("body")).toHaveCSS(
-    "background-color",
-    "rgb(247, 248, 250)",
-  );
-  await expect(categoryCard).toHaveCSS("background-color", "rgb(255, 255, 255)");
-
-  await categoryCard.hover();
-  await expect
-    .poll(() => categoryCard.evaluate((element) => getComputedStyle(element).translate))
-    .not.toBe("none");
-  await categoryCard.focus();
-  await expect
-    .poll(() => categoryCard.evaluate((element) => getComputedStyle(element).boxShadow))
-    .not.toBe("none");
+  // The repository CI seed has no eligible DATA-1 representatives. Empty
+  // sections must stay absent, rather than falling back to legacy category data.
+  await expect(page.getByRole("heading", { name: "按分类找", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "省钱排行榜", exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("收录统计")).toHaveCount(0);
+  const guideCard = page.getByRole("heading", { name: "价格指南", level: 3 }).locator("xpath=ancestor::a[1]");
+  await expect(guideCard).toBeVisible();
+  await expect(guideCard).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await guideCard.focus();
+  await expect(guideCard).toBeFocused();
 
   await page.emulateMedia({ colorScheme: "dark" });
-  await expect(page.locator("body")).toHaveCSS(
-    "background-color",
-    "rgb(9, 9, 11)",
-  );
-  await expect(categoryCard).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await expect(categoryCard).not.toHaveCSS("color", "rgb(0, 0, 0)");
+  await expect(guideCard).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(guideCard).not.toHaveCSS("color", "rgb(0, 0, 0)");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "light" });
   await page.reload();
-  await page.getByRole("button", { name: "搜索" }).click();
+  await page.getByRole("button", { name: "搜索产品或国家", exact: true }).click();
   const searchDialog = page.getByRole("dialog", { name: "搜索", exact: true });
   await expect(searchDialog).toBeVisible();
   await expect(searchDialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
@@ -65,7 +53,7 @@ test("homepage and search remain usable across desktop mobile light and dark sta
   await expect(searchDialog).toBeHidden();
 
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.getByRole("button", { name: "搜索" }).click();
+  await page.getByRole("button", { name: "搜索产品或国家", exact: true }).click();
   await expect(searchDialog).toBeVisible();
   expect(await getRenderedBackgroundRgb(searchDialog)).toEqual([26, 29, 32]);
   await page.keyboard.press("Escape");
