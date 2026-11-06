@@ -1,3 +1,4 @@
+import { isRetiredPublicPath } from "./public-launch-routes.ts";
 import { isSeoIndexableLocale } from "./seo-indexing-policy.ts";
 import {
   replaceSiteLocaleInPath,
@@ -24,7 +25,7 @@ export function getLanguageSwitchHref(
   // Keep every language available without linking to an unpublished detail page.
   if (
     relativePath.startsWith("/guides/") &&
-    !isSeoIndexableLocale(nextLocale)
+    (!isSeoIndexableLocale(nextLocale) || isRetiredPublicPath(relativePath))
   ) {
     return withSiteLocale("/guides", nextLocale);
   }

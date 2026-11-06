@@ -8,6 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { isRetiredPublicPath } from "../lib/public-launch-routes";
 import { loadCoreGuideHubStates } from "../lib/core-guide-cms";
 import {
   coreGuideSlugs,
@@ -51,7 +52,7 @@ export default async function CoreGuideHub({
     state: cmsStates.get(slug),
   }));
   const coreGuides = states.filter(
-    ({ state }) => !state?.managed || state.published,
+    ({ slug, state }) => !isRetiredPublicPath(`/guides/${slug}`) && (!state?.managed || state.published),
   );
   const copy =
     locale === "zh"

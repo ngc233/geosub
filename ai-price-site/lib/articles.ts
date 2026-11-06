@@ -9,6 +9,7 @@ import type {
   Locale,
   ProductCategory,
 } from "@prisma/client";
+import { retiredGuideSlugs } from "./public-launch-routes";
 import { prisma } from "./prisma";
 import type { SiteLocale } from "./site-locale";
 
@@ -184,6 +185,7 @@ export async function getPublishedArticles(locale: Locale = "ZH") {
     where: {
       locale,
       noindex: false,
+      slug: { notIn: [...retiredGuideSlugs] },
       deletedAt: null,
       OR: [
         {
@@ -219,6 +221,7 @@ function publicArticleWhere(locale: Locale = "ZH") {
 
   return {
     locale,
+    slug: { notIn: [...retiredGuideSlugs] },
     deletedAt: null,
     OR: [
       {
@@ -242,10 +245,12 @@ function publishedArticleWhere(locale: Locale = "ZH") {
 }
 
 export async function getPublishedArticleBySlug(slug: string, locale: Locale = "ZH") {
+  if (retiredGuideSlugs.includes(slug)) return null;
+
   return prisma.article.findFirst({
     where: {
-      slug,
       ...publicArticleWhere(locale),
+      slug,
     },
     include: {
       category: true,
@@ -263,6 +268,10 @@ export async function getPublishedArticleBySlug(slug: string, locale: Locale = "
       relations: {
         where: {
           status: "PUBLISHED",
+          OR: [
+            { relatedArticle: null },
+            { relatedArticle: { slug: { notIn: [...retiredGuideSlugs] } } },
+          ],
         },
         include: {
           product: {

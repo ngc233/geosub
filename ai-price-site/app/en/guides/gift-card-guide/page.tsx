@@ -1,11 +1,11 @@
-import CmsBackedGuidePage, {
-  getCoreGuideMetadata,
-} from "../../../../components/CmsBackedGuidePage";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-export function generateMetadata() {
-  return getCoreGuideMetadata({ locale: "en", slug: "gift-card-guide" });
-}
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+  alternates: { canonical: null, languages: {} },
+};
 
-export default function GiftCardGuidePage() {
-  return <CmsBackedGuidePage locale="en" slug="gift-card-guide" />;
+export default function RetiredGiftCardGuidePage() {
+  notFound();
 }

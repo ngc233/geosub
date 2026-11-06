@@ -1,5 +1,11 @@
-import { permanentRedirect } from "next/navigation";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-export default function TraditionalChineseLegacyGiftCardGuidePage() {
-  permanentRedirect("/zh/guides/gift-card-guide");
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+  alternates: { canonical: null, languages: {} },
+};
+
+export default function RetiredGiftCardGuidePage() {
+  notFound();
 }

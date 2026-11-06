@@ -41,7 +41,6 @@ const desired = {
         children: [
           { label: "全部指南", href: "/zh/guides" },
           { label: "价格指南", href: "/zh/guides/price-guide" },
-          { label: "礼品卡教程", href: "/zh/guides/gift-card-guide" },
           { label: "支付与账号", href: "/zh/guides/payment-account" },
           { label: "工具测评", href: "/zh/guides/tool-review" },
           { label: "方法论", href: "/zh/guides/methodology" },
@@ -99,7 +98,6 @@ const desired = {
         children: [
           { label: "All Guides", href: "/en/guides" },
           { label: "Price Guide", href: "/en/guides/price-guide" },
-          { label: "Gift Card Guide", href: "/en/guides/gift-card-guide" },
           { label: "Payment & Account", href: "/en/guides/payment-account" },
           { label: "Tool Reviews", href: "/en/guides/tool-review" },
           { label: "Methodology", href: "/en/guides/methodology" },
