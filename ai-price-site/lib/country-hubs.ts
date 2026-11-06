@@ -14,8 +14,8 @@ export type CountryHubPrice = {
   platform: string; billingCycle: string; priceType: string; quality: string; confidence: number;
   checkedAt: string | null; sourceUrl: string | null; observationId: string | null;
 };
-type HubRate = { rate: number; source: string | null; rateDate: string | null; fetchedAt: string | null; isFallback: boolean; isStale?: boolean; isExpired?: boolean };
-export function getCountryHubRows(prices: CountryHubPrice[], countryCode: string, rates: Record<string, HubRate>, now = new Date()) {
+export type HubRate = { rate: number; source: string | null; rateDate: string | null; fetchedAt: string | null; isFallback: boolean; isStale?: boolean; isExpired?: boolean };
+export function getVerifiedPriceRows(prices: CountryHubPrice[], rates: Record<string, HubRate>, now = new Date()) {
   const valid = prices.filter(price => price.platform === "ios" && price.billingCycle === "monthly"
     && price.priceType === "list_price" && price.quality === "verified" && price.confidence >= 80
     && Number.isFinite(price.amount) && price.amount > 0 && /^[A-Z]{3}$/.test(price.currency)
@@ -30,7 +30,7 @@ export function getCountryHubRows(prices: CountryHubPrice[], countryCode: string
       || rate.isFallback || rate.isStale || rate.isExpired || !Number.isFinite(age) || age < 0 || age > 18 * 3_600_000) return null;
     return { usd: price.amount / rate.rate, fxDate: rate.rateDate };
   };
-  return valid.filter(price => price.countryCode === countryCode).map(price => {
+  return valid.map(price => {
     const converted = convert(price);
     const us = valid.find(other => other.countryCode === "US" && other.productSlug === price.productSlug
       && other.planSlug === price.planSlug && other.platform === price.platform && other.billingCycle === price.billingCycle);
@@ -41,4 +41,16 @@ export function getCountryHubRows(prices: CountryHubPrice[], countryCode: string
       usPrice: reference?.usd ?? null,
       difference: converted && reference ? (Math.round((converted.usd / reference.usd - 1) * 100) || 0) : null };
   }).sort((a, b) => (a.difference ?? Infinity) - (b.difference ?? Infinity) || a.productName.localeCompare(b.productName) || a.planName.localeCompare(b.planName));
+}
+
+export function getCountryHubRows(prices: CountryHubPrice[], countryCode: string, rates: Record<string, HubRate>, now = new Date()) {
+  return getVerifiedPriceRows(prices, rates, now).filter(price => price.countryCode === countryCode);
+}
+
+// A missing/stale FX quote does not remove the local price from country pages.
+// Homepage statistics must use only this derived, convertible-price collection.
+export function getComparablePriceRows(prices: CountryHubPrice[], rates: Record<string, HubRate>, now = new Date()) {
+  return getVerifiedPriceRows(prices, rates, now).filter(
+    (price): price is typeof price & { usd: number } => price.usd !== null && Number.isFinite(price.usd) && price.usd > 0,
+  );
 }
