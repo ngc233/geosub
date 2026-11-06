@@ -27,18 +27,18 @@
 
 ## 本地验收记录（2026-11-06）
 
-- 单测 1,132 项：1,131 通过、1 项既有跳过、0 失败；类型、Lint、设计检查、SEO 检查、编码检查、生产构建通过。
+- 单测 1,133 项：1,132 通过、1 项既有跳过、0 失败；类型、Lint、设计检查、SEO 检查、编码检查、生产构建通过。
 - 首页浏览器 8/8：桌面/390px 亮暗、键盘、币种切换和缺汇率回退、分类、轮播暂停、减少动态效果、无 JS 价格及统计、搜索币种、横向溢出、隐藏导航 HTML。
 - Plus/英文各 1280/390px、亮暗，8/8 与精确 main 基线逐像素一致；正文、全部链接的文字/顺序/href/rel、SEO 信息一致。比较使用相同构建器和依赖；旧 3151 构建的 lab/oklch 转换造成微小色差，已改用 0eadf845 同工具重建，未放宽像素阈值。
 - 390px 冷缓存字体共 45,408 字节（Inter Tight 600：22,660；700：22,748），无中文字体下载。
 - 同工具生产构建、同一本地测试库的单次 Lighthouse 手机测量：main 91，V3 96；LCP 3,476 → 2,790 ms，CLS 均为 0。测试库合格价格为零，此结果仅证明空数据状态，不能外推生产全量地图/排行性能。
-- 未验证：远程 CI（推送后单独记录）、生产全量数据下性能；本任务没有再次读取生产数据。8 项浏览器用例中 7 项需要显式本地虚构开关，CI 默认执行常规 HTML 验收。
+- 未验证：远程 CI（推送后单独记录）、生产全量数据下性能；此前只验收本地；本次补充只读查询仅取套餐命名汇总、不取价格行。8 项浏览器用例中 7 项需要显式本地虚构开关，CI 默认执行常规 HTML 验收。
 - 证据保存在仓库外 `v3-evidence`，包含四态截图、短录屏、严格锁定页对比及哈希清单；不纳入代码提交。
 
 ## 本地复核后的修正
 
 共用 `formatPublicPrice` 实现 CNY ¥ / USD $ / JPY JP¥ / HKD HK$ / TWD NT$ / EUR € / GBP £，其余保留 ISO 代码，统一空格及金额格式。`PublicPriceNumber` 的新 currency/cycle 参数让首页及公共搜索复用同一格式，并把小号辅助色周期放在同一行；旧调用保持原样，Plus 与英文不切换。币种下拉继续显示 ISO 代码。
-首页套餐和搜索使用 `getPlanDisplayName`，该现有函数只负责去重产品名，不翻译。已有中文原样保留；缺中文时保留原命名、不自动翻译。当前仓库未找到可复用中文显示名的代表套餐如下（按产品 → 配置套餐列出；不据此修改正式数据）：
-Anghami → plus；Captions → max；Character.AI → plus；ChatGPT → plus；Claude → pro；Crunchyroll → mega-fan；Deezer → premium；Disney+ → premium；DramaBox → membership；F1 TV → access；Gemini → pro；Grok → super；HBO Max → standard；HeyGen → starter；invideo AI → plus；Kimi → moderato；Kling AI → pro；Mistral Vibe (Le Chat) → pro；Leonardo AI → essential；Manus → basic；Microsoft Copilot → personal；MUBI → monthly；Netflix → standard；Perplexity → pro；Podimo → premium；Poe → basic；Pollo AI → pro；ReelShort → subscription；RunwayML → standard；SoundCloud → go-plus；Suno → pro；Rakuten Viki → plus；X Premium → premium；YouTube Premium → individual。
-分类卡增加“查看全部 AI 订阅 / 查看全部流媒体”，以及排序后第一项代表产品的完整套餐名、原值计算的节省率；不使用示例中的 Netflix 85% 常量。
+首页套餐和搜索复用 `getChinesePlanDisplayName`：优先保留已存中文名，只翻译负责人批准的六个通用词（Individual 个人版、Standard 标准版、Premium 高级版、Family 家庭版、Basic 基础版、Monthly 月度会员）；Plus/Pro/Go/Max 等品牌档位保留，产品名里的 Premium 不被误译。旧 `getPlanDisplayName` 行为不变，锁定页仍走旧函数。
+分类卡仅保留“最多省：产品 套餐 X%”及“查看全部 AI 订阅 / 查看全部流媒体”，移除重复的“代表套餐最多省”。所有值来自代表套餐，不使用示例中的 Netflix 85% 常量。
+2026-11-06 按用户新增授权，通过 geosub_readonly 执行套餐名称 SELECT 汇总；核对默认只读与 30s 超时，不写入、不迁移、不改缓存。生产已发布套餐的中文名缺口清单和查询时间放 PR 描述；不将生产名称汇总加入测试夹具或仓库。此前“仅测试数据缺中文名”的推断不成立。最初状态枚举大小写不符的查询报 22P02，修正为 schema 的 published 后查询成功。
 生产配置阶段检测本地测试开关并抛错，阻止误带样本构建或启动。开发模式仍需显式 fictional 值及 loopback 数据库，关闭开关时样本与横幅均不显示。

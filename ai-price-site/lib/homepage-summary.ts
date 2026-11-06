@@ -1,4 +1,4 @@
-import { getPlanDisplayName, getPlanTabLabel } from "./pricing-labels.ts";
+import { getChinesePlanDisplayName, getPlanTabLabel } from "./pricing-labels.ts";
 import { priorityCountries, type getComparablePriceRows, type HubRate } from "./country-hubs.ts";
 import type { getHomepageRepresentatives } from "./homepage-representatives.ts";
 
@@ -16,8 +16,8 @@ export function homepageProducts(representatives: Representatives) {
     const first = rep.prices[0];
     const prices = rep.prices.map(row => ({ code: row.countryCode, usd: row.usd }));
     const lowest = prices.reduce((a,b) => a.usd <= b.usd ? a : b);
-    return { slug: rep.productSlug, name: first.productName, plan: getPlanTabLabel(first.productName, getPlanDisplayName(first.productName, first.planName)),
-      planDisplayName: getPlanDisplayName(first.productName, first.planName), category: first.category,
+    return { slug: rep.productSlug, name: first.productName, plan: getPlanTabLabel(first.productName, getChinesePlanDisplayName(first.productName, first.planName)),
+      planDisplayName: getChinesePlanDisplayName(first.productName, first.planName), category: first.category,
       href: `/zh/${first.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${rep.productSlug}/${rep.planSlug}/`,
       productHref: `/zh/${first.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${rep.productSlug}/`,
       usPrice: rep.usPrice, prices, lowest, saving: (rep.usPrice-lowest.usd)/rep.usPrice };

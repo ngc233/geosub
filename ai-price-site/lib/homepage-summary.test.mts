@@ -1,3 +1,4 @@
+import { getChinesePlanDisplayName, getPlanDisplayName } from "./pricing-labels.ts";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { formatPublicPrice } from "./public-price-format.ts";
@@ -65,7 +66,7 @@ test("homepage preserves existing Chinese names without inventing translations o
   const reps=getHomepageRepresentatives(rows).representatives;
   const products=homepageProducts(reps.map(rep=>({...rep,prices:rep.prices.map(row=>({...row,planName:`${row.productName} 测试中文名`}))})));
   assert.ok(products.every(p=>p.plan==="测试中文名"&&p.planDisplayName===`${p.name} 测试中文名`));
-  assert.equal(homepageProducts(reps).find(p=>p.slug==="netflix")?.planDisplayName,"Netflix Standard");
+  assert.equal(homepageProducts(reps).find(p=>p.slug==="netflix")?.planDisplayName,"Netflix 标准版");
 });
 test("actual production build fails immediately when the local fixture switch is present",()=>{
   const cwd=fileURLToPath(new URL("../",import.meta.url));
@@ -76,4 +77,17 @@ test("actual production build fails immediately when the local fixture switch is
   assert.equal(result.error,undefined);
   assert.equal(result.status,1);
   assert.match(result.stdout+result.stderr,/GEOSUB_V3_FIXTURE is local-only/);
+});
+
+test("Chinese generic tiers translate without changing brand words, stored Chinese or locked labels",()=>{
+  for(const [raw,zh] of Object.entries({Individual:"个人版",Standard:"标准版",Premium:"高级版",Family:"家庭版",Basic:"基础版",Monthly:"月度会员"})) {
+    assert.equal(getChinesePlanDisplayName("Example",raw),`Example ${zh}`);
+    assert.equal(getChinesePlanDisplayName("Example",`Example ${raw}`),`Example ${zh}`);
+  }
+  assert.equal(getChinesePlanDisplayName("YouTube Premium","YouTube Premium Individual"),"YouTube Premium 个人版");
+  assert.equal(getChinesePlanDisplayName("YouTube Premium","YouTube Premium"),"YouTube Premium");
+  assert.equal(getChinesePlanDisplayName("Netflix","官方中文套餐"),"Netflix 官方中文套餐");
+  for(const brand of ["Plus","Pro","Go","Max"])assert.equal(getChinesePlanDisplayName("Example",brand),`Example ${brand}`);
+  assert.equal(getChinesePlanDisplayName("Gemini","Google AI Pro"),"Google AI Pro");
+  assert.equal(getPlanDisplayName("Netflix","Standard"),"Netflix Standard");
 });

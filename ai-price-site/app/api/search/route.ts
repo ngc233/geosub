@@ -1,4 +1,4 @@
-import { getPlanDisplayName } from "../../../lib/pricing-labels";
+import { getChinesePlanDisplayName } from "../../../lib/pricing-labels";
 import { retiredGuideSlugs } from "../../../lib/public-launch-routes";
 import { getPublicPricingProduct } from "../../../lib/pricing-product-store";
 import { loadCountryHub } from "../../../lib/cached-country-hub";
@@ -301,14 +301,14 @@ export async function GET(request: NextRequest) {
         const product = details.get(result.logoSlug!);
         const plan = result.kind === "plan" ? products.find(p=>p.id===result.productId)?.plans.find(p=>p.id===result.planId)?.slug : undefined;
         const minimum = product && minimumSearchPrice(product,plan);
-        return minimum ? [{id:result.id,kind:result.kind as "product"|"plan",title:result.kind === "plan" ? getPlanDisplayName(product!.name,minimum.plan) : result.title,href:result.href,
-          subtitle:`${getPlanDisplayName(product!.name,minimum.plan)} · 最低 · ${minimum.country}`,minimumUsd:minimum.usd,cycle:minimum.cycle}] : [];
+        return minimum ? [{id:result.id,kind:result.kind as "product"|"plan",title:result.kind === "plan" ? getChinesePlanDisplayName(product!.name,minimum.plan) : result.title,href:result.href,
+          subtitle:`${getChinesePlanDisplayName(product!.name,minimum.plan)} · 最低 · ${minimum.country}`,minimumUsd:minimum.usd,cycle:minimum.cycle}] : [];
       });
       const countries = priorityCountries.filter(country=>scoreSearchText(query,[country.zh,country.en,country.code,country.slug])>0).slice(0,3);
       for (const country of countries) {
         const minimum = minimumCountrySearchPrice(await loadCountryHub(country.code));
         if (minimum) priced.push({id:`country:${country.code}`,kind:"country",title:country.zh,href:`/zh/countries/${country.slug}`,
-          subtitle:`${getPlanDisplayName(minimum.productName,minimum.planName)} 起`,minimumUsd:minimum.usd!,cycle:"monthly"});
+          subtitle:`${getChinesePlanDisplayName(minimum.productName,minimum.planName)} 起`,minimumUsd:minimum.usd!,cycle:"monthly"});
       }
       return json({query,results:priced});
     }

@@ -23,7 +23,10 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
   await expect(page.getByRole("note")).toContainText("虚构测试数据");
   await expect(page.getByLabel("收录统计")).toContainText("62");
   await expect(page.getByRole("link").filter({hasText:"查看全部 AI 订阅"})).toContainText("最多省：ChatGPT Plus 15%");
-  await expect(page.getByRole("link").filter({hasText:"查看全部流媒体"})).toContainText("最多省：YouTube Premium Individual 15%");
+  await expect(page.getByRole("link").filter({hasText:"查看全部流媒体"})).toContainText("最多省：YouTube Premium 个人版 15%");
+  await expect(page.getByText(/代表套餐最多省/)).toHaveCount(0);
+  await expect(page.getByRole("list",{name:"订阅省钱排名"})).toContainText("标准版");
+  await expect(page.getByRole("list",{name:"订阅省钱排名"})).toContainText("月度会员");
   const price=page.locator('[data-gs-price-cycle="true"]').filter({hasText:"¥ 119.00"}).last();
   await expect(price).toContainText("¥ 119.00 / 月");
   const inline=await price.evaluate(element=>{const amount=element.querySelector('span[aria-hidden]')!,cycle=element.querySelector('small')!;const a=amount.getBoundingClientRect(),c=cycle.getBoundingClientRect();return c.x>=a.right&&c.top<a.bottom;});
