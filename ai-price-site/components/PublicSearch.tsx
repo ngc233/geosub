@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import type { ChromeSearchResult } from "../lib/public-chrome-search";
 import { PublicDialog } from "./PublicControls";
 import PublicIcon from "./PublicIcon";
+import { useSearchDisplayCurrency } from "./PublicCurrencySelect";
 import PublicPriceNumber from "./PublicPriceNumber";
 
-export default function PublicSearch() {
+export default function PublicSearch({variant="header"}:{variant?:"header"|"hero"}) {
+  const display=useSearchDisplayCurrency();
   const [open,setOpen]=useState(false);
   const [query,setQuery]=useState("");
   const [results,setResults]=useState<ChromeSearchResult[]>([]);
@@ -17,9 +19,9 @@ export default function PublicSearch() {
   const input=useRef<HTMLInputElement>(null);
   const id=useId(); const router=useRouter();
   useEffect(()=>{
-    const shortcut=(e:KeyboardEvent)=>{ if(e.key==="/" && !e.metaKey && !e.ctrlKey && !(e.target instanceof HTMLElement && (e.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)))) { e.preventDefault(); setOpen(true); } };
+    const shortcut=(e:KeyboardEvent)=>{ if(variant==="header" && e.key==="/" && !e.metaKey && !e.ctrlKey && !(e.target instanceof HTMLElement && (e.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)))) { e.preventDefault(); setOpen(true); } };
     document.addEventListener("keydown",shortcut); return ()=>document.removeEventListener("keydown",shortcut);
-  },[]);
+  },[variant]);
   useEffect(()=>{ if(open) input.current?.focus(); },[open]);
   useEffect(()=>{
     if(!open || query.trim().length<2) return;
@@ -43,14 +45,14 @@ export default function PublicSearch() {
   };
   const choose=(result:ChromeSearchResult)=>{setOpen(false);router.push(result.href);};
   return <>
-    <button type="button" className="gs-search-trigger" data-gs-ui="button" aria-label="搜索产品或国家" onClick={()=>setOpen(true)}><PublicIcon name="Search"/><span>搜索</span><kbd>/</kbd></button>
+    {variant==="hero"?<form className="gs-home-search" role="search" onSubmit={e=>{e.preventDefault();setOpen(true);search(query);}}><PublicIcon name="Search"/><input aria-label="首页搜索产品或国家" placeholder="搜索产品或国家" value={query} maxLength={80} onChange={e=>setQuery(e.target.value)}/><button type="submit" data-gs-ui="button">搜索</button></form>:<button type="button" className="gs-search-trigger" data-gs-ui="button" aria-label="搜索产品或国家" onClick={()=>setOpen(true)}><PublicIcon name="Search"/><span>搜索</span><kbd>/</kbd></button>}
     {open && <PublicDialog label="搜索" variant="search" onClose={()=>setOpen(false)}>
       <input ref={input} data-gs-ui="input" aria-label="搜索产品或国家" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls={`${id}-results`} aria-activedescendant={results[active]?`${id}-${active}`:undefined} value={query} maxLength={80}
         onChange={e=>search(e.target.value)}
         onKeyDown={e=>{if(["ArrowDown","ArrowUp"].includes(e.key)){e.preventDefault();if(results.length)setActive(old=>(old+(e.key==="ArrowDown"?1:-1)+results.length)%results.length);}if(e.key==="Enter"&&results[active]){e.preventDefault();choose(results[active]);}}}/>
       <div id={`${id}-results`} role="listbox" aria-label="搜索结果" className="gs-search-results">
         {(["product","plan","country"] as const).map(kind=>{const group=results.filter(result=>result.kind===kind);return group.length?<div key={kind} role="group" aria-label={{product:"产品",plan:"套餐",country:"国家"}[kind]}><strong className="gs-search-group-title">{{product:"产品",plan:"套餐",country:"国家"}[kind]}</strong>{group.map(result=>{const index=results.indexOf(result);return <div key={result.id} id={`${id}-${index}`} role="option" aria-selected={active===index} onMouseMove={()=>setActive(index)} onClick={()=>choose(result)}>
-          <div><strong>{result.title}</strong><small>{result.subtitle}</small></div><span className="gs-search-price"><PublicPriceNumber value={result.minimumUsd} prefix="$"/><small>USD / {result.cycle.toLowerCase()==="monthly"?"月":result.cycle.toLowerCase()==="yearly"?"年":result.cycle}</small></span>
+          <div><strong>{result.title}</strong><small>{result.subtitle}</small></div><span className="gs-search-price"><PublicPriceNumber value={result.minimumUsd*display.rate} currency={display.currency} cycle={result.cycle} changeKey={display.changeKey}/></span>
         </div>;})}</div>:null;})}
       </div>
       <p role="status">{status}</p>{status.includes("不可用")&&<button data-gs-ui="button" onClick={()=>{setStatus("正在搜索…");setRetry(x=>x+1);}}>重试</button>}

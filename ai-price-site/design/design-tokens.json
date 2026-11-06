@@ -26,7 +26,12 @@
     "baseline": "#3D4450",
     "focus": "var(--gs-text)",
     "link": "var(--gs-text)",
-    "onPrimary": "var(--gs-surface)"
+    "onPrimary": "var(--gs-surface)",
+    "mapSurface": "#FFFFFF",
+    "mapLow": "#4D7C0F",
+    "mapHigh": "#C2410C",
+    "mapBaseline": "#3D4450",
+    "mapLand": "#D9D9D3"
   },
   "radius": {
     "tag": 999,

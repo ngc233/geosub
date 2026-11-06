@@ -1,23 +1,25 @@
 "use client";
 
+import { formatPublicPrice, publicBillingLabel } from "../lib/public-price-format";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { numberMotionProgress, parseNumberMotion } from "../lib/public-number-motion";
 
 /** Display only: callers supply the already-converted value. No rates or fallback data.
  * Changing value alone never animates; changeKey must change after a user action. */
 export default function PublicPriceNumber({ value, changeKey, prefix = "", suffix = "",
-  locale = "zh-CN", fractionDigits = 2, size = "row", label }: {
+  locale = "zh-CN", fractionDigits = 2, size = "row", label, initialValue, currency, cycle }: {
   value: number; changeKey?: string | number; prefix?: string; suffix?: string;
-  locale?: string; fractionDigits?: number; size?: "row" | "hero"; label?: string;
+  locale?: string; fractionDigits?: number; size?: "row" | "hero"; label?: string; initialValue?: number; currency?: string; cycle?: string;
 }) {
   const root = useRef<HTMLSpanElement>(null);
   const visible = useRef<HTMLSpanElement>(null);
-  const last = useRef({ value, key: changeKey });
-  const format = useMemo(() => new Intl.NumberFormat(locale, {
-    minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits,
-  }), [locale, fractionDigits]);
+  const last = useRef({ value: initialValue ?? value, key: initialValue === undefined ? changeKey : undefined });
+  const format = useMemo(() => {
+    const number = new Intl.NumberFormat(locale, { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
+    return (amount: number) => currency ? formatPublicPrice(amount, currency, locale, fractionDigits) : `${prefix}${number.format(amount)}${suffix}`;
+  }, [currency, locale, fractionDigits, prefix, suffix]);
   const valid = Number.isFinite(value);
-  const finalText = valid ? `${prefix}${format.format(value)}${suffix}` : "";
+  const finalText = valid ? format(value) : "";
   useLayoutEffect(() => {
     const element = visible.current;
     const container = root.current;
@@ -38,19 +40,20 @@ export default function PublicPriceNumber({ value, changeKey, prefix = "", suffi
       const progress = Math.min(1, (now - start) / motion.ms);
       const current = previous.value + (value - previous.value) * numberMotionProgress(progress, motion.curve);
       last.current.value = current;
-      element.textContent = `${prefix}${format.format(current)}${suffix}`;
+      element.textContent = format(current);
       if (progress < 1) frame = requestAnimationFrame(tick);
       else finish();
     };
-    element.textContent = `${prefix}${format.format(previous.value)}${suffix}`;
+    element.textContent = format(previous.value);
     frame = requestAnimationFrame(tick);
     const onPreference = () => { if (reduced.matches) finish(); };
     reduced.addEventListener("change", onPreference);
     return () => { cancelAnimationFrame(frame); reduced.removeEventListener("change", onPreference); };
   }, [value, changeKey, finalText, prefix, suffix, format, valid]);
   if (!valid) return null;
-  return <span ref={root} data-gs-number data-gs-price data-size={size}>
-    <span className="gs-sr-only">{label ? `${label}：` : ""}{finalText}</span>
+  return <span ref={root} data-gs-number data-gs-price data-size={size} data-gs-price-cycle={cycle ? "true" : undefined}>
+    <span className="gs-sr-only">{label ? `${label}：` : ""}{finalText}{cycle ? ` / ${publicBillingLabel(cycle)}` : ""}</span>
     <span ref={visible} aria-hidden="true">{finalText}</span>
+    {cycle && <small data-gs-cycle aria-hidden="true"> / {publicBillingLabel(cycle)}</small>}
   </span>;
 }

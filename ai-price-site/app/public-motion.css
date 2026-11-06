@@ -43,3 +43,18 @@
 .gs-public-unified.gs-dialog[open][data-variant="menu"] { animation:gs-drawer-in var(--gs-motion-base) var(--gs-motion-ease); }
 @keyframes gs-drawer-in { from { transform:translateX(100%); } to { transform:translateX(0); } }
 @media (prefers-reduced-motion:reduce) { .gs-public-unified.gs-dialog[open][data-variant="menu"] { animation:none !important; } }
+
+/* V3 product changes keep the map mounted. */
+.gs-public-unified .gs-home-bubble { transition:translate var(--gs-motion-slow) var(--gs-motion-ease); }
+.gs-public-unified .gs-home-carousel-progress[data-running="true"][data-cycle="0"] { animation:gs-carousel-a var(--gs-motion-carousel) var(--gs-motion-ease) forwards; }
+.gs-public-unified .gs-home-carousel-progress[data-running="true"][data-cycle="1"] { animation:gs-carousel-b var(--gs-motion-carousel) var(--gs-motion-ease) forwards; }
+@keyframes gs-carousel-a { from { width:0; } to { width:100%; } }
+@keyframes gs-carousel-b { from { width:0; } to { width:100%; } }
+@media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-home-carousel-progress { animation:none !important; } }
+.gs-public-unified .gs-home-bubble { translate:calc(var(--gs-bubble-x) * 1cqw) calc(var(--gs-bubble-y) * 1cqw); }
+.gs-public-unified .gs-home-rank-slot { transition:grid-template-rows var(--gs-motion-base) var(--gs-motion-ease),visibility var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-home-ranking-row { transition:padding var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-home-section .gs-bar-fill { transition:transform var(--gs-motion-slow) var(--gs-motion-ease); }
+@media (max-width:767px) { .gs-public-unified .gs-home-bubble { translate:none; } }
+@media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-home-bubble { transition:none !important; } }
+.gs-public-unified .gs-home-bubble[data-unmapped="true"] { translate:none; }
