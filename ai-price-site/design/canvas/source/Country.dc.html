@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>国家页 · 土耳其</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F6F3}
+a{color:#15171A}a:hover{color:#4D7C0F}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.ghost{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #D9D9D3;background:#FFFFFF;color:#15171A;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms}
+.ghost:hover{background:#F0F0EC}
+.tab{min-height:44px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:15px;color:#5B616B;cursor:pointer;position:relative;z-index:1;transition:color 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.tab[aria-pressed="true"]{color:#1A2E05;font-weight:700}
+.row{transition:background-color 120ms}
+.row:hover{background:#F8FBEF}
+.lift{transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),box-shadow 120ms cubic-bezier(0.2,0.8,0.2,1)}
+.lift:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(21,23,26,0.08)}
+.lift:active{transform:scale(0.98)}
+.lift:focus-visible,.ghost:focus-visible,.tab:focus-visible,.row:focus-visible{outline:3px solid #4D7C0F;outline-offset:2px}
+@keyframes rise0{from{transform:translateY(8px)}to{transform:translateY(0)}}
+@keyframes rise1{from{transform:translateY(8px)}to{transform:translateY(0)}}
+.rise0{animation:rise0 320ms cubic-bezier(0.2,0.8,0.2,1) both}
+.rise1{animation:rise1 320ms cubic-bezier(0.2,0.8,0.2,1) both}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F6F3; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+
+<header style="background: rgba(246,246,243,0.92); border-bottom: 1px solid #E4E4DF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #15171A; min-height: 44px"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="#15171A"></circle><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24" fill="none" stroke="#3D4450" stroke-width="1.5"></path><circle cx="21" cy="8" r="4" fill="#A3E635" stroke="#F6F6F3" stroke-width="1.5"></circle></svg><span style="font-size: 19px; font-weight: 700">GeoSub</span></a>
+<nav aria-label="主导航" style="display: flex; flex-grow: 1; gap: 4px; font-size: 15px">
+<a href="#h" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #5B616B">首页</a>
+<a href="#p" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #5B616B">按产品</a>
+<a href="#c" aria-current="page" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #15171A; font-weight: 600; box-shadow: inset 0 -3px 0 #84CC16">按国家</a>
+<a href="#g" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #5B616B">指南</a>
+</nav>
+<label style="flex: 0 1 300px; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 12px; color: #5B616B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">搜索</span><input type="search" placeholder="搜产品或国家" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 14px; color: #15171A"><kbd class="num" style="font-size: 12px; color: #5B616B; border: 1px solid #E4E4DF; border-radius: 6px; padding: 1px 6px">/</kbd></label>
+<button type="button" class="ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>简体中文<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+</div>
+</header>
+
+<main id="top" style="max-width: 1200px; margin: 0 auto; padding: 28px 24px 72px; display: flex; flex-direction: column; gap: 36px">
+<div style="font-size: 14px; color: #5B616B"><a href="#all" style="color: #5B616B; text-decoration: none">全部国家</a> / 土耳其</div>
+
+<section style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-end">
+<div style="flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 14px">
+<svg width="56" height="40" viewBox="0 0 30 20" role="img" aria-label="土耳其国旗"><rect width="30" height="20" rx="3" fill="#E30A17"></rect><circle cx="11" cy="10" r="5" fill="#FFFFFF"></circle><circle cx="12.3" cy="10" r="4" fill="#E30A17"></circle><path d="M17.5 10l-2.9 0.95 1.8-2.47v3.04l-1.8-2.47z" fill="#FFFFFF"></path></svg>
+<h1 style="margin: 0; font-size: 36px; line-height: 1.3; font-weight: 700">在土耳其订阅，一半比美国便宜 {{ avg }}% 以上</h1>
+</div>
+<p style="margin: 0; font-size: 16px; line-height: 1.7; color: #3D4450">按 App Store 土耳其区的已核验价格，和美国同套餐逐个比较，按 <b class="num" style="color: #15171A">{{ total }}</b> 个订阅计算。本币是土耳其里拉（₺），<b style="color: #15171A">汇率波动较大</b>，折算价会跟着变。</p>
+</div>
+<div style="flex: 1 1 420px; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="background: #A3E635; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 4px"><span class="num" style="font-size: 34px; font-weight: 700; color: #1A2E05">−{{ avg }}%</span><span style="font-size: 13px; color: #1A2E05">一半订阅至少低这么多</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 4px"><span class="num" style="font-size: 34px; font-weight: 700">{{ cheaper }}<span style="font-size: 18px; color: #5B616B">/{{ total }}</span></span><span style="font-size: 13px; color: #5B616B">个订阅比美国便宜</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 4px"><span class="num" style="font-size: 34px; font-weight: 700; color: #4D7C0F">{{ best }}%</span><span style="font-size: 13px; color: #5B616B">最多能省</span></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h2 style="margin: 0; font-size: 22px; font-weight: 700">土耳其的订阅价格</h2><div style="font-size: 14px; color: #5B616B">按比美国低多少排序 · 每月 · 示例数据</div></div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<button type="button" class="ghost" style="min-height: 52px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>折合为 <b class="num">CNY</b><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<div style="display: inline-flex; position: relative; background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 12px; padding: 4px">
+<div style="position: absolute; top: 4px; left: 4px; height: 44px; width: 96px; border-radius: 9px; background: #A3E635; transform: translateX({{ tabX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3"><button type="button" class="tab" style="width: 96px" aria-pressed="{{ t.on }}" onClick="{{ t.pick }}">{{ t.label }}</button></sc-for>
+</div>
+</div>
+</div>
+<div style="background: #FFFFFF; border-radius: 20px; padding: 8px; overflow-x: auto">
+<div style="min-width: 720px">
+<div style="display: grid; grid-template-columns: minmax(180px, 1.4fr) 120px 110px 110px minmax(180px, 1.5fr); gap: 12px; padding: 8px 14px; font-size: 13px; color: #5B616B">
+<div>订阅</div><div style="text-align: right">本地标价</div><div style="text-align: right">折合</div><div style="text-align: right">美国</div><div>比美国低</div>
+</div>
+<div style="height: {{ listH }}px; overflow: hidden; transition: height 220ms cubic-bezier(0.2,0.8,0.2,1)">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+<a href="#plan" class="row rise{{ gen }}" style="display: grid; grid-template-columns: minmax(180px, 1.4fr) 120px 110px 110px minmax(180px, 1.5fr); gap: 12px; align-items: center; height: 64px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; text-decoration: none; color: #15171A; min-height: 44px; animation-delay: {{ r.delay }}ms">
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 30px; height: 30px; border-radius: 8px; background: #F0F0EC; color: #15171A; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">{{ r.initial }}</span><span style="display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 600">{{ r.name }}</span><span style="font-size: 12px; color: #5B616B">{{ r.cat }}</span></span></span>
+<span class="num" style="font-size: 14px; color: #5B616B; text-align: right">{{ r.local }}</span>
+<span class="num" style="font-size: 16px; font-weight: 700; color: #4D7C0F; text-align: right">{{ r.price }}</span>
+<span class="num" style="font-size: 14px; color: #5B616B; text-align: right">{{ r.us }}</span>
+<span style="display: flex; align-items: center; gap: 10px"><span style="flex-grow: 1; height: 8px; border-radius: 4px; background: #F0F0EC"><span style="display: block; height: 8px; border-radius: 4px; background: #84CC16; width: {{ r.pct }}%"></span></span><span class="num" style="font-size: 14px; font-weight: 700; color: #3F6212; width: 44px; text-align: right">−{{ r.pct }}%</span></span>
+</a>
+</sc-for>
+</div>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-wrap: wrap; gap: 16px">
+<div style="flex: 1 1 380px; min-width: 0; background: #FFFFFF; border-radius: 20px; padding: 26px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 18px; font-weight: 700">在土耳其区订阅要注意</div>
+<div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.6; color: #3D4450">
+<div style="display: flex; gap: 10px"><span style="color: #4D7C0F; font-weight: 700">1</span>需要土耳其区 Apple 账号</div>
+<div style="display: flex; gap: 10px"><span style="color: #4D7C0F; font-weight: 700">2</span>付款方式以 App Store 土耳其区实际显示为准</div>
+<div style="display: flex; gap: 10px"><span style="color: #4D7C0F; font-weight: 700">3</span>里拉汇率变化快，平台会不定期调价</div>
+</div>
+<a href="#guide" style="font-size: 14px; color: #4D7C0F; min-height: 44px; display: inline-flex; align-items: center">支付与账号指南<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 4px; vertical-align: -3px"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+</div>
+<div style="flex: 1 1 380px; min-width: 0; background: #FFFFFF; border-radius: 20px; padding: 26px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px"><span style="font-size: 18px; font-weight: 700">和其他便宜地区比</span><span style="font-size: 12px; color: #5B616B">各国订阅节省的中位数</span></div>
+<sc-for list="{{ peers }}" as="k" hint-placeholder-count="4">
+<a href="#k" class="lift" style="display: grid; grid-template-columns: 34px 72px minmax(0,1fr) 48px; align-items: center; gap: 12px; text-decoration: none; color: #15171A; padding: 8px 10px; border-radius: 12px; background: {{ k.bg }}; min-height: 44px">
+<span class="num" style="width: 34px; height: 34px; border-radius: 50%; background: #ECFCCB; color: #3F6212; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{ k.code }}</span>
+<span style="font-size: 15px; font-weight: 600">{{ k.name }}</span>
+<span style="height: 8px; border-radius: 4px; background: #F0F0EC"><span style="display: block; height: 8px; border-radius: 4px; background: #84CC16; width: {{ k.w }}%"></span></span>
+<span class="num" style="font-size: 14px; font-weight: 700; color: #3F6212; text-align: right">−{{ k.pct }}%</span>
+</a>
+</sc-for>
+</div>
+</section>
+</main>
+<footer style="border-top: 1px solid #E4E4DF; padding: 24px; text-align: center; font-size: 13px; color: #5B616B">页脚与首页相同</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.data = [
+      ['YouTube Premium', 'Y', 'stream', '₺ 79.99', 17.8, 99.0], ['Apple Music', 'M', 'stream', '₺ 74.99', 16.9, 71.0],
+      ['Spotify 个人版', 'S', 'stream', '₺ 84.99', 18.9, 85.3], ['Disney+', 'D', 'stream', '₺ 104.99', 23.6, 99.5],
+      ['Netflix 标准版', 'N', 'stream', '₺ 169.99', 38.4, 124.3], ['ChatGPT Plus', 'C', 'ai', '₺ 249.99', 54.1, 142.4],
+      ['Gemini Advanced', 'G', 'ai', '₺ 319.99', 72.0, 142.4], ['Claude Pro', 'A', 'ai', '₺ 459.99', 104.2, 142.4]
+    ];
+    this.state = { tab: 0, gen: 0 };
+  }
+  renderVals() {
+    const s = this.state;
+    const keys = [null, 'ai', 'stream'];
+    const rows = this.data.filter((d) => !keys[s.tab] || d[2] === keys[s.tab])
+      .map((d) => ({ name: d[0], initial: d[1], cat: d[2] === 'ai' ? 'AI 订阅' : '流媒体', local: d[3], price: '¥ ' + d[4].toFixed(2), us: '¥ ' + d[5].toFixed(2), pct: Math.round((1 - d[4] / d[5]) * 100) }))
+      .sort((a, b) => b.pct - a.pct).map((r, i) => Object.assign(r, { delay: i * 40 }));
+    const all = this.data.map((d) => Math.round((1 - d[4] / d[5]) * 100));
+    const sorted = [...all].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const avg = Math.round(sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2);
+    return {
+      avg,
+      cheaper: all.filter((p) => p > 0).length, total: all.length, best: Math.max.apply(null, all),
+      tabs: ['全部', 'AI 订阅', '流媒体'].map((label, i) => ({ label, on: String(i === s.tab), pick: () => { if (i !== this.state.tab) this.setState({ tab: i, gen: 1 - this.state.gen }); } })),
+      tabX: s.tab * 96, gen: s.gen, listH: rows.length * 64, rows,
+      peers: [['EG', '埃及', 71], ['TR', '土耳其', avg], ['PK', '巴基斯坦', 58], ['IN', '印度', 52]].map((p) => ({ code: p[0], name: p[1], pct: p[2], w: Math.round(p[2] / 80 * 100), bg: p[1] === '土耳其' ? '#F8FBEF' : 'transparent' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>手机端套餐页</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F6F3}
+a{color:#15171A}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.icon{width:44px;height:44px;border-radius:12px;border:1px solid #E4E4DF;background:#FFFFFF;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1)}
+.icon:active{transform:scale(0.94)}
+.btn{flex:1 1 0;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid #D9D9D3;background:#FFFFFF;color:#15171A;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms}
+.btn:active{transform:scale(0.98);background:#F0F0EC}
+.chip{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #E4E4DF;background:#FFFFFF;font:inherit;font-size:14px;color:#3D4450;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background-color 220ms cubic-bezier(0.2,0.8,0.2,1),color 220ms,border-color 220ms}
+.chip[aria-pressed="true"]{background:#A3E635;border-color:#A3E635;color:#1A2E05;font-weight:700}
+.row{width:100%;min-height:60px;border:0;background:transparent;font:inherit;color:#15171A;cursor:pointer;display:flex;align-items:center;gap:12px;padding:0 12px;text-align:left;border-radius:12px}
+.row:active{background:#F8FBEF}
+.fold{display:grid;transition:grid-template-rows 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.fold > div{overflow:hidden}
+.chev{transition:transform 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.faq{width:100%;min-height:52px;border:0;background:transparent;font:inherit;font-size:15px;color:#15171A;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0;text-align:left}
+.sheet{transition:transform 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.scrim{transition:opacity 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.opt{width:100%;min-height:48px;border:0;background:transparent;font:inherit;font-size:15px;color:#15171A;display:flex;align-items:center;gap:12px;padding:0 12px;border-radius:10px;cursor:pointer;text-align:left}
+.opt[aria-selected="true"]{background:#ECFCCB;font-weight:600}
+.icon:focus-visible,.btn:focus-visible,.chip:focus-visible,.row:focus-visible,.faq:focus-visible,.opt:focus-visible{outline:3px solid #4D7C0F;outline-offset:2px}
+@keyframes rise0{from{transform:translateY(8px)}to{transform:translateY(0)}}
+@keyframes rise1{from{transform:translateY(8px)}to{transform:translateY(0)}}
+.rise0{animation:rise0 320ms cubic-bezier(0.2,0.8,0.2,1) both}
+.rise1{animation:rise1 320ms cubic-bezier(0.2,0.8,0.2,1) both}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 2500px; position: relative; overflow: hidden; background: #F6F6F3; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+
+<header style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E4E4DF; background: #F6F6F3">
+<a href="#top" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #15171A; min-height: 44px"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="#15171A"></circle><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24" fill="none" stroke="#3D4450" stroke-width="1.5"></path><circle cx="21" cy="8" r="4" fill="#A3E635" stroke="#F6F6F3" stroke-width="1.5"></circle></svg><span style="font-size: 18px; font-weight: 700">GeoSub</span></a>
+<div style="display: flex; gap: 8px">
+<button type="button" class="icon" aria-label="搜索"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15171A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="icon" aria-label="打开菜单"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15171A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button>
+</div>
+</header>
+
+<main id="top" style="padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 13px; color: #5B616B">AI 订阅 / ChatGPT / Plus</div>
+<h1 style="margin: 0; font-size: 26px; line-height: 1.3; font-weight: 700">ChatGPT Plus 各地区价格</h1>
+<div style="font-size: 13px; color: #5B616B">App Store · 每月 · 38 个地区 · 11月4日采集</div>
+</div>
+
+<section style="background: #FFFFFF; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: inset 0 0 0 2px #A3E635">
+<div style="font-size: 14px; color: #3F6212; font-weight: 700">全球最低 · 土耳其</div>
+<div class="num" style="font-size: 48px; font-weight: 700; line-height: 1.05; color: #4D7C0F">{{ low }}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><span style="background: #A3E635; color: #1A2E05; border-radius: 999px; padding: 5px 11px; font-size: 14px; font-weight: 700">比美国低 62%</span><span class="num" style="font-size: 13px; color: #5B616B">本地标价 ₺ 249.99 · 含税</span></div>
+<div style="display: flex; gap: 8px; margin-top: 4px">
+<button type="button" class="btn" aria-haspopup="dialog" onClick="{{ openSheet }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>折合为 <b class="num">{{ curCode }}</b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button type="button" class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>分享价格图</button>
+</div>
+<a href="#guide-apple-id" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #F7FEE7; border: 1px solid #D9F99D; text-decoration: none; color: #15171A; min-height: 44px; margin-top: 4px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3F6212" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg>
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">怎么注册外区 Apple ID</span><span style="font-size: 12px; color: #5B616B">通用教程 · 约 5 分钟读完</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+</a>
+<div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; border: 1px dashed #D9D9D3; font-size: 13px; color: #5B616B"><span style="font-size: 11px; border: 1px solid #E4E4DF; border-radius: 4px; padding: 0 5px">推广</span>推广位（预留，默认关闭）</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 16px; font-weight: 700">各地区价格分布</span><span style="font-size: 12px; color: #5B616B">38 个地区</span></div>
+<div style="position: relative; height: 44px; margin: 0 6px" role="img" aria-label="各地区价格从低到高的分布，竖线为美国价格">
+<div style="position: absolute; left: 0; right: 0; top: 26px; height: 4px; border-radius: 2px; background: #F0F0EC"></div>
+<div style="position: absolute; left: {{ usX }}%; top: 0; transform: translateX(-50%); font-size: 11px; color: #3D4450">美国</div>
+<div style="position: absolute; left: {{ usX }}%; top: 16px; width: 2px; height: 24px; margin-left: -1px; background: #3D4450"></div>
+<sc-for list="{{ dist }}" as="d" hint-placeholder-count="9"><div style="position: absolute; left: {{ d.x }}%; top: 22px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: {{ d.c }}; border: 2px solid #FFFFFF; box-sizing: border-box"></div></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="background: #F6F6F3; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #5B616B">美国</span><span class="num" style="font-size: 16px; font-weight: 700">{{ us }}</span></div>
+<div style="background: #F6F6F3; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #5B616B">中位数</span><span class="num" style="font-size: 16px; font-weight: 700">{{ median }}</span></div>
+<div style="background: #F6F6F3; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #5B616B">最贵 · 瑞士</span><span class="num" style="font-size: 16px; font-weight: 700; color: #C2410C">{{ high }}</span></div>
+</div>
+<div style="font-size: 13px; color: #3F6212; background: #F7FEE7; border-radius: 10px; padding: 10px 12px"><b class="num">26</b> / 38 个地区比美国便宜</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">地区价格</h2>
+<div style="display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px">
+<sc-for list="{{ filters }}" as="f" hint-placeholder-count="3"><button type="button" class="chip" aria-pressed="{{ f.on }}" onClick="{{ f.pick }}">{{ f.label }}</button></sc-for>
+</div>
+<div style="background: #FFFFFF; border-radius: 18px; padding: 6px">
+<div style="height: {{ listH }}px; overflow: hidden; transition: height 220ms cubic-bezier(0.2,0.8,0.2,1)">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+<div class="rise{{ gen }}" style="border-top: {{ r.line }}; animation-delay: {{ r.delay }}ms">
+<button type="button" class="row" aria-expanded="{{ r.open }}" onClick="{{ r.toggle }}">
+<span class="num" style="width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; background: #F0F0EC; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #3D4450">{{ r.code }}</span>
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: {{ r.weight }}">{{ r.name }}</span><span class="num" style="font-size: 12px; color: #5B616B">{{ r.local }} · {{ r.tax }}</span></span>
+<span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px"><span class="num" style="font-size: 16px; font-weight: 700; color: {{ r.fg }}">{{ r.price }}</span><span class="num" style="font-size: 12px; font-weight: 700; color: {{ r.fg }}">{{ r.diff }}</span></span>
+<span class="chev" style="display: inline-flex; transform: rotate({{ r.rot }}deg); color: #5B616B"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span>
+</button>
+<div class="fold" style="grid-template-rows: {{ r.rows }}"><div>
+<div style="margin: 0 8px 10px; padding: 12px; border-radius: 12px; background: #F6F6F3; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #3D4450">
+<span>来源：App Store {{ r.name }}区页面</span><span>采集 11月4日 08:00 · 连续 3 次同价，已核验</span><a href="#ev" style="color: #4D7C0F; min-height: 32px; display: inline-flex; align-items: center">查看原始快照</a>
+</div>
+</div></div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="font-size: 13px; color: #5B616B; display: flex; justify-content: space-between"><span>显示 {{ shown }} / 38 个地区</span><a href="#all" style="color: #4D7C0F">展开全部</a></div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 17px; font-weight: 700">怎么买到这个价格</div>
+<div style="font-size: 14px; line-height: 1.7; color: #3D4450">便宜地区的价格<b style="color: #15171A">只有该地区的账号能买到</b>。先看这几篇：</div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{ guides }}" as="g" hint-placeholder-count="3"><a href="#g" style="min-height: 48px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #15171A; font-size: 15px; border-top: 1px solid #F0F0EC">{{ g }}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a></sc-for>
+</div>
+<div style="font-size: 12px; color: #5B616B">官方定价参考：<a href="#app" style="color: #3D4450">App Store 页面</a> · <a href="#web" style="color: #3D4450">ChatGPT 官网</a></div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 17px; font-weight: 700">Plus 适合谁</div>
+<div style="font-size: 14px; line-height: 1.7; color: #3D4450">经常用于写作、学习、编程的个人用户。偶尔用，<b style="color: #15171A">Go 更划算</b>；需要大量高级模型额度，<b style="color: #15171A">选 Pro</b>。</div>
+<a href="#guide-plans" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #F7FEE7; border: 1px solid #D9F99D; text-decoration: none; color: #15171A"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3F6212" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg><span style="flex-grow: 1; font-size: 15px; font-weight: 600">Go、Plus、Pro 有什么区别</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+<div style="display: flex; gap: 8px"><a href="#go" class="btn" style="text-decoration: none">了解 Go</a><a href="#pro" class="btn" style="text-decoration: none">了解 Pro</a></div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">为什么各地价格不同</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.7; color: #3D4450">平台按当地收入定价：<b style="color: #15171A">收入越低，标价越低</b>。当地人买同一个套餐，反而要工作更久。</p>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{ hours }}" as="h" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 48px minmax(0, 1fr) 64px; gap: 10px; align-items: center; min-height: 36px; border-radius: 8px; background: {{ h.bg }}; padding: 0 6px">
+<span style="font-size: 13px; font-weight: {{ h.weight }}">{{ h.name }}</span>
+<span style="height: 8px; border-radius: 4px; background: #F0F0EC"><span style="display: block; height: 8px; border-radius: 4px; background: {{ h.bar }}; width: {{ h.w }}%; transition: width 480ms cubic-bezier(0.2,0.8,0.2,1) {{ h.delay }}ms"></span></span>
+<span class="num" style="font-size: 13px; font-weight: 700; text-align: right">{{ h.hrs }} 小时</span>
+</div>
+</sc-for>
+</div>
+<div style="font-size: 12px; line-height: 1.6; color: #5B616B">世界银行人均收入，按每月 160 工作小时换算。示例数据。</div>
+</section>
+
+<section style="display: flex; flex-direction: column">
+<h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 700">常见问题</h2>
+<sc-for list="{{ faqs }}" as="q" hint-placeholder-count="3">
+<div style="border-bottom: 1px solid #E4E4DF">
+<button type="button" class="faq" aria-expanded="{{ q.open }}" onClick="{{ q.toggle }}"><span>{{ q.q }}</span><span class="chev" style="transform: rotate({{ q.rot }}deg); color: #5B616B; display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></button>
+<div class="fold" style="grid-template-rows: {{ q.rows }}"><div><p style="margin: 0 0 14px; font-size: 14px; line-height: 1.7; color: #3D4450">{{ q.a }}</p></div></div>
+</div>
+</sc-for>
+</section>
+<div style="font-size: 12px; color: #5B616B; text-align: center">页脚与手机首页相同（四组折叠）</div>
+</main>
+
+<div class="scrim" style="position: absolute; inset: 0; background: rgba(21,23,26,0.45); opacity: {{ scrimOp }}; pointer-events: {{ scrimPe }}" onClick="{{ closeSheet }}"></div>
+<div class="sheet" role="dialog" aria-label="选择显示币种" style="position: absolute; left: 0; right: 0; top: 0; height: 0; pointer-events: none">
+<div style="position: absolute; left: 0; right: 0; top: {{ sheetTop }}px; background: #FFFFFF; border-radius: 20px 20px 0 0; box-shadow: 0 -12px 32px rgba(21,23,26,0.12); padding: 8px 12px 24px; transform: translateY({{ sheetY }}px); opacity: {{ scrimOp }}; transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1), opacity 220ms cubic-bezier(0.2,0.8,0.2,1); pointer-events: {{ scrimPe }}">
+<div style="width: 40px; height: 4px; border-radius: 2px; background: #D9D9D3; margin: 4px auto 10px"></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px 8px"><span style="font-size: 17px; font-weight: 700">显示币种</span><button type="button" class="icon" aria-label="关闭" onClick="{{ closeSheet }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15171A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; margin-bottom: 6px; border-radius: 10px; background: #F6F6F3; color: #5B616B"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" placeholder="搜索币种" aria-label="搜索币种" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 16px"></label>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{ curs }}" as="c" hint-placeholder-count="8"><button type="button" class="opt" role="option" aria-selected="{{ c.on }}" onClick="{{ c.pick }}"><span class="num" style="width: 44px; font-weight: 700">{{ c.code }}</span><span style="flex-grow: 1; color: #3D4450">{{ c.label }}</span><sc-if value="{{ c.sel }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4D7C0F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></sc-for>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.us = 142.4;
+    this.data = [
+      ['TR', '土耳其', 54.1, '₺ 249.99', '含税'], ['PK', '巴基斯坦', 63.0, 'Rs 2,500', '含税'], ['EG', '埃及', 68.5, 'E£ 469', '含税'],
+      ['IN', '印度', 71.3, '₹ 1,999', '含税'], ['JP', '日本', 128.0, '¥ 3,000', '含税'],
+      ['US', '美国', 142.4, '$ 19.99', '另加州税'], ['GB', '英国', 158.2, '£ 19.99', '含税'], ['CH', '瑞士', 186.3, 'CHF 22', '含税']
+    ];
+    this.currencies = [
+      ['CNY', '人民币', '¥ ', 1, 2], ['USD', '美元', '$ ', 0.1404, 2], ['HKD', '港元', 'HK$ ', 1.093, 2], ['TWD', '新台币', 'NT$ ', 4.52, 0],
+      ['JPY', '日元', 'JP¥ ', 21.6, 0], ['EUR', '欧元', '€ ', 0.1302, 2], ['GBP', '英镑', '£ ', 0.1101, 2], ['SGD', '新加坡元', 'S$ ', 0.1832, 2]
+    ];
+    this.state = { cur: 'CNY', k: 1, filter: 0, open: null, gen: 0, faq: -1, sheet: false, hoursOn: false };
+    this.raf = null;
+  }
+  componentDidMount() { setTimeout(() => this.setState({ hoursOn: true }), 400); }
+  componentWillUnmount() { if (this.raf) cancelAnimationFrame(this.raf); }
+  setCur(code) {
+    this.setState({ sheet: false });
+    if (code === this.state.cur) return;
+    const from = this.state.k, to = this.currencies.find((c) => c[0] === code)[3];
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    if (reduce) { this.setState({ cur: code, k: to }); return; }
+    this.setState({ cur: code });
+    const start = performance.now();
+    const step = (now) => { const t = Math.min(1, (now - start - 160) / 480); if (t < 0) { this.raf = requestAnimationFrame(step); return; } const e = 1 - Math.pow(1 - t, 3); this.setState({ k: from + (to - from) * e }); if (t < 1) this.raf = requestAnimationFrame(step); };
+    this.raf = requestAnimationFrame(step);
+  }
+  fmt(v) {
+    const c = this.currencies.find((x) => x[0] === this.state.cur);
+    return c[2] + (v * this.state.k).toLocaleString('en-US', { minimumFractionDigits: c[4], maximumFractionDigits: c[4] });
+  }
+  renderVals() {
+    const s = this.state;
+    const fl = [null, (v) => v < this.us, (v) => v > this.us][s.filter];
+    const list = this.data.filter((d) => !fl || fl(d[2]) || d[1] === '美国');
+    const rows = list.map((d, i) => {
+      const p = Math.round((d[2] / this.us - 1) * 100);
+      const isUS = d[1] === '美国';
+      const open = s.open === d[1];
+      return { code: d[0], name: d[1], local: d[3], tax: d[4], price: this.fmt(d[2]), weight: isUS ? '700' : '500',
+        fg: isUS ? '#3D4450' : (p < 0 ? '#3F6212' : '#C2410C'), diff: isUS ? '基准' : (p < 0 ? p + '%' : '+' + p + '%'),
+        delay: i * 40, line: i === 0 ? '0' : '1px solid #F0F0EC',
+        open: String(open), rows: open ? '1fr' : '0fr', rot: open ? 180 : 0, toggle: () => this.setState({ open: open ? null : d[1] }) };
+    });
+    const faqs = [
+      ['显示的价格含税吗？', '大多数地区的 App Store 标价已含税；美国标价不含销售税，结算时按州加收。'],
+      ['可以直接买最便宜地区的吗？', '需要该地区的 Apple 账号和当地可用的付款方式，并遵守平台条款。'],
+      ['价格多久更新一次？', '每天自动采集一次。同一价格连续出现三次才会标记为已核验。']
+    ].map((q, i) => ({ q: q[0], a: q[1], open: String(s.faq === i), rows: s.faq === i ? '1fr' : '0fr', rot: s.faq === i ? 180 : 0, toggle: () => this.setState({ faq: s.faq === i ? -1 : i }) }));
+    return {
+      low: this.fmt(54.1), us: this.fmt(142.4), high: this.fmt(186.3), median: this.fmt(118.4),
+      curCode: s.cur,
+      usX: ((142.4 - 54.1) / (186.3 - 54.1) * 100).toFixed(1),
+      dist: this.data.map((d) => ({ x: ((d[2] - 54.1) / (186.3 - 54.1) * 100).toFixed(1), c: d[1] === '美国' ? '#3D4450' : (d[2] < this.us ? '#65A30D' : '#EA580C') })),
+      filters: ['全部', '比美国便宜', '比美国贵'].map((label, i) => ({ label, on: String(i === s.filter), pick: () => { if (i !== this.state.filter) this.setState({ filter: i, gen: 1 - this.state.gen, open: null }); } })),
+      gen: s.gen,
+      rows, shown: rows.length,
+      listH: rows.length * 61 + (rows.some((r) => r.open === 'true') ? 104 : 0),
+      guides: ['注册外区 Apple ID', '外区账号常见付款方式', '切换地区后，原有订阅会怎样'],
+      hours: [['美国', 1.1], ['日本', 1.6], ['土耳其', 3.4], ['菲律宾', 6.2], ['印度', 9.8]].map((r, i) => ({ name: r[0], hrs: r[1].toFixed(1), w: s.hoursOn ? Math.round(r[1] / 10 * 100) : 0, delay: i * 40, bar: r[0] === '美国' ? '#3D4450' : '#9CA3AF', weight: r[0] === '土耳其' ? '700' : '400', bg: r[0] === '土耳其' ? '#F7FEE7' : 'transparent' })),
+      faqs,
+      curs: this.currencies.map((c) => ({ code: c[0], label: c[1], on: String(c[0] === s.cur), sel: c[0] === s.cur, pick: () => this.setCur(c[0]) })),
+      openSheet: () => this.setState({ sheet: true }),
+      closeSheet: () => this.setState({ sheet: false }),
+      scrimOp: s.sheet ? 1 : 0, scrimPe: s.sheet ? 'auto' : 'none',
+      sheetTop: 290, sheetY: s.sheet ? 0 : 120
+    };
+  }
+}
+</script>
+</body>
+</html>

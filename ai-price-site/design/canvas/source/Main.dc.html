@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设计方向与规范</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#15171A}a:hover{color:#4D7C0F}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 1380px; box-sizing: border-box; padding: 72px 80px; background: #F6F6F3; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; display: flex; flex-direction: column; gap: 48px">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 14px; color: #5B616B; letter-spacing: 0.08em">GEOSUB 前台重构 · 总体方案 · 2026-11-05</div>
+<h1 style="margin: 0; font-size: 56px; line-height: 1.15; font-weight: 700">价格雷达：一眼看到结论，动效说明变化</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3D4450; max-width: 880px">每一页先回答用户的问题：“哪里最便宜、便宜多少、数据可不可信”。版面只留一个主角数字，其他信息退后；动效只用来告诉用户“什么变了”和“操作生效了”。</p>
+</div>
+<div style="font-size: 13px; color: #5B616B; border: 1px solid #D9D9D3; border-radius: 999px; padding: 8px 14px; white-space: nowrap">画布中的价格均为示例数据</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
+<div class="num" style="font-size: 15px; font-weight: 600; color: #4D7C0F">01</div>
+<div style="font-size: 22px; font-weight: 700">结论先行</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.7; color: #3D4450">第一屏用一句话加一个大数字回答问题，例如“土耳其最便宜，比美国低 62%”。证据、汇率、税费放到第二层，需要时再展开。</p>
+</div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
+<div class="num" style="font-size: 15px; font-weight: 600; color: #4D7C0F">02</div>
+<div style="font-size: 22px; font-weight: 700">动效有含义</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.7; color: #3D4450">只在三种时刻动：数据变化（切换币种、套餐、排序）、操作反馈（悬停、按下、展开）、页面进场。价格永远在第一帧就清楚可读。</p>
+</div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
+<div class="num" style="font-size: 15px; font-weight: 600; color: #4D7C0F">03</div>
+<div style="font-size: 22px; font-weight: 700">一个数字只出现一次</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.7; color: #3D4450">同一屏不重复同一个价格。层级靠字号、颜色和留白区分，少用边框和卡片套卡片；地图和图表只负责“比较”，不再复述数字。</p>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="font-size: 20px; font-weight: 700">色彩：保留青柠，亮色只做底，不做字</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 10px; background: #A3E635; display: flex; align-items: flex-end; padding: 10px; box-sizing: border-box; color: #1A2E05; font-size: 13px; font-weight: 700">深色字可读</div><div style="font-size: 14px; font-weight: 600">品牌青柠 · 选中与高亮</div><div class="num" style="font-size: 12px; color: #5B616B">#A3E635 / 浅底 #ECFCCB</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 10px; background: #4D7C0F"></div><div style="font-size: 14px; font-weight: 600">便宜 · 深青柠（文字与图形）</div><div class="num" style="font-size: 12px; color: #5B616B">#4D7C0F · 对白底 4.9:1</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 10px; background: #C2410C"></div><div style="font-size: 14px; font-weight: 600">更贵 · 橙</div><div class="num" style="font-size: 12px; color: #5B616B">#C2410C / 底 #FCEBE2</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 10px; background: #3D4450"></div><div style="font-size: 14px; font-weight: 600">美国基准 · 石墨</div><div class="num" style="font-size: 12px; color: #5B616B">#3D4450</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 10px; background: #15171A"></div><div style="font-size: 14px; font-weight: 600">文字与主按钮</div><div class="num" style="font-size: 12px; color: #5B616B">#15171A</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 10px; background: #F6F6F3; border: 1px solid #E4E4DF"></div><div style="font-size: 14px; font-weight: 600">页面底色</div><div class="num" style="font-size: 12px; color: #5B616B">#F6F6F3</div></div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.7; color: #5B616B">亮青柠只用在选中的按钮、下划线、高亮底色和地图上的最低价，上面的字一律用深色；价格数字用深青柠，保证对比度。青柠和橙的明暗不同，色弱用户也分得清。说明文字里最关键的结论加粗，每句最多一处；按钮和链接用明确动词：“了解”“查看”，不单用“看”。黑色只用于文字、主按钮和小号提示，不做大面积底色；需要强调的区块用浅青柠底 #F7FEE7 加细边框。产品图标用官方彩色 Logo。暗色模式下，亮青柠可以直接当文字色。</p>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="font-size: 20px; font-weight: 700">字体：中文零下载，数字单独设计</div>
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; gap: 20px; border-bottom: 1px solid #EEEEE9; padding-bottom: 14px"><span class="num" style="font-size: 56px; font-weight: 700; line-height: 1">¥ 48.60</span><span style="font-size: 13px; color: #5B616B">主角价格 · Inter Tight 700 · 56px · 等宽数字</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px"><span style="font-size: 32px; font-weight: 700">页面标题 32</span><span style="font-size: 13px; color: #5B616B">苹方 / 微软雅黑 · 700</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px"><span style="font-size: 22px; font-weight: 700">区块标题 22</span><span style="font-size: 13px; color: #5B616B">700</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px"><span style="font-size: 16px">正文 16，行高 1.7</span><span style="font-size: 13px; color: #5B616B">400</span></div>
+<div style="display: flex; align-items: baseline; gap: 20px"><span style="font-size: 13px; color: #5B616B">辅助说明 13，最小不低于 12</span></div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.7; color: #5B616B">中文用系统字体，不额外下载；数字字体只含拉丁字符，约 30KB。所有价格用等宽数字，滚动变化时不会左右抖动。</p>
+</div>
+</div>
+
+<div style="background: #FFFFFF; color: #15171A; border-radius: 16px; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-size: 20px; font-weight: 700">动效规范：四类、三档时长、一条曲线</div><div class="num" style="font-size: 14px; color: #5B616B">cubic-bezier(0.2, 0.8, 0.2, 1)</div></div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #A3E635; padding-top: 14px"><div style="font-size: 16px; font-weight: 700">反馈 <span class="num" style="color: #4D7C0F">120ms</span></div><div style="font-size: 14px; line-height: 1.6; color: #3D4450">卡片悬停上浮 2px、阴影加深；按下缩到 98%。表格行悬停只变浅青柠底，不上浮。输入框聚焦时描边加在外层圆角框上。分段按钮选中项：青柠滑块 + 深色粗体字，外框白底细边。</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #A3E635; padding-top: 14px"><div style="font-size: 16px; font-weight: 700">切换 <span class="num" style="color: #4D7C0F">220ms</span></div><div style="font-size: 14px; line-height: 1.6; color: #3D4450">栏目下划线、分段按钮的滑块、菜单与抽屉、展开收起。</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #A3E635; padding-top: 14px"><div style="font-size: 16px; font-weight: 700">数据 <span class="num" style="color: #4D7C0F">480ms</span></div><div style="font-size: 14px; line-height: 1.6; color: #3D4450">数字滚动、价格条生长、排序重排、最低价位置的脉冲。</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #A3E635; padding-top: 14px"><div style="font-size: 16px; font-weight: 700">进场 <span class="num" style="color: #4D7C0F">320ms</span></div><div style="font-size: 14px; line-height: 1.6; color: #3D4450">区块逐个上浮 8px，间隔 40ms；只动位置，文字不从透明淡入。</div></div>
+</div>
+<div style="font-size: 14px; color: #5B616B">系统开启“减少动态效果”时，全部改为瞬间切换。动效全部写在一个文件里，组件不得各自覆盖。</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 24px 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px; color: #15171A">
+<div style="display: flex; flex-direction: column; gap: 6px; flex: 0 0 330px">
+<div style="font-size: 20px; font-weight: 700">图标：全站只用 Lucide</div>
+<div style="font-size: 14px; line-height: 1.6; color: #5B616B">网站代码已在使用 lucide-react。统一线宽 1.75、圆头；尺寸 16 / 20 / 24；颜色跟随文字。不手画、不混用其他图标库。</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 18px; flex: 1">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="font-size: 12px; color: #5B616B">搜索</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg><span style="font-size: 12px; color: #5B616B">语言</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg><span style="font-size: 12px; color: #5B616B">币种</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg><span style="font-size: 12px; color: #5B616B">分享</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg><span style="font-size: 12px; color: #5B616B">官方入口</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg><span style="font-size: 12px; color: #5B616B">展开</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg><span style="font-size: 12px; color: #5B616B">前往</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px; color: #C2410C"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg><span style="font-size: 12px; color: #5B616B">涨价</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px; color: #4D7C0F"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg><span style="font-size: 12px; color: #5B616B">降价</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg><span style="font-size: 12px; color: #5B616B">菜单</span></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1380}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
