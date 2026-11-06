@@ -29,3 +29,17 @@
   .gs-public-unified :is(a,button,[data-gs-motion-card],[data-gs-enter],[data-gs-motion]), .gs-public-unified [data-gs-pulse]::after { transform:none !important; scale:none !important; translate:none !important; }
   .gs-public-unified [data-gs-pulse]::after { opacity:0; }
 }
+/* V2: initial indicator is placed before paint; later positions and segments slide. */
+.gs-public-unified .gs-nav-indicator { transform:translateX(var(--gs-indicator-left)); transition:transform var(--gs-motion-base) var(--gs-motion-ease),width var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-segment-slider { transform:translateX(calc(var(--gs-selected) * 100%)); transition:transform var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-bar-fill { transform-origin:left; transform:scaleX(1); transition:transform var(--gs-motion-enter) var(--gs-motion-ease); }
+.gs-public-unified .gs-comparison[data-entered="false"] .gs-bar-fill { transform:scaleX(0); }
+.gs-public-unified.gs-dialog[open] { animation:gs-menu-in var(--gs-motion-base) var(--gs-motion-ease); }
+@media (prefers-reduced-motion:reduce) {
+  .gs-public-unified .gs-bar-fill { transform:scaleX(1) !important; }
+  .gs-public-unified.gs-dialog { animation:none !important; }
+}
+
+.gs-public-unified.gs-dialog[open][data-variant="menu"] { animation:gs-drawer-in var(--gs-motion-base) var(--gs-motion-ease); }
+@keyframes gs-drawer-in { from { transform:translateX(100%); } to { transform:translateX(0); } }
+@media (prefers-reduced-motion:reduce) { .gs-public-unified.gs-dialog[open][data-variant="menu"] { animation:none !important; } }

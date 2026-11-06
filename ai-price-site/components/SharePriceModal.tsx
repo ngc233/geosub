@@ -9,6 +9,7 @@ import { formatUsd, type PlanStats, type ProductPlan } from '../lib/public-prici
 import { getPlanDisplayName } from '../lib/pricing-labels';
 import type { SiteLocale } from '../lib/site-locale';
 import { shareCopy } from './SharePriceCopy';
+import PublicIcon from "./PublicIcon";
 import ShareMiniMap, { getDiffPercent, getReadableDiffByLocale } from './SharePriceMap';
 
 export type SharePriceProduct = {
@@ -19,6 +20,7 @@ export type SharePriceProduct = {
 };
 
 type SharePriceModalProps = {
+  unifiedTrigger?: boolean;
   product: SharePriceProduct;
   plan: ProductPlan;
   stats: PlanStats;
@@ -38,6 +40,7 @@ export default function SharePriceModal({
   plan,
   stats,
   locale = 'zh',
+  unifiedTrigger = false,
 }: SharePriceModalProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -203,7 +206,11 @@ export default function SharePriceModal({
 
   return (
     <>
-      <button
+      {unifiedTrigger ? <button ref={triggerRef} type="button" data-gs-ui="button" data-share-price-trigger
+        data-track-event="open_share_modal" data-track-name="Open price share modal"
+        data-track-button={`${product.slug}:${plan.slug}`} data-track-placement="share_modal" onClick={() => setOpen(true)}>
+        <PublicIcon name="Share2" size={16}/><span>分享价格图</span>
+      </button> : <button
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
@@ -216,7 +223,7 @@ export default function SharePriceModal({
       >
         <Share aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.8} />
         <span>{text.button}</span>
-      </button>
+      </button>}
 
       {open && (
         <div

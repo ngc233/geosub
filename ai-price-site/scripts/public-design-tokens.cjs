@@ -144,10 +144,10 @@ function contrastRatio(a, b) {
   const values = [luminance(a), luminance(b)].sort((x, y) => x - y);
   return (values[1] + .05) / (values[0] + .05);
 }
-function checkContrastUse(palette, { category, foreground, background, role, support }) {
+function checkContrastUse(palette, { category, foreground, background, role = "", support = "" }) {
   const ratio = contrastRatio(palette[foreground], palette[background]);
   if (category === "text") return { pass: ratio >= 4.5, ratio, reason: "All text requires 4.5:1; no exemption." };
-  if (category === "graphic-only") return { pass: foreground === "bar-low" && background === "surface" && ratio >= 3, ratio, reason: "Standalone cheap points/lines use bar-low on the white panel (the dark surface in dark mode), at least 3:1." };
+  if (category === "graphic-only") return { pass: ["bar-low", "low", "bar-high", "baseline"].includes(foreground) && background === "surface" && ratio >= 3, ratio, reason: "Standalone points/lines use bar-low, low, bar-high or baseline on the white panel (the dark surface in dark mode), at least 3:1." };
   const exception = category === "redundant" && CONTRAST_ALLOWLIST[role];
   const pass = Boolean(exception && exception.tokens.includes(foreground) && exception.support.includes(support));
   return { pass, ratio, reason: pass ? exception.reason : "No approved, supported graphic exception." };
@@ -160,7 +160,7 @@ function inspectContrastPolicy(tokens, compatibility) {
       ["page", "surface", "subtle"].filter(background => foreground !== "low" || background !== "subtle")
         .map(background => ({ category: "text", foreground, background })));
     for (const [foreground, background] of [["on-accent", "accent"], ["low-on-soft", "accent-soft"], ["low-on-soft", "tag-low"], ["high-on-soft", "high-soft"]]) uses.push({ category: "text", foreground, background });
-    uses.push({ category: "graphic-only", foreground: "bar-low", background: "surface" });
+    for (const foreground of ["bar-low", "low", "bar-high", "baseline"]) uses.push({ category: "graphic-only", foreground, background: "surface" });
     for (const [role, entry] of Object.entries(CONTRAST_ALLOWLIST)) for (const foreground of entry.tokens) for (const background of ["page", "surface", "subtle"]) {
       uses.push({ category: "redundant", role, foreground, background, support: entry.support[0] });
     }

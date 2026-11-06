@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Keep the layout viewport stable when any overlay locks body scrolling. */
+html { scrollbar-gutter: stable; }
+
 /* Admin overrides are scoped; public pages retain the system preference. */
 @custom-variant dark {
   @media (prefers-color-scheme: dark) {

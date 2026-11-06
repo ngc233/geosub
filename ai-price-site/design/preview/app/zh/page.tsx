@@ -4,6 +4,11 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import PublicIcon, { type PublicIconName } from "../../../../components/PublicIcon";
 import PublicPriceNumber from "../../../../components/PublicPriceNumber";
 
+import PublicCurrencySelect, { usePublicCurrency } from "../../../../components/PublicCurrencySelect";
+import { PublicSegments, PublicDisclosure, PublicComparisonBar, PublicTutorialCard, PublicPromotionPlaceholder, PublicEmphasis } from "../../../../components/PublicControls";
+import SharePriceModal from "../../../../components/SharePriceModal";
+import { getPlanStats, type ProductPlan } from "../../../../lib/public-pricing-model";
+
 const cluster: CSSProperties = { display: "flex", flexWrap: "wrap", gap: "var(--gs-space-12)", alignItems: "center" };
 const muted: CSSProperties = { color: "var(--gs-text-secondary)", fontSize: "var(--gs-metadata-size)" };
 const iconNames: PublicIconName[] = ["Search", "Globe", "Banknote", "Share2", "ExternalLink", "ChevronDown", "ArrowRight", "ChevronRight", "ArrowUp", "ArrowDown", "TrendingUp", "TrendingDown", "BookOpen", "Check", "Menu", "X"];
@@ -71,5 +76,21 @@ export default function FoundationPreview() {
         <p style={muted}>统一 Lucide · 线宽 1.75 · 16 / 20 / 24</p>
       </section>
     </div>
-  </main>;
+  <ControlsPreview /></main>;
+}
+
+const plan:ProductPlan={slug:"fixture",name:"测试套餐",billing:"monthly",regions:[{rank:1,country:"测试地区",code:"TR",priceUsd:5,localPrice:"5 USD",tax:"测试"},{rank:2,country:"美国",code:"US",priceUsd:10,localPrice:"10 USD",tax:"测试",isReference:true}]};
+function ControlsPreview(){
+  const [selected,setSelected]=useState("all"); const [currency]=usePublicCurrency();
+  return <section aria-label="V2 共用控件" style={{display:"grid",gap:"var(--gs-space-24)",marginTop:"var(--gs-space-48)"}}>
+    <h2>V2 共用控件 · 纯测试输入</h2><p>只在本地样例演示，不是公开产品价格或汇率。</p>
+    <div style={{display:"flex",flexWrap:"wrap",gap:"var(--gs-space-12)"}}><PublicCurrencySelect/><PublicCurrencySelect/><SharePriceModal product={{slug:"fixture",name:"测试产品",brand:"测试",updatedAt:"2026-11-05"}} plan={plan} stats={getPlanStats(plan)} unifiedTrigger/></div>
+    <PublicPriceNumber value={currency==="CNY"?12.34:56.78} changeKey={currency} suffix={` ${currency}（测试数字）`}/>
+    <PublicSegments label="价格筛选样例" options={[{value:"all",label:"全部"},{value:"low",label:"比美国便宜"},{value:"high",label:"比美国贵"}]} value={selected} onChange={setSelected}/>
+    <p role="status">当前筛选：{selected}</p>
+    <PublicDisclosure title="查看测试证据"><p>展开的测试内容。正式页面将传入已有证据。</p><button data-gs-ui="button">证据中的可聚焦按钮</button></PublicDisclosure>
+    <div data-gs-ui="card"><PublicComparisonBar label="最低（测试）" value={5} maximum={20} tone="low" marker={10}/><PublicComparisonBar label="美国（测试）" value={10} maximum={20} tone="baseline"/><PublicComparisonBar label="最高（测试）" value={20} maximum={20} tone="high"/></div>
+    <PublicTutorialCard article={{href:"#controls",title:"教程卡片（测试）",summary:"测试摘要，不代表真实文章入口"}}/>
+    <PublicTutorialCard/><PublicPromotionPlaceholder/><PublicEmphasis>强调区块：测试文字</PublicEmphasis>
+  </section>;
 }

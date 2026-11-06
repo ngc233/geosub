@@ -53,6 +53,7 @@
   ],
   "exclude": [
     "node_modules",
-    "design/preview/.next"
+    "design/preview/.next",
+    "design/preview/next-env.d.ts"
   ]
 }
