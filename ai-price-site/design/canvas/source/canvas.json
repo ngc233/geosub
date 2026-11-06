@@ -1,0 +1,142 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Home.dc.html": {
+      "expand": "fill",
+      "h": 2850,
+      "is_interactive": true,
+      "title": "3 · 首页 · 聚合页（可点击 · 11/6 已按最新决定更新）",
+      "w": 1440,
+      "x": 3099,
+      "y": 1671
+    },
+    "Main.dc.html": {
+      "h": 1680,
+      "title": "1 · 设计方向与规范",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Motion.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "title": "2 · 动效库（可点击）",
+      "w": 1440,
+      "x": 3061,
+      "y": 358
+    },
+    "Product.dc.html": {
+      "expand": "fill",
+      "h": 1640,
+      "is_interactive": true,
+      "title": "4 · 产品页 · ChatGPT（可点击）",
+      "w": 1440,
+      "x": 0,
+      "y": 4800
+    },
+    "Plan.dc.html": {
+      "expand": "fill",
+      "h": 2930,
+      "is_interactive": true,
+      "title": "5 · 套餐页 · ChatGPT Plus（可点击）",
+      "w": 1440,
+      "x": 1520,
+      "y": 4800
+    },
+    "Country.dc.html": {
+      "expand": "fill",
+      "h": 1530,
+      "is_interactive": true,
+      "title": "6 · 国家页 · 土耳其（可点击）",
+      "w": 1440,
+      "x": 3040,
+      "y": 4800
+    },
+    "Mobile.dc.html": {
+      "h": 1900,
+      "is_interactive": true,
+      "title": "7 · 手机端首页与菜单（可点击）",
+      "w": 390,
+      "x": 4560,
+      "y": 4800
+    },
+    "MobilePlan.dc.html": {
+      "h": 2760,
+      "is_interactive": true,
+      "title": "8 · 手机端套餐页（可点击）",
+      "w": 390,
+      "x": 0,
+      "y": 7700
+    },
+    "Guides.dc.html": {
+      "expand": "fill",
+      "h": 1650,
+      "is_interactive": true,
+      "title": "9 · 指南列表（可点击）",
+      "w": 1440,
+      "x": 470,
+      "y": 7700
+    },
+    "Article.dc.html": {
+      "expand": "fill",
+      "h": 2100,
+      "is_interactive": true,
+      "title": "10 · 指南文章页 · 长文本页模板（可点击）",
+      "w": 1440,
+      "x": 1990,
+      "y": 7700
+    },
+    "Tools.dc.html": {
+      "expand": "fill",
+      "h": 1560,
+      "is_interactive": true,
+      "title": "11 · 价格历史与汇率换算（可点击）",
+      "w": 1440,
+      "x": 3510,
+      "y": 7700
+    },
+    "States.dc.html": {
+      "h": 1520,
+      "is_interactive": true,
+      "title": "12 · 搜索、404 与各种状态（可点击）",
+      "w": 1440,
+      "x": 470,
+      "y": 10300
+    },
+    "Dark.dc.html": {
+      "h": 1150,
+      "is_interactive": true,
+      "title": "13 · 暗色模式（可切换）",
+      "w": 1440,
+      "x": 1990,
+      "y": 10300
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-05T02:40:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {},
+  "order": [
+    "Main.dc.html",
+    "Motion.dc.html",
+    "Home.dc.html",
+    "Product.dc.html",
+    "Plan.dc.html",
+    "Country.dc.html",
+    "Mobile.dc.html",
+    "MobilePlan.dc.html",
+    "Guides.dc.html",
+    "Article.dc.html",
+    "Tools.dc.html",
+    "States.dc.html",
+    "Dark.dc.html"
+  ],
+  "pages": [],
+  "title": "GeoSub 前台重构总体方案"
+}

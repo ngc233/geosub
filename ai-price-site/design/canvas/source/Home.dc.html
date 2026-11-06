@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>首页 · 聚合页</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F6F3}
+a{color:#15171A}a:hover{color:#4D7C0F}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.nav{min-height:44px;padding:0 14px;border:0;background:transparent;font:inherit;font-size:15px;color:#5B616B;cursor:pointer;transition:color 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.nav[aria-pressed="true"]{color:#15171A;font-weight:600}
+.chip{position:relative;overflow:hidden;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid #E4E4DF;background:#FFFFFF;font:inherit;font-size:14px;color:#3D4450;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:background-color 220ms cubic-bezier(0.2,0.8,0.2,1),border-color 220ms cubic-bezier(0.2,0.8,0.2,1),transform 120ms cubic-bezier(0.2,0.8,0.2,1)}
+.chip:hover{border-color:#C9C9C2}
+.chip:active{transform:scale(0.98)}
+.chip[aria-pressed="true"]{background:#ECFCCB;border-color:#A3E635;color:#1A2E05;font-weight:700}
+.tab{min-height:44px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:15px;color:#5B616B;cursor:pointer;position:relative;z-index:1;transition:color 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.tab[aria-pressed="true"]{color:#1A2E05;font-weight:700}
+.ghost{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #D9D9D3;background:#FFFFFF;color:#15171A;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms cubic-bezier(0.2,0.8,0.2,1)}
+.ghost:hover{background:#F0F0EC}
+.ghost:active{transform:scale(0.98)}
+.lift{transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),box-shadow 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms}
+.lift:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(21,23,26,0.08)}
+.lift:active{transform:scale(0.98)}
+.row{transition:background-color 120ms}
+.row:hover{background:#F8FBEF}
+.lift:focus-visible,.ghost:focus-visible,.chip:focus-visible,.tab:focus-visible,.nav:focus-visible,.row:focus-visible{outline:3px solid #4D7C0F;outline-offset:2px}
+.field:focus-within{border-color:#4D7C0F !important;box-shadow:0 0 0 1px #4D7C0F}
+.flink{color:#5B616B;text-decoration:none;font-size:14px;min-height:32px;display:inline-flex;align-items:center}
+.flink:hover{color:#15171A}
+@keyframes pulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(3.4);opacity:0}}
+.ring{animation:pulse 1200ms cubic-bezier(0.2,0.8,0.2,1) 2}
+@keyframes draw{from{stroke-dashoffset:600}to{stroke-dashoffset:0}}
+.arc{stroke-dasharray:600;animation:draw 700ms cubic-bezier(0.2,0.8,0.2,1) both}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.progress{transform-origin:left;animation:fill 4500ms linear both}
+@keyframes rise0{from{transform:translateY(8px)}to{transform:translateY(0)}}
+@keyframes rise1{from{transform:translateY(8px)}to{transform:translateY(0)}}
+.rise0{animation:rise0 320ms cubic-bezier(0.2,0.8,0.2,1) both}
+.rise1{animation:rise1 320ms cubic-bezier(0.2,0.8,0.2,1) both}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F6F3; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+
+<header style="position: sticky; top: 0; z-index: 10; background: rgba(246,246,243,0.92); border-bottom: 1px solid #E4E4DF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #15171A; min-height: 44px">
+<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="#15171A"></circle><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24" fill="none" stroke="#3D4450" stroke-width="1.5"></path><circle cx="21" cy="8" r="4" fill="#A3E635" stroke="#F6F6F3" stroke-width="1.5"></circle></svg>
+<span style="font-size: 19px; font-weight: 700">GeoSub</span>
+</a>
+<nav aria-label="主导航" style="position: relative; display: flex; flex-grow: 1">
+<sc-for list="{{ navs }}" as="n" hint-placeholder-count="4">
+<button type="button" class="nav" style="width: 84px" aria-pressed="{{ n.on }}" onClick="{{ n.pick }}">{{ n.label }}</button>
+</sc-for>
+<div style="position: absolute; bottom: 4px; left: 0; height: 3px; width: 28px; border-radius: 3px; background: #84CC16; transform: translateX({{ navX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+</nav>
+<label class="field" style="flex: 0 1 300px; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 12px; color: #5B616B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">搜索</span><input type="search" placeholder="搜产品或国家" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 14px; color: #15171A"><kbd class="num" style="font-size: 12px; color: #5B616B; border: 1px solid #E4E4DF; border-radius: 6px; padding: 1px 6px">/</kbd></label>
+<button type="button" class="ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>简体中文<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+</div>
+</header>
+
+<main id="top" style="max-width: 1200px; margin: 0 auto; padding: 48px 24px 72px; display: flex; flex-direction: column; gap: 64px">
+
+<section style="display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center" onMouseEnter="{{ pause }}" onMouseLeave="{{ resume }}">
+<h1 style="margin: 0; font-size: 48px; line-height: 1.2; font-weight: 700">同一个订阅，<span style="background: linear-gradient(transparent 62%, #D9F99D 62%); padding: 0 4px">换个地区能省多少</span></h1>
+<p style="margin: 0; font-size: 17px; color: #3D4450">比较 AI 与流媒体订阅在全球各地区的真实价格，<b style="color: #15171A">每天自动核验</b>。</p>
+<form role="search" style="display: flex; gap: 8px; width: 100%; max-width: 620px" onSubmit="{{ noSubmit }}">
+<label class="field" style="flex-grow: 1; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px; background: #FFFFFF; border: 1px solid #D9D9D3; border-radius: 14px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">搜索产品或国家</span>
+<input type="search" placeholder="搜 ChatGPT、Netflix，或者土耳其" style="flex-grow: 1; border: 0; outline: none; font: inherit; font-size: 16px; background: transparent; color: #15171A; min-width: 0">
+</label>
+<button type="submit" style="min-height: 52px; padding: 0 22px; border-radius: 14px; border: 0; background: #A3E635; color: #1A2E05; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">搜索</button>
+</form>
+<div class="num" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; font-size: 14px; color: #5B616B">
+<span><b style="color: #15171A">{{ statProducts }}</b> 个产品</span><span>·</span><span><b style="color: #15171A">{{ statRegions }}</b> 个地区</span><span>·</span><span><b style="color: #15171A">{{ statPrices }}</b> 条已核验价格</span><span>·</span><span>今天 08:00 更新</span>
+</div>
+
+<div style="width: 100%; background: #FFFFFF; border-radius: 24px; padding: 20px 20px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left">
+<div style="font-size: 15px; font-weight: 700">各地区价格 · App Store · 每月</div>
+<button type="button" class="ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>折合为 <b class="num">CNY</b><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+</div>
+<div style="position: relative; width: 100%; aspect-ratio: 60 / 22">
+<sc-for list="{{ land }}" as="d" hint-placeholder-count="40">
+<div style="position: absolute; left: {{ d.x }}%; top: {{ d.y }}%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: #E4E4DE"></div>
+</sc-for>
+<sc-if value="{{ arcOn }}" hint-placeholder-val="{{ true }}">
+<svg viewBox="0 0 600 220" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible" aria-hidden="true"><path class="arc" d="{{ arcPath }}" pathLength="600" fill="none" stroke="#84CC16" stroke-width="2" stroke-linecap="round"></path></svg>
+</sc-if>
+<sc-for list="{{ dots }}" as="c" hint-placeholder-count="12">
+<div style="position: absolute; left: {{ c.x }}%; top: {{ c.y }}%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: {{ c.fill }}; border: 2px solid #FFFFFF; transition: background-color 480ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+</sc-for>
+<div style="position: absolute; left: {{ low.x }}%; top: {{ low.y }}%; width: 18px; height: 18px; margin: -9px 0 0 -9px; transition: left 480ms cubic-bezier(0.2,0.8,0.2,1), top 480ms cubic-bezier(0.2,0.8,0.2,1)">
+<sc-if value="{{ arcOn }}" hint-placeholder-val="{{ true }}"><div class="ring" style="position: absolute; inset: 0; border-radius: 50%; background: #84CC16"></div></sc-if>
+<div style="position: absolute; inset: 0; border-radius: 50%; background: #4D7C0F; border: 3px solid #FFFFFF; box-sizing: border-box"></div>
+</div>
+<div style="position: absolute; left: {{ low.x }}%; top: {{ low.y }}%; transform: translate(-50%, calc(-100% - 16px)); transition: left 480ms cubic-bezier(0.2,0.8,0.2,1), top 480ms cubic-bezier(0.2,0.8,0.2,1); background: #FFFFFF; color: #15171A; border: 1px solid #D9F99D; border-radius: 12px; padding: 8px 12px; text-align: left; white-space: nowrap; box-shadow: 0 8px 20px rgba(21,23,26,0.18)">
+<div style="font-size: 12px; color: #3F6212; font-weight: 600">全球最低 · {{ low.name }}</div>
+<div style="display: flex; align-items: baseline; gap: 8px"><span class="num" style="font-size: 22px; font-weight: 700">{{ priceText }}</span><span class="num" style="font-size: 13px; font-weight: 700; color: #4D7C0F">−{{ pctText }}%</span></div>
+</div>
+<div style="position: absolute; left: {{ usPos.x }}%; top: {{ usPos.y }}%; transform: translate(-50%, 14px); background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 10px; padding: 5px 10px; font-size: 12px; color: #3D4450; white-space: nowrap">美国 <span class="num" style="font-weight: 700; color: #15171A">{{ usText }}</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px">
+<sc-for list="{{ chips }}" as="p" hint-placeholder-count="6">
+<button type="button" class="chip" aria-pressed="{{ p.on }}" onClick="{{ p.pick }}">
+<span style="width: 22px; height: 22px; border-radius: 6px; background: {{ p.iconBg }}; color: {{ p.iconFg }}; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{ p.initial }}</span>{{ p.name }}
+<sc-if value="{{ p.showBar }}" hint-placeholder-val="{{ false }}"><span class="progress" style="position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: #A3E635"></span></sc-if>
+</button>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: #5B616B">每 4.5 秒自动换一个产品，鼠标移到这里会暂停 · 示例数据</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h2 style="margin: 0; font-size: 26px; font-weight: 700">省钱排行榜</h2><div style="font-size: 14px; color: #5B616B">每个产品一个代表套餐，按比美国低多少排序</div></div>
+<div style="display: inline-flex; position: relative; background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 12px; padding: 4px">
+<div style="position: absolute; top: 4px; left: 4px; height: 44px; width: 96px; border-radius: 9px; background: #A3E635; transform: translateX({{ tabX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+<button type="button" class="tab" style="width: 96px" aria-pressed="{{ t.on }}" onClick="{{ t.pick }}">{{ t.label }}</button>
+</sc-for>
+</div>
+</div>
+<div style="background: #FFFFFF; border-radius: 20px; padding: 8px; overflow-x: auto">
+<div style="display: grid; grid-template-columns: 40px minmax(160px, 1.4fr) minmax(110px, 1fr) 110px minmax(160px, 1.6fr); gap: 12px; padding: 10px 14px; font-size: 13px; color: #5B616B; min-width: 640px">
+<div>#</div><div>订阅</div><div>最便宜地区</div><div style="text-align: right">每月</div><div>比美国低</div>
+</div>
+<div style="min-width: 640px; height: {{ listH }}px; overflow: hidden; transition: height 220ms cubic-bezier(0.2,0.8,0.2,1)">
+<sc-for list="{{ rank }}" as="r" hint-placeholder-count="6">
+<a href="#plan" class="row rise{{ gen }}" style="display: grid; grid-template-columns: 40px minmax(160px, 1.4fr) minmax(110px, 1fr) 110px minmax(160px, 1.6fr); gap: 12px; align-items: center; height: 56px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; text-decoration: none; color: #15171A; min-height: 44px; animation-delay: {{ r.delay }}ms">
+<div class="num" style="font-size: 15px; color: #5B616B; font-weight: 600">{{ r.no }}</div>
+<div style="display: flex; align-items: center; gap: 10px"><span style="width: 30px; height: 30px; border-radius: 8px; background: #F0F0EC; color: #15171A; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">{{ r.initial }}</span><span style="font-size: 15px; font-weight: 600">{{ r.name }} <span style="font-weight: 400; color: #5B616B">{{ r.plan }}</span></span></div>
+<div style="font-size: 15px">{{ r.country }}</div>
+<div class="num" style="font-size: 16px; font-weight: 700; color: #4D7C0F; text-align: right">{{ r.price }}</div>
+<div style="display: flex; align-items: center; gap: 10px"><div style="flex-grow: 1; height: 8px; border-radius: 4px; background: #F0F0EC"><div style="height: 8px; border-radius: 4px; background: #84CC16; width: {{ r.pct }}%"></div></div><span class="num" style="font-size: 14px; font-weight: 700; color: #3F6212; width: 40px; text-align: right">{{ r.pct }}%</span></div>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-wrap: wrap; gap: 24px">
+<div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 22px; font-weight: 700">按分类找</h2><a href="#all" style="font-size: 14px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center">全部产品<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 4px; vertical-align: -3px"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+<a href="#ai" class="lift" style="background: #FFFFFF; border-radius: 18px; padding: 22px; text-decoration: none; color: #15171A; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex"><span style="width: 34px; height: 34px; border-radius: 50%; background: #F0F0EC; color: #15171A; border: 2px solid #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">C</span><span style="width: 34px; height: 34px; border-radius: 50%; background: #3D4450; color: #FFFFFF; border: 2px solid #FFFFFF; margin-left: -8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">A</span><span style="width: 34px; height: 34px; border-radius: 50%; background: #5B616B; color: #FFFFFF; border: 2px solid #FFFFFF; margin-left: -8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">G</span><span class="num" style="width: 34px; height: 34px; border-radius: 50%; background: #F0F0EC; color: #3D4450; border: 2px solid #FFFFFF; margin-left: -8px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">+17</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 18px; font-weight: 700">AI 订阅</div><div style="font-size: 14px; color: #5B616B">20 个产品</div></div>
+<div style="font-size: 14px; color: #3D4450">最多能省 <span class="num" style="font-size: 22px; font-weight: 700; color: #4D7C0F">64%</span></div>
+</a>
+<a href="#stream" class="lift" style="background: #FFFFFF; border-radius: 18px; padding: 22px; text-decoration: none; color: #15171A; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex"><span style="width: 34px; height: 34px; border-radius: 50%; background: #F0F0EC; color: #15171A; border: 2px solid #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">N</span><span style="width: 34px; height: 34px; border-radius: 50%; background: #3D4450; color: #FFFFFF; border: 2px solid #FFFFFF; margin-left: -8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">S</span><span style="width: 34px; height: 34px; border-radius: 50%; background: #5B616B; color: #FFFFFF; border: 2px solid #FFFFFF; margin-left: -8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">Y</span><span class="num" style="width: 34px; height: 34px; border-radius: 50%; background: #F0F0EC; color: #3D4450; border: 2px solid #FFFFFF; margin-left: -8px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">+11</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 18px; font-weight: 700">流媒体</div><div style="font-size: 14px; color: #5B616B">14 个产品</div></div>
+<div style="font-size: 14px; color: #3D4450">最多能省 <span class="num" style="font-size: 22px; font-weight: 700; color: #4D7C0F">86%</span></div>
+</a>
+</div>
+
+</div>
+
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 22px; font-weight: 700">最近变价</h2><a href="#history" style="font-size: 14px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center">价格历史<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 4px; vertical-align: -3px"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a></div>
+<div style="background: #FFFFFF; border-radius: 18px; padding: 8px">
+<sc-for list="{{ changes }}" as="g" hint-placeholder-count="5">
+<a href="#change" class="row" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; text-decoration: none; color: #15171A; min-height: 44px">
+<span style="width: 28px; height: 28px; border-radius: 50%; background: {{ g.bg }}; color: {{ g.fg }}; display: inline-flex; align-items: center; justify-content: center"><sc-if value="{{ g.up }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg></sc-if><sc-if value="{{ g.down }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg></sc-if></span>
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: 600">{{ g.name }} · {{ g.country }}</span><span style="font-size: 13px; color: #5B616B">{{ g.when }}</span></span>
+<span class="num" style="font-size: 15px; font-weight: 700; color: {{ g.fg }}">{{ g.delta }}</span>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px"><div style="display: flex; flex-direction: column; gap: 4px"><h2 style="margin: 0; font-size: 22px; font-weight: 700">哪些国家整体更便宜</h2><div style="font-size: 14px; color: #5B616B">按每个国家已收录订阅的中位数，和美国比；进度条刻度 0–20%</div></div><a href="#countries" style="font-size: 14px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center">全部国家<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 4px; vertical-align: -3px"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px">
+<sc-for list="{{ countries }}" as="k" hint-placeholder-count="6">
+<a href="#country" class="lift" style="background: #FFFFFF; border-radius: 14px; padding: 14px 18px; text-decoration: none; color: #15171A; display: grid; grid-template-columns: 34px 84px minmax(0, 1fr) 48px; align-items: center; gap: 12px; min-height: 44px">
+<span class="num" style="width: 34px; height: 34px; border-radius: 50%; background: #ECFCCB; color: #3F6212; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{ k.code }}</span>
+<span style="font-size: 15px; font-weight: 600">{{ k.name }}</span>
+<span style="height: 8px; border-radius: 4px; background: #F0F0EC"><span style="display: block; height: 8px; border-radius: 4px; background: #84CC16; width: {{ k.w }}%; transition: width 480ms cubic-bezier(0.2,0.8,0.2,1) {{ k.delay }}ms"></span></span>
+<span class="num" style="font-size: 15px; font-weight: 700; color: #3F6212; text-align: right">−{{ k.pct }}%</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">买之前先看</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px">
+<a href="#g1" class="lift" style="background: #FFFFFF; border-radius: 16px; padding: 20px; text-decoration: none; color: #15171A; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; color: #4D7C0F; font-weight: 600">价格指南</span><span style="font-size: 17px; font-weight: 700">怎么读懂一个地区的价格</span><span style="font-size: 14px; color: #5B616B; line-height: 1.6">本地标价、汇率、税费分别看什么</span></a>
+<a href="#g2" class="lift" style="background: #FFFFFF; border-radius: 16px; padding: 20px; text-decoration: none; color: #15171A; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; color: #4D7C0F; font-weight: 600">支付与账号</span><span style="font-size: 17px; font-weight: 700">便宜地区的订阅能不能买</span><span style="font-size: 14px; color: #5B616B; line-height: 1.6">账号地区和付款方式的常见限制</span></a>
+<a href="#g3" class="lift" style="background: #FFFFFF; border-radius: 16px; padding: 20px; text-decoration: none; color: #15171A; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; color: #4D7C0F; font-weight: 600">方法论</span><span style="font-size: 17px; font-weight: 700">GeoSub 的价格从哪里来</span><span style="font-size: 14px; color: #5B616B; line-height: 1.6">采集、核验和更新的规则</span></a>
+</div>
+</section>
+</main>
+
+<footer style="border-top: 1px solid #E4E4DF; background: #F6F6F3">
+<div style="max-width: 1200px; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; gap: 40px">
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 10px"><div style="font-size: 17px; font-weight: 700">GeoSub</div><div style="font-size: 14px; line-height: 1.7; color: #5B616B">比较 AI 与流媒体订阅在不同地区的公开价格。独立服务，与所列品牌无隶属关系。</div></div>
+<div style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 4px"><div style="font-size: 13px; font-weight: 600; padding-bottom: 6px">价格</div><a href="#f" class="flink">AI 订阅</a><a href="#f" class="flink">流媒体</a><a href="#f" class="flink">汇率换算</a></div>
+<div style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 4px"><div style="font-size: 13px; font-weight: 600; padding-bottom: 6px">指南</div><a href="#f" class="flink">价格指南</a><a href="#f" class="flink">支付与账号</a><a href="#f" class="flink">方法论</a></div>
+<div style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 4px"><div style="font-size: 13px; font-weight: 600; padding-bottom: 6px">关于</div><a href="#f" class="flink">关于 GeoSub</a><a href="#f" class="flink">数据来源</a><a href="#f" class="flink">联系我们</a></div>
+<div style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 4px"><div style="font-size: 13px; font-weight: 600; padding-bottom: 6px">条款</div><a href="#f" class="flink">隐私政策</a><a href="#f" class="flink">服务条款</a></div>
+</div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px 32px; font-size: 13px; color: #5B616B">© 2026 GeoSub · 价格以官方结算页为准 · 统计设置</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.pos = {
+      '土耳其': [35.8, 6.5], '印度': [43, 9.5], '巴基斯坦': [41.7, 8], '埃及': [35, 8.7], '尼日利亚': [31.3, 11.5],
+      '菲律宾': [50.3, 11], '巴西': [21.7, 14.7], '墨西哥': [13, 9.2], '日本': [53, 7], '美国': [13.7, 6.5],
+      '英国': [29.4, 4.2], '德国': [31.8, 4.6], '瑞士': [31.1, 5.4], '澳大利亚': [52.3, 17.2]
+    };
+    this.hero = [
+      { name: 'ChatGPT', initial: 'C', us: 142.4, prices: { '土耳其': 54.1, '巴基斯坦': 63.0, '埃及': 68.5, '印度': 71.3, '尼日利亚': 75.0, '菲律宾': 96.8, '巴西': 110.2, '墨西哥': 118.4, '日本': 128.0, '美国': 142.4, '澳大利亚': 151.0, '英国': 158.2, '德国': 160.5, '瑞士': 186.3 } },
+      { name: 'Claude', initial: 'A', us: 142.4, prices: { '印度': 98.5, '土耳其': 104.2, '菲律宾': 118.0, '巴西': 121.0, '墨西哥': 126.0, '日本': 139.0, '美国': 142.4, '澳大利亚': 158.0, '德国': 165.0, '英国': 168.0 } },
+      { name: 'Netflix', initial: 'N', us: 124.3, prices: { '巴基斯坦': 21.8, '埃及': 31.2, '尼日利亚': 35.0, '土耳其': 38.4, '印度': 52.0, '巴西': 58.0, '菲律宾': 64.0, '日本': 79.0, '澳大利亚': 98.0, '德国': 106.0, '英国': 115.0, '美国': 124.3, '瑞士': 172.6 } },
+      { name: 'Spotify', initial: 'S', us: 85.3, prices: { '印度': 13.5, '巴基斯坦': 16.0, '土耳其': 18.9, '埃及': 20.7, '尼日利亚': 22.0, '巴西': 28.0, '菲律宾': 30.5, '墨西哥': 35.0, '日本': 70.0, '德国': 79.0, '澳大利亚': 82.0, '美国': 85.3, '英国': 92.0, '瑞士': 108.0 } },
+      { name: 'YouTube Premium', initial: 'Y', us: 99.0, prices: { '印度': 11.2, '巴基斯坦': 12.6, '埃及': 15.0, '土耳其': 17.8, '尼日利亚': 19.5, '巴西': 26.0, '菲律宾': 33.0, '墨西哥': 52.0, '日本': 66.0, '德国': 86.0, '美国': 99.0, '英国': 93.0, '瑞士': 118.0 } },
+      { name: 'Gemini', initial: 'G', us: 142.4, prices: { '印度': 61.0, '土耳其': 72.0, '埃及': 78.0, '巴西': 98.0, '菲律宾': 104.0, '日本': 132.0, '美国': 142.4, '英国': 160.0, '德国': 158.0 } }
+    ];
+    this.rankData = [
+      { name: 'Netflix', plan: '标准版', initial: 'N', cat: 'stream', country: '巴基斯坦', price: 20.58, pct: 86 },
+      { name: 'Anghami', plan: 'Plus', initial: 'A', cat: 'stream', country: '尼日利亚', price: 7.90, pct: 81 },
+      { name: 'HBO Max', plan: '标准版', initial: 'H', cat: 'stream', country: '菲律宾', price: 30.40, pct: 77 },
+      { name: 'DramaBox', plan: '会员', initial: 'D', cat: 'stream', country: '菲律宾', price: 33.82, pct: 76 },
+      { name: 'SoundCloud', plan: 'Go+', initial: 'S', cat: 'stream', country: '巴西', price: 28.55, pct: 73 },
+      { name: 'Deezer', plan: '高级版', initial: 'D', cat: 'stream', country: '埃及', price: 28.62, pct: 73 },
+      { name: 'X Premium', plan: '高级版', initial: 'X', cat: 'ai', country: '土耳其', price: 28.48, pct: 64 },
+      { name: 'Character.AI', plan: 'Plus', initial: 'C', cat: 'ai', country: '尼日利亚', price: 25.92, pct: 64 },
+      { name: 'Microsoft 365', plan: '个人版', initial: 'M', cat: 'ai', country: '埃及', price: 31.04, pct: 56 },
+      { name: 'Leonardo AI', plan: 'Essential', initial: 'L', cat: 'ai', country: '土耳其', price: 56.89, pct: 50 },
+      { name: 'invideo AI', plan: 'Plus', initial: 'I', cat: 'ai', country: '土耳其', price: 113.78, pct: 33 },
+      { name: 'Perplexity', plan: 'Pro', initial: 'P', cat: 'ai', country: '菲律宾', price: 112.92, pct: 21 }
+    ];
+    const mask = [
+      [[13,26],[32,33],[38,47]], [[3,6],[9,17],[21,26],[33,35],[41,59]], [[2,19],[22,24],[26,27],[32,59]],
+      [[3,19],[22,22],[31,57]], [[8,20],[28,53],[56,56]], [[9,20],[29,52],[53,53]], [[9,18],[28,51],[53,53]],
+      [[10,17],[29,31],[34,50],[51,53]], [[11,16],[28,50]], [[12,13],[16,17],[27,39],[41,45],[46,50]],
+      [[13,15],[27,38],[42,44],[46,48],[50,50]], [[15,16],[18,19],[27,37],[42,43],[46,47],[50,50]],
+      [[17,21],[28,38],[46,50]], [[17,22],[31,37],[46,52]], [[16,24],[32,36],[47,55]], [[17,23],[32,36],[51,53]],
+      [[18,23],[32,37],[50,54]], [[18,22],[32,35],[37,37],[49,55]], [[18,21],[32,35],[49,55]], [[18,20],[52,55],[59,59]],
+      [[18,19],[54,54],[58,58]], [[17,19]]
+    ];
+    this.land = [];
+    mask.forEach((ranges, r) => ranges.forEach((range) => {
+      for (let c = range[0]; c <= range[1]; c++) this.land.push({ x: ((c + 0.5) / 60 * 100).toFixed(2), y: ((r + 0.5) / 22 * 100).toFixed(2) });
+    }));
+    const first = this.sorted(this.hero[0]);
+    this.state = { nav: 0, prod: 0, shown: first[0][1], pct: this.pctOf(this.hero[0]), arcOn: true, paused: false, tab: 0, gen: 0, stats: 0, grown: false };
+    this.raf = null; this.timer = null; this.statRaf = null;
+  }
+  componentDidMount() {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { this.setState({ stats: 1, grown: true }); return; }
+    this.timer = setInterval(() => { if (!this.state.paused) this.pick((this.state.prod + 1) % this.hero.length); }, 4500);
+    const start = performance.now();
+    const step = (now) => { const t = Math.min(1, (now - start) / 900); this.setState({ stats: 1 - Math.pow(1 - t, 3) }); if (t < 1) this.statRaf = requestAnimationFrame(step); };
+    this.statRaf = requestAnimationFrame(step);
+    setTimeout(() => this.setState({ grown: true }), 300);
+  }
+  componentWillUnmount() { if (this.raf) cancelAnimationFrame(this.raf); if (this.statRaf) cancelAnimationFrame(this.statRaf); if (this.timer) clearInterval(this.timer); }
+  sorted(d) { return Object.keys(d.prices).map((k) => [k, d.prices[k]]).sort((a, b) => a[1] - b[1]); }
+  pctOf(d) { return Math.round((1 - this.sorted(d)[0][1] / d.us) * 100); }
+  xy(n) { return { x: ((this.pos[n][0] + 0.5) / 60 * 100).toFixed(2), y: ((this.pos[n][1] + 0.5) / 22 * 100).toFixed(2), px: (this.pos[n][0] + 0.5) * 10, py: (this.pos[n][1] + 0.5) * 10 }; }
+  pick(i) {
+    if (i === this.state.prod) return;
+    const d = this.hero[i];
+    const fromV = this.state.shown, toV = this.sorted(d)[0][1];
+    const fromP = this.state.pct, toP = this.pctOf(d);
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.setState({ prod: i, arcOn: false });
+    setTimeout(() => this.setState({ arcOn: true }), 30);
+    const start = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / 480);
+      const e = 1 - Math.pow(1 - t, 3);
+      this.setState({ shown: fromV + (toV - fromV) * e, pct: Math.round(fromP + (toP - fromP) * e) });
+      if (t < 1) this.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+  renderVals() {
+    const s = this.state;
+    const d = this.hero[s.prod];
+    const list = this.sorted(d);
+    const low = this.xy(list[0][0]);
+    const us = this.xy('美国');
+    const cx = (us.px + low.px) / 2, cy = Math.min(us.py, low.py) - 70;
+    const fillOf = (n, v) => n === '美国' ? '#3D4450' : (v < d.us ? (v <= d.us / 2 ? '#4D7C0F' : '#65A30D') : '#EA580C');
+    const tabLabels = ['全部', 'AI 订阅', '流媒体'];
+    const tabKeys = [null, 'ai', 'stream'];
+    const rows = this.rankData.filter((r) => !tabKeys[s.tab] || r.cat === tabKeys[s.tab]).slice(0, 6);
+    const navLabels = ['首页', '按产品', '按国家', '指南'];
+    const k = s.stats;
+    const countries = [['PH', '菲律宾', 14], ['TR', '土耳其', 13], ['CA', '加拿大', 9], ['BR', '巴西', 8], ['ID', '印度尼西亚', 8], ['EG', '埃及', 7]];
+    return {
+      navs: navLabels.map((label, i) => ({ label, on: String(i === s.nav), pick: () => this.setState({ nav: i }) })),
+      navX: s.nav * 84 + 28,
+      pause: () => this.setState({ paused: true }),
+      resume: () => this.setState({ paused: false }),
+      noSubmit: (e) => e.preventDefault(),
+      statProducts: Math.round(35 * k), statRegions: Math.round(39 * k), statPrices: Math.round(2717 * k).toLocaleString('en-US'),
+      land: this.land,
+      dots: list.map((r) => Object.assign(this.xy(r[0]), { fill: fillOf(r[0], r[1]) })),
+      arcOn: s.arcOn,
+      arcPath: 'M ' + us.px + ' ' + us.py + ' Q ' + cx + ' ' + cy + ' ' + low.px + ' ' + low.py,
+      low: { x: low.x, y: low.y, name: list[0][0] },
+      usPos: { x: us.x, y: us.y },
+      priceText: '¥ ' + s.shown.toFixed(2),
+      pctText: String(s.pct),
+      usText: '¥ ' + d.us.toFixed(2),
+      chips: this.hero.map((p, i) => ({ name: p.name, initial: p.initial, on: String(i === s.prod), showBar: i === s.prod && !s.paused && s.arcOn, iconBg: i === s.prod ? '#A3E635' : '#F0F0EC', iconFg: '#15171A', pick: () => this.pick(i) })),
+      tabs: tabLabels.map((label, i) => ({ label, on: String(i === s.tab), pick: () => { if (i !== this.state.tab) this.setState({ tab: i, gen: 1 - this.state.gen }); } })),
+      tabX: s.tab * 96,
+      gen: s.gen,
+      listH: rows.length * 56,
+      rank: rows.map((r, i) => ({ no: i + 1, name: r.name, plan: r.plan, initial: r.initial, country: r.country, price: '¥ ' + r.price.toFixed(2), pct: r.pct, delay: i * 40 })),
+      changes: [
+        { name: 'Spotify', country: '土耳其', when: '11月4日', delta: '+18%', arrow: '↑', bg: '#FCEBE2', fg: '#C2410C' },
+        { name: 'Netflix', country: '印度', when: '11月3日', delta: '−10%', arrow: '↓', bg: '#ECFCCB', fg: '#3F6212' },
+        { name: 'YouTube Premium', country: '尼日利亚', when: '11月2日', delta: '+40%', arrow: '↑', bg: '#FCEBE2', fg: '#C2410C' },
+        { name: 'ChatGPT Plus', country: '巴西', when: '10月31日', delta: '+5%', arrow: '↑', bg: '#FCEBE2', fg: '#C2410C' },
+        { name: 'Disney+', country: '菲律宾', when: '10月30日', delta: '−8%', arrow: '↓', bg: '#ECFCCB', fg: '#3F6212' }
+      ].map((g) => Object.assign(g, { up: g.arrow === '↑', down: g.arrow === '↓' })),
+      countries: countries.map((c, i) => ({ code: c[0], name: c[1], pct: c[2], w: s.grown ? Math.round(Math.min(c[2], 20) / 20 * 100) : 0, delay: i * 40 }))
+    };
+  }
+}
+</script>
+</body>
+</html>

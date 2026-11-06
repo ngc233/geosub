@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>动效库</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#15171A}a:hover{color:#4D7C0F}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.replay{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #D9D9D3;background:#FFFFFF;color:#15171A;font:inherit;font-size:14px;cursor:pointer;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms cubic-bezier(0.2,0.8,0.2,1)}
+.replay:hover{background:#F0F0EC}
+.replay:active{transform:scale(0.98)}
+.seg{min-height:44px;padding:0 18px;border:0;background:transparent;font:inherit;font-size:15px;color:#5B616B;cursor:pointer;position:relative;z-index:1;transition:color 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.seg[aria-pressed="true"]{color:#1A2E05;font-weight:700}
+.nav{width:96px;min-height:44px;border:0;background:transparent;font:inherit;font-size:15px;color:#5B616B;cursor:pointer;transition:color 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.nav[aria-pressed="true"]{color:#15171A;font-weight:600}
+.lift{transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),box-shadow 120ms cubic-bezier(0.2,0.8,0.2,1);cursor:pointer}
+.lift:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(21,23,26,0.10)}
+.lift:active{transform:translateY(0) scale(0.98);box-shadow:0 2px 6px rgba(21,23,26,0.10)}
+.lift:focus-visible{outline:3px solid #4D7C0F;outline-offset:3px}
+.press{transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1)}
+.press:active{transform:scale(0.98)}
+@keyframes pulse{0%{transform:scale(1);opacity:.55}100%{transform:scale(3.2);opacity:0}}
+.ring{animation:pulse 1200ms cubic-bezier(0.2,0.8,0.2,1) 2}
+@keyframes rise{from{transform:translateY(8px)}to{transform:translateY(0)}}
+.rise{animation:rise 320ms cubic-bezier(0.2,0.8,0.2,1) both}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; padding: 64px 80px; background: #F6F6F3; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; display: flex; flex-direction: column; gap: 32px">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h1 style="margin: 0; font-size: 40px; font-weight: 700">动效库：点一下就能看到</h1>
+<p style="margin: 0; font-size: 16px; color: #3D4450">六种动效覆盖全站。每一格都可以点击或悬停，时长和曲线就是最终上线的规格。</p>
+</div>
+<div style="font-size: 13px; color: #5B616B">价格与汇率均为示例数据</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; flex-grow: 1">
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-size: 18px; font-weight: 700">A 切换币种：数字滚动</div><div class="num" style="font-size: 13px; color: #4D7C0F">480ms</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 0">
+<div style="font-size: 14px; color: #5B616B">ChatGPT Plus · 土耳其 · 每月</div>
+<div class="num" style="font-size: 56px; font-weight: 700; line-height: 1.1; color: #4D7C0F">{{ priceText }}</div>
+<div style="font-size: 14px; color: #4D7C0F; font-weight: 600">比美国便宜 62%</div>
+</div>
+<div style="display: inline-flex; position: relative; align-self: flex-start; background: #F0F0EC; border-radius: 12px; padding: 4px">
+<div style="position: absolute; top: 4px; left: 4px; height: 44px; width: 76px; border-radius: 9px; background: #A3E635; transform: translateX({{ curX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+<sc-for list="{{ currencies }}" as="c" hint-placeholder-count="3">
+<button type="button" class="seg num" style="width: 76px" aria-pressed="{{ c.on }}" onClick="{{ c.pick }}">{{ c.code }}</button>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.7; color: #5B616B">数字从旧值滚到新值，等宽数字不左右抖动。分段按钮的白色滑块跟着滑过去。页面源码里直接写最终价格，不等动画。</p>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-size: 18px; font-weight: 700">B 栏目切换：下划线滑动</div><div class="num" style="font-size: 13px; color: #4D7C0F">220ms</div></div>
+<div style="position: relative; border-bottom: 1px solid #E4E4DF; display: flex; align-self: flex-start">
+<sc-for list="{{ navs }}" as="n" hint-placeholder-count="4">
+<button type="button" class="nav" aria-pressed="{{ n.on }}" onClick="{{ n.pick }}">{{ n.label }}</button>
+</sc-for>
+<div style="position: absolute; bottom: -1px; left: 0; height: 3px; width: 40px; border-radius: 3px; background: #84CC16; transform: translateX({{ navX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 8px">
+<div style="font-size: 14px; color: #5B616B">打开页面时，下划线直接出现在当前栏目下，不播放动画；只有切换栏目时才滑动。</div>
+<div style="font-size: 14px; color: #5B616B">同样的滑块用在：月付 / 年付、AI / 流媒体、排序方式。</div>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-size: 18px; font-weight: 700">C 悬停与按下：卡片和按钮</div><div class="num" style="font-size: 13px; color: #4D7C0F">120ms</div></div>
+<a href="#c" class="lift" style="display: flex; align-items: center; gap: 14px; text-decoration: none; color: #15171A; border: 1px solid #E4E4DF; border-radius: 14px; padding: 16px 18px; background: #FFFFFF">
+<div style="width: 40px; height: 40px; border-radius: 10px; background: #F0F0EC; color: #15171A; display: flex; align-items: center; justify-content: center; font-weight: 700">N</div>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><div style="font-size: 16px; font-weight: 600">Netflix 标准版</div><div style="font-size: 13px; color: #5B616B">最低在巴基斯坦</div></div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px"><div class="num" style="font-size: 20px; font-weight: 700; color: #4D7C0F">¥ 21.80</div><div style="font-size: 12px; color: #4D7C0F">比美国低 79%</div></div>
+</a>
+<div style="display: flex; gap: 12px">
+<button type="button" class="press" style="min-height: 44px; padding: 0 20px; border-radius: 10px; border: 0; background: #15171A; color: #FFFFFF; font: inherit; font-size: 15px; cursor: pointer">查看全部地区</button>
+<button type="button" class="press" style="min-height: 44px; padding: 0 20px; border-radius: 10px; border: 1px solid #D9D9D3; background: #FFFFFF; color: #15171A; font: inherit; font-size: 15px; cursor: pointer">官方入口</button>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.7; color: #5B616B">把鼠标放到卡片上：上浮 2px、阴影加深。按住不放：缩到 98%。用键盘 Tab 到卡片，会出现青绿色焦点框。</p>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-size: 18px; font-weight: 700">D 价格条：从短到长生长</div><div class="num" style="font-size: 13px; color: #4D7C0F">480ms · 逐行 40ms</div></div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{ bars }}" as="b" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 56px minmax(0, 1fr) 72px; align-items: center; gap: 10px">
+<div style="font-size: 13px; color: #3D4450">{{ b.name }}</div>
+<div style="height: 14px; background: #F0F0EC; border-radius: 7px; position: relative; overflow: visible">
+<div style="height: 14px; border-radius: 7px; background: {{ b.color }}; width: {{ b.w }}%; transition: width 480ms cubic-bezier(0.2,0.8,0.2,1) {{ b.delay }}ms"></div>
+</div>
+<div class="num" style="font-size: 14px; font-weight: 600; text-align: right; color: {{ b.color }}">{{ b.price }}</div>
+</div>
+</sc-for>
+</div>
+<button type="button" class="replay" style="align-self: flex-start" onClick="{{ replayBars }}">重新播放</button>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-size: 18px; font-weight: 700">E 排序：每一行滑到新位置</div><div class="num" style="font-size: 13px; color: #4D7C0F">480ms</div></div>
+<div style="display: inline-flex; position: relative; align-self: flex-start; background: #F0F0EC; border-radius: 12px; padding: 4px">
+<div style="position: absolute; top: 4px; left: 4px; height: 44px; width: 112px; border-radius: 9px; background: #A3E635; transform: translateX({{ sortX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+<button type="button" class="seg" style="width: 112px" aria-pressed="{{ sortAsc }}" onClick="{{ setAsc }}">价格从低到高</button>
+<button type="button" class="seg" style="width: 112px" aria-pressed="{{ sortDesc }}" onClick="{{ setDesc }}">价格从高到低</button>
+</div>
+<div style="position: relative; height: 260px">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+<div style="position: absolute; left: 0; right: 0; top: {{ r.top }}px; height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-radius: 10px; background: {{ r.bg }}; transition: top 480ms cubic-bezier(0.2,0.8,0.2,1)">
+<div style="font-size: 15px">{{ r.name }}</div>
+<div class="num" style="font-size: 15px; font-weight: 600; color: {{ r.color }}">{{ r.price }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-size: 18px; font-weight: 700">F 最低价脉冲与进场</div><div class="num" style="font-size: 13px; color: #4D7C0F">1200ms × 2 · 320ms</div></div>
+<div style="position: relative; height: 150px; border-radius: 12px; background: #F6F6F3; overflow: hidden">
+<div style="position: absolute; left: 24%; top: 44%; width: 10px; height: 10px; border-radius: 50%; background: #3D4450"></div>
+<div style="position: absolute; left: 70%; top: 30%; width: 10px; height: 10px; border-radius: 50%; background: #C2410C"></div>
+<div style="position: absolute; left: 52%; top: 40%; width: 14px; height: 14px">
+<sc-if value="{{ pulseOn }}" hint-placeholder-val="{{ true }}"><div class="ring" style="position: absolute; inset: 0; border-radius: 50%; background: #4D7C0F"></div></sc-if>
+<div style="position: absolute; inset: 0; border-radius: 50%; background: #4D7C0F; box-shadow: 0 0 0 3px #FFFFFF"></div>
+</div>
+<div style="position: absolute; left: calc(52% + 22px); top: calc(40% - 6px); background: #FFFFFF; border-radius: 8px; padding: 4px 8px; font-size: 12px; color: #4D7C0F; font-weight: 600">土耳其 · 最低</div>
+</div>
+<sc-if value="{{ pulseOn }}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 10px">
+<div class="rise" style="flex: 1; height: 36px; border-radius: 8px; background: #F0F0EC; animation-delay: 0ms"></div>
+<div class="rise" style="flex: 1; height: 36px; border-radius: 8px; background: #F0F0EC; animation-delay: 40ms"></div>
+<div class="rise" style="flex: 1; height: 36px; border-radius: 8px; background: #F0F0EC; animation-delay: 80ms"></div>
+</div>
+</sc-if>
+<button type="button" class="replay" style="align-self: flex-start" onClick="{{ replayPulse }}">重新播放</button>
+<p style="margin: 0; font-size: 13px; line-height: 1.7; color: #5B616B">地图上的最低价位置脉冲两次后停下，不一直闪。下方三个块演示进场：逐个上浮 8px，内容不从透明淡入。</p>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { cur: 'CNY', shown: 54.1, nav: 0, grown: true, asc: true, pulseOn: true };
+    this.values = { CNY: 54.1, USD: 7.6, JPY: 1170 };
+    this.raf = null;
+  }
+  componentWillUnmount() { if (this.raf) cancelAnimationFrame(this.raf); }
+  roll(code) {
+    if (code === this.state.cur) return;
+    const from = this.state.shown, to = this.values[code];
+    const start = performance.now();
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    if (reduce) { this.setState({ cur: code, shown: to }); return; }
+    this.setState({ cur: code });
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / 480);
+      const e = 1 - Math.pow(1 - t, 3);
+      this.setState({ shown: from + (to - from) * e });
+      if (t < 1) this.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+  fmt(code, v) {
+    if (code === 'JPY') return '¥ ' + Math.round(v).toLocaleString('en-US');
+    const sym = code === 'USD' ? '$ ' : '¥ ';
+    return sym + v.toFixed(2);
+  }
+  renderVals() {
+    const s = this.state;
+    const codes = ['CNY', 'USD', 'JPY'];
+    const currencies = codes.map((code) => ({ code, on: String(code === s.cur), pick: () => this.roll(code) }));
+    const navLabels = ['首页', '按产品', '按国家', '指南'];
+    const navs = navLabels.map((label, i) => ({ label, on: String(i === s.nav), pick: () => this.setState({ nav: i }) }));
+    const data = [
+      { name: '土耳其', v: 54.1 }, { name: '印度', v: 71.3 }, { name: '菲律宾', v: 96.8 },
+      { name: '日本', v: 128.0 }, { name: '美国', v: 142.4 }, { name: '瑞士', v: 186.3 }
+    ];
+    const colorOf = (v) => v < 142.4 ? '#4D7C0F' : (v === 142.4 ? '#3D4450' : '#C2410C');
+    const bars = data.map((d, i) => ({ name: d.name, price: '¥ ' + d.v.toFixed(2), color: colorOf(d.v), w: s.grown ? Math.round(d.v / 200 * 100) : 0, delay: i * 40 }));
+    const sorted = data.slice().sort((a, b) => s.asc ? a.v - b.v : b.v - a.v);
+    const rows = data.slice(0, 5).concat([data[5]]).filter((d, i) => i !== 1).map((d) => {
+      const rank = sorted.filter((x) => x.name !== '印度').findIndex((x) => x.name === d.name);
+      return { name: d.name, price: '¥ ' + d.v.toFixed(2), color: colorOf(d.v), top: rank * 52, bg: d.name === '美国' ? '#F0F0EC' : '#F8F8F6' };
+    });
+    return {
+      priceText: this.fmt(s.cur, s.shown),
+      currencies,
+      curX: codes.indexOf(s.cur) * 76,
+      navs,
+      navX: s.nav * 96 + 28,
+      bars,
+      replayBars: () => { this.setState({ grown: false }); setTimeout(() => this.setState({ grown: true }), 60); },
+      rows,
+      sortAsc: String(s.asc), sortDesc: String(!s.asc), sortX: s.asc ? 0 : 112,
+      setAsc: () => this.setState({ asc: true }), setDesc: () => this.setState({ asc: false }),
+      pulseOn: s.pulseOn,
+      replayPulse: () => { this.setState({ pulseOn: false }); setTimeout(() => this.setState({ pulseOn: true }), 60); }
+    };
+  }
+}
+</script>
+</body>
+</html>
