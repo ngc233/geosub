@@ -22,6 +22,25 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
   await page.goto("/zh",{waitUntil:"networkidle"});await page.evaluate(()=>document.fonts.ready);
   const consent=page.getByRole("button",{name:"拒绝统计"});if(await consent.isVisible())await consent.click();
   await expect(page.getByRole("note")).toContainText("虚构测试数据");
+  const dark=colorScheme==="dark", surface=dark?"rgb(26, 29, 32)":"rgb(255, 255, 255)";
+  await expect(page.locator(".gs-home-map-panel")).toHaveCSS("background-color",surface);
+  await expect(page.locator(".gs-home-map-stage")).toHaveCSS("background-color",surface);
+  await expect(page.locator(".gs-home-land").first()).toHaveCSS("color",dark?"rgb(53, 58, 64)":"rgb(217, 217, 211)");
+  for(const [tone,color] of Object.entries(dark?{low:"rgb(163, 230, 53)",high:"rgb(251, 146, 60)",baseline:"rgb(169, 175, 184)"}:{low:"rgb(77, 124, 15)",high:"rgb(194, 65, 12)",baseline:"rgb(61, 68, 80)"})) {
+    await expect(page.locator(`.gs-home-point > [data-tone="${tone}"]`).first()).toHaveCSS("background-color",color);
+  }
+  const bubble=page.locator(".gs-home-bubble");
+  if(dark){
+    // All selected regions retain the requested dark emphasis surface, including
+    // expensive and US states; the point color and explicit text carry the tone.
+    for(const tone of ["low","high","baseline"]) {
+      if(width===1280)await page.locator(`.gs-home-point:has(> [data-tone="${tone}"])`).first().click();
+      await expect(bubble).toHaveCSS("background-color","rgb(28, 36, 16)");
+      await expect(bubble).toHaveCSS("border-top-color","rgb(63, 98, 18)");
+      await expect(bubble).toHaveCSS("color","rgb(190, 242, 100)");
+    }
+  }
+
   await expect(page.getByLabel("收录统计")).toContainText("62");
   await expect(page.getByRole("link").filter({hasText:"查看全部 AI 订阅"})).toContainText("最多省：ChatGPT Plus 15%");
   await expect(page.getByRole("link").filter({hasText:"查看全部流媒体"})).toContainText("最多省：YouTube Premium 个人版 15%");

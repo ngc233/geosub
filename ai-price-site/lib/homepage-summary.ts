@@ -51,3 +51,9 @@ export function homepageDisplayRates(rates: Record<string,HubRate>, now = new Da
       && !rate.isStale && !rate.isExpired && age>=0 && age<=18*3_600_000;
   }).map(([code,rate])=>[code,rate.rate])]) as Record<string,number>;
 }
+
+/** Keep failures observable without logging messages, SQL, prices or arbitrary error names. */
+export function homepageDataFailure(error: unknown): null {
+  console.error({ event: "homepage_data_read_failed", errorType: error instanceof Error ? "Error" : error === null ? "null" : typeof error });
+  return null;
+}

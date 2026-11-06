@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { formatPublicPrice } from "./public-price-format.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { homepageStatistics, homepageProducts, homepageCountries, homepageDisplayRates } from "./homepage-summary.ts";
+import { homepageStatistics, homepageProducts, homepageCountries, homepageDisplayRates, homepageDataFailure } from "./homepage-summary.ts";
 import { savingsLabel } from "./homepage-display.ts";
 import { getComparablePriceRows } from "./country-hubs.ts";
 import { getHomepageRepresentatives } from "./homepage-representatives.ts";
@@ -90,4 +90,19 @@ test("Chinese generic tiers translate without changing brand words, stored Chine
   for(const brand of ["Plus","Pro","Go","Max"])assert.equal(getChinesePlanDisplayName("Example",brand),`Example ${brand}`);
   assert.equal(getChinesePlanDisplayName("Gemini","Google AI Pro"),"Google AI Pro");
   assert.equal(getPlanDisplayName("Netflix","Standard"),"Netflix Standard");
+});
+
+test("homepage read failure logs only an event and safe error type, returning the empty state",async(t)=>{
+  const log=t.mock.method(console,"error",()=>{});
+  const sensitive="fictional price detail must not be logged";
+  const error=new Error(sensitive);error.name=sensitive;
+  for(const [value,errorType] of [[error,"Error"],[{price:sensitive},"object"],[sensitive,"string"],[null,"null"],[undefined,"undefined"]] as const){
+    const data=await Promise.reject(value).catch(homepageDataFailure);
+    assert.equal(data,null);
+    assert.deepEqual(homepageProducts(data??[]),[]);
+    assert.equal(homepageStatistics(data??[]),null);
+    assert.deepEqual(log.mock.calls.at(-1)?.arguments,[{event:"homepage_data_read_failed",errorType}]);
+  }
+  assert.equal(log.mock.callCount(),5);
+  assert.ok(!JSON.stringify(log.mock.calls).includes(sensitive));
 });

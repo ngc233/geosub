@@ -9,7 +9,7 @@ import { PublicComparisonBar } from "../../components/PublicControls";
 import { loadComparablePrices } from "../../lib/comparable-prices-data";
 import { loadHomepageRepresentatives } from "../../lib/homepage-representatives-data";
 import { loadVerifiedPriceSource } from "../../lib/cached-verified-price-source";
-import { homepageStatistics, homepageCountries, homepageProducts, homepageDisplayRates } from "../../lib/homepage-summary";
+import { homepageStatistics, homepageCountries, homepageProducts, homepageDisplayRates, homepageDataFailure } from "../../lib/homepage-summary";
 import { homepageMap } from "../../lib/homepage-map";
 import { getHomepageCopy } from "../../lib/homepage-copy";
 import { formatPublicDate } from "../../lib/public-date";
@@ -19,7 +19,7 @@ import { isHomepageFixtureEnabled, fictionalHomepageSource } from "../../lib/tes
 
 export default async function ZhHomePage() {
   const [data,guides] = await Promise.all([
-    Promise.all([loadComparablePrices(),loadHomepageRepresentatives(),(isHomepageFixtureEnabled()?Promise.resolve(fictionalHomepageSource()):loadVerifiedPriceSource())]).catch(()=>null),
+    Promise.all([loadComparablePrices(),loadHomepageRepresentatives(),(isHomepageFixtureEnabled()?Promise.resolve(fictionalHomepageSource()):loadVerifiedPriceSource())]).catch(homepageDataFailure),
     loadCoreGuideHubStates("zh"),
   ]);
   const rows=data?.[0]??[], products=homepageProducts(data?.[1]??[]);
