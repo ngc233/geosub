@@ -1,8 +1,9 @@
 import "server-only";
-import { loadVerifiedPriceSource } from "./cached-verified-price-source";
+import { readVerifiedPriceSource } from "./verified-price-source.ts";
 import { getCountryHubRows } from "./country-hubs.ts";
 
-export async function getCountryHub(countryCode: string) {
-  const { prices, rates } = await loadVerifiedPriceSource();
+// CLI checks use the uncached reader; Next callers inject the shared source cache.
+export async function getCountryHub(countryCode: string, readSource = readVerifiedPriceSource) {
+  const { prices, rates } = await readSource();
   return getCountryHubRows(prices, countryCode, rates);
 }

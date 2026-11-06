@@ -64,6 +64,7 @@ test("country and homepage consumers share the same one-hour source cache and bo
   const load = modules({ "server-only": {}, "react": { cache: (fn: unknown) => fn },
     "./country-hubs.ts": projection,
     "./verified-price-source": { readVerifiedPriceSource: async () => { reads++; return { prices: [], rates: {} }; } },
+    "./verified-price-source.ts": { readVerifiedPriceSource: async () => { throw new Error("Next consumers must use the cached source"); } },
     "./price-evidence-preview": { getPriceEvidencePreview: () => ({ capturedAt: "unit-preview" }) },
     "next/cache": { unstable_cache: (fn: () => Promise<unknown>, keys: string[], options: { revalidate: number; tags: string[] }) => {
       settings.push({ keys, options });
@@ -107,4 +108,16 @@ test("homepage server entry hides invalid configured plans and reports throttled
   eligible = false;
   assert.equal((await read()).length, 0);
   assert.equal(warnings.length, 3, "recurrence is logged immediately after recovery");
+});
+
+
+test("CLI country projection loads without Next cache and keeps the same uncached reader", async () => {
+  let reads = 0;
+  const load = modules({ "server-only": {}, "./country-hubs.ts": projection,
+    "./verified-price-source.ts": { readVerifiedPriceSource: async () => { reads++; return { prices: [], rates: {} }; } },
+    "next/cache": new Proxy({}, { get() { throw new Error("CLI must not require Next runtime"); } }),
+  });
+  const read = load("./country-hubs-data").getCountryHub as (code: string) => Promise<unknown[]>;
+  assert.equal((await read("PH")).length, 0);
+  assert.equal(reads, 1);
 });
