@@ -7,6 +7,8 @@ import vm from "node:vm";
 import test from "node:test";
 import ts from "typescript";
 import * as projection from "./country-hubs.ts";
+import { makeVerifiedPriceScale } from "./test-fixtures/verified-price-scale.ts";
+import { packVerifiedPriceSource } from "./verified-price-cache.ts";
 
 const require = createRequire(import.meta.url);
 // Execute the actual server modules with controlled database/cache boundaries.
@@ -59,25 +61,31 @@ test("one additional FX query covers all non-USD currencies without widening the
 
 test("country and homepage consumers share the same one-hour source cache and both invalidation tags", async () => {
   let reads = 0;
+  const snapshot = makeVerifiedPriceScale(100);
   const settings: { keys: string[]; options: { revalidate: number; tags: string[] } }[] = [];
   const entries = new Map<string, Promise<unknown>>();
   const load = modules({ "server-only": {}, "react": { cache: (fn: unknown) => fn },
     "./country-hubs.ts": projection,
-    "./verified-price-source": { readVerifiedPriceSource: async () => { reads++; return { prices: [], rates: {} }; } },
+    "./verified-price-source": { readVerifiedPriceSource: async () => { reads++; return snapshot; } },
     "./verified-price-source.ts": { readVerifiedPriceSource: async () => { throw new Error("Next consumers must use the cached source"); } },
     "./price-evidence-preview": { getPriceEvidencePreview: () => ({ capturedAt: "unit-preview" }) },
     "next/cache": { unstable_cache: (fn: () => Promise<unknown>, keys: string[], options: { revalidate: number; tags: string[] }) => {
       settings.push({ keys, options });
-      return () => { const key = JSON.stringify(keys); if (!entries.has(key)) entries.set(key, fn()); return entries.get(key); };
+      return () => { const key = JSON.stringify(keys); if (!entries.has(key)) entries.set(key, fn().then(value => {
+        assert.ok("plans" in (value as object), "cache stores the compact DTO, not expanded rows");
+        return JSON.parse(JSON.stringify(value));
+      })); return entries.get(key); };
     } },
   });
   const country = load("./cached-country-hub").loadCountryHub as (code: string) => Promise<unknown>;
   const comparable = load("./comparable-prices-data").loadComparablePrices as () => Promise<unknown>;
-  await Promise.all([country("PH"), country("JP"), comparable(), country("US")]);
+  const results = await Promise.all([country("PH"), country("JP"), comparable(), country("US")]);
+  assert.equal(JSON.stringify(results[0]), JSON.stringify(projection.getCountryHubRows(snapshot.prices, "PH", snapshot.rates)));
+  assert.equal(JSON.stringify(results[2]), JSON.stringify(projection.getComparablePriceRows(snapshot.prices, snapshot.rates)));
   assert.equal(reads, 1);
   assert.equal(settings.length, 4, "no separate per-country persistent cache");
   for (const { keys, options } of settings) {
-    assert.equal(JSON.stringify(keys), JSON.stringify(["verified-price-source-v1", "unit-preview"]));
+    assert.equal(JSON.stringify(keys), JSON.stringify(["verified-price-source-v2", "unit-preview"]));
     assert.equal(options.revalidate, 3600);
     assert.equal(JSON.stringify(options.tags), JSON.stringify(["public-pricing", "public-pricing-exchange-rates"]));
   }
@@ -120,4 +128,23 @@ test("CLI country projection loads without Next cache and keeps the same uncache
   const read = load("./country-hubs-data").getCountryHub as (code: string) => Promise<unknown[]>;
   assert.equal((await read("PH")).length, 0);
   assert.equal(reads, 1);
+});
+
+
+test("measure actual reader return JSON with 3000 synthetic database rows", async t => {
+  const snapshot = makeVerifiedPriceScale();
+  let reads = 0;
+  const load = modules({ "server-only": {}, "./prisma.ts": { prisma: { $queryRaw: async () => {
+    reads++;
+    return reads === 1 ? snapshot.prices.map(row => ({ ...row, amount: String(row.amount) }))
+      : Object.values(snapshot.rates).map(rate => ({ ...rate, rate: String(rate.rate) }));
+  } } } });
+  const read = load("./verified-price-source").readVerifiedPriceSource as () => Promise<typeof snapshot>;
+  const result = await read();
+  assert.equal(reads, 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), snapshot);
+  const rawBytes = Buffer.byteLength(JSON.stringify(result), "utf8");
+  const cachedBytes = Buffer.byteLength(JSON.stringify(packVerifiedPriceSource(result)), "utf8");
+  assert.ok(cachedBytes < 1_500_000);
+  t.diagnostic(JSON.stringify({ readerRows: result.prices.length, fxRows: Object.keys(result.rates).length, rawBytes, cachedBytes, source: "synthetic database boundary; actual readVerifiedPriceSource executed" }));
 });

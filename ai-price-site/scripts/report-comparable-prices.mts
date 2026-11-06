@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { packVerifiedPriceSource } from "../lib/verified-price-cache.ts";
 import { performance } from "node:perf_hooks";
 import { getComparablePriceRows, getVerifiedPriceRows } from "../lib/country-hubs.ts";
 import { getRepresentativePlanCandidates } from "../lib/comparable-price-candidates.ts";
@@ -38,6 +39,7 @@ try {
   console.log(JSON.stringify({
     at: now.toISOString(), database: database.pathname.slice(1), source: "repository local test fixtures only",
     timing: { scope: "uncached reader including pool/adapter overhead; first sample includes connection setup", samplesMs: timings, firstMs: timings[0], warmP50Ms: warm[2], warmP95Ms: warm[4] },
+    serializedBytes: { raw: Buffer.byteLength(JSON.stringify(snapshot), "utf8"), cached: Buffer.byteLength(JSON.stringify(packVerifiedPriceSource(snapshot!)), "utf8") },
     rawRows: prices.length, verifiedRows: verified.length, comparableRows: comparable.length,
     unavailableFxRows: verified.length - comparable.length, productCount: included.size,
     regionCount: new Set(comparable.map(row => row.countryCode)).size,

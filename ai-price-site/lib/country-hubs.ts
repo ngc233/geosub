@@ -30,10 +30,20 @@ export function getVerifiedPriceRows(prices: CountryHubPrice[], rates: Record<st
       || rate.isFallback || rate.isStale || rate.isExpired || !Number.isFinite(age) || age < 0 || age > 18 * 3_600_000) return null;
     return { usd: price.amount / rate.rate, fxDate: rate.rateDate };
   };
+  // JSON tuple keys avoid delimiter collisions. Keep the first valid US row,
+  // exactly like the previous Array.find, even when duplicate baselines exist.
+  const identity = (price: CountryHubPrice) => JSON.stringify([
+    price.productSlug, price.planSlug, price.platform, price.billingCycle,
+  ]);
+  const usByPlan = new Map<string, CountryHubPrice>();
+  for (const price of valid) {
+    if (price.countryCode !== "US") continue;
+    const key = identity(price);
+    if (!usByPlan.has(key)) usByPlan.set(key, price);
+  }
   return valid.map(price => {
     const converted = convert(price);
-    const us = valid.find(other => other.countryCode === "US" && other.productSlug === price.productSlug
-      && other.planSlug === price.planSlug && other.platform === price.platform && other.billingCycle === price.billingCycle);
+    const us = usByPlan.get(identity(price));
     const reference = us ? convert(us) : null;
     return { ...price, sourceUrl: getAppStoreSourceUrl(price.sourceUrl, price.countryCode)!,
       observationId: price.observationId && isObservationId(price.observationId) ? price.observationId : null,
