@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 import { readAppBuildMetadata } from "./lib/app-build-metadata.ts";
 
+// Fail before compilation/prerendering if a local fictional-data switch leaks
+// into a production build (also reject it at production startup).
+if (process.env.NODE_ENV === "production" && process.env.GEOSUB_V3_FIXTURE !== undefined) {
+  throw new Error("GEOSUB_V3_FIXTURE is local-only; remove it before a production build or start.");
+}
+
 const healthBuild = readAppBuildMetadata(__dirname);
 
 const securityHeaders = [

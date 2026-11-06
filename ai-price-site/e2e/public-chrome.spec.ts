@@ -138,6 +138,7 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
 
 for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as const) {
   test(`search minimum equals the destination overview: ${width} ${colorScheme}`, async({page})=>{
+    await page.addInitScript(()=>localStorage.setItem("geosub-public-display-currency","USD"));
     await page.setViewportSize({width,height:844}); await page.emulateMedia({colorScheme,reducedMotion:"reduce"});
     await page.goto("/zh"); await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();
     const responsePromise=page.waitForResponse(response=>response.url().includes("/api/search?") && response.url().includes("view=chrome"));
@@ -146,15 +147,16 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     const data=await response.json(); const result=data.results.find((item: {kind:string})=>item.kind==="product");
     expect(result,"repository E2E product must have a real search result").toBeTruthy();
     const option=page.getByRole("group",{name:"产品",exact:true}).getByRole("option").filter({hasText:result.title});
-    const price=option.locator('[data-gs-price] > [aria-hidden="true"]');
-    await expect(price).toHaveText(`$${result.minimumUsd.toFixed(2)}`);
+    const price=option.locator('[data-gs-price] > span[aria-hidden="true"]');
+    await expect(price).toHaveText(`$ ${result.minimumUsd.toFixed(2)}`);
     const displayedPrice=await price.innerText();
     await page.screenshot({path:path.join(evidence,`search-minimum-${width}-${colorScheme}.png`)});
     await option.click(); await expect(page).toHaveURL(new RegExp(result.href+"$"));
     const summary=page.locator("main").getByText("美元价格范围",{exact:true}).locator("..");
     await expect(summary).toHaveCount(1);
     await expect(summary).toBeVisible();
-    expect((await summary.innerText()).match(/\$[\d,.]+/)?.[0]).toBe(displayedPrice);
+    const destination=(await summary.innerText()).match(/\$\s*([\d,.]+)/)?.[1];
+    expect(Number(destination?.replaceAll(",",""))).toBe(Number(displayedPrice.replace(/[\s$,]/g,"")));
     await page.screenshot({path:path.join(evidence,`destination-minimum-${width}-${colorScheme}.png`)});
   });
 }

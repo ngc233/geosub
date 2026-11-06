@@ -1,3 +1,4 @@
+import { filterPublicNavigation } from "../lib/public-navigation-filter";
 import Footer from "./Footer";
 import {
   getSiteNavigationByLocale,
@@ -8,7 +9,7 @@ export default async function FooterShell() {
   let navItemsByLocale: SiteNavigationByLocale = {};
 
   try {
-    navItemsByLocale = await getSiteNavigationByLocale("FOOTER");
+    navItemsByLocale = filterPublicNavigation(await getSiteNavigationByLocale("FOOTER"));
   } catch {
     navItemsByLocale = {};
   }

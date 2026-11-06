@@ -13,7 +13,7 @@ export function usePublicCurrency() {
   return [currency,(value:DisplayCurrency)=>{memory=value;try{localStorage.setItem(key,value);}catch{/* Private browsing still shares the in-memory preference. */}window.dispatchEvent(new Event(eventName));}] as const;
 }
 /** V2 component only: pages opt in during V3–V6. No exchange-rate fetch or page mounting. */
-export default function PublicCurrencySelect({ onChange }: {onChange?:(value:DisplayCurrency)=>void}) {
+export default function PublicCurrencySelect({ onChange, displayCurrency }: {onChange?:(value:DisplayCurrency)=>void;displayCurrency?:string}) {
   const [currency,select]=usePublicCurrency(); const [open,setOpen]=useState(false); const [query,setQuery]=useState("");const [active,setActive]=useState(0);const id=useId();
   const input=useRef<HTMLInputElement>(null);
   useEffect(()=>{if(open)input.current?.focus();},[open]);
@@ -21,8 +21,21 @@ export default function PublicCurrencySelect({ onChange }: {onChange?:(value:Dis
   const names=new Intl.DisplayNames(["zh-CN"],{type:"currency"});
   const options=supportedDisplayCurrencies.filter(code=>`${code} ${names.of(code)}`.toLowerCase().includes(query.toLowerCase()));
   const choose=(code:DisplayCurrency)=>{select(code);onChange?.(code);setOpen(false);};
-  return <><button type="button" data-gs-ui="button" aria-haspopup="dialog" onClick={()=>{setQuery("");setActive(supportedDisplayCurrencies.indexOf(currency));setOpen(true);}}>折合为 {currency}<PublicIcon name="ChevronDown" size={16}/></button>
+  return <><button type="button" data-gs-ui="button" aria-haspopup="dialog" onClick={()=>{setQuery("");setActive(supportedDisplayCurrencies.indexOf(currency));setOpen(true);}}>折合为 {displayCurrency ?? currency}<PublicIcon name="ChevronDown" size={16}/></button>
     {open&&<PublicDialog label="选择币种" variant="currency" onClose={()=>setOpen(false)}><input ref={input} data-gs-ui="input" aria-label="搜索币种" role="combobox" aria-expanded="true" aria-controls={id} aria-activedescendant={options[active]?`${id}-${options[active]}`:undefined} value={query} onChange={e=>{setQuery(e.target.value);setActive(0);}} onKeyDown={e=>{if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(options.length)setActive(old=>(old+(e.key==="ArrowDown"?1:-1)+options.length)%options.length);}if(e.key==="Enter"&&options[active]){e.preventDefault();choose(options[active]);}}}/>
       <div id={id} role="listbox" aria-label="显示币种" className="gs-currency-options">{options.map((code,index)=><div key={code} id={`${id}-${code}`} role="option" aria-selected={currency===code} data-active={index===active} onClick={()=>choose(code)}><span>{code} · {names.of(code)}</span>{currency===code&&<PublicIcon name="Check" size={16}/>}</div>)}</div>{!options.length&&<p role="status">没有匹配的币种</p>}
     </PublicDialog>}</>;
+}
+
+// A page publishes only its already-read, valid DATA-1 rates. Header search
+// follows that page's preference without another query or persisted rate data.
+let pageRates:Readonly<Record<string,number>>|null=null;
+export function usePageDisplayRates(rates:Readonly<Record<string,number>>) {
+  useEffect(()=>{pageRates=rates;window.dispatchEvent(new Event(eventName));return()=>{if(pageRates===rates){pageRates=null;window.dispatchEvent(new Event(eventName));}};},[rates]);
+}
+export function useSearchDisplayCurrency() {
+  const [preferred]=usePublicCurrency();
+  const rates=useSyncExternalStore(subscribe,()=>pageRates,()=>null);
+  const currency=rates?.[preferred]?preferred:"USD";
+  return {currency,rate:rates?.[currency]??1,changeKey:preferred};
 }

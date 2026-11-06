@@ -24,11 +24,11 @@ export function PublicDisclosure({ title, children, defaultOpen=false }: {title:
 }
 
 /** Widths are supplied by the page's canonical dataset; visible text carries the values. */
-export function PublicComparisonBar({ label, value, maximum, tone, marker }: {label:string;value:number;maximum:number;tone:"low"|"baseline"|"high";marker?:number}) {
+export function PublicComparisonBar({ label, value, maximum, tone, marker, hideValue=false }: {label:string;value:number;maximum:number;tone:"low"|"baseline"|"high";marker?:number;hideValue?:boolean}) {
   const ref=useRef<HTMLDivElement>(null);const [entered,setEntered]=useState(false);
   useEffect(()=>{const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setEntered(true);observer.disconnect();}});if(ref.current)observer.observe(ref.current);return()=>observer.disconnect();},[]);
   if(!Number.isFinite(value)||!Number.isFinite(maximum)||maximum<=0||value<0)return null;
-  return <div ref={ref} className="gs-comparison" data-entered={entered}><div className="gs-comparison-label"><span>{label}</span><span>{value}</span></div>
+  return <div ref={ref} className="gs-comparison" data-entered={entered}><div className="gs-comparison-label"><span>{label}</span>{!hideValue&&<span>{value}</span>}</div>
     <div className="gs-bar-track" aria-hidden="true"><span className="gs-bar-fill" data-tone={tone} style={{"--gs-fraction":Math.min(1,value/maximum)} as CSSProperties}/>
       {marker!==undefined&&Number.isFinite(marker)&&<span className="gs-bar-marker" style={{left:`${Math.max(0,Math.min(100,marker/maximum*100))}%`}}/>}</div>
   </div>;

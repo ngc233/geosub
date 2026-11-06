@@ -1,3 +1,4 @@
+import { filterPublicNavigation } from "../lib/public-navigation-filter";
 import Header from "./Header";
 import {
   getSiteNavigationByLocale,
@@ -8,7 +9,7 @@ export default async function HeaderShell() {
   let navItemsByLocale: SiteNavigationByLocale = {};
 
   try {
-    navItemsByLocale = await getSiteNavigationByLocale("HEADER");
+    navItemsByLocale = filterPublicNavigation(await getSiteNavigationByLocale("HEADER"));
   } catch {
     navItemsByLocale = {};
   }
