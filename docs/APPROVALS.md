@@ -58,3 +58,15 @@
 - 实现 PR：[礼品卡教程下线 #45](https://github.com/ngc233/geosub/pull/45)。合并前必须提供 Plus 页全部链接前后差异，证明仅少这一条。
 - 实验记录：`ai-price-site/docs/seo/2026-08-25-bing-chatgpt-plus-metadata-experiment.md`，记录批准日期及实际部署后的生效时间；以后分析数据须考虑这次内链干扰。
 - 状态：产品负责人已明确批准（2026-11-06），不是待追认的历史转述。此登记不代表已经部署，不授权生产部署、生产数据写入、其他内容变更或实验解冻。
+
+### 2026-11-06 DATA-1 最小权限生产只读账号
+
+2026-11-06 产品负责人批准创建生产只读账号 geosub_readonly，用于数据统计；可随时由产品负责人决定删除。
+
+- 来源：产品负责人在本轮会话中明确批准新建账号，以下为该次操作的限制，不是长期生产变更许可。
+- 只允许显式授予本数据库 CONNECT、所需 schema 的 USAGE，以及 DATA-1 实际读取的六张表 SELECT：`public.products`、`public.plans`、`public.countries`、`public.region_prices`、`public.price_observations`、`public.exchange_rates`。不得额外授予其他表权限、正式表写入、正式 schema 建表或改权限能力。
+- 账号设置：`default_transaction_read_only=on`、`statement_timeout=30s`、`CONNECTION LIMIT 2`。密码在服务器随机生成，只保存在服务器权限 600 的环境变量文件中，不输出到聊天、日志或 PR，不进仓库。
+- 建立后验证正式表 INSERT/UPDATE/DELETE 均失败、能读取所需表、不能读取未授权表；临时表能建属于预期。仅将无密码的结果写入任务记录。
+- 同日后续裁定接受两项从 PUBLIC 获得的残留权限：本连接内的临时表创建，以及 `public.price_dataset_versions` 的 SELECT。“为避免影响全库，产品负责人决定不收紧 PUBLIC 授权”。数据库及表的 PUBLIC ACL 均保持不变；这两项例外不允许写入正式表或扩展到其他业务表。
+- 现有账号权限一律不改。创建本账号是唯一允许的生产变更；之后通过该账号执行一次 DATA-1 统计，只返回汇总，不导出生产明细、不导入测试库、不迁移、不修改缓存。
+- 本登记与实现按受保护文件规则单独提交。候选清单须交 Claude 和产品负责人审核，产品负责人确认代表套餐后再开 DATA-1 正式 PR。本条登记不表示账号已经建立或统计已经执行，也不授权变更 PUBLIC 既有 ACL。
