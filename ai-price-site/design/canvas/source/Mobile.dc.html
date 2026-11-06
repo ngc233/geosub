@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>手机端首页</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F6F3}
+a{color:#15171A}a:hover{color:#4D7C0F}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.icon{width:44px;height:44px;border-radius:12px;border:1px solid #E4E4DF;background:#FFFFFF;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1)}
+.icon:active{transform:scale(0.94)}
+.chip{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #E4E4DF;background:#FFFFFF;font:inherit;font-size:14px;color:#3D4450;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background-color 220ms cubic-bezier(0.2,0.8,0.2,1),color 220ms}
+.chip[aria-pressed="true"]{background:#ECFCCB;border-color:#A3E635;color:#1A2E05;font-weight:700}
+.drawer{transition:transform 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.scrim{transition:opacity 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.dlink{min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-radius:12px;text-decoration:none;color:#15171A;font-size:17px;font-weight:600}
+.dlink:active{background:#F0F0EC}
+.fold{display:grid;transition:grid-template-rows 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.fold > div{overflow:hidden}
+.fbtn{width:100%;min-height:48px;border:0;background:transparent;font:inherit;font-size:15px;font-weight:600;color:#15171A;display:flex;justify-content:space-between;align-items:center;padding:0;cursor:pointer}
+.icon:focus-visible,.chip:focus-visible,.dlink:focus-visible,.fbtn:focus-visible{outline:3px solid #4D7C0F;outline-offset:2px}
+@keyframes pulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(3.2);opacity:0}}
+.ring{animation:pulse 1200ms cubic-bezier(0.2,0.8,0.2,1) 2}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 1900px; position: relative; overflow: hidden; background: #F6F6F3; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+
+<header style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E4E4DF; background: #F6F6F3">
+<a href="#top" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #15171A; min-height: 44px"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="#15171A"></circle><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24" fill="none" stroke="#3D4450" stroke-width="1.5"></path><circle cx="21" cy="8" r="4" fill="#A3E635" stroke="#F6F6F3" stroke-width="1.5"></circle></svg><span style="font-size: 18px; font-weight: 700">GeoSub</span></a>
+<div style="display: flex; gap: 8px">
+<button type="button" class="icon" aria-label="搜索"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15171A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="icon" aria-label="打开菜单" aria-expanded="{{ menuStr }}" onClick="{{ openMenu }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15171A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button>
+</div>
+</header>
+
+<main id="top" style="padding: 24px 16px 40px; display: flex; flex-direction: column; gap: 32px">
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h1 style="margin: 0; font-size: 30px; line-height: 1.25; font-weight: 700">同一个订阅，<br><span style="background: linear-gradient(transparent 62%, #D9F99D 62%)">换个地区能省多少</span></h1>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; background: #FFFFFF; border: 1px solid #D9D9D3; border-radius: 14px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">搜索</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" placeholder="搜产品或国家" style="flex-grow: 1; border: 0; outline: none; font: inherit; font-size: 16px; background: transparent; min-width: 0"></label>
+<div class="num" style="font-size: 13px; color: #5B616B"><b style="color: #15171A">38</b> 个产品 · <b style="color: #15171A">179</b> 个地区 · 今天 08:00 更新</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 14px; font-weight: 700">各地区价格 · 每月</span><button type="button" style="min-height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid #E4E4DF; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #15171A"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg><b class="num">CNY</b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button></div>
+<div style="position: relative; width: 100%; aspect-ratio: 60 / 22">
+<sc-for list="{{ land }}" as="d" hint-placeholder-count="40"><div style="position: absolute; left: {{ d.x }}%; top: {{ d.y }}%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: #E4E4DE"></div></sc-for>
+<div style="position: absolute; left: {{ low.x }}%; top: {{ low.y }}%; width: 12px; height: 12px; margin: -6px 0 0 -6px; transition: left 480ms cubic-bezier(0.2,0.8,0.2,1), top 480ms cubic-bezier(0.2,0.8,0.2,1)">
+<sc-if value="{{ pulseOn }}" hint-placeholder-val="{{ true }}"><div class="ring" style="position: absolute; inset: 0; border-radius: 50%; background: #84CC16"></div></sc-if>
+<div style="position: absolute; inset: 0; border-radius: 50%; background: #4D7C0F; border: 2px solid #FFFFFF; box-sizing: border-box"></div>
+</div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; color: #5B616B">{{ cur.name }} 最便宜 · {{ cur.country }}</span><span class="num" style="font-size: 34px; font-weight: 700; color: #4D7C0F; line-height: 1.1">{{ cur.price }}</span></div>
+<span style="background: #A3E635; color: #1A2E05; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 700; white-space: nowrap">低 {{ cur.pct }}%</span>
+</div>
+<div style="display: flex; gap: 8px; overflow-x: auto; margin: 0 -14px; padding: 0 14px 2px">
+<sc-for list="{{ chips }}" as="p" hint-placeholder-count="5"><button type="button" class="chip" aria-pressed="{{ p.on }}" onClick="{{ p.pick }}">{{ p.name }}</button></sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 22px; font-weight: 700">省钱排行榜</h2><a href="#rank" style="font-size: 14px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center">全部<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 4px; vertical-align: -3px"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a></div>
+<div style="background: #FFFFFF; border-radius: 18px; padding: 6px">
+<sc-for list="{{ rank }}" as="r" hint-placeholder-count="5">
+<a href="#plan" style="display: flex; align-items: center; gap: 12px; padding: 12px 10px; text-decoration: none; color: #15171A; border-radius: 12px; min-height: 44px">
+<span class="num" style="width: 18px; font-size: 14px; color: #5B616B; font-weight: 600">{{ r.no }}</span>
+<span style="width: 32px; height: 32px; border-radius: 8px; background: #F0F0EC; color: #15171A; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0">{{ r.initial }}</span>
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: 600">{{ r.name }}</span><span style="font-size: 13px; color: #5B616B">{{ r.country }} · <span class="num" style="color: #4D7C0F; font-weight: 700">{{ r.price }}</span></span></span>
+<span class="num" style="background: #ECFCCB; color: #3F6212; border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 700">−{{ r.pct }}%</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">按分类找</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<a href="#ai" style="background: #FFFFFF; border-radius: 16px; padding: 16px; text-decoration: none; color: #15171A; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 16px; font-weight: 700">AI 订阅</span><span style="font-size: 13px; color: #5B616B">12 个产品</span><span style="font-size: 13px; color: #3D4450">最多省 <b class="num" style="color: #4D7C0F; font-size: 18px">62%</b></span></a>
+<a href="#st" style="background: #FFFFFF; border-radius: 16px; padding: 16px; text-decoration: none; color: #15171A; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 16px; font-weight: 700">流媒体</span><span style="font-size: 13px; color: #5B616B">26 个产品</span><span style="font-size: 13px; color: #3D4450">最多省 <b class="num" style="color: #4D7C0F; font-size: 18px">87%</b></span></a>
+</div>
+</section>
+
+<footer style="border-top: 1px solid #E4E4DF; padding-top: 8px; display: flex; flex-direction: column">
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+<div style="border-bottom: 1px solid #ECECE7">
+<button type="button" class="fbtn" aria-expanded="{{ g.open }}" onClick="{{ g.toggle }}"><span>{{ g.title }}</span><span style="color: #5B616B; transform: rotate({{ g.rot }}deg); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></button>
+<div class="fold" style="grid-template-rows: {{ g.rows }}"><div><div style="display: flex; flex-direction: column; padding-bottom: 10px"><sc-for list="{{ g.links }}" as="l" hint-placeholder-count="3"><a href="#f" style="min-height: 40px; display: flex; align-items: center; color: #5B616B; text-decoration: none; font-size: 14px">{{ l.t }}</a></sc-for></div></div></div>
+</div>
+</sc-for>
+<div style="font-size: 12px; color: #5B616B; padding-top: 14px">© 2026 GeoSub · 价格以官方结算页为准 · 示例数据</div>
+</footer>
+</main>
+
+<div class="scrim" style="position: absolute; inset: 0; background: rgba(21,23,26,0.45); opacity: {{ scrimOp }}; pointer-events: {{ scrimPe }}" onClick="{{ closeMenu }}"></div>
+<aside class="drawer" aria-label="菜单" style="position: absolute; top: 0; right: 0; bottom: 0; width: 320px; background: #FFFFFF; transform: translateX({{ drawerX }}px); display: flex; flex-direction: column; box-shadow: -12px 0 32px rgba(21,23,26,0.12)">
+<div style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #F0F0EC"><span style="font-size: 15px; color: #5B616B">菜单</span><button type="button" class="icon" aria-label="关闭菜单" onClick="{{ closeMenu }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15171A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<nav style="padding: 12px; display: flex; flex-direction: column; gap: 2px">
+<a href="#h" class="dlink" style="background: #F8FBEF; box-shadow: inset 3px 0 0 #84CC16">首页</a>
+<a href="#p" class="dlink">按产品<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+<a href="#c" class="dlink">按国家<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+<a href="#g" class="dlink">指南<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+</nav>
+<div style="flex-grow: 1"></div>
+<div style="padding: 16px; border-top: 1px solid #F0F0EC">
+<button type="button" style="width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid #E4E4DF; background: #FFFFFF; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 14px; color: #15171A"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg><span style="flex-grow: 1; text-align: left">简体中文</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+</div>
+</aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const mask = [
+      [[13,26],[32,33],[38,47]], [[3,6],[9,17],[21,26],[33,35],[41,59]], [[2,19],[22,24],[26,27],[32,59]],
+      [[3,19],[22,22],[31,57]], [[8,20],[28,53],[56,56]], [[9,20],[29,52],[53,53]], [[9,18],[28,51],[53,53]],
+      [[10,17],[29,31],[34,50],[51,53]], [[11,16],[28,50]], [[12,13],[16,17],[27,39],[41,45],[46,50]],
+      [[13,15],[27,38],[42,44],[46,48],[50,50]], [[15,16],[18,19],[27,37],[42,43],[46,47],[50,50]],
+      [[17,21],[28,38],[46,50]], [[17,22],[31,37],[46,52]], [[16,24],[32,36],[47,55]], [[17,23],[32,36],[51,53]],
+      [[18,23],[32,37],[50,54]], [[18,22],[32,35],[37,37],[49,55]], [[18,21],[32,35],[49,55]], [[18,20],[52,55],[59,59]],
+      [[18,19],[54,54],[58,58]], [[17,19]]
+    ];
+    this.land = [];
+    mask.forEach((ranges, r) => ranges.forEach((range) => { for (let c = range[0]; c <= range[1]; c++) this.land.push({ x: ((c + 0.5) / 60 * 100).toFixed(2), y: ((r + 0.5) / 22 * 100).toFixed(2) }); }));
+    this.hero = [
+      { name: 'ChatGPT', country: '土耳其', price: '¥ 54.10', pct: 62, pos: [35.8, 6.5] },
+      { name: 'Netflix', country: '巴基斯坦', price: '¥ 21.80', pct: 82, pos: [41.7, 8] },
+      { name: 'Spotify', country: '印度', price: '¥ 13.50', pct: 84, pos: [43, 9.5] },
+      { name: 'Claude', country: '印度', price: '¥ 98.50', pct: 31, pos: [43, 9.5] },
+      { name: 'YouTube', country: '印度', price: '¥ 11.20', pct: 87, pos: [43, 9.5] }
+    ];
+    this.state = { prod: 0, menu: false, pulseOn: true, foot: -1 };
+  }
+  renderVals() {
+    const s = this.state;
+    const h = this.hero[s.prod];
+    const groups = [
+      ['价格', ['AI 订阅', '流媒体', '汇率换算']], ['指南', ['价格指南', '支付与账号', '方法论']],
+      ['关于', ['关于 GeoSub', '数据来源', '联系我们']], ['条款', ['隐私政策', '服务条款']]
+    ].map((g, i) => ({ title: g[0], links: g[1].map((t) => ({ t })), open: String(s.foot === i), rows: s.foot === i ? '1fr' : '0fr', rot: s.foot === i ? 180 : 0, toggle: () => this.setState({ foot: s.foot === i ? -1 : i }) }));
+    return {
+      land: this.land,
+      low: { x: ((h.pos[0] + 0.5) / 60 * 100).toFixed(2), y: ((h.pos[1] + 0.5) / 22 * 100).toFixed(2) },
+      cur: h, pulseOn: s.pulseOn,
+      chips: this.hero.map((p, i) => ({ name: p.name, on: String(i === s.prod), pick: () => { this.setState({ prod: i, pulseOn: false }); setTimeout(() => this.setState({ pulseOn: true }), 30); } })),
+      rank: [
+        ['YouTube Premium', 'Y', '印度', '¥ 11.20', 87], ['Spotify 个人版', 'S', '印度', '¥ 13.50', 84], ['Netflix 标准版', 'N', '巴基斯坦', '¥ 21.80', 82],
+        ['ChatGPT Plus', 'C', '土耳其', '¥ 54.10', 62], ['Gemini Advanced', 'G', '印度', '¥ 61.00', 57]
+      ].map((r, i) => ({ no: i + 1, name: r[0], initial: r[1], country: r[2], price: r[3], pct: r[4] })),
+      groups,
+      menuStr: String(s.menu),
+      openMenu: () => this.setState({ menu: true }),
+      closeMenu: () => this.setState({ menu: false }),
+      drawerX: s.menu ? 0 : 340,
+      scrimOp: s.menu ? 1 : 0,
+      scrimPe: s.menu ? 'auto' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>
