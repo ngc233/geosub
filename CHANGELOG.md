@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.27.0 - Unreleased
+
+- Release DATA-1 and the V3 Chinese homepage body: representative-plan map, rankings, categories, country medians and guide entry points; retain the existing H1 and introduction.
+- Keep Plus and English pages unchanged; omit recent price changes (DATA-2), preserve canonical data/SEO rules, and prevent local fictional fixtures from production builds.
+- Register exact application rollback to retained 2.26.0; no database input changes, backfills, collector deployment or database restore.
+
 ## 2.26.0 - Unreleased
 
 - Release the reviewed V1/V2 Chinese public design foundation, navigation, footer and shared controls (PR #40/#42); retain the legacy English and frozen Chinese Plus framework.
