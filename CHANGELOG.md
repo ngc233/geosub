@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.27.1 - Unreleased
+
+- Load every supported display currency alongside price-native currencies; retain the 18-hour freshness rule and stale-rate USD warning.
+- Round rebuilt Chinese savings displays to whole percentages without changing ranking or median calculations; translate Membership and Subscription generic tiers.
+- Register exact rollback to 2.27.0; no database migrations or collector changes.
+
 ## 2.27.0 - Unreleased
 
 - Release DATA-1 and the V3 Chinese homepage body: representative-plan map, rankings, categories, country medians and guide entry points; retain the existing H1 and introduction.

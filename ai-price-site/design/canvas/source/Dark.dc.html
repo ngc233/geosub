@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>暗色模式</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.th-light{--bg:#F6F6F3;--panel:#FFFFFF;--weak:#F0F0EC;--line:#E4E4DF;--line2:#D9D9D3;--ink:#15171A;--ink2:#3D4450;--muted:#5B616B;--lime:#A3E635;--onlime:#1A2E05;--gfx:#84CC16;--bar:#65A30D;--cheap:#4D7C0F;--cheap2:#3F6212;--emph:#F7FEE7;--emphline:#D9F99D;--tag:#ECFCCB;--pricey:#C2410C;--priceyg:#EA580C;--priceybg:#FCEBE2;--priceyt:#9A3412;--us:#3D4450;--hdr:rgba(246,246,243,0.92);--shadow:rgba(21,23,26,0.08)}
+.th-dark{--bg:#111315;--panel:#1A1D20;--weak:#23272B;--line:#2A2E33;--line2:#353A40;--ink:#EDEEEF;--ink2:#C9CED6;--muted:#A9AFB8;--lime:#A3E635;--onlime:#1A2E05;--gfx:#84CC16;--bar:#84CC16;--cheap:#A3E635;--cheap2:#BEF264;--emph:#1C2410;--emphline:#3F6212;--tag:#26330F;--pricey:#FB923C;--priceyg:#EA580C;--priceybg:#3A1F14;--priceyt:#FDBA74;--us:#A9AFB8;--hdr:rgba(17,19,21,0.92);--shadow:rgba(0,0,0,0.4)}
+.th *{transition:background-color 220ms cubic-bezier(0.2,0.8,0.2,1),color 220ms cubic-bezier(0.2,0.8,0.2,1),border-color 220ms cubic-bezier(0.2,0.8,0.2,1),fill 220ms,stroke 220ms}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.pick{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--ink);font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.seg{min-height:40px;width:110px;border:0;background:transparent;font:inherit;font-size:14px;color:#5B616B;cursor:pointer;position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:color 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.seg[aria-pressed="true"]{color:#1A2E05;font-weight:700}
+.pick:focus-visible,.seg:focus-visible{outline:3px solid #4D7C0F;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 1150px; background: #ECECE7; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px"><h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #15171A">暗色模式（已确认）</h1><p style="margin: 0; font-size: 15px; color: #3D4450; max-width: 820px">跟随系统设置自动切换，不在头部放切换按钮。<b style="color: #15171A">颜色含义不变</b>：便宜仍是青柠、更贵仍是橙、美国仍是中性灰；只换底色和文字的明暗。切换右边按钮对比。</p></div>
+<div style="display: inline-flex; position: relative; background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 12px; padding: 4px; flex-shrink: 0">
+<div style="position: absolute; top: 4px; left: 4px; height: 40px; width: 110px; border-radius: 9px; background: #A3E635; transform: translateX({{ segX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+<button type="button" class="seg" aria-pressed="{{ isLight }}" onClick="{{ toLight }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2m-7.07-14.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>亮色</button>
+<button type="button" class="seg" aria-pressed="{{ isDark }}" onClick="{{ toDark }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>暗色</button>
+</div>
+</div>
+
+<div class="th th-{{ mode }}" style="border-radius: 20px; overflow: hidden; background: var(--bg); color: var(--ink); box-shadow: 0 0 0 1px rgba(21,23,26,0.08)">
+<header style="background: var(--hdr); border-bottom: 1px solid var(--line)">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; min-height: 64px; display: flex; align-items: center; gap: 16px">
+<span style="display: flex; align-items: center; gap: 10px"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" style="fill: var(--ink)"></circle><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24" fill="none" style="stroke: var(--us)" stroke-width="1.5"></path><circle cx="21" cy="8" r="4" fill="#A3E635" style="stroke: var(--bg)" stroke-width="1.5"></circle></svg><span style="font-size: 19px; font-weight: 700">GeoSub</span></span>
+<nav style="display: flex; flex-grow: 1; gap: 4px; font-size: 15px">
+<span style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; color: var(--muted)">首页</span>
+<span style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; font-weight: 600; box-shadow: inset 0 -3px 0 var(--gfx)">按产品</span>
+<span style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; color: var(--muted)">按国家</span>
+<span style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; color: var(--muted)">指南</span>
+</nav>
+<span style="flex: 0 1 300px; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>搜产品或国家</span>
+</div>
+</header>
+
+<div style="max-width: 1200px; margin: 0 auto; padding: 28px 24px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="font-size: 36px; font-weight: 700">ChatGPT Plus 各地区价格</div><div style="font-size: 15px; color: var(--muted)">App Store · 每月 · 38 个地区 · 11月4日采集</div></div>
+
+<div style="display: flex; gap: 16px">
+<div style="flex: 2 1 0; min-width: 0; background: var(--panel); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 10px; box-shadow: inset 0 0 0 2px var(--lime)">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 15px; color: var(--cheap2); font-weight: 700">全球最低 · 土耳其</span><span style="display: flex; gap: 8px"><span class="pick">折合为 <b class="num">CNY</b></span><span class="pick">分享价格图</span></span></div>
+<div class="num" style="font-size: 64px; font-weight: 700; line-height: 1.05; color: var(--cheap)">¥ 54.10</div>
+<div style="display: flex; gap: 10px; align-items: center"><span style="background: var(--lime); color: var(--onlime); border-radius: 999px; padding: 6px 12px; font-size: 15px; font-weight: 700">比美国低 62%</span><span class="num" style="font-size: 14px; color: var(--muted)">本地标价 ₺ 249.99 · 含税</span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--emph); border: 1px solid var(--emphline); margin-top: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="stroke: var(--cheap2)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">怎么注册外区 Apple ID</span><span style="font-size: 13px; color: var(--muted)">通用教程 · 约 5 分钟读完</span></span></div>
+</div>
+<div style="flex: 1 1 0; min-width: 0; background: var(--panel); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 16px; font-weight: 700">各地区价格分布</span>
+<div style="position: relative; height: 46px; margin: 0 8px">
+<div style="position: absolute; left: 0; right: 0; top: 26px; height: 4px; border-radius: 2px; background: var(--weak)"></div>
+<div style="position: absolute; left: 66.8%; top: 0; transform: translateX(-50%); font-size: 11px; color: var(--us)">美国</div>
+<div style="position: absolute; left: 66.8%; top: 16px; width: 2px; height: 24px; margin-left: -1px; background: var(--us)"></div>
+<sc-for list="{{ dist }}" as="d" hint-placeholder-count="9"><div style="position: absolute; left: {{ d.x }}%; top: 22px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: {{ d.c }}; border: 2px solid var(--panel); box-sizing: border-box"></div></sc-for>
+</div>
+<div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line)"><span style="font-size: 14px; font-weight: 600">美国基准</span><span class="num" style="font-size: 20px; font-weight: 700; color: var(--us)">¥ 142.40</span></div>
+<div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line)"><span style="font-size: 14px; font-weight: 600">最贵 · 瑞士</span><span class="num" style="font-size: 20px; font-weight: 700; color: var(--pricey)">¥ 186.30</span></div>
+<div style="font-size: 13px; color: var(--cheap2); background: var(--emph); border-radius: 10px; padding: 10px 12px"><b class="num">26</b> / 38 个地区比美国便宜</div>
+</div>
+</div>
+
+<div style="background: var(--panel); border-radius: 20px; padding: 8px">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: minmax(150px, 1.2fr) 120px 130px minmax(160px, 1.4fr) 110px; gap: 12px; align-items: center; min-height: 56px; padding: 0 14px; border-top: {{ r.line }}">
+<span style="display: flex; align-items: center; gap: 10px"><span class="num" style="width: 30px; height: 30px; border-radius: 50%; background: var(--weak); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--ink2)">{{ r.code }}</span><span style="font-size: 15px; font-weight: {{ r.weight }}">{{ r.name }}</span></span>
+<span class="num" style="font-size: 16px; font-weight: 700; text-align: right; color: {{ r.fg }}">{{ r.price }}</span>
+<span class="num" style="font-size: 14px; text-align: right; color: var(--muted)">{{ r.local }}</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="flex-grow: 1; height: 8px; border-radius: 4px; background: var(--weak); position: relative"><span style="position: absolute; left: 0; top: 0; height: 8px; border-radius: 4px; background: {{ r.bar }}; width: {{ r.w }}%"></span><span style="position: absolute; left: 71.2%; top: -3px; width: 2px; height: 14px; background: var(--us)"></span></span><span class="num" style="font-size: 13px; font-weight: 700; width: 52px; text-align: right; color: {{ r.fg }}">{{ r.diff }}</span></span>
+<span style="font-size: 13px; color: var(--muted)">{{ r.tax }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; font-size: 13px; line-height: 1.6; color: #3D4450">
+<div style="background: #FFFFFF; border-radius: 14px; padding: 14px 16px"><b style="color: #15171A">不用纯黑。</b>底色 #111315、面板 #1A1D20，层级靠明暗差，不靠阴影。</div>
+<div style="background: #FFFFFF; border-radius: 14px; padding: 14px 16px"><b style="color: #15171A">青柠变亮。</b>便宜价格文字从 #4D7C0F 换成 #A3E635，对比度仍 ≥ 4.5:1。</div>
+<div style="background: #FFFFFF; border-radius: 14px; padding: 14px 16px"><b style="color: #15171A">青柠底上的字不变。</b>徽章和选中滑块仍是 #A3E635 底、#1A2E05 字。</div>
+<div style="background: #FFFFFF; border-radius: 14px; padding: 14px 16px"><b style="color: #15171A">切换只换颜色。</b>系统切换时颜色 220ms 过渡，不做位移；分享价格图始终用亮色。</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'dark' };
+  }
+  renderVals() {
+    const s = this.state;
+    const us = 142.4;
+    const data = [['TR', '土耳其', 54.1, '₺ 249.99', '含税'], ['IN', '印度', 71.3, '₹ 1,999', '含税'], ['JP', '日本', 128.0, '¥ 3,000', '含税'], ['US', '美国', 142.4, '$ 19.99', '另加州税'], ['CH', '瑞士', 186.3, 'CHF 22', '含税']];
+    const all = [54.1, 63.0, 68.5, 71.3, 96.8, 128.0, 142.4, 158.2, 186.3];
+    return {
+      mode: s.mode, isLight: String(s.mode === 'light'), isDark: String(s.mode === 'dark'),
+      segX: s.mode === 'dark' ? 110 : 0,
+      toLight: () => this.setState({ mode: 'light' }), toDark: () => this.setState({ mode: 'dark' }),
+      dist: all.map((v) => ({ x: ((v - 54.1) / (186.3 - 54.1) * 100).toFixed(1), c: v === us ? 'var(--us)' : (v < us ? 'var(--bar)' : 'var(--priceyg)') })),
+      rows: data.map((d, i) => {
+        const p = Math.round((d[2] / us - 1) * 100);
+        const isUS = d[1] === '美国';
+        return { code: d[0], name: d[1], local: d[3], tax: d[4], price: '¥ ' + d[2].toFixed(2), weight: isUS ? '700' : '500', line: i ? '1px solid var(--line)' : '0',
+          fg: isUS ? 'var(--us)' : (p < 0 ? 'var(--cheap2)' : 'var(--pricey)'), bar: isUS ? 'var(--us)' : (p < 0 ? 'var(--bar)' : 'var(--priceyg)'),
+          w: Math.round(d[2] / 200 * 100), diff: isUS ? '基准' : (p < 0 ? p + '%' : '+' + p + '%') };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
