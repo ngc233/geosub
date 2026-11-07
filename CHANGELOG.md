@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.28.1 - Unreleased
+
+- Fix the Chinese homepage map rapidly cycling after production CSS minifies `4500ms` to `4.5s`: parse CSS time units into milliseconds and reject invalid or overflowing timer delays. Preserve the existing 4.5-second cadence, pause behaviour and visual styling.
+- Include PR #58's unit coverage and explicit local production-build browser tests for real-time cadence, hover/focus pauses and reduced motion; keep data, SEO, shared styles and the collector unchanged.
+- Register exact retained-reader rollback compatibility to recorded production 2.28.0 and preserve the eight prior exact compatibility scopes. Database inputs are unchanged (`migration_skipped`). Rollback to 2.28.0 restores the known rapid-carousel defect; it is an application fallback, not a fix for that defect.
+- Install and verify the final reviewed candidate controller before any separately approved rollout because the exact compatibility policy changed. No production deployment is included in this release-preparation PR.
+
 ## 2.28.0 - Unreleased
 
 - Release the reviewed V3.1 Chinese homepage canvas reconstruction, including the V2 unified public shell and shared controls carried forward from 2.26.0, plus the latest header, language and display-currency interaction polish.

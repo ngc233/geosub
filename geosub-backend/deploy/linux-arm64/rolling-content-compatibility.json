@@ -2334,6 +2334,257 @@
       ],
       "reason": "Exact 2.27.1 reader compatibility; 27 registered reader/fence/schema files unchanged, VERSION only. Does not assert deployment or grant production admission or database restore.",
       "evidence": "docs/release-readiness-2.28.0-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "520d60c216f452aa66e169ec832497d87f60256cca2267a7b69e1e6bbad77127",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ead5051bb786a6cc16d0791ad463667e9fe1b0b4",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "356052cd10f04487509a07484d5afac754b578b4a40124213d5ea82d7ae2ad20",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs"
+      ],
+      "retainedCommit": "a3e1cf78ffe4f163384dfd578846feb4ba36a50f",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "b8d4f092a72ab1d894db2cffd5b37a822813847fc69052b8dc3ddba08cd3c249",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ad71456c3d50bdf89ad64d7ec4e10e714b6cec5d",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "2f1e0ffdc9d0cd88b9e0dd8f0e35a414f1cd318d2a99d12f4ab419609d84f1c2",
+      "retainedCommit": "d4f80b96f59b443e297a15f956e6bde776b7e9eb",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "31255a489de7b20738b1163193dbdc25dfca7e7aae99a577c35af4b9f72751ca",
+      "retainedCommit": "ed3ec9bb42ef9ca210b70384e64e29c5bfc45fbe",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "a9c431f571880f0a5387624639591e50802896b2c6208724a05feafd779e47f6",
+      "retainedCommit": "1c0492821b25d21fe11ce19bc8b4867dc69b6efe",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "be72d4f213d81709969d35ca1685792a61b6b73ffe30c9ef54bf39d7d2a75925",
+      "retainedCommit": "6105eb27d66aac59859f0348341b48671a716a25",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "b0e1c59c304550d110ab9eeb221c839707b67ba50b6ffdeeda802cbc551c8530",
+      "retainedCommit": "21f58948c5cce6a60a3f965f821582f4b5c3fe9e",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.28.1 release: all 27 registered reader/fence/schema files are byte-identical to 2.28.0; only VERSION changes. Carry forward the exact audited retained-reader scope.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
+    },
+    {
+      "format": 2,
+      "from": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "to": "dc7b840ba78a1c2182a9117f047391e5c5a60722ca1516d7c1440f3b6fbc0a33",
+      "retainedCommit": "187406c8f5ea8bb49a4869efd7b7a1c6bb03c04f",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "Exact 2.28.0 reader compatibility; 27 registered reader/fence/schema files unchanged, VERSION only. Does not assert deployment or grant production admission or database restore.",
+      "evidence": "docs/release-readiness-2.28.1-2026-11-07.md"
     }
   ]
 }
