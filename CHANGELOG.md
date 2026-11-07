@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.28.0 - Unreleased
+
+- Release the reviewed V3.1 Chinese homepage canvas reconstruction, including the V2 unified public shell and shared controls carried forward from 2.26.0, plus the latest header, language and display-currency interaction polish.
+- Use local brand logos and country flags, a restrained sticky map transition, and six-at-a-time ranking disclosure. Preserve the approved homepage SEO changes, the frozen Plus page and legacy English pages; DATA-2 remains absent.
+- Include the merged 2.27.1 display-currency and Chinese tier-name fixes. Keep DATA-1 pricing, ranking and median calculations unchanged.
+- Register exact retained-reader compatibility to 2.27.1 and recorded production 2.27.0. Database inputs are unchanged (`migration_skipped`); no migrations, backfills, collector deployment or database restore. Install the reviewed candidate controller before a separately approved production rollout.
+
 ## 2.27.1 - Unreleased
 
 - Load every supported display currency alongside price-native currencies; retain the 18-hour freshness rule and stale-rate USD warning.
