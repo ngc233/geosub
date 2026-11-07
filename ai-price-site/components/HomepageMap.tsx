@@ -7,6 +7,7 @@ import PublicIcon from "./PublicIcon";
 import PublicPriceNumber from "./PublicPriceNumber";
 import type { HomepageRepresentative } from "../lib/homepage-summary";
 import { savingsLabel } from "../lib/homepage-display";
+import { parseCarouselDuration } from "../lib/carousel-duration";
 const names = new Intl.DisplayNames(["zh-CN"],{type:"region"});
 export default function HomepageMap({ products, map, currency, rate, controls }: {
   products:HomepageRepresentative[]; map:{land:string;points:Record<string,number[]>}; currency:string; rate:number; controls?:ReactNode;
@@ -36,7 +37,8 @@ export default function HomepageMap({ products, map, currency, rate, controls }:
   useEffect(()=>{const media=matchMedia("(prefers-reduced-motion: reduce)");const sync=()=>setReduced(media.matches);sync();media.addEventListener("change",sync);return()=>media.removeEventListener("change",sync);},[]);
   useEffect(()=>{
     if(paused||reduced||products.length<2)return;
-    const duration=parseFloat(getComputedStyle(root.current!).getPropertyValue("--gs-motion-carousel"));
+    const duration=parseCarouselDuration(getComputedStyle(root.current!).getPropertyValue("--gs-motion-carousel"));
+    if(duration===null)return;
     const timer=setInterval(()=>{if(!document.hidden){setIndex(old=>(old+1)%products.length);setSelected(null);}},duration);
     return()=>clearInterval(timer);
   },[paused,reduced,products.length]);
