@@ -41,7 +41,9 @@ test("visitor can move from home to an AI detail and switch language", async ({
   await expect(page).toHaveURL(new RegExp(`${detailPath}$`));
   await expect(page.locator("h1").first()).toContainText(fixture.productName);
 
-  await page.locator("header .gs-desktop-language summary").click();
+  const language = page.getByRole("banner").getByRole("button", { name: "简体中文", exact: true });
+  await language.click();
+  await expect(language).toHaveAttribute("aria-expanded", "true");
   const englishPath = `/en/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`;
   await page.locator(`header a[href="${englishPath}"]`).click();
 

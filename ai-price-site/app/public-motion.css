@@ -31,7 +31,7 @@
 }
 /* V2: initial indicator is placed before paint; later positions and segments slide. */
 .gs-public-unified .gs-nav-indicator { transform:translateX(var(--gs-indicator-left)); transition:transform var(--gs-motion-base) var(--gs-motion-ease),width var(--gs-motion-base) var(--gs-motion-ease); }
-.gs-public-unified .gs-segment-slider { transform:translateX(calc(var(--gs-selected) * 100%)); transition:transform var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-segment-slider { transform:translateX(calc(var(--gs-selected) * 100%)); transition:transform var(--gs-motion-jelly) var(--gs-motion-jelly-ease); }
 .gs-public-unified .gs-bar-fill { transform-origin:left; transform:scaleX(1); transition:transform var(--gs-motion-enter) var(--gs-motion-ease); }
 .gs-public-unified .gs-comparison[data-entered="false"] .gs-bar-fill { transform:scaleX(0); }
 .gs-public-unified.gs-dialog[open] { animation:gs-menu-in var(--gs-motion-base) var(--gs-motion-ease); }
@@ -45,16 +45,54 @@
 @media (prefers-reduced-motion:reduce) { .gs-public-unified.gs-dialog[open][data-variant="menu"] { animation:none !important; } }
 
 /* V3 product changes keep the map mounted. */
-.gs-public-unified .gs-home-bubble { transition:translate var(--gs-motion-slow) var(--gs-motion-ease); }
-.gs-public-unified .gs-home-carousel-progress[data-running="true"][data-cycle="0"] { animation:gs-carousel-a var(--gs-motion-carousel) var(--gs-motion-ease) forwards; }
-.gs-public-unified .gs-home-carousel-progress[data-running="true"][data-cycle="1"] { animation:gs-carousel-b var(--gs-motion-carousel) var(--gs-motion-ease) forwards; }
+.gs-public-unified .gs-home-bubble { transform:translate(-50%,calc(-100% - var(--gs-space-16))); transition:left var(--gs-motion-slow) var(--gs-motion-ease),top var(--gs-motion-slow) var(--gs-motion-ease); }
+.gs-public-unified .gs-home-us { transform:translateX(-50%); }
+.gs-public-unified .gs-home-carousel-progress[data-running="true"][data-cycle="0"] { animation:gs-carousel-a var(--gs-motion-carousel) var(--gs-motion-carousel-ease) forwards; }
+.gs-public-unified .gs-home-carousel-progress[data-running="true"][data-cycle="1"] { animation:gs-carousel-b var(--gs-motion-carousel) var(--gs-motion-carousel-ease) forwards; }
 @keyframes gs-carousel-a { from { width:0; } to { width:100%; } }
 @keyframes gs-carousel-b { from { width:0; } to { width:100%; } }
 @media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-home-carousel-progress { animation:none !important; } }
-.gs-public-unified .gs-home-bubble { translate:calc(var(--gs-bubble-x) * 1cqw) calc(var(--gs-bubble-y) * 1cqw); }
-.gs-public-unified .gs-home-rank-slot { transition:grid-template-rows var(--gs-motion-base) var(--gs-motion-ease),visibility var(--gs-motion-base) var(--gs-motion-ease); }
-.gs-public-unified .gs-home-ranking-row { transition:padding var(--gs-motion-base) var(--gs-motion-ease); }
+
+.gs-public-unified [data-gs-motion-row] { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
 .gs-public-unified .gs-home-section .gs-bar-fill { transition:transform var(--gs-motion-slow) var(--gs-motion-ease); }
-@media (max-width:767px) { .gs-public-unified .gs-home-bubble { translate:none; } }
+@media (max-width:767px) { .gs-public-unified .gs-home-bubble { transform:none; } }
 @media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-home-bubble { transition:none !important; } }
-.gs-public-unified .gs-home-bubble[data-unmapped="true"] { translate:none; }
+
+/* 2026-11-06 explicit canvas correction: only the timed carousel uses linear. */
+.gs-public-unified .gs-home-low-marker { transition:left var(--gs-motion-slow) var(--gs-motion-ease),top var(--gs-motion-slow) var(--gs-motion-ease); }
+.gs-public-unified .gs-home-low-ring[data-gs-pulse]::after { border:0; background:var(--gs-graphic); }
+.gs-public-unified .gs-home-arc { stroke-dasharray:600; animation:gs-home-draw var(--gs-motion-arc) var(--gs-motion-ease) both; }
+@keyframes gs-home-draw { from { stroke-dashoffset:600; } to { stroke-dashoffset:0; } }
+@media (prefers-reduced-motion:reduce) {
+ .gs-public-unified .gs-home-low-marker { transition:none !important; }
+ .gs-public-unified .gs-home-arc { animation:none !important; stroke-dashoffset:0; }
+}
+
+/* Shared chrome popovers remain mounted so closing can animate; inert owns focus. */
+.gs-public-unified .gs-popover { opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-6px) scale(0.98); transform-origin:top left; transition:opacity var(--gs-motion-base) var(--gs-motion-ease),transform var(--gs-motion-base) var(--gs-motion-ease),visibility 0s var(--gs-motion-base); }
+.gs-public-unified .gs-language .gs-popover { transform-origin:top right; }
+.gs-public-unified .gs-popover[data-open="true"] { opacity:1; visibility:visible; pointer-events:auto; transform:translateY(0) scale(1); transition-delay:0s; }
+.gs-public-unified .gs-nav-chevron { transition:translate var(--gs-motion-base) var(--gs-motion-ease),rotate var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified :is(.gs-nav-item > a,.gs-language-trigger):hover .gs-nav-chevron { translate:0 1.5px; }
+.gs-public-unified :is(.gs-nav-item > a,.gs-language-trigger)[aria-expanded="true"] .gs-nav-chevron { rotate:180deg; translate:0 0; }
+.gs-public-unified .gs-nav-item > a { transition:scale var(--gs-motion-fast) var(--gs-motion-ease),color var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified .gs-nav-item > a:active { scale:var(--gs-motion-press); }
+@media (prefers-reduced-motion:reduce) {
+ .gs-public-unified .gs-nav-chevron { translate:none !important; }
+}
+
+/* Round 6: shared segments retain the approved spring; map pills use the later restrained adhesion treatment. */
+.gs-public-unified { --gs-motion-jelly:400ms; --gs-motion-jelly-ease:cubic-bezier(0.34,1.56,0.64,1); }
+.gs-public-unified .gs-home-product-jelly { translate:var(--gs-jelly-x) var(--gs-jelly-y); transform-origin:var(--gs-jelly-origin,50%) center; transition:translate var(--gs-motion-jelly) var(--gs-motion-ease),width var(--gs-motion-jelly) var(--gs-motion-ease),height var(--gs-motion-jelly) var(--gs-motion-ease); }
+.gs-public-unified [data-jelly-cycle="0"] > .gs-segment-slider { animation:gs-jelly-morph-a var(--gs-motion-jelly) var(--gs-motion-jelly-ease); }
+.gs-public-unified [data-jelly-cycle="1"] > .gs-segment-slider { animation:gs-jelly-morph-b var(--gs-motion-jelly) var(--gs-motion-jelly-ease); }
+@keyframes gs-jelly-morph-a { 0% { scale:0.94 1.04; } 45% { scale:1.07 0.92; } 75% { scale:0.98 1.02; } 100% { scale:1 1; } }
+@keyframes gs-jelly-morph-b { 0% { scale:0.94 1.04; } 45% { scale:1.07 0.92; } 75% { scale:0.98 1.02; } 100% { scale:1 1; } }
+/* The leading edge stays anchored while the trailing side stretches once, then releases. No translation overshoot or logo recoil. */
+.gs-public-unified .gs-home-products[data-jelly-cycle="0"] > .gs-home-product-jelly { animation:gs-pill-adhere-a var(--gs-motion-jelly) var(--gs-motion-ease); }
+.gs-public-unified .gs-home-products[data-jelly-cycle="1"] > .gs-home-product-jelly { animation:gs-pill-adhere-b var(--gs-motion-jelly) var(--gs-motion-ease); }
+@keyframes gs-pill-adhere-a { 0% { scale:1 1; } 30%, 55% { scale:1.18 0.94; } 100% { scale:1 1; } }
+@keyframes gs-pill-adhere-b { 0% { scale:1 1; } 30%, 55% { scale:1.18 0.94; } 100% { scale:1 1; } }
+@media (prefers-reduced-motion:reduce) {
+ .gs-public-unified :is(.gs-home-product-jelly,.gs-segment-slider,.gs-home-product-pill-mark) { animation:none !important; transition:none !important; scale:1 !important; }
+}

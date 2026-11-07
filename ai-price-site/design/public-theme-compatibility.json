@@ -20,6 +20,8 @@
     "bar-high": "#EA580C",
     "high-soft": "#3A1F14",
     "high-on-soft": "#FDBA74",
-    "baseline": "#A9AFB8"
+    "baseline": "#A9AFB8",
+    "row-hover": "#23272B",
+    "map-land": "#353A40"
   }
 }
