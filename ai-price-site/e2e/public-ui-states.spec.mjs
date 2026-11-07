@@ -32,7 +32,9 @@ test("homepage and search remain usable across desktop mobile light and dark sta
   await expect(page.getByRole("heading", { name: "按分类找", exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "省钱排行榜", exact: true })).toHaveCount(0);
   await expect(page.getByLabel("收录统计")).toHaveCount(0);
-  const guideCard = page.getByRole("heading", { name: "价格指南", level: 3 }).locator("xpath=ancestor::a[1]");
+  const guideCard = page.getByRole("heading", { name: "如何阅读地区价格", level: 3, exact: true }).locator("xpath=ancestor::a[1]");
+  await expect(guideCard).toHaveAttribute("href", "/zh/guides/price-guide");
+  await expect(guideCard.locator(".gs-home-guide-category")).toHaveText("价格指南");
   await expect(guideCard).toBeVisible();
   await expect(guideCard).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await guideCard.focus();

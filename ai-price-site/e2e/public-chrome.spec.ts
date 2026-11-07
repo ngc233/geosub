@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { startHomepageFixtureServer } from "./helpers/homepage-fixture-server";
 test.use({launchOptions:{ignoreDefaultArgs:["--hide-scrollbars"]}});
 const evidence=process.env.GEOSUB_V2_EVIDENCE || "/tmp/geosub-v2-evidence";
 const baseline=process.env.GEOSUB_V2_BASELINE || "http://127.0.0.1:3142";
@@ -161,9 +162,9 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
   });
 }
 
-// Round 5: shared chrome contract; the fixture origin supplies display rates only.
+// Shared menu tests run against the standard production-mode E2E application.
 for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as const) {
- test(`round5 menus and currency ${width} ${colorScheme}`,async({page})=>{
+ test(`round5 menus ${width} ${colorScheme}`,async({page})=>{
   await page.setViewportSize({width,height:width===1280?720:844});await page.emulateMedia({colorScheme,reducedMotion:"no-preference"});
   await page.goto("/zh",{waitUntil:"networkidle"});
   const consent=page.getByRole("button",{name:"拒绝统计",exact:true});if(await consent.isVisible())await consent.click();
@@ -194,6 +195,44 @@ for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as cons
   await expect(language).toBeFocused();await expect(languagePanel).toHaveAttribute("inert","");
   if(width===390)await page.keyboard.press("Escape");
   else {await language.click();await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();await expect(language).toHaveAttribute("aria-expanded","false");await page.keyboard.press("Escape");}
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ });
+}
+
+
+// Empty DATA-1 is an expected CI state, never silently skip a missing trigger.
+for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as const) {
+ test(`homepage currency empty state ${width} ${colorScheme}`,async({page})=>{
+  await page.setViewportSize({width,height:844});await page.emulateMedia({colorScheme});
+  await page.goto("/zh");
+  for(const preferred of ["CNY","USD"]) {
+   await page.evaluate(value=>localStorage.setItem("geosub-public-display-currency",value),preferred);
+   await page.reload();
+   await expect(page.getByRole("note").filter({hasText:"虚构测试数据"})).toHaveCount(0);
+   await expect(page.getByRole("region",{name:"代表套餐地区价格",exact:true})).toHaveCount(0);
+   await expect(page.getByRole("heading",{name:"省钱排行榜",exact:true})).toHaveCount(0);
+   await expect(page.getByRole("heading",{name:"按分类找",exact:true})).toHaveCount(0);
+   await expect(page.getByLabel("收录统计")).toHaveCount(0);
+   await expect(page.getByRole("button",{name:/^折合为 /})).toHaveCount(0);
+   await expect(page.getByRole("dialog",{name:"选择币种",exact:true})).toHaveCount(0);
+   await expect(page.getByRole("heading",{name:"如何阅读地区价格",exact:true})).toBeVisible();
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ });
+}
+
+test.describe("currency with explicit fictional homepage data",()=>{
+ let fixture: Awaited<ReturnType<typeof startHomepageFixtureServer>>;
+ test.beforeAll(async()=>{test.setTimeout(150_000);fixture=await startHomepageFixtureServer();});
+ test.afterAll(async()=>{await fixture?.stop();});
+ for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as const) {
+  test(`round5 currency data ${width} ${colorScheme}`,async({page})=>{
+   await page.setViewportSize({width,height:width===1280?720:844});await page.emulateMedia({colorScheme,reducedMotion:"no-preference"});
+   await page.goto(`${fixture.origin}/zh`,{waitUntil:"networkidle"});
+   await expect(page.getByRole("note")).toContainText("虚构测试数据");
+   await expect(page.getByRole("list",{name:"订阅省钱排名"}).getByRole("listitem")).toHaveCount(6);
+   await expect(page.locator('.gs-home-ranking')).toContainText('¥ 119.00');
+   const consent=page.getByRole("button",{name:"拒绝统计",exact:true});if(await consent.isVisible())await consent.click();
   const currency=page.getByRole("button",{name:"折合为 ¥ CNY",exact:true});await currency.click();
   const dialog=page.getByRole("dialog",{name:"选择币种",exact:true});
   const list=dialog.getByRole("listbox",{name:"显示币种"});await expect(dialog.locator('input')).toHaveCount(0);
@@ -216,8 +255,12 @@ for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as cons
   await usd.click();await expect(options.first()).toBeFocused();await page.keyboard.press("Escape");await expect(usd).toBeFocused();
   if(width===1280){await usd.click();await page.mouse.click(50,10);await expect(dialog).toHaveCount(0);}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- });
-}
+   await page.reload();
+   await expect(page.getByRole("button",{name:"折合为 $ USD",exact:true})).toBeVisible();
+   await expect(page.locator('.gs-home-ranking')).toContainText('$ 17.00');
+  });
+ }
+});
 
 for(const route of ["/zh","/zh/ai-pricing"]) test(`round5 global header feedback and optimistic indicator ${route}`,async({page})=>{
  await page.setViewportSize({width:1280,height:720});await page.emulateMedia({reducedMotion:"no-preference"});await page.goto(route,{waitUntil:"networkidle"});
