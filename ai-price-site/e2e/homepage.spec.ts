@@ -67,6 +67,11 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
   await page.getByRole("button",{name:"折合为 USD",exact:true}).click();await page.getByRole("option",{name:"CNY · 人民币",exact:true}).click();
   const countries=page.getByRole("region",{name:"哪些国家整体更便宜"});await expect(countries.getByRole("link").filter({hasText:"加拿大"})).toHaveCount(0);await expect(countries.getByRole("link").filter({hasText:"菲律宾"})).toHaveCount(1);
   await expect(countries).toContainText("订阅价格的中位水平与美国相同");
+  // All rebuilt savings displays use whole percentages, including cards and map.
+  for(const selector of [".gs-home-ranking", ".gs-home-categories", ".gs-home-countries", ".gs-home-bubble"]){
+    expect(await page.locator(selector).innerText()).not.toMatch(/\d+\.\d+%/);
+  }
+  await expect(countries).toContainText("便宜约");
   if(evidence){
     // Full-page capture includes off-screen lazy images; decode those first so
     // the evidence shows the same flags a reviewer sees while scrolling.

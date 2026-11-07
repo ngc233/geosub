@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>搜索与各种状态</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ECECE7}
+a{color:#15171A}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.label{font-size:13px;font-weight:700;color:#5B616B;letter-spacing:0.02em}
+.panel{background:#F6F6F3;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
+.ghost{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #D9D9D3;background:#FFFFFF;color:#15171A;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms}
+.ghost:hover{background:#F0F0EC}
+.ghost:active{transform:scale(0.98)}
+.res{width:100%;min-height:52px;border:0;background:transparent;font:inherit;color:#15171A;cursor:pointer;display:flex;align-items:center;gap:12px;padding:0 12px;border-radius:10px;text-align:left;text-decoration:none;transition:background-color 120ms}
+.res[aria-selected="true"]{background:#F7FEE7}
+.chip{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid #E4E4DF;background:#FFFFFF;font:inherit;font-size:14px;color:#3D4450;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.chip:hover{border-color:#A3E635;color:#15171A}
+.ghost:focus-visible,.res:focus-visible,.chip:focus-visible{outline:3px solid #4D7C0F;outline-offset:2px}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:0.55}}
+.sk{background:#E8E8E3;border-radius:8px;animation:breathe 1200ms cubic-bezier(0.2,0.8,0.2,1) infinite}
+.toast{transition:transform 220ms cubic-bezier(0.2,0.8,0.2,1),opacity 220ms cubic-bezier(0.2,0.8,0.2,1)}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 1520px; background: #ECECE7; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+
+<div style="display: flex; flex-direction: column; gap: 6px"><h1 style="margin: 0; font-size: 30px; font-weight: 700">搜索与各种状态</h1><p style="margin: 0; font-size: 15px; color: #3D4450">全站共用。每个状态都要<b style="color: #15171A">告诉用户发生了什么、下一步能做什么</b>，不出现空白页或只有一句“出错了”。</p></div>
+
+<div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: start">
+
+<section class="panel" style="min-height: 620px">
+<span class="label">1 · 头部搜索（可输入试试：chat、印度、netflix、xyz）</span>
+<div style="position: relative">
+<label style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; background: #FFFFFF; border: 2px solid #84CC16; border-radius: 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" value="{{ q }}" onChange="{{ onQ }}" onKeyDown="{{ onKey }}" role="combobox" aria-expanded="true" aria-controls="sr" aria-label="搜索产品或国家" placeholder="搜产品或国家" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 16px"><kbd style="font-size: 12px; color: #5B616B; border: 1px solid #E4E4DF; border-radius: 6px; padding: 1px 6px">Esc</kbd></label>
+<div id="sr" role="listbox" style="margin-top: 8px; background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 14px; box-shadow: 0 14px 36px rgba(21,23,26,0.10); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+<sc-if value="{{ hasRes }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+<div style="font-size: 12px; color: #5B616B; padding: 8px 12px 4px">{{ g.title }}</div>
+<sc-for list="{{ g.items }}" as="r" hint-placeholder-count="3">
+<a href="#r" class="res" role="option" aria-selected="{{ r.on }}" onMouseEnter="{{ r.hover }}">
+<span style="width: 32px; height: 32px; border-radius: 8px; background: #F0F0EC; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #3D4450; flex-shrink: 0">{{ r.badge }}</span>
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: 600">{{ r.name }}</span><span style="font-size: 12px; color: #5B616B">{{ r.sub }}</span></span>
+<span class="num" style="font-size: 14px; font-weight: 700; color: #4D7C0F">{{ r.price }}</span>
+</a>
+</sc-for>
+</sc-for>
+<div style="display: flex; gap: 16px; padding: 10px 12px 4px; margin-top: 4px; border-top: 1px solid #F0F0EC; font-size: 12px; color: #5B616B"><span><kbd>↑</kbd> <kbd>↓</kbd> 选择</span><span><kbd>Enter</kbd> 打开</span><span><kbd>Esc</kbd> 关闭</span></div>
+</sc-if>
+<sc-if value="{{ noRes }}" hint-placeholder-val="{{ false }}">
+<div style="padding: 18px 12px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 15px">没有找到“<b>{{ q }}</b>”</div>
+<div style="font-size: 13px; color: #5B616B">可以换个写法，或者试试：</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{ suggest }}" as="s" hint-placeholder-count="4"><button type="button" class="chip" onClick="{{ s.pick }}">{{ s.t }}</button></sc-for></div>
+<a href="#contact" style="font-size: 13px; color: #4D7C0F">想让我们收录这个产品？告诉我们</a>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="font-size: 13px; line-height: 1.7; color: #5B616B">产品、套餐、国家三组，每组最多 3 条；每条右侧给出最低价，搜完就能看到结论。手机端点搜索图标后全屏打开同一个面板。</div>
+</section>
+
+<section class="panel" style="min-height: 620px; justify-content: center; align-items: center; text-align: center; gap: 16px; background: #FFFFFF">
+<span class="label" style="align-self: flex-start">2 · 404 页面（仍返回 HTTP 404）</span>
+<div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; max-width: 420px">
+<svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true">
+<sc-for list="{{ globe }}" as="d" hint-placeholder-count="40"><circle cx="{{ d.x }}" cy="{{ d.y }}" r="2.2" fill="{{ d.c }}"></circle></sc-for>
+<circle cx="60" cy="60" r="54" fill="none" stroke="#E4E4DF" stroke-width="1.5"></circle>
+<circle cx="84" cy="40" r="7" fill="#A3E635" stroke="#FFFFFF" stroke-width="2"></circle>
+</svg>
+<div class="num" style="font-size: 14px; color: #5B616B; font-weight: 600">404</div>
+<h2 style="margin: 0; font-size: 26px; font-weight: 700">这个页面不存在</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.7; color: #3D4450">可能是链接写错了，或者这个套餐已经下架。搜一下你要找的产品：</p>
+<label style="width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; background: #FFFFFF; border: 1px solid #D9D9D3; border-radius: 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" placeholder="搜产品或国家" aria-label="搜索" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px"></label>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px"><a href="#" class="chip">ChatGPT Plus</a><a href="#" class="chip">Netflix</a><a href="#" class="chip">YouTube Premium</a><a href="#" class="chip">返回首页</a></div>
+</div>
+</section>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch">
+
+<section class="panel">
+<span class="label">3 · 筛选没有结果</span>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 8px">
+<div style="display: flex; justify-content: space-between; padding: 8px 12px; font-size: 13px; color: #5B616B"><span>地区</span><span>折合</span></div>
+<div style="border-top: 1px solid #F0F0EC; padding: 28px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5B616B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path></svg>
+<div style="font-size: 15px; font-weight: 600">没有比美国更贵的地区</div>
+<div style="font-size: 13px; color: #5B616B">这个套餐在所有已收录地区都比美国便宜。</div>
+<button type="button" class="ghost">查看全部地区</button>
+</div>
+</div>
+<div style="font-size: 13px; line-height: 1.6; color: #5B616B">空结果本身也是结论，要说清楚。表格高度过渡到空状态，不跳。</div>
+</section>
+
+<section class="panel">
+<span class="label">4 · 加载中</span>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px" aria-busy="true" aria-label="价格加载中">
+<div class="sk" style="width: 40%; height: 14px"></div>
+<div class="sk" style="width: 62%; height: 44px; border-radius: 10px"></div>
+<div style="display: flex; gap: 8px"><div class="sk" style="width: 96px; height: 28px; border-radius: 999px"></div><div class="sk" style="width: 140px; height: 28px; border-radius: 999px"></div></div>
+<div class="sk" style="width: 100%; height: 10px; margin-top: 8px"></div>
+<div class="sk" style="width: 86%; height: 10px"></div>
+</div>
+<div style="font-size: 13px; line-height: 1.6; color: #5B616B">只用于客户端切换（换币种、换产品）超过 300ms 时。首屏价格由服务器直接输出，不显示骨架。骨架形状和真实内容一致，替换时不跳。</div>
+</section>
+
+<section class="panel">
+<span class="label">5 · 价格过期 / 加载失败</span>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 6px">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 12px"><span style="flex-grow: 1; font-size: 15px">埃及</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #3D4450; background: #F0F0EC; border-radius: 999px; padding: 3px 8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>9 天未更新</span><span class="num" style="font-size: 15px; font-weight: 700; color: #5B616B">¥ 68.50</span></div>
+</div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 12px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3D4450" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">新币种的价格没加载出来</span><span style="font-size: 13px; color: #5B616B">先显示人民币价格</span></div>
+<button type="button" class="ghost">重试</button>
+</div>
+<div style="font-size: 13px; line-height: 1.6; color: #5B616B">超过 7 天没更新的价格用灰色显示并加标签，不参与“最低价”。出错不用红色和橙色（橙色只表示“更贵”）。</div>
+</section>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 24px; align-items: stretch">
+<section class="panel" style="position: relative; overflow: hidden; min-height: 260px">
+<span class="label">6 · 轻提示（点按钮试试）</span>
+<div style="display: flex; gap: 10px"><button type="button" class="ghost" onClick="{{ showToast }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>复制链接</button></div>
+<div style="font-size: 13px; line-height: 1.6; color: #5B616B; max-width: 360px">从底部上滑出现，2.4 秒后自动消失；同时用 aria-live 读出。只用于“复制成功”“已保存图片”这类结果确认。</div>
+<div role="status" aria-live="polite" class="toast" style="position: absolute; left: 50%; bottom: 24px; transform: translate(-50%, {{ toastY }}px); opacity: {{ toastOp }}; background: #FFFFFF; border: 1px solid #E4E4DF; box-shadow: 0 14px 36px rgba(21,23,26,0.14); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 15px; white-space: nowrap">
+<span style="width: 22px; height: 22px; border-radius: 50%; background: #A3E635; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A2E05" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>{{ toastText }}
+</div>
+</section>
+
+<section class="panel">
+<span class="label">7 · 页面出错（服务器错误时）</span>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; gap: 24px; align-items: center">
+<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3D4450" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M12 2v4"></path><path d="m16.2 7.8 2.9-2.9"></path><path d="M18 12h4"></path><path d="m16.2 16.2 2.9 2.9"></path><path d="M12 18v4"></path><path d="m4.9 19.1 2.9-2.9"></path><path d="M2 12h4"></path><path d="m4.9 4.9 2.9 2.9"></path></svg>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">页面暂时打不开</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.7; color: #3D4450">我们这边出了点问题，已经自动记录。稍后再试，或者先看看其他价格。</p>
+<div style="display: flex; gap: 10px; margin-top: 4px"><button type="button" class="ghost" style="background: #A3E635; border-color: #A3E635; color: #1A2E05; font-weight: 700">重新加载</button><a href="#" class="ghost">返回首页</a></div>
+</div>
+</div>
+<div style="font-size: 13px; line-height: 1.6; color: #5B616B">保留头部和页脚，用户不会觉得网站“挂了”。不显示技术错误信息。</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1520}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.products = [
+      ['ChatGPT', 'C', '3 个套餐', '¥ 54.10', 'chatgpt'], ['Claude', 'C', '2 个套餐', '¥ 98.50', 'claude'], ['Gemini', 'G', '2 个套餐', '¥ 61.00', 'gemini'],
+      ['Netflix', 'N', '3 个套餐', '¥ 21.80', 'netflix'], ['Spotify', 'S', '4 个套餐', '¥ 13.50', 'spotify'], ['YouTube Premium', 'Y', '3 个套餐', '¥ 11.20', 'youtube']
+    ];
+    this.plans = [
+      ['ChatGPT Plus', 'C', '最低 · 土耳其', '¥ 54.10', 'chatgpt plus'], ['ChatGPT Go', 'C', '最低 · 印度', '¥ 23.60', 'chatgpt go'], ['ChatGPT Pro', 'C', '最低 · 土耳其', '¥ 540.00', 'chatgpt pro'],
+      ['Netflix 标准版', 'N', '最低 · 巴基斯坦', '¥ 21.80', 'netflix'], ['Spotify 个人版', 'S', '最低 · 印度', '¥ 13.50', 'spotify'], ['YouTube Premium 个人版', 'Y', '最低 · 印度', '¥ 11.20', 'youtube premium']
+    ];
+    this.countries = [
+      ['印度', 'IN', '平均比美国低 71%', '−71%', '印度 india'], ['土耳其', 'TR', '平均比美国低 58%', '−58%', '土耳其 turkey'], ['日本', 'JP', '平均比美国低 12%', '−12%', '日本 japan'], ['美国', 'US', '基准', '', '美国 usa']
+    ];
+    this.state = { q: 'chat', idx: 0, toast: false, toastText: '链接已复制' };
+    this.timer = null;
+  }
+  componentWillUnmount() { if (this.timer) clearTimeout(this.timer); }
+  results() {
+    const q = this.state.q.trim().toLowerCase();
+    if (!q) return [];
+    const m = (arr) => arr.filter((x) => x[4].indexOf(q) >= 0 || x[0].toLowerCase().indexOf(q) >= 0).slice(0, 3);
+    return [['产品', m(this.products)], ['套餐', m(this.plans)], ['国家', m(this.countries)]].filter((g) => g[1].length);
+  }
+  renderVals() {
+    const s = this.state;
+    const gs = this.results();
+    let k = 0;
+    const flat = [];
+    const groups = gs.map((g) => ({ title: g[0], items: g[1].map((x) => { const i = k++; flat.push(i); return { name: x[0], badge: x[1], sub: x[2], price: x[3], on: String(i === s.idx), hover: () => this.setState({ idx: i }) }; }) }));
+    const total = k;
+    const globe = [];
+    for (let r = 0; r < 11; r++) for (let c = 0; c < 11; c++) { const x = 10 + c * 10, y = 10 + r * 10; const dx = x - 60, dy = y - 60; if (dx * dx + dy * dy <= 48 * 48) globe.push({ x, y, c: ((r * 7 + c * 3) % 5 === 0) ? '#84CC16' : '#D9D9D3' }); }
+    return {
+      q: s.q,
+      onQ: (e) => this.setState({ q: e.target.value, idx: 0 }),
+      onKey: (e) => { if (!total) return; if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ idx: (this.state.idx + 1) % total }); } if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ idx: (this.state.idx - 1 + total) % total }); } },
+      groups, hasRes: total > 0, noRes: total === 0 && s.q.trim().length > 0,
+      suggest: ['ChatGPT', 'Netflix', '土耳其', '印度'].map((t) => ({ t, pick: () => this.setState({ q: t, idx: 0 }) })),
+      globe,
+      showToast: () => { if (this.timer) clearTimeout(this.timer); this.setState({ toast: true }); this.timer = setTimeout(() => this.setState({ toast: false }), 2400); },
+      toastY: s.toast ? 0 : 24, toastOp: s.toast ? 1 : 0, toastText: s.toastText
+    };
+  }
+}
+</script>
+</body>
+</html>

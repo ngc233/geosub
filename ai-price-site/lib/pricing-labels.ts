@@ -46,7 +46,7 @@ export function getPlanTabLabel(productName: string, planName: string) {
 }
 
 /** Chinese rebuilt pages only. Keep stored Chinese labels and branded tiers;
- * translate only the six generic terms approved on 2026-11-06. Legacy/locked
+ * translate only the generic terms approved on 2026-11-06. Legacy/locked
  * pages continue to use getPlanDisplayName without changing their copy. */
 export function getChinesePlanDisplayName(productName: string, planName: string) {
   const product = productName.trim(), plan = planName.trim();
@@ -56,7 +56,8 @@ export function getChinesePlanDisplayName(productName: string, planName: string)
   const generic: Readonly<Record<string, string>> = {
     individual: "个人版", standard: "标准版", premium: "高级版",
     family: "家庭版", basic: "基础版", monthly: "月度会员",
+    membership: "会员", subscription: "订阅会员",
   };
-  const translated = tier.replace(/\b(Individual|Standard|Premium|Family|Basic|Monthly)\b/gi, word => generic[word.toLowerCase()]);
+  const translated = tier.replace(/\b(Individual|Standard|Premium|Family|Basic|Monthly|Membership|Subscription)\b/gi, word => generic[word.toLowerCase()]);
   return getPlanDisplayName(product, translated);
 }

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>价格历史与汇率换算</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F6F3}
+a{color:#15171A}
+.num{font-family:"Inter Tight",system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.ghost{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #D9D9D3;background:#FFFFFF;color:#15171A;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms}
+.ghost:hover{background:#F0F0EC}
+.ghost:active{transform:scale(0.98)}
+.chip{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #E4E4DF;background:#FFFFFF;font:inherit;font-size:14px;color:#3D4450;cursor:pointer;white-space:nowrap;transition:background-color 220ms cubic-bezier(0.2,0.8,0.2,1),color 220ms,border-color 220ms}
+.chip[aria-pressed="true"]{background:#A3E635;border-color:#A3E635;color:#1A2E05;font-weight:700}
+.tab{min-height:40px;padding:0 14px;border:0;background:transparent;font:inherit;font-size:14px;color:#5B616B;cursor:pointer;position:relative;z-index:1;white-space:nowrap;transition:color 220ms cubic-bezier(0.2,0.8,0.2,1)}
+.tab[aria-pressed="true"]{color:#1A2E05;font-weight:700}
+.sel{appearance:none;-webkit-appearance:none;min-height:52px;padding:0 40px 0 14px;border-radius:12px;border:1px solid #D9D9D3;background:#FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235B616B' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;font:inherit;font-size:15px;color:#15171A;cursor:pointer;width:100%}
+.swap{width:44px;height:44px;border-radius:50%;border:1px solid #D9D9D3;background:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#15171A;transition:transform 220ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms}
+.swap:hover{background:#F0F0EC}
+.ghost:focus-visible,.chip:focus-visible,.tab:focus-visible,.sel:focus-visible,.swap:focus-visible{outline:3px solid #4D7C0F;outline-offset:2px}
+@keyframes draw0{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes draw1{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.draw0{stroke-dasharray:1;animation:draw0 480ms cubic-bezier(0.2,0.8,0.2,1) both}
+.draw1{stroke-dasharray:1;animation:draw1 480ms cubic-bezier(0.2,0.8,0.2,1) both}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F6F3; color: #15171A; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+
+<header style="background: rgba(246,246,243,0.92); border-bottom: 1px solid #E4E4DF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; min-height: 64px; display: flex; align-items: center; gap: 16px">
+<a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #15171A; min-height: 44px"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="#15171A"></circle><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24" fill="none" stroke="#3D4450" stroke-width="1.5"></path><circle cx="21" cy="8" r="4" fill="#A3E635" stroke="#F6F6F3" stroke-width="1.5"></circle></svg><span style="font-size: 19px; font-weight: 700">GeoSub</span></a>
+<nav aria-label="主导航" style="display: flex; flex-grow: 1; gap: 4px; font-size: 15px">
+<a href="#h" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #5B616B">首页</a>
+<a href="#p" aria-current="page" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #15171A; font-weight: 600; box-shadow: inset 0 -3px 0 #84CC16">按产品</a>
+<a href="#c" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #5B616B">按国家</a>
+<a href="#g" style="min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; color: #5B616B">指南</a>
+</nav>
+<label style="flex: 0 1 300px; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 12px; color: #5B616B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" placeholder="搜产品或国家" aria-label="搜索" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 14px"><kbd class="num" style="font-size: 12px; color: #5B616B; border: 1px solid #E4E4DF; border-radius: 6px; padding: 1px 6px">/</kbd></label>
+<button type="button" class="ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>简体中文</button>
+</div>
+</header>
+
+<main id="top" style="max-width: 1200px; margin: 0 auto; padding: 28px 24px 72px; display: flex; flex-direction: column; gap: 48px">
+
+<section style="display: flex; flex-direction: column; gap: 18px">
+<div style="font-size: 14px; color: #5B616B">AI 订阅 / ChatGPT / Plus / 价格历史</div>
+<div style="display: flex; flex-direction: column; gap: 8px"><h1 style="margin: 0; font-size: 34px; font-weight: 700">ChatGPT Plus 价格历史</h1><p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3D4450">过去 12 个月，<b style="color: #15171A">土耳其 9 月涨价 25%</b>，但仍是全球最低。其他地区标价没变，折合人民币的起伏来自汇率。</p></div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<div style="display: flex; gap: 8px; align-items: center"><span style="font-size: 14px; color: #5B616B; margin-right: 4px">看哪个地区</span><sc-for list="{{ regions }}" as="r" hint-placeholder-count="3"><button type="button" class="chip" aria-pressed="{{ r.on }}" onClick="{{ r.pick }}">{{ r.name }}</button></sc-for></div>
+<div style="display: inline-flex; position: relative; background: #F6F6F3; border-radius: 12px; padding: 4px">
+<div style="position: absolute; top: 4px; left: 4px; height: 40px; width: 120px; border-radius: 9px; background: #A3E635; transform: translateX({{ mX }}px); transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1)"></div>
+<button type="button" class="tab" style="width: 120px" aria-pressed="{{ m0 }}" onClick="{{ toCny }}">折合人民币</button><button type="button" class="tab" style="width: 120px" aria-pressed="{{ m1 }}" onClick="{{ toLocal }}">本地标价</button>
+</div>
+</div>
+
+<div style="position: relative; width: calc(100% - 48px); aspect-ratio: 1100 / 300" onMouseLeave="{{ leave }}">
+<svg width="100%" height="100%" viewBox="0 0 1100 300" preserveAspectRatio="none" role="img" aria-label="{{ aria }}" style="display: block; overflow: visible; position: absolute; inset: 0">
+<sc-for list="{{ yTicks }}" as="t" hint-placeholder-count="4"><line x1="56" x2="1090" y1="{{ t.y }}" y2="{{ t.y }}" stroke="#F0F0EC" stroke-width="1"></line></sc-for>
+<sc-if value="{{ showUS }}" hint-placeholder-val="{{ true }}"><path d="{{ usPath }}" fill="none" stroke="#3D4450" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round"></path></sc-if>
+<path class="draw{{ gen }}" pathLength="1" d="{{ selPath }}" fill="none" stroke="{{ selColor }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+<sc-if value="{{ hasHover }}" hint-placeholder-val="{{ false }}"><line x1="{{ hx }}" x2="{{ hx }}" y1="16" y2="268" stroke="#D9D9D3" stroke-width="1"></line><circle cx="{{ hx }}" cy="{{ hy }}" r="5" fill="#4D7C0F" stroke="#FFFFFF" stroke-width="2"></circle></sc-if>
+<sc-if value="{{ changeOn }}" hint-placeholder-val="{{ true }}"><g transform="translate({{ cx }}, {{ cy }})"><circle r="11" fill="#FCEBE2"></circle><path d="M0 4V-4M-3.5 -0.5 0 -4 3.5 -0.5" fill="none" stroke="#C2410C" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></g></sc-if>
+<sc-for list="{{ zones }}" as="z" hint-placeholder-count="12"><rect x="{{ z.x }}" y="10" width="{{ z.w }}" height="262" fill="transparent" onMouseEnter="{{ z.enter }}"></rect></sc-for>
+</svg>
+<sc-for list="{{ yTicks }}" as="t" hint-placeholder-count="4"><span class="num" style="position: absolute; right: calc(100% - {{ t.lx }}%); top: {{ t.py }}%; transform: translateY(-50%); font-size: 12px; color: #5B616B; padding-right: 8px">{{ t.label }}</span></sc-for>
+<sc-for list="{{ xTicks }}" as="t" hint-placeholder-count="12"><span style="position: absolute; left: {{ t.px }}%; top: 100%; transform: translateX(-50%); font-size: 12px; color: #5B616B; padding-top: 6px; white-space: nowrap">{{ t.label }}</span></sc-for>
+<sc-if value="{{ showUS }}" hint-placeholder-val="{{ true }}"><span style="position: absolute; left: 99.4%; top: {{ usLabelPy }}%; transform: translateY(-50%); font-size: 12px; color: #3D4450; padding-left: 6px; white-space: nowrap">美国</span></sc-if>
+<span style="position: absolute; left: 99.4%; top: {{ selLabelPy }}%; transform: translateY(-50%); font-size: 12px; font-weight: 700; color: #3F6212; padding-left: 6px; white-space: nowrap">{{ selName }}</span>
+<sc-if value="{{ hasHover }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: {{ tipX }}%; top: 8px; transform: translateX({{ tipShift }}); background: #FFFFFF; border: 1px solid #E4E4DF; border-radius: 12px; box-shadow: 0 10px 24px rgba(21,23,26,0.10); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; min-width: 150px">
+<span style="font-size: 12px; color: #5B616B">{{ tipDate }}</span>
+<span style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px"><span>{{ selName }}</span><b class="num" style="color: #4D7C0F">{{ tipSel }}</b></span>
+<sc-if value="{{ showUS }}" hint-placeholder-val="{{ true }}"><span style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: #3D4450"><span>美国</span><b class="num">{{ tipUS }}</b></span></sc-if>
+</div>
+</sc-if>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: #5B616B; align-items: center; margin-top: 22px">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 18px; height: 3px; border-radius: 2px; background: #65A30D"></span>{{ selName }}</span>
+<sc-if value="{{ showUS }}" hint-placeholder-val="{{ true }}"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 18px; height: 0; border-top: 2px dashed #3D4450"></span>美国（基准）</span></sc-if>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #FCEBE2"></span>官方调价</span>
+<span>{{ modeNote }}</span>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 8px 24px">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0 8px"><h2 style="margin: 0; font-size: 18px; font-weight: 700">官方调价记录</h2><span style="font-size: 13px; color: #5B616B">只列本地标价的变化，不含汇率波动</span></div>
+<sc-for list="{{ changes }}" as="c" hint-placeholder-count="4">
+<div style="display: grid; grid-template-columns: 96px 110px minmax(0, 1fr) 96px; gap: 16px; align-items: center; min-height: 52px; border-top: 1px solid #F0F0EC; font-size: 15px">
+<span class="num" style="color: #5B616B; font-size: 14px">{{ c.d }}</span><span style="font-weight: 600">{{ c.r }}</span><span class="num" style="color: #3D4450">{{ c.from }} → <b style="color: #15171A">{{ c.to }}</b></span>
+<span class="num" style="justify-self: end; background: {{ c.bg }}; color: {{ c.fg }}; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px"><sc-if value="{{ c.up }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{ c.down }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if>{{ c.pct }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section id="converter" style="display: flex; gap: 24px; align-items: stretch">
+<div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding-top: 6px">
+<div style="font-size: 14px; color: #5B616B">工具</div>
+<h2 style="margin: 0; font-size: 30px; font-weight: 700">汇率换算</h2>
+<p style="margin: 0; font-size: 16px; line-height: 1.7; color: #3D4450; max-width: 420px">用的是和全站价格<b style="color: #15171A">同一天的汇率</b>，方便你自己核对。实际扣款会因银行和手续费略有不同。</p>
+<a href="#all" style="font-size: 15px; color: #4D7C0F; min-height: 44px; display: inline-flex; align-items: center; gap: 6px">按 {{ toCode }} 查看所有价格<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+</div>
+<div style="flex: 1.3 1 0; min-width: 0; background: #FFFFFF; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); gap: 12px; align-items: end">
+<label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; color: #5B616B">从</span><select class="sel" value="{{ fromCode }}" onChange="{{ onFrom }}" aria-label="原币种"><sc-for list="{{ fromOpts }}" as="o" hint-placeholder-count="6"><option value="{{ o.code }}">{{ o.code }} · {{ o.label }}</option></sc-for></select></label>
+<button type="button" class="swap" aria-label="交换币种" onClick="{{ swap }}" style="transform: rotate({{ swapRot }}deg); margin-bottom: 4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg></button>
+<label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; color: #5B616B">换成</span><select class="sel" value="{{ toCode }}" onChange="{{ onTo }}" aria-label="目标币种"><sc-for list="{{ toOpts }}" as="o" hint-placeholder-count="6"><option value="{{ o.code }}">{{ o.code }} · {{ o.label }}</option></sc-for></select></label>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; color: #5B616B">金额</span><span style="display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 16px; border-radius: 12px; border: 1px solid #D9D9D3"><b class="num" style="font-size: 15px; color: #5B616B">{{ fromCode }}</b><input class="num" type="text" inputmode="decimal" value="{{ amt }}" onChange="{{ onAmt }}" aria-label="金额" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 24px; font-weight: 700; color: #15171A"></span></label>
+<div style="display: flex; gap: 8px"><sc-for list="{{ quick }}" as="q" hint-placeholder-count="4"><button type="button" class="chip" aria-pressed="{{ q.on }}" onClick="{{ q.pick }}"><span class="num">{{ q.v }}</span></button></sc-for></div>
+<div style="background: #F7FEE7; border: 1px solid #D9F99D; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #3F6212">约等于</span>
+<span class="num" style="font-size: 40px; font-weight: 700; color: #1A2E05; line-height: 1.1">{{ result }}</span>
+<span class="num" style="font-size: 13px; color: #3F6212">1 {{ fromCode }} = {{ rate }} {{ toCode }} · 汇率 11月4日</span>
+</div>
+</div>
+</section>
+</main>
+<footer style="border-top: 1px solid #E4E4DF; padding: 24px; text-align: center; font-size: 13px; color: #5B616B">页脚与首页相同 · 示例数据</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.months = ['12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月'];
+    this.years = ['2025', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026'];
+    this.us = [144.0, 143.5, 143.1, 142.8, 143.6, 144.2, 143.0, 142.1, 141.9, 142.6, 142.9, 142.4];
+    this.regions = [
+      { name: '土耳其', cny: [49.8, 48.9, 47.6, 46.8, 46.0, 45.1, 44.3, 43.6, 43.0, 54.9, 54.4, 54.1], local: [199.99, 199.99, 199.99, 199.99, 199.99, 199.99, 199.99, 199.99, 199.99, 249.99, 249.99, 249.99], sym: '₺ ', change: 9 },
+      { name: '印度', cny: [72.9, 72.6, 72.4, 72.1, 71.9, 71.8, 71.6, 71.5, 71.4, 71.4, 71.3, 71.3], local: [1999, 1999, 1999, 1999, 1999, 1999, 1999, 1999, 1999, 1999, 1999, 1999], sym: '₹ ', change: -1 },
+      { name: '日本', cny: [139.1, 137.2, 136.5, 134.8, 133.0, 131.6, 130.4, 129.8, 129.0, 128.6, 128.3, 128.0], local: [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000], sym: 'JP¥ ', change: -1 }
+    ];
+    this.cur = [['CNY', '人民币', 1], ['USD', '美元', 0.1404], ['TRY', '土耳其里拉', 4.62], ['JPY', '日元', 21.6], ['EUR', '欧元', 0.1302], ['INR', '印度卢比', 11.83], ['HKD', '港元', 1.093]];
+    this.state = { reg: 0, mode: 0, gen: 0, hover: -1, from: 'TRY', to: 'CNY', amt: '249.99', shown: 249.99 * (1 / 4.62), swapRot: 0 };
+    this.raf = null;
+  }
+  componentWillUnmount() { if (this.raf) cancelAnimationFrame(this.raf); }
+  rateOf(c) { return this.cur.find((x) => x[0] === c)[2]; }
+  target(s) { const a = parseFloat(String(s.amt).replace(/,/g, '')) || 0; return a / this.rateOf(s.from) * this.rateOf(s.to); }
+  roll(next) {
+    const merged = Object.assign({}, this.state, next);
+    const from = this.state.shown, to = this.target(merged);
+    this.setState(next);
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    if (reduce) { this.setState({ shown: to }); return; }
+    const start = performance.now();
+    const step = (now) => { const t = Math.min(1, (now - start) / 480); const e = 1 - Math.pow(1 - t, 3); this.setState({ shown: from + (to - from) * e }); if (t < 1) this.raf = requestAnimationFrame(step); };
+    this.raf = requestAnimationFrame(step);
+  }
+  renderVals() {
+    const s = this.state;
+    const r = this.regions[s.reg];
+    const local = s.mode === 1;
+    const sel = local ? r.local : r.cny;
+    const all = local ? sel : sel.concat(this.us);
+    let lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+    const pad = (hi - lo) * 0.25 || hi * 0.1; lo = Math.max(0, lo - pad); hi = hi + pad;
+    const X = (i) => 70 + i * (1010 / 11);
+    const Y = (v) => 268 - (v - lo) / (hi - lo) * 248;
+    const path = (arr) => arr.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+    const stepPath = (arr) => arr.map((v, i) => i ? 'H' + X(i).toFixed(1) + ' V' + Y(v).toFixed(1) : 'M' + X(0).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+    const fmtV = (v) => local ? r.sym + v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '¥ ' + v.toFixed(2);
+    const ticks = [0, 1, 2, 3].map((k) => { const v = lo + (hi - lo) * k / 3; return { y: Y(v).toFixed(1), py: (Y(v) / 300 * 100).toFixed(2), lx: (56 / 1100 * 100).toFixed(2), label: local ? Math.round(v).toLocaleString('en-US') : Math.round(v) }; });
+    const h = s.hover;
+    const changes = [
+      { d: '2026-09-12', r: '土耳其', from: '₺ 199.99', to: '₺ 249.99', pct: '25%', up: true, down: false, bg: '#FCEBE2', fg: '#9A3412' },
+      { d: '2026-03-03', r: '巴基斯坦', from: 'Rs 2,800', to: 'Rs 2,500', pct: '11%', up: false, down: true, bg: '#ECFCCB', fg: '#3F6212' },
+      { d: '2026-01-20', r: '埃及', from: 'E£ 399', to: 'E£ 469', pct: '18%', up: true, down: false, bg: '#FCEBE2', fg: '#9A3412' },
+      { d: '2025-12-08', r: '英国', from: '£ 19.99', to: '£ 19.99', pct: '0%', up: false, down: false, bg: '#F0F0EC', fg: '#3D4450' }
+    ].slice(0, 3);
+    const rate = this.rateOf(s.to) / this.rateOf(s.from);
+    const dec = s.to === 'JPY' ? 0 : 2;
+    const opts = (cur) => this.cur.map((c) => ({ code: c[0], label: c[1], sel: c[0] === cur }));
+    return {
+      regions: this.regions.map((x, i) => ({ name: x.name, on: String(i === s.reg), pick: () => { if (i !== this.state.reg) this.setState({ reg: i, gen: 1 - this.state.gen, hover: -1 }); } })),
+      mX: s.mode * 120, m0: String(s.mode === 0), m1: String(s.mode === 1),
+      toCny: () => { if (this.state.mode !== 0) this.setState({ mode: 0, gen: 1 - this.state.gen }); },
+      toLocal: () => { if (this.state.mode !== 1) this.setState({ mode: 1, gen: 1 - this.state.gen }); },
+      gen: s.gen,
+      yTicks: ticks,
+      xTicks: this.months.map((m, i) => ({ px: (X(i) / 1100 * 100).toFixed(2), label: m })),
+      showUS: !local, usPath: path(this.us), usLabelPy: (Y(this.us[11]) / 300 * 100).toFixed(2),
+      selPath: local ? stepPath(sel) : path(sel), selColor: '#65A30D', selName: r.name, selLabelPy: (Y(sel[11]) / 300 * 100).toFixed(2),
+      changeOn: r.change >= 0, cx: r.change >= 0 ? X(r.change).toFixed(1) : 0, cy: r.change >= 0 ? (Y(sel[r.change]) - 20).toFixed(1) : 0,
+      zones: this.months.map((m, i) => ({ x: (X(i) - 1010 / 22).toFixed(1), w: (1010 / 11).toFixed(1), enter: () => this.setState({ hover: i }) })),
+      leave: () => this.setState({ hover: -1 }),
+      hasHover: h >= 0, hx: h >= 0 ? X(h).toFixed(1) : 0, hy: h >= 0 ? Y(sel[h]).toFixed(1) : 0,
+      tipX: h >= 0 ? (X(h) / 1100 * 100).toFixed(1) : 0, tipShift: h > 8 ? 'calc(-100% - 12px)' : '12px',
+      tipDate: h >= 0 ? this.years[h] + ' 年 ' + this.months[h] : '', tipSel: h >= 0 ? fmtV(sel[h]) : '', tipUS: h >= 0 ? '¥ ' + this.us[h].toFixed(2) : '',
+      modeNote: local ? '本地标价：只显示官方调价，不受汇率影响' : '折合人民币：按每月汇率换算，包含汇率波动',
+      aria: r.name + ' 过去 12 个月 ChatGPT Plus 价格走势',
+      changes,
+      fromOpts: opts(s.from), toOpts: opts(s.to), fromCode: s.from, toCode: s.to,
+      onFrom: (e) => this.roll({ from: e.target.value }),
+      onTo: (e) => this.roll({ to: e.target.value }),
+      swap: () => this.roll({ from: this.state.to, to: this.state.from, swapRot: this.state.swapRot + 180 }),
+      swapRot: s.swapRot,
+      amt: s.amt,
+      onAmt: (e) => this.roll({ amt: e.target.value }),
+      quick: ['10', '100', '249.99', '1000'].map((v) => ({ v, on: String(s.amt === v), pick: () => this.roll({ amt: v }) })),
+      result: (s.to === 'CNY' ? '¥ ' : '') + s.shown.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + (s.to === 'CNY' ? '' : ' ' + s.to),
+      rate: rate.toFixed(4)
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import test from "node:test";
 import ts from "typescript";
+import { supportedDisplayCurrencies } from "./display-currency.ts";
 import * as projection from "./country-hubs.ts";
 import { makeVerifiedPriceScale } from "./test-fixtures/verified-price-scale.ts";
 import { packVerifiedPriceSource } from "./verified-price-cache.ts";
@@ -28,12 +29,12 @@ function modules(overrides: Record<string, unknown>, runtime: Record<string, unk
   return load;
 }
 
-test("executed price SQL is the main query with only the country filter removed; USD/empty sources need one query", async () => {
+test("executed price SQL is the main query with only the country filter removed; even empty sources load display FX", async () => {
   const calls: unknown[][] = [];
   const load = modules({ "server-only": {}, "./prisma.ts": { prisma: { $queryRaw: async (...args: unknown[]) => { calls.push(args); return []; } } } });
   const read = load("./verified-price-source").readVerifiedPriceSource as () => Promise<{ prices: unknown[] }>;
   assert.equal((await read()).prices.length, 0);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   const sql = (calls[0][0] as string[]).join("");
   // SHA256 of 1c04928's query after removing exactly `c.code IN (${countryCode}, 'US') AND `.
   assert.equal(createHash("sha256").update(sql).digest("hex"), "99e1451bd3a0ef8e4ab75382c92b31978b58837a4f2c2904321753345904e7af");
@@ -51,7 +52,7 @@ test("one additional FX query covers all non-USD currencies without widening the
   const result = await read();
   assert.equal(calls.length, 2);
   const query = calls[1][0] as { sql: string; values: string[] };
-  assert.deepEqual(query.values, ["PHP", "JPY"]);
+  assert.deepEqual(query.values, [...new Set(["PHP", "JPY", ...supportedDisplayCurrencies.filter(code => code !== "USD")])]);
   assert.match(query.sql, /base_currency = 'USD' AND status = 'active'/);
   assert.match(query.sql, /ORDER BY quote_currency, rate_date DESC, fetched_at DESC/);
   assert.equal(result.prices[0].amount, 20);
@@ -85,7 +86,7 @@ test("country and homepage consumers share the same one-hour source cache and bo
   assert.equal(reads, 1);
   assert.equal(settings.length, 4, "no separate per-country persistent cache");
   for (const { keys, options } of settings) {
-    assert.equal(JSON.stringify(keys), JSON.stringify(["verified-price-source-v2", "unit-preview"]));
+    assert.equal(JSON.stringify(keys), JSON.stringify(["verified-price-source-v3-display-currencies", "unit-preview"]));
     assert.equal(options.revalidate, 3600);
     assert.equal(JSON.stringify(options.tags), JSON.stringify(["public-pricing", "public-pricing-exchange-rates"]));
   }
@@ -147,4 +148,23 @@ test("measure actual reader return JSON with 3000 synthetic database rows", asyn
   const cachedBytes = Buffer.byteLength(JSON.stringify(packVerifiedPriceSource(result)), "utf8");
   assert.ok(cachedBytes < 1_500_000);
   t.diagnostic(JSON.stringify({ readerRows: result.prices.length, fxRows: Object.keys(result.rates).length, rawBytes, cachedBytes, source: "synthetic database boundary; actual readVerifiedPriceSource executed" }));
+});
+
+test("CNY is read without CNY prices, and expires at the unchanged 18-hour display boundary", async () => {
+  const now = new Date("2026-11-06T08:00:00Z");
+  const calls: unknown[][] = [];
+  const load = modules({ "server-only": {}, "./prisma.ts": { prisma: { $queryRaw: async (...args: unknown[]) => {
+    calls.push(args);
+    if (calls.length === 1) return [{ currency: "USD", amount: "20" }];
+    const query = args[0] as { values: string[] };
+    // Model the real SQL IN boundary: omit a currency unless it was requested.
+    return query.values.includes("CNY") ? [{ currency: "CNY", rate: "7", source: "fictional", rateDate: "2026-11-06", fetchedAt: now.toISOString() }] : [];
+  } } } });
+  const read = load("./verified-price-source").readVerifiedPriceSource as () => Promise<{ prices: { currency: string }[]; rates: Record<string, projection.HubRate> }>;
+  const source = await read();
+  assert.ok(source.prices.every(row => row.currency !== "CNY"));
+  assert.equal(source.rates.CNY.rate, 7);
+  const { homepageDisplayRates } = await import("./homepage-summary.ts");
+  assert.equal(homepageDisplayRates(source.rates, new Date(now.getTime() + 18 * 3_600_000)).CNY, 7);
+  assert.deepEqual(homepageDisplayRates(source.rates, new Date(now.getTime() + 18 * 3_600_000 + 1)), { USD: 1 });
 });
