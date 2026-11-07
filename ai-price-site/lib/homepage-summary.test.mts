@@ -5,7 +5,7 @@ import { formatPublicPrice } from "./public-price-format.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { homepageStatistics, homepageProducts, homepageCountries, homepageDisplayRates, homepageDataFailure } from "./homepage-summary.ts";
-import { savingsLabel } from "./homepage-display.ts";
+import { savingsLabel, savingsPercent } from "./homepage-display.ts";
 import { getComparablePriceRows } from "./country-hubs.ts";
 import { getHomepageRepresentatives } from "./homepage-representatives.ts";
 import { fictionalHomepageSource, isHomepageFixtureEnabled } from "./test-fixtures/homepage.ts";
@@ -31,7 +31,7 @@ test("D8 uses raw, equal-plan median, retains negatives, requires five and links
   assert.equal(homepageCountries([...sample,sample[0]])[0].count,6);
   assert.equal(homepageCountries(sample.map(r=>({...r,countryCode:"CA"})))[0].href,null);
   assert.ok(homepageCountries(sample.map(r=>({...r,usd:110})))[0].median<0);
-  assert.equal(savingsLabel(0.140329),"比美国低 14%");assert.equal(savingsLabel(-0.0001),"比美国高不足 0.1%");
+  assert.equal(savingsLabel(0.140329),"比美国低 14%");assert.equal(savingsLabel(-0.0001),"比美国高 0%");
 });
 test("display FX excludes stale/future/fallback values, USD is a unit identity",()=>{
   assert.deepEqual(homepageDisplayRates(source.rates,now),{USD:1,CNY:7,JPY:150,EUR:0.9});
@@ -80,7 +80,7 @@ test("actual production build fails immediately when the local fixture switch is
 });
 
 test("Chinese generic tiers translate without changing brand words, stored Chinese or locked labels",()=>{
-  for(const [raw,zh] of Object.entries({Individual:"个人版",Standard:"标准版",Premium:"高级版",Family:"家庭版",Basic:"基础版",Monthly:"月度会员"})) {
+  for(const [raw,zh] of Object.entries({Individual:"个人版",Standard:"标准版",Premium:"高级版",Family:"家庭版",Basic:"基础版",Monthly:"月度会员",Membership:"会员",Subscription:"订阅会员"})) {
     assert.equal(getChinesePlanDisplayName("Example",raw),`Example ${zh}`);
     assert.equal(getChinesePlanDisplayName("Example",`Example ${raw}`),`Example ${zh}`);
   }
@@ -105,4 +105,12 @@ test("homepage read failure logs only an event and safe error type, returning th
   }
   assert.equal(log.mock.callCount(),5);
   assert.ok(!JSON.stringify(log.mock.calls).includes(sensitive));
+});
+
+
+test("savings display rounds integers without changing raw comparisons or median",()=>{
+  for(const [raw,display] of [[0.145,15],[0.1449,14],[0.1451,15],[0.8553,86],[-0.1451,15],[0,0],[0.0001,0]])assert.equal(savingsPercent(raw),display);
+  assert.equal(savingsLabel(0.8553),"比美国低 86%");
+  assert.equal(savingsLabel(-0.1451),"比美国高 15%");
+  assert.equal(savingsLabel(0),"与美国相同");
 });

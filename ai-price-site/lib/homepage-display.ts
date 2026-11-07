@@ -1,7 +1,10 @@
-/** Floor positive claims: “at least” must never round the promised saving up. */
+/** Display only. Ranking and median calculations keep the original ratios. */
+export function savingsPercent(value: number) {
+  return Math.round((Math.abs(value) + Number.EPSILON) * 100);
+}
+
 export function savingsLabel(value: number) {
-  const percent = Math.floor(Math.abs(value)*1000 + 1e-9)/10;
+  const percent = savingsPercent(value);
   if (value === 0) return "与美国相同";
-  if (percent === 0) return `比美国${value>0?"低":"高"}不足 0.1%`;
   return `比美国${value>0?"低":"高"} ${percent}%`;
 }

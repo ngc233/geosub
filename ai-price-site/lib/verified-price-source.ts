@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.ts";
 import type { CountryHubPrice } from "./country-hubs.ts";
+import { supportedDisplayCurrencies } from "./display-currency.ts";
 
 type CountryRow = Omit<CountryHubPrice, "amount"> & { amount: unknown };
 // DATA-1: the former country query, with only the country restriction removed.
@@ -53,7 +54,9 @@ export async function readVerifiedPriceSource() {
         )
       ORDER BY p.slug, pl.slug, c.code
     `;
-  const currencies = [...new Set(prices.map(price => price.currency).filter(currency => currency !== "USD"))];
+  // Display currencies need rates even when no eligible price is denominated in
+  // them. Share the dropdown's inventory; USD remains the identity conversion.
+  const currencies = [...new Set([...prices.map(price => price.currency), ...supportedDisplayCurrencies])].filter(currency => currency !== "USD");
   // Keep UTC text across the raw-query adapter boundary. A database session in
   // another timezone must not make evidence appear eight hours in the future.
   const rateRows = currencies.length ? await prisma.$queryRaw<Array<{
