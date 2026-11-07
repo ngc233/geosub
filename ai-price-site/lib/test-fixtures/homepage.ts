@@ -8,7 +8,9 @@ export function isHomepageFixtureEnabled() {
 export function fictionalHomepageSource(now=new Date()) {
   const plans=[ ["chatgpt","ChatGPT","plus","Plus","ai",20], ["claude","Claude","pro","Pro","ai",30],
     ["gemini","Gemini","pro","Pro","ai",10], ["netflix","Netflix","standard","Standard","streaming",12],
-    ["youtube-premium","YouTube Premium","individual","Individual","streaming",8], ["mubi","MUBI","monthly","Monthly","streaming",16] ] as const;
+    ["youtube-premium","YouTube Premium","individual","Individual","streaming",8], ["mubi","MUBI","monthly","Monthly","streaming",16],
+    // Extra handwritten rows exercise >6 ranks and both +N badges, not canvas prices.
+    ["suno","Suno","pro","Pro","ai",18], ["deezer","Deezer","premium","Premium","streaming",9] ] as const;
   const regions=[ ["US",1],["PH",0.86],["TR",0.87],["CA",0.91],["JP",0.95],["IN",0.99],["BR",1],["GB",1.04],["DE",1.1],["AU",1.2] ] as const;
   const prices:CountryHubPrice[]=plans.flatMap(([productSlug,productName,planSlug,planName,category,price],index)=>regions.map(([countryCode,factor])=>({productSlug,productName,planSlug,planName,category,countryCode,
     amount:price*(countryCode==="US"?1:factor+(index%2?0.01:-0.01)),currency:"USD",platform:"ios",billingCycle:"monthly",priceType:"list_price",quality:"verified",confidence:90,checkedAt:now.toISOString(),sourceUrl:`https://apps.apple.com/${countryCode.toLowerCase()}/app/fictional/id123456789`,observationId:null})));

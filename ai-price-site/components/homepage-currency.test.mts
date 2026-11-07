@@ -24,7 +24,8 @@ test("expired CNY renders USD and the existing visible warning in HomepagePricin
     "./PublicCurrencySelect": { default: ({ displayCurrency }: { displayCurrency: string }) => createElement("button", {}, `折合为 ${displayCurrency}`), usePublicCurrency: () => ["CNY"], usePageDisplayRates: empty, __esModule: true },
     "./PublicControls": { PublicSegments: empty, PublicComparisonBar: empty },
     "../lib/homepage-display": display,
-    ...Object.fromEntries(["./HomepageCountryFlag", "./PublicPriceNumber", "./PublicIcon", "./BrandIcon", "./HomepageMap"].map(name => [name, empty])),
+    "./HomepageMap": ({ controls }: { controls: unknown }) => controls,
+    ...Object.fromEntries(["./HomepageCountryFlag", "./PublicPriceNumber", "./PublicIcon", "./BrandIcon", "./HomepageProductMark"].map(name => [name, empty])),
   };
   const testModule = { exports: {} as { default: typeof import("./HomepagePricing").default } };
   const code = ts.transpileModule(readFileSync(new URL("./HomepagePricing.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;

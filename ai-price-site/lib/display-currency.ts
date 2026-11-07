@@ -28,6 +28,17 @@ export const supportedDisplayCurrencies = [
 
 export type DisplayCurrency = (typeof supportedDisplayCurrencies)[number];
 
+/** Deterministic selector labels: never depend on server/browser ICU versions. */
+const displayCurrencySymbols: Record<DisplayCurrency, string> = {
+  USD: "$", CNY: "¥", TWD: "NT$", HKD: "HK$", SGD: "S$", EUR: "€",
+  JPY: "¥", KRW: "₩", AUD: "A$", CAD: "C$", MYR: "RM", IDR: "Rp",
+  THB: "฿", PHP: "₱", VND: "₫", TRY: "₺", SAR: "SAR", GBP: "£",
+  CHF: "CHF", INR: "₹", BRL: "R$", MXN: "Mex$", AED: "AED", NZD: "NZ$", ZAR: "R",
+};
+export function getDisplayCurrencySymbol(currency: DisplayCurrency): string {
+  return displayCurrencySymbols[currency];
+}
+
 const displayCurrencySymbolOverrides: Partial<
   Record<DisplayCurrency, string>
 > = {

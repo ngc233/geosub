@@ -2,6 +2,8 @@
 
 /* Keep the layout viewport stable when any overlay locks body scrolling. */
 html { scrollbar-gutter: stable; }
+/* Canvas homepage remains centered without shifting when an overlay locks scroll. */
+@media (min-width: 768px) { html:has(.gs-home) { scrollbar-gutter: stable both-edges; } }
 
 /* Admin overrides are scoped; public pages retain the system preference. */
 @custom-variant dark {

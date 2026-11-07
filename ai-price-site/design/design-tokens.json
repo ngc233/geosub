@@ -1,6 +1,6 @@
 {
   "version": "GeoSub V2 taskbook V1 inactive foundation",
-  "updatedAt": "2026-11-05",
+  "updatedAt": "2026-11-06",
   "colors": {
     "page": "#F6F6F3",
     "surface": "#FFFFFF",
@@ -24,9 +24,11 @@
     "highSoft": "#FCEBE2",
     "highOnSoft": "#9A3412",
     "baseline": "#3D4450",
-    "focus": "var(--gs-text)",
+    "focus": "var(--gs-low)",
     "link": "var(--gs-text)",
-    "onPrimary": "var(--gs-surface)"
+    "onPrimary": "var(--gs-surface)",
+    "rowHover": "#F8FBEF",
+    "mapLand": "#E4E4DE"
   },
   "radius": {
     "tag": 999,
@@ -35,7 +37,9 @@
     "small": 14,
     "card": 16,
     "large": 24,
-    "panel": 20
+    "panel": 20,
+    "category": 18,
+    "segment": 9
   },
   "motion": {
     "fast": "120ms",
@@ -49,21 +53,32 @@
     "lift": "-2px",
     "press": ".98",
     "enterOffset": "8px",
-    "pulseScale": "1.6",
-    "pulseCount": 2
+    "pulseScale": "3.4",
+    "pulseCount": 2,
+    "arc": "700ms",
+    "carouselEase": "linear"
   },
   "spacing": [
     4,
+    5,
+    6,
     8,
+    10,
     12,
+    14,
     16,
+    18,
     20,
+    22,
     24,
     28,
+    32,
     36,
+    40,
     48,
     56,
-    64
+    64,
+    72
   ],
   "fonts": {
     "body": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", system-ui, sans-serif",
@@ -127,8 +142,26 @@
     "homeTitle": {
       "desktop": 48,
       "mobile": 30,
-      "lineHeight": 1.3,
+      "lineHeight": 1.2,
       "weight": 700
+    },
+    "homeLead": {
+      "size": 17
+    },
+    "homeMeta": {
+      "size": 14
+    },
+    "homeRankTitle": {
+      "size": 26
+    },
+    "homeBubblePrice": {
+      "size": 22
+    },
+    "brand": {
+      "size": 19
+    },
+    "homeStackCount": {
+      "size": 11
     }
   },
   "layout": {
@@ -142,17 +175,40 @@
     "mobileCardPadding": 16,
     "minTouchTarget": 44,
     "desktopHeaderHeight": 64,
-    "mobileHeaderHeight": 56
+    "mobileHeaderHeight": 56,
+    "rule": 3,
+    "mapLandDot": 5,
+    "mapLandDotMobile": 3,
+    "productMarkRadius": 6,
+    "minimumOffset": 9,
+    "rankProductMark": 28,
+    "footerLinkHeight": 32,
+    "countryBadge": 34,
+    "segmentHeight": 44,
+    "homeSearchHeight": 52,
+    "countryRowHeight": 72,
+    "countryNameWidth": 84,
+    "homeSegmentWidth": 96,
+    "homePriceColumn": 110,
+    "homeRankMinimumColumn": 160,
+    "homeGuideMinimumWidth": 280,
+    "homeCountryMinimumWidth": 340,
+    "homeRecentMinimumWidth": 420,
+    "homeCategoriesMinimumWidth": 520,
+    "homeSearchWidth": 620,
+    "homeTableMinimumWidth": 640
   },
   "effects": {
     "shadowCard": "none",
     "shadowCardHover": "0 10px 24px rgba(21,23,26,.08)",
-    "shadowFloating": "0 14px 36px rgba(21,23,26,.12)"
+    "shadowFloating": "0 14px 36px rgba(21,23,26,.12)",
+    "shadowFieldFocus": "0 0 0 1px var(--gs-low)",
+    "shadowMapBubble": "0 8px 20px rgba(21,23,26,.18)"
   },
   "controls": {
     "weightEmphasis": 600,
     "touchTarget": "var(--gs-min-touch-target)",
-    "focusWidth": "2px",
+    "focusWidth": "3px",
     "focusOffset": "2px",
     "controlHeight": "var(--gs-touch-target)",
     "tagHeight": "24px",
@@ -162,6 +218,7 @@
     "pulseOpacity": ".6",
     "iconSmall": "16px",
     "iconMedium": "20px",
-    "iconLarge": "24px"
+    "iconLarge": "24px",
+    "weightStrong": 700
   }
 }

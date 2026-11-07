@@ -62,9 +62,9 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
     test.skip(testInfo.project.name !== "local-chrome-acceptance", "Controls require the separately guarded local sample; run playwright.chrome.config.ts locally.");
     await page.setViewportSize({width,height:width===390?844:720});await page.emulateMedia({colorScheme});await page.goto(sample,{waitUntil:"networkidle"});
     const section=page.getByRole("region",{name:"V2 共用控件"});await expect(section).toBeVisible();await section.scrollIntoViewIfNeeded();
-    await section.getByRole("button",{name:"折合为 CNY"}).first().click();
-    const input=page.getByRole("combobox",{name:"搜索币种"});await input.fill("美元");await input.press("Enter");
-    await expect(section.getByRole("button",{name:"折合为 USD"})).toHaveCount(2);
+    await section.getByRole("button",{name:"折合为 ¥ CNY"}).first().click();
+    await page.getByRole("option",{name:"USD · 美元",exact:true}).click();
+    await expect(section.getByRole("button",{name:"折合为 $ USD"})).toHaveCount(2);
     await section.getByRole("tab",{name:"全部",exact:true}).focus();await page.keyboard.press("ArrowRight");await expect(section.getByRole("tab",{name:"比美国便宜"})).toHaveAttribute("aria-selected","true");
     const disclosure=section.getByRole("button",{name:"查看测试证据"});await disclosure.click();await expect(disclosure).toHaveAttribute("aria-expanded","true");await expect(section.getByRole("button",{name:"证据中的可聚焦按钮"})).toBeVisible();
     await expect(section.getByRole("complementary",{name:"推广位"})).toHaveCount(0);
@@ -124,7 +124,7 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     await page.setViewportSize({width,height:844});await page.emulateMedia({colorScheme});
     const queries:string[]=[];
     await page.route("**/api/search?**",route=>{queries.push(new URL(route.request().url()).searchParams.get("q")!);return route.fulfill({json:{results:[]}});});
-    await page.goto("/zh");await page.keyboard.press("/");const input=page.getByRole("combobox");await input.fill("xyz");
+    await page.goto("/zh");await page.keyboard.press("/");const input=page.getByRole("combobox",{name:"搜索产品或国家",exact:true});await input.fill("xyz");
     const suggestions=page.getByLabel("搜索建议");await expect(suggestions.getByRole("button")).toHaveCount(4);
     await expect(suggestions.getByRole("link",{name:"联系我们"})).toHaveAttribute("href","/zh/contact");
     await page.screenshot({path:path.join(evidence,`search-empty-${width}-${colorScheme}.png`)});
@@ -160,3 +160,95 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     await page.screenshot({path:path.join(evidence,`destination-minimum-${width}-${colorScheme}.png`)});
   });
 }
+
+// Round 5: shared chrome contract; the fixture origin supplies display rates only.
+for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as const) {
+ test(`round5 menus and currency ${width} ${colorScheme}`,async({page})=>{
+  await page.setViewportSize({width,height:width===1280?720:844});await page.emulateMedia({colorScheme,reducedMotion:"no-preference"});
+  await page.goto("/zh",{waitUntil:"networkidle"});
+  const consent=page.getByRole("button",{name:"拒绝统计",exact:true});if(await consent.isVisible())await consent.click();
+  if(width===390)await page.getByRole("button",{name:"打开菜单",exact:true}).click();
+  const chrome=width===390?page.getByRole("dialog",{name:"菜单",exact:true}):page.getByRole("banner");
+  const language=chrome.getByRole("button",{name:"简体中文",exact:true});
+  const languagePanel=chrome.locator('.gs-language .gs-popover');
+  const nav=chrome.getByRole("button",{name:"数字订阅",exact:true});
+  const navPanel=nav.locator('..').locator('.gs-popover');
+  await nav.click();await expect(navPanel).toHaveAttribute("data-open","true");
+  await language.click();await expect(nav).toHaveAttribute("aria-expanded","false");await expect(navPanel).toHaveAttribute("inert","");
+  await expect(languagePanel).toHaveAttribute("data-open","true");await expect(languagePanel).not.toHaveAttribute("inert");
+  await expect(languagePanel.locator('a')).toHaveCount(12); // Existing locale list: preserve the 76-link SEO contract.
+  expect(await languagePanel.evaluate(e=>e.scrollHeight<=e.clientHeight)).toBe(true);
+  await expect(languagePanel.locator('a[aria-current="true"] svg')).toHaveCount(1);
+  await page.screenshot({path:path.join(evidence,`round5-language-${width}-${colorScheme}.png`),animations:"disabled"});
+  // Clicking a noninteractive heading/blank part of the page closes the language panel.
+  if(width===390)await chrome.locator('.gs-dialog-heading strong').click();else await page.locator('h1').click();
+  await expect(language).toHaveAttribute("aria-expanded","false");
+  await language.click();await nav.click();await expect(language).toHaveAttribute("aria-expanded","false");await expect(navPanel).toHaveAttribute("data-open","true");
+  await expect.poll(()=>nav.locator('.gs-nav-chevron').evaluate(e=>getComputedStyle(e).rotate)).toBe("180deg");
+  expect(await navPanel.evaluate(e=>getComputedStyle(e).transitionProperty)).toContain("opacity");
+  await expect.poll(()=>navPanel.evaluate(e=>getComputedStyle(e).opacity)).toBe("1");
+  await page.screenshot({path:path.join(evidence,`round5-navigation-${width}-${colorScheme}.png`),animations:"disabled"});
+  await language.click();await languagePanel.locator('a[aria-current="true"]').click();
+  if(width===390){await expect(chrome).toHaveCount(0);await page.getByRole("button",{name:"打开菜单",exact:true}).click();}
+  await language.click();await languagePanel.locator('a').first().focus();await page.keyboard.press("Escape");
+  await expect(language).toBeFocused();await expect(languagePanel).toHaveAttribute("inert","");
+  if(width===390)await page.keyboard.press("Escape");
+  else {await language.click();await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();await expect(language).toHaveAttribute("aria-expanded","false");await page.keyboard.press("Escape");}
+  const currency=page.getByRole("button",{name:"折合为 ¥ CNY",exact:true});await currency.click();
+  const dialog=page.getByRole("dialog",{name:"选择币种",exact:true});
+  const list=dialog.getByRole("listbox",{name:"显示币种"});await expect(dialog.locator('input')).toHaveCount(0);
+  const options=list.getByRole("option");await expect(options).toHaveCount(25);
+  await expect(list.getByRole("option",{name:"CNY · 人民币",exact:true})).toBeFocused();
+  const symbols=["$","¥","NT$","HK$","S$","€","¥","₩","A$","C$","RM","Rp","฿","₱","₫","₺","SAR","£","CHF","₹","R$","Mex$","AED","NZ$","R"];
+  expect(await list.locator('.gs-currency-symbol').allTextContents()).toEqual(symbols);
+  expect(await list.locator('.gs-currency-label strong').allTextContents()).toEqual(["USD","CNY","TWD","HKD","SGD","EUR","JPY","KRW","AUD","CAD","MYR","IDR","THB","PHP","VND","TRY","SAR","GBP","CHF","INR","BRL","MXN","AED","NZD","ZAR"]);
+  for(const text of await list.locator('.gs-currency-label small').allTextContents())expect(text).toMatch(/[\u4e00-\u9fff]/);
+  expect(await list.evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length)).toBe(width===1280?3:2);
+  if(width===1280){expect(await dialog.evaluate(e=>e.scrollHeight<=e.clientHeight)).toBe(true);expect(await list.evaluate(e=>e.scrollHeight<=e.clientHeight)).toBe(true);}
+  await page.screenshot({path:path.join(evidence,`round5-currency-${width}-${colorScheme}.png`),animations:"disabled"});
+  await page.keyboard.press("ArrowDown");await expect(options.nth(width===1280?4:3)).toBeFocused();
+  await page.keyboard.press("ArrowUp");await expect(options.nth(1)).toBeFocused();
+  await page.keyboard.press("ArrowRight");await expect(options.nth(2)).toBeFocused();
+  await page.keyboard.press("ArrowLeft");await expect(options.nth(1)).toBeFocused();
+  await page.keyboard.press("Home");await expect(options.first()).toBeFocused();await page.keyboard.press("Enter");
+  const usd=page.getByRole("button",{name:"折合为 $ USD",exact:true});await expect(usd).toBeVisible();await expect(usd).toBeFocused();
+  await expect(page.locator('.gs-home-ranking')).toContainText('$ 17.00');
+  await usd.click();await expect(options.first()).toBeFocused();await page.keyboard.press("Escape");await expect(usd).toBeFocused();
+  if(width===1280){await usd.click();await page.mouse.click(50,10);await expect(dialog).toHaveCount(0);}
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ });
+}
+
+for(const route of ["/zh","/zh/ai-pricing"]) test(`round5 global header feedback and optimistic indicator ${route}`,async({page})=>{
+ await page.setViewportSize({width:1280,height:720});await page.emulateMedia({reducedMotion:"no-preference"});await page.goto(route,{waitUntil:"networkidle"});
+ const nav=page.getByRole("navigation",{name:"主导航"});const items=nav.locator('.gs-nav-item > a');
+ expect(await page.locator('.gs-header-inner').evaluate(e=>e.getBoundingClientRect().height)).toBe(64);
+ const before=await items.evaluateAll(es=>es.map(e=>e.getBoundingClientRect().x));
+ for(let i=0;i<await items.count();i++){
+  await items.nth(i).hover();
+  await expect.poll(()=>items.nth(i).evaluate(e=>getComputedStyle(e).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+  expect(await items.nth(i).evaluate(e=>getComputedStyle(e).webkitTextStrokeWidth)).toBe('0.35px');
+  await expect.poll(()=>items.nth(i).evaluate(e=>getComputedStyle(e).color)).toBe(await page.locator('.gs-header').evaluate(e=>getComputedStyle(e).color));
+  const after=await items.evaluateAll(es=>es.map(e=>e.getBoundingClientRect().x));expect(after).toEqual(before);
+ }
+ const drop=nav.getByRole('button',{name:'数字订阅',exact:true});await drop.hover();
+ await expect.poll(()=>drop.locator('.gs-nav-chevron').evaluate(e=>getComputedStyle(e).translate)).toBe('0px 1.5px');
+ await drop.click();const panel=nav.locator('.gs-popover[data-open="true"]');
+ await expect.poll(()=>drop.locator('.gs-nav-chevron').evaluate(e=>getComputedStyle(e).rotate)).toBe('180deg');
+ expect(await panel.evaluate(e=>getComputedStyle(e).transitionDuration)).toContain('0.22s');
+ expect((await panel.boundingBox())!.y).toBe(72);
+ await drop.click();await expect(panel).toHaveCount(0);await page.waitForTimeout(250);
+ await expect(nav.locator('.gs-popover').first()).toHaveAttribute('inert','');
+ // Hold the real route response so the indicator must respond before pathname changes.
+ let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+ await page.route('**/zh/countries?*',async r=>{await gate;await r.continue();});
+ const target=nav.getByRole('link',{name:'国家价格',exact:true});await target.click();
+ await expect(target).toHaveAttribute('aria-current','page');
+ await expect.poll(async()=>Math.abs((await nav.locator('.gs-nav-indicator').boundingBox())!.x-(await target.boundingBox())!.x)).toBeLessThan(0.5);
+ release();await page.waitForURL('**/zh/countries');
+ await expect(target).toHaveAttribute('aria-current','page');
+ await page.goBack();await expect(page).toHaveURL(new RegExp(route+'$'));
+ await expect(nav.locator('[aria-current="page"]')).toHaveText(route==='/zh'?'首页':'数字订阅');
+ await page.emulateMedia({reducedMotion:'reduce'});await drop.click();
+ const open=nav.locator('.gs-popover[data-open="true"]');expect(await open.evaluate(e=>getComputedStyle(e).transitionDuration)).toBe('0s');
+});

@@ -22,9 +22,11 @@
   --gs-high-soft: #FCEBE2;
   --gs-high-on-soft: #9A3412;
   --gs-baseline: #3D4450;
-  --gs-focus: var(--gs-text);
+  --gs-focus: var(--gs-low);
   --gs-link: var(--gs-text);
   --gs-on-primary: var(--gs-surface);
+  --gs-row-hover: #F8FBEF;
+  --gs-map-land: #E4E4DE;
   --gs-radius-tag: 999px;
   --gs-radius-control: 12px;
   --gs-radius-control-small: 10px;
@@ -32,6 +34,8 @@
   --gs-radius-card: 16px;
   --gs-radius-large: 24px;
   --gs-radius-panel: 20px;
+  --gs-radius-category: 18px;
+  --gs-radius-segment: 9px;
   --gs-motion-fast: 120ms;
   --gs-motion-base: 220ms;
   --gs-motion-slow: 480ms;
@@ -43,19 +47,30 @@
   --gs-motion-lift: -2px;
   --gs-motion-press: .98;
   --gs-motion-enter-offset: 8px;
-  --gs-motion-pulse-scale: 1.6;
+  --gs-motion-pulse-scale: 3.4;
   --gs-motion-pulse-count: 2;
+  --gs-motion-arc: 700ms;
+  --gs-motion-carousel-ease: linear;
   --gs-space-4: 4px;
+  --gs-space-5: 5px;
+  --gs-space-6: 6px;
   --gs-space-8: 8px;
+  --gs-space-10: 10px;
   --gs-space-12: 12px;
+  --gs-space-14: 14px;
   --gs-space-16: 16px;
+  --gs-space-18: 18px;
   --gs-space-20: 20px;
+  --gs-space-22: 22px;
   --gs-space-24: 24px;
   --gs-space-28: 28px;
+  --gs-space-32: 32px;
   --gs-space-36: 36px;
+  --gs-space-40: 40px;
   --gs-space-48: 48px;
   --gs-space-56: 56px;
   --gs-space-64: 64px;
+  --gs-space-72: 72px;
   --gs-font-body: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
   --gs-font-price: "Inter Tight", system-ui, sans-serif;
   --gs-numeric-variant: tabular-nums;
@@ -92,8 +107,14 @@
   --gs-noncritical-caption-line-height: 1.5;
   --gs-home-title-desktop: 48px;
   --gs-home-title-mobile: 30px;
-  --gs-home-title-line-height: 1.3;
+  --gs-home-title-line-height: 1.2;
   --gs-home-title-weight: 700;
+  --gs-home-lead-size: 17px;
+  --gs-home-meta-size: 14px;
+  --gs-home-rank-title-size: 26px;
+  --gs-home-bubble-price-size: 22px;
+  --gs-brand-size: 19px;
+  --gs-home-stack-count-size: 11px;
   --gs-max-content-width: 1200px;
   --gs-article-max-width: 680px;
   --gs-desktop-page-padding: 24px;
@@ -105,12 +126,35 @@
   --gs-min-touch-target: 44px;
   --gs-desktop-header-height: 64px;
   --gs-mobile-header-height: 56px;
+  --gs-rule: 3px;
+  --gs-map-land-dot: 5px;
+  --gs-map-land-dot-mobile: 3px;
+  --gs-product-mark-radius: 6px;
+  --gs-minimum-offset: 9px;
+  --gs-rank-product-mark: 28px;
+  --gs-footer-link-height: 32px;
+  --gs-country-badge: 34px;
+  --gs-segment-height: 44px;
+  --gs-home-search-height: 52px;
+  --gs-country-row-height: 72px;
+  --gs-country-name-width: 84px;
+  --gs-home-segment-width: 96px;
+  --gs-home-price-column: 110px;
+  --gs-home-rank-minimum-column: 160px;
+  --gs-home-guide-minimum-width: 280px;
+  --gs-home-country-minimum-width: 340px;
+  --gs-home-recent-minimum-width: 420px;
+  --gs-home-categories-minimum-width: 520px;
+  --gs-home-search-width: 620px;
+  --gs-home-table-minimum-width: 640px;
   --gs-shadow-card: none;
   --gs-shadow-card-hover: 0 10px 24px rgba(21,23,26,.08);
   --gs-shadow-floating: 0 14px 36px rgba(21,23,26,.12);
+  --gs-shadow-field-focus: 0 0 0 1px var(--gs-low);
+  --gs-shadow-map-bubble: 0 8px 20px rgba(21,23,26,.18);
   --gs-weight-emphasis: 600;
   --gs-touch-target: var(--gs-min-touch-target);
-  --gs-focus-width: 2px;
+  --gs-focus-width: 3px;
   --gs-focus-offset: 2px;
   --gs-control-height: var(--gs-touch-target);
   --gs-tag-height: 24px;
@@ -121,6 +165,7 @@
   --gs-icon-small: 16px;
   --gs-icon-medium: 20px;
   --gs-icon-large: 24px;
+  --gs-weight-strong: 700;
 }
 @media (prefers-color-scheme: dark) {
   .gs-public-unified {
@@ -144,5 +189,7 @@
     --gs-high-soft: #3A1F14;
     --gs-high-on-soft: #FDBA74;
     --gs-baseline: #A9AFB8;
+    --gs-row-hover: #23272B;
+    --gs-map-land: #353A40;
   }
 }

@@ -7,7 +7,10 @@ export function PublicSegments({ label, options, value, onChange }: {
   label:string; options:{value:string;label:string}[]; value:string; onChange:(value:string)=>void;
 }) {
   const selected=Math.max(0,options.findIndex(option=>option.value===value));
-  return <div className="gs-segments" role="tablist" aria-label={label} style={{"--gs-count":options.length,"--gs-selected":selected} as CSSProperties}>
+  const [morph,setMorph]=useState({selected,cycle:0,changed:false});
+  // Alternate even for nonadjacent selections; index parity alone misses 0 -> 2.
+  if(morph.selected!==selected)setMorph({selected,cycle:1-morph.cycle,changed:true});
+  return <div data-jelly-cycle={morph.changed?morph.cycle:undefined} className="gs-segments" role="tablist" aria-label={label} style={{"--gs-count":options.length,"--gs-selected":selected} as CSSProperties}>
     <span className="gs-segment-slider" aria-hidden="true"/>
     {options.map((option,index)=><button key={option.value} type="button" role="tab" aria-selected={option.value===value} tabIndex={option.value===value?0:-1} onClick={()=>onChange(option.value)} onKeyDown={e=>{
       let next=index;if(e.key==="ArrowRight")next=(index+1)%options.length;else if(e.key==="ArrowLeft")next=(index-1+options.length)%options.length;else if(e.key==="Home")next=0;else if(e.key==="End")next=options.length-1;else return;
@@ -52,6 +55,7 @@ export function PublicDialog({ label, onClose, children, variant = "menu" }: {
     const trigger = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     dialog.showModal();
+    dialog.querySelector<HTMLElement>("[data-gs-initial-focus]")?.focus();
     document.body.style.overflow = "hidden";
     return () => { dialog.close(); document.body.style.overflow = overflow; trigger?.focus(); };
   }, []);

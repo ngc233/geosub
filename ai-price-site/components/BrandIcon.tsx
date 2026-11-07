@@ -39,6 +39,8 @@ type BrandIconProps = {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   priority?: boolean;
+  /** Use when adjacent text already supplies the product identity. */
+  decorative?: boolean;
   appearance?: "public" | "admin";
 };
 
@@ -106,17 +108,20 @@ function SvgIcon({
   icon,
   className,
   monochrome = false,
+  decorative = false,
 }: {
   icon: SimpleIcon;
   className: string;
   monochrome?: boolean;
+  decorative?: boolean;
 } & SVGProps<SVGSVGElement>) {
   return (
     <svg
       viewBox="0 0 24 24"
       className={className}
-      role="img"
-      aria-label={icon.title}
+      role={decorative ? undefined : "img"}
+      aria-hidden={decorative || undefined}
+      aria-label={decorative ? undefined : icon.title}
       fill={monochrome ? "currentColor" : `#${icon.hex}`}
     >
       <path d={icon.path} />
@@ -129,6 +134,7 @@ export default function BrandIcon({
   size = "md",
   className = "",
   priority = false,
+  decorative = false,
   appearance = "public",
 }: BrandIconProps) {
   const [localAssetFailed, setLocalAssetFailed] = useState(false);
@@ -143,13 +149,15 @@ export default function BrandIcon({
         overflow-hidden rounded-[22%] border shadow-sm ${appearance === "admin"
           ? "border-admin-border bg-admin-surface-subtle text-admin-text-secondary"
           : "border-zinc-200/80 bg-white dark:border-zinc-700 dark:bg-zinc-900"} ${sizeClass.box} ${className}`}
+      aria-hidden={decorative || undefined}
       data-brand-source={approvedLocalAsset && !localAssetFailed ? "approved-local" : icon ? "simple-icons" : "neutral"}
       title={product.name || product.slug}
     >
       {approvedLocalAsset && !localAssetFailed ? (
         <img
           src={getOptimizedBrandAssetPath(approvedLocalAsset)}
-          alt={product.name ? `${product.name} logo` : ""}
+          alt={!decorative && product.name ? `${product.name} logo` : ""}
+          aria-hidden={decorative || undefined}
           width={96}
           height={96}
           className={
@@ -162,13 +170,13 @@ export default function BrandIcon({
           onError={() => setLocalAssetFailed(true)}
         />
       ) : icon ? (
-        <SvgIcon icon={icon} className={sizeClass.svg} monochrome={appearance === "admin"} />
+        <SvgIcon icon={icon} className={sizeClass.svg} monochrome={appearance === "admin"} decorative={decorative} />
       ) : (
         <span
           aria-hidden="true"
           className={`font-black tracking-normal ${appearance === "admin" ? "text-admin-text-secondary" : "text-zinc-700 dark:text-zinc-200"} ${sizeClass.text}`}
         >
-          {initials}
+          {decorative ? null : initials}
         </span>
       )}
     </span>

@@ -13,10 +13,10 @@ import { filterPublicNavigation } from "./public-navigation-filter.ts";
 const now=new Date("2026-11-06T08:00:00Z"), source=fictionalHomepageSource(now);
 const rows=getComparablePriceRows(source.prices,source.rates,now);
 test("D1 includes nonrepresentative plans and products, empty has no current-date fallback",()=>{
-  assert.deepEqual(homepageStatistics(rows),{products:7,regions:10,prices:62,updatedAt:now.toISOString()});
+  assert.deepEqual(homepageStatistics(rows),{products:9,regions:10,prices:82,updatedAt:now.toISOString()});
   assert.equal(homepageStatistics([]),null);
   const reps=getHomepageRepresentatives(rows).representatives;
-  const products=homepageProducts(reps);assert.equal(products.length,6);
+  const products=homepageProducts(reps);assert.equal(products.length,8);
   assert.equal(products.filter(p=>p.slug==="chatgpt").length,1);
   assert.ok(products.every(p=>p.saving===(p.usPrice-p.lowest.usd)/p.usPrice));
   const noUs=getHomepageRepresentatives(rows.filter(row=>row.countryCode!=="US"));
