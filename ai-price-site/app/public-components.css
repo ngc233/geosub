@@ -481,3 +481,16 @@
 @media (max-width:767px) { .gs-public-unified .gs-home-ranking-more > button { width:100%; } }
 
 .gs-public-unified .gs-home-ranking-more[data-has-more="true"] { margin-top:var(--gs-space-20); }
+
+/* DATA-2: local-price history occupies the canvas discovery column. */
+.gs-public-unified .gs-home-recent { flex:1 1 var(--gs-home-recent-minimum-width); min-width:0; display:flex; flex-direction:column; gap:var(--gs-space-16); }
+.gs-public-unified .gs-home-recent .gs-home-section-heading { margin:0; }
+.gs-public-unified .gs-home-change-list { margin:0; padding:var(--gs-space-8); list-style:none; background:var(--gs-surface); border-radius:var(--gs-radius-category); }
+.gs-public-unified .gs-home-change-row { display:flex; align-items:center; gap:var(--gs-space-12); padding:var(--gs-space-12) var(--gs-space-14); min-height:var(--gs-control-height); border-radius:var(--gs-radius-control); color:var(--gs-text); text-decoration:none; }
+.gs-public-unified .gs-home-change-icon { width:var(--gs-space-28); height:var(--gs-space-28); flex-shrink:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:var(--gs-low-on-soft); background:var(--gs-tag-low); }
+.gs-public-unified .gs-home-change-row[data-direction="increase"] .gs-home-change-icon { color:var(--gs-high); background:var(--gs-high-soft); }
+.gs-public-unified .gs-home-change-copy { display:flex; flex:1; min-width:0; flex-direction:column; gap:calc(2 * var(--gs-border-width)); font-size:var(--gs-body-compact-size); font-weight:600; overflow-wrap:anywhere; }
+.gs-public-unified .gs-home-change-copy time, .gs-public-unified .gs-home-change-note { font-size:var(--gs-metadata-size); color:var(--gs-text-muted); font-weight:400; }
+.gs-public-unified .gs-home-change-note { margin:0; }
+.gs-public-unified .gs-home-change-percent { font-family:var(--gs-font-price); font-size:var(--gs-body-compact-size); font-weight:700; color:var(--gs-low-on-soft); white-space:nowrap; }
+.gs-public-unified .gs-home-change-row[data-direction="increase"] .gs-home-change-percent { color:var(--gs-high); }

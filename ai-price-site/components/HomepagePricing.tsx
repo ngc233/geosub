@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { HomepageRepresentative } from "../lib/homepage-summary";
 import { savingsPercent } from "../lib/homepage-display";
 import PublicCurrencySelect, { usePublicCurrency, usePageDisplayRates } from "./PublicCurrencySelect";
@@ -12,7 +12,7 @@ import HomepageCountryFlag from "./HomepageCountryFlag";
 import HomepageMap from "./HomepageMap";
 const rankingPageSize=6;
 const names=new Intl.DisplayNames(["zh-CN"],{type:"region"});
-export default function HomepagePricing({products,rates,map}:{products:HomepageRepresentative[];rates:Record<string,number>;map:{land:string;points:Record<string,number[]>}}) {
+export default function HomepagePricing({products,rates,map,recentChanges}:{recentChanges?:ReactNode;products:HomepageRepresentative[];rates:Record<string,number>;map:{land:string;points:Record<string,number[]>}}) {
   usePageDisplayRates(rates);
   const [preferred]=usePublicCurrency();const [category,setCategory]=useState("all");
   const rankingId=useId();
@@ -48,7 +48,7 @@ export default function HomepagePricing({products,rates,map}:{products:HomepageR
   const currency=rates[preferred]>0?preferred:"USD", rate=rates[currency]??1;
   const ranked=[...products].sort((a,b)=>b.saving-a.saving||a.slug.localeCompare(b.slug));
   const rows=ranked.filter(row=>category==="all"||row.category===category);
-  if(!products.length)return null;
+  if(!products.length)return recentChanges ? <div className="gs-home-section">{recentChanges}</div> : null;
   return <>
     <section data-gs-enter="a" className="gs-home-map-panel" aria-label="代表套餐地区价格">
 
@@ -72,6 +72,6 @@ export default function HomepagePricing({products,rates,map}:{products:HomepageR
     </section>
     <section data-gs-enter="a" className="gs-home-section gs-home-discovery" aria-labelledby="home-categories"><div className="gs-home-category-panel"><h2 id="home-categories">按分类找</h2><div className="gs-home-categories">
       {(["ai","streaming"] as const).map(kind=>{const items=ranked.filter(p=>p.category===kind);if(!items.length)return null;return <article key={kind} className="gs-home-card" data-gs-motion-card><div className="gs-home-brand-stack gs-home-category-avatars">{items.slice(0,3).map(p=><Link key={p.slug} className="gs-home-category-product-link" href={p.href} prefetch={false} aria-label={p.planDisplayName}><HomepageProductMark product={p} className="gs-home-category-avatar"/></Link>)}{items.length>3&&<span className="gs-home-brand-more">+{items.length-3}</span>}</div><Link className="gs-home-category-link" href={`/zh/${kind==="ai"?"ai-pricing":"streaming-pricing"}/`}><div className="gs-home-category-title"><h3>{kind==="ai"?"AI 订阅":"流媒体"}</h3><p>{items.length} 个产品</p></div><p className="gs-home-category-saving">最多能省 <strong>{savingsPercent(items[0].saving)}%</strong><span className="gs-sr-only"> · {items[0].planDisplayName}</span></p><span className="gs-home-category-action gs-sr-only">查看全部{kind==="ai"?" AI 订阅":"流媒体"}<PublicIcon name="ArrowRight" size={20}/></span></Link></article>;})}
-    </div></div><div className="gs-home-recent-placeholder" aria-hidden="true"/></section>
+    </div></div>{recentChanges ?? <div className="gs-home-recent-placeholder" aria-hidden="true"/>}</section>
   </>;
 }
