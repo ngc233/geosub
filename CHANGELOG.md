@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.29.1 - Unreleased
+
+- Fix recent-change cold reads blocking the Chinese homepage: materialize eligible streams once, detect the unchanged 50,000-row cap before loading evidence, and fetch only the evidence needed by the existing change algorithm.
+- Cancel slow SQL within a decreasing six-second read budget, hide the optional block on failure, and coalesce concurrent reads with a 30-second per-process failure cooldown. Keep the successful one-hour cache and existing price-change rules.
+- Include DATA-2 from the unsuccessful 2.29.0 rollout; preserve UI, SEO, Plus/English pages and all other homepage data. No database migrations, indexes, dependency updates or collector changes (`migration_skipped`).
+- Preserve all prior exact compatibility registrations and carry forward eleven audited rollback scopes for this version. Prefer the verified retained 2.28.2 build; do not register failed 2.29.0 as a healthy rollback target. Rollback to 2.28.2 removes recent changes without database restore.
+- Install and hash-verify the final reviewed controller before a separately approved rollout because the compatibility policy changed. This PR prepares the release only.
+
 ## 2.29.0 - Unreleased
 
 - Add verified recent local-currency price changes to the Chinese homepage (DATA-2): last 30 days, at most six events, cached for one hour and hidden when no eligible history is available. Reuse the existing price-history review and identity rules; exchange-rate movements are not price changes.
