@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.28.2 - Unreleased
+
+- Fix Chinese homepage ranking logos overlapping product names on mobile with reduced motion after production CSS optimization; preserve full-row navigation and visible keyboard focus.
+- Animate progressive ranking height with the existing 220ms token, keeping six initial rows, batches of six, reduced-motion instant updates and server-rendered prices and links.
+- Carry forward the exact 2.28.1 rollback scopes and register the recorded 2.28.1 reader; database inputs are unchanged (`migration_skipped`). Rollback to 2.28.1 restores the two ranking defects but retains the 4.5-second carousel fix.
+- Require installation and verification of the final reviewed controller because the compatibility policy changed. This PR prepares the release only; it does not deploy production.
+
 ## 2.28.1 - Unreleased
 
 - Fix the Chinese homepage map rapidly cycling after production CSS minifies `4500ms` to `4.5s`: parse CSS time units into milliseconds and reject invalid or overflowing timer delays. Preserve the existing 4.5-second cadence, pause behaviour and visual styling.
