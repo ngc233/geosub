@@ -419,6 +419,7 @@
 
 /* Round 4: real links; circular crops remain local to the homepage. */
 .gs-public-unified .gs-home-ranking-link::after { content:""; position:absolute; inset:0; z-index:1; cursor:pointer; border-radius:inherit; }
+.gs-public-unified .gs-home-ranking-link:focus-visible::after { outline:var(--gs-focus-width) solid var(--gs-focus); outline-offset:var(--gs-focus-offset); }
 .gs-public-unified .gs-home-ranking-mark { cursor:pointer; }
 .gs-public-unified .gs-home-categories .gs-home-card { position:relative; isolation:isolate; }
 .gs-public-unified .gs-home-category-link { display:contents; }
@@ -470,6 +471,8 @@
 
 /* Progressive ranking disclosure uses the same shared control tokens. */
 .gs-public-unified .gs-home-ranking-row[hidden] { display:none; }
+.gs-public-unified .gs-home-ranking-viewport { height:var(--gs-ranking-height,auto); }
+.gs-public-unified .gs-home-ranking-viewport[data-height-changing="true"] { overflow:clip; }
 .gs-public-unified .gs-home-ranking-more { display:flex; justify-content:center; overflow-anchor:none; }
 .gs-public-unified .gs-home-ranking-more > button { min-width:calc(var(--gs-space-64) * 4); min-height:var(--gs-touch-target); border-color:var(--gs-border); }
 .gs-public-unified .gs-home-ranking-more > button:hover { background:var(--gs-tag-low); border-color:var(--gs-accent); color:var(--gs-low-on-soft); }

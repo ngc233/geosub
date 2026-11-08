@@ -54,6 +54,12 @@
 @media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-home-carousel-progress { animation:none !important; } }
 
 .gs-public-unified [data-gs-motion-row] { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified .gs-home-ranking-viewport { transition:height var(--gs-motion-base) var(--gs-motion-ease); }
+@media (prefers-reduced-motion:reduce) {
+  /* Unlike a minified identity matrix, a cascade reset creates no containing
+     block: the mobile logo and full-row link hit area stay anchored to the row. */
+  .gs-public-unified .gs-home-ranking-row .gs-home-ranking-link { transform:revert !important; }
+}
 .gs-public-unified .gs-home-section .gs-bar-fill { transition:transform var(--gs-motion-slow) var(--gs-motion-ease); }
 @media (max-width:767px) { .gs-public-unified .gs-home-bubble { transform:none; } }
 @media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-home-bubble { transition:none !important; } }
