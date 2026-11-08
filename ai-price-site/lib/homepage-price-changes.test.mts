@@ -36,6 +36,7 @@ test("older approved baseline and ignored unchanged evidence retain continuity a
 });
 
 // Execute the real cache/error boundary with deterministic I/O; do not query a DB.
+import * as resilience from "./homepage-changes-resilience.ts";
 import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
@@ -44,6 +45,7 @@ function cachedReader(read: () => Promise<{records:PriceObservationRecord[]; now
   const exports: {loadHomepagePriceChanges?:()=>Promise<unknown[]>} = {};
   const code=ts.transpileModule(fs.readFileSync(new URL('./cached-homepage-price-changes.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
   vm.runInNewContext(code,{exports,Error,Date,console:{error:(...args:unknown[])=>logs.push(args)},require:(id:string)=>{
+    if(id==='./homepage-changes-resilience')return resilience;
     if(id==='server-only')return {};
     if(id==='react')return {cache:(fn:unknown)=>fn};
     if(id==='next/cache')return {unstable_cache:(fn:unknown,keys:unknown,options:unknown)=>{settings.push({keys,options});return fn;}};
@@ -57,8 +59,8 @@ function cachedReader(read: () => Promise<{records:PriceObservationRecord[]; now
 test('actual service hides read failures, logs only event/type and configures a one-hour cache',async()=>{
   const r=cachedReader(async()=>{throw new Error('private database detail must not leave server');});
   assert.equal((await r.load()).length,0);
-  assert.equal(JSON.stringify(r.settings),JSON.stringify([{keys:['homepage-price-changes-v1'],options:{revalidate:3600,tags:['public-pricing']}}]));
-  assert.equal(JSON.stringify(r.logs),JSON.stringify([['homepage-price-changes-read-failed','Error']]));
+  assert.equal(JSON.stringify(r.settings),JSON.stringify([{keys:['homepage-price-changes-v2'],options:{revalidate:3600,tags:['public-pricing']}}]));
+  assert.equal(JSON.stringify(r.logs),JSON.stringify([['homepage-price-changes-read-failed','read-error']]));
 });
 test('actual service fails closed on truncation and removes aged cached events',async()=>{
   const source=[row(1,31,100),row(2,30,80)];
