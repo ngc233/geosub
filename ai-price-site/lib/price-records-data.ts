@@ -64,3 +64,32 @@ export async function getPriceRecordProducts() {
     WHERE status = 'published' AND category IN ('ai', 'streaming') ORDER BY name LIMIT 200
   `;
 }
+
+/** DATA-2: bounded read, with the same 120-day evidence horizon as product
+ * history. Only streams with a recent approved endpoint can yield an event.
+ * Do not filter rejected/pending/ignored rows out of those streams: they are
+ * required by getPriceChanges to break or maintain evidence continuity.
+ * Overflow is explicit and the homepage fails closed, never a partial top six.
+ */
+export async function getHomepagePriceRecords() {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SET TRANSACTION READ ONLY`;
+    const [{ now }] = await tx.$queryRaw<Array<{ now: Date }>>`SELECT NOW() AS now`;
+    const result = await readPriceRecordWindow<RecordRow>((cursor, limit) => {
+      const boundary = cursor
+        ? Prisma.sql`AND (po.observed_at, po.id) < (${cursor.cursorAt}::timestamptz, ${cursor.id}::uuid)`
+        : Prisma.empty;
+      return tx.$queryRaw<RecordRow[]>(Prisma.sql`${recordSelect}
+        AND po.observed_at >= NOW() - INTERVAL '120 days'
+        AND EXISTS (
+          SELECT 1 FROM price_observations endpoint
+          WHERE endpoint.product_id = po.product_id AND endpoint.plan_id = po.plan_id
+            AND endpoint.country_id = po.country_id AND endpoint.billing_platform = po.billing_platform
+            AND endpoint.status = 'approved' AND endpoint.observed_at >= NOW() - INTERVAL '30 days'
+            AND endpoint.observed_at <= NOW()
+        )
+        ${boundary} ORDER BY po.observed_at DESC, po.id DESC LIMIT ${limit}`);
+    }, 5000, 50_000);
+    return { records: result.records.map(toRecord), truncated: result.truncated, now };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30_000 });
+}
