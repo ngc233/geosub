@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.29.0 - Unreleased
+
+- Add verified recent local-currency price changes to the Chinese homepage (DATA-2): last 30 days, at most six events, cached for one hour and hidden when no eligible history is available. Reuse the existing price-history review and identity rules; exchange-rate movements are not price changes.
+- Preserve the homepage metadata, H1/introduction, DATA-1 statistics and rankings, Plus/English locked pages, and the 2.28.1/2.28.2 carousel and ranking fixes.
+- Carry forward ten exact rollback scopes and register recorded production 2.28.2; database inputs are unchanged (`migration_skipped`). Application rollback to 2.28.2 removes recent changes without restoring earlier UI defects.
+- Require installation and hash verification of the final reviewed controller because the compatibility policy changed. This release-preparation PR does not authorize deployment.
+
 ## 2.28.2 - Unreleased
 
 - Fix Chinese homepage ranking logos overlapping product names on mobile with reduced motion after production CSS optimization; preserve full-row navigation and visible keyboard focus.
