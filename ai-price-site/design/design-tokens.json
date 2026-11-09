@@ -162,6 +162,15 @@
     },
     "homeStackCount": {
       "size": 11
+    },
+    "planHero": {
+      "desktop": 64,
+      "mobile": 48,
+      "lineHeight": 1.05,
+      "weight": 700
+    },
+    "planTitle": {
+      "mobile": 26
     }
   },
   "layout": {
@@ -196,7 +205,17 @@
     "homeRecentMinimumWidth": 420,
     "homeCategoriesMinimumWidth": 520,
     "homeSearchWidth": 620,
-    "homeTableMinimumWidth": 640
+    "homeTableMinimumWidth": 640,
+    "planSectionGap": 36,
+    "planMobileGap": 28,
+    "planColumnLocal": 130,
+    "planColumnPrice": 120,
+    "planColumnTax": 110,
+    "planLowestBasis": 420,
+    "planDistributionBasis": 360,
+    "planDistributionHeight": 46,
+    "planDistributionTrackTop": 26,
+    "planMarkerWidth": 2
   },
   "effects": {
     "shadowCard": "none",

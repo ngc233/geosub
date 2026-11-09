@@ -22,13 +22,13 @@ const controllerChanges = {
     candidate: "62c461fc28f0e7bd65966d6b1bd3c35cbfeb6193d6cde9a09e83cdd0fbe5dd76",
   },
 };
-// V4 approved Chinese-only entry and its four fingerprinted dependencies.
+// V4/V5 approved Chinese-only entries and their fingerprinted dependencies.
 // Pin additions as absent in the retained build and exact bytes in the candidate;
 // every other reader retains the original byte-equality assertion.
 const v4ReaderChanges = {
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "25a5f343c6eaee5e0ea2a9881e32d5dba5649b91978addf9bac2b13daac73979"
+    "candidate": "5e55489f29aca9e8da3b63d5a42372c291e0f9e3a151d3af37f6ddc7116472a7"
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
@@ -45,6 +45,18 @@ const v4ReaderChanges = {
   "ai-price-site/lib/product-canvas-order.ts": {
     "retained": null,
     "candidate": "9072f8d80728865ec69651e9dc3cec79aa9fb5117cadcf1377bd704d4160fef9"
+  },
+  "ai-price-site/components/PlanCanvasPage.tsx": {
+    "retained": null,
+    "candidate": "e91624aeec256d081214013efe85dc3e230e010b729af3b77e0a26d3c2f09aaf"
+  },
+  "ai-price-site/components/PlanCanvasPricing.tsx": {
+    "retained": null,
+    "candidate": "b48e9c7685c7c0672503b06b196189980f1c0e77773f3f25e0a9463f39b8c063"
+  },
+  "ai-price-site/lib/plan-canvas.ts": {
+    "retained": null,
+    "candidate": "32d66f818fd3c4239395422d899cc9ad72b918ac06ea2c47fbb8e2f3c255c641"
   }
 };
 const url = new URL(process.env.GEOSUB_VERSION_UPGRADE_DATABASE_URL);

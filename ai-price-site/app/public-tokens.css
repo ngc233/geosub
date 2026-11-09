@@ -115,6 +115,11 @@
   --gs-home-bubble-price-size: 22px;
   --gs-brand-size: 19px;
   --gs-home-stack-count-size: 11px;
+  --gs-plan-hero-desktop: 64px;
+  --gs-plan-hero-mobile: 48px;
+  --gs-plan-hero-line-height: 1.05;
+  --gs-plan-hero-weight: 700;
+  --gs-plan-title-mobile: 26px;
   --gs-max-content-width: 1200px;
   --gs-article-max-width: 680px;
   --gs-desktop-page-padding: 24px;
@@ -147,6 +152,16 @@
   --gs-home-categories-minimum-width: 520px;
   --gs-home-search-width: 620px;
   --gs-home-table-minimum-width: 640px;
+  --gs-plan-section-gap: 36px;
+  --gs-plan-mobile-gap: 28px;
+  --gs-plan-column-local: 130px;
+  --gs-plan-column-price: 120px;
+  --gs-plan-column-tax: 110px;
+  --gs-plan-lowest-basis: 420px;
+  --gs-plan-distribution-basis: 360px;
+  --gs-plan-distribution-height: 46px;
+  --gs-plan-distribution-track-top: 26px;
+  --gs-plan-marker-width: 2px;
   --gs-shadow-card: none;
   --gs-shadow-card-hover: 0 10px 24px rgba(21,23,26,.08);
   --gs-shadow-floating: 0 14px 36px rgba(21,23,26,.12);
