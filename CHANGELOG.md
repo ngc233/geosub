@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.30.0 - Unreleased
+
+- Release V4 Chinese product overviews and V5 non-Plus Chinese plan pages as one reviewed canvas-alignment batch: plan cards/matrix, minimum-price and distribution cards, region filtering, shared currency controls and compact plan guidance.
+- Keep full original editorial text and links in server-rendered disclosure sections; show nominal-income work hours only for eligible monthly plans. Preserve canonical pricing, metadata, JSON-LD, the Chinese ChatGPT Plus lock and legacy English pages.
+- Include the approved plan currency E2E locator adaptation without changing production code or weakening viewport, dark-mode, scroll and keyboard assertions.
+- Preserve all 171 prior exact compatibility registrations and carry forward the 13 audited retained-reader scopes for this version. Prefer the recorded healthy 2.29.1 release; verify the actual live and retained builds again before deployment. Application rollback restores the previous product/plan layout without restoring the database.
+- Database inputs and dependencies are unchanged (`migration_skipped`). Install and hash-verify the final reviewed controller before a separately approved rollout because the compatibility policy changes. This PR prepares the release only; it does not deploy or authorize production operations.
+
 ## 2.29.1 - Unreleased
 
 - Fix recent-change cold reads blocking the Chinese homepage: materialize eligible streams once, detect the unchanged 50,000-row cap before loading evidence, and fetch only the evidence needed by the existing change algorithm.
