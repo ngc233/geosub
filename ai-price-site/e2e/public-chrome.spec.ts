@@ -153,11 +153,18 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     const displayedPrice=await price.innerText();
     await page.screenshot({path:path.join(evidence,`search-minimum-${width}-${colorScheme}.png`)});
     await option.click(); await expect(page).toHaveURL(new RegExp(result.href+"$"));
-    const summary=page.locator("main").getByText("美元价格范围",{exact:true}).locator("..");
+    // V4 exposes each plan's minimum in its overview card. Compare the
+    // cheapest displayed card, not the featured plan or its US reference.
+    const summary=page.getByRole("region",{name:"套餐概览",exact:true});
     await expect(summary).toHaveCount(1);
     await expect(summary).toBeVisible();
-    const destination=(await summary.innerText()).match(/\$\s*([\d,.]+)/)?.[1];
-    expect(Number(destination?.replaceAll(",",""))).toBe(Number(displayedPrice.replace(/[\s$,]/g,"")));
+    const minima=summary.locator('.gs-product-plan-price [data-gs-price] > span[aria-hidden="true"]');
+    await expect(minima.first()).toBeVisible();
+    const amounts=(await minima.allInnerTexts()).map(text=>{
+      expect(text).toMatch(/^\$\s*[\d,]+\.\d{2}$/);
+      return Number(text.replace(/[\s$,]/g,""));
+    });
+    expect(Math.min(...amounts)).toBe(Number(displayedPrice.replace(/[\s$,]/g,"")));
     await page.screenshot({path:path.join(evidence,`destination-minimum-${width}-${colorScheme}.png`)});
   });
 }
