@@ -22,6 +22,31 @@ const controllerChanges = {
     candidate: "62c461fc28f0e7bd65966d6b1bd3c35cbfeb6193d6cde9a09e83cdd0fbe5dd76",
   },
 };
+// V4 approved Chinese-only entry and its four fingerprinted dependencies.
+// Pin additions as absent in the retained build and exact bytes in the candidate;
+// every other reader retains the original byte-equality assertion.
+const v4ReaderChanges = {
+  "ai-price-site/components/PricingDetailPage.tsx": {
+    "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
+    "candidate": "25a5f343c6eaee5e0ea2a9881e32d5dba5649b91978addf9bac2b13daac73979"
+  },
+  "ai-price-site/components/ProductCanvasOverview.tsx": {
+    "retained": null,
+    "candidate": "4530250be6eaa542509e9b1baac681601193593198afd0bcd3d0325b9db8fb20"
+  },
+  "ai-price-site/components/ProductCanvasPricing.tsx": {
+    "retained": null,
+    "candidate": "2301175abb62ec34383947a84879a1cb1bd3e2bdfa1822e334acfe3e95f5d24c"
+  },
+  "ai-price-site/lib/product-canvas.ts": {
+    "retained": null,
+    "candidate": "1b7bc1863b6dc7369f5f6968bb4c57e2ac680eb452fec1509468fa635e0ece37"
+  },
+  "ai-price-site/lib/product-canvas-order.ts": {
+    "retained": null,
+    "candidate": "9072f8d80728865ec69651e9dc3cec79aa9fb5117cadcf1377bd704d4160fef9"
+  }
+};
 const url = new URL(process.env.GEOSUB_VERSION_UPGRADE_DATABASE_URL);
 assert(["127.0.0.1", "localhost"].includes(url.hostname));
 assert(/^\/geosub_price_version_test_[a-z0-9_]+_e2e$/.test(url.pathname));
@@ -104,14 +129,18 @@ async function main() {
     const plan = contract.rollbackPlan(root, old, policy);
     assert.equal(plan.mode, "audited-compatible-readers");
     assert.deepEqual(plan.targets, [{ id: "overview:en:chatgpt", facts: false }]);
-    for (const file of Object.keys(controllerChanges)) assert(policy.files.includes(file));
+    for (const file of Object.keys({ ...controllerChanges, ...v4ReaderChanges })) assert(policy.files.includes(file));
     for (const file of policy.files.filter(file => !["VERSION", "ai-price-site/prisma/schema.prisma"].includes(file))) {
       const candidateHash = sha(fs.readFileSync(path.join(root, file)));
-      const retainedHash = sha(fs.readFileSync(path.join(old, file)));
-      const expected = controllerChanges[file];
+      const expected = controllerChanges[file] || v4ReaderChanges[file];
+      const retainedPath = path.join(old, file);
+      if (expected?.retained === null) {
+        assert.equal(fs.existsSync(retainedPath), false, `${file}: unexpected retained file`);
+      }
+      const retainedHash = expected?.retained === null ? null : sha(fs.readFileSync(retainedPath));
       if (expected) {
-        assert.equal(retainedHash, expected.retained, `${file}: retained controller changed`);
-        assert.equal(candidateHash, expected.candidate, `${file}: unexpected controller change`);
+        assert.equal(retainedHash, expected.retained, `${file}: retained contract changed`);
+        assert.equal(candidateHash, expected.candidate, `${file}: unexpected contract change`);
       } else {
         assert.equal(candidateHash, retainedHash, file);
       }

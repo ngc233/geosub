@@ -22,7 +22,27 @@ H1、导语、metadata、JSON-LD、既有套餐说明、FAQ、来源与链接目
 
 28 个已登记契约文件中，仅获批的 PricingDetailPage 改变，其余 27 个及 SQL/模型/围栏不变。旧内容解析、回读、版本、事实和 JSON-LD 计算未改。外部证据包含逐文件 SHA-256、旧逻辑逐字节检查、真实本地草稿/预览/发布/中文独立回退的公开 HTML 回读。
 
-尚未修改精确回退策略。新指纹没有已审核兼容对，原 `test-content-release-gates.cjs` 因 `Reviewed retained contract missing` 失败，`rollbackPlan` 正确返回 `code-default-required`。不能把本地 UI 验收等同于发布许可。准备正式发布前，必须单独审核新渲染依赖的契约范围及精确回退登记；不能仅换指纹或绕过围栏。
+初次复核时尚未修改精确回退策略，`test-content-release-gates.cjs` 因 `Reviewed retained contract missing` 失败，`rollbackPlan` 正确返回 `code-default-required`。PR #66 首轮 CI 重现了该阻断。此前将登记安排到 V5／发布前的顺序不准确；2026-11-09 产品负责人批准在 V4 合并前补齐，具体核验见下节。本地 UI 验收仍不等同于生产发布许可。
+
+### PR #66 CI 修复：精确契约与搜索比价（2026-11-09）
+
+Bug / L2。仅修复已获批准的两类 CI 问题，不修改页面实现、版本、数据库输入、19 个 isolate 文件或门禁阈值；不合并、不部署。原 18 文件实现保持（本记录追加除外）。
+
+- 候选契约由 28 文件扩为 32 文件，加入 `ProductCanvasOverview.tsx`、`ProductCanvasPricing.tsx`、`product-canvas.ts`、`product-canvas-order.ts`。前两者负责 H1、导语、内容属性、JSON-LD、managed editorial/FAQ 插槽及 hero 的实际输出，后两者是该渲染路径的数据投影与排序依赖，必须绑定审核字节。它们不新增内容存储格式、目标或事实 token。
+- 候选指纹：`1822d57c36a122631012ddd738d2845772cf9fcf21ece7b7007e6bcd034f3eaa`。原 146 条登记对象完全保留；新增 12 条精确对：继承基线 2.29.1 的 11 个历史目标，再加入基线 main `01c32b7edd6d4c8a9319fa5c53840bb01709a500`，其指纹为 `a2b49f6bd1a1929b472f035f15582b9dd677c5d767550d6141b4f4e945664d6c`。每条均显式固定旧版 `toFiles`，不要求旧构建含 V4 新文件；继承项的 retainedCommit、to、targets、facts 与原范围逐项一致。没有新增指向失败 2.29.0 的登记。
+- 12 个保留版本逐文件导出（最早两个使用仓库自带、逐项验 SHA-256 的历史源码夹具），实际 `rollbackPlan` 均通过，反向均拒绝。新增执行型单测逐个修改／删除四个新依赖，必须返回 `code-default-required`；未知组合也拒绝。原 28 文件中仍只有 PricingDetailPage 改变；去除获批入口和 import 后，整个文件与基线逐字节相同。
+- 原数据库升级演练仍要求未批准读取器逐字节相等；为获批的 PricingDetailPage 和四个新依赖固定精确候选 SHA-256。旧文件也固定旧哈希，新增文件则断言旧构建确实不存在。没有取消文件核验、过滤读取器、改迁移或降低断言。
+- 搜索测试改为读取新版“套餐概览”中各套餐卡实际显示的 USD 最低价，取其中最小值与点击前的搜索结果严格数值相等；同时断言卡片可见及美元格式。没有使用美国基准、默认套餐或搜索 API 返回值代替目标页面价格，也未改生产价格逻辑。
+
+实际本地验证：
+
+- 标准 `npm run test:e2e` 完整执行隔离库迁移／仓库夹具、生产 build + start 和浏览器套件：54 通过、0 失败、41 项既有条件跳过。此次没有新增或调整 skip，4 个 1280/390 明暗搜索价格对照均通过。
+- `npm run test:content-store` 全链通过，最后的内容回退／准入演练 51 项通过，含 9 个历史生产读取器场景；`test:price-version-upgrade` 的 16 项完整本地升级／保留客户端／备份恢复测试通过，5,000 条数据为合成夹具，历史及账本保持。
+- `test:content-release` 34 通过、0 失败、1 项既有 Linux flock 平台条件跳过；新增 V4 依赖变动拒绝测试通过；typecheck、lint 通过。远端 Linux 全量结果推送后另记。
+- 首次本地连接被沙箱拒绝，随后获准访问回环测试库；第一次完整 store 测试因 PATH 缺本机已有 psql 失败，补齐进程 PATH 后原命令完整通过，未修改测试来规避环境问题。
+- 现有 V4 完整复核包中的真实本地中文/英文 Claude 草稿隔离、发布、独立回退、公开 HTML 回读及四态证据仍对应同一实现字节；本轮未修改页面。真实 PostgreSQL 演练中的 Next cache 和 HTTP/CDN 回执明确为 MOCK，不能当作生产分发或线上回退验证。
+
+证据目录：仓库外 `2026-11-09/v4-ci-fix-evidence`。既有预览及临时数据库保留。后续 V5 或发布递增版本会产生新的候选指纹，必须再次核验登记；实际应用回退目标须在获批部署前现场确认。兼容策略变化也意味着将来须按 #51 规则安装并核验最终候选控制器，本次不安装控制器、不访问生产。
 
 原 `test-content-target-browser.cjs` 的后台定位器仍查旧 nav，当前 main 已用 tablist，且选中项字重断言与 main 的 500 不符。仓库原测试和后台实现均未改。本轮另做前台内容回读专项（真实应用操作、原解析器及事实哈希），不宣称该整套后台测试通过。
 
