@@ -4,21 +4,24 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const fixture = require("../scripts/e2e-fixture.cjs");
 
-test("mobile currency menu stays inside the viewport in dark mode", async ({
+test("mobile currency dialog stays inside the viewport in dark mode", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto(`/zh/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`);
 
-  const currencyButton = page
-    .getByRole("button", { name: "显示币种", exact: true })
-    .first();
+  const currencyButton = page.getByRole("button", { name: /^折合为 / });
   await currencyButton.click();
 
-  const currencyMenu = page.getByRole("menu").filter({ visible: true });
+  const currencyMenu = page.getByRole("dialog", { name: "选择币种", exact: true });
   await expect(currencyMenu).toBeVisible();
   await expect(currencyMenu).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
+
+  // Measure the settled dialog, after its existing entrance animation finishes.
+  await currencyMenu.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
 
   const menuGeometry = await currencyMenu.evaluate((element) => {
     const rect = element.getBoundingClientRect();
@@ -41,5 +44,6 @@ test("mobile currency menu stays inside the viewport in dark mode", async ({
 
   await page.keyboard.press("Escape");
   await expect(currencyMenu).toBeHidden();
-  await expect(currencyButton).toHaveAttribute("aria-expanded", "false");
+  await expect(currencyButton).toHaveAttribute("aria-haspopup", "dialog");
+  await expect(currencyButton).toBeFocused();
 });
