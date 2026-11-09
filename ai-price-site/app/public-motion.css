@@ -102,3 +102,10 @@
 @media (prefers-reduced-motion:reduce) {
  .gs-public-unified :is(.gs-home-product-jelly,.gs-segment-slider,.gs-home-product-pill-mark) { animation:none !important; transition:none !important; scale:1 !important; }
 }
+.gs-public-unified .gs-product-matrix-row[data-flip="start"] { transform: translateY(var(--gs-product-row-offset, 0px)); transition: none; }
+.gs-public-unified .gs-product-matrix-row[data-flip="end"] { transform: translateY(0); transition: transform var(--gs-motion-base) var(--gs-motion-ease), background-color var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified .gs-product-table-viewport { transition: height var(--gs-motion-base) var(--gs-motion-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .gs-public-unified .gs-product-matrix-row[data-flip] { transform: none; transition: none; }
+  .gs-public-unified .gs-product-table-viewport { transition: none; }
+}

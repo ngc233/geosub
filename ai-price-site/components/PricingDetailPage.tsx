@@ -21,6 +21,7 @@ import BrandIcon from "./BrandIcon";
 import TrackedLink from "./analytics/TrackedLink";
 import ProductSidebar from "./ProductSidebar";
 import ProductPlanOverview from "./ProductPlanOverview";
+import ProductCanvasOverview from "./ProductCanvasOverview";
 import PlanDecisionGuidance from "./PlanDecisionGuidance";
 import PlanTabs from "./PlanTabs";
 import MobileProductSwitcher from "./MobileProductSwitcher";
@@ -1114,6 +1115,23 @@ export default async function PricingDetailPage({
       planName: "",
       stats: null,
     });
+
+    if (locale === "zh") {
+      return <ProductCanvasOverview product={product} title={pageTitle} description={pageDescription}
+        basePath={detailBasePath} backLabel={pageCopy.backToPricing} rates={await getCachedPublicExchangeRates()}
+        contentAttributes={{ "data-content-facts-hash": rendered?.factsHash, "data-content-kind": managed ? "managed" : "fallback",
+          "data-content-mode-generation": revision?.modeGeneration, "data-content-version": contentPreview !== undefined ? "preview" : revision?.version || "baseline" }}
+        schema={<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}/>}
+        eligibility={<PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={publishedPlans} pageKind="overview"/>}
+        officialLabel={pageCopy.visitOfficial}
+        navigation={<><ProductSidebar products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/>
+          <MobileProductSwitcher products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/></>}>
+        {managed ? <OverviewEditorialSections content={managed} locale={locale}/> : null}
+        <CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category}/>
+        <RelatedPricingProducts locale={locale} category={product.category} products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath}/>
+        {overviewFaqs.length > 0 ? <FaqSection title={pageCopy.faqTitle} faqs={overviewFaqs} managed={Boolean(managed)}/> : null}
+      </ProductCanvasOverview>;
+    }
 
     return (
       <main data-content-facts-hash={rendered?.factsHash} data-content-kind={managed ? "managed" : "fallback"} data-content-mode-generation={revision?.modeGeneration} data-content-version={contentPreview !== undefined ? "preview" : revision?.version || "baseline"} className="mx-auto flex max-w-6xl gap-5 px-5 py-6">

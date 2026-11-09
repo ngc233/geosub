@@ -1,0 +1,51 @@
+"""Reproduce the optional V4 numeral subset, without changing the source fonts.
+
+Tooling only: fonttools[woff]==4.68.0 (not an application/build dependency).
+Run from ai-price-site. Original OFL is assets/fonts/OFL-Inter-Tight.txt.
+"""
+from pathlib import Path
+from fontTools import subset
+from fontTools.ttLib import TTFont
+from fontTools.pens.recordingPen import DecomposingRecordingPen
+
+directory = Path(__file__).resolve().parents[1] / "assets/fonts/web"
+source = directory / "inter-tight-latin-700-normal.woff2"
+output = directory / "geosub-price-numerals-700.woff2"
+unicodes = [0x20, 0x24, *range(0x2B, 0x3A), 0xA0, 0xA3, 0xA5, 0x202F, 0x20AC, 0x2212]
+font = TTFont(source, recalcTimestamp=False)
+options = subset.Options()
+options.layout_features = ["*"]  # Preserve tabular digits and shaping, including hints.
+options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14]
+subsetter = subset.Subsetter(options=options)
+subsetter.populate(unicodes=unicodes)
+subsetter.subset(font)
+names = {1: "GeoSub Price Numerals", 2: "Bold", 3: "GeoSubPriceNumerals700",
+         4: "GeoSub Price Numerals Bold", 6: "GeoSubPriceNumerals-Bold"}
+for record in font["name"].names:
+    if record.nameID in names:
+        record.string = names[record.nameID].encode(record.getEncoding())
+font.flavor = "woff2"
+font.save(output)
+
+# Outlines, advances, vertical metrics and hints must retain the original design.
+original = TTFont(source)
+result = TTFont(output)
+for code in set(unicodes) & set(original.getBestCmap()):
+    old_name, new_name = original.getBestCmap()[code], result.getBestCmap()[code]
+    old_set, new_set = original.getGlyphSet(), result.getGlyphSet()
+    old_pen, new_pen = DecomposingRecordingPen(old_set), DecomposingRecordingPen(new_set)
+    old_set[old_name].draw(old_pen)
+    new_set[new_name].draw(new_pen)
+    assert old_pen.value == new_pen.value, hex(code)
+    assert original["hmtx"][old_name] == result["hmtx"][new_name], hex(code)
+    old_glyph, new_glyph = original["glyf"][old_name], result["glyf"][new_name]
+    if hasattr(old_glyph, "program"):
+        assert old_glyph.program.getBytecode() == new_glyph.program.getBytecode(), hex(code)
+for table in ["fpgm", "prep", "cvt "]:
+    if table in original:
+        assert original.getTableData(table) == result.getTableData(table), table
+for field in ["ascent", "descent", "lineGap"]:
+    assert getattr(original["hhea"], field) == getattr(result["hhea"], field)
+total = sum(path.stat().st_size for path in directory.glob("*.woff2"))
+assert total <= 50_000, total
+print(f"Numerals: {output.stat().st_size} bytes; all web fonts: {total} bytes; outline/metric/hint checks passed.")

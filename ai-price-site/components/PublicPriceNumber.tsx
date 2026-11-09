@@ -15,8 +15,9 @@ export default function PublicPriceNumber({ value, changeKey, prefix = "", suffi
   const visible = useRef<HTMLSpanElement>(null);
   const last = useRef({ value: initialValue ?? value, key: initialValue === undefined ? changeKey : undefined });
   const format = useMemo(() => {
+    if (currency) return (amount: number) => formatPublicPrice(amount, currency, locale, fractionDigits);
     const number = new Intl.NumberFormat(locale, { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
-    return (amount: number) => currency ? formatPublicPrice(amount, currency, locale, fractionDigits) : `${prefix}${number.format(amount)}${suffix}`;
+    return (amount: number) => `${prefix}${number.format(amount)}${suffix}`;
   }, [currency, locale, fractionDigits, prefix, suffix]);
   const valid = Number.isFinite(value);
   const finalText = valid ? format(value) : "";
@@ -26,10 +27,16 @@ export default function PublicPriceNumber({ value, changeKey, prefix = "", suffi
     const previous = last.current;
     last.current = { value, key: changeKey };
     if (!element || !container || !valid) return;
+    // SSR already contains the final value. Avoid interleaving a style read
+    // with a text write for every matrix cell when no animation is requested.
+    if (changeKey === undefined || previous.key === changeKey || !Number.isFinite(previous.value)) {
+      if (element.textContent !== finalText) element.textContent = finalText;
+      return;
+    }
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const style = getComputedStyle(container);
     const motion = parseNumberMotion(style.getPropertyValue("--gs-motion-slow").trim(), style.getPropertyValue("--gs-motion-ease").trim());
-    if (changeKey === undefined || previous.key === changeKey || !Number.isFinite(previous.value) || reduced.matches || !motion) {
+    if (reduced.matches || !motion) {
       element.textContent = finalText;
       return;
     }
