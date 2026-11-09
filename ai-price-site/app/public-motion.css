@@ -109,3 +109,10 @@
   .gs-public-unified .gs-product-matrix-row[data-flip] { transform: none; transition: none; }
   .gs-public-unified .gs-product-table-viewport { transition: none; }
 }
+.gs-public-unified.gs-plan-scope .gs-plan-list-viewport { transition: height var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified.gs-plan-scope .gs-plan-bar > span { transition: width var(--gs-motion-slow) var(--gs-motion-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .gs-public-unified.gs-plan-scope .gs-plan-list-viewport, .gs-public-unified.gs-plan-scope .gs-plan-bar > span { transition: none; }
+}
+
+.gs-public-unified .gs-plan-details[open] > summary > svg { transform: rotate(180deg); }

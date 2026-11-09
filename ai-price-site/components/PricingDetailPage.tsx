@@ -22,6 +22,8 @@ import TrackedLink from "./analytics/TrackedLink";
 import ProductSidebar from "./ProductSidebar";
 import ProductPlanOverview from "./ProductPlanOverview";
 import ProductCanvasOverview from "./ProductCanvasOverview";
+import PlanCanvasPage from "./PlanCanvasPage";
+import { usesPlanCanvas } from "../lib/plan-canvas";
 import PlanDecisionGuidance from "./PlanDecisionGuidance";
 import PlanTabs from "./PlanTabs";
 import MobileProductSwitcher from "./MobileProductSwitcher";
@@ -1366,6 +1368,27 @@ export default async function PricingDetailPage({
     plan: contentPlan,
     faqs: effectiveFaqs,
   });
+
+  if (usesPlanCanvas(locale, canonicalDetailPath)) {
+    return <PlanCanvasPage product={product} plan={contentPlan} title={pageTitle} description={heroDescription}
+      rates={exchangeRates} incomes={affordability.rows} basePath={detailBasePath} backLabel={pageCopy.backToPricing}
+      schema={<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}/>}
+      eligibility={eligibility ? <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={[contentPlan]}/> : null}
+      reference={<>{product.officialUrl && <TrackedLink href={product.officialUrl} eventKey="click_official" eventName="Open official website" buttonKey={product.slug} placement="product_hero" target="_blank" rel="noreferrer">{pageCopy.visitOfficial}</TrackedLink>}
+        <TrackedLink href={`/reports/${locale}/${product.slug}-global-pricing.pdf`} eventKey="download_price_report" eventName="Download global pricing report" buttonKey={product.slug} placement="product_hero" download={`${product.slug}-${locale}-global-pricing.pdf`}>{reportDownloadLabel[locale]}</TrackedLink></>}
+      fit={editorialContent ? <ProductEditorialSection productSlug={product.slug} planName={activePlan.name} locale={locale} content={editorialContent} billingContent={billingContent}/> : null}
+      fitSummary={editorialContent ? { title: `${activePlan.name} 适合谁`, body: editorialContent.plan.bestFor } : null}
+      overview={<ProductOverviewLink locale={locale} productName={product.name} href={productCanonicalPath}/>}
+      related={<RelatedPlanChoices locale={locale} product={product} currentPlanSlug={activePlan.slug}/>}
+      faq={<FaqSection title={pageCopy.faqTitle} faqs={effectiveFaqs}/>}
+      navigation={<><ProductSidebar products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/><MobileProductSwitcher products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/></>}
+      legacy={<><CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category}/><PlanDecisionGuidance product={product} locale={locale} planSlug={activePlan.slug}/>{stats && <PricingPressureSwitcher locale={locale} productName={product.name}
+        priceView={<PricePositionSection plan={getPricePositionPlan(contentPlan)} bigMacBenchmarks={affordability.bigMacBenchmarks} locale={locale}/>}
+        burdenView={affordability.rows.length > 0 ? <AffordabilityComparison productName={product.name} planName={activePlan.name} summary={affordability.summary} rows={affordability.rows} locale={locale} embedded/> : undefined}
+        matrixView={affordability.rows.length > 0 ? <PriceBurdenMatrix rows={affordability.rows} locale={locale}/> : undefined}
+        unavailableReason={getAffordabilityUnavailableReason(affordability.quality, locale, getPricingChannelLabel(contentPlan))}/>}</>}
+    />;
+  }
 
   return (
     <main className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
