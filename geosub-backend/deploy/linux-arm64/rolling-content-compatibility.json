@@ -5971,6 +5971,708 @@
       ],
       "reason": "2.30.1 release of reviewed V4/V5 layouts and fail-closed sitemap pipeline fix: all 34 registered reader/fence/model files remain byte-identical to reviewed main; only VERSION changes. Preserve every exact retained SHA, file scope, target and fact restriction; prioritize recorded healthy 2.29.1, subject to fresh deployment-time identity verification.",
       "evidence": "docs/release-readiness-2.30.1-2026-11-10.md"
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "520d60c216f452aa66e169ec832497d87f60256cca2267a7b69e1e6bbad77127",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ead5051bb786a6cc16d0791ad463667e9fe1b0b4",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md"
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "356052cd10f04487509a07484d5afac754b578b4a40124213d5ea82d7ae2ad20",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs"
+      ],
+      "retainedCommit": "a3e1cf78ffe4f163384dfd578846feb4ba36a50f",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md"
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "b8d4f092a72ab1d894db2cffd5b37a822813847fc69052b8dc3ddba08cd3c249",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "retainedCommit": "ad71456c3d50bdf89ad64d7ec4e10e714b6cec5d",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md"
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "2f1e0ffdc9d0cd88b9e0dd8f0e35a414f1cd318d2a99d12f4ab419609d84f1c2",
+      "retainedCommit": "d4f80b96f59b443e297a15f956e6bde776b7e9eb",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": false
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "31255a489de7b20738b1163193dbdc25dfca7e7aae99a577c35af4b9f72751ca",
+      "retainedCommit": "ed3ec9bb42ef9ca210b70384e64e29c5bfc45fbe",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "a9c431f571880f0a5387624639591e50802896b2c6208724a05feafd779e47f6",
+      "retainedCommit": "1c0492821b25d21fe11ce19bc8b4867dc69b6efe",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "be72d4f213d81709969d35ca1685792a61b6b73ffe30c9ef54bf39d7d2a75925",
+      "retainedCommit": "6105eb27d66aac59859f0348341b48671a716a25",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "b0e1c59c304550d110ab9eeb221c839707b67ba50b6ffdeeda802cbc551c8530",
+      "retainedCommit": "21f58948c5cce6a60a3f965f821582f4b5c3fe9e",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "dc7b840ba78a1c2182a9117f047391e5c5a60722ca1516d7c1440f3b6fbc0a33",
+      "retainedCommit": "187406c8f5ea8bb49a4869efd7b7a1c6bb03c04f",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "46b17cc0f1bf0d39fc1275bd2ea0731e189d64c697322333de12e7814224a7ad",
+      "retainedCommit": "07f814f5177eb18ed58e83ecdbca87774bf7b15d",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "8cef18dbf1eee969db9ac6c07ee5270d40d7073d6a5b4d864bb12336aeeb366f",
+      "retainedCommit": "1da247e9d881706ae9a9c0488f6c4578f6eac8cf",
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ]
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "a2b49f6bd1a1929b472f035f15582b9dd677c5d767550d6141b4f4e945664d6c",
+      "retainedCommit": "01c32b7edd6d4c8a9319fa5c53840bb01709a500",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql"
+      ],
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md"
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "1822d57c36a122631012ddd738d2845772cf9fcf21ece7b7007e6bcd034f3eaa",
+      "retainedCommit": "8c458578135e600c0a8e209770d834fae34a000f",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql",
+        "ai-price-site/components/ProductCanvasOverview.tsx",
+        "ai-price-site/components/ProductCanvasPricing.tsx",
+        "ai-price-site/lib/product-canvas.ts",
+        "ai-price-site/lib/product-canvas-order.ts"
+      ],
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.31.0 V6 country-page release: all 34 registered reader/fence/model files are byte-identical to reviewed main; VERSION alone changes. Preserve the exact retained SHA, file scope, targets and fact restrictions.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md"
+    },
+    {
+      "format": 2,
+      "from": "d598c53afcc0400f219b1b622f2c437b6f5f306c0ca3bc039b1f324e0255155a",
+      "to": "ec715a6c56d6c1e80d48488656dd73f8241769c85f1dff25b0b9e9ce99f4bea5",
+      "retainedCommit": "0189acf4244e36d4a61841381b5588c92fe3e4be",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql",
+        "ai-price-site/components/ProductCanvasOverview.tsx",
+        "ai-price-site/components/ProductCanvasPricing.tsx",
+        "ai-price-site/lib/product-canvas.ts",
+        "ai-price-site/lib/product-canvas-order.ts",
+        "ai-price-site/components/PlanCanvasPage.tsx",
+        "ai-price-site/components/PlanCanvasPricing.tsx",
+        "ai-price-site/lib/plan-canvas.ts"
+      ],
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "Exact rollback to recorded healthy 2.30.1: all 34 registered reader/fence/model files are byte-identical; only VERSION differs. All three existing content targets and fact-token readers are unchanged. Recheck actual retained build before deployment.",
+      "evidence": "docs/release-readiness-2.31.0-2026-11-10.md"
     }
   ]
 }
