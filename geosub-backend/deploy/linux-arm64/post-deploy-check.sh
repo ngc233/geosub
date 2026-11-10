@@ -619,24 +619,41 @@ if command -v curl >/dev/null 2>&1; then
       "$CANONICAL_SITE_URL/zh/streaming-pricing/netflix"
     )
     for required_sitemap_url in "${required_sitemap_urls[@]}"; do
-      if printf '%s' "$sitemap_content" | grep -Fq "<loc>${required_sitemap_url}</loc>"; then
+      # Consume the entire pipe: grep -q can close it early, making printf exit
+      # with SIGPIPE and pipefail report a missing URL even when grep found it.
+      if printf '%s' "$sitemap_content" | grep -F -- "<loc>${required_sitemap_url}</loc>" >/dev/null; then
         pass "public sitemap dynamic sentinel: $required_sitemap_url"
       else
-        fail "public sitemap missing dynamic sentinel: $required_sitemap_url"
+        sitemap_check_status=("${PIPESTATUS[@]}")
+        if (( sitemap_check_status[0] == 0 && sitemap_check_status[1] == 1 )); then
+          fail "public sitemap missing dynamic sentinel: $required_sitemap_url"
+        else
+          fail "public sitemap sentinel check failed (producer=${sitemap_check_status[0]}, matcher=${sitemap_check_status[1]}): $required_sitemap_url"
+        fi
       fi
     done
 
     if printf '%s' "$sitemap_content" |
-      grep -Eq '<loc>https://geosub\.org/(zh-tw|ja|ko|es|tr|ar|fr|it|de|pt)(/|<)'; then
+      grep -E -- '<loc>https://geosub\.org/(zh-tw|ja|ko|es|tr|ar|fr|it|de|pt)(/|<)' >/dev/null; then
       fail "public sitemap contains staged locale URLs"
     else
-      pass "public sitemap excludes staged locale URLs"
+      sitemap_check_status=("${PIPESTATUS[@]}")
+      if (( sitemap_check_status[0] == 0 && sitemap_check_status[1] == 1 )); then
+        pass "public sitemap excludes staged locale URLs"
+      else
+        fail "public sitemap locale check failed (producer=${sitemap_check_status[0]}, matcher=${sitemap_check_status[1]})"
+      fi
     fi
 
-    if printf '%s' "$sitemap_content" | grep -Eq '<loc>[^<]*\?'; then
+    if printf '%s' "$sitemap_content" | grep -E -- '<loc>[^<]*\?' >/dev/null; then
       fail "public sitemap contains query-string URLs"
     else
-      pass "public sitemap contains canonical path URLs only"
+      sitemap_check_status=("${PIPESTATUS[@]}")
+      if (( sitemap_check_status[0] == 0 && sitemap_check_status[1] == 1 )); then
+        pass "public sitemap contains canonical path URLs only"
+      else
+        fail "public sitemap query-string check failed (producer=${sitemap_check_status[0]}, matcher=${sitemap_check_status[1]})"
+      fi
     fi
 
     sitemap_urls="$(
