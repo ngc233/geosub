@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.31.0 - Unreleased
+
+- Release the reviewed V6 Chinese country detail pages for Turkey, India, the Philippines and Japan: equal-weight median statistics, sortable-by-savings price rows, currency/category controls, purchase caveats and existing-country comparisons. Keep original explanations and links in a default-closed native data/source disclosure that works without JavaScript.
+- Preserve DATA-1 filters, raw-value D8 calculations, SEO metadata, the frozen Plus/English pages and V4/V5 layouts. Keep approved existing-page link additions; do not claim that the V6 link layout is unchanged from the legacy page.
+- Preserve Inter Tight and font-display: swap while matching the old mobile performance median. Load offscreen local imagery near the viewport, avoid automatic plan-row prefetch, format static dates on the server, and carry the identical numeral subset in country-only cached CSS.
+- Keep 197 historical compatibility registrations unchanged; inherit 13 exact reader scopes and add the recorded healthy 2.30.1 commit as the preferred exact application rollback. Rollback restores the legacy country page without restoring the database; verify actual retained identity before deployment.
+- Database inputs and dependencies are unchanged (migration_skipped). The compatibility registry changes, so install and hash-verify the final reviewed controller before a separately approved production rollout. This PR only prepares the release; it does not deploy, migrate, backfill, publish collectors or change server configuration.
+
 ## 2.30.1 - Unreleased
 
 - Fix sitemap release checks under `set -euo pipefail`: fully consume pipeline input so a successful match cannot cause upstream SIGPIPE, and fail closed on producer or matcher errors. Preserve all sentinel URLs, URL budgets, excluded locales, query-string rules, timeouts and per-URL HTTP checks.
