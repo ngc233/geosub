@@ -18,6 +18,150 @@ function fixture(t) {
   for (const p of ['old', 'next', 'shared']) mkdirSync(join(root, p));
   return root;
 }
+
+const sitemapSentinels = [
+  'https://geosub.org/zh/ai-pricing/chatgpt',
+  'https://geosub.org/en/ai-pricing/chatgpt',
+  'https://geosub.org/zh/streaming-pricing/netflix',
+];
+
+// Synthetic XML only. Execute the actual gate block without sourcing a server
+// environment, accessing a database, or making HTTP requests.
+function sitemapXml({ count = 189, position = 'middle', padding = 0, missing, extra = [] } = {}) {
+  const required = sitemapSentinels.map(url => url === missing ? `${url}-missing-fixture` : url);
+  const filler = Array.from({ length: count - required.length - extra.length }, (_, i) => `https://geosub.org/zh/guides/synthetic-${i}`);
+  const at = position === 'start' ? 0 : position === 'end' ? filler.length : Math.floor(filler.length / 2);
+  const urls = [...filler.slice(0, at), ...required, ...filler.slice(at)];
+  urls.unshift(...extra);
+  const before = position === 'start' ? 0 : position === 'end' ? padding : Math.floor(padding / 2);
+  return `<urlset>\n<!--${'x'.repeat(before)}-->\n${urls.map(url => `<url><loc>${url}</loc></url>`).join('\n')}\n<!--${'x'.repeat(padding - before)}-->\n</urlset>`;
+}
+
+function runSitemapGate(t, xml, { matcherExit, producerExit } = {}) {
+  const source = readFileSync(new URL('./post-deploy-check.sh', import.meta.url), 'utf8');
+  const strict = source.match(/^set -euo pipefail$/m);
+  assert.ok(strict, 'The real script must retain errexit, nounset and pipefail');
+  const start = source.indexOf('    sitemap_url_count="$(');
+  const split = source.indexOf('    required_sitemap_urls=(', start);
+  const end = source.indexOf('    sitemap_urls="$(', split);
+  assert.ok(start >= 0 && split > start && end > split, 'Extract the complete real count and three URL checks');
+  const limits = ['MIN', 'MAX'].map(name => {
+    const line = source.match(new RegExp(`^${name}_SITEMAP_URLS=.*$`, 'm'));
+    assert.ok(line, `Missing ${name} sitemap limit`);
+    return line[0];
+  });
+  const root = fixture(t), file = join(root, 'sitemap.xml');
+  writeFileSync(file, xml);
+  // Fault injection happens after the count check, so producer failure is
+  // exercised in all three URL checks, including grep's legitimate exit 1.
+  const faults = [
+    matcherExit === undefined ? '' : `grep() { cat >/dev/null; return ${matcherExit}; }`,
+    producerExit === undefined ? '' : `printf() { builtin printf "$@"; return ${producerExit}; }`,
+  ].join('\n');
+  const program = `${strict[0]}
+${limits.join('\n')}
+CANONICAL_SITE_URL=https://geosub.org
+failures=0
+pass() { builtin printf 'OK %s\\n' "$1"; }
+fail() { failures=$((failures + 1)); builtin printf 'FAIL %s\\n' "$1"; }
+sitemap_content="$(cat "$1")"
+${source.slice(start, split)}
+${faults}
+${source.slice(split, end)}
+if (( failures > 0 )); then exit 1; fi
+`;
+  const env = { ...process.env };
+  delete env.GEOSUB_MIN_SITEMAP_URLS;
+  delete env.GEOSUB_MAX_SITEMAP_URLS;
+  const result = spawnSync('/bin/bash', ['-c', program, 'sitemap-gate-test', file], {
+    env, encoding: 'utf8', timeout: 10_000, maxBuffer: 1024 * 1024,
+  });
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(result.signal, null);
+  assert.equal(result.stderr, '', result.stderr);
+  return result;
+}
+
+test('sitemap gate accepts complete small and pipe-sized XML with sentinels at any position', t => {
+  for (const position of ['start', 'middle', 'end']) {
+    // Exercise hits before and after the pipe buffer, including a long unread
+    // tail. Small fixtures alone missed the real 31 KB sitemap's SIGPIPE race.
+    for (const padding of [0, 32 * 1024, 2 * 1024 * 1024]) {
+      const result = runSitemapGate(t, sitemapXml({ position, padding }));
+      assert.equal(result.status, 0, `${position}, padding=${padding}: ${result.stdout}`);
+      for (const url of sitemapSentinels) assert.ok(result.stdout.includes(`OK public sitemap dynamic sentinel: ${url}\n`));
+      assert.match(result.stdout, /OK public sitemap excludes staged locale URLs/);
+      assert.match(result.stdout, /OK public sitemap contains canonical path URLs only/);
+      assert.doesNotMatch(result.stdout, /FAIL/);
+    }
+  }
+});
+
+test('sitemap gate retains the exact 80 through 192 URL budget', t => {
+  for (const [count, accepted] of [[79, false], [80, true], [192, true], [193, false]]) {
+    const result = runSitemapGate(t, sitemapXml({ count }));
+    assert.equal(result.status, accepted ? 0 : 1, result.stdout);
+    assert.ok(result.stdout.includes(accepted
+      ? `OK public sitemap URL budget: ${count} (80-192)`
+      : `FAIL public sitemap URL count outside release range: ${count} (80-192)`));
+  }
+});
+
+test('sitemap gate rejects each genuinely missing sentinel at an otherwise valid URL count', t => {
+  for (const missing of sitemapSentinels) {
+    const result = runSitemapGate(t, sitemapXml({ missing, padding: 32 * 1024 }));
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /OK public sitemap URL budget: 189/);
+    assert.ok(result.stdout.includes(`FAIL public sitemap missing dynamic sentinel: ${missing}\n`));
+    assert.equal(result.stdout.split('\n').filter(line => line.startsWith('FAIL')).length, 1, result.stdout);
+  }
+});
+
+test('sitemap gate rejects every staged locale even when an early match precedes a large tail', t => {
+  for (const locale of ['zh-tw', 'ja', 'ko', 'es', 'tr', 'ar', 'fr', 'it', 'de', 'pt']) {
+    for (const suffix of ['', '/ai-pricing/chatgpt']) {
+      const result = runSitemapGate(t, sitemapXml({ extra: [`https://geosub.org/${locale}${suffix}`], padding: 2 * 1024 * 1024 }));
+      assert.equal(result.status, 1, `${locale}${suffix}: ${result.stdout}`);
+      assert.match(result.stdout, /FAIL public sitemap contains staged locale URLs/);
+      assert.doesNotMatch(result.stdout, /OK public sitemap excludes staged locale URLs/);
+    }
+  }
+});
+
+test('sitemap gate rejects query-string URLs even when an early match precedes a large tail', t => {
+  for (const query of ['?displayCurrency=USD', '?']) {
+    const result = runSitemapGate(t, sitemapXml({ extra: [`https://geosub.org/zh/ai-pricing/chatgpt${query}`], padding: 2 * 1024 * 1024 }));
+    assert.equal(result.status, 1, result.stdout);
+    assert.match(result.stdout, /FAIL public sitemap contains query-string URLs/);
+    assert.doesNotMatch(result.stdout, /OK public sitemap contains canonical path URLs only/);
+  }
+});
+
+test('sitemap gate treats matcher execution errors as failures in all three URL checks', t => {
+  for (const matcherExit of [2, 127]) {
+    const result = runSitemapGate(t, sitemapXml(), { matcherExit });
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout.split('\n').filter(line => line.startsWith('FAIL')).length, 5, result.stdout);
+    for (const kind of ['sentinel', 'locale', 'query-string']) {
+      assert.ok(result.stdout.includes(`public sitemap ${kind} check failed (producer=0, matcher=${matcherExit})`), result.stdout);
+    }
+    assert.doesNotMatch(result.stdout, /missing dynamic sentinel|OK public sitemap excludes|OK public sitemap contains canonical/);
+  }
+});
+
+test('sitemap gate rejects producer errors including exit 1 paired with no grep match', t => {
+  for (const producerExit of [1, 74]) {
+    const result = runSitemapGate(t, sitemapXml(), { producerExit });
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout.split('\n').filter(line => line.startsWith('FAIL')).length, 5, result.stdout);
+    assert.ok(result.stdout.includes(`sentinel check failed (producer=${producerExit}, matcher=0)`), result.stdout);
+    for (const kind of ['locale', 'query-string']) {
+      assert.ok(result.stdout.includes(`${kind} check failed (producer=${producerExit}, matcher=1)`), result.stdout);
+    }
+    assert.doesNotMatch(result.stdout, /missing dynamic sentinel|OK public sitemap excludes|OK public sitemap contains canonical/);
+  }
+});
+
 test('both release asset sets survive rollback without overwriting', t => {
   const r = fixture(t);
   writeFileSync(join(r, 'old', 'old.js'), 'old');
