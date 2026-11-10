@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.30.1 - Unreleased
+
+- Fix sitemap release checks under `set -euo pipefail`: fully consume pipeline input so a successful match cannot cause upstream SIGPIPE, and fail closed on producer or matcher errors. Preserve all sentinel URLs, URL budgets, excluded locales, query-string rules, timeouts and per-URL HTTP checks.
+- Carry forward the reviewed V4 Chinese product overviews and V5 non-Plus Chinese plan layouts from the unsuccessful 2.30.0 rollout; this release PR adds no UI changes. Preserve the Plus/English locked branches, pricing, SEO, database inputs and dependencies.
+- Keep all 184 historical compatibility registrations unchanged and inherit 13 exact retained-reader scopes for 2.30.1. Prefer the recorded healthy 2.29.1 application rollback; do not add failed 2.30.0 as a healthy rollback target. Recheck actual live identity and retained builds before deployment.
+- Database inputs are unchanged (`migration_skipped`). Install and hash-verify the final reviewed controller before a separately approved rollout: the sitemap script, its executable tests and compatibility registry differ from the previously recorded controller. Never patch server policy in place.
+- This PR prepares the release only. No production access, deployment, collector changes, migrations, backfills or database restore.
+
 ## 2.30.0 - Unreleased
 
 - Release V4 Chinese product overviews and V5 non-Plus Chinese plan pages as one reviewed canvas-alignment batch: plan cards/matrix, minimum-price and distribution cards, region filtering, shared currency controls and compact plan guidance.
