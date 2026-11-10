@@ -4,7 +4,7 @@ const path = require("node:path");
 const postcss = require("postcss");
 
 const STYLE_FILES = Object.freeze([
-  "public-tokens.css", "public-base.css", "public-components.css", "public-motion.css",
+  "public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css",
 ]);
 
 function renderTokens(tokens, compatibility) {
@@ -189,7 +189,7 @@ function main(argv = process.argv.slice(2)) {
   if (files[0].css !== output) issues.unshift("Token CSS differs from its JSON sources; run node scripts/public-design-tokens.cjs.");
   if (issues.length) throw new Error(issues.join("\n"));
   for (const [role, entry] of Object.entries(CONTRAST_ALLOWLIST)) console.log(`ALLOW ${role}: ${entry.reason}`);
-  console.log("PASS: four foundation stylesheets; scoped tokens, sizes, shadows, centralized motion and small dark surfaces.");
+  console.log("PASS: four foundation stylesheets plus country stylesheet; scoped tokens, sizes, shadows, centralized motion and small dark surfaces.");
 }
 
 module.exports = { STYLE_FILES, renderTokens, inspectStyles, CONTRAST_ALLOWLIST, checkContrastUse, inspectContrastPolicy, main };

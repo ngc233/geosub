@@ -1,4 +1,5 @@
-import { CountryHubPage } from "../../../../components/PriceEvidencePages";
+import "../../../public-country.css";
+import CountryCanvasPage from "../../../../components/CountryCanvasPage";
 import { loadCountryHub } from "../../../../lib/cached-country-hub";
 import { getCountryHubMetadata } from "../../../../lib/country-hub-indexing";
 export const revalidate = 1800;
@@ -9,5 +10,5 @@ export async function generateMetadata({ params }: Props) {
 }
 export default async function Page({ params }: Props) {
   const { country } = await params;
-  return <CountryHubPage locale="zh" countrySlug={country} />;
+  return <CountryCanvasPage countrySlug={country} />;
 }

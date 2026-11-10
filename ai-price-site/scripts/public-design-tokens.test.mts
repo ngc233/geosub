@@ -11,7 +11,7 @@ import compatibility from "../design/public-theme-compatibility.json" with { typ
 
 const inspect = (css: string, filename = "public-motion.css") => inspectStyles([{ filename, css }]);
 
-test("the shipped four stylesheets pass the same CLI gate in npm test", () => {
+test("the shipped foundation and country stylesheets pass the same CLI gate in npm test", () => {
   const result = spawnSync(process.execPath, [fileURLToPath(new URL("./public-design-tokens.cjs", import.meta.url)), "--check"], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
 });
@@ -55,8 +55,8 @@ test("token definitions stay scoped; component declarations cannot smuggle a pal
   assert.ok(inspect('.gs-public-unified .card { transition:color 120ms; }', "public-components.css").length);
 });
 
-test("CLI checks exactly four U1 files, fails on constructed cancellation and succeeds after repair", () => {
-  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css"]);
+test("CLI checks four foundation files plus country CSS, fails on constructed cancellation and succeeds after repair", () => {
+  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css"]);
   const root = mkdtempSync(join(tmpdir(), "geosub-u1-css-"));
   try {
     mkdirSync(join(root, "app")); mkdirSync(join(root, "design"));
@@ -75,6 +75,14 @@ test("CLI checks exactly four U1 files, fails on constructed cancellation and su
     assert.equal(passed.status, 0, passed.stderr);
     // There are deliberately no PublicControls/StyleReview/Codex component files.
     assert.match(passed.stdout, /four foundation stylesheets/);
+    const country = join(root, "app/public-country.css");
+    for (const declaration of ["color:#fff", "font-size:14px", "box-shadow:none", "transition:color 120ms", "transform:scale(1.1)"]) {
+      writeFileSync(country, `.gs-public-unified .gs-country-page { ${declaration}; }`);
+      assert.equal(execute().status, 1, `Country stylesheet must reject ${declaration}`);
+    }
+    writeFileSync(country, ".gs-public-unified .gs-country-page { color:var(--gs-text); }");
+    assert.equal(execute().status, 0);
+
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
