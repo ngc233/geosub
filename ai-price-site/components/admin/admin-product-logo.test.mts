@@ -11,8 +11,16 @@ const require = createRequire(resolve(root, "package.json"));
 const ts = require("typescript"), React = require("react"), { renderToStaticMarkup } = require("react-dom/server");
 const source = readFileSync(resolve(root, "components/BrandIcon.tsx"), "utf8");
 const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } });
-const loaded = { exports: {} as Record<string, unknown> };
-new Function("require", "module", "exports", outputText)((name: string) => name === "../lib/product-brand-assets" ? assets : require(name), loaded, loaded.exports);
+const hookSource = readFileSync(resolve(root, "lib/use-deferred-visibility.ts"), "utf8");
+const hookOutput = ts.transpileModule(hookSource, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+function load(react = React) {
+  const hook = { exports: {} as Record<string, unknown> }, icon = { exports: {} as Record<string, unknown> };
+  const dependency = (name: string) => name === "react" ? react : name === "../lib/product-brand-assets" ? assets : name === "../lib/use-deferred-visibility" ? hook.exports : require(name);
+  new Function("require", "module", "exports", hookOutput)(dependency, hook, hook.exports);
+  new Function("require", "module", "exports", outputText)(dependency, icon, icon.exports);
+  return { ...icon, visibilityHook: hook.exports.useDeferredVisibility };
+}
+const loaded = load();
 const render = (props: Record<string, unknown>) => renderToStaticMarkup(React.createElement(loaded.exports.default, props));
 
 test("admin product identity reuses reviewed local thumbnails instead of remote logo metadata", () => {
@@ -45,9 +53,8 @@ test("admin fallback glyphs follow the readable theme text color while public gl
 
 test("a failed local image switches to neutral content while keeping the reserved icon dimensions", () => {
   let failed = false;
-  const isolated = { exports: {} as Record<string, unknown> };
-  const controlledReact = { ...React, useState: () => [failed, (next: boolean) => { failed = next; }] };
-  new Function("require", "module", "exports", outputText)((name: string) => name === "react" ? controlledReact : name === "../lib/product-brand-assets" ? assets : require(name), isolated, isolated.exports);
+  const controlledReact = { ...React, useState: () => [failed, (next: boolean) => { failed = next; }], useRef: () => ({ current: null }), useEffect: () => {} };
+  const isolated = load(controlledReact);
   const view = isolated.exports.default as (props: Record<string, unknown>) => { props: Record<string, unknown> };
   const props = { product: { slug: "chatgpt", name: "ChatGPT" }, appearance: "admin", size: "sm" };
   const before = view(props);
@@ -60,4 +67,47 @@ test("a failed local image switches to neutral content while keeping the reserve
   const html = renderToStaticMarkup(after);
   assert.doesNotMatch(html, /<img/);
   assert.match(html, />C<\/span>/);
+});
+
+test("opt-in deferred local logos retain a no-JavaScript image and original accessible name", () => {
+  const html = render({ defer: true, product: { slug: "chatgpt", name: "ChatGPT" } });
+  assert.match(html, /<noscript><img /);
+  assert.match(html, /alt="ChatGPT logo"/);
+  assert.ok(html.includes(assets.getOptimizedBrandAssetPath(assets.getApprovedLocalBrandAsset("chatgpt")!)));
+  assert.doesNotMatch(render({ product: { slug: "chatgpt", name: "ChatGPT" } }), /<noscript>/);
+});
+
+
+test("deferred visibility without IntersectionObserver reveals images on the next frame and cancels on cleanup", () => {
+  const names = ["window", "requestAnimationFrame", "cancelAnimationFrame"] as const;
+  const descriptors = names.map(name => Object.getOwnPropertyDescriptor(globalThis, name));
+  const updates: boolean[] = [], cancelled: number[] = [];
+  let effect: (() => (() => void) | void) | undefined;
+  let frame: (() => void) | undefined;
+  try {
+    Object.defineProperty(globalThis, "window", { configurable: true, value: {} });
+    Object.defineProperty(globalThis, "requestAnimationFrame", { configurable: true, value: (callback: () => void) => { frame = callback; return 17; } });
+    Object.defineProperty(globalThis, "cancelAnimationFrame", { configurable: true, value: (id: number) => cancelled.push(id) });
+    const isolated = load({ ...React,
+      useState: () => [false, (value: boolean) => updates.push(value)],
+      useRef: () => ({ current: null }),
+      useEffect: (callback: () => (() => void) | void) => { effect = callback; },
+    });
+    const hook = isolated.visibilityHook as (defer: boolean) => { visible: boolean };
+    assert.equal(hook(true).visible, false);
+    const cleanup = effect!();
+    assert.deepEqual(updates, []);
+    assert.ok(frame);
+    frame();
+    assert.deepEqual(updates, [true]);
+    assert.equal(typeof cleanup, "function");
+    cleanup!();
+    assert.deepEqual(cancelled, [17]);
+  } finally {
+    names.forEach((name, index) => {
+      const descriptor = descriptors[index];
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+      else Reflect.deleteProperty(globalThis, name);
+    });
+  }
 });

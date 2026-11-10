@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useState, type SVGProps } from "react";
+import { useDeferredVisibility } from "../lib/use-deferred-visibility";
 import {
   siAnthropic,
   siApplemusic,
@@ -39,6 +40,9 @@ type BrandIconProps = {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   priority?: boolean;
+  /** Opt-in only for offscreen images; SSR names and no-JS images are retained. */
+  defer?: boolean;
+  fetchPriority?: "high" | "low" | "auto";
   /** Use when adjacent text already supplies the product identity. */
   decorative?: boolean;
   appearance?: "public" | "admin";
@@ -134,10 +138,13 @@ export default function BrandIcon({
   size = "md",
   className = "",
   priority = false,
+  defer = false,
+  fetchPriority,
   decorative = false,
   appearance = "public",
 }: BrandIconProps) {
   const [localAssetFailed, setLocalAssetFailed] = useState(false);
+  const { root, visible } = useDeferredVisibility(defer && !priority);
   const approvedLocalAsset = getApprovedLocalBrandAsset(product.slug);
   const icon = getSimpleIcon(product.slug);
   const sizeClass = sizeMap[size];
@@ -145,6 +152,7 @@ export default function BrandIcon({
 
   return (
     <span
+      ref={root}
       className={`relative inline-flex aspect-square shrink-0 items-center justify-center
         overflow-hidden rounded-[22%] border shadow-sm ${appearance === "admin"
           ? "border-admin-border bg-admin-surface-subtle text-admin-text-secondary"
@@ -154,7 +162,7 @@ export default function BrandIcon({
       title={product.name || product.slug}
     >
       {approvedLocalAsset && !localAssetFailed ? (
-        <img
+        visible ? <img
           src={getOptimizedBrandAssetPath(approvedLocalAsset)}
           alt={!decorative && product.name ? `${product.name} logo` : ""}
           aria-hidden={decorative || undefined}
@@ -166,9 +174,10 @@ export default function BrandIcon({
               : "h-[72%] w-[72%] object-contain"
           }
           loading={priority ? "eager" : "lazy"}
+          fetchPriority={fetchPriority}
           decoding="async"
           onError={() => setLocalAssetFailed(true)}
-        />
+        /> : <noscript><img src={getOptimizedBrandAssetPath(approvedLocalAsset)} alt={!decorative && product.name ? `${product.name} logo` : ""} aria-hidden={decorative || undefined} width={96} height={96} className={approvedLocalAsset.displayMode === "app-icon" ? "h-full w-full object-cover" : "h-[72%] w-[72%] object-contain"} loading="lazy" decoding="async"/></noscript>
       ) : icon ? (
         <SvgIcon icon={icon} className={sizeClass.svg} monochrome={appearance === "admin"} decorative={decorative} />
       ) : (

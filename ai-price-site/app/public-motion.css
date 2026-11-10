@@ -116,3 +116,12 @@
 }
 
 .gs-public-unified .gs-plan-details[open] > summary > svg { transform: rotate(180deg); }
+
+/* V6: only the country list changes height; rows never lift or fade. */
+.gs-public-unified .gs-country-list-viewport { transition:height var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-country-row { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
+@media (prefers-reduced-motion:reduce) {
+  .gs-public-unified .gs-country-list-viewport, .gs-public-unified .gs-country-row { transition:none; }
+}
+
+.gs-public-unified .gs-country-evidence[open] > summary .gs-disclosure-chevron { rotate:180deg; }
