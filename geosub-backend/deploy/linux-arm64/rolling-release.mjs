@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { atomic, retainAssets, route, timers, safePath, digest, checkMigrationChanges, taskUnitText, taskLaunch, taskIsBusy, parseUpgradeCommit, verifyUpgradeCommit } from './rolling-release-lib.mjs';
 import { migrationPlan, executeMigrationPlan, webRuntime, webRuntimeEnv, ownedTaskTimers } from './component-release-lib.mjs';
 import contentContract from './content-release-contract.cjs';
+import { acquireCollectorBatchLock } from './collector-batch-lock.mjs';
 import { finalizeExistingCandidate } from './rolling-finalize-lib.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const run = (bin, args = [], options = {}) => execFileSync(bin, args, {
@@ -39,7 +40,8 @@ let config,
   old,
   switched = false,
   paused = false,
-  lock = false;
+  lock = false,
+  collectorAdmission;
 const controlEnv = process.env;
 const enabled = name => {
   const value = spawnSync('systemctl', ['is-enabled', name], {encoding:'utf8'}).stdout.trim();
@@ -77,6 +79,16 @@ function evidence(step, status = 'running', detail = '') {
     updatedAt: new Date().toISOString()
   };
   save(path.join(root, 'attempts', attempt.id, 'rolling.json'), attempt);
+}
+function waitForCollectorBatch() {
+  // Legacy adoption retains its existing timer-drain path. Independent
+  // collectors share this file with run-collector-jobs.sh for the whole batch.
+  if (!fs.existsSync(path.join(root, 'collector-state.json'))) return;
+  if (attempt) evidence('collector_batch_wait');
+  console.log('Waiting for collector batch admission (maximum 120 seconds).');
+  collectorAdmission = acquireCollectorBatchLock();
+  if (attempt) evidence('collector_batch_ready');
+  console.log('Collector batch admission held through verification and recording.');
 }
 function point(dir) {
   const tmp = `${live}.pending`;
@@ -267,6 +279,7 @@ try {
       runtimeMatches: JSON.stringify(json(path.join(root, 'web-runtime.json'))) === JSON.stringify(webRuntime(target)),
     }, {
       verify: async release => {
+        waitForCollectorBatch();
         identity(release);
         if (fs.readFileSync(path.join(release.dir, 'VERSION'), 'utf8').trim() !== release.version) throw Error('Candidate version changed');
         await health(release);
@@ -274,12 +287,14 @@ try {
         contentGate(release, ['verify-closed', '--production']);
         contentGate(release, ['verify-origin', `http://127.0.0.1:${release.port}`, '--production']);
         contentGate(release, ['check-rollback', '--from-root', release.dir, '--to-root', prior.previous.dir, '--policy', path.join(here, 'rolling-content-compatibility.json')]);
+        collectorAdmission?.assertHeld();
         run('bash', [path.join(here, 'post-deploy-check.sh')], { env: { ...envFor(release), PGOPTIONS: '-c default_transaction_read_only=on' } });
         // Recheck pointers after the potentially long verification. No switch,
         // service start/stop, task install, migration or content write is allowed.
         if (JSON.stringify(json(stateFile)) !== JSON.stringify(currentState) || fs.realpathSync(live) !== release.dir || fs.readFileSync(config.routeFile, 'utf8') !== route(release.port, config.proxyAssets || assets)) throw Error('Runtime changed during finalization');
       },
       record: next => {
+        collectorAdmission?.assertHeld();
         const id = new Date().toISOString().replace(/[-:]/g, '').replace(/\.(\d+)Z$/, 'Z-$1');
         attempt = { id, operation: 'finalize', previous: prior.previous, target, migration: prior.migration, originalAttempt: ref, createdAt: new Date().toISOString() };
         evidence('record');
@@ -448,6 +463,7 @@ try {
         skipped: reason => { evidence('migration_skipped', 'running', reason); console.log(`Database migration skipped: ${reason}`); }
       });
       if (!databasePlan.required && !fs.existsSync(path.join(root, 'collector-state.json'))) await pauseTimers(['geosub-collector-jobs.timer']);
+      waitForCollectorBatch();
       script(release, 'db-smoke-check.sh');
       user(release, 'npm', ['run', 'sync:logos']);
       evidence('candidate_start');
@@ -470,6 +486,7 @@ try {
       attempt.backup = prior.backup;
       identity(attempt.target);
       validateTaskUnits(attempt.target);
+      waitForCollectorBatch();
       evidence('content_fence');
       rollbackFence(old, attempt.target);
       run('systemctl', ['start', attempt.target.unit]);
@@ -477,6 +494,7 @@ try {
     }
     contentGate(attempt.target, ['verify-closed', '--production']);
     contentGate(attempt.target, ['verify-origin', `http://127.0.0.1:${attempt.target.port}`, '--production']);
+    collectorAdmission?.assertHeld();
     evidence('switch');
     switched = true;
     proxySwitch(attempt.target);
@@ -484,6 +502,7 @@ try {
     point(attempt.target.dir);
     taskUnits(attempt.target);
     restoreTimers();
+    collectorAdmission?.assertHeld();
     evidence('post_deploy');
     run('bash', [path.join(here, 'post-deploy-check.sh')], {
       env: envFor(attempt.target)
@@ -492,6 +511,7 @@ try {
       active: attempt.target,
       previous: old
     };
+    collectorAdmission?.assertHeld();
     record(attempt.target);
     evidence('complete', 'succeeded');
     if (beforeState.previous && ![old.id, attempt.target.id].includes(beforeState.previous.id)) ok('systemctl', ['disable', '--now', beforeState.previous.unit]);
@@ -522,5 +542,7 @@ try {
   }
   process.exitCode = 1;
 } finally {
-  if (lock) fs.rmdirSync(path.join(root, 'rolling.lock'));
+  try { collectorAdmission?.release(); } finally {
+    if (lock) fs.rmdirSync(path.join(root, 'rolling.lock'));
+  }
 }
