@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import './release-candidate.test.mjs';
+import './collector-batch-lock.test.mjs';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';
@@ -358,7 +359,7 @@ test('controller gates precede every switch and finalization uses all-target rea
   const code=readFileSync(new URL('./rolling-release.mjs',import.meta.url),'utf8');
   assert.ok(code.includes("contentGate(old, ['upgrade'])"));
   assert.ok(code.includes("contentGate(old, ['verify-closed', '--production'])"));
-  assert.ok(code.includes("contentGate(attempt.target, ['verify-origin', `http://127.0.0.1:${attempt.target.port}`, '--production']);\n    evidence('switch')"));
+  assert.ok(code.includes("contentGate(attempt.target, ['verify-origin', `http://127.0.0.1:${attempt.target.port}`, '--production']);\n    collectorAdmission?.assertHeld();\n    evidence('switch')"));
   assert.ok(code.includes("contentGate(release, ['verify-closed', '--production'])"));
   assert.ok(code.includes("path.join(here, 'content-release-fence.cjs')"));
   assert.ok(!code.includes("['scripts/content-deploy-fence.cjs', compatible"));
