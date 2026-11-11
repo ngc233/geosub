@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.31.1 - Unreleased
+
+- Release the reviewed V6 Chinese country detail pages carried forward from the unsuccessful 2.31.0 rollout, together with the reviewed collector-batch coordination fix in PR #73. This release PR changes no page implementation, data algorithm, SEO, dependency or protected file.
+- Wait for the existing collector batch before candidate startup, then hold the existing collector lock through switching, strict post-deploy checks and success recording or failure recovery. Keep the 120-second bound and every existing data threshold; missing or invalid locks and genuine stale observations still fail closed. Do not publish collectors or change their configuration.
+- Preserve all 225 existing exact rollback registrations and inherit the same 14 audited retained-reader scopes for the new version. Prefer the recorded healthy 2.30.1 build; do not treat the failed 2.31.0 attempt as a healthy rollback point. Application rollback restores the old country pages without database restore.
+- Database inputs are unchanged (`migration_skipped`). Before a separately approved deployment, install the final merged and CI-successful controller and verify all 84 files, including the new batch-lock helper and its tests. Never edit server policy in place or reuse the obsolete 82-file inventory.
+- This PR prepares the release only; production data gates, actual retained-build verification, rollout and five-minute observation require separate approval and evidence.
+
 ## 2.31.0 - Unreleased
 
 - Release the reviewed V6 Chinese country detail pages for Turkey, India, the Philippines and Japan: equal-weight median statistics, sortable-by-savings price rows, currency/category controls, purchase caveats and existing-country comparisons. Keep original explanations and links in a default-closed native data/source disclosure that works without JavaScript.
