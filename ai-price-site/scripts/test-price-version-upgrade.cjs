@@ -9,13 +9,14 @@ const { PrismaPg } = require("@prisma/adapter-pg");
 const app = path.resolve(__dirname, "..");
 const root = path.resolve(app, "..");
 const baseline = "d4f80b96f59b443e297a15f956e6bde776b7e9eb";
-// T03a intentionally changes only these two registered controller files.
+// T03a and the approved web/collector coordination change these controller bytes.
+// The candidate hash pins the reviewed coordination implementation; no gate is bypassed.
 // Pin both sides: neither arbitrary controller edits nor retained-source drift
 // may pass the migration/retained-client test. Reader equality stays mandatory.
 const controllerChanges = {
   "geosub-backend/deploy/linux-arm64/rolling-release.mjs": {
     retained: "50d61a4296d677a88da3ddc568acbefd62dd5c61627fac42f0818c0f467468f7",
-    candidate: "43856ca901bbb2a55be4316ed3416ddd883ce0d62f58a4105eba74dc2a0f46fb",
+    candidate: "5b3e65d257ef49c6891dfb3f14ed6363eb84e85fd03386db111e110d042e6986",
   },
   "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs": {
     retained: "f26003d4a85c44b5052e9d3d7f3b76655fd4c0c5f16dad225ffce78fd328bab0",
