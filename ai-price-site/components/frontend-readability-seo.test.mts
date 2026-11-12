@@ -26,7 +26,10 @@ test("guide hubs keep reviewed core guides discoverable without duplicating CMS 
   assert.match(hub, /!state\?\.managed \|\| state\.published/);
   assert.match(hub, /"tool-review"/);
   assert.match(hub, /guideHubExcludedArticleSlugs/);
-  assert.match(chineseHub, /beforeArticles=\{<CoreGuideHub locale="zh" \/>\}/);
+  assert.match(chineseHub, /loadCoreGuideHubStates\("zh"\)/);
+  assert.match(chineseHub, /!state\?\.managed \|\| state\.published/);
+  assert.match(chineseHub, /<GuideCollection/);
+  assert.match(chineseHub, /steps=\{core\}/);
   assert.match(englishHub, /beforeArticles=\{<CoreGuideHub locale="en" \/>\}/);
   assert.match(chineseHub, /guideHubExcludedArticleSlugs\.has\(article\.slug\)/);
   assert.match(englishHub, /guideHubExcludedArticleSlugs\.has\(article\.slug\)/);

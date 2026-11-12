@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import GuideArticle from "./GuideArticle";
 
 type GuideSection = {
   title: string;
@@ -6,6 +8,8 @@ type GuideSection = {
 };
 
 export default function PublicGuidePage({
+  canvas = false,
+  metadata,
   eyebrow,
   title,
   description,
@@ -14,6 +18,8 @@ export default function PublicGuidePage({
   relatedLabel,
   relatedLinks = [],
 }: {
+  canvas?: boolean;
+  metadata?: ReactNode;
   eyebrow: string;
   title: string;
   description: string;
@@ -26,6 +32,8 @@ export default function PublicGuidePage({
     description?: string | null;
   }>;
 }) {
+  if (canvas) return <GuideArticle metadata={metadata} eyebrow={eyebrow} title={title} description={description} relatedLabel={relatedLabel} relatedLinks={relatedLinks}><div className="gs-guide-prose" data-guide-body>{sections.map((section, index) => <section key={`${section.title}-${index}`}><h2>{section.title}</h2><p>{section.body}</p></section>)}<p className="gs-guide-note">{note}</p></div></GuideArticle>;
+
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">
       <section className="mx-auto max-w-4xl">

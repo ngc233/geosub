@@ -6,6 +6,7 @@ const { spawn, spawnSync } = require("node:child_process");
 const { createHash, randomBytes } = require("node:crypto");
 const { Client } = require("pg");
 const { PrismaPg } = require("@prisma/adapter-pg");
+const { selectPgTools } = require("./price-upgrade-pg-tools.cjs");
 const app = path.resolve(__dirname, "..");
 const root = path.resolve(app, "..");
 const baseline = "d4f80b96f59b443e297a15f956e6bde776b7e9eb";
@@ -67,6 +68,7 @@ const env = {
   ...process.env, DATABASE_URL: url.href, GEOSUB_SCHEMA_MODE: "complete-schema",
   PGHOST: url.hostname, PGPORT: url.port || "5432",
   PGUSER: decodeURIComponent(url.username), PGPASSWORD: decodeURIComponent(url.password),
+  PGDATABASE: url.pathname.slice(1),
 };
 delete env.PGOPTIONS;
 const db = new Client({ connectionString: url.href });
@@ -128,6 +130,12 @@ async function main() {
   const timing = {};
   let backup, after, beforeRegistry;
   try {
+    const pgTools = selectPgTools((await db.query("SHOW server_version_num")).rows[0].server_version_num, env, temp);
+    const archiveTool = (tool, args) => {
+      const call = pgTools.invocation(tool, args);
+      return run(call.command, call.args);
+    };
+    console.log(JSON.stringify({ postgresTools: { major: pgTools.major, mode: pgTools.mode } }));
     assert.equal((await db.query("SELECT to_regclass('public.products') AS name")).rows[0].name, null);
     fs.mkdirSync(old);
     const archive = spawnSync("git", [
@@ -210,10 +218,10 @@ async function main() {
     assert.deepEqual(await business(), before); checks++;
 
     const dump = path.join(temp, "synthetic-before-upgrade.dump");
-    run("pg_dump", ["--format=custom", "--file", dump, url.pathname.slice(1)]);
+    archiveTool("pg_dump", ["--format=custom", "--file", dump, url.pathname.slice(1)]);
     const bytes = fs.readFileSync(dump);
     assert.equal(bytes.subarray(0, 5).toString(), "PGDMP");
-    const catalog = run("pg_restore", ["--list", dump]);
+    const catalog = archiveTool("pg_restore", ["--list", dump]);
     assert(catalog.includes("region_prices"));
     backup = { bytes: bytes.length, sha256: sha(bytes), catalogVerified: true, syntheticOnly: true }; checks++;
 
@@ -308,7 +316,7 @@ async function main() {
     try {
       assert.equal((await admin.query("SELECT 1 FROM pg_database WHERE datname=$1", [restoreName])).rowCount, 0);
       await admin.query("CREATE DATABASE " + restoreName); ownedRestore = true;
-      run("pg_restore", ["--no-owner", "--exit-on-error", "--dbname", restoreName, dump]);
+      archiveTool("pg_restore", ["--no-owner", "--exit-on-error", "--dbname", restoreName, dump]);
       const restoredUrl = new URL(url); restoredUrl.pathname = "/" + restoreName;
       const restored = new Client({ connectionString: restoredUrl.href }); await restored.connect();
       try {

@@ -45,6 +45,7 @@ function loadPage(locale: string, structuredDataType: string) {
       process: { env: { NEXT_PUBLIC_SITE_URL: "https://geosub.org" } },
       require: (id: string) => {
         if (id === "next/link") return { default: "a" };
+        if (id.endsWith("/GuideArticle")) return { default: ({ children }: { children: ReactNode }) => children };
         if (id === "next/image") return { default: "img" };
         if (id === "next/navigation") return { notFound: () => { throw new Error("Unexpected 404"); } };
         if (id.endsWith("/articles")) return {

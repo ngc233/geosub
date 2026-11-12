@@ -171,6 +171,23 @@
     },
     "planTitle": {
       "mobile": 26
+    },
+    "guideTitle": {
+      "desktop": 40,
+      "mobile": 30
+    },
+    "guideArticleTitle": {
+      "desktop": 38,
+      "mobile": 30
+    },
+    "guideSection": {
+      "size": 24
+    },
+    "guideStart": {
+      "size": 20
+    },
+    "guideCard": {
+      "size": 18
     }
   },
   "layout": {

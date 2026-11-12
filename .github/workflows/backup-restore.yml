@@ -14,7 +14,10 @@ concurrency:
 jobs:
   backup-restore:
     name: Backup restore drill
-    runs-on: ubuntu-latest
+    # Ubuntu 26.04 ships curl 8.18, whose SigV4 canonicalization turns %2B
+    # into a space. Keep the real signature assertion on the verified LTS tools.
+    # Requalify newer runners with the same test before changing this pin.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Check out candidate

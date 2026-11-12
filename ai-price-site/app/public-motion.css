@@ -125,3 +125,12 @@
 }
 
 .gs-public-unified .gs-country-evidence[open] > summary .gs-disclosure-chevron { rotate:180deg; }
+/* V7 reading progress and TOC use the existing timing policy. */
+.gs-public-unified .gs-guide-progress { transition:width var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-guide-toc-items button { transition:color var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-guide-price-row { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
+@media (prefers-reduced-motion:reduce) {
+ .gs-public-unified :is(.gs-guide-progress,.gs-guide-toc-items button,.gs-guide-price-row) { transition:none; }
+}
+.gs-public-unified .gs-guide-grid-viewport { transition:height var(--gs-motion-base) var(--gs-motion-ease); }
+@media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-guide-grid-viewport { transition:none; } }

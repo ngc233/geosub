@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import GuideCollection from "./GuideCollection";
 import { ArrowRight } from "lucide-react";
 import {
   formatArticleDate,
@@ -31,6 +32,7 @@ export default function ArticleCollectionView({
   tags?: Array<{ id: string; slug: string; name: string }>;
   beforeArticles?: ReactNode;
 }) {
+  if (locale === "zh") return <GuideCollection eyebrow={eyebrow} title={title} description={description} emptyText={emptyText} showBack={showBack} cards={articles.map(article => ({ href: `/zh/guides/${article.slug}`, title: article.title, description: article.excerpt, category: article.category?.name || getArticleTypeLabel(article.articleType, "zh"), date: formatArticleDate(article.publishedAt, "zh"), minutes: article.readingTime }))} navigation={<div className="gs-guide-taxonomy gap-y-2 gap-x-4 flex flex-wrap">{categories.map(category => <Link key={category.id} href={`/zh/guides/category/${category.slug}`}>{category.name}</Link>)}{tags.slice(0, 18).map(tag => <Link key={tag.id} href={`/zh/guides/tag/${tag.slug}`}>#{tag.name}</Link>)}</div>}/>;
   const featured = articles[0] || null;
   const rest = featured ? articles.slice(1) : articles;
   const guidesPath = `/${locale}/guides`;

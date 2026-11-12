@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublicGuidePage from "./PublicGuidePage";
-import { getArticleTypeLabel } from "../lib/articles";
+import { getArticleTypeLabel, formatArticleDate } from "../lib/articles";
 import { loadCoreGuideCmsState } from "../lib/core-guide-cms";
 import {
   getCoreGuideDefinition,
@@ -160,6 +160,8 @@ export default async function CmsBackedGuidePage({
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
       <PublicGuidePage
+        canvas={locale === "zh"}
+        metadata={locale === "zh" && article ? <><span>{formatArticleDate(article.publishedAt)}</span>{article.readingTime ? <span>{article.readingTime} 分钟读完</span> : null}</> : undefined}
         eyebrow={
           article
             ? getArticleTypeLabel(article.articleType, locale)
