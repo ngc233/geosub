@@ -49,27 +49,34 @@ class TransportGuards(unittest.TestCase):
                "GEOSUB_BACKUP_S3_ENDPOINT": "http://127.0.0.1:" + str(server.server_port),
                "GEOSUB_BACKUP_S3_ACCESS_KEY_ID": access,
                "GEOSUB_BACKUP_S3_SECRET_ACCESS_KEY": secret}
-        with mock.patch.dict(os.environ, env, clear=True), tempfile.TemporaryDirectory() as directory:
-            remote.Store().request("GET", output=Path(directory) / "body",
-                                   query={"list-type": "2", "continuation-token": "page+2"})
-        headers = received["headers"]
-        algorithm, attributes = headers["Authorization"].split(" ", 1)
-        fields = dict(item.split("=", 1) for item in attributes.split(", "))
-        credential, scope = fields["Credential"].split("/", 1)
-        self.assertTrue(credential == access)
-        signed = fields["SignedHeaders"]
-        canonical_headers = "".join(key + ":" + " ".join(headers[key].split()) + "\n"
-                                    for key in signed.split(";"))
-        url = urllib.parse.urlsplit(received["path"])
-        canonical = "\n".join(["GET", url.path, url.query, canonical_headers, signed,
-                               hashlib.sha256(b"").hexdigest()])
-        string_to_sign = "\n".join([algorithm, headers["X-Amz-Date"], scope,
-                                    hashlib.sha256(canonical.encode()).hexdigest()])
-        key = ("AWS4" + secret).encode()
-        for value in scope.split("/"):
-            key = hmac.new(key, value.encode(), hashlib.sha256).digest()
-        expected = hmac.new(key, string_to_sign.encode(), hashlib.sha256).hexdigest()
-        self.assertTrue(hmac.compare_digest(fields["Signature"], expected))
+        # Preserve literal +, /, =, %, and empty tokens; never accept a bad signature.
+        for token in ["page+2", "page/2==", "page%2B2", ""]:
+            with self.subTest(token=token):
+                with mock.patch.dict(os.environ, env, clear=True), tempfile.TemporaryDirectory() as directory:
+                    remote.Store().request("GET", output=Path(directory) / "body",
+                                           query={"list-type": "2", "continuation-token": token})
+                self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlsplit(received["path"]).query, keep_blank_values=True)["continuation-token"], [token])
+                headers = received["headers"]
+                algorithm, attributes = headers["Authorization"].split(" ", 1)
+                fields = dict(item.split("=", 1) for item in attributes.split(", "))
+                credential, scope = fields["Credential"].split("/", 1)
+                self.assertTrue(credential == access)
+                signed = fields["SignedHeaders"]
+                canonical_headers = "".join(key + ":" + " ".join(headers[key].split()) + "\n"
+                                            for key in signed.split(";"))
+                url = urllib.parse.urlsplit(received["path"])
+                canonical = "\n".join(["GET", url.path, url.query, canonical_headers, signed,
+                                       hashlib.sha256(b"").hexdigest()])
+                string_to_sign = "\n".join([algorithm, headers["X-Amz-Date"], scope,
+                                            hashlib.sha256(canonical.encode()).hexdigest()])
+                key = ("AWS4" + secret).encode()
+                for value in scope.split("/"):
+                    key = hmac.new(key, value.encode(), hashlib.sha256).digest()
+                expected = hmac.new(key, string_to_sign.encode(), hashlib.sha256).hexdigest()
+                self.assertTrue(hmac.compare_digest(fields["Signature"], expected))
+
+                tampered = ("0" if fields["Signature"][0] != "0" else "1") + fields["Signature"][1:]
+                self.assertFalse(hmac.compare_digest(tampered, expected))
 
     def test_config_cannot_inject_options(self):
         with self.assertRaises(remote.BackupError):
