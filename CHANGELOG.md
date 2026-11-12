@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.32.0 - Unreleased
+
+- Release V7 first-batch Chinese guide lists and article layouts from PR #75: canvas-aligned entry steps, category filtering, reading navigation and existing related price links. Preserve article body text, headings and SEO metadata; Chinese Plus and English pages retain their reviewed layouts.
+- Preserve the reviewed guide-only Inter Tight numeral subset and mobile performance. Prevent filter transitions from covering or intercepting following links, reserve mobile table-of-contents space before hydration, and preserve visible keyboard focus.
+- Include the merged CI-only compatibility fix: matching PostgreSQL archive clients and a verified Ubuntu 24.04 backup-drill runner, with stricter token/signature coverage. No production backup, collector, database, dependency or configuration changes.
+- Keep all 239 historical exact rollback registrations, inherit 14 audited scopes, and add one exact rollback pair to recorded healthy 2.31.1 (`df4851bfd1a85648818148b00c7653b8c202a871`). Rollback restores the previous guide layouts without restoring the database; retain V3–V6.
+- Database inputs are unchanged (`migration_skipped`). A separately approved deployment must first pass full production read-only data gates, then install the final merged, CI-successful controller and verify all 84 files against that commit. The updated compatibility policy requires a new controller installation; never edit server policy in place.
+
 ## 2.31.1 - Unreleased
 
 - Release the reviewed V6 Chinese country detail pages carried forward from the unsuccessful 2.31.0 rollout, together with the reviewed collector-batch coordination fix in PR #73. This release PR changes no page implementation, data algorithm, SEO, dependency or protected file.
