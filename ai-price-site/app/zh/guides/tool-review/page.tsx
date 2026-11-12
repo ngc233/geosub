@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 export default function GuideCategoryPage() {
   return (
     <PublicGuidePage
+      canvas
       eyebrow="Tool Review"
       title="怎样判断一个数字工具是否值得订阅"
       description="不要只看功能清单或单次跑分。先明确使用场景，再比较能力、限制和持续成本。"

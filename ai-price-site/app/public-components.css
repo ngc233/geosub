@@ -800,3 +800,86 @@
 }
 
 .gs-public-unified .gs-plan-work-row > small { grid-column: 1 / -1; line-height: 1.4; margin-top: var(--gs-space-4); }
+
+/* V7 guides: the article source is unchanged; only this Chinese scope is restyled. */
+.gs-public-unified.gs-guide-scope { --gs-font-price:"GeoSub Price Numerals", "Inter Tight", system-ui, sans-serif; background:var(--gs-page); min-height:70vh; }
+.gs-public-unified .gs-guide-caption { color:var(--gs-text-muted); font-size:var(--gs-metadata-size); }
+.gs-public-unified :is(.gs-guide-index,.gs-guide-article-layout,.gs-guide-related) { width:calc(100% - 48px); max-width:var(--gs-max-content-width); margin:auto; }
+.gs-public-unified .gs-guide-index-intro h1 { font-size:var(--gs-guide-title-desktop); }
+.gs-public-unified .gs-guide-index-intro p { font-size:var(--gs-home-lead-size); line-height:1.6; max-width:640px; color:var(--gs-text-secondary); }
+.gs-public-unified .gs-guide-index-intro > a { color:var(--gs-low); font-size:var(--gs-home-meta-size); }
+.gs-public-unified :is(.gs-guide-start,.gs-guide-summary) { border:1px solid var(--gs-accent-border); background:var(--gs-accent-soft); }
+.gs-public-unified .gs-guide-start { border-radius:var(--gs-radius-panel); }
+.gs-public-unified .gs-guide-start h2 { margin:0 0 16px; font-size:var(--gs-guide-start-size); }
+.gs-public-unified :is(.gs-guide-step,.gs-guide-card,.gs-guide-price-row) { color:var(--gs-text); text-decoration:none; }
+.gs-public-unified .gs-guide-step { background:var(--gs-surface); border-radius:var(--gs-radius-small); }
+.gs-public-unified .gs-guide-step-number { border-radius:50%; background:var(--gs-accent); color:var(--gs-on-accent); font:700 var(--gs-body-compact-size) var(--gs-font-price); }
+.gs-public-unified .gs-guide-tabs .gs-segments { --gs-home-segment-width:112px; width:max-content; }
+.gs-public-unified :is(.gs-guide-card,.gs-guide-prices) { border-radius:var(--gs-radius-category); background:var(--gs-surface); }
+.gs-public-unified .gs-guide-card { min-height:196px; }
+.gs-public-unified .gs-guide-card-icon { border-radius:var(--gs-radius-control-small); background:var(--gs-subtle); color:var(--gs-text-secondary); }
+.gs-public-unified .gs-guide-card p { font-size:var(--gs-home-meta-size); line-height:1.6; color:var(--gs-text-muted); }
+.gs-public-unified .gs-guide-card-meta svg { color:var(--gs-text); }
+.gs-public-unified .gs-guide-empty { border:1px solid var(--gs-border); border-radius:var(--gs-radius-panel); color:var(--gs-text-muted); }
+.gs-public-unified .gs-guide-taxonomy:empty { display:none; }
+.gs-public-unified .gs-guide-taxonomy a { display:inline-flex; align-items:center; font-size:var(--gs-home-meta-size); color:var(--gs-low); }
+.gs-public-unified .gs-guide-contact { background:var(--gs-surface); border-radius:var(--gs-radius-panel); }
+.gs-public-unified .gs-guide-contact p { font-size:var(--gs-home-meta-size); color:var(--gs-text-muted); }
+.gs-public-unified .gs-guide-article-layout { grid-template-columns:200px minmax(0,var(--gs-article-max-width)) 260px; }
+.gs-public-unified :is(.gs-guide-breadcrumb,.gs-guide-article-meta) { font-size:var(--gs-home-meta-size); color:var(--gs-text-muted); }
+.gs-public-unified .gs-guide-breadcrumb a { min-height:24px; color:inherit; }
+.gs-public-unified .gs-guide-article h1 { font-size:var(--gs-guide-article-title-desktop); line-height:1.3; margin:0 0 14px; }
+.gs-public-unified .gs-guide-summary { border-radius:var(--gs-radius-card); margin:28px 0 8px; scroll-margin-top:100px; }
+.gs-public-unified .gs-guide-summary > strong { font-size:var(--gs-body-compact-size); color:var(--gs-low-on-soft); }
+.gs-public-unified .gs-guide-prose { overflow-wrap:anywhere; color:var(--gs-text-secondary); }
+.gs-public-unified .gs-guide-prose :is(h2,h3) { margin:44px 0 14px; font-size:var(--gs-guide-section-size); line-height:1.4; font-weight:700; color:var(--gs-text); scroll-margin-top:100px; }
+.gs-public-unified .gs-guide-prose h3 { font-size:var(--gs-guide-start-size); }
+.gs-public-unified .gs-guide-prose :is(p,li) { font-size:var(--gs-home-lead-size); line-height:1.85; }
+.gs-public-unified .gs-guide-prose p { margin:0 0 16px; }
+.gs-public-unified .gs-guide-prose :is(ul,ol) { padding-left:22px; margin:0 0 16px; }
+.gs-public-unified .gs-guide-prose ul { list-style:disc; }
+.gs-public-unified .gs-guide-prose ol { list-style:decimal; }
+.gs-public-unified .gs-guide-prose li { margin-bottom:6px; }
+.gs-public-unified .gs-guide-prose :is(strong,b) { color:var(--gs-text); }
+.gs-public-unified .gs-guide-prose a { color:var(--gs-low); text-decoration:underline; text-underline-offset:3px; }
+.gs-public-unified .gs-guide-prose :is(blockquote,pre) { background:var(--gs-surface); border:1px solid var(--gs-border); border-radius:var(--gs-radius-small); padding:16px 18px; margin:16px 0; }
+.gs-public-unified .gs-guide-prose pre { overflow:auto; }
+.gs-public-unified .gs-guide-prose table { display:block; max-width:100%; overflow-x:auto; background:var(--gs-surface); border-radius:var(--gs-radius-small); margin:16px 0; font-size:var(--gs-body-compact-size); }
+.gs-public-unified .gs-guide-prose :is(th,td) { padding:12px 16px; border-bottom:1px solid var(--gs-border); text-align:left; }
+.gs-public-unified .gs-guide-prose th { color:var(--gs-text-muted); }
+.gs-public-unified .gs-guide-prose img, .gs-public-unified .gs-guide-cover { border-radius:var(--gs-radius-small); }
+.gs-public-unified .gs-guide-prose .gs-guide-note { font-size:var(--gs-metadata-size); color:var(--gs-text-muted); margin-top:24px; }
+.gs-public-unified .gs-guide-side { position:sticky; top:88px; padding-top:112px; }
+.gs-public-unified .gs-guide-toc-items { border-left:2px solid var(--gs-border); }
+.gs-public-unified .gs-guide-toc-items button { min-height:40px;  width:calc(100% + 2px); border:0; border-left:2px solid transparent; background:transparent; color:var(--gs-text-muted); font-size:var(--gs-home-meta-size); line-height:1.5; }
+.gs-public-unified .gs-guide-toc-items button[aria-current] { border-left-color:var(--gs-graphic); color:var(--gs-text); font-weight:700; }
+.gs-public-unified .gs-guide-toc-items button:hover { color:var(--gs-text); }
+.gs-public-unified .gs-guide-progress { top:var(--gs-desktop-header-height); background:var(--gs-graphic); }
+.gs-public-unified .gs-guide-prices h2 { font-size:var(--gs-home-meta-size); }
+.gs-public-unified .gs-guide-prices > p { color:var(--gs-text-muted); font-size:var(--gs-noncritical-caption-size); }
+.gs-public-unified .gs-guide-price-row { border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-guide-price-row:hover { background:var(--gs-row-hover); }
+.gs-public-unified .gs-guide-price-row strong { font-size:var(--gs-home-meta-size); }
+.gs-public-unified .gs-guide-price-row small { font-size:var(--gs-noncritical-caption-size); color:var(--gs-text-muted); }
+.gs-public-unified .gs-guide-price [data-gs-number] { font-size:var(--gs-body-compact-size); color:var(--gs-low); }
+.gs-public-unified .gs-guide-related h2 { font-size:var(--gs-guide-start-size); }
+.gs-public-unified .gs-guide-related a { background:var(--gs-surface); border-radius:var(--gs-radius-card); text-decoration:none; color:var(--gs-text); }
+@media (max-width:1199px) {
+ .gs-public-unified .gs-guide-article-layout { grid-template-columns:160px minmax(0,1fr); gap:24px; }
+ .gs-public-unified .gs-guide-side { grid-column:2; padding-top:0; position:static; }
+ .gs-public-unified .gs-guide-collection-heading { flex-wrap:wrap; }
+}
+@media (max-width:767px) {
+ .gs-public-unified .gs-guide-index, .gs-public-unified .gs-guide-article-layout, .gs-public-unified .gs-guide-related { width:calc(100% - 32px); }
+ .gs-public-unified .gs-guide-index-intro h1 { font-size:var(--gs-guide-title-mobile); }
+ .gs-public-unified .gs-guide-step small { font-size:var(--gs-home-meta-size); }
+ .gs-public-unified .gs-guide-article h1 { font-size:var(--gs-guide-article-title-mobile); }
+ .gs-public-unified .gs-guide-toc-mobile { border:1px solid var(--gs-border); border-radius:var(--gs-radius-control); background:var(--gs-surface); padding:0 16px; }
+ .gs-public-unified .gs-guide-toc-items { margin:8px 0 16px; }
+ .gs-public-unified .gs-guide-toc-items button { min-height:44px; }
+}
+.gs-public-unified .gs-guide-grid-viewport { height:var(--gs-guide-grid-height,auto); }
+.gs-public-unified .gs-guide-grid-viewport[data-resizing] { overflow:clip; overflow-clip-margin:var(--gs-space-8); }
+.gs-public-unified .gs-guide-tabs .gs-segments button { flex:0 0 112px; width:112px; min-height:44px; white-space:nowrap; font-size:var(--gs-home-meta-size); }
+
+@media (max-width:767px) { .gs-public-unified .gs-guide-progress { top:var(--gs-mobile-header-height); } }

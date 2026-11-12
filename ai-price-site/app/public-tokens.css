@@ -120,6 +120,13 @@
   --gs-plan-hero-line-height: 1.05;
   --gs-plan-hero-weight: 700;
   --gs-plan-title-mobile: 26px;
+  --gs-guide-title-desktop: 40px;
+  --gs-guide-title-mobile: 30px;
+  --gs-guide-article-title-desktop: 38px;
+  --gs-guide-article-title-mobile: 30px;
+  --gs-guide-section-size: 24px;
+  --gs-guide-start-size: 20px;
+  --gs-guide-card-size: 18px;
   --gs-max-content-width: 1200px;
   --gs-article-max-width: 680px;
   --gs-desktop-page-padding: 24px;
