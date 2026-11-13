@@ -1,0 +1,36 @@
+name: Task heartbeats
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: task-heartbeats-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  task-heartbeats:
+    name: Task heartbeat safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use production Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test heartbeat transport, receipts and transactional installer
+        run: python3 -m unittest discover -s scripts/tests -p test_task_heartbeats.py -v
+      - name: Test actual controller unit writers and Node FX completion
+        run: node --test scripts/tests/heartbeat-release.test.mjs
+      - name: Test real systemd and local TLS endpoint on this disposable runner
+        env:
+          GEOSUB_RUN_HEARTBEAT_SYSTEMD: '1'
+        run: sudo --preserve-env=GITHUB_ACTIONS,GEOSUB_RUN_HEARTBEAT_SYSTEMD python3 -m unittest discover -s scripts/tests -p test_task_heartbeats_systemd.py -v
