@@ -8,7 +8,7 @@ import PublicIcon from "./PublicIcon";
 import { useSearchDisplayCurrency } from "./PublicCurrencySelect";
 import PublicPriceNumber from "./PublicPriceNumber";
 
-export default function PublicSearch({variant="header"}:{variant?:"header"|"hero"}) {
+export default function PublicSearch({variant="header"}:{variant?:"header"|"hero"|"state"}) {
   const display=useSearchDisplayCurrency();
   const [open,setOpen]=useState(false);
   const [query,setQuery]=useState("");
@@ -45,7 +45,7 @@ export default function PublicSearch({variant="header"}:{variant?:"header"|"hero
   };
   const choose=(result:ChromeSearchResult)=>{setOpen(false);router.push(result.href);};
   return <>
-    {variant==="hero"?<form className="gs-home-search" role="search" onSubmit={e=>{e.preventDefault();setOpen(true);search(query);}}><label className="gs-field gs-home-search-field"><PublicIcon name="Search"/><input aria-label="首页搜索产品或国家" placeholder="搜 ChatGPT、Netflix，或者土耳其" value={query} maxLength={80} onChange={e=>setQuery(e.target.value)}/></label><button type="submit" data-gs-ui="button">搜索</button></form>:<button type="button" className="gs-search-trigger" data-gs-ui="button" aria-label="搜索产品或国家" onClick={()=>setOpen(true)}><PublicIcon name="Search"/><span>搜索</span><kbd>/</kbd></button>}
+    {variant!=="header"?<form className="gs-home-search" role="search" onSubmit={e=>{e.preventDefault();setOpen(true);search(query);}}><label className="gs-field gs-home-search-field"><PublicIcon name="Search"/><input aria-label={variant==="state" ? "查找产品或国家" : "首页搜索产品或国家"} placeholder="搜 ChatGPT、Netflix，或者土耳其" value={query} maxLength={80} onChange={e=>setQuery(e.target.value)}/></label><button type="submit" data-gs-ui="button">搜索</button></form>:<button type="button" className="gs-search-trigger" data-gs-ui="button" aria-label="搜索产品或国家" onClick={()=>setOpen(true)}><PublicIcon name="Search"/><span>搜索</span><kbd>/</kbd></button>}
     {open && <PublicDialog label="搜索" variant="search" onClose={()=>setOpen(false)}>
       <div className="gs-field"><input ref={input} data-gs-initial-focus data-gs-ui="input" aria-label="搜索产品或国家" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls={`${id}-results`} aria-activedescendant={results[active]?`${id}-${active}`:undefined} value={query} maxLength={80}
         onChange={e=>search(e.target.value)}

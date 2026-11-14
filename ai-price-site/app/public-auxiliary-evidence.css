@@ -1,0 +1,26 @@
+/* Checked V7 evidence presentation, emitted only by its Chinese route. */
+
+.gs-public-unified.gs-evidence-page {
+  --color-bg-subtle:var(--gs-subtle); --color-border-default:var(--gs-border); --color-text-primary:var(--gs-text); --color-text-secondary:var(--gs-text-secondary); --color-text-muted:var(--gs-text-muted);
+  --color-accent:var(--gs-low); --color-accent-soft:var(--gs-accent-soft); --color-price-low:var(--gs-low); --color-price-low-soft:var(--gs-tag-low); --color-price-high:var(--gs-high); --color-price-high-soft:var(--gs-high-soft);
+  max-width:1200px; margin:auto; padding:28px 24px 72px; min-height:60vh;
+}
+.gs-public-unified.gs-evidence-page > header { text-align:left; }
+.gs-public-unified.gs-evidence-page > header > div { justify-content:flex-start; }
+.gs-public-unified.gs-evidence-page > header > p { margin-left:0; }
+.gs-public-unified.gs-evidence-page section.rounded-xl { border-color:var(--gs-border); background:var(--gs-surface); border-radius:var(--gs-radius-panel); }
+.gs-public-unified.gs-evidence-page :is(h2,h3) { color:var(--gs-text); font-size:var(--gs-card-title-size); }
+.gs-public-unified.gs-evidence-page summary { list-style:none; }
+.gs-public-unified.gs-evidence-page summary::-webkit-details-marker { display:none; }
+.gs-public-unified .gs-history-events { margin:16px 0 24px; display:flex; flex-direction:column; gap:12px; }
+.gs-public-unified .gs-history-events > section > div:first-child { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px 24px; align-items:center; }
+.gs-public-unified .gs-history-events > section > div:first-child > * { min-width:0; margin:0; }
+@media (max-width:767px) {
+  .gs-public-unified.gs-evidence-page { padding:24px 16px 48px; }
+  .gs-public-unified .gs-history-events > section > div:first-child { grid-template-columns:minmax(0,1fr); }
+}
+.gs-public-unified.gs-evidence-page h1 { font-size:var(--gs-price-hero-mobile); }
+
+.gs-public-unified.gs-evidence-page :is(.text-zinc-400,.text-zinc-500) { color:var(--gs-text-muted); }
+.gs-public-unified.gs-evidence-page .text-zinc-950 { color:var(--gs-text); }
+.gs-public-unified.gs-evidence-page :is(.border-zinc-100,.border-zinc-200) { border-color:var(--gs-border); }

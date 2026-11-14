@@ -1,0 +1,26 @@
+/* Checked V7 article presentation, emitted only by its Chinese route. */
+
+
+.gs-public-unified.gs-aux-scope { min-height:60vh; }
+.gs-public-unified .gs-aux-layout { display:grid; grid-template-columns:200px minmax(0,var(--gs-article-max-width)); gap:40px; max-width:1200px; margin:auto; padding:32px 24px 72px; }
+.gs-public-unified .gs-aux-prose { min-width:0; }
+.gs-public-unified .gs-aux-prose > section + section { margin-top:44px; }
+.gs-public-unified .gs-aux-prose h1 { color:var(--gs-text); margin:14px 0 20px; }
+.gs-public-unified .gs-aux-prose .gs-aux-eyebrow { color:var(--gs-text-muted); font-size:var(--gs-home-meta-size); margin-bottom:10px; }
+.gs-public-unified .gs-aux-stack { display:flex; flex-direction:column; gap:16px; }
+.gs-public-unified .gs-aux-note { border:1px solid var(--gs-accent-border); background:var(--gs-accent-soft); color:var(--gs-low-on-soft); border-radius:var(--gs-radius-card); padding:20px 22px; margin:16px 0; }
+.gs-public-unified .gs-aux-note :is(p,h2,h3) { color:inherit; }
+.gs-public-unified .gs-aux-note > :first-child { margin-top:0; }
+.gs-public-unified .gs-aux-note > :last-child { margin-bottom:0; }
+.gs-public-unified .gs-aux-block { border-bottom:1px solid var(--gs-border); padding:0 0 20px; }
+.gs-public-unified .gs-aux-icon { width:20px; height:20px; flex-shrink:0; stroke-width:1.75; color:var(--gs-text-muted); }
+.gs-public-unified .gs-aux-icon-line { display:flex; align-items:baseline; gap:8px; }
+.gs-public-unified .gs-aux-icon-line svg { align-self:center; }
+.gs-public-unified .gs-aux-caption { font-size:var(--gs-metadata-size); color:var(--gs-text-muted); }
+.gs-public-unified .gs-aux-link { display:inline-flex; align-items:center; gap:8px; }
+@media (max-width:767px) {
+  .gs-public-unified .gs-aux-layout { display:flex; flex-direction:column; width:100%; gap:24px; padding:24px 16px 48px; }
+}
+
+.gs-public-unified .gs-aux-block :is(h2,h3) { margin-top:14px; }
+.gs-public-unified .gs-aux-prose > section:first-child .gs-aux-eyebrow { font-size:var(--gs-home-meta-size); color:var(--gs-text-muted); }

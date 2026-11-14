@@ -1,0 +1,18 @@
+/* Contact-only form rules, checked by the same gate. */
+
+.gs-public-unified .gs-aux-form { background:var(--gs-surface); border:1px solid var(--gs-border); border-radius:var(--gs-radius-panel); padding:24px; scroll-margin-top:100px; }
+.gs-public-unified .gs-aux-form-grid { display:grid; gap:20px; }
+.gs-public-unified .gs-aux-form label { display:block; font-size:var(--gs-body-compact-size); font-weight:600; }
+.gs-public-unified .gs-aux-form label[aria-hidden] { display:none; }
+.gs-public-unified .gs-aux-form :is(input,select,textarea) { display:block; width:100%; min-width:0; margin-top:8px; border:1px solid var(--gs-border-strong); border-radius:var(--gs-radius-control); padding:12px; color:var(--gs-text); background:var(--gs-surface); font-size:var(--gs-body-compact-size); font-weight:400; }
+.gs-public-unified .gs-aux-form textarea { resize:vertical; }
+.gs-public-unified .gs-aux-form [role="alert"] { color:var(--gs-text); font-weight:700; }
+.gs-public-unified .gs-aux-form button { margin-top:16px; }
+@media (max-width:767px) {
+  .gs-public-unified .gs-aux-form { padding:20px 16px; }
+}
+
+.gs-public-unified .gs-aux-form .gs-field { display:block; margin-top:8px; border:1px solid var(--gs-border-strong); border-radius:var(--gs-radius-control); }
+.gs-public-unified .gs-aux-form .gs-field :is(input,select,textarea) { margin:0; border:0; outline:0; background:transparent; }
+
+.gs-public-unified .gs-aux-form .gs-field:focus-within { border-color:var(--gs-low); }
