@@ -1,3 +1,4 @@
+import "../../public-listing.css";
 import PricingListPage from "../../../components/PricingListPage";
 import { getPricingListMetadata } from "../../../lib/pricing-list-seo";
 

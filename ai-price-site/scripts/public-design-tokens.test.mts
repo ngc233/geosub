@@ -56,7 +56,7 @@ test("token definitions stay scoped; component declarations cannot smuggle a pal
 });
 
 test("CLI checks four foundation files plus country/auxiliary CSS, fails on constructed cancellation and succeeds after repair", () => {
-  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css"]);
+  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-listing.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css"]);
   const root = mkdtempSync(join(tmpdir(), "geosub-u1-css-"));
   try {
     mkdirSync(join(root, "app")); mkdirSync(join(root, "design")); mkdirSync(join(root, "public/styles"), { recursive:true });
@@ -82,7 +82,7 @@ test("CLI checks four foundation files plus country/auxiliary CSS, fails on cons
     }
     writeFileSync(country, ".gs-public-unified .gs-country-page { color:var(--gs-text); }");
     assert.equal(execute().status, 0);
-    for (const file of ["app/public-auxiliary-article.css", "app/public-auxiliary-contact.css", "public/styles/v7-auxiliary-tools.css", "app/public-auxiliary-evidence.css", "public/styles/v7-auxiliary-states.css"]) {
+    for (const file of ["app/public-listing.css", "app/public-auxiliary-article.css", "app/public-auxiliary-contact.css", "public/styles/v7-auxiliary-tools.css", "app/public-auxiliary-evidence.css", "public/styles/v7-auxiliary-states.css"]) {
     const auxiliary = join(root, file);
     for (const declaration of ["color:#fff", "font-size:14px", "box-shadow:none", "transition:color 120ms", "transform:scale(1.1)"]) {
       writeFileSync(auxiliary, `.gs-public-unified .gs-converter { ${declaration}; }`);

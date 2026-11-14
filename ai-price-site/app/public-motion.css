@@ -134,3 +134,9 @@
 }
 .gs-public-unified .gs-guide-grid-viewport { transition:height var(--gs-motion-base) var(--gs-motion-ease); }
 @media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-guide-grid-viewport { transition:none; } }
+
+/* Category cards create no transformed containing block in reduced motion,
+ * including after minifiers serialize the global identity reset as a matrix. */
+@media (prefers-reduced-motion:reduce) {
+  .gs-public-unified .gs-listing-card { transform:revert !important; scale:revert !important; }
+}

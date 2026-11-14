@@ -4,7 +4,7 @@ const path = require("node:path");
 const postcss = require("postcss");
 
 const STYLE_FILES = Object.freeze([
-  "public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css",
+  "public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-listing.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css",
 ]);
 
 function renderTokens(tokens, compatibility) {
@@ -189,7 +189,7 @@ function main(argv = process.argv.slice(2)) {
   if (files[0].css !== output) issues.unshift("Token CSS differs from its JSON sources; run node scripts/public-design-tokens.cjs.");
   if (issues.length) throw new Error(issues.join("\n"));
   for (const [role, entry] of Object.entries(CONTRAST_ALLOWLIST)) console.log(`ALLOW ${role}: ${entry.reason}`);
-  console.log("PASS: four foundation stylesheets plus country and auxiliary stylesheets; scoped tokens, sizes, shadows, centralized motion and small dark surfaces.");
+  console.log("PASS: four foundation stylesheets plus country, listing and auxiliary stylesheets; scoped tokens, sizes, shadows, centralized motion and small dark surfaces.");
 }
 
 module.exports = { STYLE_FILES, renderTokens, inspectStyles, CONTRAST_ALLOWLIST, checkContrastUse, inspectContrastPolicy, main };
