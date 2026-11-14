@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.33.0 - Unreleased
+
+- Release the reviewed V7 Chinese auxiliary pages from PR #77: about/contact/privacy/terms/data sources, subscription currency tools, price history/snapshots and 404/error layouts. Preserve existing prose, headings, SEO and normal-page links; only approved existing-page entries are added to Chinese fallback pages. Plus and English layouts remain unchanged.
+- Load auxiliary styles only on their applicable routes with all color, size, shadow and motion gates retained. Keep the approved Inter Tight numeral bytes and font-display strategy; reviewed mobile performance medians remain 97/97 for articles, tools and history.
+- Show unavailable rates honestly in the Chinese converter and quick comparisons when missing or beyond the existing seven-day limit; keep the 18-hour warning, readers and formulas. Preserve local-currency history without inventing unavailable historical exchange-rate charts.
+- Preserve all 254 historical exact rollback pairs, inherit 15 audited scopes unchanged, and add one exact rollback target to recorded healthy 2.32.0 (`15edcbe2edc964985ce02357cb071555475761f4`). Rollback restores the prior auxiliary layouts without restoring the database; retain the released guide pages and V3–V6.
+- Database inputs remain unchanged (`migration_skipped`). A separately approved deployment must pass full production read-only gates and install the final CI-successful controller, verifying all 84 files against its commit. The changed compatibility policy requires this installation; never edit server policy in place.
+
 ## 2.32.0 - Unreleased
 
 - Release V7 first-batch Chinese guide lists and article layouts from PR #75: canvas-aligned entry steps, category filtering, reading navigation and existing related price links. Preserve article body text, headings and SEO metadata; Chinese Plus and English pages retain their reviewed layouts.
