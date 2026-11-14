@@ -1,6 +1,9 @@
+import { canDisplayConverterRate } from "../lib/converter-display";
+import { formatPublicPrice } from "../lib/public-price-format";
 import type { Metadata } from "next";
 import Link from "next/link";
 import SubscriptionCurrencyConverter, {
+  ConverterStyleResource,
   type ConverterRate,
 } from "./SubscriptionCurrencyConverter";
 import { getCurrencyConverterCopy } from "../lib/currency-converter-copy";
@@ -45,6 +48,7 @@ function formatCurrency(
   currency: DisplayCurrency,
   locale: SiteLocale,
 ) {
+  if (locale === "zh") return formatPublicPrice(value, currency, "zh-CN", getDisplayCurrencyFractionDigits(currency));
   return new Intl.NumberFormat(getSiteLocaleDefinition(locale).intlLocale, {
     style: "currency",
     currency,
@@ -171,7 +175,7 @@ export default async function CurrencyConverterPage({
   const fromRate = pair ? rateMap.get(pair.from)?.rate || 0 : 0;
   const toRate = pair ? rateMap.get(pair.to)?.rate || 0 : 0;
   const pairRate =
-    pair && fromRate > 0 && toRate > 0 ? toRate / fromRate : null;
+    pair && fromRate > 0 && toRate > 0 && (locale !== "zh" || (canDisplayConverterRate(rateMap.get(pair.from)) && canDisplayConverterRate(rateMap.get(pair.to)))) ? toRate / fromRate : null;
   const pairRateDate = pair
     ? [rateMap.get(pair.from), rateMap.get(pair.to)]
         .filter((item): item is ConverterRate => Boolean(item))
@@ -231,20 +235,21 @@ export default async function CurrencyConverterPage({
   ];
 
   return (
-    <main className="min-h-screen bg-[#faf8f3]">
+    <main className={locale === "zh" ? "gs-public-unified gs-tools-scope" : "min-h-screen bg-[#faf8f3]"}>
+      {locale === "zh" && <ConverterStyleResource/>}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
-      <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 md:py-14">
-        <header className="mb-7 max-w-3xl">
-          <p className="text-sm font-semibold text-lime-700">
+      <div className={locale === "zh" ? "gs-tools-layout" : "mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 md:py-14"}>
+        <header className={locale === "zh" ? "gs-tool-intro" : "mb-7 max-w-3xl"}>
+          <p className={locale === "zh" ? "" : "text-sm font-semibold text-lime-700"}>
             {pairCopy?.eyebrow || copy.eyebrow}
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-zinc-950 md:text-4xl">
+          <h1 className={locale === "zh" ? "mt-2" : "mt-2 text-3xl font-bold text-zinc-950 md:text-4xl"}>
             {pageTitle}
           </h1>
-          <p className="mt-4 text-base leading-7 text-zinc-600">
+          <p className={locale === "zh" ? "mt-4 leading-7" : "mt-4 text-base leading-7 text-zinc-600"}>
             {pageDescription}
           </p>
         </header>
@@ -259,12 +264,12 @@ export default async function CurrencyConverterPage({
 
         {pair && pairCopy && pairPresentation ? (
           <>
-            <section className="mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-[0.9fr_1.1fr]">
+            <section className={locale === "zh" ? "gs-tool-section" : "mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-[0.9fr_1.1fr]"}>
               <article>
-                <h2 className="text-base font-semibold text-zinc-950">
+                <h2 className={locale === "zh" ? "" : "text-base font-semibold text-zinc-950"}>
                   {pairCopy.currentRate}
                 </h2>
-                <p className="mt-3 text-3xl font-bold tabular-nums text-zinc-950">
+                <p className={locale === "zh" ? "mt-3 tabular-nums" : "mt-3 text-3xl font-bold tabular-nums text-zinc-950"}>
                   {pairRate === null
                     ? copy.unavailable
                     : `1 ${pair.from} = ${new Intl.NumberFormat(
@@ -275,7 +280,7 @@ export default async function CurrencyConverterPage({
                         },
                       ).format(pairRate)} ${pair.to}`}
                 </p>
-                <p className="mt-2 text-sm text-zinc-500">
+                <p className={locale === "zh" ? "mt-2" : "mt-2 text-sm text-zinc-500"}>
                   {pairRateDate
                     ? `${copy.rateBasis} ${pairRateDate}`
                     : copy.pending}
@@ -283,22 +288,22 @@ export default async function CurrencyConverterPage({
               </article>
 
               <article>
-                <h2 className="text-base font-semibold text-zinc-950">
+                <h2 className={locale === "zh" ? "" : "text-base font-semibold text-zinc-950"}>
                   {pairCopy.examplesTitle}
                 </h2>
-                <p className="mt-1 text-sm leading-6 text-zinc-500">
+                <p className={locale === "zh" ? "mt-1 leading-6" : "mt-1 text-sm leading-6 text-zinc-500"}>
                   {pairCopy.examplesDescription(pair.from, pair.to)}
                 </p>
-                <div className="mt-3 divide-y divide-zinc-100 border-y border-zinc-100">
+                <div className={locale === "zh" ? "mt-3 divide-y divide-zinc-100" : "mt-3 divide-y divide-zinc-100 border-y border-zinc-100"}>
                   {[5, 10, 20, 50, 100].map((amount) => (
                     <div
                       key={amount}
-                      className="flex min-h-10 items-center justify-between gap-4 py-2 text-sm"
+                      className={locale === "zh" ? "flex min-h-10 items-center justify-between gap-4 py-2" : "flex min-h-10 items-center justify-between gap-4 py-2 text-sm"}
                     >
-                      <span className="text-zinc-500">
+                      <span className={locale === "zh" ? "" : "text-zinc-500"}>
                         {formatCurrency(amount, pair.from, locale)}
                       </span>
-                      <strong className="tabular-nums text-zinc-950">
+                      <strong className={locale === "zh" ? "tabular-nums" : "tabular-nums text-zinc-950"}>
                         {pairRate === null
                           ? copy.unavailableShort
                           : formatCurrency(
@@ -313,27 +318,27 @@ export default async function CurrencyConverterPage({
               </article>
             </section>
 
-            <section className="mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-2">
+            <section className={locale === "zh" ? "gs-tool-section" : "mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-2"}>
               <article>
-                <h2 className="text-sm font-semibold text-zinc-950">
+                <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
                   {pairCopy.methodologyTitle}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className={locale === "zh" ? "mt-2 leading-6" : "mt-2 text-sm leading-6 text-zinc-500"}>
                   {pairCopy.methodology}
                 </p>
               </article>
               <article>
-                <h2 className="text-sm font-semibold text-zinc-950">
+                <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
                   {pairCopy.paymentTitle}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className={locale === "zh" ? "mt-2 leading-6" : "mt-2 text-sm leading-6 text-zinc-500"}>
                   {pairCopy.paymentNote}
                 </p>
               </article>
             </section>
 
-            <section className="mt-8 border-t border-zinc-200 pt-7">
-              <h2 className="text-sm font-semibold text-zinc-950">
+            <section className={locale === "zh" ? "gs-tool-section" : "mt-8 border-t border-zinc-200 pt-7"}>
+              <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
                 {pairCopy.popularPairs}
               </h2>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -343,14 +348,14 @@ export default async function CurrencyConverterPage({
                     <Link
                       key={item.slug}
                       href={`${basePath}/${item.slug}`}
-                      className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
+                      className={locale === "zh" ? "gs-tool-link" : "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"}
                     >
                       {item.from}/{item.to}
                     </Link>
                   ))}
                 <Link
                   href={basePath}
-                  className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950"
+                  className={locale === "zh" ? "gs-tool-link" : "rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950"}
                 >
                   {pairCopy.backToConverter}
                 </Link>
@@ -358,8 +363,8 @@ export default async function CurrencyConverterPage({
             </section>
           </>
         ) : (
-          <section className="mt-8 border-t border-zinc-200 pt-7">
-            <h2 className="text-sm font-semibold text-zinc-950">
+          <section className={locale === "zh" ? "gs-tool-section" : "mt-8 border-t border-zinc-200 pt-7"}>
+            <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
               {getCurrencyPairCopy(locale).popularPairs}
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -367,7 +372,7 @@ export default async function CurrencyConverterPage({
                 <Link
                   key={item.slug}
                   href={`${basePath}/${item.slug}`}
-                  className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
+                  className={locale === "zh" ? "gs-tool-link" : "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"}
                 >
                   {item.from}/{item.to}
                 </Link>
@@ -376,14 +381,14 @@ export default async function CurrencyConverterPage({
           </section>
         )}
 
-        <section className="mt-8 border-t border-zinc-200 pt-7">
+        <section className={locale === "zh" ? "gs-tool-section" : "mt-8 border-t border-zinc-200 pt-7"}>
           <div className="grid gap-x-8 gap-y-7 md:grid-cols-3">
             {pairQuestions.map((item) => (
               <article key={item.question}>
-                <h2 className="text-sm font-semibold text-zinc-950">
+                <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
                   {item.question}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className={locale === "zh" ? "mt-2 leading-6" : "mt-2 text-sm leading-6 text-zinc-500"}>
                   {item.answer}
                 </p>
               </article>

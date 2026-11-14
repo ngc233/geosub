@@ -1,0 +1,23 @@
+/* Shared Chinese fallback state components. */
+
+.gs-public-unified .gs-state-page, .gs-public-unified.gs-state-page { min-height:70vh; padding:64px 24px; }
+.gs-public-unified .gs-state-panel { max-width:740px; margin:auto; padding:56px 48px; background:var(--gs-surface); border-radius:var(--gs-radius-panel); text-align:center; }
+.gs-public-unified .gs-state-panel h1 { font-size:var(--gs-plan-title-mobile); margin:16px 0; }
+.gs-public-unified .gs-state-panel p { color:var(--gs-text-secondary); font-size:var(--gs-body-compact-size); line-height:1.7; }
+.gs-public-unified .gs-state-globe { position:relative; width:120px; height:120px; border-radius:50%; border:1px solid var(--gs-border-strong); margin:0 auto 20px; background:radial-gradient(circle,var(--gs-border-strong) 2px,transparent 2px) center/10px 10px; }
+.gs-public-unified .gs-state-globe::after { content:""; position:absolute; width:12px; height:12px; border-radius:50%; background:var(--gs-accent); top:28px; right:24px; }
+.gs-public-unified .gs-state-panel .gs-home-search { width:100%; margin:24px 0 16px; }
+.gs-public-unified .gs-state-panel nav { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+.gs-public-unified .gs-state-panel nav a { display:inline-flex; align-items:center; border:1px solid var(--gs-border); border-radius:var(--gs-radius-tag); padding:0 14px; font-size:var(--gs-home-meta-size); }
+.gs-public-unified .gs-state-error { display:flex; align-items:center; gap:24px; text-align:left; padding:28px; }
+.gs-public-unified .gs-state-error h1 { font-size:var(--gs-h2-desktop); }
+.gs-public-unified .gs-state-error-icon { display:flex; align-items:center; justify-content:center; flex:0 0 56px; height:56px; color:var(--gs-text-secondary); }
+.gs-public-unified .gs-state-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+@media (max-width:767px) {
+  .gs-public-unified.gs-state-page { padding:32px 16px; }
+  .gs-public-unified .gs-state-panel { padding:32px 20px; }
+  .gs-public-unified .gs-state-error { flex-direction:column; align-items:flex-start; }
+}
+.gs-public-unified .gs-state-actions button { background:var(--gs-accent); color:var(--gs-on-accent); border-color:var(--gs-accent); }
+
+.gs-public-unified .gs-state-panel:not(.gs-state-error) > * { max-width:420px; margin-left:auto; margin-right:auto; }

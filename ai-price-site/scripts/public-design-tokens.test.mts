@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,7 +11,7 @@ import compatibility from "../design/public-theme-compatibility.json" with { typ
 
 const inspect = (css: string, filename = "public-motion.css") => inspectStyles([{ filename, css }]);
 
-test("the shipped foundation and country stylesheets pass the same CLI gate in npm test", () => {
+test("the shipped foundation, country and auxiliary stylesheets pass the same CLI gate in npm test", () => {
   const result = spawnSync(process.execPath, [fileURLToPath(new URL("./public-design-tokens.cjs", import.meta.url)), "--check"], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
 });
@@ -55,11 +55,11 @@ test("token definitions stay scoped; component declarations cannot smuggle a pal
   assert.ok(inspect('.gs-public-unified .card { transition:color 120ms; }', "public-components.css").length);
 });
 
-test("CLI checks four foundation files plus country CSS, fails on constructed cancellation and succeeds after repair", () => {
-  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css"]);
+test("CLI checks four foundation files plus country/auxiliary CSS, fails on constructed cancellation and succeeds after repair", () => {
+  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css"]);
   const root = mkdtempSync(join(tmpdir(), "geosub-u1-css-"));
   try {
-    mkdirSync(join(root, "app")); mkdirSync(join(root, "design"));
+    mkdirSync(join(root, "app")); mkdirSync(join(root, "design")); mkdirSync(join(root, "public/styles"), { recursive:true });
     writeFileSync(join(root, "design/design-tokens.json"), JSON.stringify(tokens));
     writeFileSync(join(root, "design/public-theme-compatibility.json"), JSON.stringify(compatibility));
     writeFileSync(join(root, "app/public-tokens.css"), renderTokens(tokens, compatibility));
@@ -82,6 +82,15 @@ test("CLI checks four foundation files plus country CSS, fails on constructed ca
     }
     writeFileSync(country, ".gs-public-unified .gs-country-page { color:var(--gs-text); }");
     assert.equal(execute().status, 0);
+    for (const file of ["app/public-auxiliary-article.css", "app/public-auxiliary-contact.css", "public/styles/v7-auxiliary-tools.css", "app/public-auxiliary-evidence.css", "public/styles/v7-auxiliary-states.css"]) {
+    const auxiliary = join(root, file);
+    for (const declaration of ["color:#fff", "font-size:14px", "box-shadow:none", "transition:color 120ms", "transform:scale(1.1)"]) {
+      writeFileSync(auxiliary, `.gs-public-unified .gs-converter { ${declaration}; }`);
+      assert.equal(execute().status, 1, `Auxiliary stylesheet must reject ${declaration}`);
+    }
+    writeFileSync(auxiliary, ".gs-public-unified .gs-converter { color:var(--gs-text); }");
+    assert.equal(execute().status, 0);
+    }
 
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
@@ -134,4 +143,12 @@ test("contrast rulings fail closed for text, standalone graphs and unsupported e
       assert.equal(checkContrastUse({...palette,[foreground]:palette.surface},{category:"graphic-only",foreground,background:"surface"}).pass,false);
     }
   }
+});
+
+test("the inline tool numeral font is byte-identical to the approved asset and keeps swap", () => {
+  const css = readFileSync(new URL("../public/styles/v7-auxiliary-tools.css", import.meta.url), "utf8");
+  const encoded = css.match(/data:font\/woff2;base64,([A-Za-z0-9+/=]+)/)?.[1];
+  assert.ok(encoded);
+  assert.deepEqual(Buffer.from(encoded, "base64"), readFileSync(new URL("../assets/fonts/web/geosub-price-numerals-700.woff2", import.meta.url)));
+  assert.match(css, /font-display:\s*swap/);
 });

@@ -129,22 +129,22 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
   },
 };
 
-export default function PrivacyDisclosure({ locale }: { locale: SiteLocale }) {
+export default function PrivacyDisclosure({ locale, articleLayout = false }: { locale: SiteLocale; articleLayout?: boolean }) {
   const text = copy[locale];
 
   return (
-    <section className="mt-10">
-      <p className="text-xs font-bold tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
+    <section className={articleLayout ? "" : "mt-10"}>
+      <p className={articleLayout ? "" : "text-xs font-bold tracking-[0.1em] text-zinc-500 dark:text-zinc-400"}>
         {text.updated}
       </p>
-      <div className="mt-6 grid gap-px border border-black/10 bg-black/10 md:grid-cols-2">
+      <div className={articleLayout ? "" : "mt-6 grid gap-px border border-black/10 bg-black/10 md:grid-cols-2"}>
         {text.sections.map((section, index) => (
-          <article key={section.title} className="bg-white p-6 sm:p-8 dark:bg-zinc-900">
-            <span className="text-xs font-black text-lime-700 dark:text-lime-400">{String(index + 1).padStart(2, "0")}</span>
-            <h2 className="mt-5 text-lg font-black text-zinc-950 dark:text-white">
+          <article key={section.title} className={articleLayout ? "" : "bg-white p-6 sm:p-8 dark:bg-zinc-900"}>
+            <span className={articleLayout ? "" : "text-xs font-black text-lime-700 dark:text-lime-400"}>{String(index + 1).padStart(2, "0")}</span>
+            <h2 className={articleLayout ? "" : "mt-5 text-lg font-black text-zinc-950 dark:text-white"}>
               {section.title}
             </h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
+            <p className={articleLayout ? "" : "mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300"}>
               {section.body}
             </p>
           </article>

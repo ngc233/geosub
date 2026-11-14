@@ -1,5 +1,15 @@
 "use client";
+import { preinit } from "react-dom";
 
+/** Declared during SSR too, without a separate resource-loader download. */
+export function ConverterStyleResource() {
+  preinit("/styles/v7-auxiliary-tools.css", { as:"style", precedence:"gs-auxiliary" });
+  return null;
+}
+
+import { canDisplayConverterRate } from "../lib/converter-display";
+import { formatPublicPrice } from "../lib/public-price-format";
+import PublicPriceNumber from "./PublicPriceNumber";
 import { ArrowLeftRight, Check, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -44,6 +54,7 @@ function formatCurrency(
   currency: DisplayCurrency,
   locale: SiteLocale,
 ) {
+  if (locale === "zh") return formatPublicPrice(value, currency, "zh-CN", getDisplayCurrencyFractionDigits(currency));
   const intlLocale = getSiteLocaleDefinition(locale).intlLocale;
   const formatter = new Intl.NumberFormat(intlLocale, {
     style: "currency",
@@ -284,6 +295,7 @@ export default function SubscriptionCurrencyConverter({
     from: DisplayCurrency,
     to: DisplayCurrency,
   ) {
+    if (locale === "zh" && (!canDisplayConverterRate(rateMap.get(from)) || !canDisplayConverterRate(rateMap.get(to)))) return null;
     const fromRate = rateMap.get(from)?.rate || 0;
     const toRate = rateMap.get(to)?.rate || 0;
     if (fromRate <= 0 || toRate <= 0) return null;
@@ -322,6 +334,33 @@ export default function SubscriptionCurrencyConverter({
   function swapCurrencies() {
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
+  }
+
+  // Reuse the same amount, rates, stale handling and conversion formula for both shells.
+  if (locale === "zh") {
+    const currencySelect = (value: DisplayCurrency, set: (value: DisplayCurrency) => void, label: string) =>
+      <label className="gs-converter-select"><span>{label}</span><select aria-label={label} value={value} onChange={event => set(event.target.value as DisplayCurrency)}>
+        {supportedDisplayCurrencies.map(currency => <option key={currency} value={currency} disabled={disabledCurrencies.includes(currency)}>{currency} · {getCurrencyName(currency, locale)}</option>)}
+      </select></label>;
+    return <div className="gs-converter">
+      <div className="gs-converter-currencies">
+        {currencySelect(fromCurrency, setFromCurrency, copy.fromAria)}
+        <button type="button" data-gs-ui="icon-button" className="gs-converter-swap" onClick={swapCurrencies} aria-label={copy.swapAria}><ArrowLeftRight size={20} strokeWidth={1.75} aria-hidden="true"/></button>
+        {currencySelect(toCurrency, setToCurrency, copy.toAria)}
+      </div>
+      <label className="gs-converter-amount"><span>{copy.amountLabel}</span><span className="gs-field"><b>{fromCurrency}</b><input value={amount} onChange={event => setAmount(event.target.value)} inputMode="decimal" aria-label={copy.amountAria}/></span></label>
+      <div className="gs-converter-quick"><h2>{copy.quickTitle}</h2><p>{copy.quickDescription}</p><div>{quickAmounts.map(value => <button type="button" key={value} aria-pressed={numericAmount === value && fromCurrency === initialFromCurrency} onClick={() => { setAmount(new Intl.NumberFormat(localeDefinition.intlLocale, { minimumFractionDigits:2, maximumFractionDigits:2 }).format(value)); setFromCurrency(initialFromCurrency); }}>{formatCurrency(value, initialFromCurrency, locale)}</button>)}</div></div>
+      <div className="gs-converter-result" aria-live="polite">
+        <p>{numericAmount === null ? copy.invalidAmount : `${formatCurrency(numericAmount, fromCurrency, locale)} ${copy.approximately}`}</p>
+        <div>{convertedAmount === null ? copy.unavailable : <PublicPriceNumber value={convertedAmount} currency={toCurrency} fractionDigits={getDisplayCurrencyFractionDigits(toCurrency)} changeKey={`${amount}:${fromCurrency}:${toCurrency}`}/>}</div>
+        {pairRate !== null && <p>1 {fromCurrency} = {formatRate(pairRate, locale)} {toCurrency}</p>}
+      </div>
+      <section className="gs-converter-comparisons"><h2>{copy.comparisonTitle}</h2>{comparisonCurrencies.filter(currency => currency !== fromCurrency).slice(0,5).map(currency => {
+        const value = numericAmount === null ? null : convert(numericAmount, fromCurrency, currency);
+        return <div key={currency}><span>{getCurrencyName(currency,locale)} {currency}</span><strong>{value === null ? copy.unavailableShort : formatCurrency(value,currency,locale)}</strong></div>;
+      })}</section>
+      <footer><span>{disabledCurrencies.includes(fromCurrency) || disabledCurrencies.includes(toCurrency) ? copy.unavailable : pairIsStale ? copy.stale : `${copy.rateBasis} ${rateDate || copy.pending}`}</span><span>{copy.resultNote}</span></footer>
+    </div>;
   }
 
   return (

@@ -1,3 +1,4 @@
+import AuxiliaryStyles from "./AuxiliaryStyles";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -100,11 +101,11 @@ function Unavailable({ locale }: { locale: HubLocale }) {
 export async function SnapshotPage({ id, locale }: { id: string; locale: HubLocale }) {
   let snapshot;
   try { snapshot = await getPriceSnapshotById(id); } catch {
-    return <main className={pageClass}><PageHeading locale={locale} title={locale === "zh" ? "原始价格快照" : "Original price snapshot"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
+    return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}<PageHeading locale={locale} title={locale === "zh" ? "原始价格快照" : "Original price snapshot"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
   }
   if (!snapshot) notFound();
   const path = getEvidencePlanHref(`/${locale}/${snapshot.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${snapshot.productSlug}/${snapshot.planSlug}`);
-  return <main className={pageClass}>
+  return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}
     <div className="mb-6 flex flex-wrap gap-x-6">
       <Link className={linkClass} href={path}><ArrowLeft size={16} aria-hidden="true" />{locale === "zh" ? "返回套餐价格" : "Back to plan prices"}</Link>
       <Link className={linkClass} href={`/${locale}/price-history/${snapshot.productSlug}`}><History size={16} aria-hidden="true" />{locale === "zh" ? "查看该产品价格历史" : "View this product's price history"}</Link>
@@ -144,7 +145,7 @@ export async function SnapshotPage({ id, locale }: { id: string; locale: HubLoca
 export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: string }) {
   let products;
   try { products = await loadProducts(); } catch {
-    return <main className={pageClass}><PageHeading locale={locale} title={locale === "zh" ? "价格变化记录" : "Price change records"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
+    return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}<PageHeading locale={locale} title={locale === "zh" ? "价格变化记录" : "Price change records"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
   }
   const product = slug ? products.find(item => item.slug === slug) : null;
   if (slug && !product) notFound();
@@ -155,7 +156,7 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
   }
   const events = result?.events || [];
   const snapshots = result?.snapshots || [];
-  return <main className={pageClass}>
+  return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}
     <PageHeading centered locale={locale} title={`${product ? `${product.name} ` : ""}${locale === "zh" ? "价格变化记录" : "Price change records"}`}
       description={locale === "zh" ? "追踪同一套餐、地区与计费周期的 App Store 本币标价变化。每条变化均可回溯采集记录；汇率折算波动不计为调价。" : "Track local App Store price changes for the same plan, country and billing period. Each change links to its source records. Exchange-rate movements are not price changes."} />
     <PageLinks locale={locale} active="history" />
@@ -187,7 +188,7 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
     </EmptyState> : null}
     {events.length ? <section className="mt-8" aria-label={locale === "zh" ? "已确认的调价" : "Confirmed price changes"}>
       <h2 className={headingClass}>{locale === "zh" ? "已确认的调价" : "Confirmed price changes"}</h2>
-      <div className={gridClass}>{events.slice(0, 100).map(event => <PublicSection key={`${event.before.id}:${event.after.id}`}>
+      <div className={locale === "zh" ? "gs-history-events" : gridClass}>{events.slice(0, 100).map(event => <PublicSection key={`${event.before.id}:${event.after.id}`}>
         <div className="p-5 md:p-6">
           <div className="flex items-start justify-between gap-3"><h3 className={headingClass}>{event.after.planName}</h3><span className={`shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${event.direction === "decrease" ? "bg-[var(--color-price-low-soft)] text-[var(--color-price-low)]" : "bg-[var(--color-price-high-soft)] text-[var(--color-price-high)]"}`}>{locale === "zh" ? event.direction === "increase" ? "本币涨价" : "本币降价" : event.direction === "increase" ? "Price increase" : "Price decrease"} {event.percent > 0 ? "+" : ""}{event.percent}%</span></div>
           <p className={`mt-2 ${mutedClass}`}>{countryName(event.after.countryCode, locale)} · {getBillingCycleLabel(event.after.billingCycle as ProductPlan["billing"], locale)} · App Store</p>
