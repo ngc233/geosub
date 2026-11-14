@@ -188,6 +188,15 @@
     },
     "guideCard": {
       "size": 18
+    },
+    "listingCaption": {
+      "size": 11
+    },
+    "listingBadge": {
+      "size": 10
+    },
+    "listingTitleMobile": {
+      "size": 17
     }
   },
   "layout": {

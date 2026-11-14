@@ -1,0 +1,101 @@
+/* Approved Chinese category listing layout; data and link semantics are unchanged. */
+.gs-public-unified.gs-listing{width:100%;max-width:1200px;margin:0 auto;padding:48px 24px 72px;color:var(--gs-text);font-family:var(--gs-font-body)}
+.gs-public-unified.gs-listing *{box-sizing:border-box}
+.gs-public-unified.gs-listing h1,.gs-public-unified.gs-listing h2,.gs-public-unified.gs-listing h3,.gs-public-unified.gs-listing p{margin:0}
+.gs-public-unified .gs-listing-intro{margin-bottom:40px;text-align:left;max-width:800px}
+.gs-public-unified .gs-listing-eyebrow{font-size:var(--gs-metadata-size);font-weight:600;color:var(--gs-low);margin-bottom:12px!important}
+.gs-public-unified .gs-listing-intro h1{font-size:var(--gs-h1-desktop);font-weight:700;line-height:1.3;letter-spacing:-.025em;margin-bottom:16px}
+.gs-public-unified .gs-listing-intro>p:last-child{font-size:var(--gs-body-size);line-height:1.7;color:var(--gs-text-secondary)}
+.gs-public-unified .gs-listing-sectionhead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}
+.gs-public-unified .gs-listing-sectionhead h2{font-size:var(--gs-h2-desktop);font-weight:700;line-height:1.4}
+.gs-public-unified .gs-listing-sectionhead p{font-size:var(--gs-home-meta-size);line-height:1.7;color:var(--gs-text-muted);margin-top:8px}
+.gs-public-unified .gs-listing-count{font-size:var(--gs-metadata-size);color:var(--gs-text-muted);white-space:nowrap}
+.gs-public-unified .gs-listing-cycle{margin-bottom:40px}
+.gs-public-unified .gs-listing-cycle>h3{font-size:var(--gs-body-size);color:var(--gs-text-secondary);font-weight:600;margin-bottom:16px}
+.gs-public-unified .gs-listing-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.gs-public-unified .gs-listing-card{display:block;overflow:hidden;background:var(--gs-surface);border:1px solid var(--gs-border);border-radius:20px;color:var(--gs-text);text-decoration:none}
+.gs-public-unified .gs-listing-card:hover{box-shadow:var(--gs-shadow-card-hover)}
+.gs-public-unified .gs-listing-card:focus-visible,.gs-public-unified .gs-listing-directory a:focus-visible{outline:3px solid var(--gs-focus);outline-offset:2px}
+.gs-public-unified .gs-listing-card-head{padding:22px 22px 18px}
+.gs-public-unified .gs-listing-brandline{display:flex;gap:14px;align-items:flex-start}
+.gs-public-unified .gs-listing-brandline>.gs-listing-brand{display:inline-flex;flex:none;width:44px;height:44px;overflow:hidden;border-radius:12px;background:var(--gs-surface)}
+.gs-public-unified .gs-listing-brand img{height:100%;width:100%;object-fit:cover}
+.gs-public-unified .gs-listing-brand svg{height:28px;width:28px;margin:auto}
+.gs-public-unified .gs-listing-description-wrap{min-width:0;flex:1}
+.gs-public-unified .gs-listing-card-headline{display:flex;flex-direction:column;gap:12px}
+.gs-public-unified .gs-listing-card-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gs-public-unified .gs-listing-card-name h2{font-size:var(--gs-card-title-size);font-weight:700;line-height:1.4}
+.gs-public-unified .gs-listing-plan{font-size:var(--gs-noncritical-caption-size);line-height:1.5;background:var(--gs-subtle);color:var(--gs-text-secondary);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.gs-public-unified .gs-listing-card-description{font-size:var(--gs-metadata-size);line-height:1.65;color:var(--gs-text-muted);margin-top:8px!important;display:block}
+.gs-public-unified .gs-listing-card-meta{display:flex;gap:16px;color:var(--gs-text-muted);font-size:var(--gs-noncritical-caption-size)}
+.gs-public-unified .gs-listing-card-meta span:first-child{color:var(--gs-text-secondary);font-weight:600}
+.gs-public-unified .gs-listing-tablewrap{padding:0 12px;overflow:visible}
+.gs-public-unified .gs-listing-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:var(--gs-metadata-size)}
+.gs-public-unified .gs-listing-table th{text-align:left;font-size:var(--gs-noncritical-caption-size);font-weight:400;color:var(--gs-text-muted);padding:10px 6px;border-top:1px solid var(--gs-border);border-bottom:1px solid var(--gs-border)}
+.gs-public-unified .gs-listing-table th:nth-child(1){width:30px}
+.gs-public-unified .gs-listing-table th:nth-child(2){width:42%}
+.gs-public-unified .gs-listing-table th:nth-child(3){width:30%}
+.gs-public-unified .gs-listing-table th:nth-child(4){width:auto;text-align:right;white-space:nowrap}
+.gs-public-unified .gs-listing-table td{padding:12px 6px;border-bottom:1px solid var(--gs-border);vertical-align:middle}
+.gs-public-unified .gs-listing-table tr:last-child td{border-bottom:0}
+.gs-public-unified .gs-listing-table tbody tr:hover{background:var(--gs-row-hover)}
+.gs-public-unified .gs-listing-rank{font-family:var(--gs-font-body);font-size:var(--gs-noncritical-caption-size);color:var(--gs-text-muted)}
+.gs-public-unified .gs-listing-region{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.gs-public-unified .gs-listing-countrycode{font-family:var(--gs-font-body);font-size:var(--gs-listing-caption-size);color:var(--gs-text-muted);width:22px;flex-shrink:0}
+.gs-public-unified .gs-listing-countryname{font-size:var(--gs-metadata-size);font-weight:600}
+.gs-public-unified .gs-listing-badge{font-size:var(--gs-listing-badge-size);line-height:1.5;white-space:nowrap;padding:2px 5px;border-radius:6px;color:var(--gs-text-muted);background:var(--gs-subtle)}
+.gs-public-unified .gs-listing-low{color:var(--gs-low-on-soft);background:var(--gs-tag-low)}
+.gs-public-unified .gs-listing-high{color:var(--gs-high-on-soft);background:var(--gs-high-soft)}
+.gs-public-unified .gs-listing-value{font-family:"GeoSub Price Numerals",var(--gs-font-body);font-size:var(--gs-body-size);font-weight:700;white-space:nowrap;letter-spacing:-.02em;display:flex;align-items:baseline;gap:4px;color:var(--gs-text)}
+.gs-public-unified .gs-listing-value.is-low{color:var(--gs-low)}
+.gs-public-unified .gs-listing-value.is-high{color:var(--gs-high)}
+.gs-public-unified .gs-listing-period{font-family:var(--gs-font-body);font-size:var(--gs-listing-caption-size);letter-spacing:0;font-weight:400;color:var(--gs-text-muted)}
+.gs-public-unified .gs-listing-local{font-weight:700;font-family:"GeoSub Price Numerals",var(--gs-font-body);font-size:var(--gs-listing-caption-size);line-height:1.5;color:var(--gs-text-muted);margin-top:3px;overflow-wrap:anywhere}
+.gs-public-unified .gs-listing-comparison{text-align:start;font-size:var(--gs-noncritical-caption-size);font-weight:700;color:var(--gs-text-muted);font-family:"GeoSub Price Numerals",var(--gs-font-body)}
+.gs-public-unified .gs-listing-comparison .is-low{color:var(--gs-low)}
+.gs-public-unified .gs-listing-comparison .is-high{color:var(--gs-high)}
+.gs-public-unified .gs-listing-card-foot{padding:14px 18px;border-top:1px solid var(--gs-border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gs-public-unified .gs-listing-updated{font-size:var(--gs-listing-caption-size);color:var(--gs-text-muted)}
+.gs-public-unified .gs-listing-detail{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 14px;border:1px solid var(--gs-border-strong);border-radius:10px;font-size:var(--gs-metadata-size);font-weight:600;color:var(--gs-text)}
+.gs-public-unified .gs-listing-detail svg{height:16px;width:16px}
+.gs-public-unified .gs-listing-mobile-spread{display:none}
+.gs-public-unified .gs-listing-directory{background:var(--gs-surface);border:1px solid var(--gs-border);border-radius:20px;padding:24px}
+.gs-public-unified .gs-listing-directory h2{font-size:var(--gs-card-title-size);font-weight:700}
+.gs-public-unified .gs-listing-directory p{font-size:var(--gs-home-meta-size);line-height:1.7;color:var(--gs-text-muted);margin-top:8px}
+.gs-public-unified .gs-listing-directory>div{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.gs-public-unified .gs-listing-directory a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid var(--gs-border-strong);border-radius:10px;color:var(--gs-text);font-size:var(--gs-home-meta-size);text-decoration:none}
+.gs-public-unified .gs-listing-directory a:hover{background:var(--gs-row-hover);border-color:var(--gs-low)}
+@media(max-width:760px){
+.gs-public-unified.gs-listing{padding:28px 16px 48px}
+.gs-public-unified .gs-listing-intro{margin-bottom:28px}
+.gs-public-unified .gs-listing-intro h1{font-size:var(--gs-h1-mobile);margin-bottom:12px}
+.gs-public-unified .gs-listing-intro>p:last-child{font-size:var(--gs-body-compact-size)}
+.gs-public-unified .gs-listing-sectionhead{align-items:flex-start;flex-direction:column;gap:8px;margin-bottom:20px}
+.gs-public-unified .gs-listing-sectionhead h2{font-size:var(--gs-h2-desktop)}
+.gs-public-unified .gs-listing-sectionhead p{font-size:var(--gs-metadata-size)}
+.gs-public-unified .gs-listing-grid{grid-template-columns:1fr;gap:16px}
+.gs-public-unified .gs-listing-card-head{padding:18px 16px 16px}
+.gs-public-unified .gs-listing-brandline{gap:12px}
+.gs-public-unified .gs-listing-brandline>.gs-listing-brand{width:40px;height:40px;border-radius:10px}
+.gs-public-unified .gs-listing-card-name{gap:6px}
+.gs-public-unified .gs-listing-card-name h2{font-size:var(--gs-listing-title-mobile-size)}
+.gs-public-unified .gs-listing-card-meta{font-size:var(--gs-noncritical-caption-size)}
+.gs-public-unified .gs-listing-tablewrap{padding:0 10px}
+.gs-public-unified .gs-listing-table th:nth-child(1){width:22px}
+.gs-public-unified .gs-listing-table th:nth-child(2){width:39%}
+.gs-public-unified .gs-listing-table th:nth-child(3){width:32%}
+.gs-public-unified .gs-listing-table th{padding:9px 3px;font-size:var(--gs-listing-caption-size)}
+.gs-public-unified .gs-listing-table td{padding:12px 3px}
+.gs-public-unified .gs-listing-countrycode{width:18px;font-size:var(--gs-listing-badge-size)}
+.gs-public-unified .gs-listing-countryname{font-size:var(--gs-noncritical-caption-size)}
+.gs-public-unified .gs-listing-badge{font-size:var(--gs-listing-badge-size);padding:1px 4px}
+.gs-public-unified .gs-listing-region{gap:3px}
+.gs-public-unified .gs-listing-value{font-size:var(--gs-body-compact-size);gap:2px}
+.gs-public-unified .gs-listing-period{font-size:var(--gs-listing-badge-size)}
+.gs-public-unified .gs-listing-local{font-size:var(--gs-listing-badge-size)}
+.gs-public-unified .gs-listing-comparison{font-size:var(--gs-listing-caption-size)}
+.gs-public-unified .gs-listing-card-foot{padding:12px 14px}
+.gs-public-unified .gs-listing-directory{padding:20px 18px}
+}
+.gs-public-unified .gs-listing-brand { border:0; box-shadow:var(--gs-shadow-card); }
+.gs-public-unified .gs-listing-empty { padding:var(--gs-space-48) var(--gs-space-24); border:var(--gs-border-width) dashed var(--gs-border-strong); border-radius:var(--gs-radius-panel); text-align:center; color:var(--gs-text-muted); background:var(--gs-surface); font-size:var(--gs-home-meta-size); }
