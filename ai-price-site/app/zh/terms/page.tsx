@@ -10,9 +10,7 @@ export default function TrustPage() {
   return (
     <AuxiliaryArticle>
       <section>
-        <p className="gs-aux-eyebrow">
-          Terms of Service
-        </p>
+
 
         <h1>
           服务条款

@@ -56,9 +56,9 @@ function PageHeading({ title, description, locale, centered = false, identity }:
 }) {
   const preview = getPriceEvidencePreview();
   return <header className={`mb-8 ${centered ? "text-center" : ""}`}>
-    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-      {locale === "zh" ? "GEOSUB 订阅价格数据" : "GEOSUB SUBSCRIPTION PRICE DATA"}
-    </p>
+    {locale !== "zh" && <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+      GEOSUB SUBSCRIPTION PRICE DATA
+    </p>}
     <div className={`flex items-center gap-4 ${centered ? "justify-center" : ""}`}>
       {identity}
       <h1 className="min-w-0 text-3xl font-semibold tracking-[-0.025em] text-[var(--color-text-primary)] md:text-4xl">{title}</h1>
@@ -70,15 +70,16 @@ function PageHeading({ title, description, locale, centered = false, identity }:
     </aside> : null}
   </header>;
 }
-function PageLinks({ locale, active }: { locale: HubLocale; active?: "countries" | "history" }) {
+function PageLinks({ locale, active, controls = false }: { locale: HubLocale; active?: "countries" | "history"; controls?: boolean }) {
   const links = [
     { key: "countries", path: "countries", label: locale === "zh" ? "按国家找订阅" : "Browse by country", icon: Globe2 },
     { key: "history", path: "price-history", label: locale === "zh" ? "价格变化记录" : "Price change records", icon: History },
     { key: "sources", path: "data-sources", label: locale === "zh" ? "数据来源" : "Data sources", icon: Database },
   ];
-  return <nav aria-label={locale === "zh" ? "价格探索" : "Explore prices"} className="mb-8 flex flex-wrap gap-x-5 border-b border-[var(--color-border-default)]">
+  return <nav aria-label={locale === "zh" ? "价格探索" : "Explore prices"} className={controls ? "gs-country-index-nav" : "mb-8 flex flex-wrap gap-x-5 border-b border-[var(--color-border-default)]"}>
     {links.map(({ key, path, label, icon: Icon }) => <Link key={key} href={`/${locale}/${path}`} aria-current={active === key ? "page" : undefined}
-      className={`${linkClass} border-b-2 py-2 ${active === key ? "border-[var(--color-accent)] !text-[var(--color-text-primary)]" : "border-transparent"}`}>
+      data-gs-ui={controls ? "button" : undefined} data-gs-variant={controls && active === key ? "primary" : undefined}
+      className={controls ? undefined : `${linkClass} border-b-2 py-2 ${active === key ? "border-[var(--color-accent)] !text-[var(--color-text-primary)]" : "border-transparent"}`}>
       <Icon size={15} aria-hidden="true" />{label}
     </Link>)}
   </nav>;
@@ -214,23 +215,25 @@ export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: 
 
 export async function CountryIndexPage({ locale }: { locale: HubLocale }) {
   const coverage = await Promise.allSettled(priorityCountries.map(country => loadCountryHub(country.code)));
-  return <main className={pageClass}>
-    <PageHeading centered locale={locale} title={locale === "zh" ? "按国家找订阅" : "Browse subscriptions by country"}
+  const canvas = locale === "zh";
+  return <main className={canvas ? "gs-public-unified gs-country-index" : pageClass}>
+    {canvas && <AuxiliaryStyles kind="countryIndex" />}
+    <PageHeading centered={!canvas} locale={locale} title={locale === "zh" ? "按国家找订阅" : "Browse subscriptions by country"}
       description={locale === "zh" ? "集中查看重点地区已核验的 App Store 月付订阅，比较当地标价、美国同套餐基准与采集记录。" : "Explore verified monthly App Store subscriptions in selected countries, with local prices, same-plan US comparisons and source records."} />
-    <PageLinks locale={locale} active="countries" />
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-2"><h2 className={headingClass}>{locale === "zh" ? "重点国家与地区" : "Featured countries and regions"}</h2><span className={metaClass}>{locale === "zh" ? "当前开放 4 个地区" : "4 regions available"}</span></div>
-    <div className="grid gap-5 md:grid-cols-2">{priorityCountries.map((country, index) => <PublicSection key={country.code} className="overflow-hidden shadow-sm">
-      <Link href={`/${locale}/countries/${country.slug}`} className="group block hover:bg-[var(--color-bg-subtle)]">
-        <div className="flex items-start gap-4 p-5 md:p-6"><CountryIdentity code={country.code} /><div className="min-w-0"><h3 className={headingClass}>{country[locale]}</h3><p className={`mt-1 ${metaClass}`}>{locale === "zh" ? country.en : country.code}</p><p className={`mt-3 ${mutedClass}`}>{locale === "zh" ? "查看已核验套餐、本币标价、比较结果与采集日期" : "View verified plans, local prices, comparisons and collection dates"}</p></div></div>
-        <div className={`px-5 pb-4 tabular-nums md:px-6 ${metaClass}`}>{coverage[index].status === "fulfilled" ? (() => {
+    <PageLinks locale={locale} active="countries" controls={canvas} />
+    <div className={canvas ? "gs-country-index-heading" : "mb-5 flex flex-wrap items-end justify-between gap-2"}><h2 className={headingClass}>{locale === "zh" ? "重点国家与地区" : "Featured countries and regions"}</h2><span className={metaClass}>{locale === "zh" ? "当前开放 4 个地区" : "4 regions available"}</span></div>
+    <div className={canvas ? "gs-country-index-panel" : "grid gap-5 md:grid-cols-2"}>{priorityCountries.map((country, index) => <PublicSection key={country.code} className={canvas ? "gs-country-index-row" : "overflow-hidden shadow-sm"}>
+      <Link href={`/${locale}/countries/${country.slug}`} className={canvas ? "gs-country-index-card" : "group block hover:bg-[var(--color-bg-subtle)]"}>
+        <div className={canvas ? "gs-country-index-identity" : "flex items-start gap-4 p-5 md:p-6"}><CountryIdentity code={country.code} /><div className={canvas ? "gs-country-index-names" : "min-w-0"}><h3 className={headingClass}>{country[locale]}</h3><p className={`mt-1 ${metaClass}`}>{locale === "zh" ? country.en : country.code}</p><p className={`mt-3 ${mutedClass}`}>{locale === "zh" ? "查看已核验套餐、本币标价、比较结果与采集日期" : "View verified plans, local prices, comparisons and collection dates"}</p></div></div>
+        <div className={canvas ? "gs-country-index-stats" : `px-5 pb-4 tabular-nums md:px-6 ${metaClass}`}>{coverage[index].status === "fulfilled" ? (() => {
           const rows = coverage[index].value;
           const products = new Set(rows.map(row => row.productSlug)).size;
           return locale === "zh" ? `${products} 个产品 · ${rows.length} 个套餐 · AI ${rows.filter(row => row.category === "ai").length} / 流媒体 ${rows.filter(row => row.category === "streaming").length}` : `${products} products · ${rows.length} plans · AI ${rows.filter(row => row.category === "ai").length} / Streaming ${rows.filter(row => row.category === "streaming").length}`;
         })() : (locale === "zh" ? "覆盖数量暂时无法读取" : "Coverage is temporarily unavailable")}</div>
-        <div className="flex min-h-11 items-center justify-between border-t border-[var(--color-border-default)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] md:px-6"><span>{locale === "zh" ? "查看地区价格" : "Explore regional prices"}</span><ArrowRight size={16} aria-hidden="true" /></div>
+        <div className={canvas ? "gs-country-index-action" : "flex min-h-11 items-center justify-between border-t border-[var(--color-border-default)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] md:px-6"}><span>{locale === "zh" ? "查看地区价格" : "Explore regional prices"}</span><ArrowRight size={16} aria-hidden="true" /></div>
       </Link>
     </PublicSection>)}</div>
-    <PublicSection className="mt-6"><DataNote>{locale === "zh" ? "收录范围：App Store · 月付 · 已核验。逐个套餐与美国相同套餐比较，不发布国家综合指数，也不保证跨区购买资格。" : "Scope: verified monthly App Store plans. Each plan is compared with the same US plan. This is not a national price index or a guarantee of purchase eligibility."}</DataNote></PublicSection>
+    <PublicSection className={canvas ? "gs-country-index-note" : "mt-6"}><DataNote>{locale === "zh" ? "收录范围：App Store · 月付 · 已核验。逐个套餐与美国相同套餐比较，不发布国家综合指数，也不保证跨区购买资格。" : "Scope: verified monthly App Store plans. Each plan is compared with the same US plan. This is not a national price index or a guarantee of purchase eligibility."}</DataNote></PublicSection>
   </main>;
 }
 
