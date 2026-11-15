@@ -146,7 +146,6 @@
 .gs-public-unified .gs-disclosure-grid { display:grid; grid-template-rows:0fr; }
 .gs-public-unified .gs-disclosure-grid > div { min-height:0; overflow:hidden; }
 .gs-public-unified [data-gs-disclosure][data-open="true"] > .gs-disclosure-grid { grid-template-rows:1fr; }
-.gs-public-unified .gs-footer-groups .gs-disclosure-grid a { display:flex; align-items:center; font-size:var(--gs-metadata-size); }
 .gs-public-unified .gs-footer-about { margin-top:var(--gs-space-24); font-size:var(--gs-metadata-size); }
 .gs-public-unified .gs-footer-about p { margin-top:var(--gs-space-8); }
 .gs-public-unified .gs-footer-about > a { display:inline-flex; align-items:center; }
@@ -341,7 +340,13 @@
 .gs-public-unified .gs-footer-about p { font-size:var(--gs-home-meta-size); line-height:1.7; }
 .gs-public-unified .gs-footer-groups .gs-disclosure-header { font-size:var(--gs-metadata-size); font-weight:var(--gs-weight-emphasis); min-height:0; margin-bottom:var(--gs-space-10); }
 .gs-public-unified .gs-footer-groups .gs-disclosure-header > a { min-height:0; }
-.gs-public-unified .gs-footer-groups .gs-disclosure-grid a { min-height:var(--gs-footer-link-height); font-size:var(--gs-home-meta-size); }
+.gs-public-unified .gs-footer-groups .gs-disclosure-grid a { display:flex; align-items:center; min-height:var(--gs-footer-link-height); font-size:var(--gs-home-meta-size); }
+/* Reserve the existing 3px outline + 2px offset inside the disclosure clip.
+ * Inline compensation preserves text alignment; child margins collapse away with the 0fr track. */
+.gs-public-unified .gs-footer-groups .gs-disclosure-grid { margin-inline:calc(-1 * var(--gs-space-6)); }
+.gs-public-unified .gs-footer-groups .gs-disclosure-grid > div { padding-inline:var(--gs-space-6); }
+.gs-public-unified .gs-footer-groups .gs-disclosure-grid a:first-child { margin-top:var(--gs-space-6); }
+.gs-public-unified .gs-footer-groups .gs-disclosure-grid a:last-child { margin-bottom:var(--gs-space-6); }
 @media (min-width:768px) {
  .gs-public-unified.gs-footer > .gs-frame-container { display:grid; grid-template-columns:1.6fr repeat(4,1fr); column-gap:var(--gs-space-40); }
  .gs-public-unified .gs-footer-groups { display:contents; }

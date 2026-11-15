@@ -1,7 +1,7 @@
 import AuxiliaryArticle from "../../../components/AuxiliaryArticle";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BarChart3, Cookie, Database, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, BarChart3, Cookie, Database, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import PrivacyDisclosure from "../../../components/PrivacyDisclosure";
 
 export const metadata: Metadata = {
@@ -20,9 +20,7 @@ export default function PrivacyPage() {
     <AuxiliaryArticle>
       <section>
         <div>
-          <div className="gs-aux-eyebrow gs-aux-icon-line">
-            <ShieldCheck className="gs-aux-icon" aria-hidden="true" /> PRIVACY · CONTROL
-          </div>
+
           <div className="gs-aux-stack">
             <div>
               <h1>数据应该帮助你判断，<span>不该用来追踪你。</span></h1>

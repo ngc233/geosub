@@ -23,7 +23,7 @@ const qualityRules = [
 
 export default function DataSourcesPage() {
   return <AuxiliaryArticle>
-    <section><div><div className="gs-aux-eyebrow gs-aux-icon-line"><Database className="gs-aux-icon" aria-hidden="true" /> DATA SOURCES · METHODOLOGY</div>
+    <section><div>
       <div className="gs-aux-stack"><div><h1>价格从哪里来，<span>每一步都应该说得清。</span></h1><p>GeoSub 按相同套餐和计费周期比较 App Store 各地区公开订阅价格，同时保留本地币种、来源、检查日期和汇率基准。</p></div><div className="gs-aux-note"><p className="gs-aux-eyebrow">来源政策</p><p>我们宁可暂时不展示，也不会用固定汇率、错误周期或无法解释的价格填补空白。</p></div></div>
     </div></section>
 

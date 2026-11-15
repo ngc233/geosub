@@ -1,7 +1,7 @@
 import AuxiliaryArticle from "../../../components/AuxiliaryArticle";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, BarChart3, Building2, CheckCircle2, FileSearch, Lightbulb, Mail, Megaphone, MessageSquareText, ShieldCheck } from "lucide-react";
+import { ArrowRight, BadgeCheck, BarChart3, Building2, CheckCircle2, FileSearch, Lightbulb, Mail, Megaphone, ShieldCheck } from "lucide-react";
 import ContactTicketForm from "./ContactTicketForm";
 
 export const metadata: Metadata = {
@@ -34,9 +34,7 @@ export default function ContactPage() {
       <section>
         <div className="gs-aux-stack">
           <div>
-            <div className="gs-aux-eyebrow gs-aux-icon-line">
-              <MessageSquareText className="gs-aux-icon" aria-hidden="true" /> CONTACT · PARTNERSHIP
-            </div>
+
             <h1>
               让价格信息更准确，<span>让合作更透明。</span>
             </h1>
@@ -97,7 +95,7 @@ export default function ContactPage() {
         <div className="gs-aux-stack">
           <div>
             <div className="gs-aux-icon-line"><Building2 className="gs-aux-icon" aria-hidden="true" /></div>
-            <p className="gs-aux-eyebrow">ADVERTISING &amp; BRAND</p>
+
             <h2>GeoSub 可以接广告吗？</h2>
             <p>
               可以，但只接受与读者需求相关、合作关系清晰、不会干预价格数据和编辑结论的项目。我们更看重长期信任，而不是把每个位置都变成广告位。
