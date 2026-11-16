@@ -179,3 +179,65 @@ for (const width of [1280, 390]) for (const reducedMotion of ['no-preference', '
     await expect(page).toHaveURL(/\/zh\/guides\/category\//);
   });
 }
+
+for (const width of [1280, 390]) for (const colorScheme of ['light', 'dark'] as const) {
+  test(`long guide filter names remain complete and inside their targets ${width} ${colorScheme}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+    await page.goto('/zh/guides');
+    const tabs = page.getByRole('tablist', { name: '指南分类' }).getByRole('tab');
+    const target = tabs.nth(1);
+    const originalName = await target.innerText();
+    const initialCards = await page.locator('.gs-guide-card').evaluateAll(cards => cards.map(card => ({
+      href: card.getAttribute('href'), category: card.querySelector('.gs-guide-card-category')?.textContent?.trim(),
+    })));
+    // Stress the rendered shared control without adding CMS fixtures or changing
+    // its option values/handlers. Local acceptance also uses real long-name CMS rows.
+    for (const label of ['用于核验超长分类筛选名称是否遮挡相邻按钮的完整中文分类名称', 'UnbrokenSubscriptionCategoryNameForKeyboardAndTouchTesting']) {
+      await target.evaluate((element, text) => { element.textContent = text; }, label);
+      await target.scrollIntoViewIfNeeded();
+      await page.keyboard.press('Tab');
+      await target.focus();
+      await expect(target).toBeFocused();
+      await expect(target).toHaveText(label);
+      await expect(target).toHaveCSS('outline-width', '3px');
+      await expect(target).toHaveCSS('outline-offset', '2px');
+      const geometry = await target.evaluate(element => {
+        const box = element.getBoundingClientRect();
+        const range = document.createRange(); range.selectNodeContents(element);
+        const lines = [...range.getClientRects()].filter(rect => rect.width > 0 && rect.height > 0);
+        return {
+          fullTextInside: lines.every(rect => rect.left >= box.left && rect.right <= box.right && rect.top >= box.top && rect.bottom <= box.bottom),
+          lines: lines.length, height: box.height,
+          overflowing: element.scrollWidth > element.clientWidth || element.scrollHeight > element.clientHeight,
+        };
+      });
+      expect(geometry.fullTextInside).toBe(true);
+      expect(geometry.lines).toBeGreaterThan(1);
+      expect(geometry.height).toBeGreaterThanOrEqual(44);
+      expect(geometry.overflowing).toBe(false);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await target.hover(); await expect(target).toHaveText(label);
+      // Focusing and choosing the adjacent tab must reach that tab, not the long label.
+      const neighbour = tabs.nth(2);
+      await neighbour.scrollIntoViewIfNeeded();
+      expect(await neighbour.evaluate(element => {
+        const r = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+      })).toBe(true);
+      await neighbour.click(); await expect(neighbour).toHaveAttribute('aria-selected', 'true');
+      const selected = await neighbour.boundingBox();
+      const slider = await page.locator('.gs-guide-tabs .gs-segment-slider').boundingBox();
+      expect(Math.abs(slider!.x - selected!.x)).toBeLessThan(1);
+      expect(Math.abs(slider!.width - selected!.width)).toBeLessThan(1);
+      expect(slider!.height).toBeGreaterThanOrEqual(44);
+      await neighbour.press('Home'); await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+    }
+    await target.click(); await expect(target).toHaveAttribute('aria-selected', 'true');
+    expect(await page.locator('.gs-guide-card').evaluateAll(cards => cards.map(card => card.getAttribute('href'))))
+      .toEqual(initialCards.filter(card => card.category === originalName).map(card => card.href));
+    await target.press('Home');
+    expect(await page.locator('.gs-guide-card').evaluateAll(cards => cards.map(card => card.getAttribute('href'))))
+      .toEqual(initialCards.map(card => card.href));
+  });
+}
