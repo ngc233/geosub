@@ -452,3 +452,126 @@ test('missing local prices stay 404 instead of fabricating a successful pilot pa
     await expect(page.locator('.gs-product-country')).toHaveCount(0);
   }
 });
+
+// The approved phone/desktop snapshots missed the narrow-tablet transition.
+// Use the existing rendered fixture prices unchanged, including Pro 200 and
+// Netflix Standard/Premium, and inspect painted text rather than scrollWidth:
+// adjacent table cells can overlap while the table itself still fits the page.
+for (const width of [390, 767, 768, 820, 1023, 1024, 1280]) for (const colorScheme of ['light', 'dark'] as const) {
+  test(`price-cell boundary: original amounts, cycles and controls stay separate ${width} ${colorScheme}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 }); await page.emulateMedia({ colorScheme });
+    for (const item of [examples[0], examples[3]]) {
+      await open(page, item.path);
+      const rows = page.locator('.gs-product-country-table tbody tr');
+      const measurements = await rows.evaluateAll(elements => {
+        const rect = (box: DOMRect) => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom });
+        const characters = (element: Element) => {
+          const result: Array<{ text: string; left: number; right: number; top: number; bottom: number }> = [];
+          const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+          for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            let offset = 0;
+            for (const character of node.textContent || '') {
+              const range = document.createRange();
+              range.setStart(node, offset); offset += character.length; range.setEnd(node, offset);
+              if (!character.trim()) continue;
+              for (const box of range.getClientRects()) {
+                if (box.width && box.height) result.push({ text: character, ...rect(box) });
+              }
+            }
+          }
+          return result;
+        };
+        const inside = (character: ReturnType<typeof characters>[number], cell: DOMRect) =>
+          character.left >= cell.left && character.right <= cell.right && character.top >= cell.top && character.bottom <= cell.bottom;
+        return elements.map(row => {
+          const localCell = row.querySelector('.gs-product-country-local')!, usdCell = row.querySelector('.gs-product-country-usd')!;
+          const localNumber = localCell.querySelector('.gs-product-country-number')!, usdNumber = usdCell.querySelector('.gs-product-country-number')!;
+          const amount = localNumber.querySelector(':scope > span')!, cycle = localNumber.querySelector('[data-gs-cycle]')!;
+          const amountCharacters = characters(amount), cycleCharacters = characters(cycle), usdCharacters = characters(usdNumber);
+          const localCharacters = [...amountCharacters, ...cycleCharacters];
+          return {
+            plan: row.querySelector('.gs-product-country-plan')!.textContent!.trim(),
+            amount: amount.textContent, cycle: cycle.textContent, usd: usdNumber.textContent,
+            amountCharacters: amountCharacters.length, cycleCharacters: cycleCharacters.length, usdCharacters: usdCharacters.length,
+            outsideLocal: localCharacters.filter(character => !inside(character, localCell.getBoundingClientRect())),
+            outsideUsd: usdCharacters.filter(character => !inside(character, usdCell.getBoundingClientRect())),
+            overlaps: localCharacters.flatMap(local => usdCharacters.filter(usd =>
+              Math.min(local.right, usd.right) > Math.max(local.left, usd.left) &&
+              Math.min(local.bottom, usd.bottom) > Math.max(local.top, usd.top)
+            ).map(usd => ({ local, usd }))),
+          };
+        });
+      });
+      expect(measurements.length).toBeGreaterThan(0);
+      // Assert the originally observed defect first, so the pre-fix run fails
+      // on real overlapping glyphs rather than an inferred layout breakpoint.
+      expect(measurements.filter(row => row.overlaps.length), `${item.path}: local price/cycle overlaps USD`).toEqual([]);
+      for (const row of measurements) {
+        expect(row.amountCharacters, `${item.path} ${row.plan}: visible amount`).toBeGreaterThan(0);
+        expect(row.cycleCharacters, `${item.path} ${row.plan}: visible billing cycle`).toBeGreaterThan(0);
+        expect(row.usdCharacters, `${item.path} ${row.plan}: visible USD amount`).toBeGreaterThan(0);
+        expect(row.outsideLocal, `${item.path} ${row.plan}: local amount/cycle stays in its own cell`).toEqual([]);
+        expect(row.outsideUsd, `${item.path} ${row.plan}: USD stays in its own cell`).toEqual([]);
+      }
+      for (const row of await rows.all()) {
+        await row.scrollIntoViewIfNeeded(); await page.mouse.move(0, 0);
+        const before = await row.boundingBox(); await row.hover();
+        await expect(row).toHaveCSS('transform', 'none'); await expect(row).toHaveCSS('box-shadow', 'none');
+        expect(await row.boundingBox()).toEqual(before);
+        if (width <= 1023) {
+          await expect(row).toHaveCSS('display', 'grid');
+          await expect(row).toHaveCSS('background-color', await tokenColor(page, '--gs-row-hover'));
+          expect(await row.evaluate(element => {
+            const style = getComputedStyle(element);
+            return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomLeftRadius, style.borderBottomRightRadius].every(value => parseFloat(value) > 0);
+          })).toBe(true);
+        } else {
+          await expect(row).toHaveCSS('display', 'table-row');
+          await expect(row).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+          for (const cell of await row.locator('td').all()) await expect(cell).toHaveCSS('background-color', await tokenColor(page, '--gs-row-hover'));
+          expect(await row.evaluate(element => {
+            const first = getComputedStyle(element.firstElementChild!), last = getComputedStyle(element.lastElementChild!);
+            return [first.borderTopLeftRadius, first.borderBottomLeftRadius, last.borderTopRightRadius, last.borderBottomRightRadius].every(value => parseFloat(value) > 0);
+          })).toBe(true);
+        }
+        const action = row.locator('.gs-product-country-plan-link');
+        await expect(action).toHaveText('查看全球套餐比较'); await expect(action).toHaveCSS('cursor', 'pointer');
+        const actionBox = await action.boundingBox();
+        expect(actionBox!.width).toBeGreaterThanOrEqual(44); expect(actionBox!.height).toBeGreaterThanOrEqual(44);
+        const content = await action.evaluate(element => {
+          const box = element.getBoundingClientRect(), cell = element.closest('td')!.getBoundingClientRect();
+          const range = document.createRange(); range.selectNodeContents(element);
+          const content = [...range.getClientRects(), ...Array.from(element.querySelectorAll('svg'), icon => icon.getBoundingClientRect())].filter(rect => rect.width && rect.height);
+          return {
+            contentCount: content.length,
+            contentInside: content.every(rect => rect.left >= box.left && rect.right <= box.right && rect.top >= box.top && rect.bottom <= box.bottom),
+            buttonInsideCell: box.left >= cell.left && box.right <= cell.right && box.top >= cell.top && box.bottom <= cell.bottom,
+            overflow: element.scrollWidth > element.clientWidth,
+          };
+        });
+        expect(content.contentCount).toBeGreaterThan(0);
+        expect(content).toMatchObject({ contentInside: true, buttonInsideCell: true, overflow: false });
+        await action.hover();
+        await expect(action).toHaveCSS('background-color', await tokenColor(page, '--gs-subtle'));
+        expect(await action.evaluate(element => parseFloat(getComputedStyle(element).borderTopLeftRadius))).toBeGreaterThan(0);
+        await page.keyboard.press('Tab');
+        await action.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'nearest' }));
+        await focusWithoutClipping(action);
+        const focus = await action.evaluate(element => {
+          const box = element.getBoundingClientRect(), style = getComputedStyle(element);
+          const extent = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+          const row = element.closest('tr')!, boundary = getComputedStyle(row).display === 'grid' ? row : element.closest('.gs-product-country-table-panel')!;
+          const bounds = boundary.getBoundingClientRect();
+          const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+          return {
+            insidePaintedBoundary: box.left - extent >= bounds.left && box.right + extent <= bounds.right && box.top - extent >= bounds.top && box.bottom + extent <= bounds.bottom,
+            insideViewport: box.left - extent >= 0 && box.right + extent <= innerWidth && box.top - extent >= 0 && box.bottom + extent <= innerHeight,
+            unobscured: hit === element || !!hit && element.contains(hit),
+          };
+        });
+        expect(focus).toEqual({ insidePaintedBoundary: true, insideViewport: true, unobscured: true });
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  });
+}
