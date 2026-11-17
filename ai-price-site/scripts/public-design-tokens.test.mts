@@ -11,7 +11,7 @@ import compatibility from "../design/public-theme-compatibility.json" with { typ
 
 const inspect = (css: string, filename = "public-motion.css") => inspectStyles([{ filename, css }]);
 
-test("the shipped foundation, country and auxiliary stylesheets pass the same CLI gate in npm test", () => {
+test("the shipped foundation, country, product-country and auxiliary stylesheets pass the same CLI gate in npm test", () => {
   const result = spawnSync(process.execPath, [fileURLToPath(new URL("./public-design-tokens.cjs", import.meta.url)), "--check"], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
 });
@@ -55,8 +55,8 @@ test("token definitions stay scoped; component declarations cannot smuggle a pal
   assert.ok(inspect('.gs-public-unified .card { transition:color 120ms; }', "public-components.css").length);
 });
 
-test("CLI checks four foundation files plus country/auxiliary CSS, fails on constructed cancellation and succeeds after repair", () => {
-  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css"]);
+test("CLI checks four foundation files plus country/product-country/auxiliary CSS, fails on constructed cancellation and succeeds after repair", () => {
+  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-country-index.css", "public-product-country.css", "public-listing.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css"]);
   const root = mkdtempSync(join(tmpdir(), "geosub-u1-css-"));
   try {
     mkdirSync(join(root, "app")); mkdirSync(join(root, "design")); mkdirSync(join(root, "public/styles"), { recursive:true });
@@ -73,6 +73,28 @@ test("CLI checks four foundation files plus country/auxiliary CSS, fails on cons
     writeFileSync(motion, ".gs-public-unified .card:hover { transform:translateY(-2px); box-shadow:var(--gs-shadow-card-hover); }");
     const passed = execute();
     assert.equal(passed.status, 0, passed.stderr);
+    // Run the real CLI against the route stylesheet: registering its filename
+    // must enforce every existing gate, not just the most common color rule.
+    const productCountry = join(root, "app/public-product-country.css");
+    const invalidProductCountryRules = [
+      ['body { color:var(--gs-text); }', /Selector escapes/],
+      ['.gs-public-unified .pilot { color:#fff; }', /Literal color/],
+      ['.gs-public-unified .pilot { font-size:14px; }', /Literal font-size/],
+      ['.gs-public-unified .pilot { box-shadow:none; }', /box-shadow must use a variable/],
+      ['.gs-public-unified .pilot { transition:color 120ms; }', /Motion belongs/],
+      ['.gs-public-unified .pilot { animation:enter 120ms; }', /Motion belongs/],
+      ['.gs-public-unified .pilot { transform:scale(1.1); }', /Transforms belong/],
+      ['@keyframes enter { from { opacity:0; } to { opacity:1; } }', /Keyframes belong/],
+    ] as const;
+    for (const [css, expected] of invalidProductCountryRules) {
+      writeFileSync(productCountry, css);
+      const rejected = execute();
+      assert.equal(rejected.status, 1, `Product-country stylesheet must reject ${css}`);
+      assert.match(rejected.stderr, expected);
+    }
+    writeFileSync(productCountry, '.gs-public-unified .pilot { color:var(--gs-text); font-size:var(--gs-body-size); box-shadow:var(--gs-shadow-card); }');
+    const repairedProductCountry = execute();
+    assert.equal(repairedProductCountry.status, 0, repairedProductCountry.stderr);
     // There are deliberately no PublicControls/StyleReview/Codex component files.
     assert.match(passed.stdout, /four foundation stylesheets/);
     const country = join(root, "app/public-country.css");
@@ -82,7 +104,7 @@ test("CLI checks four foundation files plus country/auxiliary CSS, fails on cons
     }
     writeFileSync(country, ".gs-public-unified .gs-country-page { color:var(--gs-text); }");
     assert.equal(execute().status, 0);
-    for (const file of ["app/public-auxiliary-article.css", "app/public-auxiliary-contact.css", "public/styles/v7-auxiliary-tools.css", "app/public-auxiliary-evidence.css", "public/styles/v7-auxiliary-states.css"]) {
+    for (const file of ["app/public-country-index.css", "app/public-listing.css", "app/public-auxiliary-article.css", "app/public-auxiliary-contact.css", "public/styles/v7-auxiliary-tools.css", "app/public-auxiliary-evidence.css", "public/styles/v7-auxiliary-states.css"]) {
     const auxiliary = join(root, file);
     for (const declaration of ["color:#fff", "font-size:14px", "box-shadow:none", "transition:color 120ms", "transform:scale(1.1)"]) {
       writeFileSync(auxiliary, `.gs-public-unified .gs-converter { ${declaration}; }`);

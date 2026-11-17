@@ -127,6 +127,9 @@
   --gs-guide-section-size: 24px;
   --gs-guide-start-size: 20px;
   --gs-guide-card-size: 18px;
+  --gs-listing-caption-size: 11px;
+  --gs-listing-badge-size: 10px;
+  --gs-listing-title-mobile-size: 17px;
   --gs-max-content-width: 1200px;
   --gs-article-max-width: 680px;
   --gs-desktop-page-padding: 24px;

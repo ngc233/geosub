@@ -20,6 +20,7 @@ import {
 type DbPricingCardProps = {
   product: DbPricingProduct;
   locale: PreparedSiteLocale;
+  canvas?: boolean;
 };
 
 type CardCopy = PricingListCopy["card"];
@@ -40,7 +41,8 @@ function comparisonPercent(price: number, referencePrice: number) {
   return Math.round(((price - referencePrice) / referencePrice) * 100);
 }
 
-export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
+export default function DbPricingCard({ product, locale, canvas = false }: DbPricingCardProps) {
+  const ui = (name: string, legacy: string) => canvas ? name : legacy;
   const defaultPlan = getDefaultPlan(product);
 
   if (!defaultPlan) {
@@ -84,14 +86,15 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
   return (
     <Link
       href={detailHref}
+      data-gs-motion-card={canvas || undefined}
       data-track-event="click_digital_service_card"
       data-track-name="Open digital service pricing"
       data-track-button={product.slug}
       data-track-placement="pricing_card"
-      className="group relative z-0 block overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 dark:hover:border-zinc-700 dark:hover:shadow-black/35 dark:focus-visible:ring-offset-zinc-950"
+      className={ui("gs-listing-card", "group relative z-0 block overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 dark:hover:border-zinc-700 dark:hover:shadow-black/35 dark:focus-visible:ring-offset-zinc-950")}
     >
-      <div className="p-5 md:p-6">
-        <div className="flex items-start gap-4">
+      <div className={ui("gs-listing-card-head", "p-5 md:p-6")}>
+        <div className={ui("gs-listing-brandline", "flex items-start gap-4")}>
           <BrandIcon
             product={{
               slug: product.slug,
@@ -99,32 +102,33 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
               logoUrl: product.logoUrl,
             }}
             size="md"
+            className={canvas ? "gs-listing-brand" : undefined}
           />
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+          <div className={ui("gs-listing-description-wrap", "min-w-0 flex-1")}>
+            <div className={ui("gs-listing-card-headline", "flex items-start justify-between gap-4")}>
+              <div className={ui("", "min-w-0")}>
+                <div className={ui("gs-listing-card-name", "flex flex-wrap items-center gap-2")}>
+                  <h2 className={ui("", "text-xl font-semibold tracking-tight text-zinc-900 dark:text-white")}>
                     {product.name} {copy.titleSuffix}
                   </h2>
 
-                  <span className="rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className={ui("gs-listing-plan", "rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300")}>
                     {defaultPlan.name}
                   </span>
                 </div>
 
-                <p className="mt-2 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className={ui("gs-listing-card-description", "mt-2 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400")}>
                   {product.description}
                 </p>
               </div>
 
-              <div className="hidden shrink-0 flex-col items-end gap-3 sm:flex">
-                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <div className={ui("gs-listing-card-meta", "hidden shrink-0 flex-col items-end gap-3 sm:flex")}>
+                <span className={ui("", "text-xs font-semibold text-zinc-700 dark:text-zinc-300")}>
                   {copy.spread} {spread}%
                 </span>
 
-                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                <span className={ui("", "text-xs font-medium text-zinc-500 dark:text-zinc-400")}>
                   {regionCount} {copy.regions}
                 </span>
               </div>
@@ -133,14 +137,14 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className={ui("gs-listing-tablewrap", "overflow-x-auto")}>
+        <table className={ui("gs-listing-table", "w-full text-left text-sm")}>
           <thead>
-            <tr className="border-y border-zinc-100 text-xs font-medium text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-              <th className="w-14 py-3 pl-5 md:pl-6">#</th>
-              <th className="min-w-[120px] py-3">{copy.region}</th>
-              <th className="min-w-[150px] py-3">{copy.price}</th>
-              <th className="hidden min-w-[110px] py-3 pr-6 md:table-cell">
+            <tr className={ui("", "border-y border-zinc-100 text-xs font-medium text-zinc-400 dark:border-zinc-800 dark:text-zinc-500")}>
+              <th className={ui("", "w-14 py-3 pl-5 md:pl-6")}>#</th>
+              <th className={ui("", "min-w-[120px] py-3")}>{copy.region}</th>
+              <th className={ui("", "min-w-[150px] py-3")}>{copy.price}</th>
+              <th className={ui("", "hidden min-w-[110px] py-3 pr-6 md:table-cell")}>
                 {referenceRegion ? copy.comparison : copy.spread}
               </th>
             </tr>
@@ -161,49 +165,50 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
               return (
                 <tr
                   key={`${product.slug}-${defaultPlan.slug}-${region.code}-${region.rank}`}
-                  className={`border-b border-zinc-100 transition-colors group-hover:bg-white dark:border-zinc-800/50 dark:group-hover:bg-zinc-800/40 ${
+                  data-gs-motion-row={canvas || undefined}
+                  className={canvas ? "" : `border-b border-zinc-100 transition-colors group-hover:bg-white dark:border-zinc-800/50 dark:group-hover:bg-zinc-800/40 ${
                     isSeparatedRow
                       ? "border-t border-dashed border-t-zinc-300 bg-zinc-50/40 dark:border-t-zinc-700 dark:bg-zinc-950/30"
                       : ""
                   }`}
                 >
-                  <td className="py-3.5 pl-5 font-mono text-xs text-zinc-400 md:pl-6 dark:text-zinc-500">
+                  <td className={ui("gs-listing-rank", "py-3.5 pl-5 font-mono text-xs text-zinc-400 md:pl-6 dark:text-zinc-500")}>
                     {region.rank}
                   </td>
 
-                  <td className="py-3.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+                  <td className={ui("", "py-3.5")}>
+                    <div className={ui("gs-listing-region", "flex items-center gap-2")}>
+                      <span className={ui("gs-listing-countrycode", "font-mono text-xs text-zinc-500 dark:text-zinc-400")}>
                         {region.code}
                       </span>
 
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      <span className={ui("gs-listing-countryname", "font-semibold text-zinc-900 dark:text-zinc-100")}>
                         {region.countryName}
                       </span>
 
                       {region.isReference ? (
-                        <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold text-zinc-400 dark:bg-zinc-800 dark:text-zinc-400">
+                        <span className={ui("gs-listing-badge", "rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold text-zinc-400 dark:bg-zinc-800 dark:text-zinc-400")}>
                           {copy.base}
                         </span>
                       ) : null}
 
                       {isLowestRow ? (
-                        <span className="rounded-md bg-lime-50 px-1.5 py-0.5 text-[10px] font-bold text-lime-700 ring-1 ring-lime-200 dark:bg-lime-500/10 dark:text-lime-400 dark:ring-lime-500/20">
+                        <span className={ui("gs-listing-badge gs-listing-low", "rounded-md bg-lime-50 px-1.5 py-0.5 text-[10px] font-bold text-lime-700 ring-1 ring-lime-200 dark:bg-lime-500/10 dark:text-lime-400 dark:ring-lime-500/20")}>
                           {copy.lowest}
                         </span>
                       ) : null}
 
                       {isCompareRow ? (
-                        <span className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-500 ring-1 ring-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/20">
+                        <span className={ui("gs-listing-badge gs-listing-high", "rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-500 ring-1 ring-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/20")}>
                           {copy.highest}
                         </span>
                       ) : null}
                     </div>
                   </td>
 
-                  <td className="py-3.5">
+                  <td className={ui("", "py-3.5")}>
                     <div
-                      className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-bold tracking-wide ${
+                      className={canvas ? `gs-listing-value ${isLowestRow ? "is-low" : isCompareRow ? "is-high" : ""}` : `inline-flex items-center rounded-md px-2.5 py-1 text-xs font-bold tracking-wide ${
                         isLowestRow
                           ? "bg-lime-100 text-lime-800 ring-1 ring-inset ring-lime-200 dark:bg-lime-500/10 dark:text-lime-400 dark:ring-lime-500/20"
                           : isCompareRow
@@ -214,25 +219,25 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
                       }`}
                     >
                       {formatUsd(region.priceUsd)}
-                      {priceSuffix(copy, defaultPlan.billingCycle)}
+                      {canvas ? <span className="gs-listing-period">{priceSuffix(copy, defaultPlan.billingCycle)}</span> : priceSuffix(copy, defaultPlan.billingCycle)}
                     </div>
 
-                    <div className="mt-1.5 font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
+                    <div className={ui("gs-listing-local", "mt-1.5 font-mono text-[11px] text-zinc-400 dark:text-zinc-500")}>
                       ≈ {region.localPrice}
                     </div>
                   </td>
 
-                  <td className="hidden py-4 pr-6 text-xs font-semibold md:table-cell">
+                  <td className={ui("gs-listing-comparison", "hidden py-4 pr-6 text-xs font-semibold md:table-cell")}>
                     {difference === null || difference === 0 ? (
-                      <span className={isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-zinc-500 dark:text-zinc-400"}>
+                      <span className={canvas ? (isLowestRow ? "is-low" : "") : isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-zinc-500 dark:text-zinc-400"}>
                         {referenceRegion ? copy.base : copy.lowest}
                       </span>
                     ) : difference < 0 ? (
-                      <span className={isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-emerald-700 dark:text-emerald-400"}>
+                      <span className={canvas ? "is-low" : isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-emerald-700 dark:text-emerald-400"}>
                         −{Math.abs(difference)}%
                       </span>
                     ) : (
-                      <span className="text-rose-600 dark:text-rose-400">+{difference}%</span>
+                      <span className={ui("is-high", "text-rose-600 dark:text-rose-400")}>+{difference}%</span>
                     )}
                   </td>
                 </tr>
@@ -242,17 +247,17 @@ export default function DbPricingCard({ product, locale }: DbPricingCardProps) {
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-950/40 md:px-6">
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">
+      <div className={ui("gs-listing-card-foot", "flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-950/40 md:px-6")}>
+        <span className={ui("gs-listing-updated", "text-xs text-zinc-400 dark:text-zinc-500")}>
           {copy.updated}: {product.updatedAt}
         </span>
 
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-semibold text-zinc-700 sm:hidden dark:text-zinc-300">
+        <div className={ui("", "flex items-center gap-4")}>
+          <span className={ui("gs-listing-mobile-spread", "text-xs font-semibold text-zinc-700 sm:hidden dark:text-zinc-300")}>
             {copy.spread} {spread}%
           </span>
 
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 transition group-hover:border-zinc-300 group-hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:border-zinc-600 dark:group-hover:text-white">
+          <span className={ui("gs-listing-detail", "inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 transition group-hover:border-zinc-300 group-hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:border-zinc-600 dark:group-hover:text-white")}>
             {copy.detail}
             <ArrowRight size={14} strokeWidth={2} />
           </span>

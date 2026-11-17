@@ -31,12 +31,15 @@ const overviewDirectoryCopy = {
 type DbAiPricingClientProps = {
   products: DbPricingProduct[];
   locale: PreparedSiteLocale;
+  canvas?: boolean;
 };
 
 export default function DbAiPricingClient({
   products,
   locale,
+  canvas = false,
 }: DbAiPricingClientProps) {
+  const ui = (name: string, legacy: string) => canvas ? name : legacy;
   const copy = getPricingListCopy(locale);
   const tabs = useMemo(
     () => [
@@ -83,7 +86,7 @@ export default function DbAiPricingClient({
   return (
     <>
       {availableTabs.length > 1 ? (
-        <div className="mb-10 flex justify-center">
+        <div className={ui("gs-listing-tabs", "mb-10 flex justify-center")}>
           <SegmentedControl
             ariaLabel={copy.categoryAria}
             value={activeCategory}
@@ -97,21 +100,21 @@ export default function DbAiPricingClient({
         </div>
       ) : null}
 
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className={ui("gs-listing-sectionhead", "mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between")}>
         <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+          <div className={ui("", "flex flex-wrap items-center gap-3")}>
+            <h2 className={ui("", "text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white")}>
               {activeTab.label}
             </h2>
 
           </div>
 
-          <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+          <p className={ui("", "mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400")}>
             {activeTab.desc}
           </p>
         </div>
 
-        <div className="text-sm font-medium text-zinc-400 dark:text-zinc-500">
+        <div className={ui("gs-listing-count", "text-sm font-medium text-zinc-400 dark:text-zinc-500")}>
           {copy.productCount(filteredProducts.length)}
         </div>
       </div>
@@ -119,32 +122,32 @@ export default function DbAiPricingClient({
       {filteredProducts.length > 0 ? (
         <>
           {groupPricingProductsByCycle(filteredProducts)
-            .map(({ cycle, products: cycleProducts }) => <section key={cycle} className="mb-8">
-              <h3 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
+            .map(({ cycle, products: cycleProducts }) => <section key={cycle} className={ui("gs-listing-cycle", "mb-8")}>
+              <h3 className={ui("", "mb-4 text-lg font-semibold text-[var(--color-text-primary)]")}>
                 {getBillingCycleLabel(cycle.toLowerCase() as ProductPlan["billing"], locale)}
               </h3>
-              <div className="grid grid-cols-1 gap-5 overflow-visible xl:grid-cols-2">
-                {cycleProducts.map(product => <DbPricingCard key={product.slug} product={product} locale={locale} />)}
+              <div className={ui("gs-listing-grid", "grid grid-cols-1 gap-5 overflow-visible xl:grid-cols-2")}>
+                {cycleProducts.map(product => <DbPricingCard key={product.slug} product={product} locale={locale} canvas={canvas} />)}
               </div>
             </section>)}
 
           {directoryCopy ? (
             <nav
               aria-label={directoryCopy.title}
-              className="mt-10 border-t border-zinc-200 pt-6 dark:border-zinc-800"
+              className={ui("gs-listing-directory", "mt-10 border-t border-zinc-200 pt-6 dark:border-zinc-800")}
             >
-              <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+              <h2 className={ui("", "text-base font-semibold text-zinc-950 dark:text-white")}>
                 {directoryCopy.title}
               </h2>
-              <p className="mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+              <p className={ui("", "mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400")}>
                 {directoryCopy.description}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className={ui("", "mt-4 flex flex-wrap gap-2")}>
                 {filteredProducts.map((product) => (
                   <Link
                     key={`${product.slug}-overview`}
                     href={getPricingDetailPath(locale, product.category, product.slug)}
-                    className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-900 dark:hover:text-white"
+                    className={ui("", "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-900 dark:hover:text-white")}
                   >
                     {product.name}
                   </Link>
@@ -154,7 +157,7 @@ export default function DbAiPricingClient({
           ) : null}
         </>
       ) : (
-        <div className="rounded-3xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center text-sm font-bold text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-500">
+        <div className={ui("gs-listing-empty", "rounded-3xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center text-sm font-bold text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-500")}>
           {copy.empty}
         </div>
       )}

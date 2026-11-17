@@ -47,23 +47,31 @@ export default async function PricingListPage({
   const products = await getCachedPricingListProducts(locale, category);
   const copy = getPricingListCopy(locale).pages[category];
 
-  return (
-    <main className="mx-auto max-w-6xl overflow-visible px-5 py-12 md:py-14">
-      <div className="mb-9 text-center">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700">
+  // Only the two Chinese category listings adopt the approved canvas layout.
+  const canvas = locale === "zh";
+  const ui = (name: string, legacy: string) => canvas ? name : legacy;
+
+  const content = (
+    <main className={ui("gs-public-unified gs-listing", "mx-auto max-w-6xl overflow-visible px-5 py-12 md:py-14")}>
+      <div className={ui("gs-listing-intro", "mb-9 text-center")}>
+        <p className={ui("gs-listing-eyebrow", "mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700")}>
           {copy.eyebrow}
         </p>
 
-        <h1 className="mb-4 text-3xl font-semibold tracking-[-0.025em] text-zinc-950 md:text-4xl dark:text-white">
+        <h1 className={ui("", "mb-4 text-3xl font-semibold tracking-[-0.025em] text-zinc-950 md:text-4xl dark:text-white")}>
           {copy.title}
         </h1>
 
-        <p className="mx-auto max-w-2xl text-base leading-7 text-zinc-500 dark:text-zinc-400">
+        <p className={ui("", "mx-auto max-w-2xl text-base leading-7 text-zinc-500 dark:text-zinc-400")}>
           {copy.description}
         </p>
       </div>
 
-      <DbAiPricingClient products={products} locale={locale} />
+      <DbAiPricingClient products={products} locale={locale} canvas={canvas} />
     </main>
   );
+  return canvas ? <div className="gs-public-unified gs-listing-page">
+    <link rel="preload" href={new URL("../assets/fonts/web/geosub-price-numerals-700.woff2", import.meta.url).href} as="font" type="font/woff2" crossOrigin="anonymous" />
+    {content}
+  </div> : content;
 }
