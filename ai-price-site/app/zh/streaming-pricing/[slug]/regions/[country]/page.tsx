@@ -1,3 +1,4 @@
+import "../../../../../public-product-country.css";
 import CountryPricingPilotPage, {
   getCountryPricingPilotMetadata,
   type CountryPricingPilotPageProps,
@@ -15,6 +16,8 @@ export function generateMetadata(props: CountryPricingPilotPageProps) {
 
 export default function Page(props: CountryPricingPilotPageProps) {
   return (
-    <CountryPricingPilotPage {...props} locale="zh" category="streaming" />
+    <>
+        <CountryPricingPilotPage {...props} locale="zh" category="streaming" />
+    </>
   );
 }
