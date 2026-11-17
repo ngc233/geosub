@@ -198,6 +198,58 @@ function Normalize-PlanMatchText {
   return $text
 }
 
+function Get-AppStorePendingPlanIdentity {
+  param(
+    [string]$ProductSlug,
+    [string]$AppleAppId,
+    [string]$CountryCode,
+    [string]$ItemName,
+    [AllowNull()][object]$ProductSpec = $null
+  )
+
+  # Independent review-only registration is a product decision, not evidence
+  # that these labels have the same Apple productId as either legacy Max tier.
+  if ($ProductSlug -ne "claude" -or $AppleAppId -ne "6473753684" -or $CountryCode -ne "KR") {
+    return $null
+  }
+
+  $labels = @{
+    "claude max monthly" = "Claude Max - Monthly"
+    "claude ultra monthly" = "Claude Ultra - Monthly"
+  }
+  $itemText = Normalize-PlanMatchText -Value $ItemName
+  if (!$labels.ContainsKey($itemText)) {
+    return $null
+  }
+
+  $expectedSlug = if ($itemText -eq "claude max monthly") { "max" } else { "ultra" }
+  $expectedName = if ($expectedSlug -eq "max") { "Claude Max" } else { "Claude Ultra" }
+  $registered = @($ProductSpec.plans | Where-Object { $_.slug -eq $expectedSlug })
+  $resolved = Resolve-PlanSpec -ProductSpec $ProductSpec -ItemName $ItemName -ProductName "Claude"
+  if ($registered.Count -eq 1 -and $null -ne $resolved -and $resolved.slug -ceq $expectedSlug) {
+    $plan = $registered[0]
+    if (
+      $plan.name -ceq $expectedName -and $plan.billing_cycle -ceq "monthly" -and
+      $plan.review_only -eq $true -and $plan.exact_plan_aliases -eq $true -and
+      $plan.app_store_id -ceq "6473753684" -and
+      @($plan.country_codes).Count -eq 1 -and $plan.country_codes[0] -ceq "KR" -and
+      @($plan.aliases).Count -eq 1 -and (Normalize-PlanMatchText $plan.aliases[0]) -eq $itemText
+    ) {
+      return $null
+    }
+  }
+
+  # Emit only allowlisted diagnostics: no plan binding, SKU, price or raw text.
+  return [pscustomobject]@{
+    product_slug = "claude"
+    app_store_id = "6473753684"
+    country_code = "KR"
+    item_name = $labels[$itemText]
+    identity_status = "pending_confirmation"
+    reason = "subscription_identity_unconfirmed"
+  }
+}
+
 function Test-AppStoreItemMatchesProduct {
   param(
     [string]$ItemName,
@@ -268,6 +320,7 @@ function Resolve-PlanSpec {
   }
 
   $itemText = Normalize-PlanMatchText -Value $ItemName
+  $fullItemText = $itemText
   $matchProductName = if (
     $ProductSpec.PSObject.Properties.Name -contains "match_product_name" -and
     ![string]::IsNullOrWhiteSpace([string]$ProductSpec.match_product_name)
@@ -299,8 +352,11 @@ function Resolve-PlanSpec {
   $exactAliases = $ProductSpec.PSObject.Properties.Name -contains "exact_plan_aliases" -and $ProductSpec.exact_plan_aliases -eq $true
   $planMatches = @()
   foreach ($plan in @($ProductSpec.plans)) {
+    # Plan-level exact labels include the brand and never inherit slug/name aliases.
+    # Keep the existing product-level matching behavior for other registrations.
+    $planExactAliases = $plan.PSObject.Properties.Name -contains "exact_plan_aliases" -and $plan.exact_plan_aliases -eq $true
     $aliases = @($plan.aliases)
-    if (!$exactAliases) { $aliases += @($plan.slug, $plan.name) }
+    if (!$exactAliases -and !$planExactAliases) { $aliases += @($plan.slug, $plan.name) }
 
     foreach ($alias in $aliases) {
       $aliasText = Normalize-PlanMatchText -Value ([string]$alias)
@@ -308,6 +364,12 @@ function Resolve-PlanSpec {
         continue
       }
 
+      if ($planExactAliases) {
+        if ($fullItemText -eq $aliasText) {
+          $planMatches += [pscustomobject]@{ Plan = $plan; AliasLength = $aliasText.Length }
+        }
+        continue
+      }
       if ($exactAliases -and ![string]::IsNullOrWhiteSpace($productText)) {
         $aliasText = [regex]::Replace($aliasText, "\b$([regex]::Escape($productText))\b", "").Trim()
         $aliasText = [regex]::Replace($aliasText, "\s+", " ").Trim()
@@ -326,6 +388,22 @@ function Resolve-PlanSpec {
   }
 
   return $null
+}
+
+function Test-AppStorePlanScope {
+  param(
+    [AllowNull()][object]$PlanSpec,
+    [string]$AppleAppId,
+    [string]$CountryCode
+  )
+  if ($null -eq $PlanSpec) { return $true }
+  if ($PlanSpec.PSObject.Properties.Name -contains "app_store_id" -and $PlanSpec.app_store_id -cne $AppleAppId) {
+    return $false
+  }
+  if ($PlanSpec.PSObject.Properties.Name -contains "country_codes" -and $CountryCode.ToUpperInvariant() -notin @($PlanSpec.country_codes)) {
+    return $false
+  }
+  return $true
 }
 
 function Test-ProductSpecCountryScope {
@@ -1365,7 +1443,9 @@ function Ensure-Plan {
     [string]$ItemName,
     [hashtable]$PlansBySlug,
     [int]$SortOrder,
-    [AllowNull()][object]$ProductSpec = $null
+    [AllowNull()][object]$ProductSpec = $null,
+    [string]$AppleAppId,
+    [string]$CountryCode
   )
 
   $planSpec = Resolve-PlanSpec -ProductSpec $ProductSpec -ItemName $ItemName -ProductName $ProductName
@@ -1389,6 +1469,39 @@ function Ensure-Plan {
     ([string]$planSpec.billing_cycle).Trim().ToLowerInvariant()
   } else {
     "monthly"
+  }
+
+  if ($null -ne $planSpec -and $planSpec.exact_plan_aliases -eq $true) {
+    if (!(Test-AppStorePlanScope -PlanSpec $planSpec -AppleAppId $AppleAppId -CountryCode $CountryCode)) {
+      throw "independent_plan_scope_mismatch: $planSlug"
+    }
+    # These independent plans require separate governed registration. Never
+    # auto-create them, adopt a name match, or change an existing plan's state.
+    $names = @($planName, $ItemName) + @($planSpec.aliases)
+    $nameSql = ($names | ForEach-Object { Quote-SqlString ([string]$_).ToLowerInvariant() }) -join ","
+    $binding = Invoke-PsqlJson @"
+SELECT json_build_object('plans', COALESCE(json_agg(row_to_json(candidate)), '[]'::json))
+FROM (
+  SELECT id, product_id, slug, name, billing_cycle, status, sort_order
+  FROM plans
+  WHERE product_id = $(Quote-SqlString $ProductId)::uuid
+    AND (slug = $(Quote-SqlString $planSlug) OR LOWER(name) IN ($nameSql))
+) candidate;
+"@
+    $rows = @($binding.plans)
+    $plan = if ($rows.Count -eq 1) { $rows[0] } else { $null }
+    $otherIds = @($PlansBySlug.Values | Where-Object { $_.slug -ne $planSlug } | ForEach-Object { [string]$_.id })
+    if (
+      $null -eq $plan -or [string]::IsNullOrWhiteSpace([string]$plan.id) -or
+      $plan.product_id -ne $ProductId -or $plan.slug -cne $planSlug -or $plan.name -cne $planName -or
+      $plan.billing_cycle -cne $billingCycle -or $publishStatus -ne "review" -or $plan.status -cne "review" -or
+      $plan.sort_order -ne $effectiveSortOrder -or [string]$plan.id -in $otherIds -or
+      ($PlansBySlug.ContainsKey($planSlug) -and $PlansBySlug[$planSlug].id -ne $plan.id)
+    ) {
+      throw "independent_plan_binding_conflict: $planSlug requires a unique pre-registered review plan"
+    }
+    $PlansBySlug[$planSlug] = $plan
+    return $plan
   }
 
   if ($planSlug -eq "pro-20x" -and $PlansBySlug.ContainsKey("pro")) {
@@ -2114,6 +2227,7 @@ $summary = @{
   confirmedStorefronts = 0
   transientFailures = 0
   transientCountryCodes = @()
+  pendingPlanIdentities = @()
 }
 
 foreach ($countryCode in $CountryCodes) {
@@ -2194,7 +2308,20 @@ foreach ($countryCode in $CountryCodes) {
   $candidateItemsBySlug = @{}
   $ignoredItemCount = 0
   foreach ($item in $items) {
+    $pendingIdentity = Get-AppStorePendingPlanIdentity `
+      -ProductSlug $ProductSlug -AppleAppId $AppId -CountryCode $code -ItemName $item.Name -ProductSpec $productPlanSpec
+    if ($null -ne $pendingIdentity) {
+      $summary.pendingPlanIdentities += $pendingIdentity
+      Write-Host "App Store identity pending confirmation: $code $($pendingIdentity.item_name)"
+      $ignoredItemCount += 1
+      continue
+    }
+
     $planSpec = Resolve-PlanSpec -ProductSpec $productPlanSpec -ItemName $item.Name -ProductName $context.product.name
+    if (!(Test-AppStorePlanScope -PlanSpec $planSpec -AppleAppId $AppId -CountryCode $code)) {
+      $ignoredItemCount += 1
+      continue
+    }
     $allowIgnoredRecurringItem = Test-PlanAllowsIgnoredRecurringItem -PlanSpec $planSpec -ItemName $item.Name
     if ((Should-IgnoreInAppPurchase -ItemName $item.Name -CountryCode $code) -and !$allowIgnoredRecurringItem) {
       Write-Host "Ignoring non-subscription App Store item: $code $($item.Name)"
@@ -2376,6 +2503,9 @@ foreach ($countryCode in $CountryCodes) {
   if ($subscriptionItemCount -gt 0 -and $null -ne $productPlanSpec) {
     foreach ($planSpec in @($productPlanSpec.plans)) {
       $planSlug = [string]$planSpec.slug
+      if (!(Test-AppStorePlanScope -PlanSpec $planSpec -AppleAppId $AppId -CountryCode $code)) {
+        continue
+      }
       if (!$plansBySlug.ContainsKey($planSlug)) {
         continue
       }
@@ -2407,7 +2537,8 @@ foreach ($countryCode in $CountryCodes) {
       -ItemName $item.Name `
       -PlansBySlug $plansBySlug `
       -SortOrder $planSortOrder `
-      -ProductSpec $productPlanSpec
+      -ProductSpec $productPlanSpec `
+      -AppleAppId $AppId -CountryCode $code
     $planSortOrder += 10
 
     if ($observedCurrency -eq "USD") {
@@ -2501,6 +2632,8 @@ $machineSummary = @{
   missing = [int]$summary.missing
   confirmed_storefronts = [int]$summary.confirmedStorefronts
   transient_failures = [int]$summary.transientFailures
+  pending_identity_item_count = @($summary.pendingPlanIdentities).Count
+  pending_plan_identities = @($summary.pendingPlanIdentities)
 }
 $machineSummaryJson = $machineSummary | ConvertTo-Json -Depth 8 -Compress
 Write-Host "GEOSUB_COLLECTION_RESULT=$machineSummaryJson"
