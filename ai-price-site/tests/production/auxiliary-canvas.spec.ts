@@ -104,11 +104,25 @@ test('confirmed fictional history retains original local values and both source 
 });
 
 test('auxiliary stylesheet is loaded only by the approved Chinese route families',async({page,request,browser})=>{
-  for(const [route,expected] of [['/zh/tools/currency-converter',true],['/zh/price-history/chatgpt',true],['/zh/about',true],['/zh/ai-pricing/chatgpt/plus',false],['/en',false],['/en/tools/currency-converter',false]] as const){
+  const cases = [
+    { route: '/zh/tools/currency-converter', tools: true },
+    { route: '/zh/price-history', history: true },
+    { route: '/zh/price-history/chatgpt', history: true },
+    { route: '/zh/price-records/30000000-0000-4000-8000-000000000001', inline: 'evidence' },
+    { route: '/zh/about', inline: 'article' },
+    { route: '/zh/ai-pricing/chatgpt/plus' },
+    { route: '/en' },
+    { route: '/en/price-history/chatgpt' },
+    { route: '/en/tools/currency-converter' },
+  ];
+  for (const { route, tools = false, history = false, inline } of cases) {
     await page.goto(route,{waitUntil:'networkidle'});
     const urls=await page.locator('link[rel="stylesheet"]').evaluateAll(links=>links.map(link=>(link as HTMLLinkElement).href));
-    const styles=await Promise.all(urls.map(async url=>(await request.get(url)).text()));
-    const tools = route.startsWith('/zh/tools/'), article = route === '/zh/about';
+    const styles = await Promise.all(urls.map(async url => {
+      const response = await request.get(url);
+      expect(response.ok(), url).toBe(true);
+      return response.text();
+    }));
     expect(styles.some(css=>css.includes('.gs-tools-layout')),route).toBe(tools);
     expect(styles.some(css=>css.includes('.gs-aux-layout')),route).toBe(false);
     expect(urls.some(url=>url.includes('v7-auxiliary-tools.css')),route).toBe(tools);
@@ -116,8 +130,13 @@ test('auxiliary stylesheet is loaded only by the approved Chinese route families
     expect(urls.some(url=>url.includes('v7-auxiliary-states.css')),route).toBe(false);
     expect(styles.some(css=>css.includes('.gs-state-page')),route).toBe(false);
     if(route.startsWith('/en'))expect(styles.some(css=>css.includes('.gs-home-ranking-row')),route).toBe(false);
-    await expect(page.locator('style[data-gs-auxiliary]'),route).toHaveCount(expected&&!tools?1:0);
-    if(expected&&!tools)expect(await page.locator('style[data-gs-auxiliary]').textContent()).toContain(article?'.gs-aux-layout':'.gs-evidence-page');
+    expect(styles.filter(css => css.includes('.gs-evidence-nav')), route).toHaveLength(history ? 1 : 0);
+    const inlineStyles = page.locator('style[data-gs-auxiliary]');
+    await expect(inlineStyles, route).toHaveCount(inline ? 1 : 0);
+    if (inline) {
+      await expect(inlineStyles, route).toHaveAttribute('data-gs-auxiliary', inline);
+      expect(await inlineStyles.textContent(), route).toContain(inline === 'article' ? '.gs-aux-layout' : '.gs-evidence-page');
+    }
   }
   const noScript = await browser.newContext({javaScriptEnabled:false,viewport:{width:1280,height:720}});
   try {
