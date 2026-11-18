@@ -19,11 +19,16 @@ const fixture: Row[] = [
 async function render(locale: "zh" | "en", unavailable: string[] = [], empty: string[] = []) {
   const calls: string[] = [];
   const mod = { exports: {} as { CountryIndexPage: (props: { locale: string }) => Promise<ReactNode> } };
-  const code = ts.transpileModule(readFileSync(new URL("./PriceEvidencePages.tsx", import.meta.url), "utf8"), {
+  const compile = (file: string) => ts.transpileModule(readFileSync(new URL(file, import.meta.url), "utf8"), {
     compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
   }).outputText;
   const tag = (name: string) => function StaticTag({ children, ...props }: { children?: ReactNode } & Record<string, unknown>) { return createElement(name, props, children); };
-  vm.runInNewContext(code, { exports: mod.exports, module: mod, Intl, URL, require: (name: string) => {
+  const localRequire = (name: string): unknown => {
+    if (name === "./PriceEvidenceShared") {
+      const shared = { exports: {} };
+      vm.runInNewContext(compile("./PriceEvidenceShared.tsx"), { ...shared, module: shared, Intl, URL, require: localRequire });
+      return shared.exports;
+    }
     if (name === "next/link") return tag("a");
     if (name === "next/cache") return { unstable_cache: (f: unknown) => f };
     if (name === "./AuxiliaryStyles") return function StaticStyles({ kind }: { kind: string }) { return createElement("style", { "data-gs-auxiliary": kind }); };
@@ -39,7 +44,8 @@ async function render(locale: "zh" | "en", unavailable: string[] = [], empty: st
     if (name.endsWith(".module.css")) return { page: "legacy-page" };
     if (name.startsWith(".")) return {};
     return require(name);
-  } });
+  };
+  vm.runInNewContext(compile("./PriceEvidencePages.tsx"), { ...mod, module: mod, Intl, URL, require: localRequire });
   return { html: renderToStaticMarkup(await mod.exports.CountryIndexPage({ locale })), calls };
 }
 const texts = (html: string) => html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, "").replace(/<[^>]*>/g, "");

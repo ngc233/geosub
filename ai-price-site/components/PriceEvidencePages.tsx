@@ -1,10 +1,7 @@
 import AuxiliaryStyles from "./AuxiliaryStyles";
-import type { ReactNode } from "react";
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { unstable_cache } from "next/cache";
-import { ArrowLeft, ArrowRight, ChevronDown, Database, ExternalLink, Globe2, History, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ExternalLink, History } from "lucide-react";
 import BrandIcon from "./BrandIcon";
 import CountryIdentity from "./CountryIdentity";
 import { DataNote, MetricItem, MetricStrip, PublicSection, PublicSectionHeader } from "./ui/PublicPage";
@@ -12,97 +9,26 @@ import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import type { ProductPlan } from "../lib/public-pricing-model";
 import { loadCountryHub } from "../lib/cached-country-hub";
 import { getPriorityCountry, priorityCountries, type HubLocale } from "../lib/country-hubs";
-import { getEvidencePlanHref, getPriceEvidencePreview } from "../lib/price-evidence-preview";
-import { getPriceHistorySummary } from "../lib/price-records";
-import { getPriceRecordProducts, getPriceSnapshotById, getProductPriceRecords } from "../lib/price-records-data";
-import { PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_REVALIDATE_SECONDS } from "../lib/public-pricing-cache";
+import { getEvidencePlanHref } from "../lib/price-evidence-preview";
+import { getPriceSnapshotById } from "../lib/price-records-data";
+import { HistoryPage as SharedHistoryPage } from "./PriceHistoryPage";
+import { countryName, dateTime, EmptyState, headingClass, linkClass, metaClass, money, mutedClass, PageHeading, PageLinks, Unavailable } from "./PriceEvidenceShared";
 import styles from "./PriceEvidencePages.module.css";
 
 const pageClass = `${styles.page} mx-auto max-w-6xl px-5 py-12 md:py-14`;
-const mutedClass = "text-sm leading-6 text-[var(--color-text-secondary)]";
-const metaClass = "text-xs leading-5 text-[var(--color-text-muted)]";
-const headingClass = "text-xl font-semibold tracking-tight text-[var(--color-text-primary)]";
-const linkClass = "inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]";
 const gridClass = "my-6 grid gap-5 md:grid-cols-2";
 const pillClass = "inline-flex items-center rounded-md bg-[var(--color-bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]";
 
-const previewCacheScope = () => getPriceEvidencePreview()?.capturedAt || "public";
-const loadRecords = (slug: string) => unstable_cache(async () => {
-  const result = await getProductPriceRecords(slug);
-  return { ...getPriceHistorySummary(result.records), truncated: result.truncated };
-}, ["price-records-v3", slug, previewCacheScope()], {
-  revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS, tags: [PUBLIC_PRICING_CACHE_TAG],
-})();
-const loadProducts = () => unstable_cache(getPriceRecordProducts, ["price-record-products-v1", previewCacheScope()], {
-  revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS, tags: [PUBLIC_PRICING_CACHE_TAG],
-})();
+export { evidenceMetadata } from "./PriceEvidenceShared";
 
-export function evidenceMetadata(locale: HubLocale, path: string, title: string): Metadata {
-  return { title, alternates: { canonical: `/${locale}${path}` }, robots: { index: false, follow: true } };
+export function HistoryPage({ slug }: { locale: "en"; slug?: string }) {
+  return <SharedHistoryPage locale="en" slug={slug} pageClass={pageClass} />;
 }
-function money(amount: number, currency: string, locale: HubLocale) {
-  return new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
-}
-function countryName(code: string, locale: HubLocale) {
-  return new Intl.DisplayNames([locale === "zh" ? "zh-CN" : "en"], { type: "region" }).of(code) || code;
-}
-function dateTime(value: string, locale: HubLocale) {
-  return new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(value)) + " UTC";
-}
-// Existing page headers vary by template. Keep this composition local; sections,
-// statistics and product identity use the site's shared public components.
-function PageHeading({ title, description, locale, centered = false, identity }: {
-  title: string; description: string; locale: HubLocale; centered?: boolean; identity?: ReactNode;
-}) {
-  const preview = getPriceEvidencePreview();
-  return <header className={`mb-8 ${centered ? "text-center" : ""}`}>
-    {locale !== "zh" && <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-      GEOSUB SUBSCRIPTION PRICE DATA
-    </p>}
-    <div className={`flex items-center gap-4 ${centered ? "justify-center" : ""}`}>
-      {identity}
-      <h1 className="min-w-0 text-3xl font-semibold tracking-[-0.025em] text-[var(--color-text-primary)] md:text-4xl">{title}</h1>
-    </div>
-    <p className={`mt-4 max-w-3xl text-base leading-7 text-[var(--color-text-secondary)] ${centered ? "mx-auto" : ""}`}>{description}</p>
-    {preview ? <aside className="mt-5 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] px-4 py-3 text-start text-xs leading-6 text-[var(--color-text-secondary)]">
-      <p className="font-semibold text-[var(--color-text-primary)]">{locale === "zh" ? "线上真实公开数据 · 只读预览" : "Live public data · read-only preview"} · {dateTime(preview.capturedAt, locale)}</p>
-      <p>{locale === "zh" ? "本机副本覆盖土耳其、印度、菲律宾、日本及美国基准；历史记录也限于这五个地区。“比较所有地区”进入线上网站。" : "This local copy covers Turkey, India, the Philippines, Japan and the US baseline. History is limited to those five regions. “Compare all regions” opens the live website."}</p>
-    </aside> : null}
-  </header>;
-}
-function PageLinks({ locale, active, controls = false }: { locale: HubLocale; active?: "countries" | "history"; controls?: boolean }) {
-  const links = [
-    { key: "countries", path: "countries", label: locale === "zh" ? "按国家找订阅" : "Browse by country", icon: Globe2 },
-    { key: "history", path: "price-history", label: locale === "zh" ? "价格变化记录" : "Price change records", icon: History },
-    { key: "sources", path: "data-sources", label: locale === "zh" ? "数据来源" : "Data sources", icon: Database },
-  ];
-  return <nav aria-label={locale === "zh" ? "价格探索" : "Explore prices"} className={controls ? "gs-country-index-nav" : "mb-8 flex flex-wrap gap-x-5 border-b border-[var(--color-border-default)]"}>
-    {links.map(({ key, path, label, icon: Icon }) => <Link key={key} href={`/${locale}/${path}`} aria-current={active === key ? "page" : undefined}
-      data-gs-ui={controls ? "button" : undefined} data-gs-variant={controls && active === key ? "primary" : undefined}
-      className={controls ? undefined : `${linkClass} border-b-2 py-2 ${active === key ? "border-[var(--color-accent)] !text-[var(--color-text-primary)]" : "border-transparent"}`}>
-      <Icon size={15} aria-hidden="true" />{label}
-    </Link>)}
-  </nav>;
-}
-function EmptyState({ title, children, unavailable = false }: { title: string; children: ReactNode; unavailable?: boolean }) {
-  const Icon = unavailable ? Database : Search;
-  return <PublicSection className="my-6 px-5 py-10 text-center md:px-6" >
-    <div role={unavailable ? "status" : undefined}>
-      <Icon className="mx-auto mb-4 text-[var(--color-text-muted)]" size={24} aria-hidden="true" />
-      <h2 className={headingClass}>{title}</h2>
-      <p className={`mx-auto mt-3 max-w-2xl ${mutedClass}`}>{children}</p>
-    </div>
-  </PublicSection>;
-}
-function Unavailable({ locale }: { locale: HubLocale }) {
-  return <EmptyState unavailable title={locale === "zh" ? "暂时无法读取价格记录" : "Price records are temporarily unavailable"}>
-    {locale === "zh" ? "请稍后刷新重试。读取失败不代表没有价格或没有变化。" : "Refresh later to try again. A read failure does not mean there are no prices or changes."}
-  </EmptyState>;
-}
+
 export async function SnapshotPage({ id, locale }: { id: string; locale: HubLocale }) {
   let snapshot;
   try { snapshot = await getPriceSnapshotById(id); } catch {
-    return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}<PageHeading locale={locale} title={locale === "zh" ? "原始价格快照" : "Original price snapshot"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
+    return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}<PageHeading locale={locale} title={locale === "zh" ? "原始价格快照" : "Original price snapshot"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} controls={locale === "zh"} /></main>;
   }
   if (!snapshot) notFound();
   const path = getEvidencePlanHref(`/${locale}/${snapshot.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${snapshot.productSlug}/${snapshot.planSlug}`);
@@ -139,77 +65,7 @@ export async function SnapshotPage({ id, locale }: { id: string; locale: HubLoca
         <div className="pb-5"><p className="break-all font-mono text-xs leading-6 text-[var(--color-text-secondary)]">{snapshot.id}<br />SHA-256: {snapshot.contentHash}</p><p className={`mt-3 ${metaClass}`}>{locale === "zh" ? "校验值用于识别本站展示记录的内容，不是 Apple 签名或第三方认证。" : "The checksum identifies the source fields displayed here; it is not an Apple signature or independent certification."}</p></div>
       </details>
     </PublicSection>
-    <div className="mt-8"><PageLinks locale={locale} /></div>
-  </main>;
-}
-
-export async function HistoryPage({ locale, slug }: { locale: HubLocale; slug?: string }) {
-  let products;
-  try { products = await loadProducts(); } catch {
-    return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}<PageHeading locale={locale} title={locale === "zh" ? "价格变化记录" : "Price change records"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
-  }
-  const product = slug ? products.find(item => item.slug === slug) : null;
-  if (slug && !product) notFound();
-  let result = null;
-  let unavailable = false;
-  if (product) {
-    try { result = await loadRecords(product.slug); } catch { unavailable = true; }
-  }
-  const events = result?.events || [];
-  const snapshots = result?.snapshots || [];
-  return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}
-    <PageHeading centered locale={locale} title={`${product ? `${product.name} ` : ""}${locale === "zh" ? "价格变化记录" : "Price change records"}`}
-      description={locale === "zh" ? "追踪同一套餐、地区与计费周期的 App Store 本币标价变化。每条变化均可回溯采集记录；汇率折算波动不计为调价。" : "Track local App Store price changes for the same plan, country and billing period. Each change links to its source records. Exchange-rate movements are not price changes."} />
-    <PageLinks locale={locale} active="history" />
-    <PublicSection className="mb-6 px-5 md:px-6">
-      <details open={!slug} className="group">
-        <summary className={`${linkClass} flex cursor-pointer justify-between py-4`}><span>{locale === "zh" ? "选择产品" : "Choose a product"}{product ? <span className={`ms-3 ${pillClass}`}>{product.name}</span> : null}</span><ChevronDown size={16} aria-hidden="true" className="shrink-0 group-open:rotate-180" /></summary>
-        <div className="flex flex-wrap gap-2 border-t border-[var(--color-border-default)] py-4">{products.map(item => <Link key={item.slug} href={`/${locale}/price-history/${item.slug}`} aria-current={slug === item.slug ? "page" : undefined}
-          className={`inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-medium ${slug === item.slug ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]" : "border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]"}`}>{item.name}</Link>)}</div>
-      </details>
-    </PublicSection>
-    {result && result.coverage.recordCount > 0 ? <PublicSection className="mb-6 p-5 md:p-6">
-      <h2 className={headingClass}>{locale === "zh" ? "观察覆盖" : "Observation coverage"}</h2>
-      <p className={`mt-2 ${mutedClass}`}>
-        {locale === "zh"
-          ? `${result.coverage.observedDays} 个采样日 · ${result.coverage.countryCount} 个曾观测地区 · ${result.coverage.recordCount.toLocaleString()} 条观测`
-          : `${result.coverage.observedDays} sampled days · ${result.coverage.countryCount} observed regions · ${result.coverage.recordCount.toLocaleString()} observations`}
-      </p>
-      <p className={`mt-2 ${metaClass}`}>
-        {dateTime(result.coverage.firstObservedAt!, locale)} → {dateTime(result.coverage.lastObservedAt!, locale)}
-      </p>
-      <p className={`mt-2 ${metaClass}`}>{locale === "zh"
-        ? "以上为读取到的原始观测覆盖，包含未通过核验的记录；不代表连续监测、当前可购买或整个窗口内价格不变。"
-        : "Coverage describes the retrieved raw observations, including unverified records. It does not establish continuous monitoring, current availability or unchanged prices throughout the window."}</p>
-    </PublicSection> : null}
-    {unavailable ? <Unavailable locale={locale} /> : product && !events.length ? <EmptyState title={result?.truncated
-      ? (locale === "zh" ? "观察窗口未读取完整" : "Observation window is incomplete")
-      : (locale === "zh" ? "尚无可确认的调价事件" : "No confirmed price-change events yet")}>
-      {locale === "zh" ? "这不代表价格从未变化。旧记录可能未保存计费周期；我们保留原始观测，不补造缺失历史。" : "This does not mean prices have never changed. Older observations may lack a retained billing period. We preserve observations without inventing missing history."}
-    </EmptyState> : null}
-    {events.length ? <section className="mt-8" aria-label={locale === "zh" ? "已确认的调价" : "Confirmed price changes"}>
-      <h2 className={headingClass}>{locale === "zh" ? "已确认的调价" : "Confirmed price changes"}</h2>
-      <div className={locale === "zh" ? "gs-history-events" : gridClass}>{events.slice(0, 100).map(event => <PublicSection key={`${event.before.id}:${event.after.id}`}>
-        <div className="p-5 md:p-6">
-          <div className="flex items-start justify-between gap-3"><h3 className={headingClass}>{event.after.planName}</h3><span className={`shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${event.direction === "decrease" ? "bg-[var(--color-price-low-soft)] text-[var(--color-price-low)]" : "bg-[var(--color-price-high-soft)] text-[var(--color-price-high)]"}`}>{locale === "zh" ? event.direction === "increase" ? "本币涨价" : "本币降价" : event.direction === "increase" ? "Price increase" : "Price decrease"} {event.percent > 0 ? "+" : ""}{event.percent}%</span></div>
-          <p className={`mt-2 ${mutedClass}`}>{countryName(event.after.countryCode, locale)} · {getBillingCycleLabel(event.after.billingCycle as ProductPlan["billing"], locale)} · App Store</p>
-          <div className="mt-5 flex items-center gap-4 tabular-nums"><span className="text-lg text-[var(--color-text-secondary)]">{money(event.before.amount, event.before.currency, locale)}</span><ArrowRight size={18} className="shrink-0 text-[var(--color-text-muted)]" aria-hidden="true" /><span className="text-2xl font-semibold text-[var(--color-text-primary)]">{money(event.after.amount, event.after.currency, locale)}</span></div>
-          <p className={`mt-3 ${metaClass}`}>{dateTime(event.before.observedAt, locale)} → {dateTime(event.after.observedAt, locale)}</p>
-        </div>
-        <div className="flex flex-wrap gap-x-6 border-t border-[var(--color-border-default)] px-5 py-1 md:px-6"><Link className={linkClass} href={`/${locale}/price-records/${event.before.id}`}>{locale === "zh" ? "变化前快照" : "Before snapshot"}</Link><Link className={linkClass} href={`/${locale}/price-records/${event.after.id}`}>{locale === "zh" ? "变化后快照" : "After snapshot"}<ArrowRight size={14} aria-hidden="true" /></Link></div>
-      </PublicSection>)}</div>
-    </section> : null}
-    {(result?.eventCount || 0) > 100 ? <p className={mutedClass}>{locale === "zh" ? "显示最近 100 个已确认事件。" : "Showing the latest 100 confirmed events."}</p> : null}
-    {snapshots.length ? <PublicSection className="mt-6">
-      <PublicSectionHeader title={locale === "zh" ? "最近原始观测" : "Recent original observations"} description={locale === "zh" ? "查看当时保存的套餐条目与原始价格文本。" : "Inspect the plan items and original price text retained at collection."} />
-      <div className="divide-y divide-[var(--color-border-default)]">{snapshots.map(snapshot => <Link key={snapshot.id} href={`/${locale}/price-records/${snapshot.id}`} className="flex min-h-11 items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--color-bg-subtle)] md:px-6">
-        <div className="min-w-0"><span className="text-sm font-semibold text-[var(--color-text-primary)]">{countryName(snapshot.countryCode, locale)} · {snapshot.planName}</span><p className={`mt-1 ${metaClass}`}>{snapshot.observedAt.slice(0, 10)} · App Store</p></div><ArrowRight size={16} aria-hidden="true" className="shrink-0 text-[var(--color-text-muted)]" />
-      </Link>)}</div>
-    </PublicSection> : null}
-    {result ? <div className={`mt-6 ${metaClass}`}>
-      <p>{locale === "zh" ? "观察窗口：最近 120 天，分页读取，安全上限为最近 50,000 条观测；不推断两次采集之间的生效时刻。" : "Window: the last 120 days, paginated with a safety limit of 50,000 recent observations. Observation times do not establish exactly when a change took effect."}{result.truncated ? (locale === "zh" ? " 本次已触及读取上限，当前结果不是完整历史。" : " The read limit was reached; this is not a complete history.") : ""}</p>
-      <p className="mt-2">{locale === "zh" ? "缺少周期身份、审核中断或来源改变时，不连接两次价格。" : "Missing period identity, review interruptions and source changes break the comparison."}</p>
-    </div> : null}
+    <div className="mt-8"><PageLinks locale={locale} controls={locale === "zh"} /></div>
   </main>;
 }
 

@@ -1,4 +1,5 @@
-import { HistoryPage, evidenceMetadata } from "../../../../components/PriceEvidencePages";
+import { HistoryPage } from "../../../../components/PriceHistoryPage";
+import { evidenceMetadata } from "../../../../components/PriceEvidenceShared";
 export const revalidate = 1800;
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props) {
