@@ -661,6 +661,22 @@
 .gs-public-unified .gs-plan-region-panel [data-gs-disclosure] { border: 0; border-top: var(--gs-border-width) solid var(--gs-subtle); border-radius: 0; background: transparent; }
 .gs-public-unified .gs-plan-region-panel .gs-disclosure-header { padding: var(--gs-space-12) var(--gs-space-14); gap: var(--gs-space-12); min-height: var(--gs-space-56); }
 .gs-public-unified .gs-plan-region-panel .gs-disclosure-header:hover { background: var(--gs-row-hover); }
+
+/* Keep the row focus ring inside the viewport used for height animation. */
+.gs-public-unified .gs-plan-region-panel .gs-disclosure-header:focus-visible {
+  outline-offset: calc(-1 * var(--gs-focus-width));
+}
+
+@media (768px <= width < 840px) {
+  .gs-public-unified .gs-plan-region-panel :is(.gs-plan-row-heading, .gs-plan-row) {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+  .gs-public-unified .gs-plan-row-heading {
+    padding-inline-end: calc(var(--gs-space-14) + var(--gs-space-12) + var(--gs-space-16));
+  }
+  .gs-public-unified .gs-plan-region-panel .gs-disclosure-chevron { flex-shrink: 0; }
+  .gs-public-unified .gs-plan-region-panel .gs-plan-tax { overflow-wrap: anywhere; }
+}
 .gs-public-unified .gs-plan-row > strong { font-size: var(--gs-body-compact-size); font-weight: 500; }
 .gs-public-unified .gs-plan-row-price, .gs-public-unified .gs-plan-desktop-local { text-align: right; }.gs-public-unified .gs-plan-row-price { font-size: var(--gs-table-size); font-weight: 700; }
 .gs-public-unified .gs-plan-desktop-local, .gs-public-unified .gs-plan-tax { font-size: var(--gs-metadata-size); color: var(--gs-text-muted); }
