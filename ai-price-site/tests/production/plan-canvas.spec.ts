@@ -53,6 +53,45 @@ test("keyboard evidence, expansion height and reduced motion remain usable", asy
   await expect(page.getByRole("tab",{name:"比美国便宜",exact:true})).toBeFocused();
   await expect(page.locator(".gs-plan-row")).toHaveCount(6);
 });
+
+test("long amounts and their billing cycle fit the price card and table columns", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const assertFits = async (selector: string, amountText: string) => {
+    const slot = page.locator(selector).first();
+    const price = slot.locator("[data-gs-price-cycle]").first();
+    await price.evaluate((element, amount) => {
+      // This is a layout fixture. The normal exchange-rate data stays untouched.
+      element.closest<HTMLElement>("[data-price-font]")!.dataset.priceFont = "latin";
+      element.querySelector("span[aria-hidden]")!.textContent = amount;
+    }, amountText);
+    await expect.poll(() => slot.evaluate(async (element) => {
+      await document.fonts.ready;
+      const box = element.getBoundingClientRect();
+      const amount = element.querySelector("[data-gs-price-cycle] > span[aria-hidden]")!.getBoundingClientRect();
+      const cycle = element.querySelector("[data-gs-price-cycle] > [data-gs-cycle]")!.getBoundingClientRect();
+      return amount.left >= box.left - 1 && cycle.right <= box.right + 1 &&
+        amount.right <= cycle.left && Math.min(amount.bottom, cycle.bottom) > Math.max(amount.top, cycle.top);
+    })).toBe(true);
+  };
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(route);
+  await assertFits(".gs-plan-hero-price", "JP¥ 13,770.00");
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await assertFits(".gs-plan-row-price", "JP¥ 42,016.50");
+  await page.goto("/zh/ai-pricing/chatgpt");
+  await assertFits(".gs-product-matrix-row .gs-product-matrix-cell", "JP¥ 42,016.50");
+  const matrix = page.locator(".gs-product-table-scroll");
+  expect(await matrix.evaluate(element => element.scrollWidth > element.clientWidth &&
+    document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  const lastPlan = matrix.getByRole("columnheader").getByRole("button").last();
+  const before = await lastPlan.locator("..").getAttribute("aria-sort");
+  await lastPlan.focus();
+  await page.keyboard.press("Enter");
+  await expect(lastPlan).toBeFocused();
+  await expect(lastPlan.locator("..")).toHaveAttribute("aria-sort", before === "ascending" ? "descending" : "ascending");
+});
 test("income calculation uses nominal data only and sparse source hides the block", async ({ page }) => {
   await page.goto(route);
   await expect(page.locator(".gs-plan-work-row")).toHaveCount(5);
