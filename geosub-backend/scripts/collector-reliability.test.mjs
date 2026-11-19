@@ -1,6 +1,7 @@
 import "./suno-official-web.test.mjs";
 import "./collector-review-isolation.test.mjs";
 import "./app-store-purchase-metadata.test.mjs";
+import "./claude-kr-pending-identity.test.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
