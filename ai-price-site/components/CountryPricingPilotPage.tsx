@@ -56,6 +56,10 @@ function getCopy(locale: CountryPagePilotLocale) {
         tax: "税务说明",
         taxConfidence: "税务可信度",
         history: "本币价格记录",
+        historicalPriceChange: "历史调价",
+        historicalChange: (plan: string, before: string, after: string) =>
+          `${plan} 月付曾由 ${before} 调至 ${after}`,
+        historicalSource: "查看历史核验来源",
         noVerifiedChange: "当前未发现达到公开门槛的本币调价；汇率变化不会被记作调价。",
         confirmedOn: "来源复核",
         sourceEvidence: "查看 App Store 证据",
@@ -89,6 +93,10 @@ function getCopy(locale: CountryPagePilotLocale) {
         tax: "Tax note",
         taxConfidence: "Tax confidence",
         history: "Local-price record",
+        historicalPriceChange: "Historical price change",
+        historicalChange: (plan: string, before: string, after: string) =>
+          `${plan} monthly price changed from ${before} to ${after}`,
+        historicalSource: "View historical source",
         noVerifiedChange: "No local-price change currently meets the publication gate. Exchange-rate movement is not treated as a price change.",
         confirmedOn: "Source checked",
         sourceEvidence: "Open App Store evidence",
@@ -213,6 +221,7 @@ export default async function CountryPricingPilotPage({
     ),
   ].join(" + ") || "App Store";
   const sourceUrl = primaryRegion.sourceUrl || pilot.priceEvent?.sourceUrl;
+  const historicalEvent = pilot.historicalPriceEvent;
   const eventPlanName = pilot.priceEvent
     ? plans.find((plan) => plan.slug === pilot.priceEvent?.planSlug)?.name
     : undefined;
@@ -320,8 +329,28 @@ export default async function CountryPricingPilotPage({
           </div>
         </div>
         <div className={cn("border-t border-zinc-200 py-6 sm:border-l sm:pl-6 xl:border-l-0 xl:pl-6 dark:border-zinc-800", "gs-product-country-summary-item")}>
-          <div className={cn("text-xs font-bold text-zinc-500 dark:text-zinc-400", "gs-product-country-summary-label")}>{copy.history}</div>
-          {pilot.priceEvent ? (
+          <div className={cn("text-xs font-bold text-zinc-500 dark:text-zinc-400", "gs-product-country-summary-label")}>
+            {historicalEvent ? copy.historicalPriceChange : copy.history}
+          </div>
+          {historicalEvent ? (
+            <div className={cn("mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-200", "gs-product-country-summary-value")}>
+              <div className="font-bold text-zinc-950 dark:text-white">
+                {copy.historicalChange(historicalEvent.planName, historicalEvent.previousLocalPrice, historicalEvent.priceAfterChange)}
+              </div>
+              <div className={cn("mt-1 text-xs text-zinc-500 dark:text-zinc-400", "gs-product-country-meta")}>
+                {copy.confirmedOn} <time dateTime={historicalEvent.confirmedAt}>{historicalEvent.confirmedAt}</time>
+              </div>
+              <a
+                href={historicalEvent.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn("inline-flex min-h-11 items-center gap-1 text-xs font-bold text-zinc-950 hover:text-lime-700 dark:text-zinc-100 dark:hover:text-lime-400", "gs-product-country-meta inline-flex min-h-11 items-center gap-1")}
+              >
+                {copy.historicalSource}
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              </a>
+            </div>
+          ) : pilot.priceEvent ? (
             <div className={cn("mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-200", "gs-product-country-summary-value")}>
               <div className={cn("font-bold text-zinc-950 dark:text-white", undefined)}>
                 {eventPlanName || pilot.priceEvent.planSlug}: {pilot.priceEvent.previousLocalPrice}
@@ -349,6 +378,11 @@ export default async function CountryPricingPilotPage({
             <p className={cn("mt-2 max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-400", undefined)}>
               {copy.currentPricesHelp}
             </p>
+            {pageCopy.currentPriceNote ? (
+              <p className={cn("mt-2 max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-400", undefined)}>
+                {pageCopy.currentPriceNote}
+              </p>
+            ) : null}
           </div>
           {latestCheckedAt ? (
             <div className={cn("text-sm font-medium text-zinc-500 dark:text-zinc-400", "gs-product-country-updated")}>
