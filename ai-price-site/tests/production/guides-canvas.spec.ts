@@ -32,6 +32,22 @@ for(const width of [1280,390])for(const colorScheme of ['light','dark'] as const
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  });
 }
+for (const width of [768, 1280]) {
+  test(`short guide directory lets the page scroll at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/zh/guides/v7-test-1');
+    const directory = page.getByRole('navigation', { name: '本文目录' });
+    await directory.getByRole('button', { name: '先说结论', exact: true }).hover();
+    await expect.poll(() => directory.evaluate(el => el.scrollHeight - el.clientHeight)).toBe(0);
+    const scrollY = await page.evaluate(() => window.scrollY);
+
+    await page.mouse.wheel(0, 300);
+
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollY);
+    expect(await directory.evaluate(el => el.scrollTop)).toBe(0);
+  });
+}
+
 test('unavailable article/category keeps 404, empty published category has empty state',async({page})=>{
  expect((await page.goto('/zh/guides/v7-does-not-exist'))?.status()).toBe(404);
  expect((await page.goto('/zh/guides/category/v7-does-not-exist'))?.status()).toBe(404);
