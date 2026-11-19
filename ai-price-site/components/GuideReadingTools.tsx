@@ -57,6 +57,14 @@ export function GuideContents({ enabled = true }: { enabled?: boolean }) {
       frame = 0;
       let index = 0;
       items.forEach((item, i) => { if (item.getBoundingClientRect().top <= 150) index = i; });
+      const lastIndex = items.length - 1;
+      if (index < lastIndex) {
+        // Short articles can run out of scroll before the last heading reaches 150px.
+        const end = document.documentElement.scrollHeight - innerHeight;
+        if (end > 0 && scrollY >= end - 1 && items[lastIndex].getBoundingClientRect().top < innerHeight) {
+          index = lastIndex;
+        }
+      }
       setActive(index);
       const rect = article.getBoundingClientRect();
       const progress = scope?.querySelector<HTMLElement>(".gs-guide-progress");
