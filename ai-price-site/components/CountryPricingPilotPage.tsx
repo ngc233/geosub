@@ -353,9 +353,21 @@ export default async function CountryPricingPilotPage({
           ) : pilot.priceEvent ? (
             <div className={cn("mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-200", "gs-product-country-summary-value")}>
               <div className={cn("font-bold text-zinc-950 dark:text-white", undefined)}>
-                {eventPlanName || pilot.priceEvent.planSlug}: {pilot.priceEvent.previousLocalPrice}
-                <ArrowRight className={cn("mx-1 inline h-4 w-4", undefined)} aria-hidden="true" />
-                {pilot.priceEvent.currentLocalPrice}
+                {eventPlanName || pilot.priceEvent.planSlug}: {chineseCanvas ? (
+                  <>
+                    <span className="gs-product-country-event-price">{pilot.priceEvent.previousLocalPrice}</span>{" "}
+                    <span className="gs-product-country-event-next">
+                      <ArrowRight aria-hidden="true" />
+                      {pilot.priceEvent.currentLocalPrice}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {pilot.priceEvent.previousLocalPrice}
+                    <ArrowRight className="mx-1 inline h-4 w-4" aria-hidden="true" />
+                    {pilot.priceEvent.currentLocalPrice}
+                  </>
+                )}
               </div>
               <div className={cn("mt-1 text-xs text-zinc-500 dark:text-zinc-400", "gs-product-country-meta")}>
                 {copy.confirmedOn} {pilot.priceEvent.confirmedAt}

@@ -96,6 +96,11 @@ test("other pilots keep active event display and current source fallback", async
   const { html } = await execute({ product: p, slug: "grok" });
   assert.equal(links(html)[1].href, "https://example.invalid/fictional-row-evidence");
   assert.ok(text(html).includes(`${grokEvent.planSlug}: ${grokEvent.previousLocalPrice}`));
+  assert.match(html, /<span class="gs-product-country-event-price">KRW 49,000<\/span>/);
+  assert.match(html, /<span class="gs-product-country-event-next"><svg\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/svg>KRW 14,000<\/span>/);
+  const english = await execute({ product: p, slug: "grok", locale: "en" });
+  assert.doesNotMatch(english.html, /gs-product-country-event-/);
+  assert.match(english.html, /KRW 49,000<svg\b[^>]*class="[^"]*\binline\b[^"]*"[^>]*>[\s\S]*?<\/svg>KRW 14,000/);
   assert.doesNotMatch(text(html), /历史调价/);
   assert.doesNotMatch(text(html), /暂无同套餐美国参考价/);
 });
