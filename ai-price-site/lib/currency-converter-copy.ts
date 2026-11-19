@@ -1,4 +1,11 @@
 import type { SiteLocale } from "./site-locale";
+import { zhConverterMaximumAmount } from "./zh-converter-amount";
+
+export const zhConverterAmountCopy = {
+  invalid: "请输入普通数字金额",
+  inputTooLarge: `请输入不超过 ${zhConverterMaximumAmount} 的金额`,
+  resultTooLarge: "换算结果超过可显示上限",
+};
 
 export type CurrencyConverterCopy = {
   metadataTitle: string;

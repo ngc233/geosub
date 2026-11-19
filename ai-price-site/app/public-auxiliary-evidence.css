@@ -12,15 +12,78 @@
 .gs-public-unified.gs-evidence-page :is(h2,h3) { color:var(--gs-text); font-size:var(--gs-card-title-size); }
 .gs-public-unified.gs-evidence-page summary { list-style:none; }
 .gs-public-unified.gs-evidence-page summary::-webkit-details-marker { display:none; }
-.gs-public-unified .gs-history-events { margin:16px 0 24px; display:flex; flex-direction:column; gap:12px; }
-.gs-public-unified .gs-history-events > section > div:first-child { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px 24px; align-items:center; }
-.gs-public-unified .gs-history-events > section > div:first-child > * { min-width:0; margin:0; }
 @media (max-width:767px) {
   .gs-public-unified.gs-evidence-page { padding:24px 16px 48px; }
-  .gs-public-unified .gs-history-events > section > div:first-child { grid-template-columns:minmax(0,1fr); }
 }
 .gs-public-unified.gs-evidence-page h1 { font-size:var(--gs-price-hero-mobile); }
 
 .gs-public-unified.gs-evidence-page :is(.text-zinc-400,.text-zinc-500) { color:var(--gs-text-muted); }
 .gs-public-unified.gs-evidence-page .text-zinc-950 { color:var(--gs-text); }
 .gs-public-unified.gs-evidence-page :is(.border-zinc-100,.border-zinc-200) { border-color:var(--gs-border); }
+
+/* Evidence navigation uses the shared link-button primitive without loading
+   country-directory CSS. Keep labels, destinations and current-page semantics. */
+.gs-public-unified.gs-evidence-page .gs-evidence-nav { display:flex; align-items:center; flex-wrap:wrap; gap:var(--gs-space-12); margin:0 0 var(--gs-space-36); padding:0; border:0; }
+.gs-public-unified.gs-evidence-page .gs-evidence-nav [data-gs-ui="button"] { text-decoration:none; margin:0; white-space:nowrap; }
+.gs-public-unified.gs-evidence-page .gs-evidence-nav [data-gs-ui="button"]:hover { background:var(--gs-subtle); }
+.gs-public-unified.gs-evidence-page .gs-evidence-nav [data-gs-variant="primary"]:hover { background:var(--gs-text-secondary); }
+@media(max-width:600px) {
+ .gs-public-unified.gs-evidence-page .gs-evidence-nav { gap:var(--gs-space-8); margin-bottom:var(--gs-space-28); }
+ .gs-public-unified.gs-evidence-page .gs-evidence-nav [data-gs-ui="button"] { font-size:var(--gs-noncritical-caption-size); padding-inline:var(--gs-space-12); }
+ .gs-public-unified.gs-evidence-page .gs-evidence-nav svg { display:none; }
+}
+
+/* Tools uses a 1200px content column inside 24px desktop gutters. */
+.gs-public-unified.gs-history-page {
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, var(--gs-max-content-width));
+  align-content: start;
+  gap: var(--gs-space-18);
+  padding-inline-start: max(var(--gs-desktop-page-padding), calc((100vw - var(--gs-max-content-width)) / 2));
+  background: var(--gs-page);
+}
+.gs-public-unified.gs-history-page > :is(header, nav.gs-evidence-nav, section, div) { margin-block: 0; }
+.gs-public-unified.gs-history-page > header > p { margin-top: var(--gs-space-8); line-height: 1.6; max-width: none; }
+.gs-public-unified .gs-history-changes { background: var(--gs-surface); padding: var(--gs-space-8) var(--gs-space-24); border-radius: var(--gs-radius-panel); }
+.gs-public-unified .gs-history-changes h2 { padding-block: var(--gs-space-14) var(--gs-space-8); }
+.gs-public-unified .gs-history-changes table { width: 100%; border-collapse: collapse; color: var(--gs-text-secondary); font-size: var(--gs-body-compact-size); }
+.gs-public-unified .gs-history-changes tbody tr { height: 52px; border-top: var(--gs-border-width) solid var(--gs-border); }
+.gs-public-unified .gs-history-changes :where(td, th[scope="row"]) { padding: var(--gs-space-4) var(--gs-space-16) var(--gs-space-4) 0; text-align: start; border-bottom: 0; overflow-wrap: anywhere; }
+.gs-public-unified .gs-history-changes small,
+.gs-public-unified .gs-history-date { font-size: var(--gs-metadata-size); font-weight: normal; color: var(--gs-text-muted); }
+.gs-public-unified :is(.gs-history-date, .gs-history-plan) { line-height: 1.4; }
+.gs-public-unified .gs-history-date { width: 25%; }
+.gs-public-unified .gs-history-date time { display: inline-block; }
+.gs-public-unified .gs-history-changes .gs-history-plan { background: transparent; }
+.gs-public-unified .gs-history-changes .gs-history-sources { padding-block: 0; }
+.gs-public-unified .gs-history-plan small { display: block; }
+.gs-public-unified .gs-history-changes strong { color: var(--gs-text); }
+.gs-public-unified .gs-history-price { font-variant-numeric: tabular-nums; }
+.gs-public-unified .gs-history-price svg { display: inline; vertical-align: middle; }
+.gs-public-unified .gs-history-sources a { margin-inline-end: var(--gs-space-8); }
+.gs-public-unified .gs-history-changes .gs-history-delta { text-align: end; padding-inline-end: 0; }
+.gs-public-unified .gs-history-delta span {
+  display: inline-block; padding: 3px var(--gs-space-10); border-radius: var(--gs-radius-tag);
+  font-size: var(--gs-metadata-size); font-weight: 700; white-space: nowrap;
+  background: var(--gs-high-soft); color: var(--gs-high-on-soft);
+}
+.gs-public-unified .gs-history-delta [data-direction="decrease"] { background: var(--gs-tag-low); color: var(--gs-low-on-soft); }
+
+@media (max-width: 767px) {
+  .gs-public-unified.gs-history-page { padding-inline: var(--gs-mobile-page-padding); }
+  .gs-public-unified .gs-history-changes { padding-inline: var(--gs-mobile-card-padding); }
+  .gs-public-unified .gs-history-changes :is(table, tbody) { display: block; }
+  .gs-public-unified .gs-history-changes tbody tr {
+    display: grid; height: auto; padding-block: var(--gs-space-12) var(--gs-space-4);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "plan delta" "price price" "date date" "sources sources";
+    align-items: start; gap: var(--gs-space-6) var(--gs-space-8);
+  }
+  .gs-public-unified .gs-history-changes :where(td, th[scope="row"]) { padding: 0; }
+  .gs-public-unified .gs-history-plan { grid-area: plan; }
+  .gs-public-unified .gs-history-date { grid-area: date; width: auto; }
+  .gs-public-unified .gs-history-price { grid-area: price; }
+  .gs-public-unified .gs-history-sources { grid-area: sources; }
+  .gs-public-unified .gs-history-delta { grid-area: delta; }
+}

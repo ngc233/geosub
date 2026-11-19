@@ -514,12 +514,21 @@
 .gs-public-unified .gs-product-description { font-size: var(--gs-body-size); line-height: var(--gs-body-line-height); color: var(--gs-text-secondary); }
 .gs-public-unified .gs-product-meta { font-size: var(--gs-metadata-size); color: var(--gs-text-muted); }
 .gs-public-unified .gs-product-intro > [data-gs-ui="button"] { justify-self: start; }
-.gs-public-unified .gs-product-conclusion { background: var(--gs-accent-soft); border: var(--gs-border-width) solid var(--gs-accent-border); border-radius: var(--gs-radius-panel); padding: var(--gs-space-28); display: grid; gap: var(--gs-space-14); min-width: 0; }
+.gs-public-unified .gs-product-conclusion { background: var(--gs-accent-soft); border: var(--gs-border-width) solid var(--gs-accent-border); border-radius: var(--gs-radius-panel); padding: var(--gs-space-28); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gs-space-14); min-width: 0; }
 .gs-public-unified .gs-product-conclusion-tools { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--gs-space-8); font-size: var(--gs-home-meta-size); font-weight: var(--gs-weight-emphasis); color: var(--gs-low-on-soft); }
 .gs-public-unified .gs-product-conclusion h2 { font-size: var(--gs-h2-desktop); font-weight: var(--gs-h2-weight); line-height: var(--gs-h2-line-height); }
 .gs-public-unified .gs-product-conclusion h2 .gs-home-flag { vertical-align: middle; display: inline-flex; margin-inline: var(--gs-space-4); }
 .gs-public-unified .gs-product-headline-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--gs-space-14); color: var(--gs-low); }
 .gs-public-unified .gs-product-headline-price [data-gs-price] { line-height: 1; }
+/* Fit wide currency labels to the card while leaving space for the cycle. */
+.gs-public-unified .gs-product-hero[data-price-font="latin"] .gs-product-headline-price {
+  --gs-product-headline-size: var(--gs-price-hero-desktop);
+  --gs-product-headline-fit-size: calc((100cqi - var(--gs-space-36)) / 7.5);
+  container-type: inline-size;
+}
+.gs-public-unified .gs-product-hero[data-price-font="latin"] .gs-product-headline-price [data-gs-price] {
+  font-size: min(var(--gs-product-headline-size), var(--gs-product-headline-fit-size));
+}
 .gs-public-unified .gs-product-conclusion > p { font-size: var(--gs-home-meta-size); color: var(--gs-text-secondary); }
 .gs-public-unified .gs-product-conclusion > a { justify-self: start; }
 .gs-public-unified .gs-product-section { display: grid; gap: var(--gs-space-18); min-width: 0; }
@@ -556,8 +565,15 @@
 .gs-public-unified .gs-product-headline-price > .gs-product-saving { background: var(--gs-accent); color: var(--gs-on-accent); border-radius: var(--gs-radius-tag); padding: var(--gs-space-6) var(--gs-space-12); font-size: var(--gs-body-compact-size); }
 .gs-public-unified .gs-product-headline-price > .gs-product-saving[data-tone="high"] { background: var(--gs-high-soft); }
 .gs-public-unified .gs-product-table-scroll { min-width: 0; overflow-x: auto; border-radius: var(--gs-radius-panel); border: var(--gs-border-width) solid var(--gs-border); background: var(--gs-surface); }
-.gs-public-unified .gs-product-table { padding: var(--gs-space-8); min-width: max(100%, calc(160px + var(--gs-product-plan-count) * 120px + 110px)); }
-.gs-public-unified :is(.gs-product-matrix-head, .gs-product-matrix-row) { display: grid; grid-template-columns: minmax(160px, 1.3fr) repeat(var(--gs-product-plan-count), minmax(120px, 1fr)) 110px; align-items: stretch; gap: var(--gs-space-4); }
+.gs-public-unified .gs-product-table {
+  --gs-product-price-column: var(--gs-plan-column-price);
+  padding: var(--gs-space-8);
+  min-width: max(100%, calc(160px + var(--gs-product-plan-count) * var(--gs-product-price-column) + 110px + var(--gs-space-16) + (var(--gs-product-plan-count) + 1) * var(--gs-space-4)));
+}
+.gs-public-unified .gs-product-section[data-price-font="latin"] .gs-product-table {
+  --gs-product-price-column: calc(var(--gs-plan-column-price) + var(--gs-space-24));
+}
+.gs-public-unified :is(.gs-product-matrix-head, .gs-product-matrix-row) { display: grid; grid-template-columns: minmax(160px, 1.3fr) repeat(var(--gs-product-plan-count), minmax(var(--gs-product-price-column), 1fr)) 110px; align-items: stretch; gap: var(--gs-space-4); }
 .gs-public-unified .gs-product-matrix-head { min-height: var(--gs-touch-target); color: var(--gs-text-muted); font-size: var(--gs-metadata-size); }
 .gs-public-unified .gs-product-matrix-head > div { padding: var(--gs-space-6) var(--gs-space-12); display: flex; align-items: center; }
 .gs-public-unified .gs-product-matrix-head button { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; column-gap: var(--gs-space-6); min-height: var(--gs-touch-target); width: 100%; }
@@ -596,7 +612,7 @@
   .gs-public-unified .gs-product-editorial-plan { padding: var(--gs-space-20); }
   .gs-public-unified .gs-product-identity h1 { font-size: var(--gs-h1-mobile); }
   .gs-public-unified .gs-product-conclusion { padding: var(--gs-space-20); }
-  .gs-public-unified .gs-product-headline-price [data-gs-price] { font-size: var(--gs-price-hero-mobile); }
+  .gs-public-unified .gs-product-hero[data-price-font="latin"] .gs-product-headline-price { --gs-product-headline-size: var(--gs-price-hero-mobile); }
   .gs-public-unified .gs-product-table { min-width: 0; }
   .gs-public-unified .gs-product-matrix-head { display: flex; flex-wrap: wrap; }
   .gs-public-unified .gs-product-matrix-head > div { flex: 1; padding: var(--gs-space-4); }
@@ -623,7 +639,15 @@
 .gs-public-unified .gs-plan-tools { display: flex; gap: var(--gs-space-8); }
 .gs-public-unified .gs-plan-tools button { font-size: var(--gs-home-meta-size); white-space: nowrap; }
 .gs-public-unified .gs-plan-country { display: inline-flex; align-items: center; gap: var(--gs-space-8); }
-.gs-public-unified .gs-plan-hero-price [data-gs-price] { color: var(--gs-low); font-size: var(--gs-plan-hero-desktop); line-height: var(--gs-plan-hero-line-height); font-weight: var(--gs-plan-hero-weight); }
+.gs-public-unified .gs-plan-hero-price { --gs-plan-hero-size: var(--gs-plan-hero-desktop); container-type: inline-size; }
+.gs-public-unified .gs-plan-hero-price [data-gs-price] { color: var(--gs-low); font-size: var(--gs-plan-hero-size); line-height: var(--gs-plan-hero-line-height); font-weight: var(--gs-plan-hero-weight); }
+/* Letter-based currency labels take more space. Reserve room for the cycle in the card. */
+.gs-public-unified .gs-plan-summary[data-price-font="latin"] .gs-plan-hero-price {
+  --gs-plan-hero-fit-size: calc((100cqi - var(--gs-space-36)) / 7.5);
+}
+.gs-public-unified .gs-plan-summary[data-price-font="latin"] .gs-plan-hero-price [data-gs-price] {
+  font-size: min(var(--gs-plan-hero-size), var(--gs-plan-hero-fit-size));
+}
 .gs-public-unified .gs-plan-hero-price [data-gs-cycle] { color: var(--gs-text-muted); font-size: var(--gs-body-size); }
 .gs-public-unified .gs-plan-local { display: flex; align-items: center; flex-wrap: wrap; gap: var(--gs-space-10); color: var(--gs-text-muted); font-size: var(--gs-home-meta-size); }
 .gs-public-unified .gs-plan-saving { display: inline-flex; background: var(--gs-accent); color: var(--gs-on-accent); border-radius: var(--gs-radius-tag); padding: var(--gs-space-6) var(--gs-space-12); font-weight: 700; }
@@ -653,14 +677,30 @@
 .gs-public-unified .gs-plan-search { display: inline-flex; align-items: center; gap: var(--gs-space-8); padding: 0 var(--gs-space-14); min-height: var(--gs-home-search-height); background: var(--gs-surface); border: var(--gs-border-width) solid var(--gs-border); border-radius: var(--gs-radius-control); color: var(--gs-text-muted); }
 .gs-public-unified .gs-plan-search input { border: 0; outline: none; background: transparent; color: var(--gs-text); font-size: var(--gs-body-compact-size); min-width: 0; width: var(--gs-plan-column-local); }
 .gs-public-unified .gs-plan-search:focus-within { border-color: var(--gs-low); box-shadow: var(--gs-shadow-field-focus); }
-.gs-public-unified .gs-plan-region-panel { padding: var(--gs-space-8); background: var(--gs-surface); border-radius: var(--gs-radius-panel); }
-.gs-public-unified .gs-plan-row-heading, .gs-public-unified .gs-plan-row { display: grid; grid-template-columns: minmax(130px,1.2fr) var(--gs-plan-column-price) var(--gs-plan-column-local) minmax(160px,1.4fr) var(--gs-plan-column-tax); gap: var(--gs-space-12); align-items: center; flex: 1; min-width: 0; }
+.gs-public-unified .gs-plan-region-panel { --gs-plan-region-price-width: calc(var(--gs-plan-column-price) + var(--gs-space-20)); padding: var(--gs-space-8); background: var(--gs-surface); border-radius: var(--gs-radius-panel); }
+.gs-public-unified .gs-plan-row-heading, .gs-public-unified .gs-plan-row { display: grid; grid-template-columns: minmax(130px,1.2fr) var(--gs-plan-region-price-width) var(--gs-plan-column-local) minmax(160px,1.4fr) var(--gs-plan-column-tax); gap: var(--gs-space-12); align-items: center; flex: 1; min-width: 0; }
 .gs-public-unified .gs-plan-row-heading { padding: var(--gs-space-8) calc(var(--gs-space-14) + var(--gs-plan-mobile-gap)) var(--gs-space-8) var(--gs-space-14); font-size: var(--gs-metadata-size); color: var(--gs-text-muted); }
 .gs-public-unified .gs-plan-row-heading > :nth-child(2), .gs-public-unified .gs-plan-row-heading > :nth-child(3) { text-align: right; }
 .gs-public-unified .gs-plan-row-heading > :last-child { display: none; }
 .gs-public-unified .gs-plan-region-panel [data-gs-disclosure] { border: 0; border-top: var(--gs-border-width) solid var(--gs-subtle); border-radius: 0; background: transparent; }
 .gs-public-unified .gs-plan-region-panel .gs-disclosure-header { padding: var(--gs-space-12) var(--gs-space-14); gap: var(--gs-space-12); min-height: var(--gs-space-56); }
 .gs-public-unified .gs-plan-region-panel .gs-disclosure-header:hover { background: var(--gs-row-hover); }
+
+/* Keep the row focus ring inside the viewport used for height animation. */
+.gs-public-unified .gs-plan-region-panel .gs-disclosure-header:focus-visible {
+  outline-offset: calc(-1 * var(--gs-focus-width));
+}
+
+@media (768px <= width < 840px) {
+  .gs-public-unified .gs-plan-region-panel :is(.gs-plan-row-heading, .gs-plan-row) {
+    grid-template-columns: minmax(0, 1.2fr) minmax(var(--gs-plan-region-price-width), 1fr) minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+  .gs-public-unified .gs-plan-row-heading {
+    padding-inline-end: calc(var(--gs-space-14) + var(--gs-space-12) + var(--gs-space-16));
+  }
+  .gs-public-unified .gs-plan-region-panel .gs-disclosure-chevron { flex-shrink: 0; }
+  .gs-public-unified .gs-plan-region-panel .gs-plan-tax { overflow-wrap: anywhere; }
+}
 .gs-public-unified .gs-plan-row > strong { font-size: var(--gs-body-compact-size); font-weight: 500; }
 .gs-public-unified .gs-plan-row-price, .gs-public-unified .gs-plan-desktop-local { text-align: right; }.gs-public-unified .gs-plan-row-price { font-size: var(--gs-table-size); font-weight: 700; }
 .gs-public-unified .gs-plan-desktop-local, .gs-public-unified .gs-plan-tax { font-size: var(--gs-metadata-size); color: var(--gs-text-muted); }
@@ -691,7 +731,7 @@
   .gs-public-unified .gs-plan-page h1 { font-size: var(--gs-plan-title-mobile); }.gs-public-unified .gs-plan-page h2 { font-size: var(--gs-card-title-size); }
   .gs-public-unified .gs-plan-summary, .gs-public-unified .gs-plan-guidance, .gs-public-unified .gs-plan-work { display: grid; grid-template-columns: 1fr; gap: var(--gs-plan-mobile-gap); }.gs-public-unified .gs-plan-panel { padding: var(--gs-space-18); }
   .gs-public-unified .gs-plan-lowest .gs-plan-card-top { display: contents; }.gs-public-unified .gs-plan-lowest .gs-plan-tools { order: 2; width: 100%; }.gs-public-unified .gs-plan-lowest .gs-plan-tools > * { flex: 1; }.gs-public-unified .gs-plan-lowest .gs-plan-tools button { width: 100%; }
-  .gs-public-unified .gs-plan-lowest .gs-plan-card-bottom { order: 3; }.gs-public-unified .gs-plan-hero-price [data-gs-price] { font-size: var(--gs-plan-hero-mobile); }
+  .gs-public-unified .gs-plan-lowest .gs-plan-card-bottom { order: 3; }.gs-public-unified .gs-plan-hero-price { --gs-plan-hero-size: var(--gs-plan-hero-mobile); }
   .gs-public-unified .gs-plan-statistics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--gs-space-12); }.gs-public-unified .gs-plan-statistics > div { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gs-space-4); }.gs-public-unified .gs-plan-statistics small { display: none; }.gs-public-unified .gs-plan-statistics [data-gs-price] { font-size: var(--gs-body-size); }
   .gs-public-unified .gs-plan-statistics > div:nth-child(2) { order: 3; }.gs-public-unified .gs-plan-extremes { display: none; }
   .gs-public-unified .gs-plan-filters { width: 100%; }.gs-public-unified .gs-plan-filters .gs-segments { max-width: 100%; }.gs-public-unified .gs-plan-filters .gs-segments button { min-width: 0; padding-inline: var(--gs-space-10); font-size: var(--gs-home-meta-size); white-space: nowrap; }
@@ -874,8 +914,25 @@
  .gs-public-unified .gs-guide-side { grid-column:2; padding-top:0; position:static; }
  .gs-public-unified .gs-guide-collection-heading { flex-wrap:wrap; }
 }
+@media (min-width:768px) {
+ .gs-public-unified.gs-guide-scope .gs-guide-toc {
+   /* Reserve the same top offset as the sticky top-22 utility. */
+   max-block-size:calc(100dvh - 22 * var(--spacing) - var(--gs-space-8));
+   display:flex;
+   flex-direction:column;
+ }
+ .gs-public-unified.gs-guide-scope .gs-guide-toc-desktop {
+   --gs-guide-focus-room:calc(var(--gs-focus-width) + var(--gs-focus-offset));
+   overflow-y:auto;
+   padding:var(--gs-guide-focus-room);
+   margin:calc(-1 * var(--gs-guide-focus-room));
+   scroll-padding:var(--gs-guide-focus-room);
+ }
+ .gs-public-unified.gs-guide-scope .gs-guide-toc-desktop[data-scrollable] { overscroll-behavior-y:contain; }
+}
 @media (max-width:767px) {
  .gs-public-unified .gs-guide-index, .gs-public-unified .gs-guide-article-layout, .gs-public-unified .gs-guide-related { width:calc(100% - 32px); }
+ .gs-public-unified.gs-guide-scope .gs-guide-article { inline-size:100%; }
  .gs-public-unified .gs-guide-index-intro h1 { font-size:var(--gs-guide-title-mobile); }
  .gs-public-unified .gs-guide-step small { font-size:var(--gs-home-meta-size); }
  .gs-public-unified .gs-guide-article h1 { font-size:var(--gs-guide-article-title-mobile); }

@@ -110,3 +110,30 @@ test("prices and locked overview content render without JavaScript", async ({ br
   await expect(page.locator(".gs-product-matrix-row:visible")).toHaveCount(8);
   await context.close();
 });
+
+test("tablet conclusion keeps wide currency text and its cycle inside the card", async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto("/zh/streaming-pricing/netflix");
+  const card = page.locator(".gs-product-conclusion");
+  const amount = card.locator('.gs-product-headline-price [data-gs-price] > span[aria-hidden="true"]');
+  await expect(amount).toBeVisible();
+  // Exercise the wide currency label even when the local fixture has no JPY rate.
+  await amount.evaluate(element => {
+    element.closest(".gs-product-hero")!.setAttribute("data-price-font", "latin");
+    element.textContent = "JP¥ 1,674.00";
+  });
+  await page.evaluate(() => document.fonts.ready);
+  const layout = await card.evaluate(element => {
+    const price = element.querySelector(".gs-product-headline-price [data-gs-price-cycle]")!;
+    const amount = price.querySelector(':scope > span[aria-hidden="true"]')!.getBoundingClientRect();
+    const cycle = price.querySelector(":scope > [data-gs-cycle]")!.getBoundingClientRect();
+    const card = element.getBoundingClientRect();
+    const page = document.documentElement;
+    return {
+      keepsCycleOnLine: amount.right <= cycle.left && Math.max(amount.top, cycle.top) < Math.min(amount.bottom, cycle.bottom),
+      staysInCard: amount.left >= card.left && cycle.right <= card.right,
+      pageOverflow: Math.max(0, page.scrollWidth - page.clientWidth),
+    };
+  });
+  expect(layout).toEqual({ keepsCycleOnLine: true, staysInCard: true, pageOverflow: 0 });
+});

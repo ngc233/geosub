@@ -6,7 +6,8 @@ import SubscriptionCurrencyConverter, {
   ConverterStyleResource,
   type ConverterRate,
 } from "./SubscriptionCurrencyConverter";
-import { getCurrencyConverterCopy } from "../lib/currency-converter-copy";
+import { getCurrencyConverterCopy, zhConverterAmountCopy } from "../lib/currency-converter-copy";
+import { convertZhAmount, parseZhConverterAmount } from "../lib/zh-converter-amount";
 import {
   getCurrencyPairCopy,
   getCurrencyPairLocales,
@@ -176,6 +177,18 @@ export default async function CurrencyConverterPage({
   const toRate = pair ? rateMap.get(pair.to)?.rate || 0 : 0;
   const pairRate =
     pair && fromRate > 0 && toRate > 0 && (locale !== "zh" || (canDisplayConverterRate(rateMap.get(pair.from)) && canDisplayConverterRate(rateMap.get(pair.to)))) ? toRate / fromRate : null;
+
+  function formatExampleResult(amount: number) {
+    if (!pair || pairRate === null) return copy.unavailableShort;
+    if (locale !== "zh") return formatCurrency(amount * pairRate, pair.to, locale);
+
+    const parsed = parseZhConverterAmount(String(amount));
+    if (parsed.status !== "ok") return copy.unavailableShort;
+    const result = convertZhAmount(parsed, rateMap.get(pair.from), rateMap.get(pair.to), pair.to);
+    if (result.status === "ok") return formatCurrency(result.value, pair.to, locale);
+    return result.status === "too-large" ? zhConverterAmountCopy.resultTooLarge : copy.unavailableShort;
+  }
+
   const pairRateDate = pair
     ? [rateMap.get(pair.from), rateMap.get(pair.to)]
         .filter((item): item is ConverterRate => Boolean(item))
@@ -304,13 +317,7 @@ export default async function CurrencyConverterPage({
                         {formatCurrency(amount, pair.from, locale)}
                       </span>
                       <strong className={locale === "zh" ? "tabular-nums" : "tabular-nums text-zinc-950"}>
-                        {pairRate === null
-                          ? copy.unavailableShort
-                          : formatCurrency(
-                              amount * pairRate,
-                              pair.to,
-                              locale,
-                            )}
+                        {formatExampleResult(amount)}
                       </strong>
                     </div>
                   ))}

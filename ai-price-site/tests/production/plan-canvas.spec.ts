@@ -53,6 +53,45 @@ test("keyboard evidence, expansion height and reduced motion remain usable", asy
   await expect(page.getByRole("tab",{name:"比美国便宜",exact:true})).toBeFocused();
   await expect(page.locator(".gs-plan-row")).toHaveCount(6);
 });
+
+test("long amounts and their billing cycle fit the price card and table columns", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const assertFits = async (selector: string, amountText: string) => {
+    const slot = page.locator(selector).first();
+    const price = slot.locator("[data-gs-price-cycle]").first();
+    await price.evaluate((element, amount) => {
+      // This is a layout fixture. The normal exchange-rate data stays untouched.
+      element.closest<HTMLElement>("[data-price-font]")!.dataset.priceFont = "latin";
+      element.querySelector("span[aria-hidden]")!.textContent = amount;
+    }, amountText);
+    await expect.poll(() => slot.evaluate(async (element) => {
+      await document.fonts.ready;
+      const box = element.getBoundingClientRect();
+      const amount = element.querySelector("[data-gs-price-cycle] > span[aria-hidden]")!.getBoundingClientRect();
+      const cycle = element.querySelector("[data-gs-price-cycle] > [data-gs-cycle]")!.getBoundingClientRect();
+      return amount.left >= box.left - 1 && cycle.right <= box.right + 1 &&
+        amount.right <= cycle.left && Math.min(amount.bottom, cycle.bottom) > Math.max(amount.top, cycle.top);
+    })).toBe(true);
+  };
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(route);
+  await assertFits(".gs-plan-hero-price", "JP¥ 13,770.00");
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await assertFits(".gs-plan-row-price", "JP¥ 42,016.50");
+  await page.goto("/zh/ai-pricing/chatgpt");
+  await assertFits(".gs-product-matrix-row .gs-product-matrix-cell", "JP¥ 42,016.50");
+  const matrix = page.locator(".gs-product-table-scroll");
+  expect(await matrix.evaluate(element => element.scrollWidth > element.clientWidth &&
+    document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  const lastPlan = matrix.getByRole("columnheader").getByRole("button").last();
+  const before = await lastPlan.locator("..").getAttribute("aria-sort");
+  await lastPlan.focus();
+  await page.keyboard.press("Enter");
+  await expect(lastPlan).toBeFocused();
+  await expect(lastPlan.locator("..")).toHaveAttribute("aria-sort", before === "ascending" ? "descending" : "ascending");
+});
 test("income calculation uses nominal data only and sparse source hides the block", async ({ page }) => {
   await page.goto(route);
   await expect(page.locator(".gs-plan-work-row")).toHaveCount(5);
@@ -164,4 +203,83 @@ test("plan navigation uses canvas link buttons and supplemental controls follow 
   }
   await page.emulateMedia({reducedMotion:"reduce"});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test("tablet region headers align and tax text stays clear of the disclosure arrow", async ({ page }) => {
+  for (const width of [768, 812, 820, 839, 840, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of [route, "/zh/streaming-pricing/netflix/premium"]) {
+      await page.goto(path);
+      const panel = page.locator(".gs-plan-region-panel");
+      await expect(panel.locator(".gs-plan-row")).toHaveCount(9);
+      await page.evaluate(() => document.fonts.ready);
+      const rows = await panel.evaluate(element => {
+        const headers = [...element.querySelector(".gs-plan-row-heading")!.children].slice(0, 5);
+        return [...element.querySelectorAll<HTMLElement>(".gs-disclosure-header")].map(button => {
+          const cells = [...button.querySelector(".gs-plan-row")!.children];
+          const tax = cells[4];
+          const range = document.createRange();
+          range.selectNodeContents(tax);
+          const taxTextRight = Math.max(...[...range.getClientRects()].map(rect => rect.right));
+          const taxRight = tax.getBoundingClientRect().right;
+          const arrowLeft = button.querySelector(".gs-disclosure-chevron")!.getBoundingClientRect().left;
+          const viewportRight = button.closest(".gs-plan-list-viewport")!.getBoundingClientRect().right;
+          const columnError = Math.max(...cells.map((cell, index) => {
+            const body = cell.getBoundingClientRect(), heading = headers[index].getBoundingClientRect();
+            return Math.max(Math.abs(body.left - heading.left), Math.abs(body.right - heading.right));
+          }));
+          return { taxTextRight, taxRight, arrowLeft, viewportRight, columnError };
+        });
+      });
+      for (const row of rows) {
+        const where = `${path} at ${width}px`;
+        expect(row.columnError, where).toBeLessThanOrEqual(1);
+        expect(row.taxRight + 1, where).toBeLessThan(row.arrowLeft);
+        expect(row.taxTextRight, where).toBeLessThanOrEqual(row.taxRight + 1);
+        expect(row.taxTextRight, where).toBeLessThanOrEqual(row.viewportRight);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  }
+});
+
+test("keyboard focus stays inside the first and last region rows during disclosure", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto(route);
+  const panel = page.locator(".gs-plan-region-panel");
+  const buttons = panel.locator(".gs-disclosure-header");
+  await expect(buttons).toHaveCount(9);
+  for (const button of [buttons.first(), buttons.last()]) {
+    await button.scrollIntoViewIfNeeded();
+    await page.keyboard.press("Tab");
+    await button.focus();
+    const disclosure = button.locator("..");
+    const animated = disclosure.locator(".gs-disclosure-grid");
+    const content = animated.locator(":scope > div");
+    await expect(animated).toHaveCSS("transition-property", "grid-template-rows");
+    await expect(animated).toHaveCSS("transition-duration", "0.22s");
+    for (const [step, expanded] of [false, true, false].entries()) {
+      if (step > 0) await button.press("Enter");
+      await expect(button).toHaveAttribute("aria-expanded", String(expanded));
+      const viewport = panel.locator(".gs-plan-list-viewport");
+      await expect.poll(() => viewport.evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0);
+      const focus = await button.evaluate(element => {
+        const style = getComputedStyle(element);
+        const width = parseFloat(style.outlineWidth), offset = parseFloat(style.outlineOffset);
+        const row = element.getBoundingClientRect();
+        const clip = element.closest(".gs-plan-list-viewport")!.getBoundingClientRect();
+        const outset = width + offset;
+        return {
+          visible: element.matches(":focus-visible") && style.outlineStyle === "solid" && width > 0,
+          inset: outset <= 0,
+          clipped: row.left - outset < clip.left - 1 || row.right + outset > clip.right + 1 ||
+            row.top - outset < clip.top - 1 || row.bottom + outset > clip.bottom + 1,
+        };
+      });
+      expect(focus).toEqual({ visible: true, inset: true, clipped: false });
+      if (expanded) await expect(content).not.toHaveAttribute("inert");
+      else await expect(content).toHaveAttribute("inert", "");
+    }
+    await expect(button).toHaveAttribute("aria-expanded", "false");
+  }
 });
