@@ -136,7 +136,7 @@ const copyByLocale: Record<SiteLocale, CurrencyPairCopy> = {
     examplesDescription: (from, to) => `快速查看 ${from} 换算为 ${to} 的常见金额。`,
     methodologyTitle: "换算方法",
     methodology:
-      "GeoSub 先把原币种折算为美元基准，再换算为目标币种。只有同步时间不超过 18 小时的汇率才会用于计算。",
+      "GeoSub 先把原币种折算为美元基准，再换算为目标币种。汇率超过 18 小时未同步时，会提示正在使用最近一次可用汇率。汇率缺失或超过 7 天未同步时，停止换算。",
     paymentTitle: "实际扣款提示",
     paymentNote:
       "银行卡、支付平台、税费与结算时间可能影响最终金额。本页适合估算，不代表发卡行报价。",
