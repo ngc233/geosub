@@ -20,6 +20,8 @@
 .gs-public-unified.gs-product-country-content .gs-product-country-summary-label { font-size:var(--gs-metadata-size); color:var(--gs-text-muted); margin-bottom:var(--gs-space-8); }
 .gs-public-unified.gs-product-country-content .gs-product-country-summary-value { font-size:var(--gs-home-meta-size); line-height:var(--gs-body-line-height); color:var(--gs-text-secondary); }
 .gs-public-unified.gs-product-country-content .gs-product-country-summary-item:first-child .gs-product-country-summary-value { font-weight:var(--gs-weight-strong); color:var(--gs-text); }
+.gs-public-unified.gs-product-country-content .gs-product-country-event-price { display:inline-block; white-space:nowrap; }
+.gs-public-unified.gs-product-country-content .gs-product-country-event-next { display:inline-flex; align-items:center; gap:var(--gs-space-4); vertical-align:middle; white-space:nowrap; }
 .gs-public-unified.gs-product-country-content .gs-product-country-meta { font-size:var(--gs-metadata-size); line-height:var(--gs-metadata-line-height); color:var(--gs-text-muted); margin-top:var(--gs-space-6); overflow-wrap:anywhere; }
 .gs-public-unified.gs-product-country-content .gs-product-country-prices { margin-bottom:var(--gs-plan-section-gap); }
 .gs-public-unified.gs-product-country-content .gs-product-country-section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:var(--gs-space-20); margin-bottom:var(--gs-space-16); }
