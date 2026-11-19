@@ -22,6 +22,14 @@ export type CountryPagePilot = {
     confirmedAt: string;
     sourceUrl: string;
   };
+  historicalPriceEvent?: {
+    planSlug: string;
+    planName: string;
+    previousLocalPrice: string;
+    priceAfterChange: string;
+    confirmedAt: string;
+    sourceUrl: string;
+  };
 };
 
 export const countryPagePilots: CountryPagePilot[] = [
@@ -36,26 +44,27 @@ export const countryPagePilots: CountryPagePilot[] = [
       en: "Claude prices and plans in South Korea",
     },
     description: {
-      zh: "查看 Claude Pro、Max 5x 和 Max 20x 的韩国 App Store 月付价格，并区分本币调价与汇率变化。",
-      en: "Review Korean App Store monthly prices for Claude Pro, Max 5x and Max 20x, with local price changes separated from exchange-rate movement.",
+      zh: "查看 Claude 在韩国 App Store 已核验的月付价格，以及有日期和来源的历史调价记录。",
+      en: "See verified monthly Claude prices in the South Korean App Store and past price changes with their dates and sources.",
     },
     decisionSummary: {
-      zh: "韩国区三档个人套餐齐全。Max 5x 的韩元标价出现了经复核的变化，因此比较时应以当前韩元价格为准，而不是用旧美元折算结果判断涨跌。",
-      en: "All three individual tiers are present in South Korea. Max 5x has a reviewed local-price change, so the current KRW amount matters more than an older USD conversion.",
+      zh: "比较韩国区月付费用时，请看当前价格表中的韩元标价和采集日期。历史调价卡片记录的是当时核验的价格。",
+      en: "Use the KRW amounts and collection dates in the current table to compare monthly costs. The historical record shows the prices verified at the time.",
     },
     localContext: {
-      zh: "适合需要直接比较 Pro 与两档 Max 使用额度的韩国区用户。高阶套餐价差较大，先确认自己的使用强度，再判断是否需要 Max。",
-      en: "This page is most useful for Korean users comparing Pro with the two Max usage tiers. The step up is substantial, so expected usage should drive the choice.",
+      zh: "韩国 App Store 以韩元标价。比较不同时期的费用时，请先看韩元金额，其次再看美元折算。",
+      en: "The Korean App Store lists prices in KRW. Compare KRW amounts first when checking how the price changed over time.",
     },
     availabilityCaution: {
       zh: "购买前仍需确认 Apple ID 地区、当地付款方式和最终结算税费；GeoSub 展示的是公开商店价格，不代表跨区购买一定可行。",
       en: "Before subscribing, confirm the Apple ID region, accepted local payment method and final checkout tax. Public storefront pricing does not guarantee cross-region eligibility.",
     },
-    evidenceKind: "price_event",
-    priceEvent: {
+    evidenceKind: "regional_price",
+    historicalPriceEvent: {
       planSlug: "max-5x",
+      planName: "Max 5x",
       previousLocalPrice: "KRW 99,000",
-      currentLocalPrice: "KRW 199,000",
+      priceAfterChange: "KRW 199,000",
       confirmedAt: "2026-08-16",
       sourceUrl: "https://apps.apple.com/kr/app/id6473753684",
     },
@@ -338,8 +347,26 @@ export function getCountryPagePilotLanguageAlternates(
   };
 }
 
-// Names and counts come from exactly the monthly iOS rows rendered in the table.
-export function getCountryPageCopy(pilot: CountryPagePilot, locale: CountryPagePilotLocale, plans: Pick<ProductPlan, "name">[]) {
+// Claims about current prices follow the monthly iOS rows rendered in the table.
+export function getCountryPageCopy(pilot: CountryPagePilot, locale: CountryPagePilotLocale, plans: Pick<ProductPlan, "name" | "slug">[]) {
+  if (pilot.productSlug === "claude" && pilot.countryCode === "KR") {
+    const oldPlans = [
+      { slug: "max-5x", name: "Max 5x" },
+      { slug: "max-20x", name: "Max 20x" },
+    ];
+    const missingNames = oldPlans
+      .filter((oldPlan) => !plans.some((plan) => plan.slug === oldPlan.slug))
+      .map((oldPlan) => oldPlan.name);
+    return {
+      description: pilot.description[locale],
+      decisionSummary: pilot.decisionSummary[locale],
+      currentPriceNote: missingNames.length === 0
+        ? undefined
+        : locale === "zh"
+          ? `旧 ${missingNames.join(" 和 ")} 暂无已核验的当前价格。`
+          : `Verified current pricing is unavailable for the original ${missingNames.join(" and ")}.`,
+    };
+  }
   if (pilot.productSlug !== "chatgpt" || plans.length === 0) {
     return { description: pilot.description[locale], decisionSummary: pilot.decisionSummary[locale] };
   }

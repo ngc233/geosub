@@ -68,7 +68,7 @@ const links = (html: string) => [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g
   href: m[1].match(/\bhref="([^"]+)"/)?.[1], rel: m[1].match(/\brel="([^"]+)"/)?.[1], target: m[1].match(/\btarget="([^"]+)"/)?.[1], text: text(m[2]),
 }));
 
-test("product-country renders real event, source fallback and long fictional KRW without dropping evidence", async () => {
+test("product-country preserves historical evidence and long fictional current prices", async () => {
   const result = await execute();
   const body = text(result.html);
   assert.match(body, /KRW 99,000/); assert.match(body, /KRW 199,000/); assert.match(body, /2026-08-16/);
@@ -78,19 +78,50 @@ test("product-country renders real event, source fallback and long fictional KRW
   assert.match(body, /税务可信度 · 待复核/);
   const allLinks = links(result.html);
   assert.deepEqual(allLinks.map(a => a.href), ["/zh/ai-pricing/claude", "https://apps.apple.com/kr/app/id6473753684", "/zh/ai-pricing/claude/max-5x", "/zh/ai-pricing/claude/max-20x", "https://example.invalid/fictional-official"]);
+  assert.equal(allLinks[1].text, "查看历史核验来源");
+  assert.doesNotMatch(body, /暂无已核验的当前价格/);
   for (const index of [1, 4]) { assert.equal(allLinks[index].rel, "noopener noreferrer"); assert.equal(allLinks[index].target, "_blank"); }
   assert.match(result.html, /data-track-event="click_related_plan"/);
   assert.match(result.html, /data-track-placement="country_page_price_table"/);
   assert.deepEqual(JSON.parse(JSON.stringify(result.calls.filter(c => c.reader === "rates").map(c => c.args))), [[["KRW"]]]);
 });
 
-test("row source takes precedence; absent matching event plan retains the editorial event slug", async () => {
+test("other pilots keep active event display and current source fallback", async () => {
   const p = product(); p.plans = [p.plans[1]];
+  p.slug = "grok";
+  const grokEvent = countryPagePilots.find(pilot => pilot.productSlug === "grok" && pilot.countryCode === "KR")!.priceEvent!;
+  const fallback = await execute({ product: p, slug: "grok" });
+  assert.equal(links(fallback.html)[1].href, grokEvent.sourceUrl);
   p.plans[0].regions[0].sourceUrl = "https://example.invalid/fictional-row-evidence";
-  const { html } = await execute({ product: p });
+  const { html } = await execute({ product: p, slug: "grok" });
   assert.equal(links(html)[1].href, "https://example.invalid/fictional-row-evidence");
-  assert.match(text(html), /max-5x: KRW 99,000/);
+  assert.ok(text(html).includes(`${grokEvent.planSlug}: ${grokEvent.previousLocalPrice}`));
+  assert.doesNotMatch(text(html), /历史调价/);
   assert.doesNotMatch(text(html), /暂无同套餐美国参考价/);
+});
+
+test("Claude KR renders history separately from a Pro-only table in both languages", async () => {
+  const p = product();
+  p.plans = [{ ...p.plans[0], slug: "pro", name: "Claude Pro" }];
+  p.plans[0].regions[0].sourceUrl = "https://example.invalid/fictional-pro-evidence";
+  for (const locale of ["zh", "en"] as const) {
+    const { html, metadata } = await execute({ product: p, locale });
+    const table = html.match(/<tbody\b[^>]*>([\s\S]*?)<\/tbody>/)?.[1] || "";
+    assert.equal((table.match(/<tr\b/g) || []).length, 1);
+    assert.match(text(table), /Claude Pro/);
+    assert.doesNotMatch(table, /Max|99,000|199,000/);
+    assert.match(text(html), locale === "zh" ? /历史调价/ : /Historical price change/);
+    assert.match(text(html), /Max 5x.*KRW 99,000.*KRW 199,000/);
+    assert.match(html, /<time dateTime="2026-08-16">2026-08-16<\/time>/);
+    assert.match(text(html), locale === "zh"
+      ? /旧 Max 5x 和 Max 20x 暂无已核验的当前价格/
+      : /Verified current pricing is unavailable for the original Max 5x and Max 20x/);
+    const allLinks = links(html);
+    assert.equal(allLinks.find(a => a.text === (locale === "zh" ? "查看 App Store 证据" : "Open App Store evidence"))?.href, p.plans[0].regions[0].sourceUrl);
+    assert.equal(allLinks.find(a => a.text === (locale === "zh" ? "查看历史核验来源" : "View historical source"))?.href, "https://apps.apple.com/kr/app/id6473753684");
+    assert.doesNotMatch(String(metadata.description), /99,000|199,000|Max 5x|Max 20x/);
+    assert.doesNotMatch(text(html), /三档个人套餐齐全|All three individual tiers are present/);
+  }
 });
 
 test("no US reference and unusable FX retain existing truthful fallbacks", async () => {
