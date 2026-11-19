@@ -890,8 +890,25 @@
  .gs-public-unified .gs-guide-side { grid-column:2; padding-top:0; position:static; }
  .gs-public-unified .gs-guide-collection-heading { flex-wrap:wrap; }
 }
+@media (min-width:768px) {
+ .gs-public-unified.gs-guide-scope .gs-guide-toc {
+   /* Reserve the same top offset as the sticky top-22 utility. */
+   max-block-size:calc(100dvh - 22 * var(--spacing) - var(--gs-space-8));
+   display:flex;
+   flex-direction:column;
+ }
+ .gs-public-unified.gs-guide-scope .gs-guide-toc-desktop {
+   --gs-guide-focus-room:calc(var(--gs-focus-width) + var(--gs-focus-offset));
+   overflow-y:auto;
+   padding:var(--gs-guide-focus-room);
+   margin:calc(-1 * var(--gs-guide-focus-room));
+   scroll-padding:var(--gs-guide-focus-room);
+ }
+ .gs-public-unified.gs-guide-scope .gs-guide-toc-desktop[data-scrollable] { overscroll-behavior-y:contain; }
+}
 @media (max-width:767px) {
  .gs-public-unified .gs-guide-index, .gs-public-unified .gs-guide-article-layout, .gs-public-unified .gs-guide-related { width:calc(100% - 32px); }
+ .gs-public-unified.gs-guide-scope .gs-guide-article { inline-size:100%; }
  .gs-public-unified .gs-guide-index-intro h1 { font-size:var(--gs-guide-title-mobile); }
  .gs-public-unified .gs-guide-step small { font-size:var(--gs-home-meta-size); }
  .gs-public-unified .gs-guide-article h1 { font-size:var(--gs-guide-article-title-mobile); }
