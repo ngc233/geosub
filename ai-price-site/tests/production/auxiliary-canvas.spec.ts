@@ -89,6 +89,86 @@ test('expired and missing quotes never produce amounts; 20-hour quote retains th
   await expect(page.locator('.gs-converter-comparisons > div').filter({hasText:'KRW'})).toContainText('不可用');
 });
 
+for (const width of [1280, 390]) for (const colorScheme of ['light', 'dark'] as const) {
+  test(`Chinese amount boundaries ${width} ${colorScheme}: precise rounding, consistent results and individual limits`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+    await page.goto('/zh/tools/currency-converter/usd-jpy');
+    const amount = page.getByRole('textbox', { name: '需要换算的金额' });
+    const resultCard = page.locator('.gs-converter-result');
+    const result = resultCard.locator('[data-gs-number] [aria-hidden="true"]');
+    const comparison = (currency: string) => page.locator('.gs-converter-comparisons > div')
+      .filter({ has: page.locator('span').filter({ hasText: new RegExp(` ${currency}$`) }) }).locator('strong');
+    const examples = page.getByRole('heading', { name: '常见金额换算', exact: true }).locator('..');
+    const inputLimit = '请输入不超过 9,999,999,999.99 的金额';
+    const resultLimit = '换算结果超过可显示上限';
+    const fitsViewport = () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+      && [...document.querySelectorAll('.gs-converter-result, .gs-converter-comparisons > div')]
+        .every(node => node.scrollWidth <= node.clientWidth));
+
+    await expect(amount).toHaveValue('19.99');
+    await expect(result).toHaveText('JP¥ 2,999');
+    await expect(comparison('JPY')).toHaveText('JP¥ 2,999');
+    for (const [input, expected] of [['19.98999999', 'JP¥ 2,998'], ['19.99000001', 'JP¥ 2,999']]) {
+      await amount.fill(input);
+      await expect(result).toHaveText(expected);
+      await expect(comparison('JPY')).toHaveText(expected);
+    }
+    for (const input of ['5', '10', '20', '50', '100']) {
+      const example = examples.getByText(`$ ${input}.00`, { exact: true }).locator('..').locator('strong');
+      const expected = `JP¥ ${new Intl.NumberFormat('zh-CN').format(Number(input) * 150)}`;
+      await amount.fill(input);
+      await expect(example).toHaveText(expected);
+      await expect(result).toHaveText(expected);
+      await expect(comparison('JPY')).toHaveText(expected);
+    }
+
+    await page.getByLabel('选择目标币种').selectOption('CNY');
+    await amount.fill('0.004');
+    await expect(resultCard).toContainText('$ 0.004 约等于');
+    await expect(result).toHaveText('¥ 0.03');
+    await expect(comparison('CNY')).toHaveText('¥ 0.03');
+    await amount.fill('0');
+    await expect(result).toHaveText('¥ 0.00');
+
+    await amount.fill('9,999,999,999.99');
+    await expect(amount).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(result).toHaveCount(0);
+    await expect(resultCard).toContainText(resultLimit);
+    await expect(comparison('CNY')).toHaveText(resultLimit);
+    await expect(comparison('EUR')).toHaveText('€ 8,999,999,999.99');
+    await page.getByLabel('选择目标币种').selectOption('USD');
+    await expect(result).toHaveText('$ 9,999,999,999.99');
+    expect(await fitsViewport()).toBe(true);
+
+    for (const [input, message] of [
+      ['9,999,999,999.9901', inputLimit],
+      ['123456789012345.67', inputLimit],
+      ['1e308', '请输入普通数字金额'],
+    ]) {
+      await amount.fill(input);
+      await expect(amount).toHaveValue(input);
+      await expect(amount).toHaveAttribute('aria-invalid', 'true');
+      await expect(amount).toHaveAccessibleDescription(message);
+      await expect(result).toHaveCount(0);
+      await expect(resultCard).toContainText(message);
+      await expect(comparison('EUR')).toHaveText('不可用');
+      expect(await fitsViewport()).toBe(true);
+    }
+    await amount.fill('10');
+    await expect(result).toHaveText('$ 10.00');
+    await expect(amount).not.toHaveAttribute('aria-invalid', 'true');
+
+    await page.goto('/zh/tools/currency-converter/usd-eur');
+    await amount.fill('10');
+    await expect(result).toHaveText('€ 9.00');
+    await expect(comparison('EUR')).toHaveText('€ 9.00');
+    await expect(examples.getByText('$ 10.00', { exact: true }).locator('..').locator('strong')).toHaveText('€ 9.00');
+    await expect(page.locator('.gs-converter footer')).toContainText('当前使用最近一次可用汇率');
+    expect(await fitsViewport()).toBe(true);
+  });
+}
+
 test('confirmed fictional history retains original local values and both source records; empty history stays honest',async({page})=>{
   await page.goto('/zh/price-history/chatgpt',{waitUntil:'networkidle'});
   const events=page.getByRole('region',{name:'已确认的调价'});
