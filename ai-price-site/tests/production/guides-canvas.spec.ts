@@ -48,6 +48,32 @@ for (const width of [768, 1280]) {
   });
 }
 
+test('short guide selects its final visible heading at the page bottom', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/zh/guides/tool-review');
+  await page.evaluate(() => document.fonts.ready);
+  const directory = page.getByRole('navigation', { name: '本文目录' });
+  const first = directory.getByRole('button', { name: '先说结论', exact: true });
+  const lastLabel = '检查证据日期与产品变化';
+  const last = directory.getByRole('button', { name: lastLabel, exact: true });
+  await expect(first).toHaveAttribute('aria-current', 'location');
+
+  await last.press('Enter');
+
+  const heading = page.getByRole('heading', { name: lastLabel, exact: true });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
+  expect(await heading.evaluate(element => {
+    const end = document.documentElement.scrollHeight - window.innerHeight;
+    return end > 0 && window.scrollY >= end - 1 && element.getBoundingClientRect().top > 150;
+  })).toBe(true);
+  await expect(last).toHaveAttribute('aria-current', 'location');
+
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await expect(first).toHaveAttribute('aria-current', 'location');
+});
+
 test('unavailable article/category keeps 404, empty published category has empty state',async({page})=>{
  expect((await page.goto('/zh/guides/v7-does-not-exist'))?.status()).toBe(404);
  expect((await page.goto('/zh/guides/category/v7-does-not-exist'))?.status()).toBe(404);
