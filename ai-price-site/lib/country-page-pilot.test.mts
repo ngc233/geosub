@@ -24,7 +24,7 @@ test("country page pilot keeps a bounded manually reviewed batch", () => {
   const priceEvents = countryPagePilots.flatMap((pilot) =>
     pilot.priceEvent ? [pilot.priceEvent] : [],
   );
-  assert.equal(priceEvents.length, 3);
+  assert.equal(priceEvents.length, 2);
   assert.ok(
     priceEvents.every(
       (event) =>
@@ -32,6 +32,21 @@ test("country page pilot keeps a bounded manually reviewed batch", () => {
         event.sourceUrl.startsWith("https://apps.apple.com/"),
     ),
   );
+});
+
+test("Claude KR retains the verified Max 5x change as historical evidence only", () => {
+  const claude = getCountryPagePilot("claude", "south-korea", "ai")!;
+  assert.equal(claude.evidenceKind, "regional_price");
+  assert.equal(claude.priceEvent, undefined);
+  assert.deepEqual(claude.historicalPriceEvent, {
+    planSlug: "max-5x",
+    planName: "Max 5x",
+    previousLocalPrice: "KRW 99,000",
+    priceAfterChange: "KRW 199,000",
+    confirmedAt: "2026-08-16",
+    sourceUrl: "https://apps.apple.com/kr/app/id6473753684",
+  });
+  assert.deepEqual(countryPagePilots.filter(pilot => pilot.historicalPriceEvent), [claude]);
 });
 
 test("country page pilot paths are stable and category aware", () => {

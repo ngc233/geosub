@@ -12,7 +12,19 @@ const claude = countryPagePilots.find(
 
 function readyInput(): CountryPageReadinessInput {
   return {
-    pilot: claude,
+    // Model a pilot that still uses a price event as current evidence.
+    pilot: {
+      ...claude,
+      evidenceKind: "price_event",
+      historicalPriceEvent: undefined,
+      priceEvent: {
+        planSlug: "max-5x",
+        previousLocalPrice: "KRW 99,000",
+        currentLocalPrice: "KRW 199,000",
+        confirmedAt: "2026-08-16",
+        sourceUrl: "https://apps.apple.com/kr/app/id6473753684",
+      },
+    },
     now: new Date("2026-08-16T12:00:00.000Z"),
     prices: [{
       planSlug: "max-5x",
@@ -48,6 +60,18 @@ function readyInput(): CountryPageReadinessInput {
       engines: ["google", "bing"],
     },
   };
+}
+
+function claudeProOnlyInput(): CountryPageReadinessInput {
+  const input = readyInput();
+  input.pilot = claude;
+  input.prices = [{
+    ...input.prices[0],
+    planSlug: "pro",
+    planName: "Claude Pro",
+    localPrice: 20000, // Fictional price for the test.
+  }];
+  return input;
 }
 
 test("a fully evidenced country pilot is ready", () => {
@@ -89,6 +113,37 @@ test("price events can establish demand but must match the current local price",
   input.prices[0].localPrice = 99000;
   result = evaluateCountryPageReadiness(input);
   assert.ok(result.blockers.includes("event.current_price_or_source_mismatch"));
+});
+
+test("Claude Korea can pass with current Pro and separate Max 5x history", () => {
+  const result = evaluateCountryPageReadiness(claudeProOnlyInput());
+  assert.deepEqual(result.blockers, []);
+  assert.equal(result.status, "ready");
+  assert.equal(result.planCount, 1);
+  assert.equal(claude.evidenceKind, "regional_price");
+  assert.equal(claude.priceEvent, undefined);
+  assert.equal(claude.historicalPriceEvent?.planSlug, "max-5x");
+});
+
+test("Claude Korea history does not compensate for a stale current Pro price", () => {
+  const input = claudeProOnlyInput();
+  input.prices[0].lastCheckedAt = "2026-08-01T08:00:00.000Z";
+  const result = evaluateCountryPageReadiness(input);
+  assert.equal(result.status, "blocked");
+  assert.deepEqual(result.blockers, ["price.older_than_14_days"]);
+});
+
+test("Claude Korea history does not substitute for search impressions", () => {
+  const input = claudeProOnlyInput();
+  input.searchEvidence = {
+    clicks: 0,
+    impressions: 0,
+    latestPeriodEnd: null,
+    engines: [],
+  };
+  const result = evaluateCountryPageReadiness(input);
+  assert.equal(result.status, "blocked");
+  assert.deepEqual(result.blockers, ["demand.no_observed_search_or_price_event"]);
 });
 
 test("explicit availability blockers remain hard release gates", () => {
