@@ -4,7 +4,7 @@ const path = require("node:path");
 const postcss = require("postcss");
 
 const STYLE_FILES = Object.freeze([
-  "public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-country-index.css", "public-product-country.css", "public-listing.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css",
+  "public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-country-index.css", "public-product-country.css", "public-listing.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css", "en/public-english.css",
 ]);
 
 function renderTokens(tokens, compatibility) {

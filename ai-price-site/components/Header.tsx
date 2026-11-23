@@ -598,7 +598,7 @@ export default function Header({
     };
   }, []);
 
-  if (usesUnifiedPublicStyle(pathname)) return <PublicHeader items={navItems} active={activeItemName} pathname={pathname} languages={availableLanguages} />;
+  if (usesUnifiedPublicStyle(pathname)) return <PublicHeader items={navItems} active={activeItemName} pathname={pathname} languages={availableLanguages} locale={currentLocaleCode === "en" ? "en" : "zh"} />;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-white/85 shadow-sm shadow-zinc-950/[0.03] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/85">

@@ -109,7 +109,7 @@ test("expandable region rows keep crawlable content behind a native disclosure",
 
   assert.doesNotMatch(source, /"use client"/);
   assert.doesNotMatch(source, /useState/);
-  assert.match(source, /<details className="group">/);
+  assert.match(source, /<details className="group"(?:\s|>)/);
   assert.match(source, /<summary/);
   assert.doesNotMatch(source, /\{open \?/);
   assert.match(source, /renderChildren\(\)/);

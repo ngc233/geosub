@@ -30,15 +30,15 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
       await expect(page.getByRole("navigation",{name:"主导航"}).getByRole("link",{name:"首页",exact:true})).toHaveAttribute("aria-current","page");
     }
   });
-  test(`locked ${width} ${colorScheme}: Plus and English chrome are pixel-identical`,async({browser},testInfo)=>{
+  test(`locked ${width} ${colorScheme}: Chinese Plus and English routes outside the rollout are pixel-identical`,async({browser},testInfo)=>{
     test.skip(testInfo.project.name !== "local-chrome-acceptance", "Pixel comparison requires the separately retained main preview; run playwright.chrome.config.ts locally.");
-    for(const route of ["/zh/ai-pricing/chatgpt/plus","/en"]){
+    for(const route of ["/zh/ai-pricing/chatgpt/plus","/en/ai-pricing/chatgpt/plus"]){
       const values=[];
       for(const origin of [baseline,"http://127.0.0.1:3143"]){
         const context=await browser.newContext({viewport:{width,height:width===390?844:720},colorScheme,reducedMotion:"reduce"});
         await context.route("**/*",r=>["127.0.0.1","localhost"].includes(new URL(r.request().url()).hostname)?r.continue():r.abort());
         const p=await context.newPage();await p.goto(origin+route,{waitUntil:"networkidle"});await p.evaluate(()=>document.fonts.ready);
-        const name=route==="/en"?"en":"plus";const stage=origin===baseline?"baseline":"v2";
+        const name=route.startsWith("/en/")?"en-plus":"plus";const stage=origin===baseline?"baseline":"v2";
         const text=await p.locator("main").first().innerText();
         const meta=await p.evaluate(()=>({title:document.title,description:document.querySelector('meta[name="description"]')?.getAttribute("content"),h1:[...document.querySelectorAll("h1")].map(x=>x.textContent)}));
         const links=await p.locator("header a,footer a").evaluateAll(nodes=>nodes.map(node=>({text:node.textContent,href:node.getAttribute("href"),rel:node.getAttribute("rel")})));

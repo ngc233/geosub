@@ -31,7 +31,7 @@ const v4ReaderChanges = {
   // V8 adds the region entry only under the Chinese Plus hero.
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "8035608bae3fe69c66a51b9285068f21399a07aecc82c2f69849c083a315c618"
+    "candidate": "6b9fcccb790a0a8598a0d545dc2212b355896a4c498a39fb6ad33600369c647e"
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,

@@ -44,8 +44,8 @@ export function PublicPromotionPlaceholder({ enabled=false }: {enabled?:boolean}
 export function PublicEmphasis({children}:{children:ReactNode}) {return <aside className="gs-emphasis">{children}</aside>;}
 
 /** Native modal supplies inert background, keyboard focus containment and Escape. */
-export function PublicDialog({ label, onClose, children, variant = "menu" }: {
-  label: string; onClose: () => void; children: ReactNode; variant?: "menu" | "search" | "currency";
+export function PublicDialog({ label, closeLabel, onClose, children, variant = "menu" }: {
+  label: string; closeLabel?: string; onClose: () => void; children: ReactNode; variant?: "menu" | "search" | "currency";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const close = useRef(onClose);
@@ -63,7 +63,7 @@ export function PublicDialog({ label, onClose, children, variant = "menu" }: {
     onCancel={event => { event.preventDefault(); close.current(); }}
     onClick={event => { if (event.target === event.currentTarget) close.current(); }}>
     <div className="gs-dialog-body">
-      <div className="gs-dialog-heading"><strong>{label}</strong><button type="button" data-gs-ui="icon-button" aria-label={`关闭${label}`} onClick={onClose}><PublicIcon name="X" /></button></div>
+      <div className="gs-dialog-heading"><strong>{label}</strong><button type="button" data-gs-ui="icon-button" aria-label={closeLabel ?? `关闭${label}`} onClick={onClose}><PublicIcon name="X" /></button></div>
       {children}
     </div>
   </dialog>;
