@@ -33,6 +33,8 @@ import {
   RelatedPlanChoices,
   RelatedPricingProducts,
 } from "./PricingTopicLinks";
+import PlusRegionEntry from "./PlusRegionEntry";
+import { PLUS_BASELINE_PATH } from "../lib/plus-region-experiment";
 import PricingPlatformView from "./PricingPlatformView";
 import AffordabilityComparison from "./AffordabilityComparison";
 import PricingPressureSwitcher from "./PricingPressureSwitcher";
@@ -1451,6 +1453,7 @@ export default async function PricingDetailPage({
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-zinc-600 dark:text-zinc-300">
                   {heroDescription}
                 </p>
+                {stats && canonicalDetailPath === PLUS_BASELINE_PATH ? <PlusRegionEntry /> : null}
 
                 <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={[contentPlan]} />
 

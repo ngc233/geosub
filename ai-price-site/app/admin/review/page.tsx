@@ -1,4 +1,5 @@
 import LazyReviewDetails from "./LazyReviewDetails";
+import GameOfferReview from "./GameOfferReview";
 import { getCollectorRunHistoryRows } from "./collector-run-history-query";
 import AdminProductContext from "../../../components/admin/AdminProductContext";
 import { prisma } from "../../../lib/prisma";
@@ -14,6 +15,9 @@ export default async function ReviewPage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    source?: string;
+    gameView?: string;
+    gamePage?: string;
     runId?:string;
     returnTo?:string;
     detailProduct?: string;
@@ -48,6 +52,11 @@ export default async function ReviewPage({
     exactProduct=found?.slug || productQuery.toLowerCase();
   }
   const discoveryPromoted = params.discoveryPromoted === "1";
+  if (params.source === "games") {
+    const requestedPage = Number(params.gamePage);
+    return <GameOfferReview product={exactProduct} history={params.gameView === "history"}
+      page={Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1}/>;
+  }
   const discoveryProduct = String(params.discoveryProduct ?? productQuery).trim();
   const discoveryJobs = Math.max(0, Number(params.discoveryJobs ?? 0) || 0);
   const pendingPage = Math.max(1, Number(params.page ?? 1) || 1);

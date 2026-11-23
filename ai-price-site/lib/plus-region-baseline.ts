@@ -1,5 +1,6 @@
+export { PLUS_BASELINE_PATH } from "./plus-region-experiment";
+
 /** First observations for a single consented navigation to the Chinese Plus page. */
-export const PLUS_BASELINE_PATH = "/zh/ai-pricing/chatgpt/plus";
 
 type Lookup = "search" | "filter" | "detail" | "compare" | "browse";
 type Fields = Record<string, string | number | boolean | null>;
@@ -168,7 +169,16 @@ export function startPlusBaseline(emit: Emit, initialDocument: boolean) {
   function click(event: MouseEvent) {
     if (!event.isTrusted || !(event.target instanceof Element)) return;
     const control = event.target.closest<HTMLElement>("button,a,input,select,summary,[role=button]");
-    if (!control || control.closest("[data-region-entry],a[href^='#']") || control.matches("[data-region-query]")) return;
+    const entry = control?.closest<HTMLElement>("[data-region-entry]");
+    if (entry) {
+      // An entry jump is diagnostic only, including a keyboard-activated smooth scroll.
+      gestureUntil = 0;
+      browseOrigin = null;
+      setIntent(null);
+      report("region_entry_click", { target: entry.dataset.regionEntry || "" });
+      return;
+    }
+    if (!control || control.closest("a[href^='#']") || control.matches("[data-region-query]")) return;
     if (!hasClick) {
       hasClick = true;
       snapshot("first_click");
@@ -186,7 +196,7 @@ export function startPlusBaseline(emit: Emit, initialDocument: boolean) {
     if (!event.isTrusted) return;
     if (event instanceof KeyboardEvent &&
         (!["ArrowDown","ArrowUp","PageDown","PageUp","Home","End"," "].includes(event.key) ||
-        (event.target instanceof Element && event.target.closest("input,textarea,select,[contenteditable=true]")))) return;
+        (event.target instanceof Element && event.target.closest("input,textarea,select,[contenteditable=true],[data-region-entry]")))) return;
     gestureUntil = performance.now() + 800;
     if (sawTable && !first.has("region_browse_view") && !browseOrigin) {
       browseOrigin = new Set(Array.from(document.querySelectorAll<HTMLElement>(rowSelector))

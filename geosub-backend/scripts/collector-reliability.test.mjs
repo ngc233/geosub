@@ -8,6 +8,7 @@ import test from "node:test";
 import "./preflight-official-web-prices.test.mjs";
 import "./claude-pro-job-reuse.test.mjs";
 import "./claude-pro-review-admission.test.mjs";
+import "../tests/game-store-offers.test.mjs";
 
 const scriptsDir = import.meta.dirname;
 const runner = await readFile(path.join(scriptsDir, "run-collector-jobs.ps1"), "utf8");

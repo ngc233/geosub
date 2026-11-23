@@ -28,9 +28,10 @@ const controllerChanges = {
 // Pin additions as absent in the retained build and exact bytes in the candidate;
 // every other reader retains the original byte-equality assertion.
 const v4ReaderChanges = {
+  // V8 adds the region entry only under the Chinese Plus hero.
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "2d44a512b22ca75d5e180731232d674e8c3bed0d042a60bd349f29c2c549e3ea"
+    "candidate": "6b9fcccb790a0a8598a0d545dc2212b355896a4c498a39fb6ad33600369c647e"
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
@@ -233,6 +234,7 @@ async function main() {
     assert.deepEqual(after.sql.filter(row => !beforeRegistry.sql.some(oldRow => oldRow.id === row.id))
       .map(row => row.filename), [
         "sql/schema/060_formal_price_versions.sql", "sql/schema/061_app_store_review_isolation.sql",
+        "sql/schema/062_game_offers.sql",
       ]);
     assert.deepEqual(after.prisma.filter(row => !beforeRegistry.prisma.some(oldRow => oldRow.id === row.id))
       .map(row => row.migration_name), [

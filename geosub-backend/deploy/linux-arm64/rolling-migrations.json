@@ -7,5 +7,6 @@
   "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql": "2ef1f35b47461096ad4756a2f90ef3654d8c1ad6c6c16221093cbf00afc980e1",
   "ai-price-site/prisma/migrations/20261028090000_admin_trusted_devices/migration.sql": "da083b69b30be829f6d58ac3b52d5f6feb077f97434c2690c2c6a4c8addcf1b9",
   "geosub-backend/sql/schema/060_formal_price_versions.sql": "1a9557ebb42c62b12bcee1df27ac3b57b7df8b6a9be384dac5711f70c4a41b2f",
-  "ai-price-site/prisma/migrations/20261031090000_formal_price_versions/migration.sql": "1a9557ebb42c62b12bcee1df27ac3b57b7df8b6a9be384dac5711f70c4a41b2f"
+  "ai-price-site/prisma/migrations/20261031090000_formal_price_versions/migration.sql": "1a9557ebb42c62b12bcee1df27ac3b57b7df8b6a9be384dac5711f70c4a41b2f",
+  "geosub-backend/sql/schema/062_game_offers.sql": "ff408048598ca60f6c84a4d73a6c3eb6701799739470739947eeac4a76adf3e3"
 }

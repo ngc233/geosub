@@ -724,6 +724,15 @@
       "legacyChecksums": [
         "6d636bc25e6335aab326a4bdf8bd25d7dc40b1f19548446a073e617595c0f283"
       ]
+    },
+    {
+      "id": "schema:062",
+      "file": "sql/schema/062_game_offers.sql",
+      "legacyBaseline": false,
+      "legacyFile": "sql/schema/062_game_offers.sql",
+      "legacyChecksums": [
+        "ff408048598ca60f6c84a4d73a6c3eb6701799739470739947eeac4a76adf3e3"
+      ]
     }
   ],
   "backfill": [

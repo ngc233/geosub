@@ -1,0 +1,80 @@
+{
+  "page": {
+    "locale": "zh-hant-hk",
+    "productId": "EP1004-PPSA01547_00-GTAVISTANDARD001",
+    "isLoggedIn": false
+  },
+  "component": {
+    "args": {
+      "productId": "EP1004-PPSA01547_00-GTAVISTANDARD001"
+    },
+    "overrides": {
+      "theme": "dark",
+      "locale": "zh-hant-hk"
+    },
+    "cache": {
+      "Product:EP1004-PPSA01547_00-GTAVISTANDARD001": {
+        "id": "EP1004-PPSA01547_00-GTAVISTANDARD001",
+        "activeCtaId": "ADD_TO_CART:ADD_TO_CART:EP1004-PPSA01547_00-GTAVISTANDARD001-H004:OUTRIGHT",
+        "skus": [
+          {
+            "__ref": "Sku:EP1004-PPSA01547_00-GTAVISTANDARD001-H004"
+          }
+        ],
+        "webctas": [
+          {
+            "__ref": "GameCTA:ADD_TO_CART:ADD_TO_CART:EP1004-PPSA01547_00-GTAVISTANDARD001-H004:OUTRIGHT"
+          }
+        ]
+      },
+      "GameCTA:ADD_TO_CART:ADD_TO_CART:EP1004-PPSA01547_00-GTAVISTANDARD001-H004:OUTRIGHT": {
+        "id": "ADD_TO_CART:ADD_TO_CART:EP1004-PPSA01547_00-GTAVISTANDARD001-H004:OUTRIGHT",
+        "type": "ADD_TO_CART",
+        "showSignInToOrderLabel": false,
+        "action": {
+          "__typename": "Action",
+          "type": "ADD_TO_CART",
+          "param": [
+            {
+              "__typename": "ActionParam",
+              "name": "skuId",
+              "value": "EP1004-PPSA01547_00-GTAVISTANDARD001-H004"
+            },
+            {
+              "__typename": "ActionParam",
+              "name": "rewardId",
+              "value": "OUTRIGHT"
+            },
+            {
+              "__typename": "ActionParam",
+              "name": "conceptId",
+              "value": "10000730"
+            }
+          ]
+        },
+        "meta": {
+          "__typename": "CTAMeta",
+          "upSellService": "NONE",
+          "exclusive": false,
+          "playabilityDate": null,
+          "ineligibilityReasons": []
+        },
+        "price": {
+          "currencyCode": "HKD",
+          "basePriceValue": 56800,
+          "discountedValue": 56800,
+          "endTime": null,
+          "isExclusive": false,
+          "isTiedToSubscription": false,
+          "applicability": "APPLICABLE",
+          "qualifications": [],
+          "serviceBranding": [
+            "NONE"
+          ],
+          "membershipType": null
+        }
+      }
+    }
+  },
+  "source_sha256": "b1ba41e0963777e0209cff0c610ae5fe9cf145d32c6b87697e9b9017baae38d8"
+}

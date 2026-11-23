@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.34.0 - Unreleased
+
+- Add the draft GTA 6 console price comparison, store collectors and admin review queue. The first pilot covers the PS5 and Xbox Hong Kong standard editions. Operations reviews each observation before its price becomes eligible.
+- Register migration 062 for rolling release. Store configuration and pilot expansion remain separate manual steps.
+
 ## 2.33.2 — Chinese ChatGPT Plus region lookup measurement
 
 - Record consented region lookups and short exits on the Chinese Plus page. Deduplicate the first active lookup per visit and repeated event deliveries.
