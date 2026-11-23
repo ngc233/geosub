@@ -1210,6 +1210,7 @@ export default function ExpandableRegionPriceTable({
       <PublicSectionHeader
         eyebrow={copy.eyebrow}
         title={copy.title(plan.name)}
+        headingProps={{ id: "region-price-table-heading", tabIndex: -1, className: "scroll-mt-20" }}
         description={copy.description(activePlatformLabel, sortCurrencyLabel)}
         actions={
           <div className="text-xs text-zinc-400">

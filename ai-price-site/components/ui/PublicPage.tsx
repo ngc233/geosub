@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 type Tone = "neutral" | "green" | "red" | "amber" | "saving" | "premium";
 
@@ -34,16 +34,21 @@ export function PublicSectionHeader({
   title,
   description,
   actions,
+  headingProps,
 }: {
   eyebrow?: string;
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  headingProps?: Pick<ComponentPropsWithoutRef<"h2">, "id" | "tabIndex" | "className">;
 }) {
   return (
     <div className="flex flex-col gap-4 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800 md:flex-row md:items-end md:justify-between md:px-6">
       <div className="min-w-0">
-        <h2 className="text-xl font-semibold leading-tight text-zinc-950 dark:text-white">
+        <h2
+          {...headingProps}
+          className={["text-xl font-semibold leading-tight text-zinc-950 dark:text-white", headingProps?.className].filter(Boolean).join(" ")}
+        >
           {title}
         </h2>
         {description ? (

@@ -7,13 +7,19 @@ import { getPlusVariant, subscribePlusVariant } from "../lib/plus-region-experim
 const controlSnapshot = () => null;
 
 function jumpToPrices(search: boolean) {
-  const input = document.querySelector<HTMLInputElement>("[data-region-query]");
-  const target = search ? input : input?.closest("section")?.querySelector("h2");
+  if (search) {
+    const input = document.querySelector<HTMLInputElement>("[data-region-query]");
+    if (!input) return;
+    // Keep focus in the click handler so iOS can open the software keyboard.
+    input.scrollIntoView({ behavior: "instant", block: "center" });
+    input.focus({ preventScroll: true });
+    return;
+  }
+
+  const target = document.getElementById("region-price-table-heading");
   if (!target) return;
-  if (!search) target.tabIndex = -1;
+  target.scrollIntoView({ behavior: "instant", block: "start" });
   target.focus({ preventScroll: true });
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  target.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth", block: "center" });
 }
 
 export default function PlusRegionEntry() {

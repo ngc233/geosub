@@ -9,6 +9,26 @@ export function variantForVisitor(visitorId: string | undefined): PlusVariant | 
   return parseInt(visitorId[0], 16) < 8 ? "A" : "B";
 }
 
+export async function enrollWithPlusVisitorLock(
+  locks: Pick<LockManager, "request"> | undefined,
+  enroll: (allowAssignment: boolean) => void,
+) {
+  if (!locks) {
+    enroll(false);
+    return;
+  }
+  let started = false;
+  try {
+    await locks.request("geosub-plus-visitor", () => {
+      started = true;
+      enroll(true);
+    });
+  } catch {
+    // Keep baseline telemetry on lock denial without racing to create an experiment ID.
+    if (!started) enroll(false);
+  }
+}
+
 let current: PlusVariant | null = null;
 const listeners = new Set<() => void>();
 

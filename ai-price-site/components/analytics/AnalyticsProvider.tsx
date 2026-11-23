@@ -11,7 +11,13 @@ import {
 import { getAnalyticsSessionId } from "../../lib/client-analytics-session";
 import { useAnalyticsConsent } from "./useAnalyticsConsent";
 
-import { PLUS_BASELINE_PATH, PLUS_REGION_EXPERIMENT, setPlusVariant, variantForVisitor } from "../../lib/plus-region-experiment";
+import {
+  enrollWithPlusVisitorLock,
+  PLUS_BASELINE_PATH,
+  PLUS_REGION_EXPERIMENT,
+  setPlusVariant,
+  variantForVisitor,
+} from "../../lib/plus-region-experiment";
 import { startPlusBaseline } from "../../lib/plus-region-baseline";
 import { version as buildVersion } from "../../package.json";
 
@@ -142,14 +148,14 @@ function AnalyticsInner() {
           metadata: { path: PLUS_BASELINE_PATH, eligible_at_entry: false } });
         return;
       }
-      function enroll() {
+      function enroll(allowAssignment: boolean) {
         if (cancelled || withdrawn || readAnalyticsConsent() !== ANALYTICS_CONSENT_GRANTED) return;
-        if (!readVisitor()) {
+        if (allowAssignment && !readVisitor()) {
           const secure = location.protocol === "https:" ? "; Secure" : "";
           document.cookie = "geosub_anon_id=" + crypto.randomUUID() + "; Path=/; Max-Age=31536000; SameSite=Lax" + secure;
         }
         const visitorId = readVisitor();
-        const variant = variantForVisitor(visitorId);
+        const variant = allowAssignment ? variantForVisitor(visitorId) : null;
         const sessionId = getAnalyticsSessionId();
         stop = startPlusBaseline((eventKey, fields, eventId) => {
           sendEvent({ ...base, eventId, eventKey, sessionId,
@@ -162,12 +168,10 @@ function AnalyticsInner() {
         initialDocument.current = false;
       }
       // Serialize first entry across tabs where Web Locks are available.
-      if (!readVisitor() && navigator.locks) {
-        void navigator.locks.request("geosub-plus-visitor", enroll).catch(() => {
-          // A denied storage lock leaves the control UI in place.
-        });
+      if (readVisitor()) {
+        enroll(true);
       } else {
-        enroll();
+        void enrollWithPlusVisitorLock(navigator.locks, enroll);
       }
     }
     const onVisible = () => { if (!document.hidden) sync(); };
