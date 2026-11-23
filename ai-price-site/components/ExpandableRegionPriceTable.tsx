@@ -44,6 +44,7 @@ type Props = {
   toolbarCurrencyControl?: ReactNode;
   showPlatformFilter?: boolean;
   showSourceColumn?: boolean;
+  fullEvidenceRows?: boolean;
 };
 
 const platformOptions: Array<{ value: PlatformFilter }> = [
@@ -1046,6 +1047,7 @@ export default function ExpandableRegionPriceTable({
   toolbarCurrencyControl,
   showPlatformFilter = true,
   showSourceColumn = false,
+  fullEvidenceRows = false,
 }: Props) {
   const [platform, setPlatform] = useState<PlatformFilter>(() =>
     getDefaultPlatform(plan.regions),
@@ -1054,7 +1056,7 @@ export default function ExpandableRegionPriceTable({
   const [quickFilter, setQuickFilter] =
     useState<RegionPriceQuickFilter>("all");
   const [selectedRegionKeys, setSelectedRegionKeys] = useState<string[]>([]);
-  const [expandedRegionKey, setExpandedRegionKey] = useState<string | null>(null);
+  const [expandedRegionKeys, setExpandedRegionKeys] = useState<string[]>([]);
 
   const platformCounts = useMemo(() => {
     return plan.regions.reduce<Record<string, number>>((counts, region) => {
@@ -1154,11 +1156,12 @@ export default function ExpandableRegionPriceTable({
         locale={locale}
         comparisonSelected={comparisonSelected}
         comparisonDisabled={comparisonDisabled}
-        evidenceOpen={expandedRegionKey === regionKey}
+        evidenceOpen={expandedRegionKeys.includes(regionKey)}
         onToggleComparison={() => handleToggleComparison(region)}
         onToggleEvidence={() =>
-          setExpandedRegionKey((current) =>
-            current === regionKey ? null : regionKey,
+          setExpandedRegionKeys((current) =>
+            current.includes(regionKey) ? current.filter(key=>key!==regionKey)
+              : fullEvidenceRows ? [...current,regionKey] : [regionKey],
           )
         }
       />
@@ -1243,7 +1246,7 @@ export default function ExpandableRegionPriceTable({
                   onClick={() => {
                     setPlatform(option.value);
                     setSelectedRegionKeys([]);
-                    setExpandedRegionKey(null);
+                    setExpandedRegionKeys([]);
                   }}
                   className={[
                     "relative z-10 flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium transition-colors",
@@ -1414,8 +1417,10 @@ export default function ExpandableRegionPriceTable({
               hiddenCount={hiddenRegions.length}
               showLabel={copy.showMore(hiddenRegions.length)}
               hideLabel={copy.collapse}
+              onCollapse={fullEvidenceRows ? ()=>setExpandedRegionKeys([]) : undefined}
               renderChildren={() => hiddenRegions.map((region, index) =>
-                renderRegionSummaryRow(region, initialVisibleCount + index + 1),
+                fullEvidenceRows ? renderRegionRow(region, initialVisibleCount + index + 1) :
+                  renderRegionSummaryRow(region, initialVisibleCount + index + 1),
               )}
             />
           </>

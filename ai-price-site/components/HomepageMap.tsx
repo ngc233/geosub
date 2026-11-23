@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import HomepageCountryFlag from "./HomepageCountryFlag";
 import HomepageProductMark from "./HomepageProductMark";
@@ -8,14 +8,35 @@ import PublicPriceNumber from "./PublicPriceNumber";
 import type { HomepageRepresentative } from "../lib/homepage-summary";
 import { savingsLabel } from "../lib/homepage-display";
 import { parseCarouselDuration } from "../lib/carousel-duration";
-const names = new Intl.DisplayNames(["zh-CN"],{type:"region"});
-export default function HomepageMap({ products, map, currency, rate, controls }: {
-  products:HomepageRepresentative[]; map:{land:string;points:Record<string,number[]>}; currency:string; rate:number; controls?:ReactNode;
+import { homepageMapHeight, homepageMapWidth, spaceHomepageMapDots } from "../lib/homepage-map-spacing";
+import { getDisplayCurrencyFractionDigits, isSupportedDisplayCurrency } from "../lib/display-currency";
+const chineseNames = new Intl.DisplayNames(["zh-CN"],{type:"region"});
+export default function HomepageMap({ products, map, currency, rate, controls, englishRegionNames }: {
+  products:HomepageRepresentative[]; map:{land:string;points:Record<string,number[]>}; currency:string; rate:number; controls?:ReactNode; englishRegionNames?:Readonly<Record<string,string>>;
 }) {
+  const english = Boolean(englishRegionNames);
+  // Reuse server-localized data. Chrome and Node can disagree on names such as HK.
+  const regionName = (code:string) => englishRegionNames ? englishRegionNames[code] ?? code : chineseNames.of(code);
+  const numberLocale = english ? "en-US" : "zh-CN";
+  const fractionDigits = english && isSupportedDisplayCurrency(currency) ? getDisplayCurrencyFractionDigits(currency) : undefined;
   const [index,setIndex]=useState(0), [paused,setPaused]=useState(false), [reduced,setReduced]=useState(true);
   const [selected,setSelected]=useState<string|null>(null); const root=useRef<HTMLDivElement>(null), bubble=useRef<HTMLDivElement>(null), stage=useRef<HTMLDivElement>(null), landDot=useRef<SVGCircleElement>(null); const id=useId();
   const active=products[index%products.length];
   const pills=useRef<HTMLElement>(null);
+  const touchPoint = useRef<{x:number;y:number} | null>(null);
+  const [bounds, setBounds] = useState({width:0,height:0,dot:0,lowest:0});
+  const positions = useMemo(()=>{
+    if (!english || !bounds.width || !bounds.height) return map.points;
+    const dots = active.prices.flatMap(row=>{
+      const point = map.points[row.code];
+      return point ? [{
+        code:row.code, x:point[0] / homepageMapWidth * bounds.width,
+        y:point[1] / homepageMapHeight * bounds.height,
+        radius:(row.code === active.lowest.code ? bounds.lowest : bounds.dot) / 2,
+      }] : [];
+    });
+    return Object.fromEntries(spaceHomepageMapDots(dots,bounds.width,bounds.height,active.lowest.code));
+  },[active, bounds, english, map.points]);
   const [jelly,setJelly]=useState<{x:number;y:number;width:number;height:number;product:string;cycle:number;changed:boolean;origin:string}|null>(null);
   useLayoutEffect(()=>{
     const container=pills.current;if(!container)return;
@@ -34,6 +55,18 @@ export default function HomepageMap({ products, map, currency, rate, controls }:
     container.querySelectorAll('.gs-home-product-pill').forEach(element=>observer.observe(element));
     return()=>observer.disconnect();
   },[active.slug,products.length]);
+  useLayoutEffect(()=>{
+    if (!english || !pills.current) return;
+    const container = pills.current;
+    if (!container.scrollWidth || container.scrollWidth <= container.clientWidth) return;
+    const target = container.querySelector<HTMLElement>('.gs-home-product-pill[data-active="true"]');
+    if (!target) return;
+    const box = target.getBoundingClientRect(), outer = container.getBoundingClientRect();
+    const left = outer.left + container.clientLeft;
+    const right = left + container.clientWidth;
+    const offset = box.left < left - 1 ? box.left - left : box.right > right + 1 ? box.right - right : 0;
+    if (offset) container.scrollBy({left:offset,behavior:reduced ? "instant" : "smooth"});
+  },[active.slug,english,reduced]);
   useEffect(()=>{const media=matchMedia("(prefers-reduced-motion: reduce)");const sync=()=>setReduced(media.matches);sync();media.addEventListener("change",sync);return()=>media.removeEventListener("change",sync);},[]);
   useEffect(()=>{
     if(paused||reduced||products.length<2)return;
@@ -55,34 +88,87 @@ export default function HomepageMap({ products, map, currency, rate, controls }:
       const diameter=parseFloat(getComputedStyle(element).getPropertyValue("--gs-map-land-dot"));
       if(width>0)dot.setAttribute("r",String(diameter*600/width/2));
     });observer.observe(element);return()=>observer.disconnect();},[]);
+  useLayoutEffect(()=>{
+    if (!english || !stage.current) return;
+    const element = stage.current;
+    const measure = () => {
+      const {width,height} = element.getBoundingClientRect();
+      const dot = element.querySelector(".gs-home-point > span")?.getBoundingClientRect().width ?? 0;
+      const lowest = element.querySelector(".gs-home-low-marker")?.getBoundingClientRect().width ?? dot;
+      setBounds(old=>old.width === width && old.height === height && old.dot === dot && old.lowest === lowest ? old : {width,height,dot,lowest});
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return ()=>observer.disconnect();
+  },[active.slug,english]);
   const choose=(next:number)=>{setPaused(true);setIndex(next);setSelected(null);};
   const selectRegion=(code:string)=>{setPaused(true);setSelected(code);};
   const shown=active.prices.find(row=>row.code===selected) ?? active.lowest;
-  const point=map.points[shown.code], us=map.points.US, low=map.points[active.lowest.code];
+  const point=positions[shown.code], us=positions.US, low=positions[active.lowest.code];
   const tone=shown.code==="US"?"baseline":shown.usd>active.usPrice?"high":shown.usd<active.usPrice?"low":"baseline";
-  const label=`${shown.code===active.lowest.code?"全球最低":"地区价格"} ·`;
-  return <div ref={root} className="gs-home-map" onMouseEnter={()=>setPaused(true)} onFocusCapture={()=>setPaused(true)}>
-    <div className="gs-home-map-heading"><div><strong>各地区价格 · App Store · 每月</strong><div className="gs-home-map-caption"><Link href={active.productHref}>{active.planDisplayName}</Link><Link href={active.href}>查看全部地区 <PublicIcon name="ArrowRight" size={16}/></Link></div></div>{controls}</div>
+  const label=english ? shown.code===active.lowest.code ? "Global lowest ·" : shown.code==="US" ? "U.S. baseline ·" : "" : `${shown.code===active.lowest.code?"全球最低":"地区价格"} ·`;
+  const choosePoint = (event: MouseEvent<HTMLButtonElement>, code: string) => {
+    const pointer = touchPoint.current ?? {x:event.clientX,y:event.clientY};
+    touchPoint.current = null;
+    if (!english || !event.detail || !stage.current) return selectRegion(code);
+    let closest = event.currentTarget;
+    let distance = Infinity;
+    for (const button of stage.current.querySelectorAll<HTMLButtonElement>("[data-map-region]")) {
+      const box = button.getBoundingClientRect();
+      const candidate = (pointer.x - box.left - box.width / 2) ** 2 + (pointer.y - box.top - box.height / 2) ** 2;
+      if (candidate < distance) { distance = candidate; closest = button; }
+    }
+    if (closest !== event.currentTarget && document.activeElement === event.currentTarget) closest.focus({preventScroll:true});
+    selectRegion(closest.dataset.mapRegion ?? code);
+  };
+  return <div ref={root} className="gs-home-map" data-gs-english={english || undefined} onMouseEnter={()=>setPaused(true)} onFocusCapture={()=>setPaused(true)}>
+    <div className="gs-home-map-heading"><div><strong>{english ? "Regional prices · App Store · Monthly" : "各地区价格 · App Store · 每月"}</strong><div className="gs-home-map-caption">{english ? <span data-map-name>{active.planDisplayName}</span> : <Link href={active.productHref}>{active.planDisplayName}</Link>}<Link href={active.href} data-map-link={english || undefined}>{english ? "View all regions" : "查看全部地区"} <PublicIcon name="ArrowRight" size={16}/></Link></div></div>{controls}</div>
     <div className="gs-home-map-visual">
       <div ref={stage} className="gs-home-map-stage">
-        <svg viewBox="0 0 600 220" role="img" aria-label={`${active.name} ${active.plan} 各地区价格地图`}>
+        <svg viewBox="0 0 600 220" role="img" aria-label={english ? `${active.planDisplayName} regional prices` : `${active.name} ${active.plan} 各地区价格地图`}>
           <defs><pattern id={`${id}-dots`} width="10" height="10" patternUnits="userSpaceOnUse"><circle ref={landDot} cx="5" cy="5" r="1.3" fill="currentColor" className="gs-home-land"/></pattern><clipPath id={`${id}-land`}><path d={map.land}/></clipPath></defs>
           <rect width="600" height="220" fill={`url(#${id}-dots)`} clipPath={`url(#${id}-land)`} className="gs-home-land"/>
           {us&&low&&<path key={active.slug} className="gs-home-arc" pathLength={600} d={`M${us[0]},${us[1]} Q${(us[0]+low[0])/2},${Math.min(us[1],low[1])-70} ${low[0]},${low[1]}`}/>}
+          {english && <g className="gs-en-map-leaders" aria-hidden="true">{active.prices.map(({code})=>{
+            const original = map.points[code], adjusted = positions[code];
+            return original && adjusted && Math.hypot(original[0] - adjusted[0], original[1] - adjusted[1]) > 0.01
+              ? <line key={code} x1={original[0]} y1={original[1]} x2={adjusted[0]} y2={adjusted[1]} vectorEffect="non-scaling-stroke"/>
+              : null;
+          })}</g>}
         </svg>
-        {active.prices.map(row=>{const xy=map.points[row.code];if(!xy)return null;return <button key={row.code} type="button" className="gs-home-point" style={{left:`${xy[0]/6}%`,top:`${xy[1]/2.2}%`}} aria-label={`${names.of(row.code)} ${savingsLabel(1-row.usd/active.usPrice)}`} aria-pressed={shown.code===row.code} onClick={()=>selectRegion(row.code)}>{row.code!==active.lowest.code&&<span data-tone={row.code==="US"?"baseline":row.usd>=active.usPrice?"high":row.usd<=active.usPrice/2?"deep-low":"low"}/>}</button>;})}
+        {active.prices.map(row=>{
+          const xy=positions[row.code];
+          if (!xy) return null;
+          const tone = row.code === "US" || english && row.usd === active.usPrice ? "baseline" : row.usd >= active.usPrice ? "high" : row.usd <= active.usPrice / 2 ? "deep-low" : "low";
+          const difference = (row.usd / active.usPrice - 1) * 100;
+          return <button key={row.code} type="button" className="gs-home-point" data-map-region={english ? row.code : undefined}
+            style={{left:`${xy[0]/6}%`,top:`${xy[1]/2.2}%`}} aria-label={`${regionName(row.code)} ${english ? `${Math.round(difference)}% vs U.S.` : savingsLabel(1-row.usd/active.usPrice)}`}
+            aria-pressed={shown.code===row.code} onClick={event=>choosePoint(event,row.code)}
+            onPointerDown={english ? ()=>{touchPoint.current=null;} : undefined}
+            onPointerCancel={english ? ()=>{touchPoint.current=null;} : undefined}
+            onPointerUp={english ? event=>{if(event.pointerType==="touch" && event.isPrimary) touchPoint.current={x:event.clientX,y:event.clientY};} : undefined}>
+            {row.code!==active.lowest.code&&<span data-tone={tone}/>}
+          </button>;
+        })}
         {low&&<span className="gs-home-low-marker" aria-hidden="true" style={{left:`${low[0]/6}%`,top:`${low[1]/2.2}%`}}><span className="gs-home-low-ring" data-gs-pulse={index%2?"b":"a"}/><span data-lowest="true"/></span>}
-        {us&&<span className="gs-home-us" style={{left:`${us[0]/6}%`,top:`${us[1]/2.2}%`}}><HomepageCountryFlag code="US"/>美国 <PublicPriceNumber value={active.usPrice*rate} currency={currency} cycle="monthly" changeKey={`${index}-${currency}`}/></span>}
+        {us&&<span className="gs-home-us" style={{left:`${us[0]/6}%`,top:`${us[1]/2.2}%`}}><HomepageCountryFlag code="US"/>{english ? "U.S." : "美国"} <PublicPriceNumber value={active.usPrice*rate} currency={currency} locale={numberLocale} fractionDigits={fractionDigits} cycle="monthly" changeKey={`${index}-${currency}`}/></span>}
       </div>
       <div ref={bubble} className="gs-home-bubble" data-unmapped={!point} data-tone={tone} style={{"--gs-bubble-x":(point?.[0]??300)/6,"--gs-bubble-y":(point?.[1]??110)/2.2} as CSSProperties}>
-        <small>{label} <HomepageCountryFlag code={shown.code}/>{names.of(shown.code)}</small><div className="gs-home-bubble-values"><strong><PublicPriceNumber value={shown.usd*rate} currency={currency} cycle="monthly" changeKey={`${index}-${currency}-${shown.code}`}/></strong><span>{shown.usd<active.usPrice?"−":shown.usd>active.usPrice?"+":""}{Math.round(Math.abs(1-shown.usd/active.usPrice)*100)}%</span></div>
+        <small>{label} <HomepageCountryFlag code={shown.code}/>{regionName(shown.code)}</small><div className="gs-home-bubble-values"><strong><PublicPriceNumber value={shown.usd*rate} currency={currency} locale={numberLocale} fractionDigits={fractionDigits} cycle="monthly" changeKey={`${index}-${currency}-${shown.code}`}/></strong><span>{shown.usd<active.usPrice?"−":shown.usd>active.usPrice?"+":""}{Math.round(Math.abs(1-shown.usd/active.usPrice)*100)}%</span></div>
       </div>
     </div>
-    <label className="gs-home-region-picker">查看地区<select aria-label="地图查看地区" value={shown.code} onChange={event=>selectRegion(event.target.value)}>{active.prices.map(row=><option key={row.code} value={row.code}>{names.of(row.code)}</option>)}</select></label>
-    <nav ref={pills} className="gs-home-products" aria-label="地图产品" data-jelly-ready={Boolean(jelly)} data-jelly-cycle={jelly?.changed?jelly.cycle:undefined}>
+    <label className="gs-home-region-picker">{english ? "View region" : "查看地区"}<select aria-label={english ? "Map region" : "地图查看地区"} value={shown.code} onChange={event=>selectRegion(event.target.value)}>{active.prices.map(row=><option key={row.code} value={row.code}>{regionName(row.code)}</option>)}</select></label>
+    <nav ref={pills} className="gs-home-products" aria-label={english ? "Map products" : "地图产品"} data-jelly-ready={Boolean(jelly)} data-jelly-cycle={jelly?.changed?jelly.cycle:undefined}>
       <span className="gs-home-product-jelly" aria-hidden="true" style={jelly?{"--gs-jelly-origin":jelly.origin,"--gs-jelly-x":`${jelly.x}px`,"--gs-jelly-y":`${jelly.y}px`,"--gs-jelly-width":`${jelly.width}px`,"--gs-jelly-height":`${jelly.height}px`} as CSSProperties:undefined}/>
-      {products.map((product,i)=><Link key={product.slug} className="gs-home-product-pill" href={product.href} prefetch={false} data-active={i===index} onMouseEnter={()=>choose(i)} onFocus={()=>choose(i)}><HomepageProductMark product={product} className="gs-home-product-pill-mark"/>{product.name}<span className="gs-home-carousel-progress" data-running={!paused&&!reduced&&i===index} data-cycle={index%2}/></Link>)}
+      {products.map((product,i)=>{
+        const common = {className:"gs-home-product-pill","data-active":i===index,onMouseEnter:()=>choose(i),onFocus:()=>choose(i)};
+        const content = <><HomepageProductMark product={product} className="gs-home-product-pill-mark"/>{product.name}<span className="gs-home-carousel-progress" data-running={!paused&&!reduced&&i===index} data-cycle={index%2}/></>;
+        return english
+          ? <button key={product.slug} type="button" {...common} data-product={product.slug} aria-pressed={i===index} onClick={()=>choose(i)}>{content}</button>
+          : <Link key={product.slug} {...common} href={product.href} prefetch={false}>{content}</Link>;
+      })}
     </nav>
-    <p className="gs-home-carousel-note">{reduced?"已按系统设置关闭自动轮换":paused?"自动轮换已暂停":"每 4.5 秒轮换一个产品；悬停或聚焦预览，点击查看详情"}</p>
+    <p className="gs-home-carousel-note">{english ? (reduced ? "Autoplay is off with reduced motion." : paused ? "Autoplay paused." : "Select a product to preview regional prices.") : (reduced?"已按系统设置关闭自动轮换":paused?"自动轮换已暂停":"每 4.5 秒轮换一个产品；悬停或聚焦预览，点击查看详情")}</p>
   </div>;
 }

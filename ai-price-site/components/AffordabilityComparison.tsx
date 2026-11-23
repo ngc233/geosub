@@ -26,6 +26,7 @@ type Props = {
   rows: PlanAffordabilityRow[];
   locale?: PreparedSiteLocale;
   embedded?: boolean;
+  compactHeader?: boolean;
 };
 
 type SortMode = "pressure" | "accessible";
@@ -801,6 +802,7 @@ export default function AffordabilityComparison({
   rows,
   locale = "zh",
   embedded = false,
+  compactHeader = false,
 }: Props) {
   const [sortMode, setSortMode] = useState<SortMode>("pressure");
   const copy = getAffordabilityCopy(locale);
@@ -915,6 +917,9 @@ export default function AffordabilityComparison({
         </div>
 
         <div className="md:hidden">
+          {compactHeader && <div className="gs-en-affordability-head">
+            <span className="gs-en-affordability-rank">{copy.rank}</span><span>{copy.region}</span><span>{copy.burden}</span>
+          </div>}
           {visibleRows.map((row, index) => (
             <AffordabilitySummaryRow
               key={`compact-${sortMode}-${row.planSlug}-${row.countryCode}`}

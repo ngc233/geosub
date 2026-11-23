@@ -47,16 +47,15 @@ export default async function PricingListPage({
   const products = await getCachedPricingListProducts(locale, category);
   const copy = getPricingListCopy(locale).pages[category];
 
-  // Only the two Chinese category listings adopt the approved canvas layout.
-  const canvas = locale === "zh";
+  const canvas = locale === "zh" || (locale === "en" && category === "ai");
   const ui = (name: string, legacy: string) => canvas ? name : legacy;
 
   const content = (
     <main className={ui("gs-public-unified gs-listing", "mx-auto max-w-6xl overflow-visible px-5 py-12 md:py-14")}>
       <div className={ui("gs-listing-intro", "mb-9 text-center")}>
-        <p className={ui("gs-listing-eyebrow", "mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700")}>
+        {locale !== "en" || !canvas ? <p className={ui("gs-listing-eyebrow", "mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700")}>
           {copy.eyebrow}
-        </p>
+        </p> : null}
 
         <h1 className={ui("", "mb-4 text-3xl font-semibold tracking-[-0.025em] text-zinc-950 md:text-4xl dark:text-white")}>
           {copy.title}
