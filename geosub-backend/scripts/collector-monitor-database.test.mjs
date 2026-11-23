@@ -27,23 +27,27 @@ test('real monitoring SQL distinguishes overdue, executing, recovered and archiv
   assert.equal(Number((await db.query(sqlFor('missing_task_success'))).rows[0].count),9);
  } finally {await db.query('ROLLBACK');await db.end();}
 });
-test('real due-job SQL selects legacy official snapshots without admitting unrelated jobs', {skip:!process.env.DATABASE_URL}, async()=>{
+test('real due-job SQL selects legacy snapshots and both configured game stores within their product scope', {skip:!process.env.DATABASE_URL}, async()=>{
  const url=new URL(process.env.DATABASE_URL);assert.ok(['localhost','127.0.0.1','::1','[::1]'].includes(url.hostname));
  const out=spawnSync('pwsh',['-NoProfile','-File',path.join(import.meta.dirname,'../tests/collector-batch-reliability.ps1')],{encoding:'utf8',env:{...process.env,GEOSUB_TEST_DUE_SQL:'true'}});assert.equal(out.status,0,out.stderr);const sql=JSON.parse(out.stdout.trim());
  const {Client}=req('pg');const db=new Client({connectionString:process.env.DATABASE_URL});await db.connect();
- try {await db.query('BEGIN');await db.query(`CREATE TEMP TABLE products(id text,slug text,name text);
+ try {await db.query('BEGIN');await db.query(`CREATE TEMP TABLE products(id text,slug text,name text,category text);
  CREATE TEMP TABLE price_sources(id text,type text,base_url text);
  CREATE TEMP TABLE collector_jobs(id text,product_id text,source_id text,job_type text,schedule text,status text,next_run_at timestamptz,error_count int,last_error text,job_config jsonb,priority int,created_at timestamptz);
  CREATE TEMP TABLE collector_job_runs(id text,job_id text,status text,started_at timestamptz);
- INSERT INTO products VALUES ('p','chatgpt','ChatGPT');
+ INSERT INTO products VALUES ('p','chatgpt','ChatGPT','ai'),('g','gta-6','GTA 6','game');
  INSERT INTO price_sources VALUES ('s','official_site','https://openai.com/');
  INSERT INTO collector_jobs SELECT n,'p','s',kind,'daily',state,now()-interval '1 hour',0,NULL,config,1,now() FROM (VALUES
  ('legacy','price_check','active','{"collector_kind":"official_site"}'::jsonb),
  ('unrelated','price_check','active','{"collector_kind":"app_store"}'::jsonb),
  ('paused','ai_pricing','paused','{"collector_kind":"official_site"}'::jsonb)
- ) x(n,kind,state,config);`);
+ ) x(n,kind,state,config);
+ INSERT INTO collector_jobs SELECT n,product,'s','price_check','daily','active',now(),0,NULL,
+   jsonb_build_object('collector_kind','pricing_page','official_web_source_key',source_key),1,now() FROM (VALUES
+   ('ps5','g','playstation-store'),('xbox','g','xbox-store'),('other','g','other-store'),('wrong-product','p','xbox-store')
+ ) g(n,product,source_key);`);
  const rows=(await db.query(sql)).rows[0].coalesce;
- assert.deepEqual(rows.map(x=>x.id),['legacy']);
+ assert.deepEqual(rows.map(x=>x.id).sort(),['legacy','ps5','xbox']);
  } finally {await db.query('ROLLBACK');await db.end();}
 });
 

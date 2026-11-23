@@ -13,7 +13,8 @@ param(
   [string]$RunId,
   [switch]$DryRun,
   [switch]$Force,
-  [switch]$SkipAutoReview
+  [switch]$SkipAutoReview,
+  [switch]$GamePromoRechecks
 )
 
 $ErrorActionPreference = "Stop"
@@ -157,7 +158,8 @@ WITH ranked_jobs AS (
     ROW_NUMBER() OVER (
       PARTITION BY
         job.product_id,
-        COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown')
+        COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown'),
+        CASE WHEN product.category = 'game' THEN job.job_config ->> 'official_web_source_key' END
       ORDER BY job.priority DESC, job.next_run_at NULLS FIRST, job.created_at
     ) AS product_kind_rank
   FROM collector_jobs job
@@ -169,6 +171,11 @@ WITH ranked_jobs AS (
       OR (
         job.job_type = 'price_check'
         AND COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'official_site'
+      )
+      OR (
+        job.job_type = 'price_check' AND product.category = 'game'
+        AND job.job_config ->> 'collector_kind' = 'pricing_page'
+        AND job.job_config ->> 'official_web_source_key' IN ('playstation-store','xbox-store')
       )
     )
     $jobFilterSql
@@ -770,6 +777,26 @@ function Invoke-CollectorScript {
     }
     "pricing_page" {
       $officialWebSourceKey = Get-ConfigValue -Config $config -Name "official_web_source_key"
+      if ($officialWebSourceKey -in @("playstation-store","xbox-store")) {
+        $target = Invoke-PsqlJson @"
+SELECT row_to_json(t) FROM game_offer_jobs b JOIN game_offer_targets t ON t.id = b.target_id
+WHERE b.job_id = $(Quote-SqlString $Job.id)::uuid AND t.product_id = $(Quote-SqlString $Job.product_id)::uuid;
+"@
+        $expectedPlatform = if ($officialWebSourceKey -eq "playstation-store") { "ps5" } else { "xbox" }
+        if (!$target -or $target.platform -ne $expectedPlatform) { throw "Game store target binding mismatch." }
+        if ($target.market -notin $countryCodes -and "ALL" -notin $countryCodes -and "DEFAULT" -notin $countryCodes) {
+          return [pscustomobject]@{ Status="skipped"; CollectorKind=$kind; Output="Outside selected markets."; Error=$null; RawPayload=@{} }
+        }
+        $scriptPath = Join-Path $PSScriptRoot "collect-game-offer.mjs"
+        $output = ($target | ConvertTo-Json -Compress) | node $scriptPath
+        if ($LASTEXITCODE -ne 0) { throw "Game store parser process failed." }
+        $offer = ($output -join "") | ConvertFrom-Json
+        $status = if ($offer.failure_reason) { "failed" } else { "succeeded" }
+        $mode = if ($GamePromoRechecks) { "promo_recheck" } elseif ($Force -or $JobId -or $RunId) { "targeted" } else { "regular_due" }
+        return [pscustomobject]@{ Status=$status; CollectorKind=$kind; Error=$offer.failure_reason
+          Output="Game store evidence: $($target.platform) $($target.market) $($target.store_product_id)"
+          RawPayload=@{ game_offer=$offer; target_id=$target.id; source_key=$officialWebSourceKey; game_run_mode=$mode } }
+      }
       if (![string]::IsNullOrWhiteSpace($officialWebSourceKey)) {
         $scriptPath = Join-Path $PSScriptRoot "collect-official-web-prices.mjs"
         $nodeArguments = @(
@@ -998,7 +1025,7 @@ function Complete-JobRun {
   $retryableOfficialWebFailure = (
     $failedAttempt -and !$permanentFailure -and
     [string]$Result.CollectorKind -eq "pricing_page" -and
-    (Get-ConfigValue -Config $Job.job_config -Name "official_web_source_key") -in @("spotify", "apple-music", "claude-us-pro")
+    (Get-ConfigValue -Config $Job.job_config -Name "official_web_source_key") -in @("spotify", "apple-music", "claude-us-pro", "playstation-store", "xbox-store")
   )
 
   if ($status -eq "succeeded") {
@@ -1491,22 +1518,38 @@ function Add-AppStoreReviewOutcome {
   return $Result
 }
 
-if (!$DryRun) {
-  Invoke-Psql @"
+$promoClaim = $null
+if ($GamePromoRechecks) {
+  if ($DryRun -or $JobId -or $RunId -or $CountryCodes -or $ProductSlug -or $CollectorKind) {
+    throw "The game promotion tick accepts no job or market filters."
+  }
+  $promoClaim = Invoke-PsqlJson "SELECT row_to_json(c) FROM claim_game_promo_recheck() c;"
+  if (!$promoClaim) { return }
+  $JobId = $promoClaim.job_id
+  $Force = $true
+  $Limit = 1
+}
+
+if (!$GamePromoRechecks) {
+  if (!$DryRun) {
+    Invoke-Psql @"
 SELECT *
 FROM reconcile_stale_collector_runs(3, 20, 3);
 "@
+  }
+  Repair-ResolvedSharedSpecFailures
+  Repair-RetryExhaustedAppStoreTransientFailures
+  Invoke-OperationalRecovery
+  Queue-AppStoreRechecks
 }
-
-Repair-ResolvedSharedSpecFailures
-Repair-RetryExhaustedAppStoreTransientFailures
-Invoke-OperationalRecovery
-Queue-AppStoreRechecks
 
 $jobs = @(Get-DueJobs)
 $requestedRunId = $RunId
 
 if ($jobs.Count -eq 0) {
+  if ($promoClaim) {
+    Invoke-Psql "SELECT finish_game_promo_recheck($(Quote-SqlString $promoClaim.token)::uuid, FALSE);"
+  }
   Write-Host "No collector jobs are due."
   return
 }
@@ -1618,6 +1661,9 @@ ORDER BY started_at DESC LIMIT 1;
       collector_kind = Get-ConfigValue -Config $job.job_config -Name "collector_kind" -Fallback "unknown"
       requested_country_codes = @(Get-CountryCodes -Config $job.job_config)
     }
+    if ($job.job_config.official_web_source_key -in @("playstation-store","xbox-store")) {
+      $failurePayload.game_offer = @{ failure_reason="fetch_error"; observed_at=$startedAt.ToUniversalTime().ToString("o") }
+    }
     if ($null -ne $repairPlan) {
       $failurePayload["repair_plan"] = $repairPlan
     }
@@ -1641,6 +1687,10 @@ ORDER BY started_at DESC LIMIT 1;
   }
 }
 
+if ($promoClaim) {
+  $ok = if ($summary.succeeded -eq 1 -and $summary.failed -eq 0) { "TRUE" } else { "FALSE" }
+  Invoke-Psql "SELECT finish_game_promo_recheck($(Quote-SqlString $promoClaim.token)::uuid, $ok);"
+}
 $reportRefreshProducts = @($completedWebPublications | Select-Object -Unique)
 if (!$SkipAutoReview -and $pendingAppStoreCompletions.Count -gt 0) {
   Write-Host "Running App Store stability auto-review after collection."

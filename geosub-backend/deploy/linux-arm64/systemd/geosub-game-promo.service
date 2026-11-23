@@ -1,0 +1,16 @@
+[Unit]
+Description=Collect a due game offer after its public promotion ends
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+User=geosub
+Group=geosub
+EnvironmentFile=-/etc/geosub/geosub.env
+Environment=GEOSUB_COLLECTOR_LOCK_DIR=/run/geosub
+RuntimeDirectory=geosub
+RuntimeDirectoryPreserve=yes
+RuntimeDirectoryMode=0700
+NoNewPrivileges=true
+WorkingDirectory=/opt/geosub/geosub-backend
+ExecStart=/bin/bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh -GamePromoRechecks

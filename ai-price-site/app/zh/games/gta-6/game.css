@@ -1,0 +1,408 @@
+.game-scope [hidden] { display: none !important; }
+.game-page [id], .game-page#top { scroll-margin-top: 78px; }
+.gs-public-unified .game-page { gap: 26px; }
+.game-profile {
+  isolation: isolate;
+  position: relative;
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 32px;
+  padding: 10px 0 4px;
+}
+.game-profile::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset: -10px 0 -12px -16px;
+  border-radius: 26px;
+  background: radial-gradient(ellipse 320px 145px at 110px 38%, rgb(217 113 138 / 13%), transparent 98%),
+              radial-gradient(ellipse 290px 140px at 165px 60%, rgb(160 120 195 / 9%), transparent 100%);
+}
+.game-cover {
+  grid-row: span 2;
+  width: 128px;
+  height: 186px;
+  object-fit: cover;
+  border-radius: 9px;
+  box-shadow: 0 5px 16px rgb(56 35 54 / 14%);
+}
+.game-identity { align-self: end; }
+.gs-public-unified .game-page h1 { font-size: clamp(38px, 4vw, 56px); letter-spacing: -.045em; line-height: 1.03; }
+.game-page .game-english { font-size: 19px; font-weight: 500; color: var(--gs-text-secondary); letter-spacing: -.025em; margin: 3px 0 7px; }
+.game-meta, .game-selectors, .game-field, .game-chapters, .quote-actions, .quote-foot, .region-disclosure, .shop-link { display: flex; align-items: center; }
+.game-meta { gap: 10px; flex-wrap: wrap; color: var(--gs-text-muted); font-size: 13px; margin: 0; }
+.game-meta span + span { padding-left: 10px; border-left: 1px solid var(--gs-border-strong); line-height: 1.05; }
+.game-selectors { gap: 24px; align-self: start; flex-wrap: wrap; }
+.game-field { flex-direction: column; align-items: flex-start; gap: 4px; }
+.field-label { font-size: 12px; color: var(--gs-text-muted); }
+.gs-public-unified .game-page .gs-segments {
+  display: flex; gap: 0; background: var(--gs-subtle); border-color: transparent;
+}
+.gs-public-unified .game-page .gs-segments button {
+  flex: 1 1 0; color: var(--gs-text-secondary); white-space: nowrap;
+}
+.game-page {
+  --choice-fill: color-mix(in srgb, var(--gs-accent) 16%, var(--gs-accent-soft));
+  --choice-ink: var(--gs-low-on-soft);
+}
+.gs-public-unified .game-page .gs-segment-slider {
+  background: var(--choice-fill); border-radius: var(--gs-radius-segment);
+  box-shadow: inset 0 0 0 1.5px var(--gs-accent);
+}
+.gs-public-unified .game-page .gs-segments button[aria-selected=true] {
+  color: var(--choice-ink); font-weight: 700;
+}
+@media (prefers-color-scheme: dark) {
+  .game-page {
+    --choice-fill: color-mix(in srgb, var(--gs-accent) 13%, var(--gs-accent-soft));
+    --choice-ink: color-mix(in srgb, var(--gs-low-on-soft) 55%, var(--gs-text));
+  }
+}
+.game-chapters { gap: 28px; border-bottom: 1px solid var(--gs-border); }
+.game-chapters a { padding: 6px 0 12px; color: var(--gs-text-muted); font-size: 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.game-chapters a[aria-current], .game-chapters a:hover { color: var(--gs-text); border-color: var(--gs-text); }
+.game-chapters a[aria-current] { font-weight: 650; }
+.quote-toolbar, .quote-actions, .quote-foot { gap: 8px; }
+.quote-toolbar { display: flex; align-items: center; justify-content: space-between; }
+.quote-actions button, .quote-foot button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--gs-border);
+  background: var(--gs-surface); color: var(--gs-text-secondary); border-radius: var(--gs-radius-control-small);
+  padding: 0 11px; min-height: 34px; font-size: 13px; cursor: pointer;
+}
+.quote-actions button:hover, .quote-foot button:hover, .shop-link:hover { background: var(--gs-subtle); color: var(--gs-text); }
+.quote-actions svg, .quote-foot svg { width: 15px; height: 15px; }
+.quote-actions .quote-filter-button[aria-expanded=true] { border-color: var(--gs-border-strong); background: var(--gs-subtle); }
+#quote-filters { justify-content: flex-start; margin-top: 10px; }
+.game-page .quote-summary { margin: 6px 0 14px; color: var(--gs-text-secondary); font-size: 15px; }
+.quote-summary strong, .quote-fx small.saving { color: var(--gs-low); }
+.quote-summary strong, .quote-local, .quote-fx strong, .mobile-local { font-variant-numeric: tabular-nums; }
+.quote-sheet { border: 1px solid var(--gs-border); border-radius: var(--gs-radius-card); overflow: hidden; background: var(--gs-surface); }
+.quote-sheet table { border-collapse: collapse; width: 100%; }
+.quote-sheet thead { background: color-mix(in srgb, var(--gs-subtle) 64%, var(--gs-surface)); }
+.quote-sheet thead th, .quote-foot { font-size: 12px; font-weight: 500; color: var(--gs-text-muted); }
+.quote-sheet th, .quote-sheet td { text-align: left; padding: 0 22px; }
+.quote-sheet thead th { height: 38px; }
+.quote-main { border-top: 1px solid var(--gs-border); }
+.quote-main > * { height: 76px; }
+.quote-sheet th:last-child, .quote-main td:last-child { text-align: right; }
+.region-disclosure { gap: 10px; text-align: left; cursor: pointer; min-height: 44px; }
+.region-disclosure:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.region-disclosure strong, .quote-fx strong { font-size: 16px; font-weight: 650; }
+.region-disclosure small, .quote-fx small { display: block; font-size: 12px; font-weight: 400; color: var(--gs-text-muted); margin-top: 2px; }
+.quote-flag { width: 27px; height: 19px; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px rgb(0 0 0 / 8%); }
+.quote-caret { width: 6px; height: 6px; margin: 0 2px 3px; border-right: 1px solid var(--gs-text-muted); border-bottom: 1px solid var(--gs-text-muted); transform: rotate(45deg); }
+[aria-expanded=true] > .quote-caret { transform: rotate(225deg); margin-bottom: -3px; }
+.quote-local { font-size: 15px; }
+.quote-fx strong { font-size: 20px; letter-spacing: -.035em; }
+.shop-link { gap: 6px; display: inline-flex; min-height: 36px; padding: 0 12px; border: 1px solid var(--gs-border); border-radius: var(--gs-radius-control-small); font-weight: 550; font-size: 13px; white-space: nowrap; }
+.quote-detail, #empty-rows { background: var(--gs-subtle); color: var(--gs-text-secondary); font-size: 13px; }
+.quote-detail ul { padding: 12px 0; display: flex; gap: 6px 22px; flex-wrap: wrap; list-style: none; }
+.quote-detail strong { font-weight: 500; }
+#empty-rows { padding: 20px; text-align: center; }
+.quote-foot { padding: 6px 22px; border-top: 1px solid var(--gs-border); min-height: 44px; }
+.quote-foot button { margin-left: auto; padding-inline: 4px; background: transparent; border: 0; border-radius: 5px; }
+.region-disclosure .mobile-local, .store-small { display: none; }
+.game-source-list > div { display: flex; align-items: center; flex-wrap: wrap; gap: var(--gs-space-12); }
+.game-source-list > div { border-bottom: 1px solid var(--gs-border); padding-block: var(--gs-space-12); }
+.game-source-list > div strong { margin-right: auto; }
+.game-source-list a, .game-scope .gs-dialog-body > a, .game-scope .gs-dialog-body p a { text-decoration: underline; text-underline-offset: 3px; }
+.game-scope .gs-dialog-body > p { margin-block: var(--gs-space-12); }
+#search-results > a { display: block; padding: var(--gs-space-12); border-bottom: 1px solid var(--gs-border); }
+#search-results > a:is(:hover,:focus-visible) { background: var(--gs-subtle); }
+.game-currency-options [aria-pressed=true] { box-shadow: inset 0 0 0 2px var(--gs-baseline); }
+@media (max-width: 700px) {
+  .gs-public-unified .game-page { gap: 18px; }
+  .game-profile { grid-template-columns: 72px minmax(0, 1fr); gap: 14px 16px; padding-block: 1px 0; }
+  .game-cover { grid-row: auto; width: 72px; height: 105px; border-radius: 6px; }
+  .game-identity { align-self: center; }
+  .game-page .game-english { font-size: 15px; margin: 3px 0 5px; }
+  .gs-public-unified .game-page h1 { font-size: 35px; }
+  .game-meta { font-size: 12px; gap: 2px 7px; }
+  .game-meta span + span { padding-left: 7px; }
+  .game-profile::before { inset: -6px 0 auto -8px; height: 118px; background: radial-gradient(ellipse 190px 80px at 75px 50%, rgb(212 111 162 / 13%), transparent); }
+  .game-selectors { grid-column: 1 / -1; gap: 14px; }
+  .game-chapters { gap: 22px; }
+  .game-chapters a { font-size: 13px; padding: 2px 0 9px; }
+  .game-page .quote-summary { font-size: 13px; margin: 5px 0 10px; }
+  .quote-sheet th, .quote-sheet td { padding-inline: 12px; }
+  .quote-sheet thead th { height: 31px; font-size: 12px; }
+  .quote-main > * { height: 66px; }
+  .quote-sheet .quote-local-head, .quote-local, .region-disclosure .region-en, .store-full { display: none; }
+  .region-disclosure .mobile-local, .store-small { display: block; }
+  .region-disclosure { gap: 6px; }
+  .quote-flag { width: 20px; height: 15px; }
+  .region-disclosure strong { font-size: 15px; }
+  .region-disclosure small, .quote-fx small { font-size: 12px; }
+  .quote-fx strong { font-size: 17px; }
+  .shop-link { gap: 3px; padding: 0 8px; font-size: 12px; }
+  .quote-foot { padding-inline: 12px; }
+  #quote-filters { flex-wrap: wrap; }
+}
+@media (max-width: 380px) {
+  .game-field { gap: 2px; }
+  .game-selectors { gap: 8px; }
+  .gs-public-unified .game-field .gs-segments button { padding-inline: 9px; font-size: 12px; }
+  .quote-sheet th, .quote-sheet td { padding-inline: 8px; }
+  .game-meta { display: grid; }
+  .game-meta span + span { padding-left: 0; border-left: 0; line-height: inherit; }
+  .quote-foot { gap: 4px; font-size: 12px; }
+}
+.game-profile::before {
+  mask-image: linear-gradient(90deg, transparent, #000 44px), linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  mask-composite: intersect;
+}
+.quote-fx small { white-space: nowrap; }
+.quote-caret, .quote-flag { flex-shrink: 0; }
+.quote-summary { text-wrap: pretty; }
+/* Keep the chapter links and the selected platform together while reading a quote. */
+.gs-public-unified .game-page :is(#regions, #pc-state, #editions, #guide, #prices) {
+  scroll-margin-top: var(--chapter-inset, 125px);
+}
+.game-chapters {
+  position: sticky;
+  top: var(--chapter-top, 65px);
+  z-index: 10;
+  min-height: 45px;
+  align-items: stretch;
+  background: var(--gs-page);
+}
+.game-chapters a { display: inline-flex; align-items: center; padding-block: 9px; }
+.game-chapters:not(.pinned) .chapter-context { position: absolute; inset-inline-end: 0; }
+.game-chapters.pinned .chapter-context { visibility: visible; }
+.game-page :is(button, a, summary):focus-visible {
+  outline: 2px solid var(--gs-low);
+  outline-offset: 2px;
+}
+.game-page :is(.edition-buy, .shop-link, .chapter-context > summary, .quote-actions button, .quote-foot button, .pc-quotes button, .edition-compare, .upgrade-note a) {
+  transition-property: scale, background-color, border-color, color;
+  transition-duration: var(--gs-motion-fast);
+  transition-timing-function: var(--gs-motion-ease);
+}
+.game-page :is(.edition-buy, .shop-link, .chapter-context > summary, .quote-actions button, .quote-foot button, .pc-quotes button):active {
+  scale: var(--gs-motion-press);
+}
+.quote-sheet .quote-main th { background: transparent; }
+.quote-sheet .quote-main:has([aria-expanded=true]) { background: color-mix(in srgb, var(--gs-subtle) 42%, var(--gs-surface)); }
+.quote-sheet .quote-detail td { padding: 0 22px; }
+.quote-detail ul { padding-block: 13px; }
+.quote-caret, .switch-caret, .guide-questions summary svg {
+  transition: transform var(--gs-motion-base) var(--gs-motion-ease);
+}
+.quote-detail:not([hidden]) > td > ul, .guide-questions details[open] > p {
+  animation: gs-enter-a var(--gs-motion-enter) var(--gs-motion-ease);
+}
+.quote-fx strong, .quote-local, .edition-cost { font-variant-numeric: tabular-nums lining-nums; }
+.shop-link { color: var(--gs-text); }
+#empty-rows button, .upgrade-note a {
+  font-size: 14px; font-weight: 550; text-decoration: underline; text-underline-offset: 4px;
+  text-decoration-color: var(--gs-border-strong);
+}
+#empty-rows button { margin-inline-start: 12px; }
+.upgrade-note a:hover, #empty-rows button:hover { text-decoration-color: currentColor; }
+.edition-heading, .edition-region, .upgrade-note {
+  display: flex; align-items: center;
+}
+.edition-heading, .upgrade-note { justify-content: space-between; gap: 18px; }
+.edition-region { gap: 9px; }
+@media (min-width: 701px) {
+  .edition-heading { justify-content: flex-start; gap: 24px; }
+}
+.edition-region > span, .edition-summary i { color: var(--gs-text-muted); font-size: 13px; font-style: normal; }
+.edition-region .gs-segments button { min-width: 55px; }
+.game-page .edition-summary {
+  display: block; color: var(--gs-text-secondary); margin: 6px 0 14px; font-size: 15px;
+}
+.edition-summary i { margin-inline: 8px; }
+.edition-premium { display: inline-block; }
+.edition-summary strong { font-weight: 650; white-space: nowrap; color: var(--gs-text); }
+.edition-sheet, .guide-questions {
+  background: var(--gs-surface); border: 1px solid var(--gs-border); border-radius: var(--gs-radius-card);
+}
+.edition-sheet { overflow: hidden; }
+.edition-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.edition-option {
+  display: grid; grid-template-rows: auto auto 1fr auto;
+  justify-items: start; align-content: start; gap: 5px; padding: 22px 24px;
+}
+.edition-option + .edition-option { border-inline-start: 1px solid var(--gs-border); }
+.edition-option h3 {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px;
+  color: var(--gs-text-secondary); font-size: 16px; font-weight: 600; margin: 0;
+}
+.edition-option[aria-current=true] { box-shadow: inset 0 2px 0 var(--gs-accent); }
+.edition-option[aria-current=true] h3 { color: var(--gs-text); }
+.edition-mark {
+  display: none; white-space: nowrap; padding: 2px 6px; border-radius: var(--gs-radius-tag);
+  color: var(--choice-ink); background: var(--choice-fill); font-size: 12px; line-height: 1.25; font-weight: 600;
+}
+.edition-option[aria-current=true] .edition-mark { display: inline-block; }
+.game-page .edition-cost {
+  margin: 0; font-size: clamp(23px,2.4vw,32px); line-height: 1.2;
+  letter-spacing: -.045em; font-weight: 650; color: var(--gs-text);
+}
+.game-page .edition-includes { margin: 4px 0 12px; font-size: 15px; color: var(--gs-text-secondary); }
+.upgrade-note {
+  background: color-mix(in srgb, var(--gs-subtle) 47%, var(--gs-surface));
+  border-top: 1px solid var(--gs-border); padding: 12px 24px;
+}
+.upgrade-note h3 { font-size: 14px; font-weight: 600; margin: 0; }
+.game-page .upgrade-note p { color: var(--gs-text-muted); font-size: 13px; margin: 2px 0 0; }
+.upgrade-note a { flex-shrink: 0; min-height: 40px; display: inline-flex; align-items: center; }
+.guide-questions { margin-top: 14px; padding-inline: 22px; }
+.guide-questions details + details { border-top: 1px solid var(--gs-border); }
+.guide-questions summary {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  min-height: 54px; cursor: pointer; font-size: 15px; font-weight: 550; list-style: none;
+}
+.guide-questions summary::-webkit-details-marker { display: none; }
+.guide-questions svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--gs-text-muted); }
+.guide-questions details[open] svg { transform: rotate(180deg); }
+.game-page .guide-questions p { font-size: 15px; color: var(--gs-text-secondary); max-width: 72ch; margin: -2px 0 16px; }
+@media (min-width: 900px) {
+  .game-profile::after {
+    content: ""; position: absolute; z-index: -1; pointer-events: none;
+    inset: 0 0 0 auto; width: min(40%, 490px); border-radius: 14px;
+    background: url("/games/gta-6/leonida-beach.webp") 50% 38% / cover no-repeat;
+    mask-image: linear-gradient(90deg, transparent, rgb(0 0 0 / 26%) 22%, #000 77%);
+    opacity: .78;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .game-profile::after { opacity: .65; }
+}
+@media (hover: hover) {
+  .quote-sheet tbody:not(.lowest-offer) .quote-main:hover { background: var(--gs-row-hover); }
+}
+@media (max-width: 700px) {
+  .edition-heading, .edition-region { gap: 7px; }
+  .edition-region .gs-segments button { min-width: 44px; }
+  .edition-region > span { font-size: 12px; }
+  .game-page .edition-summary { font-size: 14px; margin: 6px 0 12px; }
+  .edition-summary i { margin-inline: 5px; }
+  .edition-option { padding: 16px 14px; gap: 4px; }
+  .edition-option h3 { font-size: 15px; }
+  .game-page .edition-includes { font-size: 14px; margin-block: 3px 12px; }
+  .upgrade-note { padding: 12px 14px; align-items: flex-start; gap: 4px; flex-direction: column; }
+  .guide-questions { padding-inline: 14px; }
+  .guide-questions summary { min-height: 52px; font-size: 14px; }
+  .guide-questions p { font-size: 14px; }
+  .quote-sheet .quote-detail td { padding-inline: 12px; }
+  .quote-detail ul { flex-direction: column; gap: 4px; }
+  .game-page .game-chapters { gap: 15px; min-height: 41px; }
+}
+@media (max-width: 380px) {
+  .edition-option { padding-inline: 11px; }
+  .edition-region > span { display: none; }
+}
+/* The hero and the compact chapter picker expose the same two choices. */
+.gs-public-unified .game-field .gs-segments { width: 100%; }
+.gs-public-unified .game-field .gs-segments button {
+  min-width: 66px;
+  min-height: 44px;
+  padding: 3px 10px;
+  line-height: 1.15;
+  text-align: center;
+  font-size: 14px;
+}
+.gs-public-unified .game-field .gs-segments button[data-choice=pc]:not([aria-selected=true]) {
+  color: var(--gs-text-muted);
+}
+.gs-public-unified .game-field button[data-choice=pc] { position: relative; }
+.gs-public-unified .game-field button[data-choice=pc]:not([aria-selected=true])::after {
+  content: ""; position: absolute; inset: 1px 2px;
+  border: 1px dashed var(--gs-border-strong); border-radius: var(--gs-radius-segment);
+  pointer-events: none;
+}
+.pc-caption { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; }
+#quote-selection { font-weight: 600; color: var(--gs-text); white-space: nowrap; }
+.quote-sheet .lowest-offer .quote-main {
+  background: color-mix(in srgb, var(--gs-accent-soft) 60%, var(--gs-surface));
+}
+.quote-sheet .lowest-offer .quote-main > th { box-shadow: inset 3px 0 0 var(--gs-accent); }
+.quote-sheet .quote-fx small.saving {
+  display: block; width: max-content; margin-top: 3px; padding: 2px 7px;
+  background: var(--gs-accent); color: var(--gs-on-accent);
+  font-size: 12px; line-height: 1.35; font-weight: 650; border-radius: var(--gs-radius-tag);
+}
+.chapter-context {
+  position: relative; margin-inline-start: auto; align-self: center;
+  white-space: nowrap; visibility: hidden;
+}
+.chapter-context > summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: center;
+  gap: 7px; padding: 0 10px; min-height: 36px; border-radius: var(--gs-radius-control-small);
+  background: var(--gs-surface); color: var(--gs-text); border: 1px solid var(--gs-border);
+  font-weight: 600; font-size: 13px;
+}
+.chapter-context > summary::-webkit-details-marker { display: none; }
+.chapter-context > summary:hover, .chapter-context[open] > summary { border-color: var(--gs-border-strong); }
+.switch-caret {
+  width: 7px; height: 7px; border: solid var(--gs-text-muted); border-width: 0 1.5px 1.5px 0;
+  transform: translateY(-2px) rotate(45deg);
+}
+.chapter-context[open] .switch-caret { transform: translateY(2px) rotate(225deg); }
+.switch-menu {
+  position: absolute; inset-inline-end: 0; top: calc(100% + 5px);
+  width: min(280px, calc(100vw - 44px)); display: grid; gap: 12px; padding: 14px;
+  background: var(--gs-surface); border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-card); box-shadow: 0 8px 26px rgb(0 0 0 / 14%);
+}
+.chapter-context[open] .switch-menu { animation: gs-menu-in var(--gs-motion-base) var(--gs-motion-ease); }
+.switch-menu .game-field { align-items: stretch; }
+.edition-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
+.edition-buy {
+  display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+  min-height: 44px; padding: 5px 14px; border-radius: var(--gs-radius-control-small);
+  color: var(--gs-text); border: 1px solid var(--gs-border-strong); background: var(--gs-surface);
+  font-size: 14px; line-height: 1.35; font-weight: 600;
+}
+.edition-buy:hover { background: var(--gs-subtle); }
+.edition-option[aria-current=true] .edition-buy {
+  color: var(--gs-surface); background: var(--gs-text); border-color: var(--gs-text);
+}
+.edition-option[aria-current=true] .edition-buy:hover { background: color-mix(in srgb, var(--gs-text) 88%, var(--gs-surface)); }
+.edition-buy .buy-mobile { display: none; }
+.edition-compare {
+  display: inline-flex; align-items: center; min-height: 44px;
+  color: var(--gs-text-secondary); font-size: 14px;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--gs-border-strong);
+}
+.edition-compare:hover { color: var(--gs-text); text-decoration-color: currentColor; }
+.pc-quotes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pc-quotes button { min-height: 44px; white-space: nowrap; }
+@media (max-width: 700px) {
+  .game-selectors { display: grid; grid-template-columns: minmax(0,1fr); gap: 6px; }
+  .game-selectors > .game-field { display: grid; grid-template-columns: 4em minmax(0,1fr); gap: 6px; align-items: center; }
+  .game-selectors .field-label { font-size: 13px; }
+  .gs-public-unified .game-field .gs-segments button { min-width: 0; padding-inline: 4px; }
+  .chapter-context > summary { min-height: 44px; padding-inline: 7px; gap: 5px; }
+  .game-page .game-chapters { min-height: 46px; gap: 10px; }
+  .game-page .game-chapters:not(.pinned) { gap: 20px; }
+  .edition-actions { display: grid; justify-items: start; gap: 0; width: 100%; }
+  .edition-buy { width: 100%; padding-inline: 6px; }
+  .edition-buy .buy-desktop { display: none; }
+  .edition-buy .buy-mobile { display: inline; }
+  .edition-option h3 { column-gap: 4px; }
+  .edition-mark { padding-inline: 4px; }
+  .edition-compare { justify-self: center; }
+  .pc-quotes { width: 100%; }
+}
+@media (max-width: 380px) {
+  .game-page .game-chapters { gap: 5px; }
+  .game-chapters > a, .chapter-context > summary { font-size: 12px; }
+  .chapter-context > summary { gap: 4px; padding-inline: 5px; }
+  .switch-menu { width: min(260px, calc(100vw - 50px)); }
+  .edition-buy { padding-inline: 4px; font-size: 13px; }
+  .pc-quotes { gap: 5px; }
+  .gs-public-unified #pc-state .pc-quotes button { padding-inline: 4px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-page *, .game-page *::before, .game-page *::after {
+    transition: none !important; animation: none !important;
+  }
+  .game-page :is(.edition-buy, .shop-link, .chapter-context > summary, .quote-actions button, .quote-foot button, .pc-quotes button):active {
+    scale: none !important;
+  }
+}
