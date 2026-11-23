@@ -15,24 +15,38 @@ const lifecycleLockedFields = [
   "structured_data",
 ] as const;
 
-export const activeSeoExperimentLocks = [
+type SeoExperimentLock = {
+  experimentId: string;
+  engine: "bing" | "google";
+  canonicalPath: string;
+  earliestSettledThrough: string;
+  minimumCompleteObservationDays: number;
+  automaticRelease: false;
+  lockedFields: readonly string[];
+} & ({ status: "active" } | { status: "completed"; endedAt: string });
+
+const seoExperimentLocks: readonly SeoExperimentLock[] = [
   {
     experimentId: CHATGPT_PLUS_BING_METADATA_EXPERIMENT_ID,
     engine: "bing",
     canonicalPath: "/zh/ai-pricing/chatgpt/plus",
-    status: "active",
+    status: "completed",
+    endedAt: "2026-11-23",
     earliestSettledThrough: "2026-09-03",
     minimumCompleteObservationDays: 7,
     automaticRelease: false,
     lockedFields: lifecycleLockedFields,
   },
-] as const;
+];
+
+export const activeSeoExperimentLocks = seoExperimentLocks.filter(
+  (lock) => lock.status === "active",
+);
 
 export function getActiveSeoExperimentLock(canonicalPath: string) {
   const normalizedPath = canonicalPath.replace(/\/+$/, "") || "/";
   return activeSeoExperimentLocks.find(
-    (lock) =>
-      lock.status === "active" && lock.canonicalPath === normalizedPath,
+    (lock) => lock.canonicalPath === normalizedPath,
   ) ?? null;
 }
 
