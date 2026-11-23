@@ -28,9 +28,10 @@ const controllerChanges = {
 // Pin additions as absent in the retained build and exact bytes in the candidate;
 // every other reader retains the original byte-equality assertion.
 const v4ReaderChanges = {
+  // V8 adds the region entry only under the Chinese Plus hero.
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "5e55489f29aca9e8da3b63d5a42372c291e0f9e3a151d3af37f6ddc7116472a7"
+    "candidate": "8035608bae3fe69c66a51b9285068f21399a07aecc82c2f69849c083a315c618"
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
