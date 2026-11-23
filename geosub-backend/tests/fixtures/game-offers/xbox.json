@@ -1,0 +1,248 @@
+{
+  "state": {
+    "appContext": {
+      "marketInfo": {
+        "market": "HK",
+        "locale": "zh-HK"
+      }
+    },
+    "user": {
+      "isSignedIn": false
+    },
+    "core2": {
+      "products": {
+        "skuSummaries": {
+          "9NP019G7NZXT": {
+            "0010": {
+              "skuId": "0010",
+              "productId": "9NP019G7NZXT",
+              "isGamesWithGoldSku": false
+            }
+          },
+          "9PLVSSH8849X": {
+            "0010": {
+              "skuId": "0010",
+              "productId": "9PLVSSH8849X",
+              "isGamesWithGoldSku": false
+            }
+          },
+          "9PN4LLBR8RCH": {
+            "0010": {
+              "skuId": "0010",
+              "productId": "9PN4LLBR8RCH",
+              "isGamesWithGoldSku": false
+            }
+          },
+          "9PN8DW2WTFF8": {
+            "0010": {
+              "skuId": "0010",
+              "productId": "9PN8DW2WTFF8",
+              "isGamesWithGoldSku": false
+            }
+          }
+        },
+        "productSummaries": {
+          "9NP019G7NZXT": {
+            "productId": "9NP019G7NZXT",
+            "productKind": "Game",
+            "preferredSkuId": "0010",
+            "includedWithPassesProductIds": []
+          },
+          "9PLVSSH8849X": {
+            "productId": "9PLVSSH8849X",
+            "productKind": "Durable",
+            "preferredSkuId": "0010",
+            "includedWithPassesProductIds": []
+          },
+          "9PN4LLBR8RCH": {
+            "productId": "9PN4LLBR8RCH",
+            "productKind": "Durable",
+            "preferredSkuId": "0010",
+            "includedWithPassesProductIds": []
+          },
+          "9PN8DW2WTFF8": {
+            "productId": "9PN8DW2WTFF8",
+            "productKind": "Game",
+            "preferredSkuId": "0010",
+            "includedWithPassesProductIds": []
+          }
+        },
+        "availabilitySummaries": {
+          "9NP019G7NZXT": {
+            "0010": {
+              "B4D1H7P3GPW7": {
+                "actions": [
+                  "Details",
+                  "Purchase",
+                  "Browse",
+                  "Curate",
+                  "Redeem"
+                ],
+                "availabilityId": "B4D1H7P3GPW7",
+                "endDateUtc": "12/30/9998 00:00:00",
+                "productId": "9NP019G7NZXT",
+                "price": {
+                  "skuId": "0010",
+                  "availabilityId": "B4D1H7P3GPW7",
+                  "discountPercentage": 0,
+                  "eligibilityInfo": {
+                    "eligibility": "None",
+                    "type": "Unknown"
+                  },
+                  "availabilityActions": [
+                    "Details",
+                    "Purchase",
+                    "Browse",
+                    "Curate",
+                    "Redeem"
+                  ],
+                  "endDateUtc": "12/30/9998 00:00:00",
+                  "hasXPriceOffer": false,
+                  "listPrice": 568,
+                  "msrp": 568,
+                  "currency": "HKD"
+                },
+                "skuId": "0010"
+              }
+            }
+          },
+          "9PLVSSH8849X": {
+            "0010": {
+              "9RGXJ34M49KQ": {
+                "actions": [
+                  "Details",
+                  "Purchase",
+                  "Browse",
+                  "Curate",
+                  "Redeem"
+                ],
+                "availabilityId": "9RGXJ34M49KQ",
+                "endDateUtc": "12/30/9998 00:00:00",
+                "productId": "9PLVSSH8849X",
+                "price": {
+                  "skuId": "0010",
+                  "availabilityId": "9RGXJ34M49KQ",
+                  "discountPercentage": 0,
+                  "eligibilityInfo": {
+                    "eligibility": "None",
+                    "type": "Unknown"
+                  },
+                  "availabilityActions": [
+                    "Details",
+                    "Purchase",
+                    "Browse",
+                    "Curate",
+                    "Redeem"
+                  ],
+                  "endDateUtc": "12/30/9998 00:00:00",
+                  "hasXPriceOffer": false,
+                  "listPrice": 38,
+                  "msrp": 38,
+                  "currency": "HKD"
+                },
+                "skuId": "0010"
+              }
+            }
+          },
+          "9PN4LLBR8RCH": {
+            "0010": {
+              "9Q6RHFV43KWZ": {
+                "actions": [
+                  "Details",
+                  "Purchase",
+                  "Browse",
+                  "Curate",
+                  "Redeem"
+                ],
+                "availabilityId": "9Q6RHFV43KWZ",
+                "endDateUtc": "12/30/9998 00:00:00",
+                "productId": "9PN4LLBR8RCH",
+                "price": {
+                  "skuId": "0010",
+                  "availabilityId": "9Q6RHFV43KWZ",
+                  "discountPercentage": 0,
+                  "eligibilityInfo": {
+                    "eligibility": "None",
+                    "type": "Unknown"
+                  },
+                  "availabilityActions": [
+                    "Details",
+                    "Purchase",
+                    "Browse",
+                    "Curate",
+                    "Redeem"
+                  ],
+                  "endDateUtc": "12/30/9998 00:00:00",
+                  "hasXPriceOffer": false,
+                  "listPrice": 140,
+                  "msrp": 140,
+                  "currency": "HKD"
+                },
+                "skuId": "0010"
+              }
+            }
+          },
+          "9PN8DW2WTFF8": {
+            "0010": {
+              "B0MMVRX6BR3Z": {
+                "actions": [
+                  "Details",
+                  "Purchase",
+                  "Browse",
+                  "Curate",
+                  "Redeem"
+                ],
+                "availabilityId": "B0MMVRX6BR3Z",
+                "endDateUtc": "12/30/9998 00:00:00",
+                "productId": "9PN8DW2WTFF8",
+                "price": {
+                  "skuId": "0010",
+                  "availabilityId": "B0MMVRX6BR3Z",
+                  "discountPercentage": 0,
+                  "eligibilityInfo": {
+                    "eligibility": "None",
+                    "type": "Unknown"
+                  },
+                  "availabilityActions": [
+                    "Details",
+                    "Purchase",
+                    "Browse",
+                    "Curate",
+                    "Redeem"
+                  ],
+                  "endDateUtc": "12/30/9998 00:00:00",
+                  "hasXPriceOffer": false,
+                  "listPrice": 708,
+                  "msrp": 708,
+                  "currency": "HKD"
+                },
+                "skuId": "0010"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "structured": {
+    "@graph": [
+      {
+        "@type": [
+          "Product",
+          "VideoGame"
+        ],
+        "url": "https://www.xbox.com/zh-HK/games/store/grand-theft-auto-vi/9np019g7nzxt",
+        "offers": {
+          "@type": "Offer",
+          "url": "https://www.xbox.com/zh-HK/games/store/grand-theft-auto-vi/9np019g7nzxt",
+          "priceCurrency": "HKD",
+          "price": 568,
+          "availability": "https://schema.org/InStock",
+          "availableDeliveryMethod": "http://purl.org/goodrelations/v1#DeliveryModeDirectDownload",
+          "itemCondition": "https://schema.org/NewCondition"
+        }
+      }
+    ]
+  },
+  "source_sha256": "cf5ae8327f285fbebe391f88a2885449b911bbe73a9be1a5ac35e44df8bff972"
+}

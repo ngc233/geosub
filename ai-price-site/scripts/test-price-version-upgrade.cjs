@@ -233,6 +233,7 @@ async function main() {
     assert.deepEqual(after.sql.filter(row => !beforeRegistry.sql.some(oldRow => oldRow.id === row.id))
       .map(row => row.filename), [
         "sql/schema/060_formal_price_versions.sql", "sql/schema/061_app_store_review_isolation.sql",
+        "sql/schema/062_game_offers.sql",
       ]);
     assert.deepEqual(after.prisma.filter(row => !beforeRegistry.prisma.some(oldRow => oldRow.id === row.id))
       .map(row => row.migration_name), [

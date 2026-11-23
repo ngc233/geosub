@@ -72,6 +72,7 @@ export function ReviewOverviewSections({
       <AdminPageHeader
         eyebrow="价格工作流"
         title="异常审核"
+        action={<AdminLinkButton href={"/admin/review?source=games" + (productQuery ? "&product=" + encodeURIComponent(productQuery) : "")} variant="secondary">游戏报价审核</AdminLinkButton>}
         description="稳定价格通过验证后自动写入正式库；这里处理未通过的记录。"
       />
       <AdminPipelineSteps

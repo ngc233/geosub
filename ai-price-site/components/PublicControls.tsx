@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode 
 import PublicIcon from "./PublicIcon";
 
 export function PublicSegments({ label, options, value, onChange }: {
-  label:string; options:{value:string;label:string}[]; value:string; onChange:(value:string)=>void;
+  label:string; options:{value:string;label:ReactNode}[]; value:string; onChange:(value:string)=>void;
 }) {
   const selected=Math.max(0,options.findIndex(option=>option.value===value));
   const [morph,setMorph]=useState({selected,cycle:0,changed:false});
@@ -12,7 +12,7 @@ export function PublicSegments({ label, options, value, onChange }: {
   if(morph.selected!==selected)setMorph({selected,cycle:1-morph.cycle,changed:true});
   return <div data-jelly-cycle={morph.changed?morph.cycle:undefined} className="gs-segments" role="tablist" aria-label={label} style={{"--gs-count":options.length,"--gs-selected":selected} as CSSProperties}>
     <span className="gs-segment-slider" aria-hidden="true"/>
-    {options.map((option,index)=><button key={option.value} type="button" role="tab" aria-selected={option.value===value} tabIndex={option.value===value?0:-1} onClick={()=>onChange(option.value)} onKeyDown={e=>{
+    {options.map((option,index)=><button key={option.value} data-choice={option.value} type="button" role="tab" aria-selected={option.value===value} tabIndex={option.value===value?0:-1} onClick={()=>onChange(option.value)} onKeyDown={e=>{
       let next=index;if(e.key==="ArrowRight")next=(index+1)%options.length;else if(e.key==="ArrowLeft")next=(index-1+options.length)%options.length;else if(e.key==="Home")next=0;else if(e.key==="End")next=options.length-1;else return;
       e.preventDefault();onChange(options[next].value);(e.currentTarget.parentElement?.querySelectorAll("button")[next] as HTMLButtonElement)?.focus();
     }}>{option.label}</button>)}
