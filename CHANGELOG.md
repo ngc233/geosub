@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.33.1 — Chinese ChatGPT Plus observation unlock
+
+- Record the settled Bing observation, preserve the existing price inputs, and close the approved lock on the Chinese Plus page.
+- Prepare the website component and its exact rollback to 2.33.0. See the [release readiness record](docs/release-readiness-2.33.1-zh-plus.md).
+
 ## 2.33.0 - 2026-11-23
 
 - Release the reviewed V7 Chinese auxiliary pages from PR #77: about/contact/privacy/terms/data sources, subscription currency tools, price history/snapshots and 404/error layouts. Preserve existing prose, headings, SEO and normal-page links; only approved existing-page entries are added to Chinese fallback pages. Plus and English layouts remain unchanged.
