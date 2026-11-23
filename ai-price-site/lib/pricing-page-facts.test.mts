@@ -14,7 +14,7 @@ function plan(regions: RegionPrice[], name = "Plus"): ProductPlan {
   return { slug: "plus", name, billing: "monthly", regions };
 }
 
-test("Chinese Plus chart counts the same 39 iOS regions as its table without unlocking experiment copy", () => {
+test("Chinese Plus chart counts the same 39 iOS regions as its table with the retained copy", () => {
   const source = plan([...Array.from({ length: 39 }, (_, i) => row(`I${i}`)), ...Array.from({ length: 10 }, (_, i) => row(`W${i}`, "web", 1))]);
   const content = getPricingPagePlan(source, "/zh/ai-pricing/chatgpt/plus");
   assert.equal(content, source);
@@ -37,9 +37,10 @@ test("49 source rows yield the same 39 iOS rows in copy, stats and table", () =>
   assert.equal(source.regions.length, 49);
 });
 
-test("the active Chinese Plus experiment retains its original copy input", () => {
+test("Chinese Plus retains its original copy input on the canonical path and trailing slash", () => {
   const source = plan([row("US"), row("US", "web", 1)]);
   assert.equal(getPricingPagePlan(source, "/zh/ai-pricing/chatgpt/plus"), source);
+  assert.equal(getPricingPagePlan(source, "/zh/ai-pricing/chatgpt/plus/"), source);
   assert.equal(getPricingPagePlan(source, "/zh/ai-pricing/chatgpt/pro").regions.length, 1);
 });
 

@@ -1,10 +1,11 @@
 import { getDefaultPlanRegions, getPlanFreshness, type ProductPlan } from "./public-pricing-model.ts";
 import { getActiveSeoExperimentLock } from "./seo-experiment-locks.ts";
 
-// Keep the active experiment's copy unchanged until an explicit settlement.
-// All other copy and structured data use the same platform selection as the table.
+// The approved Chinese Plus copy continues to use its original plan input.
 export function getPricingPagePlan(plan: ProductPlan, canonicalPath: string): ProductPlan {
-  if (getActiveSeoExperimentLock(canonicalPath)) return plan;
+  if (canonicalPath.replace(/\/+$/, "") === "/zh/ai-pricing/chatgpt/plus" || getActiveSeoExperimentLock(canonicalPath)) {
+    return plan;
+  }
   const regions = getDefaultPlanRegions(plan)
     .slice().sort((a, b) => a.priceUsd - b.priceUsd)
     .map((region, index) => ({ ...region, rank: index + 1 }));
