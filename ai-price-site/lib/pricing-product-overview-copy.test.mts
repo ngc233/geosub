@@ -1,12 +1,32 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  getChatGptOverviewSearchDescription,
   getPricingProductOverviewCopy,
   getProductOverviewDecisionPlans,
   getProductOverviewRegionCount,
   getProductOverviewPriceFact,
 } from "./pricing-product-overview-copy.ts";
 import type { SubscriptionProduct } from "./public-pricing-model.ts";
+
+test("Chinese ChatGPT search snippet describes only four available monthly App Store plans with US prices", () => {
+  const plans = ["go", "plus", "pro-5x", "pro"].map(slug => ({
+    ...product.plans[0], slug,
+    regions: [{ ...product.plans[0].regions[0], code: "US", billingPlatform: "ios" }],
+  }));
+  const description = getChatGptOverviewSearchDescription("zh", "chatgpt", plans);
+  assert.equal(description, "查看 ChatGPT Go、Plus、Pro 100 和 Pro 200 的 App Store 月费，对比各套餐的美国基准价、最低价地区和人民币折算价格。");
+  assert.equal(getChatGptOverviewSearchDescription("en", "chatgpt", plans), undefined);
+  assert.equal(getChatGptOverviewSearchDescription("zh", "claude", plans), undefined);
+  assert.equal(getChatGptOverviewSearchDescription("zh", "chatgpt", plans.slice(1)), undefined);
+  for (const replacement of [
+    { ...plans[0], billing: "yearly" as const },
+    { ...plans[0], regions: [{ ...plans[0].regions[0], code: "GB" }] },
+    { ...plans[0], regions: [{ ...plans[0].regions[0], billingPlatform: "web" }] },
+  ]) {
+    assert.equal(getChatGptOverviewSearchDescription("zh", "chatgpt", [replacement, ...plans.slice(1)]), undefined);
+  }
+});
 
 const product: SubscriptionProduct = {
   slug: "chatgpt",

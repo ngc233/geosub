@@ -63,6 +63,7 @@ import { getPricingPressureCopy } from "../lib/pricing-pressure-copy";
 import { getPricingDetailSeoCopy } from "../lib/pricing-detail-seo-copy";
 import { getPricingMetadataExperiment } from "../lib/pricing-metadata-experiments";
 import {
+  getChatGptOverviewSearchDescription,
   getPricingProductOverviewCopy,
   getProductOverviewDecisionPlans,
   getProductOverviewRegionCount,
@@ -756,10 +757,11 @@ export async function getPricingDetailMetadata({
       (plan) => plan.regions.length > 0,
     );
     const regionCount = getProductOverviewRegionCount(product);
+    const decisionPlans = getProductOverviewDecisionPlans(product);
     const overviewCopy = getPricingProductOverviewCopy({
       locale,
       productName: product.name,
-      planCount: getProductOverviewDecisionPlans(product).length,
+      planCount: decisionPlans.length,
       regionCount,
       lowest: getProductOverviewPriceFact(product),
       billingChannel: getProductOverviewChannel(product),
@@ -791,7 +793,7 @@ export async function getPricingDetailMetadata({
 
     return {
       title,
-      description,
+      description: getChatGptOverviewSearchDescription(locale, product.slug, decisionPlans) ?? description,
       robots,
       alternates: {
         canonical: productCanonicalPath,
