@@ -550,7 +550,9 @@ export default function Header({
       { href: "/countries", name: currentLocaleCode === "zh" ? "国家价格" : "Countries", match: ["/countries"] },
       { href: "/price-history", name: currentLocaleCode === "zh" ? "价格历史" : "Price history", match: ["/price-history"] },
     ].filter(item => !baseNavItems.some(existing => stripSiteLocale(existing.href) === item.href)) : [];
-  const navItems = [...baseNavItems.slice(0, 2), ...discoveryItems, ...baseNavItems.slice(2)];
+  const gameEntry: NavItem[] = pathname === "/zh/games/gta-6" && !baseNavItems.some(item => item.href.endsWith("/games/gta-6"))
+    ? [{ name: "游戏比价", href: "/games/gta-6" }] : [];
+  const navItems = [...baseNavItems.slice(0, 2), ...gameEntry, ...discoveryItems, ...baseNavItems.slice(2)];
 
   const activeItemName = navItems.find((item) => isNavItemActive(item, pathname))?.name || "";
 

@@ -1,0 +1,78 @@
+{
+  "page": {
+    "locale": "zh-hant-hk",
+    "productId": "EP1004-PPSA01547_00-ULTEDTIONUPGRADE",
+    "isLoggedIn": false
+  },
+  "component": {
+    "args": {
+      "productId": "EP1004-PPSA01547_00-ULTEDTIONUPGRADE"
+    },
+    "overrides": {
+      "theme": "dark",
+      "locale": "zh-hant-hk"
+    },
+    "cache": {
+      "Product:EP1004-PPSA01547_00-ULTEDTIONUPGRADE": {
+        "id": "EP1004-PPSA01547_00-ULTEDTIONUPGRADE",
+        "activeCtaId": "UNAVAILABLE:OPEN_ERROR_DIALOG:EP1004-PPSA01547_00-ULTEDTIONUPGRADE-H003",
+        "skus": [
+          {
+            "__ref": "Sku:EP1004-PPSA01547_00-ULTEDTIONUPGRADE-H003"
+          }
+        ],
+        "webctas": [
+          {
+            "__ref": "GameCTA:UNAVAILABLE:OPEN_ERROR_DIALOG:EP1004-PPSA01547_00-ULTEDTIONUPGRADE-H003"
+          }
+        ]
+      },
+      "GameCTA:UNAVAILABLE:OPEN_ERROR_DIALOG:EP1004-PPSA01547_00-ULTEDTIONUPGRADE-H003": {
+        "id": "UNAVAILABLE:OPEN_ERROR_DIALOG:EP1004-PPSA01547_00-ULTEDTIONUPGRADE-H003",
+        "type": "UNAVAILABLE",
+        "showSignInToOrderLabel": false,
+        "action": {
+          "__typename": "Action",
+          "type": "OPEN_ERROR_DIALOG",
+          "param": [
+            {
+              "__typename": "ActionParam",
+              "name": "skuId",
+              "value": "EP1004-PPSA01547_00-ULTEDTIONUPGRADE-H003"
+            }
+          ]
+        },
+        "meta": {
+          "__typename": "CTAMeta",
+          "upSellService": "NONE",
+          "exclusive": false,
+          "playabilityDate": null,
+          "ineligibilityReasons": [
+            {
+              "__typename": "IneligibilityReason",
+              "type": "DONT_OWN",
+              "names": [
+                "Grand Theft Auto VI Standard Edition"
+              ]
+            }
+          ]
+        },
+        "price": {
+          "currencyCode": null,
+          "basePriceValue": null,
+          "discountedValue": null,
+          "endTime": null,
+          "isExclusive": null,
+          "isTiedToSubscription": null,
+          "applicability": null,
+          "qualifications": null,
+          "serviceBranding": [
+            "NONE"
+          ],
+          "membershipType": null
+        }
+      }
+    }
+  },
+  "source_sha256": "39853b7b5bbd12929ac2b1a4866422bfe37e7b4c13eb57deb21c1ebe8d76139f"
+}

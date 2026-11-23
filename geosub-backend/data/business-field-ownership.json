@@ -1026,6 +1026,13 @@
       ]
     },
     {
+      "path": "ai-price-site/app/admin/review/game-review-store.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
       "path": "ai-price-site/app/admin/search-demand/actions.ts",
       "classification": "admin_action",
       "tables": [
@@ -1531,6 +1538,22 @@
       "classification": "schema_or_function_definition",
       "tables": [
         "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/isolated/configure-gta6-stores.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_jobs",
+        "price_sources",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/isolated/expand-gta6-stores.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "collector_jobs"
       ]
     },
     {
