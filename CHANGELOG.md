@@ -1,12 +1,12 @@
 # Changelog
 
-## 2.33.0 - Unreleased
+## 2.33.0 - 2026-11-23
 
 - Release the reviewed V7 Chinese auxiliary pages from PR #77: about/contact/privacy/terms/data sources, subscription currency tools, price history/snapshots and 404/error layouts. Preserve existing prose, headings, SEO and normal-page links; only approved existing-page entries are added to Chinese fallback pages. Plus and English layouts remain unchanged.
 - Load auxiliary styles only on their applicable routes with all color, size, shadow and motion gates retained. Keep the approved Inter Tight numeral bytes and font-display strategy; reviewed mobile performance medians remain 97/97 for articles, tools and history.
 - Show unavailable rates honestly in the Chinese converter and quick comparisons when missing or beyond the existing seven-day limit; keep the 18-hour warning, readers and formulas. Preserve local-currency history without inventing unavailable historical exchange-rate charts.
 - Preserve all 254 historical exact rollback pairs, inherit 15 audited scopes unchanged, and add one exact rollback target to recorded healthy 2.32.0 (`15edcbe2edc964985ce02357cb071555475761f4`). Rollback restores the prior auxiliary layouts without restoring the database; retain the released guide pages and V3–V6.
-- Database inputs remain unchanged (`migration_skipped`). A separately approved deployment must pass full production read-only gates and install the final CI-successful controller, verifying all 84 files against its commit. The changed compatibility policy requires this installation; never edit server policy in place.
+- Deployed final main commit `5234753b9642fe196c40d4f65b99c991a0df74c0` on 2026-11-23. All eight production read-only checks passed, all 84 controller files matched the archive, and the native receipt recorded `migration_skipped`. See the [production release and acceptance record](docs/release-readiness-2.33.0-2026-11-14.md#实际生产发布记录-2026-11-23).
 
 ## 2.32.0 - Unreleased
 
