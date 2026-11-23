@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.35.0 - 2026-11-24
+
+- Release the Chinese ChatGPT Plus V8 region-price experiment from PR #99. Consenting visitors with a stable assignment see either the existing page or two shortcuts to the region table and its search field.
+- Keep the same server-rendered content and search metadata for both groups. This website release adds no database migration and excludes the overview metadata work in PR #96.
+- Record the exact content-reader rollback pairs for the previous 2.34.0 and 2.33.2 builds. Verify the production iPhone search field focus and software keyboard before opening the observation window.
+
 ## 2.34.0 - Unreleased
 
 - Add the draft GTA 6 console price comparison, store collectors and admin review queue. The first pilot covers the PS5 and Xbox Hong Kong standard editions. Operations reviews each observation before its price becomes eligible.
