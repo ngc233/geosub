@@ -1,5 +1,12 @@
 ﻿export const ANALYTICS_EVENTS = {
   PAGE_VIEW: "page_view",
+  REGION_TABLE_VIEW: "region_table_view",
+  REGION_SEARCH_USE: "region_search_use",
+  REGION_LOOKUP_SUCCESS: "region_lookup_success",
+  REGION_ACTIVE_LOOKUP_SUCCESS: "region_active_lookup_success",
+  REGION_BROWSE_VIEW: "region_browse_view",
+  REGION_VISIT_STATE: "region_visit_state",
+
 
   CLICK_DIGITAL_SERVICE_CARD: "click_digital_service_card",
   CLICK_DIGITAL_SERVICE_SIDEBAR: "click_digital_service_sidebar",
