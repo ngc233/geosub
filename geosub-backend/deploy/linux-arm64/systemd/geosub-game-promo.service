@@ -13,4 +13,4 @@ RuntimeDirectoryPreserve=yes
 RuntimeDirectoryMode=0700
 NoNewPrivileges=true
 WorkingDirectory=/opt/geosub/geosub-backend
-ExecStart=/usr/bin/env bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh -GamePromoRechecks
+ExecStart=/bin/bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-jobs.sh -GamePromoRechecks
