@@ -7,7 +7,6 @@ import {
   seoSearchPerformanceBaseline,
 } from "./seo-search-performance-baseline.ts";
 import { getLegacyPricingPlanRedirectPath } from "./pricing-routes.ts";
-import { activeSeoExperimentLocks } from "./seo-experiment-locks.ts";
 
 test("legacy query observations are attributed to stable plan paths", () => {
   assert.equal(
@@ -79,13 +78,14 @@ test("same-engine same-window legacy observations merge at their canonical path"
 });
 
 test("active page locks apply across engines and legacy routes without hiding metrics", () => {
+  const lock = { canonicalPath: "/zh/ai-pricing/chatgpt/plus", experimentId: "test-page-lock", status: "active" } as const;
   for (const engine of ["google", "bing"] as const) {
     const [priority] = buildSeoSearchPagePriorities([{
       engine, periodStart: "2026-10-01", periodEnd: "2026-10-07",
       path: "/zh/ai-pricing/chatgpt?plan=plus", clicks: 1, impressions: 1000,
-    }], activeSeoExperimentLocks);
+    }], [lock]);
     assert.equal(priority.tier, "实验锁定");
-    assert.equal(priority.experimentId, "zh-chatgpt-plus-bing-2026-08-25");
+    assert.equal(priority.experimentId, lock.experimentId);
     assert.equal(priority.clicks, 1);
     assert.match(priority.reasons.join(" "), /仅观察/);
     assert.doesNotMatch(priority.reasons.join(" "), /优先改善标题/);

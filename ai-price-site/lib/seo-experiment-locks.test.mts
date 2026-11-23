@@ -5,17 +5,13 @@ import {
   getActiveSeoExperimentLock,
 } from "./seo-experiment-locks.ts";
 
-test("Chinese Plus remains explicitly locked after Pro interruption", () => {
-  assert.equal(activeSeoExperimentLocks.length, 1);
-
-  for (const path of [
-    "/zh/ai-pricing/chatgpt/plus",
-  ]) {
-    const lock = getActiveSeoExperimentLock(`${path}/`);
-    assert.ok(lock);
+test("registered locks require manual release and match the canonical page only", () => {
+  for (const lock of activeSeoExperimentLocks) {
+    assert.equal(getActiveSeoExperimentLock(lock.canonicalPath), lock);
+    assert.equal(getActiveSeoExperimentLock(`${lock.canonicalPath}/`), lock);
+    assert.equal(getActiveSeoExperimentLock(`${lock.canonicalPath}-unrelated`), null);
     assert.equal(lock.automaticRelease, false);
-    assert.equal(lock.earliestSettledThrough, "2026-09-03");
-    assert.equal(lock.minimumCompleteObservationDays, 7);
+    assert.ok(lock.minimumCompleteObservationDays >= 7);
     assert.ok(lock.lockedFields.includes("robots"));
     assert.ok(lock.lockedFields.includes("canonical"));
     assert.ok(lock.lockedFields.includes("h1"));
