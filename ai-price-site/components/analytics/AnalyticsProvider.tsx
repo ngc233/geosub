@@ -11,7 +11,8 @@ import {
 import { getAnalyticsSessionId } from "../../lib/client-analytics-session";
 import { useAnalyticsConsent } from "./useAnalyticsConsent";
 
-import { PLUS_BASELINE_PATH, startPlusBaseline } from "../../lib/plus-region-baseline";
+import { PLUS_BASELINE_PATH, PLUS_REGION_EXPERIMENT, setPlusVariant, variantForVisitor } from "../../lib/plus-region-experiment";
+import { startPlusBaseline } from "../../lib/plus-region-baseline";
 import { version as buildVersion } from "../../package.json";
 
 type TrackPayload = {
@@ -82,11 +83,12 @@ function sendEvent(payload: TrackPayload) {
     });
 
     if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-      const blob = new Blob([body], {
-        type: "application/json",
-      });
-
-      const sent = navigator.sendBeacon("/api/events", blob);
+      // The endpoint parses JSON from the request body. A string keeps Plus
+      // beacons inline when WebKit queues multiple events during a lookup.
+      const beaconBody = payload.pagePath === PLUS_BASELINE_PATH
+        ? body
+        : new Blob([body], { type: "application/json" });
+      const sent = navigator.sendBeacon("/api/events", beaconBody);
 
       if (sent) {
         return;
@@ -121,9 +123,14 @@ function AnalyticsInner() {
     let cancelled = false;
     let stop: ((record: boolean) => void) | undefined;
     let reported = false;
+    let withdrawn = false;
     const eligible = readAnalyticsConsent() === ANALYTICS_CONSENT_GRANTED;
+    const readVisitor = () => document.cookie.split("; ").find(c => c.startsWith("geosub_anon_id="))?.slice("geosub_anon_id=".length);
     function sync() {
+      if (cancelled) return;
       if (!hasAnalyticsConsent() || readAnalyticsConsent() !== ANALYTICS_CONSENT_GRANTED) {
+        if (eligible) withdrawn = true;
+        setPlusVariant(null);
         stop?.(false);
         stop = undefined;
       }
@@ -135,25 +142,44 @@ function AnalyticsInner() {
           metadata: { path: PLUS_BASELINE_PATH, eligible_at_entry: false } });
         return;
       }
-      // Use the existing consent-controlled first-party identity for concurrent beacons.
-      if (!document.cookie.split("; ").some(cookie => cookie.startsWith("geosub_anon_id="))) {
-        const secure = location.protocol === "https:" ? "; Secure" : "";
-        document.cookie = "geosub_anon_id=" + crypto.randomUUID() + "; Path=/; Max-Age=31536000; SameSite=Lax" + secure;
+      function enroll() {
+        if (cancelled || withdrawn || readAnalyticsConsent() !== ANALYTICS_CONSENT_GRANTED) return;
+        if (!readVisitor()) {
+          const secure = location.protocol === "https:" ? "; Secure" : "";
+          document.cookie = "geosub_anon_id=" + crypto.randomUUID() + "; Path=/; Max-Age=31536000; SameSite=Lax" + secure;
+        }
+        const visitorId = readVisitor();
+        const variant = variantForVisitor(visitorId);
+        const sessionId = getAnalyticsSessionId();
+        stop = startPlusBaseline((eventKey, fields, eventId) => {
+          sendEvent({ ...base, eventId, eventKey, sessionId,
+            eventName: eventKey === "page_view" ? "Page View" : eventKey,
+            source: eventKey === "page_view" ? "frontend_auto" : "plus_region_baseline",
+            metadata: { ...fields, path: PLUS_BASELINE_PATH, visitor_id: visitorId, build_version: buildVersion,
+              ...(variant ? { experiment_id: PLUS_REGION_EXPERIMENT, variant } : {}) } });
+        }, initialDocument.current);
+        setPlusVariant(variant);
+        initialDocument.current = false;
       }
-      const visitorId = document.cookie.split("; ").find(c => c.startsWith("geosub_anon_id="))?.split("=")[1];
-      const sessionId = getAnalyticsSessionId();
-      stop = startPlusBaseline((eventKey, fields, eventId) => {
-        sendEvent({ ...base, eventId, eventKey, sessionId,
-          eventName: eventKey === "page_view" ? "Page View" : eventKey,
-          source: eventKey === "page_view" ? "frontend_auto" : "plus_region_baseline",
-          metadata: { ...fields, path: PLUS_BASELINE_PATH, visitor_id: visitorId, build_version: buildVersion } });
-      }, initialDocument.current);
-      initialDocument.current = false;
+      // Serialize first entry across tabs where Web Locks are available.
+      if (!readVisitor() && navigator.locks) {
+        void navigator.locks.request("geosub-plus-visitor", enroll).catch(() => {
+          // A denied storage lock leaves the control UI in place.
+        });
+      } else {
+        enroll();
+      }
     }
-    queueMicrotask(() => { if (!cancelled) sync(); });
+    const onVisible = () => { if (!document.hidden) sync(); };
+    queueMicrotask(sync);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", sync);
     window.addEventListener(ANALYTICS_CONSENT_CHANGE_EVENT, sync);
     return () => {
       cancelled = true;
+      setPlusVariant(null);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", sync);
       window.removeEventListener(ANALYTICS_CONSENT_CHANGE_EVENT, sync);
       stop?.(hasAnalyticsConsent());
     };
