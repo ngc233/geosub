@@ -30,7 +30,7 @@ const controllerChanges = {
 const v4ReaderChanges = {
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "5e55489f29aca9e8da3b63d5a42372c291e0f9e3a151d3af37f6ddc7116472a7"
+    "candidate": "2d44a512b22ca75d5e180731232d674e8c3bed0d042a60bd349f29c2c549e3ea"
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
