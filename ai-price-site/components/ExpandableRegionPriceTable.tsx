@@ -494,6 +494,7 @@ function RegionComparisonToggle({
     <button
       type="button"
       onClick={onClick}
+      data-region-action="compare"
       disabled={disabled}
       aria-pressed={selected}
       aria-label={selected ? copy.removeRegion(country) : copy.selectRegion(country)}
@@ -881,6 +882,7 @@ function RegionPriceRow({
           />
           <button
             type="button"
+            data-region-action="detail"
             onClick={onToggleEvidence}
             aria-expanded={evidenceOpen}
             aria-controls={evidencePanelId}
@@ -999,6 +1001,7 @@ function RegionPriceRow({
             />
             <button
               type="button"
+              data-region-action="detail"
               onClick={onToggleEvidence}
               aria-expanded={evidenceOpen}
               aria-controls={evidencePanelId}
@@ -1263,6 +1266,7 @@ export default function ExpandableRegionPriceTable({
       <div
         className="sticky top-16 z-30 border-b border-zinc-200 bg-white/95 px-4 py-2.5 shadow-[0_6px_18px_rgba(24,24,27,0.06)] backdrop-blur-xl md:px-6 dark:border-zinc-800 dark:bg-zinc-900/95 dark:shadow-black/20"
         aria-label={toolbarCopy.toolbarLabel}
+        data-lookup-count={filteredRegions.length}
       >
         <div className="flex flex-wrap items-center gap-2.5">
           {toolbarCurrencyControl ? (
@@ -1278,6 +1282,7 @@ export default function ExpandableRegionPriceTable({
             />
             <input
               type="search"
+              data-region-query
               value={regionQuery}
               onChange={(event) => setRegionQuery(event.target.value)}
               placeholder={toolbarCopy.searchPlaceholder}
@@ -1286,6 +1291,7 @@ export default function ExpandableRegionPriceTable({
             {regionQuery ? (
               <button
                 type="button"
+                data-region-action="clear"
                 onClick={() => setRegionQuery("")}
                 className="absolute end-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-200/70 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                 aria-label={toolbarCopy.clearSearch}
@@ -1307,6 +1313,7 @@ export default function ExpandableRegionPriceTable({
                 <button
                   key={filter}
                   type="button"
+                  data-region-action="filter"
                   onClick={() => setQuickFilter(filter)}
                   className={[
                     "flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold transition-colors",

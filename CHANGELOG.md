@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.33.2 — Chinese ChatGPT Plus region lookup measurement
+
+- Record consented region lookups and short exits on the Chinese Plus page. Deduplicate the first active lookup per visit and repeated event deliveries.
+- Prepare the website component and its exact rollback to 2.33.1. See the [release readiness record](docs/release-readiness-2.33.2-zh-plus-baseline.md).
+
 ## 2.33.1 — Chinese ChatGPT Plus observation unlock
 
 - Record the settled Bing observation, preserve the existing price inputs, and close the approved lock on the Chinese Plus page.

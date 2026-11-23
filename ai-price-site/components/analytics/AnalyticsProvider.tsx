@@ -4,12 +4,18 @@ import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   ANALYTICS_CONSENT_GRANTED,
+  ANALYTICS_CONSENT_CHANGE_EVENT,
+  readAnalyticsConsent,
   hasAnalyticsConsent,
 } from "../../lib/analytics-consent";
 import { getAnalyticsSessionId } from "../../lib/client-analytics-session";
 import { useAnalyticsConsent } from "./useAnalyticsConsent";
 
+import { PLUS_BASELINE_PATH, startPlusBaseline } from "../../lib/plus-region-baseline";
+import { version as buildVersion } from "../../package.json";
+
 type TrackPayload = {
+  eventId?: string;
   eventKey: string;
   eventName?: string;
   pagePath?: string;
@@ -105,8 +111,56 @@ function AnalyticsInner() {
   const searchParams = useSearchParams();
   const { consent } = useAnalyticsConsent();
   const lastPathRef = useRef("");
+  const initialDocument = useRef(true);
 
   useEffect(() => {
+    if (pathname !== PLUS_BASELINE_PATH) {
+      initialDocument.current = false;
+      return;
+    }
+    let cancelled = false;
+    let stop: ((record: boolean) => void) | undefined;
+    let reported = false;
+    const eligible = readAnalyticsConsent() === ANALYTICS_CONSENT_GRANTED;
+    function sync() {
+      if (!hasAnalyticsConsent() || readAnalyticsConsent() !== ANALYTICS_CONSENT_GRANTED) {
+        stop?.(false);
+        stop = undefined;
+      }
+      if (reported || !hasAnalyticsConsent()) return;
+      reported = true;
+      const base = { pagePath: PLUS_BASELINE_PATH, pageTitle: document.title, locale: "zh", referrer: document.referrer };
+      if (!eligible || !crypto.randomUUID) {
+        sendEvent({ ...base, eventKey: "page_view", eventName: "Page View", source: "frontend_auto",
+          metadata: { path: PLUS_BASELINE_PATH, eligible_at_entry: false } });
+        return;
+      }
+      // Use the existing consent-controlled first-party identity for concurrent beacons.
+      if (!document.cookie.split("; ").some(cookie => cookie.startsWith("geosub_anon_id="))) {
+        const secure = location.protocol === "https:" ? "; Secure" : "";
+        document.cookie = "geosub_anon_id=" + crypto.randomUUID() + "; Path=/; Max-Age=31536000; SameSite=Lax" + secure;
+      }
+      const visitorId = document.cookie.split("; ").find(c => c.startsWith("geosub_anon_id="))?.split("=")[1];
+      const sessionId = getAnalyticsSessionId();
+      stop = startPlusBaseline((eventKey, fields, eventId) => {
+        sendEvent({ ...base, eventId, eventKey, sessionId,
+          eventName: eventKey === "page_view" ? "Page View" : eventKey,
+          source: eventKey === "page_view" ? "frontend_auto" : "plus_region_baseline",
+          metadata: { ...fields, path: PLUS_BASELINE_PATH, visitor_id: visitorId, build_version: buildVersion } });
+      }, initialDocument.current);
+      initialDocument.current = false;
+    }
+    queueMicrotask(() => { if (!cancelled) sync(); });
+    window.addEventListener(ANALYTICS_CONSENT_CHANGE_EVENT, sync);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(ANALYTICS_CONSENT_CHANGE_EVENT, sync);
+      stop?.(hasAnalyticsConsent());
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === PLUS_BASELINE_PATH) { lastPathRef.current = ""; return; }
     if (
       consent !== ANALYTICS_CONSENT_GRANTED ||
       !pathname ||

@@ -316,9 +316,12 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    await prisma.eventLog.create({
-      data: eventData,
-    });
+    const eventId = cleanUuid(body.eventId);
+    if (eventId) {
+      await prisma.eventLog.createMany({ data: [{ ...eventData, id: eventId }], skipDuplicates: true });
+    } else {
+      await prisma.eventLog.create({ data: eventData });
+    }
   } catch {
     console.warn("Event tracking unavailable; skipping event write.");
 
