@@ -13,7 +13,18 @@ BEGIN
     WHERE p.slug='gta-6' AND p.category='game' AND t.market='HK' AND t.edition='standard'
       AND t.offer_type='full_game' AND t.platform IN ('ps5','xbox')
       AND s.status='fresh' AND v.purchasable_status='available' AND r.status='succeeded'
-      AND r.raw_payload->>'game_run_mode'='regular_due' AND l.actor_id IS NOT NULL AND btrim(l.note)<>'';
+      AND r.raw_payload->>'game_run_mode'='regular_due' AND btrim(l.note)<>''
+      AND (l.actor_id IS NOT NULL OR (
+        l.new_value->>'rule'='gta6-official-buyout-v1' AND EXISTS (
+          SELECT FROM game_offer_attempts h JOIN collector_job_runs hr ON hr.id=h.run_id
+          JOIN audit_logs hl ON hl.target_type='game_offer_attempt' AND hl.target_id=h.run_id
+          WHERE h.target_id=t.id AND h.run_id::text=l.new_value->>'human_baseline_run_id'
+            AND h.review_status='approved' AND h.purchasable_status='available'
+            AND (h.observed_at,h.run_id)<(v.verified_at,v.run_id)
+            AND hr.status='succeeded' AND hr.raw_payload->>'game_run_mode'='regular_due'
+            AND hl.action='approved' AND hl.actor_id IS NOT NULL AND btrim(hl.note)<>''
+        )
+      ));
     IF ready_count<>2 THEN
         RAISE EXCEPTION '需要两条港服标准版的有效常规采集及人工核准记录';
     END IF;

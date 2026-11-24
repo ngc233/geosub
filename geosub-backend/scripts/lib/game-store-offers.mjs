@@ -116,7 +116,7 @@ function parsePlayStation(scripts, target, observedAt) {
     }
   }
   if (unavailable.length === 1 && publicItems.length === 0 && refs.length === 1) {
-    return {purchasable_status:"unavailable", proof:{cta:unavailable[0].id, reasons:unavailable[0].meta?.ineligibilityReasons?.map(r=>r.type)}};
+    return {purchasable_status:"unavailable", proof:{product_id:page.productId, market_locale:page.locale, cta:unavailable[0].id, reasons:unavailable[0].meta?.ineligibilityReasons?.map(r=>r.type)}};
   }
   requireEvidence(publicItems.length === 1, "parse_ambiguous", "Expected one public outright cart item");
   const cta = publicItems[0], p = cta.price;
@@ -125,7 +125,7 @@ function parsePlayStation(scripts, target, observedAt) {
   const result = priceFields(target, p.currencyCode, p.basePriceValue == null ? null : p.basePriceValue / 100,
     p.discountedValue / 100, p.endTime, observedAt);
   Object.assign(result, playStationMemberFields(memberItems, p, observedAt));
-  return {purchasable_status:"available", ...result, proof:{cta:cta.id, market_locale:page.locale, reward:"OUTRIGHT",
+  return {purchasable_status:"available", ...result, proof:{product_id:page.productId, cta:cta.id, market_locale:page.locale, reward:"OUTRIGHT",
     observed_currency:p.currencyCode, public_minor:p.discountedValue, base_minor:p.basePriceValue}};
 }
 function xboxStructuredOffer(scripts, target, id) {
@@ -157,9 +157,9 @@ function parseXbox(scripts, target, observedAt) {
   const offers = products.availabilitySummaries?.[id]?.[skuId];
   const ld = xboxStructuredOffer(scripts, target, id);
   const unavailable = ["https://schema.org/OutOfStock", "https://schema.org/Discontinued", "https://schema.org/SoldOut"];
-  if (unavailable.includes(ld.availability) && offers &&
+  if (unavailable.includes(ld.availability) && offers && Object.keys(offers).length > 0 &&
       Object.values(offers).every(item => Array.isArray(item.actions) && !item.actions.includes("Purchase"))) {
-    return {purchasable_status:"unavailable", proof:{sku:skuId, market, availability:ld.availability}};
+    return {purchasable_status:"unavailable", proof:{product_id:product.productId, sku:skuId, market, availability:ld.availability}};
   }
   requireEvidence(offers && Object.keys(offers).length, "missing_evidence", "Missing Xbox availability");
   const publicItems = [];
@@ -179,7 +179,7 @@ function parseXbox(scripts, target, observedAt) {
     ld.availability === "https://schema.org/InStock", "parse_ambiguous", "Public offer disagrees with storefront availability");
   return {purchasable_status:"available", ...fields, included_in_subscription:Array.isArray(product.includedWithPassesProductIds)
     ? product.includedWithPassesProductIds.length > 0 : null,
-    proof:{sku:skuId, availability:availabilityId, market, eligibility:price.eligibilityInfo.eligibility,
+    proof:{product_id:product.productId, sku:skuId, availability:availabilityId, market, eligibility:price.eligibilityInfo.eligibility,
       observed_currency:price.currency, list:price.listPrice, msrp:price.msrp, public_offer:ld.price}};
 }
 export function parseGameStorePage(target, finalUrl, html, observedAt = new Date().toISOString()) {
