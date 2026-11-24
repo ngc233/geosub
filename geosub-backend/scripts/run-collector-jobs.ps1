@@ -1210,6 +1210,11 @@ VALUES (
 "@
   }
 
+  if ($Result.RawPayload -and $Result.RawPayload.game_offer) {
+    # A rollout hold or operator pause can arrive while the HTTP request is in flight.
+    $jobStatusSql = "CASE WHEN status='paused' THEN status ELSE $jobStatusSql END"
+  }
+
 $jobWriteSql = @"
 UPDATE collector_jobs
 SET
@@ -1225,6 +1230,18 @@ WHERE id = $(Quote-SqlString $Job.id)::uuid;
 "@
 
   Invoke-Psql ($runWriteSql + "`n" + $jobWriteSql)
+
+  if (!$SkipAutoReview -and $RunId -and $status -eq "succeeded" -and $Result.RawPayload.game_offer -and
+      $Result.RawPayload.game_run_mode -in @("regular_due", "promo_recheck")) {
+    # Evidence is durable even if the separate review transaction fails.
+    try {
+      $reviewSql = Get-Content -LiteralPath (Join-Path $PSScriptRoot "lib/review-game-offer.sql") -Raw -ErrorAction Stop
+      $reviewRun = Quote-SqlString $RunId
+      Invoke-Psql "BEGIN; SET LOCAL lock_timeout='5s'; SET LOCAL statement_timeout='60s'; SET LOCAL geosub.game_review_run TO $reviewRun; `n$reviewSql`nCOMMIT;"
+    } catch {
+      Write-Warning "Game offer automatic review failed for run $RunId. Inspect its pending record and audit history. $($_.Exception.Message)"
+    }
+  }
 }
 
 function Get-AppStoreRepairAction {
