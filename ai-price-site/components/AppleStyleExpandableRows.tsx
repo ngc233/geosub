@@ -5,6 +5,7 @@ type Props = {
   renderChildren: () => React.ReactNode;
   showLabel?: string;
   hideLabel?: string;
+  onCollapse?: () => void;
 };
 
 export default function AppleStyleExpandableRows({
@@ -12,13 +13,14 @@ export default function AppleStyleExpandableRows({
   renderChildren,
   showLabel,
   hideLabel = "收起地区列表",
+  onCollapse,
 }: Props) {
   if (hiddenCount <= 0) {
     return null;
   }
 
   return (
-    <details className="group">
+    <details className="group" onToggle={onCollapse ? event=>{if(!event.currentTarget.open) onCollapse();} : undefined}>
       <summary className="flex cursor-pointer list-none items-center justify-center border-t border-zinc-100 bg-white px-4 py-3 text-center dark:border-zinc-800 dark:bg-zinc-950/20 [&::-webkit-details-marker]:hidden">
         <span className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900 active:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">
           <span className="group-open:hidden">

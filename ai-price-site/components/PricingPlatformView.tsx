@@ -33,6 +33,8 @@ import {
 import SharePriceModal, {
   type SharePriceProduct,
 } from "./SharePriceModal";
+import { planDistribution } from "../lib/plan-canvas";
+import PublicCurrencySelect from "./PublicCurrencySelect";
 
 function MapLoadingPlaceholder() {
   return (
@@ -58,10 +60,12 @@ function DeferredPriceWorldMap({
   plan,
   locale,
   formatPrice,
+  regionPicker,
 }: {
   plan: ProductPlan;
   locale: SiteLocale;
   formatPrice: (value: number) => string;
+  regionPicker?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shouldRender, setShouldRender] = useState(false);
@@ -105,6 +109,7 @@ function DeferredPriceWorldMap({
           locale={locale}
           compact
           formatPrice={formatPrice}
+          regionPicker={regionPicker}
         />
       ) : (
         <MapLoadingPlaceholder />
@@ -132,6 +137,7 @@ type PricingPlatformViewProps = {
   defaultCurrency: DisplayCurrency;
   exchangeRates: Partial<Record<DisplayCurrency, CurrencyExchangeRate>>;
   locale?: SiteLocale;
+  englishCanvas?: boolean;
 };
 
 const UNAVAILABLE_EXCHANGE_RATE = 0;
@@ -501,6 +507,7 @@ function PricingLead({
   exchangeRates,
   onCurrencyChange,
   locale,
+  englishCanvas,
 }: {
   productName: string;
   plan: ProductPlan;
@@ -509,6 +516,7 @@ function PricingLead({
   exchangeRates: Partial<Record<DisplayCurrency, CurrencyExchangeRate>>;
   onCurrencyChange: (currency: DisplayCurrency) => void;
   locale: SiteLocale;
+  englishCanvas?: boolean;
 }) {
   const stats = getPlanStats(plan);
   const referenceRegion = getReferenceRegion(plan);
@@ -570,14 +578,16 @@ function PricingLead({
             <span className="shrink-0 text-xs font-semibold text-zinc-400">
               {copy.displayCurrency}
             </span>
-            <CurrencySelect
+            {englishCanvas ? <PublicCurrencySelect locale="en" displayCurrency={displayCurrency}
+              options={supportedDisplayCurrencies.filter(code=>!disabledCurrencies.includes(code))}
+              onChange={onCurrencyChange}/> : <CurrencySelect
               value={displayCurrency}
               onChange={onCurrencyChange}
               options={[...supportedDisplayCurrencies]}
               disabledCurrencies={disabledCurrencies}
               locale={locale}
               compact
-            />
+            />}
           </div>
 
           {displayCurrency !== "USD" ? (
@@ -727,12 +737,14 @@ function PriceDistribution({
   plan,
   locale,
   formatPrice,
+  regionPicker,
 }: {
   productName: string;
   shareProduct: SharePriceProduct;
   plan: ProductPlan;
   locale: SiteLocale;
   formatPrice: (value: number) => string;
+  regionPicker?: boolean;
 }) {
   const sortedRegions = getSortedRegions(plan);
   const referenceRegion = getReferenceRegion(plan);
@@ -761,6 +773,7 @@ function PriceDistribution({
           plan={plan}
           locale={locale}
           formatPrice={formatPrice}
+          regionPicker={regionPicker}
         />
       </div>
 
@@ -784,6 +797,31 @@ function PriceDistribution({
   );
 }
 
+function EnglishPriceDistribution({ plan, formatPrice }: {
+  plan: ProductPlan; formatPrice: (price: number) => string;
+}) {
+  const { rows, lowest, highest, us, median, cheaper } = planDistribution(plan);
+  if (!lowest || !highest) return null;
+  const span = highest.priceUsd - lowest.priceUsd;
+  const offset = (price: number) => span > 0 ? (price - lowest.priceUsd) / span * 100 : 50;
+  return <section className="gs-plan-panel gs-plan-distribution gs-en-plan-distribution" aria-label="Price distribution">
+    <div className="gs-plan-card-top"><h2>Price distribution</h2><span>{rows.length} regions</span></div>
+    <div className="gs-plan-distribution-chart" role="img" aria-label="Regional prices from lowest to highest">
+      <span className="gs-plan-distribution-track"/>
+      {rows.map(row=><span key={row.code} className="gs-plan-dot"
+        data-tone={us && row.priceUsd === us.priceUsd ? "baseline" : us && row.priceUsd > us.priceUsd ? "high" : "low"}
+        style={{left:`${offset(row.priceUsd)}%`}} title={`${row.country} ${formatPrice(row.priceUsd)}`}/>)}
+    </div>
+    <div className="gs-plan-extremes"><span>Lowest · {lowest.country}</span><span>Highest · {highest.country}</span></div>
+    <dl>
+      {us && <div><dt>U.S. baseline</dt><dd>{formatPrice(us.priceUsd)}</dd></div>}
+      <div><dt>Highest</dt><dd>{formatPrice(highest.priceUsd)}</dd></div>
+      {median !== null && <div><dt>Median</dt><dd>{formatPrice(median)}</dd></div>}
+    </dl>
+    {cheaper !== null && <p className="gs-plan-distribution-note"><strong>{cheaper} / {rows.length}</strong> regions below the U.S. reference</p>}
+  </section>;
+}
+
 export default function PricingPlatformView({
   productName,
   shareProduct,
@@ -791,6 +829,7 @@ export default function PricingPlatformView({
   defaultCurrency,
   exchangeRates,
   locale = "zh",
+  englishCanvas = false,
 }: PricingPlatformViewProps) {
   const platform = useMemo<PlatformFilter>(() => {
     const availablePlatforms = new Set(plan.regions.map(getPlatform));
@@ -852,40 +891,29 @@ export default function PricingPlatformView({
   }, [plan, platform]);
 
   const platformLabel = getPlatformLabel(platform, locale);
+  const formatPrice = (value: number) => formatDisplayPrice(value, displayCurrency, selectedRate, locale);
+  const lead = <PricingLead productName={productName} plan={filteredPlan.regions.length ? filteredPlan : plan}
+    platformLabel={platformLabel} displayCurrency={displayCurrency} exchangeRates={exchangeRates}
+    onCurrencyChange={handleCurrencyChange} locale={locale} englishCanvas={englishCanvas}/>;
   return (
     <div className="space-y-5">
       {filteredPlan.regions.length === 0 ? (
         <>
-          <PricingLead
-            productName={productName}
-            plan={plan}
-            platformLabel={platformLabel}
-            displayCurrency={displayCurrency}
-            exchangeRates={exchangeRates}
-            onCurrencyChange={handleCurrencyChange}
-            locale={locale}
-          />
+          {lead}
           <EmptyPriceState platformLabel={platformLabel} locale={locale} />
         </>
       ) : (
         <>
-          <PricingLead
-            productName={productName}
-            plan={filteredPlan}
-            platformLabel={platformLabel}
-            displayCurrency={displayCurrency}
-            exchangeRates={exchangeRates}
-            onCurrencyChange={handleCurrencyChange}
-            locale={locale}
-          />
+          {englishCanvas && planDistribution(filteredPlan).visible
+            ? <div data-gs-english-panels>{lead}<EnglishPriceDistribution plan={filteredPlan} formatPrice={formatPrice}/></div>
+            : lead}
           <PriceDistribution
             productName={productName}
             shareProduct={shareProduct}
             plan={filteredPlan}
             locale={locale}
-            formatPrice={(value) =>
-              formatDisplayPrice(value, displayCurrency, selectedRate, locale)
-            }
+            regionPicker={englishCanvas}
+            formatPrice={formatPrice}
           />
           <ExpandableRegionPriceTable
             plan={filteredPlan}
@@ -894,11 +922,11 @@ export default function PricingPlatformView({
             platformLabel={platformLabel}
             displayCurrency={displayCurrency}
             displayCurrencyLabel={getCurrencyLabel(displayCurrency, locale)}
-            formatDisplayPrice={(value) =>
-              formatDisplayPrice(value, displayCurrency, selectedRate, locale)
-            }
+            formatDisplayPrice={formatPrice}
             toolbarCurrencyControl={
-              <CurrencySelect
+              englishCanvas ? <PublicCurrencySelect locale="en" displayCurrency={displayCurrency}
+                options={supportedDisplayCurrencies.filter(code=>!disabledCurrencies.includes(code))}
+                onChange={handleCurrencyChange}/> : <CurrencySelect
                 value={displayCurrency}
                 onChange={handleCurrencyChange}
                 options={[...supportedDisplayCurrencies]}
@@ -909,6 +937,7 @@ export default function PricingPlatformView({
             }
             showPlatformFilter={false}
             showSourceColumn={platform === "all"}
+            fullEvidenceRows={englishCanvas}
           />
         </>
       )}

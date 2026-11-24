@@ -8,9 +8,11 @@ import PublicIcon from "./PublicIcon";
 import { PublicDialog } from "./PublicControls";
 import PublicSearch from "./PublicSearch";
 
-export default function PublicHeader({ items, active, pathname, languages }: {
-  items: NavItem[]; active: string; pathname: string; languages: {code: SiteLocale; name: string}[];
+export default function PublicHeader({ items, active, pathname, languages, locale = "zh" }: {
+  items: NavItem[]; active: string; pathname: string; languages: {code: SiteLocale; name: string}[]; locale?: "zh" | "en";
 }) {
+  const english = locale === "en";
+  const menuLabel = english ? "Menu" : "菜单";
   const [dropdown, setDropdown] = useState<string | null>(null);
   const [languageOpen, setLanguageOpen] = useState(false);
   const languageId = useId();
@@ -48,7 +50,7 @@ export default function PublicHeader({ items, active, pathname, languages }: {
     document.addEventListener("focusin", focus);
     return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", keyboard); document.removeEventListener("focusin", focus); };
   }, []);
-  const href = (item: {href:string; external?:boolean}) => item.external ? item.href : withSiteLocale(item.href,"zh");
+  const href = (item: {href:string; external?:boolean}) => item.external ? item.href : withSiteLocale(item.href,locale);
   const links = (mobile = false) => items.map(item => {
     const hasChildren = Boolean(item.children?.length);
     const id = `${mobile ? "mobile" : "desktop"}-${item.href.replace(/[^a-z0-9]/gi,"-")}`;
@@ -76,19 +78,19 @@ export default function PublicHeader({ items, active, pathname, languages }: {
   const language = (mobile = false) => <div className="gs-language" onKeyDown={event => {
     if(event.key === "Escape" && languageOpen) { event.preventDefault(); event.stopPropagation(); setLanguageOpen(false); event.currentTarget.querySelector("button")?.focus(); }
   }}>
-    <button type="button" className="gs-language-trigger" aria-expanded={languageOpen} aria-controls={`${languageId}-${mobile}`} onClick={() => {setDropdown(null); setLanguageOpen(!languageOpen);}}><PublicIcon name="Globe" size={16} />简体中文<PublicIcon name="ChevronDown" className="gs-nav-chevron" size={16}/></button>
-    <div id={`${languageId}-${mobile}`} className="gs-popover" data-open={languageOpen} inert={!languageOpen}>{languages.map(lang => <Link key={lang.code} href={getLanguageSwitchHref(pathname,lang.code)} hrefLang={lang.code} rel={lang.code === "zh" || lang.code === "en" ? undefined : "nofollow"} aria-current={lang.code === "zh" ? "true" : undefined} onClick={() => {setLanguageOpen(false); setDrawer(false);}}>{lang.name}{lang.code === "zh" && <PublicIcon name="Check" size={16}/>}</Link>)}</div>
+    <button type="button" className="gs-language-trigger" aria-expanded={languageOpen} aria-controls={`${languageId}-${mobile}`} onClick={() => {setDropdown(null); setLanguageOpen(!languageOpen);}}><PublicIcon name="Globe" size={16} />{english ? "English" : "简体中文"}<PublicIcon name="ChevronDown" className="gs-nav-chevron" size={16}/></button>
+    <div id={`${languageId}-${mobile}`} className="gs-popover" data-open={languageOpen} inert={!languageOpen}>{languages.map(lang => <Link key={lang.code} href={getLanguageSwitchHref(pathname,lang.code)} hrefLang={lang.code} rel={lang.code === "zh" || lang.code === "en" ? undefined : "nofollow"} aria-current={lang.code === locale ? "true" : undefined} onClick={() => {setLanguageOpen(false); setDrawer(false);}}>{lang.name}{lang.code === locale && <PublicIcon name="Check" size={16}/>}</Link>)}</div>
   </div>;
-  return <header className="gs-public-unified gs-header" data-scrolled={scrolled}>
+  return <header className="gs-public-unified gs-header" data-scrolled={scrolled} data-gs-english={english || undefined}>
     <div className="gs-header-inner">
-      <Link href="/zh/" aria-label="GeoSub 首页" className="gs-brand"><svg className="gs-brand-globe" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12"/><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24"/><circle className="gs-brand-globe-accent" cx="21" cy="8" r="4"/></svg><strong>GeoSub</strong></Link>
-      <nav ref={nav} aria-label="主导航" className="gs-desktop-nav" data-measured={Boolean(indicator)}>
+      <Link href={english ? withSiteLocale("/",locale) : "/zh/"} aria-label={english ? "GeoSub home" : "GeoSub 首页"} className="gs-brand"><svg className="gs-brand-globe" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12"/><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24"/><circle className="gs-brand-globe-accent" cx="21" cy="8" r="4"/></svg><strong>GeoSub</strong></Link>
+      <nav ref={nav} aria-label={english ? "Main navigation" : "主导航"} className="gs-desktop-nav" data-measured={Boolean(indicator)}>
         {links()}{indicator && <span aria-hidden="true" className="gs-nav-indicator" style={{"--gs-indicator-left":`${indicator.left}px`,"--gs-indicator-width":`${indicator.width}px`} as CSSProperties} />}
       </nav>
-      <PublicSearch key={pathname} />
+      <PublicSearch key={pathname} locale={locale} />
       <div className="gs-desktop-language">{language()}</div>
-      <button type="button" className="gs-mobile-menu" data-gs-ui="icon-button" aria-label="打开菜单" aria-expanded={drawer} onClick={() => {setDropdown(null); setLanguageOpen(false); setDrawer(true);}}><PublicIcon name="Menu" /></button>
+      <button type="button" className="gs-mobile-menu" data-gs-ui="icon-button" aria-label={english ? "Open menu" : "打开菜单"} aria-expanded={drawer} onClick={() => {setDropdown(null); setLanguageOpen(false); setDrawer(true);}}><PublicIcon name="Menu" /></button>
     </div>
-    {drawer && <PublicDialog label="菜单" onClose={() => setDrawer(false)}><nav aria-label="手机导航" className="gs-drawer-nav">{links(true)}</nav><div className="gs-drawer-language">{language(true)}</div></PublicDialog>}
+    {drawer && <PublicDialog label={menuLabel} closeLabel={english ? "Close menu" : undefined} onClose={() => setDrawer(false)}><nav aria-label={english ? "Mobile navigation" : "手机导航"} className="gs-drawer-nav">{links(true)}</nav><div className="gs-drawer-language">{language(true)}</div></PublicDialog>}
   </header>;
 }

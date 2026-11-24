@@ -7,6 +7,10 @@ import {
 } from "../lib/db-ai-pricing";
 import { getDefaultPlan } from "../lib/db-pricing-types";
 import type { SiteLocale } from "../lib/site-locale";
+import { homepageMap } from "../lib/homepage-map";
+import { getLatestUsdExchangeRates } from "../lib/exchange-rates";
+import { homepageDisplayRates } from "../lib/homepage-summary";
+import { supportedDisplayCurrencies } from "../lib/display-currency";
 
 const FEATURED_PRODUCT_SLUGS = [
   "chatgpt",
@@ -73,6 +77,20 @@ async function loadHomepageData(locale: SiteLocale) {
 }
 
 export default async function LocalizedHomepagePage({ locale }: { locale: SiteLocale }) {
+  if (locale === "en") {
+    const [{products,evidence}, rates] = await Promise.all([
+      loadHomepageData(locale),
+      getEnglishHomepageRates(),
+    ]);
+    return <HomepageExperience locale={locale} products={products} evidence={evidence}
+      englishCanvas={{map:homepageMap,rates}}/>;
+  }
   const { products, evidence } = await loadHomepageData(locale);
   return <HomepageExperience locale={locale} products={products} evidence={evidence} />;
 }
+
+const getEnglishHomepageRates = unstable_cache(
+  async () => homepageDisplayRates(await getLatestUsdExchangeRates(supportedDisplayCurrencies)),
+  ["english-homepage-display-rates"],
+  { revalidate:1800, tags:["homepage-pricing"] },
+);

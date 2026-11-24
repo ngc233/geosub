@@ -24,6 +24,7 @@ import ProductPlanOverview from "./ProductPlanOverview";
 import ProductCanvasOverview from "./ProductCanvasOverview";
 import PlanCanvasPage from "./PlanCanvasPage";
 import { usesPlanCanvas } from "../lib/plan-canvas";
+import { englishPlanCanvasPath } from "../lib/public-style-rollout";
 import PlanDecisionGuidance from "./PlanDecisionGuidance";
 import PlanTabs from "./PlanTabs";
 import MobileProductSwitcher from "./MobileProductSwitcher";
@@ -940,10 +941,12 @@ function CountryAnalysisLinks({
   locale,
   productSlug,
   category,
+  concise = false,
 }: {
   locale: SiteLocale;
   productSlug: string;
   category: "ai" | "streaming";
+  concise?: boolean;
 }) {
   if (locale !== "zh" && locale !== "en") return null;
 
@@ -996,7 +999,7 @@ function CountryAnalysisLinks({
                 {pilot.title[pilotLocale]}
               </span>
               <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
-                {pilot.countryName[pilotLocale]} · {copy.action}
+                {concise ? copy.action : `${pilot.countryName[pilotLocale]} · ${copy.action}`}
               </span>
             </span>
             <ArrowRight
@@ -1370,6 +1373,7 @@ export default async function PricingDetailPage({
     plan: contentPlan,
     faqs: effectiveFaqs,
   });
+  const englishCanvas = canonicalDetailPath === englishPlanCanvasPath;
 
   if (usesPlanCanvas(locale, canonicalDetailPath)) {
     return <PlanCanvasPage product={product} plan={contentPlan} title={pageTitle} description={heroDescription}
@@ -1393,7 +1397,7 @@ export default async function PricingDetailPage({
   }
 
   return (
-    <main className="mx-auto flex max-w-6xl gap-5 px-5 py-6">
+    <main className={englishCanvas ? "gs-public-unified gs-en-plan mx-auto flex max-w-6xl gap-5 px-5 py-6" : "mx-auto flex max-w-6xl gap-5 px-5 py-6"}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
@@ -1516,12 +1520,14 @@ export default async function PricingDetailPage({
               defaultCurrency={defaultCurrency}
               exchangeRates={exchangeRates}
               locale={locale}
+              englishCanvas={englishCanvas}
             />
 
             <CountryAnalysisLinks
               locale={locale}
               productSlug={product.slug}
               category={product.category}
+              concise={englishCanvas}
             />
 
             <PlanDecisionGuidance product={product} locale={locale} planSlug={activePlan.slug} />
@@ -1555,6 +1561,7 @@ export default async function PricingDetailPage({
                   rows={affordability.rows}
                   locale={locale}
                   embedded
+                  compactHeader={englishCanvas}
                 />
               ) : undefined}
               matrixView={affordability.rows.length > 0 ? (
