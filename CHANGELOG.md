@@ -1,9 +1,18 @@
 # Changelog
 
-## 2.34.0 - Unreleased
+## 2.34.1 - 2026-11-24
+
+- Release Chinese ChatGPT Plus V8 regional price lookup for eligible, consenting visitors (#99).
+- Release the GTA 6 Hong Kong price comparison pilot with the compatible schema 062 migration (#100). Store configuration, pilot expansion and collector activation are separate operations.
+- Release the first English public UI batch for the homepage, AI pricing list and ChatGPT Go (#101). Preserve reviewed metadata and original link targets.
+- Include the Prisma configuration dependency fix in #103. Pin Effect to 3.22.5 for GHSA-7589-6fvf-x4pw while retaining Prisma 7.9.1 and Next.js 16.4.2.
+- Prepare the exact application rollback to the retained 2.33.2 deployment. See the [release readiness record](docs/release-readiness-2.34.1-2026-11-24.md).
+
+## 2.34.0 - Unreleased integration version
 
 - Add the draft GTA 6 console price comparison, store collectors and admin review queue. The first pilot covers the PS5 and Xbox Hong Kong standard editions. Operations reviews each observation before its price becomes eligible.
 - Register migration 062 for rolling release. Store configuration and pilot expansion remain separate manual steps.
+- Main used this integration version when combining #99, #100 and #101. It was never deployed to production. The last recorded production release was 2.33.2 (`8a92e0a14568a1f681f0d1a88438617e752ad8d8`).
 
 ## 2.33.2 — Chinese ChatGPT Plus region lookup measurement
 
