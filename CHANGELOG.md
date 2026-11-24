@@ -1,13 +1,20 @@
 # Changelog
 
+## 2.35.1 - 2026-11-24
+
+- Prepare the combined release of Chinese ChatGPT Plus V8 regional price lookup (#99), the GTA 6 Hong Kong pilot and compatible schema 062 (#100), and the first English public UI batch for the homepage, AI pricing list and ChatGPT Go (#101).
+- Carry forward the 2.35.0 release preparation from #102 and the scoped Effect 3.22.5 security fix from #103. The Plus observation starts after a confirmed deployment and verification of both entry points, including iPhone keyboard focus.
+- 2.34.0 (`280199ceb42390f4d26417d36ba3ac0bca285c5e`) and 2.35.0 (`3bb1372ac8e7e2c07c46c444df6f7ec13859be5f`) were merged to main as undeployed integration versions. The last recorded production release remains 2.33.2 (`8a92e0a14568a1f681f0d1a88438617e752ad8d8`).
+- Verify the retained 2.33.2 build, migration 062 and all 86 controller files before an approved rollout. The [release readiness record](docs/release-readiness-2.35.1-2026-11-24.md) records the exact reader rollback pairs.
+
 ## 2.35.0 - 2026-11-24
 
 - Release the Chinese ChatGPT Plus V8 region-price experiment from PR #99. Consenting visitors with a stable assignment see either the existing page or two shortcuts to the region table and its search field.
 - Include the first English public layout rollout from PR #101 and the scoped Prisma Effect security update from PR #103.
-- Keep the same server-rendered content and search metadata for both groups. This website release adds no database migration and excludes the overview metadata work in PR #96.
+- Keep the same server-rendered content and search metadata for both groups. PR #102 added no database migration on top of its main baseline. The actual upgrade from deployed 2.33.2 still includes the compatible schema 062 from #100. PR #96 remains separate.
 - Record the exact content-reader rollback pairs for the previous 2.34.0 and 2.33.2 builds. Verify the production iPhone search field focus and software keyboard before opening the observation window.
 
-## 2.34.0 - Unreleased
+## 2.34.0 - Unreleased integration version
 
 - Add the draft GTA 6 console price comparison, store collectors and admin review queue. The first pilot covers the PS5 and Xbox Hong Kong standard editions. Operations reviews each observation before its price becomes eligible.
 - Register migration 062 for rolling release. Store configuration and pilot expansion remain separate manual steps.
