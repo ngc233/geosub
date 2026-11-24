@@ -58,9 +58,10 @@ export default function PublicPriceNumber({ value, changeKey, prefix = "", suffi
     return () => { cancelAnimationFrame(frame); reduced.removeEventListener("change", onPreference); };
   }, [value, changeKey, finalText, prefix, suffix, format, valid]);
   if (!valid) return null;
+  const cycleLabel = cycle ? publicBillingLabel(cycle, locale) : null;
   return <span ref={root} data-gs-number data-gs-price data-size={size} data-gs-price-cycle={cycle ? "true" : undefined}>
-    <span className="gs-sr-only">{label ? `${label}：` : ""}{finalText}{cycle ? ` / ${publicBillingLabel(cycle)}` : ""}</span>
+    <span className="gs-sr-only">{label ? `${label}：` : ""}{finalText}{cycleLabel ? ` / ${cycleLabel}` : ""}</span>
     <span ref={visible} aria-hidden="true">{finalText}</span>
-    {cycle && <small data-gs-cycle aria-hidden="true"> / {publicBillingLabel(cycle)}</small>}
+    {cycleLabel && <small data-gs-cycle aria-hidden="true"> / {cycleLabel}</small>}
   </span>;
 }

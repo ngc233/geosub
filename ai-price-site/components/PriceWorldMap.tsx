@@ -28,6 +28,7 @@ type PriceWorldMapProps = {
   locale?: DetailLocale;
   compact?: boolean;
   formatPrice?: (value: number) => string;
+  regionPicker?: boolean;
 };
 
 type MapFeature = {
@@ -155,6 +156,7 @@ export default function PriceWorldMap({
   locale = "zh",
   compact = false,
   formatPrice = formatUsd,
+  regionPicker = false,
 }: PriceWorldMapProps) {
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const [view, setView] = useState<ViewState>(getInitialViewState);
@@ -283,6 +285,7 @@ export default function PriceWorldMap({
 
   const resetView = () => {
     setView(getInitialViewState());
+    if (regionPicker) setHoverInfo(null);
   };
 
   return (
@@ -337,6 +340,21 @@ export default function PriceWorldMap({
           {mapCopy.noUsBenchmarkNotice}
         </div>
       ) : null}
+
+      {regionPicker && <label className="gs-en-geography-picker">
+        View region
+        <select data-gs-ui="select" value={hoverInfo?.locked ? hoverInfo.region?.code ?? "" : ""}
+          onChange={event=>{
+            const region = regionByCode.get(event.target.value);
+            if (!region) { setHoverInfo(null); return; }
+            setHoverInfo({x:0,y:0,name:region.country,region,locked:true,
+              diffPercent:referencePrice ? getGeoPriceDifference(region.priceUsd,referencePrice) : undefined});
+          }}>
+          <option value="">Choose a region</option>
+          {[...regionByCode.values()].sort((a,b)=>a.country.localeCompare(b.country,"en")).map(region=>
+            <option key={region.code} value={region.code}>{region.country}</option>)}
+        </select>
+      </label>}
 
       <div
         data-detail-geo-pricing

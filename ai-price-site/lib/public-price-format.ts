@@ -21,7 +21,10 @@ export function formatPublicPrice(value: number, currency: string, locale = "zh-
   const amount = number.format(value);
   return `${symbols[code] ?? code} ${amount}`;
 }
-export function publicBillingLabel(cycle: string) {
+export function publicBillingLabel(cycle: string, locale = "zh-CN") {
   const normalized = cycle.toLowerCase();
-  return ({ monthly: "月", yearly: "年", weekly: "周" } as Record<string, string>)[normalized] ?? cycle;
+  const labels: Record<string, string> = locale === "en-US"
+    ? { monthly: "mo", yearly: "yr", weekly: "wk" }
+    : { monthly: "月", yearly: "年", weekly: "周" };
+  return labels[normalized] ?? cycle;
 }

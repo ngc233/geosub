@@ -186,7 +186,7 @@ export default function Footer({
   const copy = footerCopy[currentLocale];
   const consentCopy = getAnalyticsConsentCopy(currentLocale);
 
-  if (usesUnifiedPublicStyle(pathname)) return <PublicFooter items={footerItems} copy={copy} settings={consentCopy.settings} />;
+  if (usesUnifiedPublicStyle(pathname)) return <PublicFooter items={footerItems} copy={copy} settings={consentCopy.settings} locale={currentLocale === "en" ? "en" : "zh"} />;
 
   return (
     <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">

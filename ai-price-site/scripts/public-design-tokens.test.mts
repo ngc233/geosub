@@ -56,10 +56,10 @@ test("token definitions stay scoped; component declarations cannot smuggle a pal
 });
 
 test("CLI checks four foundation files plus country/product-country/auxiliary CSS, fails on constructed cancellation and succeeds after repair", () => {
-  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-country-index.css", "public-product-country.css", "public-listing.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css"]);
+  assert.deepEqual([...STYLE_FILES], ["public-tokens.css", "public-base.css", "public-components.css", "public-motion.css", "public-country.css", "public-country-index.css", "public-product-country.css", "public-listing.css", "public-auxiliary-article.css", "public-auxiliary-contact.css", "../public/styles/v7-auxiliary-tools.css", "public-auxiliary-evidence.css", "../public/styles/v7-auxiliary-states.css", "en/public-english.css"]);
   const root = mkdtempSync(join(tmpdir(), "geosub-u1-css-"));
   try {
-    mkdirSync(join(root, "app")); mkdirSync(join(root, "design")); mkdirSync(join(root, "public/styles"), { recursive:true });
+    mkdirSync(join(root, "app/en"), { recursive:true }); mkdirSync(join(root, "design")); mkdirSync(join(root, "public/styles"), { recursive:true });
     writeFileSync(join(root, "design/design-tokens.json"), JSON.stringify(tokens));
     writeFileSync(join(root, "design/public-theme-compatibility.json"), JSON.stringify(compatibility));
     writeFileSync(join(root, "app/public-tokens.css"), renderTokens(tokens, compatibility));

@@ -4,6 +4,7 @@ import { getProductOverviewDecisionPlans } from "./pricing-product-overview-copy
 import { getPricingPagePlan } from "./pricing-page-facts.ts";
 import { getPricingPlanPath } from "./pricing-routes.ts";
 import type { PublicSearchResult } from "./public-search.ts";
+import type { SiteLocale } from "./site-locale.ts";
 export type ChromeSearchResult = { id:string; kind:"product"|"plan"|"country"; title:string; subtitle:string; href:string; minimumUsd:number; cycle:string };
 
 /** Bound detail reads before loading: product and plan groups share at most three products. */
@@ -15,11 +16,11 @@ export function selectChromeSearchCandidates(results: PublicSearchResult[]) {
 }
 
 /** Match ProductPlanOverview and PricingDetailPage; no search-only freshness/quality policy. */
-export function minimumSearchPrice(product: SubscriptionProduct, planSlug?:string) {
+export function minimumSearchPrice(product: SubscriptionProduct, planSlug?:string, locale: SiteLocale = "zh") {
   let plans;
   if (planSlug) {
     const plan = product.plans.find(plan => plan.slug === planSlug);
-    const contentPlan = plan && getPricingPagePlan(plan, getPricingPlanPath("zh",product.category,product.slug,plan.slug));
+    const contentPlan = plan && getPricingPagePlan(plan, getPricingPlanPath(locale,product.category,product.slug,plan.slug));
     // PricingPlatformView selects the default platform even for locked Plus copy.
     plans = contentPlan ? [{...contentPlan,regions:getDefaultPlanRegions(contentPlan)}] : [];
   } else {

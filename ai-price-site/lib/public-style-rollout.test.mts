@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { usesUnifiedPublicStyle } from "./public-style-rollout.ts";
-test("V2 activates Chinese chrome but preserves the explicit Plus lock and all other locales",()=>{
-  for(const path of ["/zh","/zh/","/zh/ai-pricing","/zh/countries/japan","/zh/ai-pricing/chatgpt/plus-extra"])assert.equal(usesUnifiedPublicStyle(path),true,path);
-  for(const path of ["/zh/ai-pricing/chatgpt/plus","/zh/ai-pricing/chatgpt/plus/","/zh/ai-pricing/chatgpt/plus?x=1","/en","/en/ai-pricing/chatgpt/plus","/zh-tw","/admin","/","","/ar"])assert.equal(usesUnifiedPublicStyle(path),false,path);
+test("shared chrome keeps the Chinese Plus exception and only enables the approved English routes",()=>{
+  for(const path of ["/zh","/zh/","/zh/ai-pricing","/zh/countries/japan","/zh/ai-pricing/chatgpt/plus-extra","/en","/en/ai-pricing/","/en/ai-pricing/chatgpt/go?test=1"])assert.equal(usesUnifiedPublicStyle(path),true,path);
+  for(const path of ["/zh/ai-pricing/chatgpt/plus","/zh/ai-pricing/chatgpt/plus/","/zh/ai-pricing/chatgpt/plus?x=1","/en/streaming-pricing","/en/ai-pricing/chatgpt/plus","/en/ai-pricing/chatgpt","/ja","/zh-tw","/admin","/","","/ar"])assert.equal(usesUnifiedPublicStyle(path),false,path);
 });
 
 import { minimumSearchPrice, minimumCountrySearchPrice, selectChromeSearchCandidates } from "./public-chrome-search.ts";
