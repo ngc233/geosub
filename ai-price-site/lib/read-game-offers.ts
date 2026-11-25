@@ -2,6 +2,29 @@ import { prisma } from "./prisma";
 import { msPerWeek, type Currency, type GameOffer, type GameResponse, type Platform } from "./game-offers";
 
 type Result = { stamp: Date; fx_date: Date | null; kind: string | null; offer: GameOffer | null };
+
+export async function hasFreshGta6HongKongOffers(): Promise<boolean> {
+  try {
+    return await prisma.$transaction(async (db) => {
+      await db.$executeRaw`SET LOCAL statement_timeout = '350ms'`;
+      const [result] = await db.$queryRaw<{ ready: boolean }[]>`
+        SELECT count(DISTINCT offer.platform) = 2 AS ready
+        FROM products p
+        JOIN game_offer_public_state offer ON offer.product_id = p.id
+        WHERE p.slug = 'gta-6' AND p.category = 'game' AND p.status = 'published'
+          AND offer.platform IN ('ps5', 'xbox') AND offer.market = 'HK'
+          AND offer.edition = 'standard' AND offer.offer_type = 'full_game'
+          AND offer.currency = 'HKD' AND offer.status = 'fresh'
+          AND (offer.price->>'public_price')::numeric > 0
+      `;
+      return result.ready;
+    }, { maxWait: 300, timeout: 500 });
+  } catch {
+    // The optional entry can be hidden while the price view is unavailable.
+    return false;
+  }
+}
+
 export async function readGameOffers(
   slug: string,
   platform: Platform,

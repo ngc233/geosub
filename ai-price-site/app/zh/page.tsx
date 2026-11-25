@@ -18,12 +18,14 @@ import { formatPublicDate } from "../../lib/public-date";
 import { loadCoreGuideHubStates } from "../../lib/core-guide-cms";
 import { getCoreGuideDefinition } from "../../lib/core-guide-content";
 import { isHomepageFixtureEnabled, fictionalHomepageSource } from "../../lib/test-fixtures/homepage";
+import { hasFreshGta6HongKongOffers } from "../../lib/read-game-offers";
 
 export default async function ZhHomePage() {
-  const [data,guides,changes] = await Promise.all([
+  const [data,guides,changes,showGta6] = await Promise.all([
     Promise.all([loadComparablePrices(),loadHomepageRepresentatives(),(isHomepageFixtureEnabled()?Promise.resolve(fictionalHomepageSource()):loadVerifiedPriceSource())]).catch(homepageDataFailure),
     loadCoreGuideHubStates("zh"),
     loadHomepagePriceChanges(),
+    hasFreshGta6HongKongOffers(),
   ]);
   const rows=data?.[0]??[], products=homepageProducts(data?.[1]??[]);
   const stats=homepageStatistics(rows), countries=homepageCountries(rows);
@@ -33,6 +35,9 @@ export default async function ZhHomePage() {
     {isHomepageFixtureEnabled()&&<aside className="gs-home-test-data" role="note">虚构测试数据 · 仅用于本地界面验收，不代表实际价格</aside>}
     <section data-gs-enter="a" className="gs-home-intro"><h1>同一个订阅，<span>换个地区能省多少</span></h1><p className="gs-home-description">比较 AI 与流媒体订阅在全球各地区的真实价格，<strong>每天自动核验</strong>。</p><PublicSearch variant="hero"/>
       {stats&&<p className="gs-home-statistics" aria-label="收录统计"><span><strong><PublicPriceNumber value={stats.products} fractionDigits={0} initialValue={0} changeKey="count-in"/></strong> 个产品</span><span><strong><PublicPriceNumber value={stats.regions} fractionDigits={0} initialValue={0} changeKey="count-in"/></strong> 个地区</span><span><strong><PublicPriceNumber value={stats.prices} fractionDigits={0} initialValue={0} changeKey="count-in"/></strong> 条已核验价格</span>{updated&&<span><time dateTime={updated.dateTime}>{updated.text}</time>更新</span>}</p>}
+      {showGta6 && <Link href="/zh/games/gta-6?region=HK" data-gs-ui="button" prefetch={false}>
+        GTA 6 港服比价 <PublicIcon name="ArrowRight" size={16}/>
+      </Link>}
     </section>
     <HomepagePricing products={products} rates={homepageDisplayRates(data?.[2].rates??{})} map={homepageMap} recentChanges={changes.length ? <HomepageRecentChanges events={changes}/> : null}/>
     {!!countries.length&&<section data-gs-enter="a" className="gs-home-section" aria-labelledby="home-countries"><div className="gs-home-section-heading"><div><h2 id="home-countries">哪些国家整体更便宜</h2><p>App Store 月付套餐逐个与美国比较，按节省率中位数排序；每个套餐权重相同，进度条刻度 0–20%。</p></div><Link href="/zh/countries">全部国家 <PublicIcon name="ArrowRight" size={16}/></Link></div>
