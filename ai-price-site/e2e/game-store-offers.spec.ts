@@ -4,6 +4,29 @@ const path = "/zh/games/gta-6";
 const api = "/api/games/gta-6/offers";
 test.skip(process.env.GEOSUB_GAME_TEST !== "1", "Requires the approved two-market local game dataset.");
 
+test("Chinese homepage links to the published Hong Kong game comparison", async ({ page, request }) => {
+  for (const platform of ["ps5", "xbox"]) {
+    const response = await request.get(`${api}?platform=${platform}`);
+    expect(response.ok()).toBe(true);
+    const data: GameResponse = await response.json();
+    expect(data.full_games).toContainEqual(expect.objectContaining({
+      market: "HK", edition: "standard", status: "fresh",
+      price: expect.objectContaining({ public_price: expect.any(String) }),
+    }));
+  }
+  await page.goto("/zh");
+  const entry = page.getByRole("link", { name: "GTA 6 港服比价", exact: true });
+  await expect(entry).toBeVisible();
+  await expect(entry).toHaveAttribute("href", `${path}?region=HK`);
+  await entry.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`${path}\\?region=HK$`));
+  await expect(page.locator('[data-code="HK"] .quote-local')).toBeVisible();
+  await expect(page.locator('[data-code="US"] .quote-local')).toHaveCount(0);
+  await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", /noindex/);
+  await page.goto("/en");
+  await expect(page.getByRole("link", { name: "GTA 6 港服比价", exact: true })).toHaveCount(0);
+});
+
 test("published API and first server HTML agree on every platform and edition", async ({ request }) => {
   for (const platform of ["ps5", "xbox", "pc"]) {
     const response = await request.get(api + "?platform=" + platform);
