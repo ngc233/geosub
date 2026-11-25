@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.35.4 - 2026-11-26
+
+- Add a games category on the Simplified Chinese homepage and a shared navigation entry to the Chinese game pricing overview (#111). The overview links each GTA 6 platform and edition directly to its regional price details.
+- Compare Hong Kong and US prices for the PS5 and Xbox standard and ultimate editions. The homepage shows the highest eligible saving and its edition. Narrow-screen price tables keep prices and store links visible.
+- Prepare an application-only rollout with unchanged database inputs and an exact rollback to the live 2.35.3 build. See the [release readiness record](docs/release-readiness-2.35.4-2026-11-26.md).
+
 ## 2.35.3 - 2026-11-25
 
 - Add a shortcut on the Simplified Chinese homepage to GTA 6 Hong Kong prices for the PS5 and Xbox standard editions (#108). The shortcut appears when the game is published and both prices are current and verified.
