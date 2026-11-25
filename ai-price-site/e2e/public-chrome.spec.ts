@@ -125,7 +125,7 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     await page.setViewportSize({width,height:844});await page.emulateMedia({colorScheme});
     const queries:string[]=[];
     await page.route("**/api/search?**",route=>{queries.push(new URL(route.request().url()).searchParams.get("q")!);return route.fulfill({json:{results:[]}});});
-    await page.goto("/zh");await page.keyboard.press("/");const input=page.getByRole("combobox",{name:"搜索产品或国家",exact:true});await input.fill("xyz");
+    await page.goto("/zh",{waitUntil:"networkidle"});await page.keyboard.press("/");const input=page.getByRole("combobox",{name:"搜索产品或国家",exact:true});await input.fill("xyz");
     const suggestions=page.getByLabel("搜索建议");await expect(suggestions.getByRole("button")).toHaveCount(4);
     await expect(suggestions.getByRole("link",{name:"联系我们"})).toHaveAttribute("href","/zh/contact");
     await page.screenshot({path:path.join(evidence,`search-empty-${width}-${colorScheme}.png`)});

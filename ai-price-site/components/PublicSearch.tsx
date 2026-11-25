@@ -3,10 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  matchChromeSearchCatalog,
   type ChromePopularItem,
-  type ChromeSearchCatalogEntry,
-  type ChromeSearchIndexPayload,
   type ChromeSearchResult,
 } from "../lib/public-chrome-search";
 import { PublicDialog } from "./PublicControls";
@@ -86,31 +83,27 @@ const defaultPopularByLocale: Record<"zh" | "en", ChromePopularItem[]> = {
   ],
 };
 
-// Module-level warm cache so reopening search or typing the first character responds in 0ms.
-const indexMemoryCache: Partial<Record<"zh" | "en", ChromeSearchIndexPayload>> = {};
-const indexPromiseCache: Partial<Record<"zh" | "en", Promise<ChromeSearchIndexPayload | null>>> = {};
+// Module-level result cache for 0ms repeat-query feedback while still revalidating against /api/search.
+const queryResultCache = new Map<string, ChromeSearchResult[]>();
+let pendingSlashShortcut = false;
+let activeHeaderShortcutCount = 0;
 
-function preloadSearchIndex(locale: "zh" | "en"): Promise<ChromeSearchIndexPayload | null> {
-  if (indexMemoryCache[locale]) return Promise.resolve(indexMemoryCache[locale]!);
-  if (indexPromiseCache[locale]) return indexPromiseCache[locale]!;
-  const pending = fetch(`/api/search?locale=${locale}&view=chrome&index=1`)
-    .then(async (res) => {
-      if (!res.ok) return null;
-      const data = (await res.json()) as Partial<ChromeSearchIndexPayload>;
-      if (!Array.isArray(data.entries)) return null;
-      const payload: ChromeSearchIndexPayload = {
-        entries: data.entries,
-        popular: Array.isArray(data.popular) && data.popular.length > 0 ? data.popular : defaultPopularByLocale[locale],
-      };
-      indexMemoryCache[locale] = payload;
-      return payload;
-    })
-    .catch(() => null)
-    .finally(() => {
-      delete indexPromiseCache[locale];
-    });
-  indexPromiseCache[locale] = pending;
-  return pending;
+if (typeof document !== "undefined") {
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (
+      activeHeaderShortcutCount === 0 &&
+      e.key === "/" &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !(
+        e.target instanceof HTMLElement &&
+        (e.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))
+      )
+    ) {
+      e.preventDefault();
+      pendingSlashShortcut = true;
+    }
+  });
 }
 
 export default function PublicSearch({
@@ -124,12 +117,7 @@ export default function PublicSearch({
   const display = useSearchDisplayCurrency(locale === "en" ? "USD" : "CNY");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [catalog, setCatalog] = useState<ChromeSearchCatalogEntry[] | null>(
-    () => indexMemoryCache[locale]?.entries ?? null,
-  );
-  const [popular, setPopular] = useState<ChromePopularItem[]>(
-    () => indexMemoryCache[locale]?.popular ?? defaultPopularByLocale[locale],
-  );
+  const popular = defaultPopularByLocale[locale];
   const [results, setResults] = useState<ChromeSearchResult[]>([]);
   const [status, setStatus] = useState<string>("");
   const [active, setActive] = useState(0);
@@ -139,9 +127,14 @@ export default function PublicSearch({
   const router = useRouter();
 
   useEffect(() => {
+    if (variant !== "header") return;
+    activeHeaderShortcutCount += 1;
+    if (pendingSlashShortcut) {
+      pendingSlashShortcut = false;
+      queueMicrotask(() => setOpen(true));
+    }
     const shortcut = (e: KeyboardEvent) => {
       if (
-        variant === "header" &&
         e.key === "/" &&
         !e.metaKey &&
         !e.ctrlKey &&
@@ -155,30 +148,21 @@ export default function PublicSearch({
       }
     };
     document.addEventListener("keydown", shortcut);
-    return () => document.removeEventListener("keydown", shortcut);
+    return () => {
+      activeHeaderShortcutCount = Math.max(0, activeHeaderShortcutCount - 1);
+      document.removeEventListener("keydown", shortcut);
+    };
   }, [variant]);
 
-  // Warm the lightweight search catalog as soon as the dialog opens (or on idle for instant 0ms search).
   useEffect(() => {
-    if (!open) return;
-    input.current?.focus();
-    let cancelled = false;
-    preloadSearchIndex(locale).then((payload) => {
-      if (cancelled || !payload) return;
-      setCatalog(payload.entries);
-      setPopular(payload.popular);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, locale]);
+    if (open) input.current?.focus();
+  }, [open]);
 
-  // Reconcile against /api/search?view=chrome&q=... without debounce delay so server-authoritative
-  // results and route-intercepted tests always stay in sync while local catalog gives 0ms feedback.
   useEffect(() => {
     const trimmed = query.trim();
     if (!open || trimmed.length < 1) return;
     const controller = new AbortController();
+    const cacheKey = `${locale}:${trimmed.toLowerCase()}`;
     (async () => {
       try {
         const response = await fetch(
@@ -189,18 +173,21 @@ export default function PublicSearch({
         const data = await response.json();
         if (controller.signal.aborted) return;
         const nextResults: ChromeSearchResult[] = Array.isArray(data.results) ? data.results : [];
+        if (nextResults.length > 0) queryResultCache.set(cacheKey, nextResults);
+        else queryResultCache.delete(cacheKey);
         setResults(nextResults);
         setActive((prev) => (nextResults.length ? Math.min(prev, nextResults.length - 1) : 0));
         setStatus(nextResults.length ? "" : copy.empty);
       } catch {
-        if (!controller.signal.aborted && (!catalog || matchChromeSearchCatalog(catalog, trimmed).length === 0)) {
+        if (!controller.signal.aborted) {
+          queryResultCache.delete(cacheKey);
           setResults([]);
           setStatus(copy.failed);
         }
       }
     })();
     return () => controller.abort();
-  }, [query, open, retry, copy, locale, catalog]);
+  }, [query, open, retry, copy, locale]);
 
   useEffect(() => {
     if (open) document.getElementById(`${id}-${active}`)?.scrollIntoView({ block: "nearest" });
@@ -216,12 +203,12 @@ export default function PublicSearch({
       input.current?.focus();
       return;
     }
-    const localEntries = catalog ?? indexMemoryCache[locale]?.entries ?? null;
-    if (localEntries && localEntries.length > 0) {
-      const instant = matchChromeSearchCatalog(localEntries, trimmed);
-      setResults(instant);
-      setStatus(instant.length ? "" : "");
+    const cached = queryResultCache.get(`${locale}:${trimmed.toLowerCase()}`);
+    if (cached && cached.length > 0) {
+      setResults(cached);
+      setStatus("");
     } else {
+      setResults([]);
       setStatus(copy.pending);
     }
     setRetry((old) => old + 1);
@@ -243,7 +230,6 @@ export default function PublicSearch({
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
-            preloadSearchIndex(locale);
             setOpen(true);
             search(query);
           }}
@@ -255,7 +241,6 @@ export default function PublicSearch({
               placeholder="搜 ChatGPT、Netflix，或者土耳其"
               value={query}
               maxLength={80}
-              onFocus={() => preloadSearchIndex(locale)}
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
@@ -269,8 +254,6 @@ export default function PublicSearch({
           className="gs-search-trigger"
           data-gs-ui="button"
           aria-label={copy.label}
-          onMouseEnter={() => preloadSearchIndex(locale)}
-          onFocus={() => preloadSearchIndex(locale)}
           onClick={() => setOpen(true)}
         >
           <PublicIcon name="Search" />
