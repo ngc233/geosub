@@ -28,22 +28,25 @@ const controllerChanges = {
 // Pin additions as absent in the retained build and exact bytes in the candidate;
 // every other reader retains the original byte-equality assertion.
 const v4ReaderChanges = {
-  // V8 adds the region entry only under the Chinese Plus hero.
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "6b9fcccb790a0a8598a0d545dc2212b355896a4c498a39fb6ad33600369c647e"
+    "candidate": "653a93cc798d69660ed3a8b78196f57fe5564bffca5ab8ad0b92083d527ddce9"
+  },
+  "ai-price-site/lib/public-pricing-model.ts": {
+    "retained": "1bb7f62199c09e8fff34610b8f9380be6a2b25f4e98ea389f83fa30c3f88bba0",
+    "candidate": "79a1c73e90924b368eeda9f4bfd0e6ebe9cd5b1b598c8981092a0938c5f5ddfe"
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
-    "candidate": "a9a41fae24ad4d81d8ed9b04427bd2d7c0ea7d7f76240c73c35e152eb2574083"
+    "candidate": "91f501d6e889a02f9b6fbdacbb4448f2b935f9a4e9396ba14f59fad5e1d697c6"
   },
   "ai-price-site/components/ProductCanvasPricing.tsx": {
     "retained": null,
-    "candidate": "2301175abb62ec34383947a84879a1cb1bd3e2bdfa1822e334acfe3e95f5d24c"
+    "candidate": "1e6f8b5742dc523ec8d45eee258f2faf65b1bd4bdb6eedca0692e895d658cb5f"
   },
   "ai-price-site/lib/product-canvas.ts": {
     "retained": null,
-    "candidate": "1b7bc1863b6dc7369f5f6968bb4c57e2ac680eb452fec1509468fa635e0ece37"
+    "candidate": "986323cc440e90129591d4c1c9b81cc05a05e9025df95155d52a7022ac8e4d17"
   },
   "ai-price-site/lib/product-canvas-order.ts": {
     "retained": null,
@@ -51,11 +54,11 @@ const v4ReaderChanges = {
   },
   "ai-price-site/components/PlanCanvasPage.tsx": {
     "retained": null,
-    "candidate": "20faf119174f704188503c5cbc8754bd6715b8914ae4729f37c823cb30dc8fc8"
+    "candidate": "8c83f4c62ae9c3d2de71e4ac56e46c7cf36dd98abb3db4060abf7ff35558ab5e"
   },
   "ai-price-site/components/PlanCanvasPricing.tsx": {
     "retained": null,
-    "candidate": "3b608d5c2f531ab5bf3b452c5a1a2fdf824daeb7787cef286693727fa64f6f6e"
+    "candidate": "7cc60efa977b323fda5ef8c1d135a54e85149dff881f412ebb3821437fece323"
   },
   "ai-price-site/lib/plan-canvas.ts": {
     "retained": null,

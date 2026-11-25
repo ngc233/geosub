@@ -1,5 +1,6 @@
 import HomepageRecentChanges from "../../components/HomepageRecentChanges";
 import { loadHomepagePriceChanges } from "../../lib/cached-homepage-price-changes";
+import { homepagePriceChanges } from "../../lib/homepage-price-changes";
 import PublicPriceNumber from "../../components/PublicPriceNumber";
 import { savingsLabel, savingsPercent } from "../../lib/homepage-display";
 import Link from "next/link";
@@ -17,7 +18,7 @@ import { getHomepageCopy } from "../../lib/homepage-copy";
 import { formatPublicDate } from "../../lib/public-date";
 import { loadCoreGuideHubStates } from "../../lib/core-guide-cms";
 import { getCoreGuideDefinition } from "../../lib/core-guide-content";
-import { isHomepageFixtureEnabled, fictionalHomepageSource } from "../../lib/test-fixtures/homepage";
+import { isHomepageFixtureEnabled, fictionalHomepageSource, fictionalPriceHistoryRecords } from "../../lib/test-fixtures/homepage";
 import { readGta6OfferSummary } from "../../lib/read-game-offers";
 import { isGta6NavigationPublished } from "../../lib/site-navigation";
 
@@ -27,7 +28,7 @@ export default async function ZhHomePage() {
   const [data,guides,changes,gameOffers,showGameCategory] = await Promise.all([
     Promise.all([loadComparablePrices(),loadHomepageRepresentatives(),(isHomepageFixtureEnabled()?Promise.resolve(fictionalHomepageSource()):loadVerifiedPriceSource())]).catch(homepageDataFailure),
     loadCoreGuideHubStates("zh"),
-    loadHomepagePriceChanges(),
+    isHomepageFixtureEnabled() ? Promise.resolve(homepagePriceChanges(fictionalPriceHistoryRecords())) : loadHomepagePriceChanges(),
     readGta6OfferSummary(),
     isGta6NavigationPublished().catch(() => false),
   ]);

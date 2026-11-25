@@ -3,7 +3,14 @@ import { retiredGuideSlugs } from "../../../lib/public-launch-routes";
 import { getPublicPricingProduct } from "../../../lib/pricing-product-store";
 import { loadCountryHub } from "../../../lib/cached-country-hub";
 import { priorityCountries } from "../../../lib/country-hubs";
-import { minimumSearchPrice, minimumCountrySearchPrice, selectChromeSearchCandidates, type ChromeSearchResult } from "../../../lib/public-chrome-search";
+import {
+  matchChromeSearchCatalog,
+  minimumCountrySearchPrice,
+  minimumSearchPrice,
+  type ChromePopularItem,
+  type ChromeSearchCatalogEntry,
+  type ChromeSearchIndexPayload,
+} from "../../../lib/public-chrome-search";
 import { selectCurrentOrLegacyPlans } from "../../../lib/current-plan-scope";
 import { ArticleStatus, Locale, Prisma, ProductCategory, PublishStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -14,6 +21,7 @@ import {
   scoreSearchText,
   type PublicSearchResult,
 } from "../../../lib/public-search";
+import { getLocalizedRegionName } from "../../../lib/locale-format";
 import { getPricingDetailPath, getPricingPlanPath } from "../../../lib/pricing-routes";
 import {
   isPreparedSiteLocale,
@@ -23,6 +31,7 @@ import {
 import { prisma } from "../../../lib/prisma";
 import { getPlanEditorialIndexingStatus } from "../../../lib/product-editorial-content";
 import { getActiveSearchAliases } from "../../../lib/search-aliases";
+import { fictionalHomepageSource, isHomepageFixtureEnabled } from "../../../lib/test-fixtures/homepage";
 
 export const dynamic = "force-dynamic";
 
@@ -30,69 +39,74 @@ const MAX_QUERY_LENGTH = 80;
 const MAX_RESULTS = 10;
 
 // Chrome uses the same bounded alias catalogue across keystrokes; legacy search is unchanged.
-const getChromeSearchAliases = unstable_cache(getActiveSearchAliases,
-  ["public-chrome-search-aliases-v1"], { revalidate: 300 });
+const getChromeSearchAliases = unstable_cache(
+  getActiveSearchAliases,
+  ["public-chrome-search-aliases-v1"],
+  { revalidate: 300 },
+);
 
 const getPublishedSearchProducts = unstable_cache(
-  async () => prisma.product.findMany({
-    where: {
-      status: PublishStatus.PUBLISHED,
-      category: { in: [ProductCategory.AI, ProductCategory.STREAMING] },
-      plans: {
-        some: {
-          status: PublishStatus.PUBLISHED,
-          regionPrices: { some: { status: PublishStatus.PUBLISHED } },
+  async () =>
+    prisma.product.findMany({
+      where: {
+        status: PublishStatus.PUBLISHED,
+        category: { in: [ProductCategory.AI, ProductCategory.STREAMING] },
+        plans: {
+          some: {
+            status: PublishStatus.PUBLISHED,
+            regionPrices: { some: { status: PublishStatus.PUBLISHED } },
+          },
         },
       },
-    },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      provider: true,
-      description: true,
-      officialUrl: true,
-      category: true,
-      plans: {
-        where: {
-          status: PublishStatus.PUBLISHED,
-          regionPrices: { some: { status: PublishStatus.PUBLISHED } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        provider: true,
+        description: true,
+        officialUrl: true,
+        category: true,
+        plans: {
+          where: {
+            status: PublishStatus.PUBLISHED,
+            regionPrices: { some: { status: PublishStatus.PUBLISHED } },
+          },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            description: true,
+            billingCycle: true,
+          },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
         },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true,
-          billingCycle: true,
-        },
-        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       },
-    },
-    orderBy: [{ featured: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
-  }),
+      orderBy: [{ featured: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
+    }),
   ["public-search-products-v1"],
   { revalidate: 300 },
 );
 
 const getPublishedSearchArticles = unstable_cache(
-  async (articleLocale: Locale) => prisma.article.findMany({
-    where: {
-      locale: articleLocale,
-      slug: { notIn: [...retiredGuideSlugs] },
-      status: ArticleStatus.PUBLISHED,
-      noindex: false,
-      deletedAt: null,
-    },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      subtitle: true,
-      excerpt: true,
-    },
-    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
-    take: 80,
-  }),
+  async (articleLocale: Locale) =>
+    prisma.article.findMany({
+      where: {
+        locale: articleLocale,
+        slug: { notIn: [...retiredGuideSlugs] },
+        status: ArticleStatus.PUBLISHED,
+        noindex: false,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        subtitle: true,
+        excerpt: true,
+      },
+      orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
+      take: 80,
+    }),
   ["public-search-articles-v1"],
   { revalidate: 300 },
 );
@@ -132,6 +146,247 @@ const getPopularSearches = unstable_cache(
   { revalidate: 900 },
 );
 
+type TopClickedProductRow = {
+  slug: string;
+};
+
+const getTopClickedProductSlugs = unstable_cache(
+  async (locale: PreparedSiteLocale): Promise<string[]> => {
+    try {
+      const rows = await prisma.$queryRaw<TopClickedProductRow[]>(Prisma.sql`
+        SELECT p."slug" AS "slug"
+        FROM "event_logs" e
+        JOIN "products" p ON (
+          p."id" = e."product_id"
+          OR COALESCE(e."metadata"->>'button', '') = p."slug"
+          OR COALESCE(e."page_path", '') LIKE ('%/' || p."slug")
+          OR COALESCE(e."page_path", '') LIKE ('%/' || p."slug" || '/%')
+        )
+        WHERE e."created_at" >= NOW() - INTERVAL '30 days'
+          AND p."status" = 'published'
+          AND p."category" IN ('ai', 'streaming')
+          AND COALESCE(e."locale", 'zh') = ${locale}
+          AND COALESCE(e."page_path", '') NOT LIKE '/admin%'
+          AND COALESCE(e."page_path", '') NOT LIKE '%tracking-test%'
+          AND COALESCE(e."source", '') NOT IN ('manual_test', 'affiliate_test')
+          AND e."event_key" IN (
+            'click_digital_service_card',
+            'page_view',
+            'select_plan',
+            'click_official',
+            'click_affiliate'
+          )
+        GROUP BY p."id", p."slug"
+        ORDER BY COUNT(*) DESC, MAX(e."created_at") DESC
+        LIMIT 6
+      `);
+      return rows.map((row) => row.slug);
+    } catch {
+      return [];
+    }
+  },
+  ["public-chrome-top-clicked-products-v1"],
+  { revalidate: 900 },
+);
+
+function getPlanResultTitle(productName: string, planName: string) {
+  const normalizedProductName = productName.trim().toLocaleLowerCase();
+  const normalizedPlanName = planName.trim().toLocaleLowerCase();
+
+  return normalizedPlanName.startsWith(normalizedProductName)
+    ? planName
+    : `${productName} ${planName}`;
+}
+
+async function buildChromeSearchIndexUncached(
+  locale: "zh" | "en",
+): Promise<ChromeSearchIndexPayload> {
+  const normalizedLocale = normalizeSiteLocale(locale);
+  const [products, controlledAliases, clickedSlugs, countryHubs] = await Promise.all([
+    getPublishedSearchProducts(),
+    getChromeSearchAliases(locale),
+    getTopClickedProductSlugs(locale),
+    Promise.allSettled(priorityCountries.map((country) => loadCountryHub(country.code))),
+  ]);
+
+  const productAliasesById = new Map<string, string[]>();
+  const planAliasesById = new Map<string, string[]>();
+  for (const alias of controlledAliases) {
+    const target = alias.targetKind === "product" ? productAliasesById : planAliasesById;
+    const targetId = alias.targetKind === "product" ? alias.productId : alias.planId;
+    if (!targetId) continue;
+    target.set(targetId, [...(target.get(targetId) || []), alias.alias]);
+  }
+
+  const detailPairs = await Promise.all(
+    products.map(async (p) => [p.slug, await getPublicPricingProduct(p.slug, normalizedLocale)] as const),
+  );
+  const detailsBySlug = new Map(detailPairs);
+  const planLabel = (productName: string, plan: string) =>
+    locale === "zh" ? getChinesePlanDisplayName(productName, plan) : plan;
+
+  const entries: ChromeSearchCatalogEntry[] = [];
+  const seenProductSlugs = new Set<string>();
+
+  for (const product of products) {
+    const detail = detailsBySlug.get(product.slug);
+    if (!detail) continue;
+    const category = product.category === ProductCategory.STREAMING ? "streaming" : "ai";
+    const prodMin = minimumSearchPrice(detail, undefined, normalizedLocale);
+    if (prodMin) {
+      seenProductSlugs.add(product.slug);
+      entries.push({
+        id: `product:${product.id}`,
+        kind: "product",
+        title: product.name,
+        subtitle: `${planLabel(detail.name, prodMin.plan)} · ${locale === "zh" ? "最低" : "Lowest"} · ${prodMin.country}`,
+        href: getPricingDetailPath(normalizedLocale, category, product.slug),
+        minimumUsd: prodMin.usd,
+        cycle: prodMin.cycle,
+        logoSlug: product.slug,
+        terms: [
+          product.name,
+          product.slug,
+          product.provider || "",
+          product.description || "",
+          ...getProductSearchAliases(product.slug),
+          ...(productAliasesById.get(product.id) || []),
+        ].filter(Boolean),
+      });
+    }
+
+    const searchablePlans = selectCurrentOrLegacyPlans(product.plans, (plan) =>
+      getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
+    );
+    for (const plan of searchablePlans) {
+      const planMin = minimumSearchPrice(detail, plan.slug, normalizedLocale);
+      if (!planMin) continue;
+      const resultTitle = getPlanResultTitle(product.name, plan.name);
+      entries.push({
+        id: `plan:${plan.id}`,
+        kind: "plan",
+        title: planLabel(detail.name, planMin.plan),
+        subtitle: `${planLabel(detail.name, planMin.plan)} · ${locale === "zh" ? "最低" : "Lowest"} · ${planMin.country}`,
+        href: getPricingPlanPath(normalizedLocale, category, product.slug, plan.slug),
+        minimumUsd: planMin.usd,
+        cycle: planMin.cycle,
+        logoSlug: product.slug,
+        terms: [
+          resultTitle,
+          plan.name,
+          plan.slug,
+          plan.description || "",
+          `${product.name} ${plan.name}`,
+          `${product.slug}-${plan.slug}`,
+          ...(planAliasesById.get(plan.id) || []),
+        ].filter(Boolean),
+      });
+    }
+  }
+
+  // In local dev fixture mode, supplement any missing fictional products so instant
+  // search and dynamic brand pills match the homepage & country previews.
+  if (isHomepageFixtureEnabled()) {
+    const fixture = fictionalHomepageSource();
+    const byProduct = new Map<string, typeof fixture.prices>();
+    for (const row of fixture.prices) {
+      if (row.productSlug === "fictional-no-us" || row.planSlug === "fictional-extra") continue;
+      if (seenProductSlugs.has(row.productSlug)) continue;
+      const list = byProduct.get(row.productSlug) ?? [];
+      list.push(row);
+      byProduct.set(row.productSlug, list);
+    }
+    for (const [slug, rows] of byProduct) {
+      const cheapest = [...rows].sort((a, b) => a.amount - b.amount)[0];
+      if (!cheapest) continue;
+      const minCountry = getLocalizedRegionName(cheapest.countryCode, locale) ?? cheapest.countryCode;
+      const href = getPricingDetailPath(normalizedLocale, cheapest.category, slug);
+      seenProductSlugs.add(slug);
+      entries.push({
+        id: `product:fixture-${slug}`,
+        kind: "product",
+        title: cheapest.productName,
+        subtitle: `${planLabel(cheapest.productName, cheapest.planName)} · ${locale === "zh" ? "最低" : "Lowest"} · ${minCountry}`,
+        href,
+        minimumUsd: cheapest.amount,
+        cycle: "monthly",
+        logoSlug: slug,
+        terms: [cheapest.productName, slug, ...getProductSearchAliases(slug)],
+      });
+    }
+  }
+
+  priorityCountries.forEach((country, index) => {
+    const hub = countryHubs[index];
+    if (hub.status !== "fulfilled") return;
+    const minimum = minimumCountrySearchPrice(hub.value);
+    if (!minimum) return;
+    entries.push({
+      id: `country:${country.code}`,
+      kind: "country",
+      title: locale === "zh" ? country.zh : country.en,
+      subtitle:
+        locale === "zh"
+          ? `${planLabel(minimum.productName, minimum.planName)} 起`
+          : `From ${minimum.productName} ${minimum.planName}`,
+      href: `/${locale}/countries/${country.slug}`,
+      minimumUsd: minimum.usd!,
+      cycle: "monthly",
+      countryCode: country.code,
+      terms: [country.zh, country.en, country.code, country.slug],
+    });
+  });
+
+  // Build dynamic popular quick-jump pills ranked by real 30-day clicks/views in event_logs,
+  // falling back smoothly to published featured products when click history is sparse.
+  const productEntries = entries.filter((entry) => entry.kind === "product");
+  const productBySlug = new Map(productEntries.map((entry) => [entry.logoSlug!, entry]));
+  const preferredFallbackOrder = ["chatgpt", "netflix", "claude", "youtube-premium", "gemini", "suno"];
+  const orderedPopularSlugs = [
+    ...clickedSlugs,
+    ...preferredFallbackOrder,
+    ...productEntries.map((entry) => entry.logoSlug!),
+  ].filter(
+    (slug, index, arr) =>
+      Boolean(slug) && !slug.startsWith("e2e-") && productBySlug.has(slug) && arr.indexOf(slug) === index,
+  );
+
+  const popular: ChromePopularItem[] = orderedPopularSlugs.slice(0, 5).map((slug) => {
+    const entry = productBySlug.get(slug)!;
+    return {
+      id: entry.id,
+      title: entry.title,
+      href: entry.href,
+      logoSlug: slug,
+    };
+  });
+
+  const topCountry = entries.find((entry) => entry.kind === "country");
+  if (topCountry) {
+    popular.push({
+      id: topCountry.id,
+      title: topCountry.title,
+      href: topCountry.href,
+      countryCode: topCountry.countryCode,
+    });
+  }
+
+  return { entries, popular };
+}
+
+const getCachedChromeSearchIndex = unstable_cache(
+  buildChromeSearchIndexUncached,
+  ["public-chrome-search-index-v2"],
+  { revalidate: 300 },
+);
+
+async function loadChromeSearchIndex(locale: "zh" | "en"): Promise<ChromeSearchIndexPayload> {
+  if (isHomepageFixtureEnabled()) {
+    return buildChromeSearchIndexUncached(locale);
+  }
+  return getCachedChromeSearchIndex(locale);
+}
+
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, {
     status,
@@ -148,21 +403,10 @@ function getArticleLocale(locale: PreparedSiteLocale) {
   return null;
 }
 
-function getPlanResultTitle(productName: string, planName: string) {
-  const normalizedProductName = productName.trim().toLocaleLowerCase();
-  const normalizedPlanName = planName.trim().toLocaleLowerCase();
-
-  return normalizedPlanName.startsWith(normalizedProductName)
-    ? planName
-    : `${productName} ${planName}`;
-}
-
 export async function GET(request: NextRequest) {
   const query = (request.nextUrl.searchParams.get("q") || "").trim().slice(0, MAX_QUERY_LENGTH);
   const requestedLocale = request.nextUrl.searchParams.get("locale");
-  const locale: PreparedSiteLocale = isPreparedSiteLocale(requestedLocale)
-    ? requestedLocale
-    : "zh";
+  const locale: PreparedSiteLocale = isPreparedSiteLocale(requestedLocale) ? requestedLocale : "zh";
 
   if (request.nextUrl.searchParams.get("popular") === "1") {
     try {
@@ -173,21 +417,41 @@ export async function GET(request: NextRequest) {
   }
 
   const chrome = (locale === "zh" || locale === "en") && request.nextUrl.searchParams.get("view") === "chrome";
+
+  if (chrome && request.nextUrl.searchParams.get("index") === "1") {
+    try {
+      const index = await loadChromeSearchIndex(locale);
+      return json(index);
+    } catch {
+      return json({ entries: [], popular: [], unavailable: true }, 503);
+    }
+  }
+
   const minQueryLength = chrome ? 1 : 2;
 
   if (query.length < minQueryLength) {
     return json({ query, results: [] });
   }
 
-  const articleLocale = chrome ? null : getArticleLocale(locale);
+  if (chrome) {
+    try {
+      const index = await loadChromeSearchIndex(locale);
+      return json({
+        query,
+        results: matchChromeSearchCatalog(index.entries, query),
+      });
+    } catch {
+      return json({ query, results: [], unavailable: true }, 503);
+    }
+  }
+
+  const articleLocale = getArticleLocale(locale);
 
   try {
     const [products, articles, controlledAliases] = await Promise.all([
       getPublishedSearchProducts(),
-      articleLocale
-        ? getPublishedSearchArticles(articleLocale)
-        : Promise.resolve([]),
-      chrome ? getChromeSearchAliases(locale) : getActiveSearchAliases(locale),
+      articleLocale ? getPublishedSearchArticles(articleLocale) : Promise.resolve([]),
+      getActiveSearchAliases(locale),
     ]);
 
     const normalizedLocale = normalizeSiteLocale(locale);
@@ -195,26 +459,26 @@ export async function GET(request: NextRequest) {
     const productAliasesById = new Map<string, string[]>();
     const planAliasesById = new Map<string, string[]>();
     for (const alias of controlledAliases) {
-      const target = alias.targetKind === "product"
-        ? productAliasesById
-        : planAliasesById;
-      const targetId = alias.targetKind === "product"
-        ? alias.productId
-        : alias.planId;
+      const target = alias.targetKind === "product" ? productAliasesById : planAliasesById;
+      const targetId = alias.targetKind === "product" ? alias.productId : alias.planId;
       if (!targetId) continue;
       target.set(targetId, [...(target.get(targetId) || []), alias.alias]);
     }
 
     for (const product of products) {
       const category = product.category === ProductCategory.STREAMING ? "streaming" : "ai";
-      const productScore = scoreSearchText(query, [
-        product.name,
-        product.slug,
-        product.provider,
-        product.description,
-        ...getProductSearchAliases(product.slug),
-        ...(productAliasesById.get(product.id) || []),
-      ], minQueryLength);
+      const productScore = scoreSearchText(
+        query,
+        [
+          product.name,
+          product.slug,
+          product.provider,
+          product.description,
+          ...getProductSearchAliases(product.slug),
+          ...(productAliasesById.get(product.id) || []),
+        ],
+        minQueryLength,
+      );
 
       if (productScore > 0) {
         results.push({
@@ -235,14 +499,18 @@ export async function GET(request: NextRequest) {
         getPlanEditorialIndexingStatus(product.slug, plan.slug) === "current",
       );
       for (const plan of searchablePlans) {
-        const planScore = scoreSearchText(query, [
-          plan.name,
-          plan.slug,
-          plan.description,
-          `${product.name} ${plan.name}`,
-          `${product.slug}-${plan.slug}`,
-          ...(planAliasesById.get(plan.id) || []),
-        ], minQueryLength);
+        const planScore = scoreSearchText(
+          query,
+          [
+            plan.name,
+            plan.slug,
+            plan.description,
+            `${product.name} ${plan.name}`,
+            `${product.slug}-${plan.slug}`,
+            ...(planAliasesById.get(plan.id) || []),
+          ],
+          minQueryLength,
+        );
 
         if (planScore <= 0) continue;
 
@@ -295,32 +563,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (chrome) {
-      const candidates = selectChromeSearchCandidates(results);
-      const slugs = [...new Set(candidates.map(result=>result.logoSlug!))];
-      const details = new Map(await Promise.all(slugs.map(async slug=>[slug,await getPublicPricingProduct(slug,normalizedLocale)] as const)));
-      const planLabel = (productName: string, plan: string) => locale === "zh" ? getChinesePlanDisplayName(productName, plan) : plan;
-      const priced: ChromeSearchResult[] = candidates.flatMap(result => {
-        const product = details.get(result.logoSlug!);
-        const plan = result.kind === "plan" ? products.find(p=>p.id===result.productId)?.plans.find(p=>p.id===result.planId)?.slug : undefined;
-        const minimum = product && minimumSearchPrice(product,plan,normalizedLocale);
-        return minimum ? [{id:result.id,kind:result.kind as "product"|"plan",title:result.kind === "plan" ? planLabel(product!.name,minimum.plan) : result.title,href:result.href,
-          subtitle:`${planLabel(product!.name,minimum.plan)} · ${locale === "zh" ? "最低" : "Lowest"} · ${minimum.country}`,minimumUsd:minimum.usd,cycle:minimum.cycle,logoSlug:result.logoSlug}] : [];
-      });
-      const countries = priorityCountries.filter(country=>scoreSearchText(query,[country.zh,country.en,country.code,country.slug],minQueryLength)>0).slice(0,3);
-      for (const country of countries) {
-        const minimum = minimumCountrySearchPrice(await loadCountryHub(country.code));
-        if (minimum) priced.push({id:`country:${country.code}`,kind:"country",title:locale === "zh" ? country.zh : country.en,href:`/${locale}/countries/${country.slug}`,
-          subtitle:locale === "zh" ? `${planLabel(minimum.productName,minimum.planName)} 起` : `From ${minimum.productName} ${minimum.planName}`,minimumUsd:minimum.usd!,cycle:"monthly",countryCode:country.code});
-      }
-      return json({query,results:priced});
-    }
-
-    const uniqueResults = [...new Map(
-      results
-        .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
-        .map((result) => [result.href, result]),
-    ).values()].slice(0, MAX_RESULTS);
+    const uniqueResults = [
+      ...new Map(
+        results
+          .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
+          .map((result) => [result.href, result]),
+      ).values(),
+    ].slice(0, MAX_RESULTS);
 
     return json({ query, results: uniqueResults });
   } catch {

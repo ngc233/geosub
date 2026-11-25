@@ -2,6 +2,7 @@
 
 import { ArrowLeftRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import GeoSubLogo from "./GeoSubLogo";
 import PublicFooter from "./PublicFooter";
 import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 import { usePathname } from "next/navigation";
@@ -198,11 +199,7 @@ export default function Footer({
               className="inline-flex items-center gap-2 text-zinc-950 transition hover:text-lime-700 dark:text-white dark:hover:text-lime-300"
               aria-label="GeoSub"
             >
-              <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-zinc-950 text-sm font-black text-white shadow-sm shadow-zinc-950/20 dark:bg-white dark:text-zinc-950">
-                G
-                <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-lime-500 dark:border-zinc-950" />
-              </span>
-              <span className="text-xl font-black tracking-tight">GeoSub</span>
+              <GeoSubLogo size={30} />
             </Link>
 
             <p className="mt-4 max-w-sm text-sm leading-7 text-zinc-500 dark:text-zinc-400">

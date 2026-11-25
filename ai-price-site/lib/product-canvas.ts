@@ -12,7 +12,7 @@ export function productCanvasModel(product: SubscriptionProduct) {
   const plans = getProductOverviewDecisionPlans(product).map(plan => {
     const editorial = getProductEditorialContent("zh", product.slug, plan.slug);
     const prices = plan.regions.map(region => ({ code: region.code, country: region.country, usd: region.priceUsd }));
-    const lowest = prices.reduce((a, b) => a.usd <= b.usd ? a : b);
+    const lowest = prices.reduce((a, b) => (a.usd - b.usd || a.code.localeCompare(b.code)) <= 0 ? a : b);
     const usPrice = prices.find(price => price.code === "US")?.usd;
     const platform = plan.regions[0]?.billingPlatform;
     return { slug: plan.slug, name: getPlanTabLabel(product.name, getChinesePlanDisplayName(product.name, plan.name)),

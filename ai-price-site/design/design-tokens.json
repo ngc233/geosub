@@ -27,7 +27,7 @@
     "focus": "var(--gs-low)",
     "link": "var(--gs-text)",
     "onPrimary": "var(--gs-surface)",
-    "rowHover": "#F8FBEF",
+    "rowHover": "#F4F4F0",
     "mapLand": "#E4E4DE"
   },
   "radius": {

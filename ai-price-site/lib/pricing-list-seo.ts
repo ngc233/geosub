@@ -28,11 +28,20 @@ export function getPricingListMetadata(
       title: copy.metaTitle,
       description: copy.metaDescription,
       url: canonicalPath,
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: "GeoSub — Look beyond the list price. See the real regional cost.",
+        },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: copy.metaTitle,
       description: copy.metaDescription,
+      images: ["/og-image.png"],
     },
   };
 }

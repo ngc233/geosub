@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties
 import { getLanguageSwitchHref } from "../lib/language-switch-route";
 import { withSiteLocale, type SiteLocale } from "../lib/site-locale";
 import type { NavItem } from "./Header";
+import GeoSubLogo from "./GeoSubLogo";
 import PublicIcon from "./PublicIcon";
 import { PublicDialog } from "./PublicControls";
 import PublicSearch from "./PublicSearch";
@@ -83,7 +84,7 @@ export default function PublicHeader({ items, active, pathname, languages, local
   </div>;
   return <header className="gs-public-unified gs-header" data-scrolled={scrolled} data-gs-english={english || undefined}>
     <div className="gs-header-inner">
-      <Link href={english ? withSiteLocale("/",locale) : "/zh/"} aria-label={english ? "GeoSub home" : "GeoSub 首页"} className="gs-brand"><svg className="gs-brand-globe" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12"/><path d="M2 14h24M14 2c4 4 4 20 0 24M14 2c-4 4-4 20 0 24"/><circle className="gs-brand-globe-accent" cx="21" cy="8" r="4"/></svg><strong>GeoSub</strong></Link>
+      <Link href={english ? withSiteLocale("/",locale) : "/zh/"} aria-label={english ? "GeoSub home" : "GeoSub 首页"} className="gs-brand"><GeoSubLogo size={28} /></Link>
       <nav ref={nav} aria-label={english ? "Main navigation" : "主导航"} className="gs-desktop-nav" data-measured={Boolean(indicator)}>
         {links()}{indicator && <span aria-hidden="true" className="gs-nav-indicator" style={{"--gs-indicator-left":`${indicator.left}px`,"--gs-indicator-width":`${indicator.width}px`} as CSSProperties} />}
       </nav>

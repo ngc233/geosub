@@ -35,8 +35,8 @@ test("existing quote ratio and currency precision apply to both ordinary and tin
   assert.deepEqual(convertZhAmount(amount("10"), quote(1e-7), quote(2e-7), "USD"), { status: "ok", value: 20 });
   assert.deepEqual(convertZhAmount(amount(".004"), usd, quote(7.2), "CNY"), { status: "ok", value: 0.03 });
   assert.deepEqual(convertZhAmount(amount("0"), usd, quote(7.2), "CNY"), { status: "ok", value: 0 });
-  assert.equal(formatZhSourceAmount(amount(".004"), "USD"), "$ 0.004");
-  assert.equal(formatZhSourceAmount(amount("0"), "USD"), "$ 0.00");
+  assert.equal(formatZhSourceAmount(amount(".004"), "USD"), "$0.004");
+  assert.equal(formatZhSourceAmount(amount("0"), "USD"), "$0.00");
 });
 
 test("plain grouped decimals obey the exact inclusive input limit", () => {

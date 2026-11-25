@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { openAnalyticsConsentPreferences } from "../lib/analytics-consent";
 import type { SiteNavigationItem } from "../lib/site-navigation";
 import { withSiteLocale } from "../lib/site-locale";
+import GeoSubLogo from "./GeoSubLogo";
 import PublicIcon from "./PublicIcon";
 const subscribe = (notify: () => void) => { const media=matchMedia("(min-width:768px)"); media.addEventListener("change",notify); return () => media.removeEventListener("change",notify); };
 export default function PublicFooter({ items, copy, settings, locale = "zh" }: {
@@ -13,7 +14,7 @@ export default function PublicFooter({ items, copy, settings, locale = "zh" }: {
   const [expanded,setExpanded] = useState<string[]>([]);
   const english = locale === "en";
   const href = (item: {href:string;external?:boolean}) => item.external ? item.href : withSiteLocale(item.href,locale);
-  const about = <div className="gs-footer-about"><Link href={english ? withSiteLocale("/",locale) : "/zh"} aria-label="GeoSub">GeoSub</Link><p>{copy.description}</p><p>{copy.independence}</p><Link href={withSiteLocale("/tools/currency-converter",locale)}>{copy.converterLabel}</Link></div>;
+  const about = <div className="gs-footer-about"><Link href={english ? withSiteLocale("/",locale) : "/zh"} aria-label="GeoSub"><GeoSubLogo size={24} /></Link><p>{copy.description}</p><p>{copy.independence}</p><Link href={withSiteLocale("/tools/currency-converter",locale)}>{copy.converterLabel}</Link></div>;
   return <footer className="gs-public-unified gs-footer"><div className="gs-frame-container">
     {english && about}
     <div className="gs-footer-groups">{items.map((group,index) => {

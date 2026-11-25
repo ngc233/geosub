@@ -2,14 +2,26 @@ import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Trusted, checked repository stylesheets, read once per server module.
-// Each route emits only its own rules, without another blocking request.
+const files = {
+  countryIndex: "app/public-country-index.css",
+  article: "app/public-auxiliary-article.css",
+  contact: "app/public-auxiliary-contact.css",
+  evidence: "app/public-auxiliary-evidence.css",
+} as const;
+
+// Trusted, checked repository stylesheets, cached per server module in production
+// and read fresh in development so local CSS edits hot-reload immediately.
 const styles = {
-  countryIndex: readFileSync(join(process.cwd(), "app/public-country-index.css"), "utf8"),
-  article: readFileSync(join(process.cwd(), "app/public-auxiliary-article.css"), "utf8"),
-  contact: readFileSync(join(process.cwd(), "app/public-auxiliary-contact.css"), "utf8"),
-  evidence: readFileSync(join(process.cwd(), "app/public-auxiliary-evidence.css"), "utf8"),
+  countryIndex: readFileSync(join(process.cwd(), files.countryIndex), "utf8"),
+  article: readFileSync(join(process.cwd(), files.article), "utf8"),
+  contact: readFileSync(join(process.cwd(), files.contact), "utf8"),
+  evidence: readFileSync(join(process.cwd(), files.evidence), "utf8"),
 };
+
 export default function AuxiliaryStyles({ kind }: { kind: keyof typeof styles }) {
-  return <style data-gs-auxiliary={kind}>{styles[kind]}</style>;
+  const css =
+    process.env.NODE_ENV === "development"
+      ? readFileSync(join(process.cwd(), files[kind]), "utf8")
+      : styles[kind];
+  return <style data-gs-auxiliary={kind}>{css}</style>;
 }

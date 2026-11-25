@@ -1,6 +1,7 @@
 import AuxiliaryStyles from "./AuxiliaryStyles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, ExternalLink, History } from "lucide-react";
 import BrandIcon from "./BrandIcon";
 import CountryIdentity from "./CountryIdentity";
@@ -10,7 +11,9 @@ import type { ProductPlan } from "../lib/public-pricing-model";
 import { loadCountryHub } from "../lib/cached-country-hub";
 import { getPriorityCountry, priorityCountries, type HubLocale } from "../lib/country-hubs";
 import { getEvidencePlanHref } from "../lib/price-evidence-preview";
+import { getPublicPriceSnapshot } from "../lib/price-records";
 import { getPriceSnapshotById } from "../lib/price-records-data";
+import { fictionalPriceHistoryRecords, isHomepageFixtureEnabled } from "../lib/test-fixtures/homepage";
 import { HistoryPage as SharedHistoryPage } from "./PriceHistoryPage";
 import { countryName, dateTime, EmptyState, headingClass, linkClass, metaClass, money, mutedClass, PageHeading, PageLinks, Unavailable } from "./PriceEvidenceShared";
 import styles from "./PriceEvidencePages.module.css";
@@ -27,12 +30,19 @@ export function HistoryPage({ slug }: { locale: "en"; slug?: string }) {
 
 export async function SnapshotPage({ id, locale }: { id: string; locale: HubLocale }) {
   let snapshot;
-  try { snapshot = await getPriceSnapshotById(id); } catch {
-    return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}<PageHeading locale={locale} title={locale === "zh" ? "原始价格快照" : "Original price snapshot"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} controls={locale === "zh"} /></main>;
+  try {
+    if (isHomepageFixtureEnabled()) {
+      const fixtureMatch = fictionalPriceHistoryRecords().find(row => row.id === id);
+      snapshot = fixtureMatch ? getPublicPriceSnapshot(fixtureMatch) : await getPriceSnapshotById(id);
+    } else {
+      snapshot = await getPriceSnapshotById(id);
+    }
+  } catch {
+    return <div className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}<PageHeading locale={locale} title={locale === "zh" ? "原始价格快照" : "Original price snapshot"} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} controls={locale === "zh"} /></div>;
   }
   if (!snapshot) notFound();
   const path = getEvidencePlanHref(`/${locale}/${snapshot.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${snapshot.productSlug}/${snapshot.planSlug}`);
-  return <main className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}
+  return <div className={locale === "zh" ? "gs-public-unified gs-evidence-page" : pageClass}>{locale === "zh" && <AuxiliaryStyles kind="evidence"/>}
     <div className="mb-6 flex flex-wrap gap-x-6">
       <Link className={linkClass} href={path}><ArrowLeft size={16} aria-hidden="true" />{locale === "zh" ? "返回套餐价格" : "Back to plan prices"}</Link>
       <Link className={linkClass} href={`/${locale}/price-history/${snapshot.productSlug}`}><History size={16} aria-hidden="true" />{locale === "zh" ? "查看该产品价格历史" : "View this product's price history"}</Link>
@@ -66,31 +76,174 @@ export async function SnapshotPage({ id, locale }: { id: string; locale: HubLoca
       </details>
     </PublicSection>
     <div className="mt-8"><PageLinks locale={locale} controls={locale === "zh"} /></div>
-  </main>;
+  </div>;
 }
 
-export async function CountryIndexPage({ locale }: { locale: HubLocale }) {
+export async function CountryIndexPage({ locale, overviewMap }: { locale: HubLocale; overviewMap?: ReactNode }) {
   const coverage = await Promise.allSettled(priorityCountries.map(country => loadCountryHub(country.code)));
   const canvas = locale === "zh";
-  return <main className={canvas ? "gs-public-unified gs-country-index" : pageClass}>
-    {canvas && <AuxiliaryStyles kind="countryIndex" />}
-    <PageHeading centered={!canvas} locale={locale} title={locale === "zh" ? "按国家找订阅" : "Browse subscriptions by country"}
-      description={locale === "zh" ? "集中查看重点地区已核验的 App Store 月付订阅，比较当地标价、美国同套餐基准与采集记录。" : "Explore verified monthly App Store subscriptions in selected countries, with local prices, same-plan US comparisons and source records."} />
-    <PageLinks locale={locale} active="countries" controls={canvas} />
-    <div className={canvas ? "gs-country-index-heading" : "mb-5 flex flex-wrap items-end justify-between gap-2"}><h2 className={headingClass}>{locale === "zh" ? "重点国家与地区" : "Featured countries and regions"}</h2><span className={metaClass}>{locale === "zh" ? "当前开放 4 个地区" : "4 regions available"}</span></div>
-    <div className={canvas ? "gs-country-index-panel" : "grid gap-5 md:grid-cols-2"}>{priorityCountries.map((country, index) => <PublicSection key={country.code} className={canvas ? "gs-country-index-row" : "overflow-hidden shadow-sm"}>
-      <Link href={`/${locale}/countries/${country.slug}`} className={canvas ? "gs-country-index-card" : "group block hover:bg-[var(--color-bg-subtle)]"}>
-        <div className={canvas ? "gs-country-index-identity" : "flex items-start gap-4 p-5 md:p-6"}><CountryIdentity code={country.code} /><div className={canvas ? "gs-country-index-names" : "min-w-0"}><h3 className={headingClass}>{country[locale]}</h3><p className={`mt-1 ${metaClass}`}>{locale === "zh" ? country.en : country.code}</p><p className={`mt-3 ${mutedClass}`}>{locale === "zh" ? "查看已核验套餐、本币标价、比较结果与采集日期" : "View verified plans, local prices, comparisons and collection dates"}</p></div></div>
-        <div className={canvas ? "gs-country-index-stats" : `px-5 pb-4 tabular-nums md:px-6 ${metaClass}`}>{coverage[index].status === "fulfilled" ? (() => {
-          const rows = coverage[index].value;
-          const products = new Set(rows.map(row => row.productSlug)).size;
-          return locale === "zh" ? `${products} 个产品 · ${rows.length} 个套餐 · AI ${rows.filter(row => row.category === "ai").length} / 流媒体 ${rows.filter(row => row.category === "streaming").length}` : `${products} products · ${rows.length} plans · AI ${rows.filter(row => row.category === "ai").length} / Streaming ${rows.filter(row => row.category === "streaming").length}`;
-        })() : (locale === "zh" ? "覆盖数量暂时无法读取" : "Coverage is temporarily unavailable")}</div>
-        <div className={canvas ? "gs-country-index-action" : "flex min-h-11 items-center justify-between border-t border-[var(--color-border-default)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] md:px-6"}><span>{locale === "zh" ? "查看地区价格" : "Explore regional prices"}</span><ArrowRight size={16} aria-hidden="true" /></div>
-      </Link>
-    </PublicSection>)}</div>
-    <PublicSection className={canvas ? "gs-country-index-note" : "mt-6"}><DataNote>{locale === "zh" ? "收录范围：App Store · 月付 · 已核验。逐个套餐与美国相同套餐比较，不发布国家综合指数，也不保证跨区购买资格。" : "Scope: verified monthly App Store plans. Each plan is compared with the same US plan. This is not a national price index or a guarantee of purchase eligibility."}</DataNote></PublicSection>
-  </main>;
+  if (!canvas) {
+    return <div className={pageClass}>
+      <PageHeading centered locale={locale} title="Browse subscriptions by country"
+        description="Explore verified monthly App Store subscriptions in selected countries, with local prices, same-plan US comparisons and source records." />
+      <PageLinks locale={locale} active="countries" />
+      {overviewMap}
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-2"><h2 className={headingClass}>Featured countries and regions</h2><span className={metaClass}>4 regions available</span></div>
+      <div className="grid gap-5 md:grid-cols-2">{priorityCountries.map((country, index) => <PublicSection key={country.code} className="overflow-hidden shadow-sm">
+        <Link href={`/${locale}/countries/${country.slug}`} className="group block hover:bg-[var(--color-bg-subtle)]">
+          <div className="flex items-start gap-4 p-5 md:p-6"><CountryIdentity code={country.code} /><div className="min-w-0"><h3 className={headingClass}>{country[locale]}</h3><p className={`mt-1 ${metaClass}`}>{country.code}</p><p className={`mt-3 ${mutedClass}`}>View verified plans, local prices, comparisons and collection dates</p></div></div>
+          <div className={`px-5 pb-4 tabular-nums md:px-6 ${metaClass}`}>{coverage[index].status === "fulfilled" ? (() => {
+            const rows = coverage[index].value;
+            const products = new Set(rows.map(row => row.productSlug)).size;
+            return `${products} products · ${rows.length} plans · AI ${rows.filter(row => row.category === "ai").length} / Streaming ${rows.filter(row => row.category === "streaming").length}`;
+          })() : "Coverage is temporarily unavailable"}</div>
+          <div className="flex min-h-11 items-center justify-between border-t border-[var(--color-border-default)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] md:px-6"><span>Explore regional prices</span><ArrowRight size={16} aria-hidden="true" /></div>
+        </Link>
+      </PublicSection>)}</div>
+      <PublicSection className="mt-6"><DataNote>Scope: verified monthly App Store plans. Each plan is compared with the same US plan. This is not a national price index or a guarantee of purchase eligibility.</DataNote></PublicSection>
+    </div>;
+  }
+
+  return <div className="gs-public-unified gs-country-index">
+    <AuxiliaryStyles kind="countryIndex" />
+    <PageHeading centered={false} locale="zh" title="按国家找订阅"
+      description="集中查看各地区已核验的 App Store 月付订阅，比较当地标价、美国同套餐基准与采集记录。" />
+    {overviewMap}
+    <div className="gs-country-index-heading">
+      <h2 className={headingClass}>重点国家与地区</h2>
+      <span className={metaClass}>深度核验专页 · 4 个地区</span>
+    </div>
+    <div className="gs-country-index-grid">
+      {priorityCountries.map((country, index) => {
+        const result = coverage[index];
+        const rows = result.status === "fulfilled" ? result.value : null;
+        const products = rows ? new Set(rows.map(row => row.productSlug)).size : 0;
+        const aiCount = rows ? rows.filter(row => row.category === "ai").length : 0;
+        const streamingCount = rows ? rows.filter(row => row.category === "streaming").length : 0;
+        const previewRows = rows
+          ? rows.filter(row => typeof row.planName === "string" && typeof row.productName === "string" && Number.isFinite(row.amount)).slice(0, 4)
+          : [];
+        const cheaperCount = rows
+          ? rows.filter(row => typeof row.difference === "number" && row.difference < 0).length
+          : 0;
+        const bestSaving = previewRows.reduce<number | null>((best, row) => {
+          if (typeof row.difference !== "number" || row.difference >= 0) return best;
+          const pct = Math.abs(row.difference);
+          return best === null || pct > best ? pct : best;
+        }, null);
+        const latestDate = previewRows
+          .map(row => (typeof row.checkedAt === "string" ? row.checkedAt.slice(0, 10) : ""))
+          .filter(Boolean)
+          .sort()
+          .at(-1);
+
+        return (
+          <PublicSection key={country.code} className="gs-country-index-item">
+            <Link href={`/zh/countries/${country.slug}`} className="gs-country-index-card">
+              <div className="gs-country-index-head">
+                <div className="gs-country-index-brandline">
+                  <CountryIdentity code={country.code} />
+                  <div className="gs-country-index-titlewrap">
+                    <div className="gs-country-index-headline">
+                      <div>
+                        <div className="gs-country-index-name">
+                          <h3 className={headingClass}>{country.zh}</h3>
+                          <span className="gs-country-index-pill">{country.en} · {country.code}</span>
+                        </div>
+                        <p className="gs-country-index-stats">
+                          {rows
+                            ? `${products} 个产品 · ${rows.length} 个套餐 · AI ${aiCount} / 流媒体 ${streamingCount}`
+                            : "覆盖数量暂时无法读取"}
+                        </p>
+                      </div>
+                      {(bestSaving !== null || cheaperCount > 0) && (
+                        <div className="gs-country-index-meta">
+                          {bestSaving !== null && <span>最高省 {bestSaving}%</span>}
+                          {cheaperCount > 0 && <span>{cheaperCount} 款低于美区</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {previewRows.length > 0 && (
+                <div className="gs-country-index-tablewrap">
+                  <table className="gs-country-index-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>已核验套餐</th>
+                        <th>折合月付</th>
+                        <th>对比美国</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewRows.map((row, rowIndex) => {
+                        const diff = typeof row.difference === "number" ? row.difference : null;
+                        const isLow = diff !== null && diff < 0;
+                        const isHigh = diff !== null && diff > 0;
+                        const hasUsd = row.usd !== null && Number.isFinite(row.usd);
+                        return (
+                          <tr key={`${row.productSlug}:${row.planSlug ?? rowIndex}`}>
+                            <td className="gs-country-index-rank">{rowIndex + 1}</td>
+                            <td>
+                              <div className="gs-country-index-plan">
+                                <BrandIcon
+                                  product={{ slug: row.productSlug, name: row.productName }}
+                                  size="xs"
+                                  decorative
+                                  className="gs-country-index-brand"
+                                />
+                                <div className="gs-country-index-plantext">
+                                  <span className="gs-country-index-planname">{row.productName}</span>
+                                  <span className="gs-country-index-plantier">{row.planName}</span>
+                                  {rowIndex === 0 && isLow && (
+                                    <span className="gs-country-index-badge is-low">低价</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div className={`gs-country-index-value${rowIndex === 0 && isLow ? " is-low" : isHigh ? " is-high" : ""}`}>
+                                {hasUsd ? money(row.usd!, "USD", "zh") : money(row.amount, row.currency, "zh")}
+                                <span className="gs-country-index-period">/月</span>
+                              </div>
+                              {hasUsd && row.currency !== "USD" && (
+                                <div className="gs-country-index-local">
+                                  ≈ {money(row.amount, row.currency, "zh")}
+                                </div>
+                              )}
+                            </td>
+                            <td className="gs-country-index-comparison">
+                              <span className={isLow ? "is-low" : isHigh ? "is-high" : undefined}>
+                                {diff === null ? "—" : diff === 0 ? "持平" : isLow ? `−${Math.abs(diff)}%` : `+${diff}%`}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="gs-country-index-foot">
+                <span className="gs-country-index-updated">
+                  {latestDate ? `最近采集: ${latestDate}` : "App Store · 月付已核验"}
+                </span>
+                <span className="gs-country-index-action">
+                  <span>{rows && rows.length > previewRows.length ? `查看全部 ${rows.length} 个套餐` : "查看地区价格"}</span>
+                  <ArrowRight size={14} aria-hidden="true" />
+                </span>
+              </div>
+            </Link>
+          </PublicSection>
+        );
+      })}
+    </div>
+    <PublicSection className="gs-country-index-note"><DataNote>收录范围：App Store · 月付 · 已核验。逐个套餐与美国相同套餐比较，不发布国家综合指数，也不保证跨区购买资格。</DataNote></PublicSection>
+  </div>;
 }
 
 export async function CountryHubPage({ countrySlug, locale }: { countrySlug: string; locale: HubLocale }) {
@@ -98,11 +251,11 @@ export async function CountryHubPage({ countrySlug, locale }: { countrySlug: str
   if (!country) notFound();
   let rows;
   try { rows = await loadCountryHub(country.code); } catch {
-    return <main className={pageClass}><PageHeading locale={locale} title={`${country[locale]}${locale === "zh" ? "订阅价格" : " subscription prices"}`} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></main>;
+    return <div className={pageClass}><PageHeading locale={locale} title={`${country[locale]}${locale === "zh" ? "订阅价格" : " subscription prices"}`} description="App Store" /><Unavailable locale={locale} /><PageLinks locale={locale} /></div>;
   }
   const productCount = new Set(rows.map(row => row.productSlug)).size;
   const comparable = rows.filter(row => row.difference !== null);
-  return <main className={pageClass}>
+  return <div className={pageClass}>
     <Link className={`${linkClass} mb-6`} href={`/${locale}/countries`}><ArrowLeft size={16} aria-hidden="true" />{locale === "zh" ? "全部国家与地区" : "All countries and regions"}</Link>
     <PageHeading locale={locale} identity={<CountryIdentity code={country.code} />} title={`${country[locale]}${locale === "zh" ? "订阅价格" : " subscription prices"}`}
       description={locale === "zh" ? "查看当地已核验的 App Store 月付套餐，逐个比较本币标价、美元参考和美国同套餐价格。" : "Explore verified local monthly App Store plans, with local prices, USD references and same-plan US comparisons."} />
@@ -141,5 +294,5 @@ export async function CountryHubPage({ countrySlug, locale }: { countrySlug: str
       </section> : null;
     })}
     <PublicSection className="mt-6"><DataNote><p>{locale === "zh" ? "折算使用 18 小时内有效汇率；税费不重复加算。缺少汇率或美国同套餐价格时不生成价差。" : "Conversions require exchange rates fetched within 18 hours. Taxes are not added twice. Missing FX or same-plan US prices produce no comparison."}</p><p className="mt-2">{locale === "zh" ? "当地商店列出价格不代表其他地区账号可购买。账号、付款方式、服务覆盖与最终税费请以官方结算页为准。" : "A local listing does not confirm that another country's account can buy it. Account, payment, availability and final taxes remain subject to official checkout."}</p></DataNote></PublicSection>
-  </main>;
+  </div>;
 }

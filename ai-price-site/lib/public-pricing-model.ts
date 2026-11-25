@@ -101,12 +101,14 @@ export function getProductPlan(product: SubscriptionProduct, planSlug?: string) 
 export function getReferenceRegion(plan: ProductPlan) {
   return (
     plan.regions.find((region) => region.code.toUpperCase() === "US") ||
-    [...plan.regions].sort((a, b) => a.priceUsd - b.priceUsd)[0]
+    [...plan.regions].sort((a, b) => a.priceUsd - b.priceUsd || a.code.localeCompare(b.code))[0]
   );
 }
 
 export function getPlanStats(plan: ProductPlan): PlanStats {
-  const sorted = [...plan.regions].sort((a, b) => a.priceUsd - b.priceUsd);
+  const sorted = [...plan.regions].sort(
+    (a, b) => a.priceUsd - b.priceUsd || a.code.localeCompare(b.code),
+  );
   const minRegion = sorted[0];
   const maxRegion = sorted[sorted.length - 1];
   const referenceRegion = getReferenceRegion(plan);

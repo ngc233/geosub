@@ -24,7 +24,6 @@ export const defaultNavigationItems: DefaultNavigationMap =
   {
   zh: {
     header: [
-      { label: "首页", href: "/zh" },
       {
         label: "数字订阅",
         href: "/zh/ai-pricing",
@@ -33,8 +32,16 @@ export const defaultNavigationItems: DefaultNavigationMap =
           { label: "流媒体", href: "/zh/streaming-pricing" },
         ],
       },
-      { label: "订阅指南", href: "/zh/guides" },
-      { label: "数据来源", href: "/zh/data-sources" },
+      {
+        label: "订阅指南",
+        href: "/zh/guides",
+        children: [
+          { label: "全部指南", href: "/zh/guides" },
+          { label: "价格指南", href: "/zh/guides/price-guide" },
+          { label: "支付与账号", href: "/zh/guides/payment-account" },
+          { label: "数据来源与口径", href: "/zh/data-sources" },
+        ],
+      },
     ],
     footer: [
       {

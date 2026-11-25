@@ -44,8 +44,8 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
   await expect(page.getByText(/代表套餐最多省/)).toHaveCount(0);
   await expect(page.getByRole("list",{name:"订阅省钱排名"})).toContainText("标准版");
   await expect(page.getByRole("list",{name:"订阅省钱排名"})).toContainText("月度会员");
-  const price=page.locator('[data-gs-price-cycle="true"]').filter({hasText:"¥ 119.00"}).last();
-  await expect(price).toContainText("¥ 119.00 / 月");
+  const price=page.locator('[data-gs-price-cycle="true"]').filter({hasText:"¥119.00"}).last();
+  await expect(price).toContainText("¥119.00 / 月");
   await expect(price.locator('[data-gs-cycle]')).toBeHidden();
   await expect(price.locator('.gs-sr-only')).toContainText('/ 月');
 
@@ -57,9 +57,9 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
   const products=page.getByRole("navigation",{name:"地图产品"});await products.getByRole("link",{name:/Claude/}).focus();
   await expect(page.getByText("已按系统设置关闭自动轮换",{exact:true})).toBeVisible();
   await page.getByRole("button",{name:"折合为 ¥ CNY",exact:true}).click();await page.getByRole("option",{name:"USD · 美元",exact:true}).click();
-  await expect(page.getByRole("button",{name:"折合为 $ USD",exact:true})).toBeVisible();await expect(ranks).toContainText("$ 17.00");
+  await expect(page.getByRole("button",{name:"折合为 $ USD",exact:true})).toBeVisible();await expect(ranks).toContainText("$17.00");
   await page.getByRole("button",{name:"折合为 $ USD",exact:true}).click();await page.getByRole("option",{name:"JPY · 日元",exact:true}).click();
-  await expect(ranks).toContainText("JP¥ 2,550.00");expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await expect(ranks).toContainText("JP¥2,550.00");expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.getByRole("button",{name:"折合为 ¥ JPY",exact:true}).click();await page.getByRole("option",{name:"GBP · 英镑",exact:true}).click();await expect(page.getByRole("status").filter({hasText:"GBP 汇率不可用"})).toBeVisible();
   await page.getByRole("button",{name:"折合为 $ USD",exact:true}).click();await page.getByRole("option",{name:"CNY · 人民币",exact:true}).click();
   const countries=page.getByRole("region",{name:"哪些国家整体更便宜"});await expect(countries.getByRole("link").filter({hasText:"加拿大"})).toHaveCount(0);await expect(countries.getByRole("link").filter({hasText:"菲律宾"})).toHaveCount(1);
@@ -97,9 +97,9 @@ test("search minimum follows the homepage display currency without a rates reque
  test.skip(!local,"Local fictional fixture only");
  await page.route("**/api/search?**",route=>route.fulfill({json:{results:[{id:"fictional",kind:"plan",title:"虚构搜索套餐",subtitle:"仅测试",href:"/zh/ai-pricing/chatgpt/plus",minimumUsd:20,cycle:"monthly"}]}}));
  await page.goto("/zh");await page.getByLabel("首页搜索产品或国家").fill("虚构");await page.getByRole("button",{name:"搜索",exact:true}).click();
- await expect(page.getByRole("option",{name:/虚构搜索套餐/})).toContainText("¥ 140.00");await page.keyboard.press("Escape");
+ await expect(page.getByRole("option",{name:/虚构搜索套餐/})).toContainText("¥140.00");await page.keyboard.press("Escape");
  await page.getByRole("button",{name:"折合为 ¥ CNY",exact:true}).click();await page.getByRole("option",{name:"USD · 美元",exact:true}).click();
- await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();await page.getByRole("combobox",{name:"搜索产品或国家"}).fill("虚构");await expect(page.getByRole("option",{name:/虚构搜索套餐/})).toContainText("$ 20.00");
+ await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();await page.getByRole("combobox",{name:"搜索产品或国家"}).fill("虚构");await expect(page.getByRole("option",{name:/虚构搜索套餐/})).toContainText("$20.00");
 });
 
 test("canvas controls: outer focus ring, flat row hover, selected segment and exact desktop dimensions",async({page})=>{

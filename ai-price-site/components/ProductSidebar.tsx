@@ -90,7 +90,7 @@ export default function ProductSidebar({
                         data-track-placement="product_sidebar"
                         className={`relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full before:transition-opacity ${
                           active
-                            ? "bg-zinc-50 text-zinc-950 before:bg-lime-500 before:opacity-100 dark:bg-zinc-800/70 dark:text-white"
+                            ? "bg-zinc-100/80 font-semibold text-zinc-950 before:bg-zinc-900 before:opacity-100 dark:bg-zinc-800/70 dark:text-white dark:before:bg-zinc-100"
                             : "text-zinc-600 before:opacity-0 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                         }`}
                       >

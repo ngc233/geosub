@@ -34,7 +34,7 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
   if(width===390)await page.keyboard.press('Escape');
   await buttons.nth(1).hover();await expect.poll(()=>buttons.nth(1).evaluate(e=>getComputedStyle(e).color)).toBe(await tabs.evaluate(e=>getComputedStyle(e).color));
   await buttons.nth(1).click();const slider=tabs.locator('.gs-segment-slider');
-  await expect(slider).toHaveCSS('transition-timing-function','cubic-bezier(0.34, 1.56, 0.64, 1)');
+  await expect(slider).toHaveCSS('transition-timing-function','cubic-bezier(0.22, 1, 0.36, 1)');
   expect(await slider.evaluate(e=>getComputedStyle(e).animationName)).toMatch(/^gs-jelly-morph-[ab]$/);
   await buttons.nth(0).click();const segmentCycle=await tabs.getAttribute('data-jelly-cycle');await buttons.nth(2).click();await expect(tabs).not.toHaveAttribute('data-jelly-cycle',segmentCycle!);
   await expect(page.locator('nav[aria-label="价格与数据说明"]')).toHaveCount(0);await expect(page.getByText('查看 ChatGPT Plus 地区成本',{exact:true})).toHaveCount(0);await expect(page.locator('.gs-home-disclaimer')).toBeVisible();

@@ -1,7 +1,7 @@
-import { Search, Globe, Banknote, Share2, ExternalLink, ChevronDown, ArrowRight,
+import { Search, Globe, Banknote, Share2, ExternalLink, ChevronDown, ArrowLeft, ArrowRight,
   ChevronRight, ArrowUp, ArrowDown, TrendingUp, TrendingDown, BookOpen, Check, Menu, X } from "lucide-react";
 
-const icons = { Search, Globe, Banknote, Share2, ExternalLink, ChevronDown, ArrowRight,
+const icons = { Search, Globe, Banknote, Share2, ExternalLink, ChevronDown, ArrowLeft, ArrowRight,
   ChevronRight, ArrowUp, ArrowDown, TrendingUp, TrendingDown, BookOpen, Check, Menu, X };
 
 export type PublicIconName = keyof typeof icons;

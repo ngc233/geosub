@@ -541,23 +541,55 @@ export default function Header({
   const copy = headerCopy[currentLocaleCode];
   const currentLocaleNavItems =
     initialNavItemsByLocale[currentLocaleCode] || [];
-  const baseNavItems = filterNavigationItems(
+  const rawBaseNavItems = filterNavigationItems(
     currentLocaleNavItems.length > 0
       ? currentLocaleNavItems
       : fallbackNavItemsByLocale[currentLocaleCode],
   );
-  // Preserve the frozen Plus experiment's existing navigation.
+  const unified = usesUnifiedPublicStyle(pathname);
+  // Preserve the frozen Plus experiment's existing navigation; on unified Chinese
+  // public routes, keep core header entries and nest data-sources under guides.
+  const baseNavItems = currentLocaleCode === "zh" && unified
+    ? rawBaseNavItems
+        .filter((item) => {
+          const clean = stripSiteLocale(item.href).replace(/\/+$/, "") || "/";
+          return clean !== "/" && clean !== "/data-sources";
+        })
+        .map((item) => {
+          const clean = stripSiteLocale(item.href);
+          if (clean !== "/guides") return item;
+          const existingChildren = item.children && item.children.length > 0
+            ? item.children
+            : [
+                ...(fallbackNavItemsByLocale.zh.find((f) => f.href === "/guides")?.children ?? []),
+                {
+                  name: "数据来源与口径",
+                  href: "/data-sources",
+                  description: "了解价格采集来源、汇率基准与核验标准。",
+                },
+              ];
+          const hasDataSources = existingChildren.some((c) => stripSiteLocale(c.href) === "/data-sources");
+          return {
+            ...item,
+            match: [...new Set([...(item.match ?? ["/guides", "/articles"]), "/data-sources"])],
+            children: hasDataSources
+              ? existingChildren
+              : [...existingChildren, { name: "数据来源与口径", href: "/data-sources" }],
+          };
+        })
+    : rawBaseNavItems;
   const discoveryItems: NavItem[] = (currentLocaleCode === "zh" || currentLocaleCode === "en")
     && pathname !== "/zh/ai-pricing/chatgpt/plus" ? [
       { href: "/countries", name: currentLocaleCode === "zh" ? "国家价格" : "Countries", match: ["/countries"] },
       { href: "/price-history", name: currentLocaleCode === "zh" ? "价格历史" : "Price history", match: ["/price-history"] },
     ].filter(item => !baseNavItems.some(existing => stripSiteLocale(existing.href) === item.href)) : [];
   const gamePath = "/games";
-  const unified = usesUnifiedPublicStyle(pathname);
   const gameEntry: NavItem[] = showGameNavigation && currentLocaleCode === "zh" && unified
     && !baseNavItems.some(item => !item.external && normalizePath(stripSiteLocale(item.href)) === gamePath)
     ? [{ name: "游戏比价", href: gamePath }] : [];
-  const navItems = [...baseNavItems.slice(0, 2), ...gameEntry, ...discoveryItems, ...baseNavItems.slice(2)];
+  const guidesIndex = baseNavItems.findIndex(item => stripSiteLocale(item.href) === "/guides");
+  const insertIndex = currentLocaleCode === "zh" && unified && guidesIndex >= 0 ? guidesIndex : 2;
+  const navItems = [...baseNavItems.slice(0, insertIndex), ...gameEntry, ...discoveryItems, ...baseNavItems.slice(insertIndex)];
 
   const activeItemName = navItems.find((item) => isNavItemActive(item, pathname))?.name || "";
 

@@ -248,7 +248,7 @@ export default async function CurrencyConverterPage({
   ];
 
   return (
-    <main className={locale === "zh" ? "gs-public-unified gs-tools-scope" : "min-h-screen bg-[#faf8f3]"}>
+    <div className={locale === "zh" ? "gs-public-unified gs-tools-scope" : "min-h-screen bg-[#faf8f3]"}>
       {locale === "zh" && <ConverterStyleResource/>}
       <script
         type="application/ld+json"
@@ -403,6 +403,6 @@ export default async function CurrencyConverterPage({
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }
