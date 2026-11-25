@@ -193,7 +193,7 @@ export default function PublicSearch({
         setActive((prev) => (nextResults.length ? Math.min(prev, nextResults.length - 1) : 0));
         setStatus(nextResults.length ? "" : copy.empty);
       } catch {
-        if (!controller.signal.aborted && !catalog) {
+        if (!controller.signal.aborted && (!catalog || matchChromeSearchCatalog(catalog, trimmed).length === 0)) {
           setResults([]);
           setStatus(copy.failed);
         }

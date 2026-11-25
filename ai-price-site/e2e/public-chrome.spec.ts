@@ -76,11 +76,11 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
 }
 test("search: three groups, arrow selection, navigation, error and empty states",async({page})=>{
   const fixture=["product","plan","country"].map((kind,i)=>({id:kind,kind,title:`测试${kind}`,subtitle:"仅测试交互",href:["/zh/ai-pricing/chatgpt","/zh/ai-pricing/chatgpt/plus","/zh/countries/india"][i],minimumUsd:i+1,cycle:"monthly"}));
-  await page.route("**/api/search?**",r=>r.fulfill({json:{results:fixture}}));await page.goto("/zh");await page.keyboard.press("/");
+  await page.route("**/api/search?**",r=>r.fulfill({json:{results:fixture}}));await page.goto("/zh",{waitUntil:"networkidle"});await page.keyboard.press("/");
   const input=page.getByRole("combobox",{name:"搜索产品或国家"});await input.fill("测试");await expect(page.getByRole("option")).toHaveCount(3);
   for(const name of ["产品","套餐","国家"])await expect(page.getByRole("group",{name,exact:true})).toBeVisible();
   await input.press("ArrowDown");await expect(page.getByRole("option").nth(1)).toHaveAttribute("aria-selected","true");await input.press("Enter");await page.waitForURL("**/zh/ai-pricing/chatgpt/plus");
-  await page.goto("/zh");await page.route("**/api/search?**",r=>r.fulfill({status:503,json:{results:[]}}));await page.keyboard.press("/");await input.fill("失败");await expect(page.getByRole("button",{name:"重试",exact:true})).toBeVisible();
+  await page.goto("/zh",{waitUntil:"networkidle"});await page.route("**/api/search?**",r=>r.fulfill({status:503,json:{results:[]}}));await page.keyboard.press("/");await input.fill("失败");await expect(page.getByRole("button",{name:"重试",exact:true})).toBeVisible();
   await page.route("**/api/search?**",r=>r.fulfill({json:{results:[]}}));await page.getByRole("button",{name:"重试",exact:true}).click();await expect(page.getByRole("status").filter({hasText:"没有找到"})).toBeVisible();
 });
 test("real local data: report result availability; never invent prices",async({request})=>{
