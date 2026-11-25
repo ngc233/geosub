@@ -18,6 +18,14 @@ export function getPlanDisplayName(productName: string, planName: string) {
     return cleanPlanName;
   }
 
+  // Microsoft Copilot App Store plans are named "Microsoft 365 ...".
+  if (
+    cleanProductName.toLowerCase() === "microsoft copilot" &&
+    cleanPlanName.toLowerCase().startsWith("microsoft 365 ")
+  ) {
+    return cleanPlanName;
+  }
+
   return `${cleanProductName} ${cleanPlanName}`;
 }
 

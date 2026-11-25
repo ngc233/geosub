@@ -5,7 +5,7 @@ import { getPricingPagePlan } from "./pricing-page-facts.ts";
 import { getPricingPlanPath } from "./pricing-routes.ts";
 import type { PublicSearchResult } from "./public-search.ts";
 import type { SiteLocale } from "./site-locale.ts";
-export type ChromeSearchResult = { id:string; kind:"product"|"plan"|"country"; title:string; subtitle:string; href:string; minimumUsd:number; cycle:string };
+export type ChromeSearchResult = { id:string; kind:"product"|"plan"|"country"; title:string; subtitle:string; href:string; minimumUsd:number; cycle:string; logoSlug?:string; countryCode?:string };
 
 /** Bound detail reads before loading: product and plan groups share at most three products. */
 export function selectChromeSearchCandidates(results: PublicSearchResult[]) {

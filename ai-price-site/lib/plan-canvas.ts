@@ -26,6 +26,18 @@ export function planDistribution(plan: ProductPlan) {
     multiple: rows[0]?.priceUsd > 0 ? rows.at(-1)!.priceUsd / rows[0].priceUsd : null };
 }
 
+/** Hit areas share a price interval. The chart still plots each exact price. */
+export function groupPlanPricePoints(rows: RegionPrice[], max: number, slots: number) {
+  const groups = new Map<number, RegionPrice[]>();
+  for (const row of rows) {
+    const slot = Math.min(slots - 1, Math.floor(row.priceUsd / max * slots));
+    const group = groups.get(slot);
+    if (group) group.push(row);
+    else groups.set(slot, [row]);
+  }
+  return groups;
+}
+
 export function filterPlanRegions(rows: RegionPrice[], filter: string, query: string, usPrice?: number) {
   const term = query.trim().toLocaleLowerCase();
   return rows.filter(row => (!term || `${row.country} ${row.code}`.toLocaleLowerCase().includes(term))

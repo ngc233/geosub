@@ -22,7 +22,7 @@ test("expired CNY renders USD and the existing visible warning in HomepagePricin
   const overrides: Record<string, unknown> = {
     "next/link": ({ children, href }: { children: unknown; href: string }) => createElement("a", { href }, children as string),
     "./PublicCurrencySelect": { default: ({ displayCurrency }: { displayCurrency: string }) => createElement("button", {}, `折合为 ${displayCurrency}`), usePublicCurrency: () => ["CNY"], usePageDisplayRates: empty, __esModule: true },
-    "./PublicControls": { PublicSegments: empty, PublicComparisonBar: empty },
+    "./PublicControls": { PublicSegments: empty, PublicComparisonBar: empty, PublicExpandButton: empty },
     "../lib/homepage-display": display,
     "./HomepageMap": ({ controls }: { controls: unknown }) => controls,
     ...Object.fromEntries(["./HomepageCountryFlag", "./PublicPriceNumber", "./PublicIcon", "./BrandIcon", "./HomepageProductMark"].map(name => [name, empty])),

@@ -40,6 +40,26 @@ export function PublicComparisonBar({ label, value, maximum, tone, marker, hideV
 export function PublicTutorialCard({ article }: {article?:{href:string;title:string;summary:string}|null}) {
   return article?<Link href={article.href} className="gs-tutorial" data-gs-motion-card><PublicIcon name="BookOpen"/><span><strong>{article.title}</strong><small>{article.summary}</small></span><PublicIcon name="ArrowRight"/></Link>:null;
 }
+
+export function PublicExpandButton({ expanded, label, hint, controls, onClick }: {
+  expanded?: boolean; label: string; hint?: string; controls?: string; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      data-gs-ui="button"
+      className="gs-expand-more"
+      aria-expanded={expanded}
+      aria-controls={controls}
+      data-expanded={expanded || undefined}
+      onClick={onClick}
+    >
+      <span>{label}</span>
+      {hint && <span className="gs-expand-more-hint">{hint}</span>}
+      <PublicIcon name="ChevronDown" size={16} className="gs-expand-more-chevron" />
+    </button>
+  );
+}
 export function PublicPromotionPlaceholder({ enabled=false }: {enabled?:boolean}) {return enabled?<aside className="gs-promotion" aria-label="推广位"><span>推广</span></aside>:null;}
 export function PublicEmphasis({children}:{children:ReactNode}) {return <aside className="gs-emphasis">{children}</aside>;}
 
