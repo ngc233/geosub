@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { createHash } = require("node:crypto");
-const { mkdir, writeFile } = require("node:fs/promises");
+const { mkdir, readFile, writeFile } = require("node:fs/promises");
 const { resolve } = require("node:path");
 const sharp = require("sharp");
 
@@ -121,11 +121,15 @@ async function main() {
 
   await mkdir(outputDirectory, { recursive: true });
   await mkdir(thumbnailDirectory, { recursive: true });
+  const previous = JSON.parse(await readFile(manifestPath, "utf8"));
   const manifest = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     usagePurpose: "nominative-product-identification",
-    products: {},
+    // Publisher-supplied assets are reviewed separately from the App Store batch.
+    products: Object.fromEntries(Object.entries(previous.products).filter(
+      ([, asset]) => asset.sourceClass !== "official-app-store-artwork",
+    )),
   };
 
   for (const download of downloads) {
