@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.35.2 - 2026-11-25
+
+- Restore product navigation on Chinese product overviews and non-Plus plan pages (#106). Desktop pages have a sticky left sidebar; smaller screens have a product switcher at the top.
+- Polish search results, shared expand buttons, the currency dialog, and regional price charts. Nearby chart points have separate group controls so each region remains reachable by touch or keyboard. Prices, sources and SEO metadata keep their existing inputs.
+- Prepare the web rollout from the publicly observed 2.35.0 build (`3bb1372ac8e7e2c07c46c444df6f7ec13859be5f`). The formal migration inputs are unchanged. The [release readiness record](docs/release-readiness-2.35.2-2026-11-25.md) lists the exact rollback and controller checks.
+
 ## 2.35.1 - 2026-11-24
 
 - Prepare the combined release of Chinese ChatGPT Plus V8 regional price lookup (#99), the GTA 6 Hong Kong pilot and compatible schema 062 (#100), and the first English public UI batch for the homepage, AI pricing list and ChatGPT Go (#101).
