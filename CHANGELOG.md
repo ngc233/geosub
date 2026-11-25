@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.35.3 - 2026-11-25
+
+- Add a shortcut on the Simplified Chinese homepage to GTA 6 Hong Kong prices for the PS5 and Xbox standard editions (#108). The shortcut appears when the game is published and both prices are current and verified.
+- Preserve the homepage title, introduction, subscription statistics, and existing links, along with the English homepage and sitemap rules. The already public GTA 6 detail page keeps its direct URL.
+- Prepare an application-only rollout with unchanged database inputs and an exact rollback to the live 2.35.2 build. See the [release readiness record](docs/release-readiness-2.35.3-2026-11-25.md).
+
 ## 2.35.2 - 2026-11-25
 
 - Restore product navigation on Chinese product overviews and non-Plus plan pages (#106). Desktop pages have a sticky left sidebar; smaller screens have a product switcher at the top.
