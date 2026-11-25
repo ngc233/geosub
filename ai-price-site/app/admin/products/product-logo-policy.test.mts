@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { getApprovedLocalBrandAsset, getOptimizedBrandAssetPath } from "../../../lib/product-brand-assets.ts";
 
 const productsDir = dirname(fileURLToPath(import.meta.url));
 
@@ -53,6 +54,7 @@ test("the published baseline has checksum-verified local app icons", () => {
     "claude",
     "gemini",
     "goodshort",
+    "gta-6",
     "grok",
     "heygen",
     "kimi",
@@ -82,6 +84,23 @@ test("the published baseline has checksum-verified local app icons", () => {
     assert.ok(thumbnail.byteLength < file.byteLength, `${slug} thumbnail is not smaller`);
     assert.equal(asset.displayMode, "app-icon", slug);
   }
+});
+
+test("published GTA 6 resolves to the reviewed Rockstar artwork and a local, verified thumbnail", () => {
+  const asset = getApprovedLocalBrandAsset("gta-6");
+  assert.ok(asset);
+  assert.equal(asset.sourceClass, "permission-backed");
+  assert.equal(asset.sellerName, "Rockstar Games");
+  assert.equal(new URL(asset.evidenceReference).origin, "https://www.rockstargames.com");
+  assert.equal(new URL(asset.sourceUrl).origin, "https://www.rockstargames.com");
+  assert.match(asset.reviewedAt, /^\d{4}-\d{2}-\d{2}$/);
+
+  const projectRoot = resolve(productsDir, "..", "..", "..");
+  const registered = JSON.parse(readProductFile("..", "..", "..", "data", "product-brand-assets.json"));
+  const thumbnailUrl = getOptimizedBrandAssetPath(asset);
+  assert.equal(thumbnailUrl, `/brand-assets/thumbs/gta-6.webp?v=${asset.sha256.slice(0, 12)}`);
+  const thumbnail = readFileSync(resolve(projectRoot, "public", thumbnailUrl.slice(1).split("?")[0]));
+  assert.equal(createHash("sha256").update(thumbnail).digest("hex"), registered.products["gta-6"].thumbnailSha256);
 });
 
 test("legacy remote logo cache is restricted to authenticated diagnostics", () => {

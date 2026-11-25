@@ -168,6 +168,28 @@
       "reviewedAt": "2026-08-16",
       "displayMode": "app-icon"
     },
+    "gta-6": {
+      "path": "/brand-assets/gta-6.webp",
+      "sourceClass": "permission-backed",
+      "usageBasis": "owner-approved-nominative-identification",
+      "evidenceReference": "https://www.rockstargames.com/VI/media/artwork-wallpapers",
+      "sourceUrl": "https://www.rockstargames.com/VI/_next/static/media/Official_Cover_Art_square.10.vgeiw52wkr.jpg",
+      "sharingReference": "https://www.rockstargames.com/VI/launch-gallery",
+      "trackName": "Grand Theft Auto VI",
+      "sellerName": "Rockstar Games",
+      "mimeType": "image/webp",
+      "width": 512,
+      "height": 512,
+      "byteLength": 89326,
+      "sha256": "29f3d0aeacebd77cea0f457cdebc74dde9e5a5ed888455ce0b0ea139b20df784",
+      "thumbnailSha256": "ff7a7de1a0bdae64f405123b6de0ab47c11cce6afb3f06aa06447b305543b3df",
+      "sourceSha256": "7e1edfff5f9d9cd77b8f24d773bad7e94afe142c2c920d98b5f7287008b3b8fd",
+      "reviewedAt": "2026-11-25",
+      "reviewedBy": "Codex under GeoSub product owner approval",
+      "reviewDueAt": "2027-03-25",
+      "processing": "Official downloadable square cover. Preserve the full artwork. Resize and encode as WebP for local use, with the existing rounded display mask.",
+      "displayMode": "app-icon"
+    },
     "heygen": {
       "path": "/brand-assets/heygen.jpg",
       "sourceClass": "official-app-store-artwork",
