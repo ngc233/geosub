@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { PublicSegments } from "@/components/PublicControls";
 import {
@@ -174,7 +175,7 @@ export default function GameComparison({
         <nav className="gs-plan-breadcrumb" aria-label="面包屑">
           <a href="/zh">首页</a>
           <span aria-hidden>/</span>
-          <span>游戏比价</span>
+          <Link href="/zh/games">游戏比价</Link>
           <span aria-hidden>/</span>
           <span>GTA 6</span>
         </nav>

@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
-import { Locale, NavigationPosition, PublishStatus } from "@prisma/client";
+import { Locale, NavigationPosition, ProductCategory, PublishStatus } from "@prisma/client";
+import { cache } from "react";
 import { prisma } from "./prisma";
+import { PUBLIC_PRICING_NAVIGATION_CACHE_TAG } from "./public-pricing-cache";
 import {
   getNavigationLocaleByValue,
   getNavigationPositionByValue,
@@ -44,6 +46,15 @@ type LocalizedNavigationRow = NavigationRow & {
 };
 
 const SITE_NAVIGATION_REVALIDATE_SECONDS = 6 * 60 * 60;
+
+export const isGta6NavigationPublished = cache(unstable_cache(
+  async () => Boolean(await prisma.product.findUnique({
+    where: { slug: "gta-6", category: ProductCategory.GAME, status: PublishStatus.PUBLISHED },
+    select: { slug: true },
+  })),
+  ["gta6-navigation-published"],
+  { revalidate: 60, tags: [PUBLIC_PRICING_NAVIGATION_CACHE_TAG] },
+));
 
 const getCachedNavigationRows = unstable_cache(
   async (locale: Locale, position: NavigationPosition) => prisma.navigationItem.findMany({

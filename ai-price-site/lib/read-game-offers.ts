@@ -1,27 +1,43 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { msPerWeek, type Currency, type GameOffer, type GameResponse, type Platform } from "./game-offers";
+import { summarizeGta6HomepageOffers, type HomepageGameQuote } from "./homepage-game-savings";
 
 type Result = { stamp: Date; fx_date: Date | null; kind: string | null; offer: GameOffer | null };
 
-export async function hasFreshGta6HongKongOffers(): Promise<boolean> {
+// Cross rates share a provider and effective date. Missing legs stay unavailable.
+const gameOffersFx = Prisma.sql`
+  SELECT rate_date, max(rate) FILTER (WHERE quote_currency='HKD') AS hkd,
+         max(rate) FILTER (WHERE quote_currency='CNY') AS cny
+  FROM exchange_rates WHERE base_currency='USD' AND quote_currency IN ('HKD','CNY')
+    AND status='active' AND rate>0 AND rate_date <= (now() AT TIME ZONE 'UTC')::date
+    AND (rate_date::timestamp AT TIME ZONE 'UTC') + interval '7 days' > now()
+  GROUP BY rate_date, source ORDER BY rate_date DESC, count(DISTINCT quote_currency) DESC, source LIMIT 1
+`;
+
+export async function readGta6OfferSummary() {
   try {
     return await prisma.$transaction(async (db) => {
       await db.$executeRaw`SET LOCAL statement_timeout = '350ms'`;
-      const [result] = await db.$queryRaw<{ ready: boolean }[]>`
-        SELECT count(DISTINCT offer.platform) = 2 AS ready
+      const quotes = await db.$queryRaw<(HomepageGameQuote & { hkd_per_usd: string | null })[]>`
+        WITH fx AS (${gameOffersFx})
+        SELECT offer.platform, offer.edition, offer.market, offer.price->>'public_price' AS price,
+               fx.hkd::text AS hkd_per_usd
         FROM products p
         JOIN game_offer_public_state offer ON offer.product_id = p.id
+        LEFT JOIN fx ON true
         WHERE p.slug = 'gta-6' AND p.category = 'game' AND p.status = 'published'
-          AND offer.platform IN ('ps5', 'xbox') AND offer.market = 'HK'
-          AND offer.edition = 'standard' AND offer.offer_type = 'full_game'
-          AND offer.currency = 'HKD' AND offer.status = 'fresh'
+          AND offer.platform IN ('ps5', 'xbox')
+          AND offer.edition IN ('standard', 'ultimate') AND offer.offer_type = 'full_game'
+          AND (offer.market, offer.currency) IN (('HK', 'HKD'), ('US', 'USD'))
+          AND offer.status = 'fresh'
           AND (offer.price->>'public_price')::numeric > 0
       `;
-      return result.ready;
+      return summarizeGta6HomepageOffers(quotes, Number(quotes[0]?.hkd_per_usd));
     }, { maxWait: 300, timeout: 500 });
   } catch {
-    // The optional entry can be hidden while the price view is unavailable.
-    return false;
+    // The optional prices can be hidden while the price view is unavailable.
+    return summarizeGta6HomepageOffers([], 0);
   }
 }
 
@@ -31,16 +47,8 @@ export async function readGameOffers(
   currency: Currency,
 ): Promise<GameResponse | null> {
   if (slug !== "gta-6") return null;
-  // Cross rates use a single provider and effective date. Keep the native price if one leg is missing.
   const rows = await prisma.$queryRaw<Result[]>`
-    WITH fx AS (
-      SELECT rate_date, source, max(rate) FILTER (WHERE quote_currency='HKD') AS hkd,
-             max(rate) FILTER (WHERE quote_currency='CNY') AS cny
-      FROM exchange_rates WHERE base_currency='USD' AND quote_currency IN ('HKD','CNY')
-        AND status='active' AND rate>0 AND rate_date <= (now() AT TIME ZONE 'UTC')::date
-        AND (rate_date::timestamp AT TIME ZONE 'UTC') + interval '7 days' > now()
-      GROUP BY rate_date, source ORDER BY rate_date DESC, count(DISTINCT quote_currency) DESC, source LIMIT 1
-    )
+    WITH fx AS (${gameOffersFx})
     SELECT now() AS stamp, fx.rate_date AS fx_date, s.offer_type AS kind,
       CASE WHEN s.id IS NOT NULL THEN jsonb_build_object(
         'market',s.market,'edition',s.edition,'store_product_id',s.store_product_id,'store_url',s.store_url,

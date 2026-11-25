@@ -2,17 +2,17 @@ import { filterPublicNavigation } from "../lib/public-navigation-filter";
 import Header from "./Header";
 import {
   getSiteNavigationByLocale,
+  isGta6NavigationPublished,
   type SiteNavigationByLocale,
 } from "../lib/site-navigation";
 
 export default async function HeaderShell() {
-  let navItemsByLocale: SiteNavigationByLocale = {};
+  const [navItemsByLocale, showGameNavigation] = await Promise.all([
+    getSiteNavigationByLocale("HEADER")
+      .then(filterPublicNavigation)
+      .catch((): SiteNavigationByLocale => ({})),
+    isGta6NavigationPublished().catch(() => false),
+  ]);
 
-  try {
-    navItemsByLocale = filterPublicNavigation(await getSiteNavigationByLocale("HEADER"));
-  } catch {
-    navItemsByLocale = {};
-  }
-
-  return <Header initialNavItemsByLocale={navItemsByLocale} />;
+  return <Header initialNavItemsByLocale={navItemsByLocale} showGameNavigation={showGameNavigation} />;
 }
