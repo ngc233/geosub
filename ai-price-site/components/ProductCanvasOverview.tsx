@@ -20,7 +20,9 @@ export default function ProductCanvasOverview({ product, title, description, bas
   schema: ReactNode; eligibility: ReactNode; officialLabel: string; navigation: ReactNode; children: ReactNode;
 }) {
   const model = productCanvasModel(product), date = formatPublicDate(product.updatedAt);
-  return <div className="gs-public-unified gs-product-scope"><main className="gs-product-page" {...contentAttributes}>
+  return <div className="gs-public-unified gs-product-scope"><div className="gs-product-page gs-pricing-layout" {...contentAttributes}>
+    <div className="gs-pricing-navigation" role="region" aria-label="产品导航">{navigation}</div>
+    <div className="gs-product-content">
     <link rel="preload" href={new URL("../assets/fonts/web/geosub-price-numerals-700.woff2", import.meta.url).href} as="font" type="font/woff2" crossOrigin="anonymous"/>
     {schema}
     <nav className="gs-product-breadcrumb" aria-label="面包屑"><Link href={basePath}>{backLabel}</Link><span aria-hidden="true">/</span><span>{product.name}</span></nav>
@@ -31,6 +33,6 @@ export default function ProductCanvasOverview({ product, title, description, bas
         placement="product_overview_hero" target="_blank" rel="noreferrer" data-gs-ui="button">{officialLabel}<PublicIcon name="ExternalLink" size={16}/></TrackedLink>}
     </div>}/>
     <div className="gs-product-related">{children}</div>
-    <details className="gs-product-navigation"><summary>浏览其他产品</summary>{navigation}</details>
-  </main></div>;
+    </div>
+  </div></div>;
 }

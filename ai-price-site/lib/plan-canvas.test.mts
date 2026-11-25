@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { usesPlanCanvas, planDistribution, planSaving, filterPlanRegions, planWorkHours, planIncomeSources } from "./plan-canvas.ts";
+import { usesPlanCanvas, planDistribution, groupPlanPricePoints, planSaving, filterPlanRegions, planWorkHours, planIncomeSources } from "./plan-canvas.ts";
 import type { ProductPlan } from "./public-pricing-model.ts";
 import type { PlanAffordabilityRow } from "./affordability.ts";
 // Synthetic unit-test prices/incomes, never production or canvas sample data.
@@ -21,6 +21,15 @@ test("missing US never uses the minimum; fewer than five countries hides distrib
   assert.equal(planSaving(2), null);assert.deepEqual(filterPlanRegions(d.rows, "low", ""), []);
   assert.equal(planDistribution(plan([1, 2, 3, 4, 5], ["AA", "AA", "AA", "BB", "CC"])).visible, false);
   assert.equal(planDistribution(plan([])).median, null);
+});
+test("distribution hit areas group near and equal prices without dropping a region", () => {
+  const { rows } = planDistribution(plan([1, 1, 2, 5, 5, 10]));
+  const compact = groupPlanPricePoints(rows, 10, 5);
+  assert.deepEqual([...compact].map(([slot, prices]) => [slot, prices.map(row => row.code)]),
+    [[0, ["AA", "BB"]], [1, ["CC"]], [2, ["DD", "US"]], [4, ["FF"]]]);
+  const narrow = groupPlanPricePoints(rows, 10, 1);
+  assert.deepEqual(narrow.get(0), rows);
+  assert.deepEqual([...compact.values()].flat(), rows);
 });
 test("D7 excludes PPP and unknown sources, uses current table USD and hides sparse/yearly data", () => {
   const p = plan([10, 20, 30, 40, 50]);

@@ -7,6 +7,9 @@
 .gs-public-unified [data-gs-motion-card]:active { scale:var(--gs-motion-press); }
 .gs-public-unified .gs-disclosure-chevron { transition:rotate var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified [data-gs-disclosure][data-open="true"] > .gs-disclosure-header .gs-disclosure-chevron { rotate:180deg; }
+.gs-public-unified .gs-expand-more-chevron { transition:rotate var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified .gs-expand-more[data-expanded="true"] .gs-expand-more-chevron,
+.gs-public-unified .gs-plan-more[open] > summary svg { rotate:180deg; }
 .gs-public-unified .gs-disclosure-grid { transition:grid-template-rows var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified [data-gs-motion="switch"] { transition:transform var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified [data-gs-initial] { transition:none; }

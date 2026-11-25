@@ -9,7 +9,7 @@ import { getCoreGuideDefinition } from "../lib/core-guide-content";
 import { publicBillingLabel } from "../lib/public-price-format";
 import { getPricingChannelLabel } from "../lib/pricing-page-facts";
 import { getChinesePlanDisplayName, getPlanTabLabel } from "../lib/pricing-labels";
-import { getPricingPlanPath } from "../lib/pricing-routes";
+import { getPricingDetailPath, getPricingPlanPath } from "../lib/pricing-routes";
 import { formatPublicDate } from "../lib/public-date";
 import PublicIcon from "./PublicIcon";
 import PlanCanvasPricing, { PlanWorkRows } from "./PlanCanvasPricing";
@@ -33,10 +33,12 @@ export default function PlanCanvasPage({ product, plan, title, description, rate
         data-track-event="select_plan" data-track-name="Select subscription plan" data-track-button={`${product.slug}:${option.slug}`} data-track-placement="plan_tabs" data-track-source="segmented_control">{label}</Link>
         : <span key={option.slug} data-gs-ui="button" aria-disabled="true">{label} {option.priceStatus === "pending" ? "待审" : "暂无"}</span>;
     };
-  return <div className="gs-public-unified gs-plan-scope"><main className="gs-plan-page">
+  return <div className="gs-public-unified gs-plan-scope"><div className="gs-plan-page gs-pricing-layout">
+    <div className="gs-pricing-navigation" role="region" aria-label="产品导航">{navigation}</div>
+    <div className="gs-plan-content">
     <link rel="preload" href={new URL("../assets/fonts/web/geosub-price-numerals-700.woff2", import.meta.url).href} as="font" type="font/woff2" crossOrigin="anonymous"/>
     {schema}
-    <nav className="gs-plan-breadcrumb" aria-label="面包屑"><Link href={basePath}>{backLabel}</Link><span aria-hidden="true">/</span><span>{product.name}</span><span aria-hidden="true">/</span><span>{name}</span></nav>
+    <nav className="gs-plan-breadcrumb" aria-label="面包屑"><Link href={basePath}>{backLabel}</Link><span aria-hidden="true">/</span><Link href={getPricingDetailPath("zh", basePath.includes("streaming-pricing") ? "streaming" : "ai", product.slug)}>{product.name}</Link><span aria-hidden="true">/</span><span>{name}</span></nav>
     <header className="gs-plan-intro"><h1>{title}</h1><p>{getPricingChannelLabel(plan)} · 每{publicBillingLabel(plan.billing)} · {plan.regions.length} 个地区{updated && <> · <time dateTime={updated.dateTime}>{updated.text}</time>采集</>}</p><p className="gs-plan-description">{description}</p></header>
     <PlanCanvasPricing plan={plan} product={{ name: product.name, slug: product.slug, brand: product.brand, updatedAt: product.updatedAt }} rates={homepageDisplayRates(rates)} rateDates={Object.fromEntries(Object.entries(rates).map(([code, rate]) => [code, rate.rateDate]))} tutorial={{ href: guides[0].href, title: guides[0].title, summary: guides[0].description }}/>
     <div className="gs-plan-guidance" data-has-notes={Boolean(eligibility)}>
@@ -53,6 +55,7 @@ export default function PlanCanvasPage({ product, plan, title, description, rate
       <PlanWorkRows rows={work.rows} rates={homepageDisplayRates(rates)} usPrice={us?.priceUsd} lowestCode={lowest?.code}/><div className="gs-plan-work-sources">{sources.map(group => <small key={group.source}>来源：{group.source}{sources.length > 1 && <>（{group.countries.join("、")}）</>}</small>)}</div>
     </section>}
     <div className="gs-plan-panel gs-plan-faq">{faq}</div>
-    <details className="gs-plan-more"><summary>更多价格说明与产品入口</summary>{navigation}{legacy}</details>
-  </main></div>;
+    <details className="gs-plan-more"><summary>更多价格说明与产品入口<PublicIcon name="ChevronDown" size={16}/></summary>{legacy}</details>
+    </div>
+  </div></div>;
 }

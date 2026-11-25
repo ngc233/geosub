@@ -172,11 +172,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  if (query.length < 2) {
+  const chrome = (locale === "zh" || locale === "en") && request.nextUrl.searchParams.get("view") === "chrome";
+  const minQueryLength = chrome ? 1 : 2;
+
+  if (query.length < minQueryLength) {
     return json({ query, results: [] });
   }
 
-  const chrome = (locale === "zh" || locale === "en") && request.nextUrl.searchParams.get("view") === "chrome";
   const articleLocale = chrome ? null : getArticleLocale(locale);
 
   try {
@@ -212,7 +214,7 @@ export async function GET(request: NextRequest) {
         product.description,
         ...getProductSearchAliases(product.slug),
         ...(productAliasesById.get(product.id) || []),
-      ]);
+      ], minQueryLength);
 
       if (productScore > 0) {
         results.push({
@@ -240,7 +242,7 @@ export async function GET(request: NextRequest) {
           `${product.name} ${plan.name}`,
           `${product.slug}-${plan.slug}`,
           ...(planAliasesById.get(plan.id) || []),
-        ]);
+        ], minQueryLength);
 
         if (planScore <= 0) continue;
 
@@ -303,13 +305,13 @@ export async function GET(request: NextRequest) {
         const plan = result.kind === "plan" ? products.find(p=>p.id===result.productId)?.plans.find(p=>p.id===result.planId)?.slug : undefined;
         const minimum = product && minimumSearchPrice(product,plan,normalizedLocale);
         return minimum ? [{id:result.id,kind:result.kind as "product"|"plan",title:result.kind === "plan" ? planLabel(product!.name,minimum.plan) : result.title,href:result.href,
-          subtitle:`${planLabel(product!.name,minimum.plan)} · ${locale === "zh" ? "最低" : "Lowest"} · ${minimum.country}`,minimumUsd:minimum.usd,cycle:minimum.cycle}] : [];
+          subtitle:`${planLabel(product!.name,minimum.plan)} · ${locale === "zh" ? "最低" : "Lowest"} · ${minimum.country}`,minimumUsd:minimum.usd,cycle:minimum.cycle,logoSlug:result.logoSlug}] : [];
       });
-      const countries = priorityCountries.filter(country=>scoreSearchText(query,[country.zh,country.en,country.code,country.slug])>0).slice(0,3);
+      const countries = priorityCountries.filter(country=>scoreSearchText(query,[country.zh,country.en,country.code,country.slug],minQueryLength)>0).slice(0,3);
       for (const country of countries) {
         const minimum = minimumCountrySearchPrice(await loadCountryHub(country.code));
         if (minimum) priced.push({id:`country:${country.code}`,kind:"country",title:locale === "zh" ? country.zh : country.en,href:`/${locale}/countries/${country.slug}`,
-          subtitle:locale === "zh" ? `${planLabel(minimum.productName,minimum.planName)} 起` : `From ${minimum.productName} ${minimum.planName}`,minimumUsd:minimum.usd!,cycle:"monthly"});
+          subtitle:locale === "zh" ? `${planLabel(minimum.productName,minimum.planName)} 起` : `From ${minimum.productName} ${minimum.planName}`,minimumUsd:minimum.usd!,cycle:"monthly",countryCode:country.code});
       }
       return json({query,results:priced});
     }

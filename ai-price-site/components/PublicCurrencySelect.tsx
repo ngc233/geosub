@@ -3,6 +3,15 @@ import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { supportedDisplayCurrencies, getDisplayCurrencySymbol, isSupportedDisplayCurrency, type DisplayCurrency } from "../lib/display-currency";
 import { PublicDialog } from "./PublicControls";
 import PublicIcon from "./PublicIcon";
+import HomepageCountryFlag from "./HomepageCountryFlag";
+
+const currencyFlags: Partial<Record<DisplayCurrency, string>> = {
+  USD: "US", CNY: "CN", TWD: "TW", HKD: "HK", SGD: "SG",
+  JPY: "JP", KRW: "KR", AUD: "AU", CAD: "CA", MYR: "MY",
+  IDR: "ID", THB: "TH", PHP: "PH", VND: "VN", TRY: "TR",
+  SAR: "SA", GBP: "GB", CHF: "CH", INR: "IN", BRL: "BR",
+  MXN: "MX", AED: "AE", NZD: "NZ", ZAR: "ZA",
+};
 const key="geosub-public-display-currency";
 const eventName="geosub-public-currency-change";
 let memory:DisplayCurrency|undefined;
@@ -38,8 +47,8 @@ export default function PublicCurrencySelect({ onChange, displayCurrency, locale
         else return;
         event.preventDefault();setActive(next);
         list.current?.querySelectorAll<HTMLButtonElement>('[role="option"]')[next]?.focus();
-      }}>{options.map((code,index)=><button type="button" key={code} id={`${id}-${code}`} role="option" aria-label={`${code} · ${names.of(code)}`} aria-selected={selected===code} data-active={index===active} data-gs-initial-focus={selected===code || undefined} tabIndex={index===active?0:-1} onFocus={()=>setActive(index)} onClick={()=>choose(code)}>
-        <span className="gs-currency-symbol" aria-hidden="true">{getDisplayCurrencySymbol(code)}</span><span className="gs-currency-label"><strong>{code}</strong><small>{names.of(code)}</small></span>{selected===code&&<PublicIcon name="Check" size={16}/>}</button>)}</div>
+      }}>{options.map((code,index)=>{const flag=currencyFlags[code];return <button type="button" key={code} id={`${id}-${code}`} role="option" aria-label={`${code} · ${names.of(code)}`} aria-selected={selected===code} data-active={index===active} data-gs-initial-focus={selected===code || undefined} tabIndex={index===active?0:-1} onFocus={()=>setActive(index)} onClick={()=>choose(code)}>
+        <span className="gs-currency-symbol" aria-hidden="true">{getDisplayCurrencySymbol(code)}</span><span className="gs-currency-label"><strong>{flag&&<HomepageCountryFlag code={flag} defer/>}{code}</strong><small>{names.of(code)}</small></span>{selected===code&&<PublicIcon name="Check" size={16}/>}</button>;})}</div>
     </PublicDialog>}</>;
 
 }

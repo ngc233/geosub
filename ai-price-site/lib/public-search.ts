@@ -191,9 +191,9 @@ function fuzzySearchScore(query: string, candidate: string) {
   return distance === 1 ? 68 : 60;
 }
 
-export function scoreSearchText(query: string, values: Array<string | null | undefined>) {
+export function scoreSearchText(query: string, values: Array<string | null | undefined>, minLength = 2) {
   const normalizedQuery = normalizeSearchText(query);
-  if (normalizedQuery.length < 2) return 0;
+  if (normalizedQuery.length < minLength) return 0;
 
   let best = 0;
   for (const value of values) {
@@ -203,7 +203,7 @@ export function scoreSearchText(query: string, values: Array<string | null | und
     else if (normalizedValue.startsWith(normalizedQuery)) best = Math.max(best, 95);
     else if (normalizedValue.includes(normalizedQuery)) best = Math.max(best, 75);
     else if (normalizedQuery.includes(normalizedValue)) best = Math.max(best, 55);
-    else best = Math.max(
+    else if (normalizedQuery.length >= 2) best = Math.max(
       best,
       fuzzySearchScore(normalizedQuery, normalizedValue)
     );
