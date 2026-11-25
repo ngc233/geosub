@@ -55,11 +55,12 @@ test("fictional fixture cannot activate in production or with a remote DB",()=>{
   } finally {for(const key of ["NODE_ENV","DATABASE_URL","GEOSUB_V3_FIXTURE"]) {if(saved[key]===undefined)delete process.env[key];else process.env[key]=saved[key];}}
 });
 
-test("public price symbols are shared, spaced and deterministic; other currencies keep ISO codes",()=>{
+test("public price symbols are shared, tight for symbol currencies and spaced for ISO codes",()=>{
   for(const [currency,symbol] of Object.entries({CNY:"¥",USD:"$",JPY:"JP¥",HKD:"HK$",TWD:"NT$",EUR:"€",GBP:"£",SGD:"SGD",TRY:"TRY"})) {
-    assert.equal(formatPublicPrice(119,currency),`${symbol} 119.00`);
+    const sep = currency === symbol ? " " : "";
+    assert.equal(formatPublicPrice(119,currency),`${symbol}${sep}119.00`);
   }
-  assert.equal(formatPublicPrice(1234.5,"cny"),"¥ 1,234.50");
+  assert.equal(formatPublicPrice(1234.5,"cny"),"¥1,234.50");
   assert.equal(formatPublicPrice(NaN,"CNY"),"");
 });
 test("homepage preserves existing Chinese names without inventing translations or duplicating product names",()=>{

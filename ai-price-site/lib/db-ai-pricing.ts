@@ -628,6 +628,10 @@ export async function getDbAiPricingProducts({
           .filter(isDate)
           .sort((a, b) => b.getTime() - a.getTime())[0] || product.updatedAt;
 
+      const totalPlans = product.plans.filter(
+        (plan) => plan.regionPrices.length > 0,
+      ).length;
+
       return {
         slug: product.slug,
         name: displayName,
@@ -639,6 +643,7 @@ export async function getDbAiPricingProducts({
         }),
         logoUrl: product.logoUrl || undefined,
         updatedAt: formatDate(latestDate),
+        totalPlans,
         plans,
       };
     })

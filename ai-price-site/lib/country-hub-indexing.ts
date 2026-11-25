@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getPriorityCountry, priorityCountries, type HubLocale } from "./country-hubs.ts";
+import { resolvePublicCountryBySlug } from "./country-route-catalog.ts";
 import { isSeoIndexableLocale } from "./seo-indexing-policy.ts";
 
 const approvedSlugs: ReadonlySet<string> = new Set(["turkey", "india", "philippines", "japan"]);
@@ -43,13 +44,14 @@ export async function getCountryHubMetadata(
   readRows: ReadRows,
   preview = isCountryHubIndexPreview(),
 ): Promise<Metadata> {
-  const country = slug === null ? undefined : getPriorityCountry(slug);
+  const priorityCountry = slug === null ? undefined : getPriorityCountry(slug);
+  const country = slug === null ? undefined : (priorityCountry ?? resolvePublicCountryBySlug(slug));
   const path = slug === null ? "/countries" : `/countries/${slug}`;
   const canonical = `/${locale}${path}`;
   let index = false;
   if (!preview && hubLocales.includes(locale)) {
     try {
-      if (country) index = countryHubIsIndexable(country.slug, await readRows(country.code));
+      if (priorityCountry) index = countryHubIsIndexable(priorityCountry.slug, await readRows(priorityCountry.code));
       else if (slug === null) index = (await getIndexableCountryHubPaths(readRows, preview)).includes(canonical);
     } catch {
       // The public template renders its unavailable state when the same read fails.

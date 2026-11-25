@@ -18,6 +18,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import BrandIcon from "./BrandIcon";
+import PublicIcon from "./PublicIcon";
+import StaticCountryFlag from "./StaticCountryFlag";
 import TrackedLink from "./analytics/TrackedLink";
 import ProductSidebar from "./ProductSidebar";
 import ProductPlanOverview from "./ProductPlanOverview";
@@ -614,11 +616,46 @@ function FaqSection({
   title,
   faqs,
   managed = false,
+  canvas = false,
+  defaultOpenIndex = 0,
 }: {
   title: string;
   faqs: PricingFaq[];
   managed?: boolean;
+  canvas?: boolean;
+  defaultOpenIndex?: number;
 }) {
+  if (canvas) {
+    return (
+      <section className="gs-canvas-panel gs-canvas-faq" aria-label={title}>
+        <div className="gs-canvas-faq-head">
+          <h2>{title}</h2>
+        </div>
+        <div className="gs-canvas-faq-list">
+          {faqs.map((faq, index) => (
+            <details
+              key={faq.q}
+              className="gs-canvas-faq-item"
+              open={index === defaultOpenIndex}
+            >
+              <summary data-managed-faq-question={managed ? "true" : undefined}>
+                <span>{faq.q}</span>
+                <PublicIcon
+                  name="ChevronDown"
+                  size={16}
+                  className="gs-canvas-faq-chevron"
+                />
+              </summary>
+              <p data-managed-faq-answer={managed ? "true" : undefined}>
+                {faq.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
       <div className="border-b border-zinc-100 px-5 py-4 md:px-6 dark:border-zinc-800">
@@ -632,7 +669,7 @@ function FaqSection({
           <details
             key={faq.q}
             className="group px-5 py-4 md:px-6"
-            open={index === 0}
+            open={index === defaultOpenIndex}
           >
             <summary data-managed-faq-question={managed ? "true" : undefined} className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-zinc-950 dark:text-white">
               {faq.q}
@@ -942,11 +979,13 @@ function CountryAnalysisLinks({
   productSlug,
   category,
   concise = false,
+  canvas = false,
 }: {
   locale: SiteLocale;
   productSlug: string;
   category: "ai" | "streaming";
   concise?: boolean;
+  canvas?: boolean;
 }) {
   if (locale !== "zh" && locale !== "en") return null;
 
@@ -971,6 +1010,48 @@ function CountryAnalysisLinks({
           "Explore reviewed regional pages covering local-price changes, plan structure and conditions to confirm before subscribing.",
         action: "Read the full analysis",
       };
+
+  if (canvas) {
+    return (
+      <section className="gs-canvas-pilots" aria-label={copy.title}>
+        <div className="gs-canvas-section-head">
+          <h2>{copy.title}</h2>
+          <span>重点核验专页 · {pilots.length} 个地区</span>
+        </div>
+        <div
+          className="gs-canvas-pilot-grid"
+          data-single={pilots.length === 1 ? "true" : undefined}
+        >
+          {pilots.map((pilot) => (
+            <TrackedLink
+              key={`${pilot.productSlug}-${pilot.countryCode}`}
+              href={getCountryPagePilotPath(pilot, pilotLocale)}
+              eventKey="click_country"
+              eventName="Open regional price analysis"
+              buttonKey={`${pilot.productSlug}:${pilot.countryCode}`}
+              countryId={pilot.countryCode}
+              placement="product_country_analysis"
+              className="gs-canvas-pilot-card"
+            >
+              <span className="gs-canvas-pilot-main">
+                <StaticCountryFlag code={pilot.countryCode} />
+                <span className="gs-canvas-pilot-copy">
+                  <strong>{pilot.title[pilotLocale]}</strong>
+                  <small>
+                    {pilot.countryName[pilotLocale]} · 本币调价、套餐结构与订阅条件复核
+                  </small>
+                </span>
+              </span>
+              <span className="gs-canvas-pilot-action">
+                {copy.action}
+                <PublicIcon name="ArrowRight" size={16} />
+              </span>
+            </TrackedLink>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="border-y border-zinc-200 py-6 dark:border-zinc-800">
@@ -1134,9 +1215,8 @@ export default async function PricingDetailPage({
         navigation={<><ProductSidebar products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/>
           <MobileProductSwitcher products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/></>}>
         {managed ? <OverviewEditorialSections content={managed} locale={locale}/> : null}
-        <CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category}/>
-        <RelatedPricingProducts locale={locale} category={product.category} products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath}/>
-        {overviewFaqs.length > 0 ? <FaqSection title={pageCopy.faqTitle} faqs={overviewFaqs} managed={Boolean(managed)}/> : null}
+        <CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category} canvas/>
+        {overviewFaqs.length > 0 ? <FaqSection title={pageCopy.faqTitle} faqs={overviewFaqs} managed={Boolean(managed)} canvas/> : null}
       </ProductCanvasOverview>;
     }
 
@@ -1382,17 +1462,10 @@ export default async function PricingDetailPage({
       eligibility={eligibility ? <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={[contentPlan]}/> : null}
       reference={<>{product.officialUrl && <TrackedLink href={product.officialUrl} eventKey="click_official" eventName="Open official website" buttonKey={product.slug} placement="product_hero" target="_blank" rel="noreferrer">{pageCopy.visitOfficial}</TrackedLink>}
         <TrackedLink href={`/reports/${locale}/${product.slug}-global-pricing.pdf`} eventKey="download_price_report" eventName="Download global pricing report" buttonKey={product.slug} placement="product_hero" download={`${product.slug}-${locale}-global-pricing.pdf`}>{reportDownloadLabel[locale]}</TrackedLink></>}
-      fit={editorialContent ? <ProductEditorialSection productSlug={product.slug} planName={activePlan.name} locale={locale} content={editorialContent} billingContent={billingContent}/> : null}
-      fitSummary={editorialContent ? { title: `${activePlan.name} 适合谁`, body: editorialContent.plan.bestFor } : null}
-      overview={<ProductOverviewLink locale={locale} productName={product.name} href={productCanonicalPath}/>}
-      related={<RelatedPlanChoices locale={locale} product={product} currentPlanSlug={activePlan.slug}/>}
-      faq={<FaqSection title={pageCopy.faqTitle} faqs={effectiveFaqs}/>}
+      editorial={editorialContent ? { content: editorialContent, billing: billingContent } : null}
+      pilots={<CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category} canvas/>}
+      faq={effectiveFaqs.length > 0 ? <FaqSection title={pageCopy.faqTitle} faqs={effectiveFaqs} canvas defaultOpenIndex={editorialContent ? (searchIntentCopy?.faqs.length ?? 0) : 0}/> : null}
       navigation={<><ProductSidebar products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/><MobileProductSwitcher products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/></>}
-      legacy={<><CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category}/><PlanDecisionGuidance product={product} locale={locale} planSlug={activePlan.slug}/>{stats && <PricingPressureSwitcher locale={locale} productName={product.name}
-        priceView={<PricePositionSection plan={getPricePositionPlan(contentPlan)} bigMacBenchmarks={affordability.bigMacBenchmarks} locale={locale}/>}
-        burdenView={affordability.rows.length > 0 ? <AffordabilityComparison productName={product.name} planName={activePlan.name} summary={affordability.summary} rows={affordability.rows} locale={locale} embedded/> : undefined}
-        matrixView={affordability.rows.length > 0 ? <PriceBurdenMatrix rows={affordability.rows} locale={locale}/> : undefined}
-        unavailableReason={getAffordabilityUnavailableReason(affordability.quality, locale, getPricingChannelLabel(contentPlan))}/>}</>}
     />;
   }
 

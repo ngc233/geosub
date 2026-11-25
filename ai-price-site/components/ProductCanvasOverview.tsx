@@ -20,6 +20,9 @@ export default function ProductCanvasOverview({ product, title, description, bas
   schema: ReactNode; eligibility: ReactNode; officialLabel: string; navigation: ReactNode; children: ReactNode;
 }) {
   const model = productCanvasModel(product), date = formatPublicDate(product.updatedAt);
+  const conciseDescription = model.plans.length > 0
+    ? `覆盖 ${model.plans.length} 个在售订阅套餐与最多 ${model.rows.length} 个国家/地区的核验价格，支持按目标币种横向对比套餐月费与地区价差。`
+    : description;
   return <div className="gs-public-unified gs-product-scope"><div className="gs-product-page gs-pricing-layout" {...contentAttributes}>
     <div className="gs-pricing-navigation" role="region" aria-label="产品导航">{navigation}</div>
     <div className="gs-product-content">
@@ -28,7 +31,7 @@ export default function ProductCanvasOverview({ product, title, description, bas
     <nav className="gs-product-breadcrumb" aria-label="面包屑"><Link href={basePath}>{backLabel}</Link><span aria-hidden="true">/</span><span>{product.name}</span></nav>
     <ProductCanvasPricing model={model} rates={homepageDisplayRates(rates)} hero={<div className="gs-product-intro">
       <div className="gs-product-identity"><BrandIcon product={{slug:product.slug,name:product.name,logoUrl:product.logoUrl,officialUrl:product.officialUrl}} size="xl" priority decorative/><div><h1>{title}</h1><p>{product.brand}{model.plans.length > 0 && <> · {model.plans.length} 个套餐 · {model.rows.length} 个地区{date && <> · <time dateTime={date.dateTime}>{date.text}</time>更新</>}</>}</p></div></div>
-      <p className="gs-product-description">{description}</p>{eligibility}
+      <p className="gs-product-description">{conciseDescription}</p>{eligibility}
       {product.officialUrl && <TrackedLink href={product.officialUrl} eventKey="click_official" eventName="Open official website" buttonKey={product.slug}
         placement="product_overview_hero" target="_blank" rel="noreferrer" data-gs-ui="button">{officialLabel}<PublicIcon name="ExternalLink" size={16}/></TrackedLink>}
     </div>}/>

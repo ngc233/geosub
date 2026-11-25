@@ -1,15 +1,15 @@
 /* All motion lives here. Numeric interpolation reads the same duration/easing tokens.
  * Entrance moves position only; prices are visible in the first server-rendered frame. */
 .gs-public-unified :is(a,button,input,select,textarea,summary,[role="option"]) { transition:color var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease); }
-.gs-public-unified [data-gs-motion-card] { transition:transform var(--gs-motion-fast) var(--gs-motion-ease),box-shadow var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified :is([data-gs-motion-card],.gs-country-index-card) { transition:transform var(--gs-motion-fast) var(--gs-motion-ease),box-shadow var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease); }
 .gs-public-unified :is([data-gs-ui="button"],[data-gs-ui="icon-button"]) { transition:scale var(--gs-motion-fast) var(--gs-motion-ease),transform var(--gs-motion-fast) var(--gs-motion-ease),box-shadow var(--gs-motion-fast) var(--gs-motion-ease),color var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease); }
 .gs-public-unified :is([data-gs-ui="button"],[data-gs-ui="icon-button"]):enabled:active,
-.gs-public-unified [data-gs-motion-card]:active { scale:var(--gs-motion-press); }
+.gs-public-unified :is([data-gs-motion-card],.gs-country-index-card):active { scale:var(--gs-motion-press); }
 .gs-public-unified .gs-disclosure-chevron { transition:rotate var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified [data-gs-disclosure][data-open="true"] > .gs-disclosure-header .gs-disclosure-chevron { rotate:180deg; }
-.gs-public-unified .gs-expand-more-chevron { transition:rotate var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified :is(.gs-expand-more-chevron,.gs-canvas-faq-chevron) { transition:rotate var(--gs-motion-fast) var(--gs-motion-ease); }
 .gs-public-unified .gs-expand-more[data-expanded="true"] .gs-expand-more-chevron,
-.gs-public-unified .gs-plan-more[open] > summary svg { rotate:180deg; }
+.gs-public-unified .gs-canvas-faq-item[open] > summary .gs-canvas-faq-chevron { rotate:180deg; }
 .gs-public-unified .gs-disclosure-grid { transition:grid-template-rows var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified [data-gs-motion="switch"] { transition:transform var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified [data-gs-initial] { transition:none; }
@@ -25,7 +25,7 @@
 @keyframes gs-pulse-a { from { transform:scale(1); opacity:var(--gs-pulse-opacity); } to { transform:scale(var(--gs-motion-pulse-scale)); opacity:0; } }
 @keyframes gs-pulse-b { from { transform:scale(1); opacity:var(--gs-pulse-opacity); } to { transform:scale(var(--gs-motion-pulse-scale)); opacity:0; } }
 @media (hover:hover) and (pointer:fine) {
-  .gs-public-unified [data-gs-motion-card]:hover { transform:translateY(var(--gs-motion-lift)); box-shadow:var(--gs-shadow-card-hover); border-color:var(--gs-border-strong); }
+  .gs-public-unified :is([data-gs-motion-card],.gs-country-index-card):hover { transform:translateY(var(--gs-motion-lift)); box-shadow:var(--gs-shadow-card-hover); border-color:var(--gs-border-strong); }
 }
 @media (prefers-reduced-motion:reduce) {
   .gs-public-unified, .gs-public-unified *, .gs-public-unified *::before, .gs-public-unified *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
@@ -56,7 +56,7 @@
 @keyframes gs-carousel-b { from { width:0; } to { width:100%; } }
 @media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-home-carousel-progress { animation:none !important; } }
 
-.gs-public-unified [data-gs-motion-row] { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified :is([data-gs-motion-row],tbody tr > :is(td,th)) { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
 .gs-public-unified .gs-home-ranking-viewport { transition:height var(--gs-motion-base) var(--gs-motion-ease); }
 @media (prefers-reduced-motion:reduce) {
   /* Unlike a minified identity matrix, a cascade reset creates no containing
@@ -70,6 +70,7 @@
 /* 2026-11-06 explicit canvas correction: only the timed carousel uses linear. */
 .gs-public-unified .gs-home-low-marker { transition:left var(--gs-motion-slow) var(--gs-motion-ease),top var(--gs-motion-slow) var(--gs-motion-ease); }
 .gs-public-unified .gs-home-low-ring[data-gs-pulse]::after { border:0; background:var(--gs-graphic); }
+.gs-public-unified .gs-home-low-marker[data-radar-tone="high"] .gs-home-low-ring[data-gs-pulse]::after { background:var(--gs-bar-high); }
 .gs-public-unified .gs-home-arc { stroke-dasharray:600; animation:gs-home-draw var(--gs-motion-arc) var(--gs-motion-ease) both; }
 @keyframes gs-home-draw { from { stroke-dashoffset:600; } to { stroke-dashoffset:0; } }
 @media (prefers-reduced-motion:reduce) {
@@ -90,18 +91,18 @@
  .gs-public-unified .gs-nav-chevron { translate:none !important; }
 }
 
-/* Round 6: shared segments retain the approved spring; map pills use the later restrained adhesion treatment. */
-.gs-public-unified { --gs-motion-jelly:400ms; --gs-motion-jelly-ease:cubic-bezier(0.34,1.56,0.64,1); }
+/* Round 6+: restrained 240ms ease-out slider without overshoot; subtle tactile settle only. */
+.gs-public-unified { --gs-motion-jelly:240ms; --gs-motion-jelly-ease:cubic-bezier(0.22,1,0.36,1); }
 .gs-public-unified .gs-home-product-jelly { translate:var(--gs-jelly-x) var(--gs-jelly-y); transform-origin:var(--gs-jelly-origin,50%) center; transition:translate var(--gs-motion-jelly) var(--gs-motion-ease),width var(--gs-motion-jelly) var(--gs-motion-ease),height var(--gs-motion-jelly) var(--gs-motion-ease); }
 .gs-public-unified [data-jelly-cycle="0"] > .gs-segment-slider { animation:gs-jelly-morph-a var(--gs-motion-jelly) var(--gs-motion-jelly-ease); }
 .gs-public-unified [data-jelly-cycle="1"] > .gs-segment-slider { animation:gs-jelly-morph-b var(--gs-motion-jelly) var(--gs-motion-jelly-ease); }
-@keyframes gs-jelly-morph-a { 0% { scale:0.94 1.04; } 45% { scale:1.07 0.92; } 75% { scale:0.98 1.02; } 100% { scale:1 1; } }
-@keyframes gs-jelly-morph-b { 0% { scale:0.94 1.04; } 45% { scale:1.07 0.92; } 75% { scale:0.98 1.02; } 100% { scale:1 1; } }
-/* The leading edge stays anchored while the trailing side stretches once, then releases. No translation overshoot or logo recoil. */
+@keyframes gs-jelly-morph-a { 0% { scale:0.99 1; } 45% { scale:1.015 0.99; } 100% { scale:1 1; } }
+@keyframes gs-jelly-morph-b { 0% { scale:0.99 1; } 45% { scale:1.015 0.99; } 100% { scale:1 1; } }
+/* Subtle micro-stretch on map pills without rubbery distortion or logo recoil. */
 .gs-public-unified .gs-home-products[data-jelly-cycle="0"] > .gs-home-product-jelly { animation:gs-pill-adhere-a var(--gs-motion-jelly) var(--gs-motion-ease); }
 .gs-public-unified .gs-home-products[data-jelly-cycle="1"] > .gs-home-product-jelly { animation:gs-pill-adhere-b var(--gs-motion-jelly) var(--gs-motion-ease); }
-@keyframes gs-pill-adhere-a { 0% { scale:1 1; } 30%, 55% { scale:1.18 0.94; } 100% { scale:1 1; } }
-@keyframes gs-pill-adhere-b { 0% { scale:1 1; } 30%, 55% { scale:1.18 0.94; } 100% { scale:1 1; } }
+@keyframes gs-pill-adhere-a { 0% { scale:1 1; } 40% { scale:1.03 0.99; } 100% { scale:1 1; } }
+@keyframes gs-pill-adhere-b { 0% { scale:1 1; } 40% { scale:1.03 0.99; } 100% { scale:1 1; } }
 @media (prefers-reduced-motion:reduce) {
  .gs-public-unified :is(.gs-home-product-jelly,.gs-segment-slider,.gs-home-product-pill-mark) { animation:none !important; transition:none !important; scale:1 !important; }
 }
@@ -117,8 +118,6 @@
 @media (prefers-reduced-motion: reduce) {
   .gs-public-unified.gs-plan-scope .gs-plan-list-viewport, .gs-public-unified.gs-plan-scope .gs-plan-bar > span { transition: none; }
 }
-
-.gs-public-unified .gs-plan-details[open] > summary > svg { transform: rotate(180deg); }
 
 /* V6: only the country list changes height; rows never lift or fade. */
 .gs-public-unified .gs-country-list-viewport { transition:height var(--gs-motion-base) var(--gs-motion-ease); }
@@ -148,4 +147,24 @@
 .gs-public-unified .gs-country-index-card { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
 @media (prefers-reduced-motion:reduce) {
   .gs-public-unified .gs-country-index-card { transition:none; }
+}
+
+/* Category overview tab switch: initial SSR frame renders with zero delay; user tab switches softly settle header + cards. */
+.gs-public-unified .gs-listing-intro[data-listing-switch="0"] { animation:gs-listing-head-a var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-listing-intro[data-listing-switch="1"] { animation:gs-listing-head-b var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-listing-stage[data-listing-switch="0"] :is(.gs-listing-card-slot,.gs-listing-directory,.gs-listing-empty) { animation:gs-listing-switch-a var(--gs-motion-enter) var(--gs-motion-ease) var(--gs-stagger,0ms) backwards; }
+.gs-public-unified .gs-listing-stage[data-listing-switch="1"] :is(.gs-listing-card-slot,.gs-listing-directory,.gs-listing-empty) { animation:gs-listing-switch-b var(--gs-motion-enter) var(--gs-motion-ease) var(--gs-stagger,0ms) backwards; }
+@keyframes gs-listing-head-a { from { opacity:0.25; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+@keyframes gs-listing-head-b { from { opacity:0.25; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+@keyframes gs-listing-switch-a { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes gs-listing-switch-b { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+/* Subtle inline footer link arrow nudge on overview, country, pilot and product plan cards. */
+.gs-public-unified :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg,.gs-product-table-drilldown svg) { transition:translate var(--gs-motion-fast) var(--gs-motion-ease); }
+@media (hover:hover) and (pointer:fine) {
+  .gs-public-unified :is(.gs-listing-card,.gs-country-index-card,.gs-canvas-pilot-card,.gs-product-plan):hover :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg),
+  .gs-public-unified .gs-product-table-drilldown:hover svg { translate:2px 0; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .gs-public-unified :is(.gs-listing-intro[data-listing-switch],.gs-listing-stage[data-listing-switch] :is(.gs-listing-card-slot,.gs-listing-directory,.gs-listing-empty)) { animation:none !important; transform:none !important; }
+  .gs-public-unified :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg,.gs-product-table-drilldown svg) { translate:none !important; transition:none !important; }
 }

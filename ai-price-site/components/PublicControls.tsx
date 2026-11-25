@@ -11,7 +11,7 @@ export function PublicSegments({ label, options, value, onChange }: {
   // Alternate even for nonadjacent selections; index parity alone misses 0 -> 2.
   if(morph.selected!==selected)setMorph({selected,cycle:1-morph.cycle,changed:true});
   return <div data-jelly-cycle={morph.changed?morph.cycle:undefined} className="gs-segments" role="tablist" aria-label={label} style={{"--gs-count":options.length,"--gs-selected":selected} as CSSProperties}>
-    <span className="gs-segment-slider" aria-hidden="true"/>
+    <span data-gs-ui="tag" className="gs-segment-slider" aria-hidden="true"/>
     {options.map((option,index)=><button key={option.value} data-choice={option.value} type="button" role="tab" aria-selected={option.value===value} tabIndex={option.value===value?0:-1} onClick={()=>onChange(option.value)} onKeyDown={e=>{
       let next=index;if(e.key==="ArrowRight")next=(index+1)%options.length;else if(e.key==="ArrowLeft")next=(index-1+options.length)%options.length;else if(e.key==="Home")next=0;else if(e.key==="End")next=options.length-1;else return;
       e.preventDefault();onChange(options[next].value);(e.currentTarget.parentElement?.querySelectorAll("button")[next] as HTMLButtonElement)?.focus();

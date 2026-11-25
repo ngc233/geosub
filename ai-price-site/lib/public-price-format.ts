@@ -19,7 +19,7 @@ export function formatPublicPrice(value: number, currency: string, locale = "zh-
     numberFormats.set(key, number);
   }
   const amount = number.format(value);
-  return `${symbols[code] ?? code} ${amount}`;
+  return code in symbols ? `${symbols[code]}${amount}` : `${code} ${amount}`;
 }
 export function publicBillingLabel(cycle: string, locale = "zh-CN") {
   const normalized = cycle.toLowerCase();

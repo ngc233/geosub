@@ -35,6 +35,7 @@ export type DbPricingProduct = {
   description: string;
   logoUrl?: string;
   updatedAt: string;
+  totalPlans?: number;
   plans: DbPricingPlan[];
 };
 

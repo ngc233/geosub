@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.36.0 - 2026-11-26
+
+- Ship the GeoSub "Horizon Glide G" brand identity kit (adaptive light/dark squircle mark, favicons, app icons, manifest, and Open Graph image), balanced four-entry Chinese unified navigation (preserving the GTA 6 game comparison entry when published), instant zero-debounce search recommendations, and restrained 240ms zero-overshoot segmented controls.
+- Establish the three-level forward Chinese subscription funnel: category lists route multi-plan products to the product overview (`代表低价` + plan count) and single-plan products directly to plan details; product overviews pair merged decision cards with a six-row cross-plan region sample and de-stitched analysis/FAQ panels; non-Plus plan pages add an H1-row recessed keycap switcher, compact equal-height summary cards, ranked six-column region tables, and interactive country/history world maps.
+- Preserve all frozen routes (`/zh/ai-pricing/chatgpt/plus`, `/zh/games/gta-6`, and non-rollout English pages), SEO metadata, database inputs (`migration_skipped`), and all 507 historical compatibility registrations, adding 27 exact rollback pairs including live production 2.35.4 (`9ca0666224496a406de9c25655a143aa942c92c1`). See the [release readiness record](docs/release-readiness-2.36.0-2026-11-26.md).
+
 ## 2.35.4 - 2026-11-26
 
 - Add a games category on the Simplified Chinese homepage and a shared navigation entry to the Chinese game pricing overview (#111). The overview links each GTA 6 platform and edition directly to its regional price details.

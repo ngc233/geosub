@@ -32,6 +32,7 @@ async function render(locale: "zh" | "en", unavailable: string[] = [], empty: st
     if (name === "next/link") return tag("a");
     if (name === "next/cache") return { unstable_cache: (f: unknown) => f };
     if (name === "./AuxiliaryStyles") return function StaticStyles({ kind }: { kind: string }) { return createElement("style", { "data-gs-auxiliary": kind }); };
+    if (name === "./BrandIcon") return function StaticBrand({ product }: { product: { slug: string } }) { return createElement("span", { "aria-hidden": true, "data-brand": product.slug }); };
     if (name === "./CountryIdentity") return function StaticIdentity({ code }: { code: string }) { return createElement("span", { "aria-hidden": true, "data-country": code }); };
     if (name === "./ui/PublicPage") return { PublicSection: tag("section"), DataNote: tag("div") };
     if (name === "../lib/country-hubs") return { priorityCountries };
@@ -49,19 +50,18 @@ async function render(locale: "zh" | "en", unavailable: string[] = [], empty: st
   return { html: renderToStaticMarkup(await mod.exports.CountryIndexPage({ locale })), calls };
 }
 const texts = (html: string) => html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, "").replace(/<[^>]*>/g, "");
-test("directory retains all seven original links, order and count semantics", async () => {
+test("directory retains featured country links, order and count semantics without duplicate sub-nav", async () => {
   const { html, calls } = await render("zh");
   assert.deepEqual(calls, ["TR", "IN", "PH", "JP"]);
   assert.deepEqual([...html.matchAll(/href="([^"]+)"/g)].map(m => m[1]), [
-    "/zh/countries", "/zh/price-history", "/zh/data-sources",
     ...priorityCountries.map(c => `/zh/countries/${c.slug}`),
   ]);
   assert.equal((texts(html).match(/2 个产品 · 3 个套餐 · AI 2 \/ 流媒体 1/g) || []).length, 4);
   assert.match(html, /gs-public-unified gs-country-index/);
   assert.doesNotMatch(texts(html), /GEOSUB 订阅价格数据/);
-  assert.equal((html.match(/data-gs-ui="button"/g) || []).length, 3);
-  assert.match(html, /data-gs-variant="primary"/);
+  assert.doesNotMatch(html, /gs-country-index-nav/);
   assert.doesNotMatch(html, /data-gs-motion-card/);
+  assert.match(html, /gs-country-index-grid/);
   assert.equal((html.match(/class="gs-country-index-card"/g) || []).length, 4);
   assert.match(texts(html), /收录范围：App Store · 月付 · 已核验。逐个套餐与美国相同套餐比较，不发布国家综合指数，也不保证跨区购买资格。/);
 });

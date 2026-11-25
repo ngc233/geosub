@@ -1,17 +1,20 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import BrandIcon from "./BrandIcon";
+import HomepageCountryFlag from "./HomepageCountryFlag";
+import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import {
   formatUsd,
   getDefaultPlan,
   getPlanSpread,
   type DbPricingProduct,
 } from "../lib/db-pricing-types";
+import type { ProductPlan } from "../lib/public-pricing-model";
 import {
   getPricingListCopy,
   type PricingListCopy,
 } from "../lib/pricing-list-copy";
-import { getPricingPlanPath } from "../lib/pricing-routes";
+import { getPricingDetailPath, getPricingPlanPath } from "../lib/pricing-routes";
 import {
   normalizeSiteLocale,
   type PreparedSiteLocale,
@@ -41,8 +44,26 @@ function comparisonPercent(price: number, referencePrice: number) {
   return Math.round(((price - referencePrice) / referencePrice) * 100);
 }
 
+function formatShortPlanName(productName: string, planName: string) {
+  const trimmedProduct = productName.trim();
+  const trimmedPlan = planName.trim();
+  if (!trimmedProduct || !trimmedPlan) return trimmedPlan;
+  if (trimmedPlan.toLowerCase().startsWith(trimmedProduct.toLowerCase())) {
+    const rest = trimmedPlan.slice(trimmedProduct.length).replace(/^[\s\-·—:：]+/, "").trim();
+    if (rest) return rest;
+  }
+  return trimmedPlan;
+}
+
+function formatCompactLocalPrice(localPrice: string) {
+  const trimmed = localPrice.trim();
+  if (!trimmed || /\bUSD\b|^\s*(?:US\$|\$)/i.test(trimmed)) return null;
+  return trimmed.replace(/\s*\/(?:月|年|周|mo|yr|wk)\b/i, "").trim();
+}
+
 export default function DbPricingCard({ product, locale, canvas = false }: DbPricingCardProps) {
   const ui = (name: string, legacy: string) => canvas ? name : legacy;
+  const zhCanvas = canvas && normalizeSiteLocale(locale) === "zh";
   const defaultPlan = getDefaultPlan(product);
 
   if (!defaultPlan) {
@@ -69,19 +90,29 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
       ) === index,
   );
   const spread = getPlanSpread(defaultPlan);
+  const hasSpread = uniqueRegions.length >= 2 && spread > 0;
   const regionCount = defaultPlan.totalRegions ?? uniqueRegions.length;
   const minimumDisplayPrice = uniqueRegions[0]
     ? roundedPriceCents(uniqueRegions[0].priceUsd)
     : null;
 
   const copy = getPricingListCopy(locale).card;
-
-  const detailHref = getPricingPlanPath(
-    normalizeSiteLocale(locale),
-    product.category,
-    product.slug,
-    defaultPlan.slug,
+  const shortPlanName = formatShortPlanName(product.name, defaultPlan.name);
+  const cycleLabel = getBillingCycleLabel(
+    defaultPlan.billingCycle.toLowerCase() as ProductPlan["billing"],
+    locale,
   );
+
+  const planCount = product.totalPlans ?? product.plans.length;
+  const hasMultiplePlans = zhCanvas && planCount > 1;
+  const detailHref = hasMultiplePlans
+    ? getPricingDetailPath("zh", product.category, product.slug)
+    : getPricingPlanPath(
+        normalizeSiteLocale(locale),
+        product.category,
+        product.slug,
+        defaultPlan.slug,
+      );
 
   return (
     <Link
@@ -94,7 +125,7 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
       className={ui("gs-listing-card", "group relative z-0 block overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-zinc-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)] focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-black/20 dark:hover:border-zinc-700 dark:hover:shadow-black/35 dark:focus-visible:ring-offset-zinc-950")}
     >
       <div className={ui("gs-listing-card-head", "p-5 md:p-6")}>
-        <div className={ui("gs-listing-brandline", "flex items-start gap-4")}>
+        <div className={ui(zhCanvas ? "gs-listing-brandline gs-listing-brandline-compact" : "gs-listing-brandline", "flex items-start gap-4")}>
           <BrandIcon
             product={{
               slug: product.slug,
@@ -106,33 +137,54 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
           />
 
           <div className={ui("gs-listing-description-wrap", "min-w-0 flex-1")}>
-            <div className={ui("gs-listing-card-headline", "flex items-start justify-between gap-4")}>
-              <div className={ui("", "min-w-0")}>
-                <div className={ui("gs-listing-card-name", "flex flex-wrap items-center gap-2")}>
-                  <h2 className={ui("", "text-xl font-semibold tracking-tight text-zinc-900 dark:text-white")}>
-                    {product.name} {copy.titleSuffix}
-                  </h2>
-
-                  <span className={ui("gs-listing-plan", "rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300")}>
-                    {defaultPlan.name}
-                  </span>
+            {zhCanvas ? (
+              <div className="gs-listing-card-headline gs-listing-card-headline-compact">
+                <div className="gs-listing-card-titlegroup">
+                  <div className="gs-listing-card-name">
+                    <h2>{product.name}</h2>
+                  </div>
+                  <p className="gs-listing-plan-meta">
+                    {hasMultiplePlans
+                      ? `代表低价：${shortPlanName} · ${cycleLabel} · 共 ${planCount} 个套餐`
+                      : `${shortPlanName} · ${cycleLabel}`}
+                  </p>
                 </div>
 
-                <p className={ui("gs-listing-card-description", "mt-2 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400")}>
-                  {product.description}
-                </p>
+                <div className="gs-listing-card-meta gs-listing-card-meta-compact">
+                  <span className="gs-listing-spread-pill">
+                    {hasSpread ? `${copy.spread} ${spread}%` : `${regionCount} ${copy.regions}`}
+                  </span>
+                </div>
               </div>
+            ) : (
+              <div className={ui("gs-listing-card-headline", "flex items-start justify-between gap-4")}>
+                <div className={ui("", "min-w-0")}>
+                  <div className={ui("gs-listing-card-name", "flex flex-wrap items-center gap-2")}>
+                    <h2 className={ui("", "text-xl font-semibold tracking-tight text-zinc-900 dark:text-white")}>
+                      {product.name} {copy.titleSuffix}
+                    </h2>
 
-              <div className={ui("gs-listing-card-meta", "hidden shrink-0 flex-col items-end gap-3 sm:flex")}>
-                <span className={ui("", "text-xs font-semibold text-zinc-700 dark:text-zinc-300")}>
-                  {copy.spread} {spread}%
-                </span>
+                    <span className={ui("gs-listing-plan", "rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300")}>
+                      {defaultPlan.name}
+                    </span>
+                  </div>
 
-                <span className={ui("", "text-xs font-medium text-zinc-500 dark:text-zinc-400")}>
-                  {regionCount} {copy.regions}
-                </span>
+                  <p className={ui("gs-listing-card-description", "mt-2 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400")}>
+                    {product.description}
+                  </p>
+                </div>
+
+                <div className={ui("gs-listing-card-meta", "hidden shrink-0 flex-col items-end gap-3 sm:flex")}>
+                  <span className={ui("", "text-xs font-semibold text-zinc-700 dark:text-zinc-300")}>
+                    {copy.spread} {spread}%
+                  </span>
+
+                  <span className={ui("", "text-xs font-medium text-zinc-500 dark:text-zinc-400")}>
+                    {regionCount} {copy.regions}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -153,20 +205,26 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
           <tbody>
             {displayRegions.map((region, index) => {
               const isCompareRow =
-                maxRegion?.code === region.code && region.rank === maxRegion.rank;
+                hasSpread &&
+                maxRegion?.code === region.code &&
+                region.rank === maxRegion.rank;
               const isLowestRow =
+                hasSpread &&
                 minimumDisplayPrice !== null &&
                 roundedPriceCents(region.priceUsd) === minimumDisplayPrice;
               const isSeparatedRow = index >= cheapRegions.length;
               const difference = comparisonReference
                 ? comparisonPercent(region.priceUsd, comparisonReference.priceUsd)
                 : null;
+              const compactLocalPrice = zhCanvas
+                ? formatCompactLocalPrice(region.localPrice)
+                : null;
 
               return (
                 <tr
                   key={`${product.slug}-${defaultPlan.slug}-${region.code}-${region.rank}`}
                   data-gs-motion-row={canvas || undefined}
-                  className={canvas ? "" : `border-b border-zinc-100 transition-colors group-hover:bg-white dark:border-zinc-800/50 dark:group-hover:bg-zinc-800/40 ${
+                  className={canvas ? (isSeparatedRow ? "gs-listing-separated-row" : "") : `border-b border-zinc-100 transition-colors group-hover:bg-white dark:border-zinc-800/50 dark:group-hover:bg-zinc-800/40 ${
                     isSeparatedRow
                       ? "border-t border-dashed border-t-zinc-300 bg-zinc-50/40 dark:border-t-zinc-700 dark:bg-zinc-950/30"
                       : ""
@@ -178,9 +236,13 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
 
                   <td className={ui("", "py-3.5")}>
                     <div className={ui("gs-listing-region", "flex items-center gap-2")}>
-                      <span className={ui("gs-listing-countrycode", "font-mono text-xs text-zinc-500 dark:text-zinc-400")}>
-                        {region.code}
-                      </span>
+                      {zhCanvas ? (
+                        <HomepageCountryFlag code={region.code} defer />
+                      ) : (
+                        <span className={ui("gs-listing-countrycode", "font-mono text-xs text-zinc-500 dark:text-zinc-400")}>
+                          {region.code}
+                        </span>
+                      )}
 
                       <span className={ui("gs-listing-countryname", "font-semibold text-zinc-900 dark:text-zinc-100")}>
                         {region.countryName}
@@ -222,15 +284,23 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
                       {canvas ? <span className="gs-listing-period">{priceSuffix(copy, defaultPlan.billingCycle)}</span> : priceSuffix(copy, defaultPlan.billingCycle)}
                     </div>
 
-                    <div className={ui("gs-listing-local", "mt-1.5 font-mono text-[11px] text-zinc-400 dark:text-zinc-500")}>
-                      ≈ {region.localPrice}
-                    </div>
+                    {zhCanvas ? (
+                      compactLocalPrice ? (
+                        <div className="gs-listing-local">
+                          {compactLocalPrice}
+                        </div>
+                      ) : null
+                    ) : (
+                      <div className={ui("gs-listing-local", "mt-1.5 font-mono text-[11px] text-zinc-400 dark:text-zinc-500")}>
+                        ≈ {region.localPrice}
+                      </div>
+                    )}
                   </td>
 
                   <td className={ui("gs-listing-comparison", "hidden py-4 pr-6 text-xs font-semibold md:table-cell")}>
                     {difference === null || difference === 0 ? (
                       <span className={canvas ? (isLowestRow ? "is-low" : "") : isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-zinc-500 dark:text-zinc-400"}>
-                        {referenceRegion ? copy.base : copy.lowest}
+                        {referenceRegion || !hasSpread ? copy.base : copy.lowest}
                       </span>
                     ) : difference < 0 ? (
                       <span className={canvas ? "is-low" : isLowestRow ? "text-lime-700 dark:text-lime-400" : "text-emerald-700 dark:text-emerald-400"}>
@@ -253,12 +323,18 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
         </span>
 
         <div className={ui("", "flex items-center gap-4")}>
-          <span className={ui("gs-listing-mobile-spread", "text-xs font-semibold text-zinc-700 sm:hidden dark:text-zinc-300")}>
-            {copy.spread} {spread}%
-          </span>
+          {hasSpread ? (
+            <span className={ui("gs-listing-mobile-spread", "text-xs font-semibold text-zinc-700 sm:hidden dark:text-zinc-300")}>
+              {copy.spread} {spread}%
+            </span>
+          ) : null}
 
           <span className={ui("gs-listing-detail", "inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 transition group-hover:border-zinc-300 group-hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:border-zinc-600 dark:group-hover:text-white")}>
-            {copy.detail}
+            {hasMultiplePlans
+              ? `对比 ${planCount} 个套餐与地区价格`
+              : zhCanvas && regionCount > displayRegions.length
+                ? `查看全部 ${regionCount} ${copy.regions}`
+                : copy.detail}
             <ArrowRight size={14} strokeWidth={2} />
           </span>
         </div>

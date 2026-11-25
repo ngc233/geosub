@@ -1,0 +1,144 @@
+import * as React from "react";
+
+export interface GeoSubLogoProps extends React.HTMLAttributes<HTMLSpanElement> {
+  /**
+   * "lockup" = Adaptive squircle badge + GeoSub wordmark (default),
+   * "badge" = Adaptive squircle badge only,
+   * "mark" = Unframed glyph only
+   */
+  variant?: "lockup" | "badge" | "mark";
+  /** Icon height in px (default: 28 to match geosub.org navbar) */
+  size?: number;
+  /** Override wordmark / unframed G ink color; defaults to var(--gs-text, currentColor) */
+  inkColor?: string;
+  /** Override orbital glide color; defaults to var(--gs-accent, #A3E635) */
+  accentColor?: string;
+}
+
+const LOGO_BADGE_STYLE = `
+.gs-logo-svg .gs-logo-tile{fill:#181B1F}
+.gs-logo-svg .gs-logo-rim{stroke:rgba(21,23,26,.12)}
+.gs-logo-svg .gs-logo-g{fill:#F5F6F7}
+@media (prefers-color-scheme:dark){
+.gs-logo-svg .gs-logo-tile{fill:#242932}
+.gs-logo-svg .gs-logo-rim{stroke:rgba(255,255,255,.24)}
+}
+:is(.dark,[data-theme="dark"]) .gs-logo-svg .gs-logo-tile{fill:#242932}
+:is(.dark,[data-theme="dark"]) .gs-logo-svg .gs-logo-rim{stroke:rgba(255,255,255,.24)}
+`.trim();
+
+/**
+ * Unified GeoSub Brand Logo ("Horizon Glide G" — Adaptive Framed Squircle)
+ * Gives an immediately recognizable overall silhouette in both light and dark mode
+ * without overpowering page hierarchy.
+ */
+export function GeoSubLogo({
+  variant = "lockup",
+  size = 28,
+  inkColor = "var(--gs-text, currentColor)",
+  accentColor = "var(--gs-accent, #A3E635)",
+  className = "",
+  style,
+  ...props
+}: GeoSubLogoProps) {
+  const iconNode =
+    variant === "mark" ? (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 64 64"
+        fill="none"
+        aria-hidden="true"
+        style={{ flexShrink: 0 }}
+      >
+        <path
+          d="M 11.764 35.4 A 22 22 0 0 1 49.849 17.279 A 4.3 4.3 0 0 1 43.458 23.034 A 13.4 13.4 0 0 0 20.247 30.02 C 16.907 31.631 14.047 33.421 11.764 35.4 Z"
+          fill={inkColor}
+        />
+        <path
+          d="M 15.656 44.868 A 22 22 0 0 0 55.157 35.868 A 3.8 3.8 0 0 0 51.416 31.4 L 39 31.4 A 3.8 3.8 0 0 0 39 39 L 42.974 39 A 1 1 0 0 1 43.738 40.645 A 13.4 13.4 0 0 1 21.771 38.48 C 18.445 40.73 16.351 43.072 15.656 44.868 Z"
+          fill={inkColor}
+        />
+        <path
+          d="M 8.6 44.5 C 10.2 34.2 32.5 24.8 59.6 24 C 35.5 26.8 15.6 36.2 13.2 44.8 C 12.1 48.6 14.8 51.4 19 52.2 C 12 52.6 7.75 49.2 8.6 44.5 Z"
+          fill={accentColor}
+        />
+      </svg>
+    ) : (
+      <svg
+        className="gs-logo-svg"
+        width={size}
+        height={size}
+        viewBox="0 0 64 64"
+        fill="none"
+        aria-hidden="true"
+        style={{ flexShrink: 0 }}
+      >
+        <style>{LOGO_BADGE_STYLE}</style>
+        <rect className="gs-logo-tile" width="64" height="64" rx="16" />
+        <rect
+          className="gs-logo-rim"
+          x="1"
+          y="1"
+          width="62"
+          height="62"
+          rx="15"
+          strokeWidth="2"
+        />
+        <g transform="translate(4.8 5.2) scale(0.85)">
+          <path
+            className="gs-logo-g"
+            d="M 11.764 35.4 A 22 22 0 0 1 49.849 17.279 A 4.3 4.3 0 0 1 43.458 23.034 A 13.4 13.4 0 0 0 20.247 30.02 C 16.907 31.631 14.047 33.421 11.764 35.4 Z"
+          />
+          <path
+            className="gs-logo-g"
+            d="M 15.656 44.868 A 22 22 0 0 0 55.157 35.868 A 3.8 3.8 0 0 0 51.416 31.4 L 39 31.4 A 3.8 3.8 0 0 0 39 39 L 42.974 39 A 1 1 0 0 1 43.738 40.645 A 13.4 13.4 0 0 1 21.771 38.48 C 18.445 40.73 16.351 43.072 15.656 44.868 Z"
+          />
+          <path
+            d="M 8.6 44.5 C 10.2 34.2 32.5 24.8 59.6 24 C 35.5 26.8 15.6 36.2 13.2 44.8 C 12.1 48.6 14.8 51.4 19 52.2 C 12 52.6 7.75 49.2 8.6 44.5 Z"
+            fill={accentColor}
+          />
+        </g>
+      </svg>
+    );
+
+  if (variant === "mark" || variant === "badge") {
+    return (
+      <span
+        className={className}
+        style={{ display: "inline-flex", alignItems: "center", ...style }}
+        {...props}
+      >
+        {iconNode}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={className}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: Math.round(size * 0.32),
+        color: inkColor,
+        ...style,
+      }}
+      {...props}
+    >
+      {iconNode}
+      <strong
+        style={{
+          fontSize: Math.round(size * 0.68),
+          fontWeight: 800,
+          letterSpacing: "-0.03em",
+          lineHeight: 1,
+        }}
+      >
+        GeoSub
+      </strong>
+    </span>
+  );
+}
+
+export default GeoSubLogo;

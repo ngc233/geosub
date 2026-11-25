@@ -8,7 +8,8 @@ test("formatter reuse preserves every currency symbol, locale, precision and rou
   for (const locale of ["zh-CN","en-US","de-DE"]) for (const digits of [0,2,4]) {
     const reference = new Intl.NumberFormat(locale,{minimumFractionDigits:digits,maximumFractionDigits:digits});
     for (const [currency,symbol] of Object.entries(symbols)) for (const value of [0,-0,1.005,-12.345,1234567.89]) {
-      assert.equal(formatPublicPrice(value,` ${currency.toLowerCase()} `,locale,digits),`${symbol} ${reference.format(value)}`);
+      const separator = currency === symbol ? " " : "";
+      assert.equal(formatPublicPrice(value,` ${currency.toLowerCase()} `,locale,digits),`${symbol}${separator}${reference.format(value)}`);
     }
   }
   assert.equal(formatPublicPrice(NaN,"USD"),"");

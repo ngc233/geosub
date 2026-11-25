@@ -27,7 +27,7 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
       await menu.click();await page.mouse.click(5,400);await expect(page.getByRole("dialog",{name:"菜单",exact:true})).toHaveCount(0);
       const group=page.getByRole("contentinfo").getByRole("button",{name:"展开指南"});await group.scrollIntoViewIfNeeded();await expect(group).toHaveAttribute("aria-expanded","false");await group.click();await expect(group).toHaveAttribute("aria-expanded","true");
     }else{
-      await expect(page.getByRole("navigation",{name:"主导航"}).getByRole("link",{name:"首页",exact:true})).toHaveAttribute("aria-current","page");
+      await expect(page.getByRole("navigation",{name:"主导航"}).locator('[aria-current="page"]')).toHaveCount(0);
     }
   });
   test(`locked ${width} ${colorScheme}: Chinese Plus and English routes outside the rollout are pixel-identical`,async({browser},testInfo)=>{
@@ -76,11 +76,11 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
 }
 test("search: three groups, arrow selection, navigation, error and empty states",async({page})=>{
   const fixture=["product","plan","country"].map((kind,i)=>({id:kind,kind,title:`测试${kind}`,subtitle:"仅测试交互",href:["/zh/ai-pricing/chatgpt","/zh/ai-pricing/chatgpt/plus","/zh/countries/india"][i],minimumUsd:i+1,cycle:"monthly"}));
-  await page.route("**/api/search?**",r=>r.fulfill({json:{results:fixture}}));await page.goto("/zh");await page.keyboard.press("/");
+  await page.route("**/api/search?**",r=>r.fulfill({json:{results:fixture}}));await page.goto("/zh",{waitUntil:"networkidle"});await page.keyboard.press("/");
   const input=page.getByRole("combobox",{name:"搜索产品或国家"});await input.fill("测试");await expect(page.getByRole("option")).toHaveCount(3);
   for(const name of ["产品","套餐","国家"])await expect(page.getByRole("group",{name,exact:true})).toBeVisible();
   await input.press("ArrowDown");await expect(page.getByRole("option").nth(1)).toHaveAttribute("aria-selected","true");await input.press("Enter");await page.waitForURL("**/zh/ai-pricing/chatgpt/plus");
-  await page.goto("/zh");await page.route("**/api/search?**",r=>r.fulfill({status:503,json:{results:[]}}));await page.keyboard.press("/");await input.fill("失败");await expect(page.getByRole("button",{name:"重试",exact:true})).toBeVisible();
+  await page.goto("/zh",{waitUntil:"networkidle"});await page.route("**/api/search?**",r=>r.fulfill({status:503,json:{results:[]}}));await page.keyboard.press("/");await input.fill("失败");await expect(page.getByRole("button",{name:"重试",exact:true})).toBeVisible();
   await page.route("**/api/search?**",r=>r.fulfill({json:{results:[]}}));await page.getByRole("button",{name:"重试",exact:true}).click();await expect(page.getByRole("status").filter({hasText:"没有找到"})).toBeVisible();
 });
 test("real local data: report result availability; never invent prices",async({request})=>{
@@ -125,7 +125,7 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     await page.setViewportSize({width,height:844});await page.emulateMedia({colorScheme});
     const queries:string[]=[];
     await page.route("**/api/search?**",route=>{queries.push(new URL(route.request().url()).searchParams.get("q")!);return route.fulfill({json:{results:[]}});});
-    await page.goto("/zh");await page.keyboard.press("/");const input=page.getByRole("combobox",{name:"搜索产品或国家",exact:true});await input.fill("xyz");
+    await page.goto("/zh",{waitUntil:"networkidle"});await page.keyboard.press("/");const input=page.getByRole("combobox",{name:"搜索产品或国家",exact:true});await input.fill("xyz");
     const suggestions=page.getByLabel("搜索建议");await expect(suggestions.getByRole("button")).toHaveCount(4);
     await expect(suggestions.getByRole("link",{name:"联系我们"})).toHaveAttribute("href","/zh/contact");
     await page.screenshot({path:path.join(evidence,`search-empty-${width}-${colorScheme}.png`)});
@@ -149,7 +149,7 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     expect(result,"repository E2E product must have a real search result").toBeTruthy();
     const option=page.getByRole("group",{name:"产品",exact:true}).getByRole("option").filter({hasText:result.title});
     const price=option.locator('[data-gs-price] > span[aria-hidden="true"]');
-    await expect(price).toHaveText(`$ ${result.minimumUsd.toFixed(2)}`);
+    await expect(price).toHaveText(`$${result.minimumUsd.toFixed(2)}`);
     const displayedPrice=await price.innerText();
     await page.screenshot({path:path.join(evidence,`search-minimum-${width}-${colorScheme}.png`)});
     await option.click(); await expect(page).toHaveURL(new RegExp(result.href+"$"));
@@ -238,7 +238,7 @@ test.describe("currency with explicit fictional homepage data",()=>{
    await page.goto(`${fixture.origin}/zh`,{waitUntil:"networkidle"});
    await expect(page.getByRole("note")).toContainText("虚构测试数据");
    await expect(page.getByRole("list",{name:"订阅省钱排名"}).getByRole("listitem")).toHaveCount(6);
-   await expect(page.locator('.gs-home-ranking')).toContainText('¥ 119.00');
+   await expect(page.locator('.gs-home-ranking')).toContainText('¥119.00');
    const consent=page.getByRole("button",{name:"拒绝统计",exact:true});if(await consent.isVisible())await consent.click();
   const currency=page.getByRole("button",{name:"折合为 ¥ CNY",exact:true});await currency.click();
   const dialog=page.getByRole("dialog",{name:"选择币种",exact:true});
@@ -258,13 +258,13 @@ test.describe("currency with explicit fictional homepage data",()=>{
   await page.keyboard.press("ArrowLeft");await expect(options.nth(1)).toBeFocused();
   await page.keyboard.press("Home");await expect(options.first()).toBeFocused();await page.keyboard.press("Enter");
   const usd=page.getByRole("button",{name:"折合为 $ USD",exact:true});await expect(usd).toBeVisible();await expect(usd).toBeFocused();
-  await expect(page.locator('.gs-home-ranking')).toContainText('$ 17.00');
+  await expect(page.locator('.gs-home-ranking')).toContainText('$17.00');
   await usd.click();await expect(options.first()).toBeFocused();await page.keyboard.press("Escape");await expect(usd).toBeFocused();
   if(width===1280){await usd.click();await page.mouse.click(50,10);await expect(dialog).toHaveCount(0);}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
    await page.reload();
    await expect(page.getByRole("button",{name:"折合为 $ USD",exact:true})).toBeVisible();
-   await expect(page.locator('.gs-home-ranking')).toContainText('$ 17.00');
+   await expect(page.locator('.gs-home-ranking')).toContainText('$17.00');
   });
  }
 });
@@ -298,7 +298,8 @@ for(const route of ["/zh","/zh/ai-pricing"]) test(`round5 global header feedback
  release();await page.waitForURL('**/zh/countries');
  await expect(target).toHaveAttribute('aria-current','page');
  await page.goBack();await expect(page).toHaveURL(new RegExp(route+'$'));
- await expect(nav.locator('[aria-current="page"]')).toHaveText(route==='/zh'?'首页':'数字订阅');
+ if(route==='/zh') await expect(nav.locator('[aria-current="page"]')).toHaveCount(0);
+ else await expect(nav.locator('[aria-current="page"]')).toHaveText('数字订阅');
  await page.emulateMedia({reducedMotion:'reduce'});await drop.click();
  const open=nav.locator('.gs-popover[data-open="true"]');expect(await open.evaluate(e=>getComputedStyle(e).transitionDuration)).toBe('0s');
 });
