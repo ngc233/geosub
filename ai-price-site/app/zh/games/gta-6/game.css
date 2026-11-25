@@ -391,6 +391,10 @@
 }
 @media (max-width: 380px) {
   .game-page .game-chapters { gap: 5px; }
+  .quote-sheet :is(th, td), .quote-sheet .shop-link, .quote-sheet .quote-fx small.saving {
+    padding-inline: var(--gs-space-4);
+  }
+  .quote-sheet .region-disclosure { gap: var(--gs-space-4); }
   .game-chapters > a, .chapter-context > summary { font-size: 12px; }
   .chapter-context > summary { gap: 4px; padding-inline: 5px; }
   .switch-menu { width: min(260px, calc(100vw - 50px)); }

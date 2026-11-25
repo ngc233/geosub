@@ -99,3 +99,21 @@
 }
 .gs-public-unified .gs-listing-brand { border:0; box-shadow:var(--gs-shadow-card); }
 .gs-public-unified .gs-listing-empty { padding:var(--gs-space-48) var(--gs-space-24); border:var(--gs-border-width) dashed var(--gs-border-strong); border-radius:var(--gs-radius-panel); text-align:center; color:var(--gs-text-muted); background:var(--gs-surface); font-size:var(--gs-home-meta-size); }
+.gs-public-unified.gs-game-listing .gs-listing-table th:nth-child(n) { width:25%; }
+.gs-public-unified.gs-game-listing .gs-listing-table th:last-child,
+.gs-public-unified.gs-game-listing .gs-listing-comparison { text-align:end; }
+.gs-public-unified.gs-game-listing .gs-listing-detail { flex-shrink:0; }
+.gs-public-unified.gs-game-listing .gs-game-listing-version { display:inline-flex; flex-direction:column; }
+.gs-public-unified.gs-game-listing .gs-game-listing-version span { color:var(--gs-text-muted); }
+.gs-public-unified.gs-game-listing .gs-game-listing-version:hover { text-decoration:underline; }
+.gs-public-unified.gs-game-listing :is(.gs-game-listing-version,.gs-listing-detail):focus-visible {
+  outline:var(--gs-focus-width) solid var(--gs-focus);
+  outline-offset:var(--gs-focus-offset);
+}
+.gs-public-unified.gs-game-listing .gs-listing-detail:hover { background:var(--gs-row-hover); }
+@media(max-width:760px){
+.gs-public-unified.gs-game-listing .gs-listing-table th:nth-child(1) { width:22%; }
+.gs-public-unified.gs-game-listing .gs-listing-table th:nth-child(2) { width:26%; }
+.gs-public-unified.gs-game-listing .gs-listing-table th:nth-child(3) { width:31%; }
+.gs-public-unified.gs-game-listing .gs-listing-table th:nth-child(4) { width:21%; }
+}

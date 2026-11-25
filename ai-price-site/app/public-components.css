@@ -283,6 +283,10 @@
 .gs-public-unified .gs-home-category-panel h2 { min-height:var(--gs-touch-target); display:flex; align-items:center; margin-bottom:var(--gs-space-16); }
 .gs-public-unified .gs-home-recent-placeholder { flex:1 1 var(--gs-home-recent-minimum-width); }
 .gs-public-unified .gs-home-categories { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gs-space-14); }
+.gs-public-unified .gs-home-game-category:only-child { grid-column:1 / -1; }
+@media (min-width:768px) {
+ .gs-public-unified .gs-home-categories:has(> .gs-home-game-category:nth-child(3)) { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
 .gs-public-unified .gs-home-card { display:flex; flex-direction:column; gap:var(--gs-space-8); padding:var(--gs-space-20); border-radius:var(--gs-radius-card); background:var(--gs-surface); min-width:0; }
 .gs-public-unified .gs-home-card p { color:var(--gs-text-muted); font-size:var(--gs-home-meta-size); line-height:1.6; }
 .gs-public-unified .gs-home-categories .gs-home-card { padding:var(--gs-space-22); border-radius:var(--gs-radius-category); gap:var(--gs-space-16); }
@@ -329,6 +333,8 @@
  .gs-public-unified .gs-home-products .gs-home-product-pill { flex-shrink:0; }
  .gs-public-unified .gs-home-recent-placeholder { display:none; }
  .gs-public-unified .gs-home-categories { gap:var(--gs-space-12); }
+ .gs-public-unified .gs-home-game-category { grid-column:1 / -1; }
+ .gs-public-unified .gs-home-categories:has(> .gs-home-game-category:nth-child(2)) > :first-child { grid-column:1 / -1; }
  .gs-public-unified .gs-home-categories .gs-home-card { padding:var(--gs-space-16); }
  .gs-public-unified .gs-home-countries, .gs-public-unified .gs-home-guides { grid-template-columns:1fr; }
 }
@@ -433,6 +439,7 @@
 .gs-public-unified .gs-home-ranking-mark { cursor:pointer; }
 .gs-public-unified .gs-home-categories .gs-home-card { position:relative; isolation:isolate; }
 .gs-public-unified .gs-home-category-link { display:contents; }
+.gs-public-unified .gs-home-game-category .gs-home-category-link { display:flex; flex-direction:column; gap:var(--gs-space-16); }
 .gs-public-unified .gs-home-category-link::after { content:""; position:absolute; inset:0; z-index:1; border-radius:inherit; cursor:pointer; }
 .gs-public-unified .gs-home-category-link:focus-visible::after { outline:var(--gs-focus-width) solid var(--gs-focus); outline-offset:var(--gs-focus-offset); }
 .gs-public-unified .gs-home-category-avatars .gs-home-category-product-link { position:relative; z-index:2; display:block; width:var(--gs-country-badge); height:var(--gs-country-badge); min-height:0; border:0; border-radius:50%; }

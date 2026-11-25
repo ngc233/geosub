@@ -521,8 +521,10 @@ function MenuIcon({ open }: { open: boolean }) {
 
 export default function Header({
   initialNavItemsByLocale = {},
+  showGameNavigation = false,
 }: {
   initialNavItemsByLocale?: Partial<Record<SiteLocale, NavItem[]>>;
+  showGameNavigation?: boolean;
 }) {
   const pathname = usePathname();
   const navDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -550,8 +552,11 @@ export default function Header({
       { href: "/countries", name: currentLocaleCode === "zh" ? "国家价格" : "Countries", match: ["/countries"] },
       { href: "/price-history", name: currentLocaleCode === "zh" ? "价格历史" : "Price history", match: ["/price-history"] },
     ].filter(item => !baseNavItems.some(existing => stripSiteLocale(existing.href) === item.href)) : [];
-  const gameEntry: NavItem[] = pathname === "/zh/games/gta-6" && !baseNavItems.some(item => item.href.endsWith("/games/gta-6"))
-    ? [{ name: "游戏比价", href: "/games/gta-6" }] : [];
+  const gamePath = "/games";
+  const unified = usesUnifiedPublicStyle(pathname);
+  const gameEntry: NavItem[] = showGameNavigation && currentLocaleCode === "zh" && unified
+    && !baseNavItems.some(item => !item.external && normalizePath(stripSiteLocale(item.href)) === gamePath)
+    ? [{ name: "游戏比价", href: gamePath }] : [];
   const navItems = [...baseNavItems.slice(0, 2), ...gameEntry, ...discoveryItems, ...baseNavItems.slice(2)];
 
   const activeItemName = navItems.find((item) => isNavItemActive(item, pathname))?.name || "";
@@ -598,7 +603,7 @@ export default function Header({
     };
   }, []);
 
-  if (usesUnifiedPublicStyle(pathname)) return <PublicHeader items={navItems} active={activeItemName} pathname={pathname} languages={availableLanguages} locale={currentLocaleCode === "en" ? "en" : "zh"} />;
+  if (unified) return <PublicHeader items={navItems} active={activeItemName} pathname={pathname} languages={availableLanguages} locale={currentLocaleCode === "en" ? "en" : "zh"} />;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-white/85 shadow-sm shadow-zinc-950/[0.03] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/85">
