@@ -18,12 +18,30 @@ const row:WorkspaceRow={id:'x',slug:'x',name:'X',publish_status:'published',pric
 test('published and running do not erase stale price action',()=>{const s=workspaceStatus(row,false);assert.equal(s.publication,'已发布');assert.equal(s.collection,'采集执行中');assert.equal(s.needsAction,true);assert.equal(s.progress,true);});
 test('partial snapshot never treats missing operational records as known failure',()=>{const s=workspaceStatus({...row,stale_count:0,failed_count:3},true);assert.equal(s.needsAction,false);assert.equal(s.progress,false);assert.equal(s.collection,'未导入采集记录');});
 
+const routeGuardSource=ts.transpileModule(readFileSync(new URL('./admin-route-guard.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const proxyPolicySource=ts.transpileModule(readFileSync(new URL('./admin-proxy-policy.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+function loadRouteGuard(role:string|null){
+ const policyMod={exports:{}};
+ vm.runInNewContext('(function(require,module,exports){'+proxyPolicySource+'\n})',{Headers})(require,policyMod,policyMod.exports);
+ const guardMod={exports:{}};
+ vm.runInNewContext('(function(require,module,exports){'+routeGuardSource+'\n})',{Response,Headers,URL,console})((name:string)=>{
+  if(name==='server-only')return {};
+  if(name==='./admin-auth')return {getCurrentAdmin:async()=>role?{id:'test-admin',role}:null};
+  if(name==='./admin-permissions')return {canAdmin};
+  if(name==='./admin-proxy-policy')return policyMod.exports;
+  return require(name);
+ },guardMod,guardMod.exports);
+ return guardMod.exports;
+}
+
 for (const route of ['pipeline/collect','review/collect','search-demand/authority-collect']) {
  for (const role of ['EDITOR','VIEWER']) test(`${route} rejects ${role} before reading request or queuing`, async()=>{
   const code=ts.transpileModule(readFileSync(new URL(`../app/admin/${route}/route.ts`,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
   const mod={exports:{} as {POST:(request:unknown)=>Promise<Response>}};
-  vm.runInNewContext('(function(require,module,exports){'+code+'\n})',{Response})((name:string)=>name.endsWith('admin-auth')?{requireAdmin:async()=>({role})}:name.endsWith('admin-permissions')?{canAdmin}:new Proxy({},{get(){throw Error('Collector dependency accessed before permission check');}}),mod,mod.exports);
-  const response=await mod.exports.POST({formData:()=>{throw Error('Unauthorized form was read');}});
+  const guardExports=loadRouteGuard(role);
+  vm.runInNewContext('(function(require,module,exports){'+code+'\n})',{Response,Headers,URL})((name:string)=>name.endsWith('admin-route-guard')?guardExports:new Proxy({},{get(){throw Error('Collector dependency accessed before permission check');}}),mod,mod.exports);
+  const request={url:'https://geosub.org/admin/'+route,headers:new Headers({origin:'https://geosub.org',host:'geosub.org'}),formData:()=>{throw Error('Unauthorized form was read');}};
+  const response=await mod.exports.POST(request);
   assert.equal(response.status,403);
  });
 }

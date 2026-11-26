@@ -1,5 +1,10 @@
-import { canAdmin } from "../../../../lib/admin-permissions";
-import { requireAdmin } from "../../../../lib/admin-auth";
+import {
+  adminRouteJson,
+  adminRouteRedirect,
+  guardAdminRoute,
+  logAdminRouteError,
+  requestWantsJson,
+} from "../../../../lib/admin-route-guard";
 import { prisma } from "../../../../lib/prisma";
 import { getProductSeoQualityAudit } from "../../../../lib/product-seo-quality-data";
 import { buildAuthorityCoverageQueue } from "../../../../lib/search-authority-coverage";
@@ -16,15 +21,24 @@ function validProductSlug(value: FormDataEntryValue | null) {
 }
 
 export async function POST(request: Request) {
-  const admin = await requireAdmin();
-  if (!canAdmin(admin.role, "manage")) return Response.json({ok:false,message:"当前账号没有采集权限。"},{status:403});
-  const wantsJson = request.headers.get("accept")?.includes("application/json");
+  const guard = await guardAdminRoute(request, {
+    capability: "manage",
+    verifyOrigin: true,
+    forbiddenMessage: "当前账号没有采集权限。",
+    routeName: "/admin/search-demand/authority-collect",
+  });
+  if (!guard.ok) return guard.response;
+
+  const admin = guard.admin;
+  const wantsJson = requestWantsJson(request);
   let redirectPath = "/admin/search-demand?authorityResult=failed";
   let status = 500;
+  let productSlug = "";
+  let requestId: string | undefined;
 
   try {
     const formData = await request.formData();
-    const productSlug = validProductSlug(formData.get("productSlug"));
+    productSlug = validProductSlug(formData.get("productSlug"));
     const audit = await getProductSeoQualityAudit(productSlug);
     const item = audit ? buildAuthorityCoverageQueue([audit], [])[0] : null;
     if (!audit || !item || item.actionKind !== "collect" || !item.gapCode) {
@@ -58,19 +72,23 @@ export async function POST(request: Request) {
 
     redirectPath = buildCollectionRedirectPath(result, productSlug);
     status = 200;
-  } catch {
-    // Keep operational details in server logs and return a stable admin result.
+  } catch (error) {
+    requestId = logAdminRouteError(
+      "/admin/search-demand/authority-collect",
+      error,
+      {
+        actorId: admin.id,
+        target: productSlug || null,
+      },
+    );
   }
 
   if (wantsJson) {
-    return Response.json(
-      { ok: status === 200, redirectPath },
+    return adminRouteJson(
+      { ok: status === 200, redirectPath, ...(requestId ? { requestId } : {}) },
       { status },
     );
   }
 
-  return new Response(null, {
-    status: 303,
-    headers: { Location: redirectPath },
-  });
+  return adminRouteRedirect(redirectPath, 303);
 }

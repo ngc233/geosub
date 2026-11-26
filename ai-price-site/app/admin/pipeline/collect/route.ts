@@ -1,15 +1,25 @@
-import { canAdmin } from "../../../../lib/admin-permissions";
-import { requireAdmin } from "../../../../lib/admin-auth";
+import {
+  adminRouteJson,
+  adminRouteRedirect,
+  guardAdminRoute,
+  logAdminRouteError,
+  requestWantsJson,
+} from "../../../../lib/admin-route-guard";
 import { queueBatchAppStoreCollections } from "../../review/collection-runner";
 import { normalizeBatchProductSlugs } from "../batch-collection";
 
 export async function POST(request: Request) {
-  const admin = await requireAdmin();
-  if (!canAdmin(admin.role, "manage")) return Response.json({ok:false,message:"当前账号没有采集权限。"},{status:403});
+  const guard = await guardAdminRoute(request, {
+    capability: "manage",
+    verifyOrigin: true,
+    forbiddenMessage: "当前账号没有采集权限。",
+    routeName: "/admin/pipeline/collect",
+  });
+  if (!guard.ok) return guard.response;
 
   const formData = await request.formData();
   const productSlugs = normalizeBatchProductSlugs(formData.getAll("productSlugs"));
-  const wantsJson = request.headers.get("accept")?.includes("application/json");
+  const wantsJson = requestWantsJson(request);
 
   if (productSlugs.length === 0) {
     const payload = {
@@ -19,8 +29,8 @@ export async function POST(request: Request) {
     };
 
     return wantsJson
-      ? Response.json(payload, { status: 400 })
-      : new Response(null, { status: 303, headers: { Location: payload.redirectPath } });
+      ? adminRouteJson(payload, { status: 400 })
+      : adminRouteRedirect(payload.redirectPath, 303);
   }
 
   try {
@@ -37,17 +47,22 @@ export async function POST(request: Request) {
     const payload = { ok: true, result, redirectPath };
 
     return wantsJson
-      ? Response.json(payload)
-      : new Response(null, { status: 303, headers: { Location: redirectPath } });
-  } catch {
+      ? adminRouteJson(payload)
+      : adminRouteRedirect(redirectPath, 303);
+  } catch (error) {
+    const requestId = logAdminRouteError("/admin/pipeline/collect", error, {
+      actorId: guard.admin.id,
+      target: productSlugs.slice(0, 10).join(","),
+    });
     const payload = {
       ok: false,
       message: "批量采集任务未能加入队列，请查看系统状态后重试。",
       redirectPath: "/admin/pipeline?batchError=failed",
+      requestId,
     };
 
     return wantsJson
-      ? Response.json(payload, { status: 500 })
-      : new Response(null, { status: 303, headers: { Location: payload.redirectPath } });
+      ? adminRouteJson(payload, { status: 500 })
+      : adminRouteRedirect(payload.redirectPath, 303);
   }
 }

@@ -27,22 +27,33 @@ test("collector product/source predicates bind values before each existing histo
  for(const q of queries){assert.ok(q.values.includes("spotify"));assert.ok(q.values.includes("web"));assert.ok(q.values.includes("%a\\%b%"));assert.ok(q.sql.indexOf("WHERE")<q.sql.indexOf("LIMIT"));assert.ok(!q.sql.includes("spotify"));}
  assert.match(queries[2].sql,/AND \? <> 'web'/);
 });
+function loadRouteGuard(role:string|null){
+ const policy=load("lib/admin-proxy-policy.ts",{});
+ const perms=load("lib/admin-permissions.ts",{});
+ return load("lib/admin-route-guard.ts",{
+  "server-only":{},
+  "./admin-auth":{getCurrentAdmin:async()=>role?{id:"test-admin",role}:null},
+  "./admin-permissions":perms,
+  "./admin-proxy-policy":policy,
+ });
+}
 test("collection status endpoint rejects malformed run IDs before querying history",async()=>{
  let queried=false;
- const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-auth":{requireAdmin:async()=>({role:"VIEWER"})},"../collection-runner":{reconcileStaleCollectorRuns:async()=>{}},"../collector-run-history-query":{getCollectorRunHistoryRows:async()=>{queried=true;return [];}}});
+ let reconciled=false;
+ const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-route-guard":loadRouteGuard("VIEWER"),"../collection-runner":{reconcileStaleCollectorRuns:async()=>{reconciled=true;}},"../collector-run-history-query":{getCollectorRunHistoryRows:async()=>{queried=true;return [];}}});
  const response=await (loaded.GET as (r:Request)=>Promise<Response>)(new Request("http://local/admin/review/collection-runs?runId=bad"));
- assert.equal(response.status,400);assert.equal(queried,false);
+ assert.equal(response.status,400);assert.equal(queried,false);assert.equal(reconciled,false);
 });
 test("collection status reads the exact product/run and disables caching",async()=>{
  let seen:unknown[]=[];
- const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-auth":{requireAdmin:async()=>({role:"VIEWER"})},"../collection-runner":{reconcileStaleCollectorRuns:async()=>{}},"../collector-run-history-query":{getCollectorRunHistoryRows:async(...args:unknown[])=>{seen=args;return [];}}});
+ const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-route-guard":loadRouteGuard("VIEWER"),"../collection-runner":{reconcileStaleCollectorRuns:async()=>{}},"../collector-run-history-query":{getCollectorRunHistoryRows:async(...args:unknown[])=>{seen=args;return [];}}});
  const id="11111111-1111-4111-8111-111111111111";
  const response=await (loaded.GET as (r:Request)=>Promise<Response>)(new Request(`http://local/admin/review/collection-runs?product=spotify&runId=${id}`));
- assert.deepEqual(seen,["",12,{product:"spotify",runId:id}]);assert.equal(response.headers.get("cache-control"),"no-store");
+ assert.deepEqual(seen,["",12,{product:"spotify",runId:id}]);assert.match(response.headers.get("cache-control")||"",/no-store/);
 });
 test("collect submission denies non-managers without starting a worker",async()=>{
  let called=false;
- const loaded=load("app/admin/review/collect/route.ts",{"@/lib/admin-workflow-context":context,"../../../../lib/admin-permissions":{canAdmin:()=>false},"../../../../lib/admin-auth":{requireAdmin:async()=>({role:"VIEWER"})},"../collection-status":{buildCollectionRedirectPath:()=>"/admin/review"},"../collection-runner":{queueAndRunAppStoreCollection:async()=>{called=true;}}});
- const response=await (loaded.POST as (r:Request)=>Promise<Response>)(new Request("http://local/admin/review/collect",{method:"POST"}));
+ const loaded=load("app/admin/review/collect/route.ts",{"@/lib/admin-workflow-context":context,"../../../../lib/admin-route-guard":loadRouteGuard("VIEWER"),"../collection-status":{buildCollectionRedirectPath:()=>"/admin/review"},"../collection-runner":{queueAndRunAppStoreCollection:async()=>{called=true;}}});
+ const response=await (loaded.POST as (r:Request)=>Promise<Response>)(new Request("https://geosub.org/admin/review/collect",{method:"POST",headers:{origin:"https://geosub.org",host:"geosub.org"}}));
  assert.equal(response.status,403);assert.equal(called,false);
 });
