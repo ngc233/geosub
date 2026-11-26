@@ -19,9 +19,18 @@ type OpenErApiResponse = {
 };
 
 const DEFAULT_BASE = "USD";
+const EXCHANGE_RATE_FETCH_TIMEOUT_MS = 15_000;
 const DEFAULT_QUOTES = supportedDisplayCurrencies.filter(
   (currency) => currency !== DEFAULT_BASE,
 );
+
+type FetchedRatesResult = {
+  source: string;
+  requestedUrl: string;
+  rateDate: string;
+  rates: Record<string, number>;
+  quoteSources?: Record<string, { source: string; rateDate: string; requestedUrl: string }>;
+};
 
 function normalizeCurrency(value: string) {
   return value.trim().toUpperCase();
@@ -60,29 +69,47 @@ function parseQuotes(request: NextRequest) {
     .filter((value) => value && value !== DEFAULT_BASE);
 }
 
-async function fetchFrankfurterRates(base: string, quotes: string[]) {
+async function fetchFrankfurterRates(base: string, quotes: string[]): Promise<FetchedRatesResult> {
   const url = `https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}&to=${quotes
     .map(encodeURIComponent)
     .join(",")}`;
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(EXCHANGE_RATE_FETCH_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     throw new Error(`Frankfurter returned ${response.status}`);
   }
 
   const payload = (await response.json()) as FrankfurterResponse;
+  const rateDate = payload.date || new Date().toISOString().slice(0, 10);
+  const rates: Record<string, number> = {};
+  const quoteSources: Record<string, { source: string; rateDate: string; requestedUrl: string }> = {};
+
+  for (const quote of quotes) {
+    const rate = Number(payload.rates?.[quote]);
+    if (Number.isFinite(rate) && rate > 0) {
+      rates[quote] = rate;
+      quoteSources[quote] = { source: "frankfurter", rateDate, requestedUrl: url };
+    }
+  }
 
   return {
     source: "frankfurter",
     requestedUrl: url,
-    rateDate: payload.date || new Date().toISOString().slice(0, 10),
-    rates: payload.rates || {},
+    rateDate,
+    rates,
+    quoteSources,
   };
 }
 
-async function fetchOpenErApiRates(base: string) {
+async function fetchOpenErApiRates(base: string, targetQuotes?: string[]): Promise<FetchedRatesResult> {
   const url = `https://open.er-api.com/v6/latest/${encodeURIComponent(base)}`;
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(EXCHANGE_RATE_FETCH_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     throw new Error(`open.er-api returned ${response.status}`);
@@ -92,22 +119,35 @@ async function fetchOpenErApiRates(base: string) {
   const rateDate = payload.time_last_update_utc
     ? new Date(payload.time_last_update_utc).toISOString().slice(0, 10)
     : new Date().toISOString().slice(0, 10);
+  const rawRates = payload.rates || {};
+  const selectedQuotes = targetQuotes ?? Object.keys(rawRates);
+  const rates: Record<string, number> = {};
+  const quoteSources: Record<string, { source: string; rateDate: string; requestedUrl: string }> = {};
+
+  for (const quote of selectedQuotes) {
+    const rate = Number(rawRates[quote]);
+    if (Number.isFinite(rate) && rate > 0) {
+      rates[quote] = rate;
+      quoteSources[quote] = { source: "open-er-api", rateDate, requestedUrl: url };
+    }
+  }
 
   return {
     source: "open-er-api",
     requestedUrl: url,
     rateDate,
-    rates: payload.rates || {},
+    rates,
+    quoteSources,
   };
 }
 
-async function getRates(base: string, quotes: string[]) {
-  let primary: Awaited<ReturnType<typeof fetchFrankfurterRates>>;
+async function getRates(base: string, quotes: string[]): Promise<FetchedRatesResult> {
+  let primary: FetchedRatesResult;
 
   try {
     primary = await fetchFrankfurterRates(base, quotes);
   } catch {
-    return fetchOpenErApiRates(base);
+    return fetchOpenErApiRates(base, quotes);
   }
 
   const missingQuotes = quotes.filter((quote) => {
@@ -119,13 +159,14 @@ async function getRates(base: string, quotes: string[]) {
     return primary;
   }
 
-  const fallback = await fetchOpenErApiRates(base);
+  const fallback = await fetchOpenErApiRates(base, missingQuotes);
 
   return {
     source: "frankfurter+open-er-api",
     requestedUrl: `${primary.requestedUrl} | ${fallback.requestedUrl}`,
-    rateDate: fallback.rateDate || primary.rateDate,
+    rateDate: primary.rateDate || fallback.rateDate,
     rates: { ...primary.rates, ...fallback.rates },
+    quoteSources: { ...primary.quoteSources, ...fallback.quoteSources },
   };
 }
 
@@ -175,7 +216,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await getRates(base, quotes);
+  let result: FetchedRatesResult;
+  try {
+    result = await getRates(base, quotes);
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Exchange-rate provider unavailable." },
+      { status: 502 },
+    );
+  }
 
   const synced: Array<{ quote: string; rate: number }> = [];
 
@@ -186,16 +235,21 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
+    const quoteMeta = result.quoteSources?.[quote];
+    const rowSource = quoteMeta?.source || result.source;
+    const rowRateDate = quoteMeta?.rateDate || result.rateDate;
+    const rowRequestedUrl = quoteMeta?.requestedUrl || result.requestedUrl;
+
     await upsertRate({
       base,
       quote,
       rate,
-      rateDate: result.rateDate,
-      source: result.source,
+      rateDate: rowRateDate,
+      source: rowSource,
       providerPayload: {
-        source: result.source,
-        requestedUrl: result.requestedUrl,
-        rateDate: result.rateDate,
+        source: rowSource,
+        requestedUrl: rowRequestedUrl,
+        rateDate: rowRateDate,
         quote,
         rate,
       },
