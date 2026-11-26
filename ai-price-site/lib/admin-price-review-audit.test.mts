@@ -97,7 +97,7 @@ function loadReviewModule({ failSql = false } = {}) {
   new Function("require", "module", "exports", code)(
     (name: string) => {
       if (name === "server-only") return {};
-      if (name === "./prisma") return { prisma: prismaStub };
+      if (name === "./prisma") return { adminPrisma: prismaStub };
       return require(name);
     },
     mod,

@@ -130,7 +130,7 @@ test("buildAuditLogWhere filters by date range, actor, system null actor, and UU
       if (name === "./model") return modelMod;
       if (name.endsWith("admin-list-params")) return { clampAdminPage: () => ({ page: 1, totalPages: 1 }) };
       if (name.endsWith("admin-performance")) return { measureAdminWorkload: (_n: string, fn: () => unknown) => fn() };
-      if (name.endsWith("prisma")) return { prisma: {} };
+      if (name.endsWith("prisma")) return { adminPrisma: {} };
       return require(name);
     },
     mod,

@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
 import type {
   AutoReviewReasonRow,

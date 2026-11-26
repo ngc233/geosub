@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "../../lib/prisma";
+import { adminPrisma as prisma } from "../../lib/prisma";
 import { AGGREGATE_PAGE_VIEW_METRIC } from "../../lib/aggregate-page-views";
 import {
   deviceNameZh,
