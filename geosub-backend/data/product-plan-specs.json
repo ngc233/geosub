@@ -133,6 +133,28 @@
         "sort_order": 30,
         "expected_monthly_usd_min": 80.0,
         "expected_monthly_usd_max": 380.0
+      },
+      {
+        "slug": "max",
+        "name": "Claude Max",
+        "aliases": ["Claude Max - Monthly"],
+        "exact_plan_aliases": true,
+        "app_store_id": "6473753684",
+        "country_codes": ["KR"],
+        "sort_order": 40,
+        "billing_cycle": "monthly",
+        "review_only": true
+      },
+      {
+        "slug": "ultra",
+        "name": "Claude Ultra",
+        "aliases": ["Claude Ultra - Monthly"],
+        "exact_plan_aliases": true,
+        "app_store_id": "6473753684",
+        "country_codes": ["KR"],
+        "sort_order": 50,
+        "billing_cycle": "monthly",
+        "review_only": true
       }
     ]
   },

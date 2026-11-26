@@ -161,3 +161,31 @@ test("explicit availability blockers remain hard release gates", () => {
     result.blockers.includes("availability.new_subscriber_basic_unverified"),
   );
 });
+
+test("fresh independent Max/Ultra prices cannot conceal either stale legacy tier", () => {
+  for (const staleSlug of ["max-5x", "max-20x"]) {
+    const input = readyInput();
+    const template = input.prices[0];
+    input.prices.push({ ...template, planSlug: "max-20x", planName: "Claude Max 20x" });
+    for (const slug of ["max", "ultra"]) {
+      // Hypothetical published fixture; review-only plans are not queried by the report.
+      input.prices.push({ ...template, planSlug: slug, planName: `Claude ${slug}` });
+    }
+    input.prices.find((price) => price.planSlug === staleSlug)!.lastCheckedAt = "2026-08-01T08:00:00.000Z";
+    const result = evaluateCountryPageReadiness(input);
+    assert.equal(result.status, "blocked");
+    assert.ok(result.blockers.includes("price.older_than_14_days"));
+    assert.equal(result.checks.event, true);
+  }
+});
+
+test("removing legacy Max 5x still breaks the registered event even with fresh new plans", () => {
+  const input = readyInput();
+  input.prices = ["max", "ultra"].map((slug) => ({
+    ...input.prices[0], planSlug: slug, planName: `Claude ${slug}`,
+  }));
+  const result = evaluateCountryPageReadiness(input);
+  assert.equal(result.status, "blocked");
+  assert.ok(result.blockers.includes("event.current_price_or_source_mismatch"));
+  assert.ok(!result.blockers.includes("price.older_than_14_days"));
+});
