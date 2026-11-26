@@ -92,9 +92,16 @@ test("admin SEO page explains index recommendations in operator language", () =>
   assert.match(promotionPanel, /AdminSelect/);
   assert.match(observationActions, /applyPlanSitemapPromotionAction/);
   assert.match(observationActions, /rollbackPlanSitemapPromotionAction/);
-  assert.match(observationActions, /requireAdmin\("manage"\)/);
+  assert.match(observationActions, /executeAdminCommand/);
+  assert.match(observationActions, /capability: "manage"/);
   assert.match(observationActions, /seoSitemapBudgets\.productPlanPages/);
-  assert.match(observationActions, /prisma\.\$transaction/);
+  assert.match(observationActions, /db: adminPrisma/);
+  const commandPipeline = readFileSync(
+    resolve(testDir, "../../../lib/admin-command.ts"),
+    "utf8",
+  );
+  assert.match(commandPipeline, /await requireAdmin\(capability\)/);
+  assert.match(commandPipeline, /db\.\$transaction/);
   assert.match(promotionState, /previousActiveSlugs/);
   assert.match(promotionState, /SEO_PLAN_PROMOTION_HISTORY_LIMIT/);
   assert.match(sitemap, /getEffectivePlanSitemapProductSlugs/);
@@ -130,10 +137,11 @@ test("admin SEO page keeps bounded read-only Google and Bing observation baselin
   assert.match(observationPanel, /最多保留最近 24 次/);
   assert.match(observationPanel, /保存 Google 快照/);
   assert.match(observationPanel, /保存 Bing 快照/);
-  assert.match(observationActions, /requireAdmin\("manage"\)/);
+  assert.match(observationActions, /executeAdminCommand/);
+  assert.match(observationActions, /capability: "manage"/);
   assert.match(observationActions, /save_seo_observation_snapshot/);
   assert.match(observationActions, /save_bing_observation_snapshot/);
-  assert.match(observationActions, /prisma\.\$transaction/);
+  assert.match(observationActions, /db: adminPrisma/);
   assert.match(observationActions, /baselineError=invalid/);
   assert.match(observationActions, /bingError=invalid/);
 });
