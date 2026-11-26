@@ -1,6 +1,6 @@
 import "server-only";
 
-import { prisma } from "./prisma";
+import { adminPrisma as prisma } from "./prisma";
 
 type ReviewRefreshOptions = {
   taxProfiles?: boolean;

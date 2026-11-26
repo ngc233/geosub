@@ -155,7 +155,7 @@ test("events export streams batched cursor rows, neutralizes formulas, sets head
           inferEventProductSlug: () => "chatgpt",
         };
       }
-      if (name.endsWith("prisma")) return { prisma: prismaStub };
+      if (name.endsWith("prisma")) return { adminPrisma: prismaStub };
       return require(name);
     },
     mod,

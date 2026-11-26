@@ -13,7 +13,7 @@ import {
   inferEventProductSlug,
   parseAdminEventFilters,
 } from "../../../../lib/admin-event-analytics";
-import { prisma } from "../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../lib/prisma";
 
 const EXPORT_LIMIT = 10_000;
 const EXPORT_BATCH_SIZE = 1_000;

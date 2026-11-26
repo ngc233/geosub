@@ -1,0 +1,25 @@
+[Unit]
+Description=GeoSub queued collector job worker
+Wants=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/geosub/geosub.env
+Environment=GEOSUB_COLLECTOR_LOCK_DIR=/run/geosub
+WorkingDirectory=/opt/geosub/geosub-backend
+ExecStart=/bin/bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-queue-worker.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=60
+User=geosub
+Group=geosub
+RuntimeDirectory=geosub
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+NoNewPrivileges=true
+MemoryMax=1800M
+CPUQuota=120%
+
+[Install]
+WantedBy=multi-user.target

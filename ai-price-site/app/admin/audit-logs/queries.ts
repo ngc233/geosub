@@ -3,7 +3,7 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { clampAdminPage } from "../../../lib/admin-list-params";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import {
   formatAuditActionLabel,
   formatAuditTargetTypeLabel,

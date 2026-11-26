@@ -48,10 +48,19 @@ test("every admin mutation entry point rechecks authentication", () => {
     "app/admin/settings/actions.ts",
   ];
 
+  const commandPipeline = readProjectFile("lib/admin-command.ts");
+  assert.match(commandPipeline, /await requireAdmin\(capability\)/);
+
   for (const file of actionFiles) {
     const source = readProjectFile(file);
     const exportedActions = source.match(/^export async function/gm)?.length || 0;
-    const authChecks = source.match(/await requireAdmin\("(?:manage|account)"\)/g)?.length || 0;
+    const directAuthChecks =
+      source.match(/await requireAdmin\("(?:manage|account)"\)/g)?.length || 0;
+    const commandAuthChecks =
+      source.match(
+        /await executeAdminCommand\(\{[\s\S]*?capability:\s*"(?:manage|account)"/g,
+      )?.length || 0;
+    const authChecks = directAuthChecks + commandAuthChecks;
 
     assert.ok(exportedActions > 0, `${file} should export an admin action`);
     assert.equal(authChecks, exportedActions, `${file} must authenticate every action`);

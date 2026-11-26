@@ -123,6 +123,8 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
         jsonb_path_query_first(latest_runs.raw_payload, '$.markets[*].issues[*]') #>> '{}' AS failure_reason,
         job.discovery_candidate_name,
         latest_runs.status AS latest_run_status,
+        latest_runs.raw_payload ->> 'failure_phase' AS failure_phase,
+        latest_runs.raw_payload ->> 'failure_stage' AS failure_stage,
         latest_runs.raw_payload ->> 'collector_status' AS collector_status,
         latest_runs.raw_payload ->> 'auto_review_status' AS auto_review_status,
         latest_runs.started_at AS latest_run_started_at,

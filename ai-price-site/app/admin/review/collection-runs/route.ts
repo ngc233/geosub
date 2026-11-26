@@ -2,7 +2,10 @@ import {
   adminRouteJson,
   guardAdminRoute,
 } from "../../../../lib/admin-route-guard";
-import { reconcileStaleCollectorRuns } from "../collection-runner";
+import {
+  getCollectorDispatchMode,
+  reconcileStaleCollectorRuns,
+} from "../collection-runner";
 import { getCollectorRunHistoryRows } from "../collector-run-history-query";
 
 export async function GET(request: Request) {
@@ -28,7 +31,9 @@ export async function GET(request: Request) {
     return adminRouteJson({ error: "运行记录标识无效" }, { status: 400 });
   }
 
-  await reconcileStaleCollectorRuns();
+  if (getCollectorDispatchMode() !== "queue") {
+    await reconcileStaleCollectorRuns();
+  }
   const rows = await getCollectorRunHistoryRows(productQuery, 12, {
     product,
     runId,
