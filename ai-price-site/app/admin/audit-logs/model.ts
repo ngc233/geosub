@@ -102,6 +102,8 @@ const ACTION_LABELS: Record<string, string> = {
   pause: "暂停采集任务",
   export_events_csv: "导出事件 CSV",
   change_password: "修改账号密码",
+  revoke_admin_session: "强制下线会话",
+  revoke_other_admin_sessions: "注销其他全部会话",
   settings_analytics_update: "更新统计配置",
   settings_notifications_update: "更新通知配置",
   create: "创建记录",
@@ -120,6 +122,7 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   article: "文章",
   event_log: "访问事件",
   admin_user: "管理员账号",
+  admin_session: "登录会话",
   site_settings: "系统设置",
   site_setting: "系统设置",
   discovery_source: "线索来源",
@@ -152,6 +155,7 @@ export function getAuditActionTone(action: string): AuditBadgeTone {
     lower.includes("reject") ||
     lower.includes("delete") ||
     lower.includes("password") ||
+    lower.includes("revoke") ||
     lower.includes("rollback")
   ) {
     return "danger";

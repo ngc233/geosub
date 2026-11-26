@@ -94,3 +94,21 @@ test("settings page keeps external operations notifications explicit and disable
   assert.match(notification, /operations_notification_deliveries/);
   assert.match(notification, /shouldSuppressDailyOperationsBrief/);
 });
+
+test("settings page exposes fine-grained RBAC badges and active session management", () => {
+  const page = readSettingsFile("page.tsx");
+  const actions = readSettingsFile("actions.ts");
+
+  assert.match(page, /当前账号权限与活跃会话/);
+  assert.match(page, /getCurrentAdminSessions/);
+  assert.match(page, /listAdminRoleDomainCapabilities/);
+  assert.match(page, /revokeAdminSession/);
+  assert.match(page, /revokeOtherAdminSessionsAction/);
+  assert.match(page, /capability="sessions\.manage"/);
+  assert.match(page, /强制下线/);
+  assert.match(page, /注销其他全部设备/);
+  assert.match(actions, /capability:\s*"settings\.manage"/);
+  assert.match(actions, /capability:\s*"sessions\.manage"/);
+  assert.match(actions, /action:\s*"revoke_admin_session"/);
+  assert.match(actions, /action:\s*"revoke_other_admin_sessions"/);
+});

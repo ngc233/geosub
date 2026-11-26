@@ -3,7 +3,12 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { getCurrentAdmin } from "./admin-auth";
 import { canAdmin, type AdminCapability } from "./admin-permissions";
-import { applyAdminResponseHeaders } from "./admin-proxy-policy";
+import {
+  applyAdminResponseHeaders,
+  getAdminHostPolicy,
+  normalizeRequestHost,
+  type AdminPolicyEnv,
+} from "./admin-proxy-policy";
 
 type AdminUserRecord = NonNullable<Awaited<ReturnType<typeof getCurrentAdmin>>>;
 
@@ -103,7 +108,24 @@ export function getExpectedAdminOrigin(
 
 export function verifyAdminMutationOrigin(
   request: Pick<Request, "headers" | "url">,
+  env?: AdminPolicyEnv,
 ): AdminOriginCheckResult {
+  const hostPolicy = getAdminHostPolicy(env);
+  if (hostPolicy.enforceDedicatedHost) {
+    let urlHost = "";
+    if (request.url) {
+      try {
+        urlHost = new URL(request.url).host;
+      } catch {
+        urlHost = "";
+      }
+    }
+    const requestHost = normalizeRequestHost(request.headers, urlHost);
+    if (!requestHost || requestHost !== hostPolicy.adminHost) {
+      return { ok: false, reason: "non-admin-host" };
+    }
+  }
+
   const secFetchSite =
     request.headers?.get("sec-fetch-site")?.trim().toLowerCase() ?? "";
   if (secFetchSite === "cross-site") {

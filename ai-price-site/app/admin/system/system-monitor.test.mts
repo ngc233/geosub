@@ -112,3 +112,15 @@ test("task monitor reports real operational backlog instead of static status", (
   assert.match(monitor, /运行超时/);
   assert.match(monitor, /长时间未成功/);
 });
+
+test("system monitor exposes read-only DB pool isolation and collector queue failure-phase telemetry", () => {
+  const observability = readProjectFile("lib/system-runtime-observability.ts");
+  const page = readProjectFile("app/admin/system/page.tsx");
+
+  assert.match(observability, /FROM pg_stat_activity/);
+  assert.match(observability, /adminPrisma/);
+  assert.match(observability, /GEOSUB_COLLECTOR_DISPATCH_MODE/);
+  assert.match(observability, /failure_phase/);
+  assert.match(page, /运行态连接池与队列观测/);
+  assert.match(page, /health\.runtimeObservability/);
+});

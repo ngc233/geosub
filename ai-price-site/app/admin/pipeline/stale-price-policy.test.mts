@@ -43,8 +43,19 @@ function readRepoFile(fileName: string) {
   return readFileSync(resolve(repoRoot, fileName), "utf8");
 }
 
+function readPipelineSource() {
+  return [
+    "app/admin/pipeline/page.tsx",
+    "app/admin/pipeline/model.ts",
+    "app/admin/pipeline/queries.ts",
+    "lib/admin-product-summary-read-model.ts",
+  ]
+    .map(readAppFile)
+    .join("\n");
+}
+
 test("pipeline marks published App Store prices stale by last checked date", () => {
-  const source = readAppFile("app/admin/pipeline/page.tsx");
+  const source = readPipelineSource();
   const scopeHelper = readAppFile("lib/admin-product-scope.ts");
   const scopePolicy = readAppFile("lib/admin-product-scope-policy.ts");
 
@@ -62,13 +73,13 @@ test("pipeline marks published App Store prices stale by last checked date", () 
   assert.match(source, /published_stale_price_count = 0/);
   assert.match(source, /latest_price_checked_at IS NOT NULL/);
   assert.match(source, /label: "需复采"/);
-  assert.match(source, /App Store'.*价格超过 14 天未更新/);
+  assert.match(source, /App Store".*价格超过 14 天未更新/);
   assert.match(source, /正式价超过 14 天/);
   assert.match(source, /最新 \$\{formatDate\(row\.latest_price_checked_at\)\}/);
 });
 
 test("pipeline recommendation uses published price freshness instead of only collector run age", () => {
-  const source = readAppFile("app/admin/pipeline/page.tsx");
+  const source = readPipelineSource();
 
   assert.match(source, /published_stale_price_count > 0/);
   assert.match(source, /latest_price_checked_at IS NULL/);

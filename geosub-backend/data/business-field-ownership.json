@@ -675,7 +675,7 @@
     },
     "seo_admin": {
       "path": "ai-price-site/app/admin/seo/actions.ts",
-      "anchor": "requireAdmin"
+      "anchor": "executeAdminCommand"
     },
     "article_admin": {
       "path": "ai-price-site/app/admin/articles/actions.ts",
@@ -1047,13 +1047,6 @@
     },
     {
       "path": "ai-price-site/app/admin/search-demand/authority-collect/route.ts",
-      "classification": "admin_action",
-      "tables": [
-        "audit_logs"
-      ]
-    },
-    {
-      "path": "ai-price-site/app/admin/seo/actions.ts",
       "classification": "admin_action",
       "tables": [
         "audit_logs"

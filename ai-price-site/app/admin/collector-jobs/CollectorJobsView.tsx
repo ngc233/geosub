@@ -7,7 +7,8 @@ import AdminFilterBar from "@/components/admin/AdminFilterBar";
 import { parseAdminProductFilter } from "@/lib/admin-workflow-context";
 import { adminButtonClassName } from "@/components/admin/AdminButton";
 import AdminPagination from "@/components/admin/AdminPagination";
-import { createAdminListView } from "@/lib/admin-list-params";
+import { buildAdminListHref } from "@/lib/admin-list-params";
+import { resolveSqlPagination } from "@/lib/admin-product-summary-model";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import AdminLink from "@/components/admin/AdminLink";
 import { ArrowLeft } from "lucide-react";
@@ -75,13 +76,55 @@ export default function CollectorJobsView({
 }) {
   const filter = parseAdminProductFilter(listParams);
   const productGroups = groupCollectorJobs(jobs);
-  const activeCount = jobs.filter((job) => job.status === "active").length;
+  const totalProductCount = jobs[0]?.total_product_count ?? productGroups.length;
+  const activeCount =
+    jobs[0]?.total_active_job_count ??
+    jobs.filter((job) => job.status === "active").length;
+  const totalRunCount = runs[0]?.total_run_count ?? runs.length;
+  const totalCheckCount =
+    availabilityChecks[0]?.total_check_count ?? availabilityChecks.length;
   const runningProductCount = productGroups.filter((group) => group.hasRunningJob).length;
   const queuedProductCount = productGroups.filter((group) => group.hasQueuedJob).length;
   const failedProductCount = productGroups.filter((group) => group.hasFailedJob).length;
-  const list = createAdminListView(productGroups, { basePath: "/admin/collector-jobs", params: listParams, pageSize: 10, pageParam: "page", id: "collector-products" });
-  const runList = createAdminListView(runs, { basePath: "/admin/collector-jobs", params: listParams, pageSize: 25, pageParam: "runPage", id: "collector-runs" });
-  const checkList = createAdminListView(availabilityChecks, { basePath: "/admin/collector-jobs", params: listParams, pageSize: 25, pageParam: "checkPage", id: "collector-checks" });
+  const productPagination = resolveSqlPagination({
+    rawPage: listParams.page,
+    total: totalProductCount,
+    pageSize: 10,
+  });
+  const runPagination = resolveSqlPagination({
+    rawPage: listParams.runPage,
+    total: totalRunCount,
+    pageSize: 25,
+  });
+  const checkPagination = resolveSqlPagination({
+    rawPage: listParams.checkPage,
+    total: totalCheckCount,
+    pageSize: 25,
+  });
+  const list = {
+    items: productGroups,
+    pagination: {
+      ...productPagination,
+      pageHref: (page: number) =>
+        `${buildAdminListHref("/admin/collector-jobs", listParams, { page, pageParam: "page" })}#collector-products`,
+    },
+  };
+  const runList = {
+    items: runs,
+    pagination: {
+      ...runPagination,
+      pageHref: (page: number) =>
+        `${buildAdminListHref("/admin/collector-jobs", listParams, { page, pageParam: "runPage" })}#collector-runs`,
+    },
+  };
+  const checkList = {
+    items: availabilityChecks,
+    pagination: {
+      ...checkPagination,
+      pageHref: (page: number) =>
+        `${buildAdminListHref("/admin/collector-jobs", listParams, { page, pageParam: "checkPage" })}#collector-checks`,
+    },
+  };
   return (
     <div>
       <AdminPageHeader
@@ -104,7 +147,7 @@ export default function CollectorJobsView({
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminStatCard
           label="产品数"
-          value={productGroups.length}
+          value={totalProductCount}
           helper="按产品聚合后的采集对象。"
         />
         <AdminStatCard
@@ -141,7 +184,7 @@ export default function CollectorJobsView({
       <details open={Boolean(listParams.page || filter.product || filter.q)}
         className="mb-4 rounded-admin-card border border-admin-border bg-admin-surface">
         <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-semibold text-admin-text">
-          产品采集列表 · {productGroups.length} 个产品
+          产品采集列表 · {totalProductCount} 个产品
         </summary>
       <AdminCard>
         <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -152,7 +195,7 @@ export default function CollectorJobsView({
             </p>
           </div>
           <p className="text-xs text-admin-text-faint">
-            当前启用底层任务 {activeCount} 个，列表最多展示最近和高优先级的 160 个任务。
+            当前启用底层任务 {activeCount} 个，列表按产品真 SQL 分页（每页 10 个产品，无上限截断）。
           </p>
         </div>
 
@@ -445,7 +488,7 @@ export default function CollectorJobsView({
       <details open={Boolean(listParams.runPage)}
         className="mb-4 rounded-admin-card border border-admin-border bg-admin-surface">
         <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-semibold text-admin-text">
-          最近采集运行 · 最近 {runs.length} 条
+          最近采集运行 · 共 {totalRunCount} 条
         </summary>
 
       <AdminCard>
@@ -567,7 +610,7 @@ export default function CollectorJobsView({
       <details open={Boolean(listParams.checkPage)}
         className="rounded-admin-card border border-admin-border bg-admin-surface">
         <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-semibold text-admin-text">
-          App Store 地区可用性 · 最近 {availabilityChecks.length} 条
+          App Store 地区可用性 · 共 {totalCheckCount} 条
         </summary>
 
       <AdminCard>
