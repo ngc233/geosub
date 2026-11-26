@@ -30,11 +30,14 @@ async function getObservationProductSlug(id: string) {
 }
 
 export async function approveObservation(formData: FormData) {
-  await requireAdmin("manage");
+  const admin = await requireAdmin("manage");
   const id = getObservationId(formData);
   const productSlug = await getObservationProductSlug(id);
 
-  await approvePriceObservation(id);
+  await approvePriceObservation(id, {
+    actorId: admin.id,
+    note: "Approved from admin review page",
+  });
   invalidatePublicPricing(productSlug);
 
   revalidatePath("/admin/price-observations");
@@ -42,19 +45,19 @@ export async function approveObservation(formData: FormData) {
 }
 
 export async function ignoreObservation(formData: FormData) {
-  await requireAdmin("manage");
+  const admin = await requireAdmin("manage");
   const id = getObservationId(formData);
 
-  await ignorePriceObservation(id, "Ignored from admin review page");
+  await ignorePriceObservation(id, "Ignored from admin review page", admin.id);
 
   revalidatePath("/admin/price-observations");
 }
 
 export async function rejectObservation(formData: FormData) {
-  await requireAdmin("manage");
+  const admin = await requireAdmin("manage");
   const id = getObservationId(formData);
 
-  await rejectPriceObservation(id, "Rejected from admin review page");
+  await rejectPriceObservation(id, "Rejected from admin review page", admin.id);
 
   revalidatePath("/admin/price-observations");
 }

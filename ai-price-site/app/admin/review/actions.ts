@@ -34,11 +34,15 @@ async function getObservationProductSlug(id: string) {
 }
 
 export async function approveObservation(formData: FormData) {
-  await requireAdmin("manage");
+  const admin = await requireAdmin("manage");
   const id = getObservationId(formData);
   const productSlug = await getObservationProductSlug(id);
 
-  await approvePriceObservation(id, { taxProfiles: true });
+  await approvePriceObservation(id, {
+    actorId: admin.id,
+    taxProfiles: true,
+    note: "Approved from review center",
+  });
   invalidatePublicPricing(productSlug);
 
   revalidatePath("/admin/review");
@@ -46,26 +50,26 @@ export async function approveObservation(formData: FormData) {
 }
 
 export async function ignoreObservation(formData: FormData) {
-  await requireAdmin("manage");
+  const admin = await requireAdmin("manage");
   const id = getObservationId(formData);
 
-  await ignorePriceObservation(id, "Ignored from review center");
+  await ignorePriceObservation(id, "Ignored from review center", admin.id);
 
   revalidatePath("/admin/review");
 }
 
 export async function rejectObservation(formData: FormData) {
-  await requireAdmin("manage");
+  const admin = await requireAdmin("manage");
   const id = getObservationId(formData);
 
-  await rejectPriceObservation(id, "Rejected from review center");
+  await rejectPriceObservation(id, "Rejected from review center", admin.id);
 
   revalidatePath("/admin/review");
 }
 
 export async function runAutoReview() {
-  await requireAdmin("manage");
-  await runAppStoreStabilityAutoReview();
+  const admin = await requireAdmin("manage");
+  await runAppStoreStabilityAutoReview(admin.id);
   invalidatePublicPricing();
 
   revalidatePath("/admin/review");
@@ -75,9 +79,25 @@ export async function runAutoReview() {
 }
 
 export async function queueAppStoreCollectionAndReview(formData?: FormData) {
-  await requireAdmin("manage");
+  const admin = await requireAdmin("manage");
   const productSlug = String(formData?.get("productSlug") ?? "").trim();
   const result = await queueAndRunAppStoreCollection(productSlug);
+
+  await prisma.auditLog.create({
+    data: {
+      actorId: admin.id,
+      action: "queue_app_store_collection",
+      targetType: "collector_product",
+      newValue: {
+        productSlug: productSlug || null,
+        queuedCount: result.queuedCount,
+        runStatus: result.runStatus,
+      },
+      note: productSlug
+        ? `Queued App Store collection for ${productSlug} from review center.`
+        : "Queued App Store collection from review center.",
+    },
+  });
 
   redirect(buildCollectionRedirectPath(result, productSlug));
 }
