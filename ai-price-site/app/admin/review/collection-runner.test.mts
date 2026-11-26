@@ -81,7 +81,11 @@ test("spawn failure records a typed terminal state instead of silently leaving a
   const fixture = loadRunner(true);
   const result = await fixture.run("local-fixture");
   assert.equal(JSON.stringify(result), JSON.stringify({ queuedCount: 0, runStatus: "failed", runIds: [] }));
-  assert.ok(fixture.queries.some(sql => /jsonb_build_object\('state', \?::text\)/.test(sql)));
+  assert.ok(
+    fixture.queries.some((sql) =>
+      /jsonb_build_object\(\s*'state', \?::text,\s*'failure_phase', \?::text,\s*'error_code', \?::text\s*\)/.test(sql),
+    ),
+  );
   assert.deepEqual(fixture.invalidated, []);
 });
 

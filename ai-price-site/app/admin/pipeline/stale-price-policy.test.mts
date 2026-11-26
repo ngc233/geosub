@@ -45,12 +45,18 @@ function readRepoFile(fileName: string) {
 
 test("pipeline marks published App Store prices stale by last checked date", () => {
   const source = readAppFile("app/admin/pipeline/page.tsx");
+  const scopeHelper = readAppFile("lib/admin-product-scope.ts");
+  const scopePolicy = readAppFile("lib/admin-product-scope-policy.ts");
 
   assert.match(source, /published_stale_price_count/);
   assert.match(source, /price\.status = 'published'::publish_status/);
   assert.match(source, /price\.billing_platform::text = pricing_scope\.billing_platform/);
-  assert.match(source, /THEN 'web' ELSE 'ios' END AS billing_platform/);
-  assert.match(source, /product\.slug IN \('spotify','apple-music'\)[\s\S]*?job_stats\.app_store_job_count,0\)=0/);
+  assert.match(source, /officialWebEligibleJobSql\("product", "job"\)/);
+  assert.match(source, /webPricingScopeJoinSql\(/);
+  assert.match(scopeHelper, /THEN 'web'[\s\S]*?ELSE 'ios'[\s\S]*?END AS billing_platform/);
+  assert.match(scopeHelper, /FROM product_source_profiles profile/);
+  assert.match(scopePolicy, /"spotify"/);
+  assert.match(scopePolicy, /"apple-music"/);
   assert.match(source, /price\.price_usd IS NOT NULL/);
   assert.match(source, /price\.last_checked_at < NOW\(\) - INTERVAL '14 days'/);
   assert.match(source, /published_stale_price_count = 0/);

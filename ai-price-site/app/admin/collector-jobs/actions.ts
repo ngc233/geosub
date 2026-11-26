@@ -4,6 +4,10 @@ import {
   AdminCommandInputError,
   executeAdminCommand,
 } from "../../../lib/admin-command";
+import {
+  activationPreflightConditionSql,
+  formatActivationPreflightError,
+} from "../../../lib/admin-product-scope";
 import { adminPrisma } from "../../../lib/prisma";
 import { startCollectorJobRunInBackground } from "../review/collection-runner";
 
@@ -41,15 +45,29 @@ export async function runCollectorJobNow(formData: FormData) {
     parseInput: parseJobId,
     db: adminPrisma,
     preflight: async ({ input: id, db }) => {
-      const guarded = await db.$queryRaw<Array<{ id: string }>>`
-        SELECT job.id::text FROM collector_jobs job
+      const preflightCondition = activationPreflightConditionSql("product", "job");
+      const guarded = await db.$queryRaw<
+        Array<{
+          id: string;
+          product_slug: string | null;
+          preflight_message: string | null;
+        }>
+      >`
+        SELECT
+          job.id::text,
+          product.slug AS product_slug,
+          job.job_config ->> 'activation_preflight_message' AS preflight_message
+        FROM collector_jobs job
         JOIN products product ON product.id = job.product_id
-        WHERE job.id = ${id}::uuid AND product.slug = 'claude'
-          AND job.job_config ->> 'collector_kind' = 'pricing_page'
+        WHERE job.id = ${id}::uuid
+          AND ${preflightCondition}
       `;
       if (guarded.length) {
         throw new AdminCommandInputError(
-          "请从 Claude 采集配置检查启用条件，再确认加入周期调度。",
+          formatActivationPreflightError({
+            productSlug: guarded[0]?.product_slug,
+            preflightMessage: guarded[0]?.preflight_message,
+          }),
         );
       }
     },

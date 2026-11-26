@@ -1,4 +1,8 @@
+import { classifyCollectorRunFailurePhase } from '../../../lib/admin-product-scope-policy.ts';
+
 export type CollectorExecutionFields = {
+  failure_phase?: string | null;
+  failure_stage?: string | null;
   collector_status?: string | null;
   auto_review_status?: string | null;
   collection_outcome?: string | null;
@@ -115,6 +119,5 @@ export function assessCollectorExecution(input: CollectorExecutionInput): Assess
 }
 
 export function isCollectorReviewFailure(input: CollectorExecutionFields & { error_message?: string | null }) {
-  return (input.collector_status === 'succeeded' && input.auto_review_status === 'failed')
-    || Boolean(input.error_message?.startsWith('Automatic review failed after collection:'));
+  return classifyCollectorRunFailurePhase(input) === 'auto_review';
 }

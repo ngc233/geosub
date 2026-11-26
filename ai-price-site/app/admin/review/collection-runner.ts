@@ -101,6 +101,8 @@ async function markCollectorRunProcessExit(
     return;
   }
 
+  const failurePhase = status === "spawn_failed" ? "spawn" : "collector";
+
   try {
     await prisma.$queryRaw`
       UPDATE collector_job_runs
@@ -109,7 +111,11 @@ async function markCollectorRunProcessExit(
         finished_at = COALESCE(finished_at, NOW()),
         duration_ms = GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(finished_at, NOW()) - started_at)) * 1000)::int,
         error_message = COALESCE(error_message, ${message}),
-        raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object('state', ${status}::text)
+        raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
+          'state', ${status}::text,
+          'failure_phase', ${failurePhase}::text,
+          'error_code', ${status}::text
+        )
       WHERE id = ${runId}::uuid
         AND status = 'running'
     `;

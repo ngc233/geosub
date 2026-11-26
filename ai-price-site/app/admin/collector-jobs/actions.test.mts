@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import test from 'node:test';
 import ts from 'typescript';
 import { canAdmin } from '../../../lib/admin-permissions.ts';
+import { formatActivationPreflightError } from '../../../lib/admin-product-scope-policy.ts';
 import { AdminSaveConflict } from '../../../lib/admin-save.ts';
 
 const nodeRequire = createRequire(import.meta.url);
@@ -21,7 +22,9 @@ function fixture({ role = 'OWNER', claudePrice = true, failAudit = false } = {})
     const sql = parts.join('?');
     queries.push(sql);
     if (inTx) txQueries.push(sql);
-    return sql.includes('SELECT job.id') && claudePrice ? [{ id: 'fixture' }] : [];
+    return sql.includes('SELECT') && sql.includes('job.id::text') && claudePrice
+      ? [{ id: 'fixture', product_slug: 'claude', preflight_message: null }]
+      : [];
   };
 
   const prismaStub = {
@@ -94,6 +97,12 @@ function fixture({ role = 'OWNER', claudePrice = true, failAudit = false } = {})
   new Function('require', 'module', 'exports', actionsCode)(
     (name: string) => {
       if (name.endsWith('/admin-command')) return adminCommandModule.exports;
+      if (name.endsWith('/admin-product-scope')) {
+        return {
+          activationPreflightConditionSql: () => 'PREFLIGHT_CONDITION',
+          formatActivationPreflightError,
+        };
+      }
       if (name.endsWith('/prisma')) return { adminPrisma: prismaStub };
       if (name.endsWith('/collection-runner')) {
         return {
