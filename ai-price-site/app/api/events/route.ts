@@ -225,10 +225,37 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let rawBody = "";
+  try {
+    rawBody = await request.text();
+  } catch {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Invalid JSON body.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+
+  if (Buffer.byteLength(rawBody, "utf8") > MAX_REQUEST_BYTES) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Request body is too large.",
+      },
+      {
+        status: 413,
+      }
+    );
+  }
+
   let body: Record<string, unknown> | null = null;
 
   try {
-    const parsed = await request.json();
+    const parsed = JSON.parse(rawBody);
     body = parsed && typeof parsed === "object" && !Array.isArray(parsed)
       ? (parsed as Record<string, unknown>)
       : null;

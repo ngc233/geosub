@@ -22,6 +22,7 @@ import {
   SearchCheck,
   LineChart,
   Settings,
+  ShieldCheck,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -87,6 +88,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     label: "系统",
     items: [
       { label: "任务状态", href: "/admin/system", icon: Activity },
+      { label: "审计日志", href: "/admin/audit-logs", icon: ShieldCheck },
       { label: "设置", href: "/admin/settings", icon: Settings },
     ],
   },

@@ -457,7 +457,10 @@ export async function GET(request: NextRequest) {
     try {
       const index = await loadChromeSearchIndex(locale);
       return json(index);
-    } catch {
+    } catch (error) {
+      console.warn(
+        `[public-search] chrome index unavailable: ${error instanceof Error ? error.message : "unknown_error"}`,
+      );
       return json({ entries: [], popular: [], unavailable: true }, 503);
     }
   }
@@ -475,7 +478,10 @@ export async function GET(request: NextRequest) {
         query,
         results: matchChromeSearchCatalog(index.entries, query),
       });
-    } catch {
+    } catch (error) {
+      console.warn(
+        `[public-search] chrome query unavailable: ${error instanceof Error ? error.message : "unknown_error"}`,
+      );
       return json({ query, results: [], unavailable: true }, 503);
     }
   }
@@ -607,7 +613,10 @@ export async function GET(request: NextRequest) {
     ].slice(0, MAX_RESULTS);
 
     return json({ query, results: uniqueResults });
-  } catch {
+  } catch (error) {
+    console.warn(
+      `[public-search] search query unavailable: ${error instanceof Error ? error.message : "unknown_error"}`,
+    );
     return json({ query, results: [], unavailable: true }, 503);
   }
 }

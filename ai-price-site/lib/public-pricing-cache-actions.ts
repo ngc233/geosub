@@ -1,4 +1,5 @@
 import { revalidateTag, updateTag } from "next/cache";
+import { invalidateAdminPricingReadModels } from "./admin-read-model-cache";
 import {
   getPublicPricingProductCacheTag,
   PUBLIC_PRICING_CACHE_TAG,
@@ -7,6 +8,7 @@ import {
 } from "./public-pricing-cache";
 
 export function invalidatePublicPricing(productSlug?: string | null) {
+  invalidateAdminPricingReadModels();
   updateTag(PUBLIC_PRICING_LIST_CACHE_TAG);
   updateTag(PUBLIC_PRICING_NAVIGATION_CACHE_TAG);
 
@@ -20,6 +22,7 @@ export function invalidatePublicPricing(productSlug?: string | null) {
 export function invalidatePublicPricingFromRoute(
   productSlug?: string | null,
 ) {
+  invalidateAdminPricingReadModels();
   revalidateTag(PUBLIC_PRICING_LIST_CACHE_TAG, { expire: 0 });
   revalidateTag(PUBLIC_PRICING_NAVIGATION_CACHE_TAG, { expire: 0 });
 

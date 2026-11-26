@@ -54,6 +54,12 @@ function createPrismaClient() {
         minimum: 5_000,
         maximum: 300_000,
       }),
+      statement_timeout: getBoundedIntegerEnvironmentValue({
+        name: "GEOSUB_DB_STATEMENT_TIMEOUT_MS",
+        fallback: 15_000,
+        minimum: 2_000,
+        maximum: 60_000,
+      }),
       keepAlive: true,
     },
     {

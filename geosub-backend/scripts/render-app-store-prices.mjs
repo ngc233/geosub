@@ -5,12 +5,12 @@ import { join } from "node:path";
 const chromium = await loadChromium();
 
 const args = new Map();
-for (let index = 2; index < process.argv.length; index += 2) {
+for (let index = 2; index < process.argv.length; index += 1) {
   const key = process.argv[index];
-  const value = process.argv[index + 1];
-  if (key?.startsWith("--")) {
-    args.set(key.slice(2), value);
-  }
+  if (!key?.startsWith("--")) continue;
+  const next = process.argv[index + 1];
+  args.set(key.slice(2), next && !next.startsWith("--") ? next : "true");
+  if (next && !next.startsWith("--")) index += 1;
 }
 
 const country = (args.get("country") ?? "US").toLowerCase();
@@ -54,12 +54,16 @@ function resolvePackageJsonPath(candidate) {
   return existsSync(packageJsonPath) ? packageJsonPath : null;
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function getAppStoreUrl(countryCode, appleAppId, value) {
   if (value) {
     const normalized = /apps\.apple\.com\/[a-z]{2}\//i.test(value)
       ? value.replace(/apps\.apple\.com\/[a-z]{2}\//i, `apps.apple.com/${countryCode}/`)
       : value.replace(/apps\.apple\.com\//i, `apps.apple.com/${countryCode}/`);
-    if (normalized.match(new RegExp(`/id${appleAppId}(\\?|$)`))) {
+    if (normalized.match(new RegExp(`/id${escapeRegExp(appleAppId)}(\\?|$)`))) {
       return normalized;
     }
   }

@@ -73,6 +73,7 @@ function loadSafeE2eEnvironment() {
     ...explicitFile,
     DATABASE_URL: databaseUrl.toString(),
     GEOSUB_ANALYTICS_CONSENT_REQUIRED: "true",
+    GEOSUB_HEALTH_SNAPSHOT_TTL_MS: "0",
     GEOSUB_NEXT_DIST_DIR: ".next-e2e",
     PORT: "3100",
     HOSTNAME: "127.0.0.1",

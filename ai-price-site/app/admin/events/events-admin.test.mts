@@ -73,7 +73,9 @@ test("event log page supports operational filters pagination and export", () => 
 test("event CSV export is authenticated bounded and privacy conscious", () => {
   const route = readProjectFile("app/admin/events/export/route.ts");
 
-  assert.match(route, /await requireAdmin\(\)/);
+  assert.match(route, /await guardAdminRoute\(request,\s*\{[\s\S]*?capability: "read"/);
+  assert.match(route, /formatSafeCsvRow/);
+  assert.match(route, /export_events_csv/);
   assert.match(route, /EXPORT_LIMIT = 10_000/);
   assert.match(route, /text\/csv; charset=utf-8/);
   assert.match(route, /anonymousId\?\.slice\(0, 8\)/);

@@ -62,7 +62,8 @@ if command -v docker >/dev/null 2>&1; then
   " 2>/dev/null || true)"
 fi
 
-if [[ -z "$RUN_ID" ]]; then
+if [[ ! "$RUN_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+  RUN_ID=""
   echo "Warning: could not record the start of system task '$TASK_KEY'." >&2
 fi
 

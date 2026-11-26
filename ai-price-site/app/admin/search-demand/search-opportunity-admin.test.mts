@@ -321,7 +321,7 @@ test("authority collection is authenticated scoped and audited", async () => {
     ), "utf8"),
   ]);
 
-  assert.match(route, /await requireAdmin\(\)/);
+  assert.match(route, /await guardAdminRoute\(request,\s*\{[\s\S]*?capability: "manage"[\s\S]*?verifyOrigin: true/);
   assert.match(route, /queueAndRunAppStoreCollection\(productSlug\)/);
   assert.match(route, /queue_authority_coverage_collection/);
   assert.match(route, /getProductSeoQualityAudit\(productSlug\)/);

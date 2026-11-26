@@ -4,6 +4,7 @@ import { safeAdminReturnTo } from "@/lib/admin-workflow-context";
 import { type Prisma, ProductCategory, PublishStatus, StructuredDataType } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { fetchAdminExternalJson } from "../../../lib/admin-external-fetch";
 import { fetchOfficialSiteIcon } from "../../../lib/official-site-logo";
 import { prisma } from "../../../lib/prisma";
 import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
@@ -94,21 +95,7 @@ function normalizeNameForMatch(value: string) {
 }
 
 async function findAppStoreApp(productName: string) {
-  const response = await fetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(productName)}&entity=software&limit=5`,
-    {
-      headers: {
-        "User-Agent": "GeoSubAdmin/1.0",
-      },
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const data = (await response.json()) as {
+  const data = await fetchAdminExternalJson<{
     results?: Array<{
       trackId?: number;
       trackName?: string;
@@ -119,7 +106,14 @@ async function findAppStoreApp(productName: string) {
       artworkUrl100?: string;
       artworkUrl60?: string;
     }>;
-  };
+  }>(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(productName)}&entity=software&limit=5`,
+    { label: "itunes_product_search" },
+  );
+
+  if (!data) {
+    return null;
+  }
 
   const expected = normalizeNameForMatch(productName);
   const candidates = data.results || [];
@@ -161,21 +155,7 @@ async function lookupAppStoreArtwork(appStoreId: string | null) {
     return null;
   }
 
-  const response = await fetch(
-    `https://itunes.apple.com/lookup?id=${encodeURIComponent(appStoreId)}`,
-    {
-      headers: {
-        "User-Agent": "GeoSubAdmin/1.0",
-      },
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const data = (await response.json()) as {
+  const data = await fetchAdminExternalJson<{
     results?: Array<{
       trackName?: string;
       sellerName?: string;
@@ -184,7 +164,14 @@ async function lookupAppStoreArtwork(appStoreId: string | null) {
       artworkUrl100?: string;
       artworkUrl60?: string;
     }>;
-  };
+  }>(
+    `https://itunes.apple.com/lookup?id=${encodeURIComponent(appStoreId)}`,
+    { label: "itunes_artwork_lookup" },
+  );
+
+  if (!data) {
+    return null;
+  }
   const app = data.results?.[0];
   const logoUrl = normalizeAppStoreArtworkUrl(
     app?.artworkUrl512 || app?.artworkUrl100 || app?.artworkUrl60 || null,

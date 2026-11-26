@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { invalidateAdminSeoReadModels } from "../../../lib/admin-read-model-cache";
 import { prisma } from "../../../lib/prisma";
 import {
   appendSeoObservationSnapshot,
@@ -126,6 +127,7 @@ export async function importSeoSearchPageObservationsAction(formData: FormData) 
       preflightToken: String(formData.get("preflightToken") ?? ""), acknowledgeExcluded: formData.get("acknowledgeExcluded") === "yes",
       batchId: randomUUID(), importedAt: new Date().toISOString(),
     });
+    invalidateAdminSeoReadModels();
     revalidatePath("/admin/seo");
     return { ...result, message: "页面报表已导入，窗口选择状态已更新。" };
   } catch (error) { return searchImportError(error); }
@@ -137,6 +139,7 @@ export async function rollbackSeoSearchPageObservationsAction(formData: FormData
     const result = await saveSeoSearchImport(prisma, admin, String(formData.get("recordVersion") ?? ""), {
       kind: "restore", engine: parseSearchEngine(formData.get("engine")), batchId: String(formData.get("batchId") ?? ""), auditId: String(formData.get("auditId") ?? ""),
     });
+    invalidateAdminSeoReadModels();
     revalidatePath("/admin/seo");
     return { ...result, message: "已按审计撤销最近导入；同窗口原批次已恢复（首次导入则移除该窗口），其他窗口保持原样。" };
   } catch (error) { return searchImportError(error); }
@@ -203,6 +206,7 @@ async function persistPlanPromotionState({
     });
   });
 
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/seo");
   revalidatePath("/sitemap.xml");
 }
@@ -265,6 +269,7 @@ export async function saveSeoObservationSnapshotAction(formData: FormData) {
     });
   });
 
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/seo");
   redirect("/admin/seo?baselineSaved=1");
 }
@@ -324,6 +329,7 @@ export async function saveBingObservationSnapshotAction(formData: FormData) {
     });
   });
 
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/seo");
   redirect("/admin/seo?bingSaved=1");
 }

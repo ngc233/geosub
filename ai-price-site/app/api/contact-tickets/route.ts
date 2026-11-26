@@ -1,17 +1,26 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { getTrustedClientIp } from "../../../lib/client-ip";
+import { createInMemoryEventRateLimiter } from "../../../lib/event-rate-limit";
 import { prisma } from "../../../lib/prisma";
 import { notifyNewContactTicket } from "../../../lib/contact-ticket-notification";
 
 const MAX_REQUEST_BYTES = 24 * 1024;
+const CONTACT_TICKET_LIMIT_PER_HOUR = 3;
+const CONTACT_TICKET_WINDOW_MS = 60 * 60 * 1000;
 const ALLOWED_CATEGORIES = new Set(["correction", "suggestion", "data", "advertising", "privacy", "other"]);
+const inMemoryContactRateLimiter = createInMemoryEventRateLimiter({
+  limit: CONTACT_TICKET_LIMIT_PER_HOUR,
+  windowMs: CONTACT_TICKET_WINDOW_MS,
+  maxKeys: 5_000,
+});
 
 function clean(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
 function clientIp(request: NextRequest) {
-  return clean(request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for")?.split(",")[0] || "unknown", 100);
+  return clean(getTrustedClientIp(request.headers), 100);
 }
 
 function isSameOrigin(request: NextRequest) {
@@ -32,9 +41,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "提交内容过长。" }, { status: 413 });
   }
 
+  let rawPayload: string;
+  try {
+    rawPayload = await request.text();
+  } catch {
+    return NextResponse.json({ ok: false, error: "提交格式无效。" }, { status: 400 });
+  }
+  if (Buffer.byteLength(rawPayload, "utf8") > MAX_REQUEST_BYTES) {
+    return NextResponse.json({ ok: false, error: "提交内容过长。" }, { status: 413 });
+  }
+
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    const parsed = JSON.parse(rawPayload);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return NextResponse.json({ ok: false, error: "提交格式无效。" }, { status: 400 });
+    }
+    body = parsed as Record<string, unknown>;
   } catch {
     return NextResponse.json({ ok: false, error: "提交格式无效。" }, { status: 400 });
   }
@@ -58,10 +81,14 @@ export async function POST(request: NextRequest) {
   }
 
   const rateKeyHash = createHash("sha256").update(`contact:${clientIp(request)}`).digest("hex");
+  const memoryDecision = inMemoryContactRateLimiter.consume(rateKeyHash);
+  if (!memoryDecision.allowed) {
+    return NextResponse.json({ ok: false, error: "提交过于频繁，请稍后再试。" }, { status: 429 });
+  }
   const recentCount = await prisma.contactTicket.count({
-    where: { rateKeyHash, createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) } },
+    where: { rateKeyHash, createdAt: { gte: new Date(Date.now() - CONTACT_TICKET_WINDOW_MS) } },
   });
-  if (recentCount >= 3) {
+  if (recentCount >= CONTACT_TICKET_LIMIT_PER_HOUR) {
     return NextResponse.json({ ok: false, error: "提交过于频繁，请稍后再试。" }, { status: 429 });
   }
 
@@ -70,12 +97,16 @@ export async function POST(request: NextRequest) {
     select: { id: true, createdAt: true },
   });
 
-  await notifyNewContactTicket({
-    ticketId: ticket.id.slice(0, 8).toUpperCase(),
-    category,
-    createdAt: ticket.createdAt.toISOString(),
-    adminUrl: new URL("/admin/contact-tickets?status=new", request.url).toString(),
-  });
+  try {
+    await notifyNewContactTicket({
+      ticketId: ticket.id.slice(0, 8).toUpperCase(),
+      category,
+      createdAt: ticket.createdAt.toISOString(),
+      adminUrl: new URL("/admin/contact-tickets?status=new", request.url).toString(),
+    });
+  } catch {
+    console.warn("Contact ticket notification delivery failed; ticket was persisted.");
+  }
 
   return NextResponse.json({ ok: true, ticketId: ticket.id.slice(0, 8).toUpperCase() }, { status: 201 });
 }

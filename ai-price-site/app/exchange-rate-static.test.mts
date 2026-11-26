@@ -65,6 +65,9 @@ test("localized exchange-rate fallback never shows a hardcoded estimate", () => 
   assert.match(cronRoute, /supportedDisplayCurrencies\.filter/);
   assert.match(cronRoute, /frankfurter\+open-er-api/);
   assert.match(cronRoute, /rates:\s*\{\s*\.\.\.primary\.rates,\s*\.\.\.fallback\.rates\s*\}/);
+  assert.match(cronRoute, /fetchOpenErApiRates\(base, missingQuotes\)/);
+  assert.match(cronRoute, /AbortSignal\.timeout\(EXCHANGE_RATE_FETCH_TIMEOUT_MS\)/);
+  assert.match(cronRoute, /rateDate:\s*primary\.rateDate \|\| fallback\.rateDate/);
   assert.doesNotMatch(exchangeRates, /7\.25/);
   assert.doesNotMatch(pricingView, /7\.25/);
   assert.match(
