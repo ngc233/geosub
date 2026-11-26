@@ -24,6 +24,16 @@ export async function fetchAdminExternalJson<T>(
     host = "invalid-url";
   }
 
+  const controller = new AbortController();
+  const timeoutTimer = setTimeout(() => {
+    controller.abort(
+      new DOMException(
+        `External fetch timed out after ${timeoutMs}ms`,
+        "TimeoutError",
+      ),
+    );
+  }, timeoutMs);
+
   try {
     const response = await fetchFn(url, {
       headers: {
@@ -31,7 +41,7 @@ export async function fetchAdminExternalJson<T>(
         ...options.headers,
       },
       cache: "no-store",
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -62,5 +72,7 @@ export async function fetchAdminExternalJson<T>(
       }),
     );
     return null;
+  } finally {
+    clearTimeout(timeoutTimer);
   }
 }

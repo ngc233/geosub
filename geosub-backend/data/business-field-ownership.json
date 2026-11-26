@@ -999,6 +999,13 @@
       ]
     },
     {
+      "path": "ai-price-site/app/admin/events/export/route.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
       "path": "ai-price-site/app/admin/plans/actions.ts",
       "classification": "admin_action",
       "tables": [
@@ -1015,6 +1022,13 @@
         "price_sources",
         "products",
         "seo_meta"
+      ]
+    },
+    {
+      "path": "ai-price-site/app/admin/review/actions.ts",
+      "classification": "admin_action",
+      "tables": [
+        "audit_logs"
       ]
     },
     {
@@ -1062,6 +1076,13 @@
     },
     {
       "path": "ai-price-site/lib/admin-auth.ts",
+      "classification": "runtime_service",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "path": "ai-price-site/lib/admin-price-review.ts",
       "classification": "runtime_service",
       "tables": [
         "audit_logs"
