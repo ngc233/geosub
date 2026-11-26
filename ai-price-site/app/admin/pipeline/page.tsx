@@ -3,22 +3,12 @@ import { productNextAction } from "@/lib/admin-product-next-action";
 import { withAdminReturnTo } from "@/lib/admin-workflow-context";
 import { adminButtonClassName } from "@/components/admin/AdminButton";
 import AdminLink from "@/components/admin/AdminLink";
-import { Prisma } from "@prisma/client";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock3,
-  DatabaseZap,
-  ShieldCheck,
-} from "lucide-react";
 import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
 import { AdminLinkButton } from "../../../components/admin/AdminButton";
 import AdminPipelineSteps from "../../../components/admin/AdminPipelineSteps";
 import AdminStatusBadge from "../../../components/admin/AdminStatusBadge";
 import {
-  adminOperationalStatusPriority,
-  assessProductOperationalStatus,
-  countAdminOperationalAssessments,
+  createAdminOperationalCounts,
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
 import {
@@ -26,655 +16,37 @@ import {
   type PipelineGrowthSignal,
 } from "../../../lib/admin-pipeline-growth";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
+import type {
+  PipelineProductRow,
+  PipelineStats,
+} from "../../../lib/admin-product-summary-model";
 import ManualCollectionProgressForm from "../review/ManualCollectionProgressForm";
-import { prisma } from "../../../lib/prisma";
 import BatchCollectionPanel from "./BatchCollectionPanel";
 import { isCollectorReviewFailure } from "../collector-jobs/execution-status";
 import AdminSegmentedControl from "../../../components/admin/AdminSegmentedControl";
 import AdminFilterBar from "../../../components/admin/AdminFilterBar";
 import AdminPagination from "../../../components/admin/AdminPagination";
+import { buildAdminListHref } from "../../../lib/admin-list-params";
 import {
-  officialWebEligibleJobSql,
-  webPricingScopeJoinSql,
-} from "../../../lib/admin-product-scope";
-import { buildAdminListHref, paginateAdminItems } from "../../../lib/admin-list-params";
+  categoryLabel,
+  emptyPipelineStats,
+  formatDate,
+  getErrorMessage,
+  getPipelineOperationalStatus,
+  getPipelineRecommendation,
+  getPipelineState,
+  getPublishReadiness,
+  joinClasses,
+  pipelineCategories,
+  pipelineStages,
+  productStatusLabel,
+  runStatusLabel,
+  toNumber,
+  toQueryCount,
+} from "./model";
+import { getPipelinePageProducts, getPipelineStats } from "./queries";
 
 export const dynamic = "force-dynamic";
-
-// Config-driven official-Web scope; existing App Store products keep their
-// current scope. Shared by the row query and aggregate counters below.
-const officialWebJobFilter = officialWebEligibleJobSql("product", "job");
-const webPilotScope = webPricingScopeJoinSql({
-  statsAlias: "job_stats",
-  officialWebCountColumn: "official_web_job_count",
-  appStoreCountColumn: "app_store_job_count",
-  scopeAlias: "pricing_scope",
-});
-
-const categories = [
-  { value: "all", label: "全部" },
-  { value: "ai", label: "AI 订阅" },
-  { value: "streaming", label: "流媒体" },
-  { value: "software", label: "软件" },
-  { value: "game", label: "游戏" },
-  { value: "gift_card", label: "礼品卡" },
-  { value: "payment", label: "支付" },
-  { value: "vpn", label: "网络工具" },
-  { value: "other", label: "其他" },
-];
-
-const pipelineStages: Array<{
-  value: "all" | AdminOperationalStatus;
-  label: string;
-  description: string;
-}> = [
-  { value: "all", label: "全部产品", description: "查看完整流水线" },
-  { value: "exception", label: "需要介入", description: "采集、审核失败或硬异常" },
-  { value: "pending", label: "系统处理中", description: "等待采集、审核或复采" },
-  { value: "not_started", label: "未开始", description: "还没有受支持的采集任务" },
-  { value: "published", label: "正式价可用", description: "正式价格当前可用" },
-];
-
-type PipelineProductRow = {
-  product_id: string;
-  product_slug: string;
-  product_name: string;
-  product_category: string;
-  product_status: string;
-  provider: string | null;
-  plan_count: unknown;
-  total_job_count: unknown;
-  app_store_job_count: unknown;
-  official_web_job_count?: unknown;
-  active_job_count: unknown;
-  due_job_count: unknown;
-  source_count: unknown;
-  next_run_at: Date | string | null;
-  latest_run_status: string | null;
-  latest_run_started_at: Date | string | null;
-  latest_run_error: string | null;
-  failure_phase?: string | null;
-  failure_stage?: string | null;
-  collector_status?: string | null;
-  auto_review_status?: string | null;
-  latest_success_at: Date | string | null;
-  has_fresh_success: boolean | null;
-  pending_observation_count: unknown;
-  blocked_observation_count: unknown;
-  waiting_observation_count: unknown;
-  changed_observation_count: unknown;
-  low_confidence_observation_count: unknown;
-  published_price_count: unknown;
-  published_region_count: unknown;
-  published_stale_price_count: unknown;
-  latest_price_checked_at: Date | string | null;
-  discovery_candidate_count: unknown;
-};
-
-type PipelineStatsRow = {
-  product_count: unknown;
-  ready_count: unknown;
-  setup_count: unknown;
-  pending_count: unknown;
-  failed_count: unknown;
-  due_count: unknown;
-  stale_count: unknown;
-  running_count: unknown;
-  published_price_count: unknown;
-};
-
-function toNumber(value: unknown) {
-  if (typeof value === "number") return value;
-  if (typeof value === "bigint") return Number(value);
-  if (typeof value === "string") return Number(value);
-  if (value && typeof value === "object" && "toNumber" in value) {
-    return Number((value as { toNumber: () => number }).toNumber());
-  }
-  return 0;
-}
-
-function toQueryCount(value: string | undefined) {
-  const count = Number.parseInt(String(value ?? ""), 10);
-  return Number.isFinite(count) && count >= 0 ? count : null;
-}
-
-function formatDate(value: Date | string | null) {
-  if (!value) return "未安排";
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "未安排";
-  return date.toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function categoryLabel(value: string) {
-  return categories.find((category) => category.value === value)?.label || value;
-}
-
-function productStatusLabel(status: string) {
-  if (status === "published") return "已上架";
-  if (status === "review") return "资料待完善";
-  if (status === "draft") return "草稿";
-  if (status === "archived") return "已归档";
-  return status || "未知";
-}
-
-function runStatusLabel(status: string | null) {
-  if (status === "succeeded") return "成功";
-  if (status === "failed") return "失败";
-  if (status === "running") return "运行中";
-  if (status === "skipped") return "跳过";
-  return status || "暂无运行";
-}
-
-type PipelineStats = {
-  productCount: number;
-  readyCount: number;
-  setupCount: number;
-  pendingCount: number;
-  failedCount: number;
-  dueCount: number;
-  staleCount: number;
-  runningCount: number;
-  publishedPriceCount: number;
-};
-
-function joinClasses(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
-
-function getPipelineState(row: PipelineProductRow) {
-  const appStoreJobs = toNumber(row.app_store_job_count);
-  const webJobs = toNumber(row.official_web_job_count);
-  const pending = toNumber(row.pending_observation_count);
-  const blocked = toNumber(row.blocked_observation_count);
-  const published = toNumber(row.published_price_count);
-  const stalePublished = toNumber(row.published_stale_price_count);
-
-  if (appStoreJobs + webJobs <= 0) {
-    return {
-      key: "setup",
-      label: "缺采集任务",
-      detail: "先补 App Store 链接或应用 ID。",
-      className: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800",
-      icon: AlertTriangle,
-    };
-  }
-
-  if (row.latest_run_status === "failed") {
-    return {
-      key: "failed",
-      label: isCollectorReviewFailure({ ...row, error_message: row.latest_run_error })
-        ? "采集成功，审核失败" : "采集失败",
-      detail: row.latest_run_error || "查看采集任务页确认失败原因。",
-      className: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800",
-      icon: AlertTriangle,
-    };
-  }
-
-  if (pending > 0) {
-    return {
-      key: "review",
-      label: blocked > 0 ? "异常待决" : "待审核",
-      detail: webJobs > 0 ? "官网样本正在自动验证，异常隔离后由后续任务重试。" : blocked > 0 ? "有硬异常，系统不会自动上线。" : "采集到新价格，等待自动或人工审核。",
-      className: blocked > 0
-        ? "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800"
-        : "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800",
-      icon: ShieldCheck,
-    };
-  }
-
-  if (!row.latest_success_at) {
-    return {
-      key: "collect",
-      label: "待采集",
-      detail: webJobs > 0 ? "已有官网任务，等待首次自动采集。" : "已有 App Store 任务，但还没有成功运行记录。",
-      className: "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800",
-      icon: DatabaseZap,
-    };
-  }
-
-  if (published <= 0) {
-    return {
-      key: "publish",
-      label: "待入库",
-      detail: "已采集过，但还没有正式价格。",
-      className: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800",
-      icon: Clock3,
-    };
-  }
-
-  if (stalePublished > 0) {
-    return {
-      key: "stale",
-      label: "需复采",
-      detail: `${stalePublished} 条正式${webJobs > 0 && appStoreJobs <= 0 ? ' Web' : ' App Store'}价格超过 14 天未更新。稳定结果会自动入库。`,
-      className: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800",
-      icon: Clock3,
-    };
-  }
-
-  return {
-    key: "ready",
-    label: "已上线",
-    detail: "有正式价格，可继续按频率复采。",
-    className: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800",
-    icon: CheckCircle2,
-  };
-}
-
-function getPipelineOperationalAssessment(row: PipelineProductRow) {
-  return assessProductOperationalStatus({
-    publishStatus: row.product_status,
-    planCount: toNumber(row.plan_count),
-    activeCollectorJobCount: toNumber(row.app_store_job_count) + toNumber(row.official_web_job_count),
-    latestRunStatus: row.latest_run_status,
-    pendingWorkCount: toNumber(row.pending_observation_count),
-    blockedCount: toNumber(row.blocked_observation_count),
-    publishedPriceCount: toNumber(row.published_price_count),
-    stalePriceCount: toNumber(row.published_stale_price_count),
-  });
-}
-
-function getPipelineOperationalStatus(
-  row: PipelineProductRow,
-): AdminOperationalStatus {
-  return getPipelineOperationalAssessment(row)?.status ?? "not_started";
-}
-
-function getPublishReadiness(row: PipelineProductRow) {
-  const checks = [
-    { ready: toNumber(row.plan_count) > 0, missing: "补套餐" },
-    { ready: toNumber(row.app_store_job_count) + toNumber(row.official_web_job_count) > 0, missing: "补采集任务" },
-    { ready: Boolean(row.latest_success_at), missing: "完成首次采集" },
-    { ready: toNumber(row.published_price_count) > 0, missing: "形成正式价格" },
-    {
-      ready:
-        toNumber(row.blocked_observation_count) === 0 &&
-        toNumber(row.published_stale_price_count) === 0,
-      missing: "处理异常或过期价格",
-    },
-  ];
-  const completed = checks.filter((check) => check.ready).length;
-
-  return {
-    completed,
-    total: checks.length,
-    nextAction: isCollectorReviewFailure({ ...row, error_message: row.latest_run_error })
-      ? "修复自动审核" : checks.find((check) => !check.ready)?.missing || "保持定期复采",
-  };
-}
-
-function sortPipelineRows(rows: PipelineProductRow[]) {
-  return [...rows].sort((left, right) => {
-    const leftStatus = getPipelineOperationalStatus(left);
-    const rightStatus = getPipelineOperationalStatus(right);
-    const statusDifference =
-      adminOperationalStatusPriority[leftStatus] - adminOperationalStatusPriority[rightStatus];
-    if (statusDifference !== 0) return statusDifference;
-
-    const readinessDifference =
-      getPublishReadiness(right).completed - getPublishReadiness(left).completed;
-    if (readinessDifference !== 0) return readinessDifference;
-
-    return left.product_name.localeCompare(right.product_name, "zh-CN");
-  });
-}
-
-async function getPipelineRows({ q, category, product }: { q: string; category: string; product:string }) {
-  const productFilter=product ? Prisma.sql`AND product.slug = ${product}` : Prisma.empty;
-  const searchFilter = q && !product
-    ? Prisma.sql`AND (product.slug ILIKE ${`%${q}%`} OR product.name ILIKE ${`%${q}%`})`
-    : Prisma.empty;
-  const categoryFilter =
-    category && category !== "all"
-      ? Prisma.sql`AND product.category = ${category}::product_category`
-      : Prisma.empty;
-
-  return prisma.$queryRaw<PipelineProductRow[]>`
-    SELECT
-      product.id::text AS product_id,
-      product.slug AS product_slug,
-      product.name AS product_name,
-      product.category::text AS product_category,
-      product.status::text AS product_status,
-      product.provider,
-      COALESCE(plan_stats.plan_count, 0)::int AS plan_count,
-      COALESCE(job_stats.total_job_count, 0)::int AS total_job_count,
-      COALESCE(job_stats.app_store_job_count, 0)::int AS app_store_job_count,
-      COALESCE(job_stats.official_web_job_count, 0)::int AS official_web_job_count,
-      COALESCE(job_stats.active_job_count, 0)::int AS active_job_count,
-      COALESCE(job_stats.due_job_count, 0)::int AS due_job_count,
-      COALESCE(job_stats.source_count, 0)::int AS source_count,
-      job_stats.next_run_at,
-      latest_run.status AS latest_run_status,
-      latest_run.started_at AS latest_run_started_at,
-      latest_run.error_message AS latest_run_error,
-      latest_run.raw_payload ->> 'failure_phase' AS failure_phase,
-      latest_run.raw_payload ->> 'failure_stage' AS failure_stage,
-      latest_run.raw_payload ->> 'collector_status' AS collector_status,
-      latest_run.raw_payload ->> 'auto_review_status' AS auto_review_status,
-      latest_success.latest_success_at,
-      COALESCE(latest_success.has_fresh_success, FALSE) AS has_fresh_success,
-      COALESCE(observation_stats.pending_observation_count, 0)::int AS pending_observation_count,
-      COALESCE(observation_stats.blocked_observation_count, 0)::int AS blocked_observation_count,
-      COALESCE(observation_stats.waiting_observation_count, 0)::int AS waiting_observation_count,
-      COALESCE(observation_stats.changed_observation_count, 0)::int AS changed_observation_count,
-      COALESCE(observation_stats.low_confidence_observation_count, 0)::int AS low_confidence_observation_count,
-      COALESCE(published_stats.published_price_count, 0)::int AS published_price_count,
-      COALESCE(published_stats.published_region_count, 0)::int AS published_region_count,
-      COALESCE(published_stats.published_stale_price_count, 0)::int AS published_stale_price_count,
-      published_stats.latest_price_checked_at,
-      COALESCE(candidate_stats.discovery_candidate_count, 0)::int AS discovery_candidate_count
-    FROM products product
-    LEFT JOIN LATERAL (
-      SELECT COUNT(*)::int AS plan_count
-      FROM plans plan
-      WHERE plan.product_id = product.id
-    ) plan_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS total_job_count,
-        COUNT(*) FILTER (
-          WHERE COALESCE(
-            job.job_config ->> 'collector_kind',
-            source.type::text,
-            'unknown'
-          ) = 'app_store'
-        )::int AS app_store_job_count,
-        COUNT(*) FILTER (WHERE ${officialWebJobFilter})::int AS official_web_job_count,
-        COUNT(*) FILTER (WHERE job.status = 'active')::int AS active_job_count,
-        COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count,
-        COUNT(DISTINCT job.source_id)::int AS source_count,
-        MIN(job.next_run_at) FILTER (WHERE job.status = 'active') AS next_run_at
-      FROM collector_jobs job
-      LEFT JOIN price_sources source ON source.id = job.source_id
-      WHERE job.product_id = product.id
-        AND job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND job.status <> 'archived'
-    ) job_stats ON TRUE
-    ${webPilotScope}
-    LEFT JOIN LATERAL (
-      SELECT run.status, run.started_at, run.error_message, run.raw_payload
-      FROM collector_jobs scoped_job
-      JOIN collector_job_runs run ON run.job_id = scoped_job.id
-      WHERE scoped_job.product_id = product.id
-        AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
-      ORDER BY run.started_at DESC
-      LIMIT 1
-    ) latest_run ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        MAX(run.started_at) FILTER (WHERE run.status = 'succeeded') AS latest_success_at,
-        COALESCE(BOOL_OR(
-          run.status = 'succeeded'
-          AND run.started_at > NOW() - INTERVAL '12 hours'
-        ), FALSE) AS has_fresh_success
-      FROM collector_jobs scoped_job
-      JOIN collector_job_runs run ON run.job_id = scoped_job.id
-      WHERE scoped_job.product_id = product.id
-        AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
-    ) latest_success ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS pending_observation_count,
-        COUNT(*) FILTER (WHERE COALESCE(observation.anomaly_flag, FALSE))::int AS blocked_observation_count,
-        COUNT(*) FILTER (WHERE observation.raw_payload ->> 'auto_review_reason_code' = 'waiting_for_more_app_store_samples')::int AS waiting_observation_count,
-        COUNT(*) FILTER (WHERE observation.raw_payload ->> 'auto_review_reason_code' = 'app_store_price_changed')::int AS changed_observation_count,
-        COUNT(*) FILTER (WHERE observation.raw_payload ->> 'auto_review_reason_code' = 'low_confidence')::int AS low_confidence_observation_count
-      FROM price_observations observation
-      WHERE observation.product_id = product.id
-        AND observation.status = 'pending'::observation_status
-        AND observation.billing_platform::text = pricing_scope.billing_platform
-    ) observation_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS published_price_count,
-        COUNT(DISTINCT price.country_id)::int AS published_region_count,
-        COUNT(*) FILTER (
-          WHERE price.last_checked_at IS NULL
-            OR price.last_checked_at < NOW() - INTERVAL '14 days'
-        )::int AS published_stale_price_count,
-        MAX(price.last_checked_at) AS latest_price_checked_at
-      FROM region_prices price
-      WHERE price.product_id = product.id
-        AND price.status = 'published'::publish_status
-        AND price.billing_platform::text = pricing_scope.billing_platform
-        AND price.price_usd IS NOT NULL
-    ) published_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT COUNT(*)::int AS discovery_candidate_count
-      FROM product_discovery_candidates candidate
-      WHERE candidate.promoted_product_id = product.id
-        OR candidate.matched_product_id = product.id
-    ) candidate_stats ON TRUE
-    WHERE product.status <> 'archived'::publish_status
-      ${productFilter}
-      ${searchFilter}
-      ${categoryFilter}
-    ORDER BY
-      CASE
-        WHEN COALESCE(observation_stats.pending_observation_count, 0) > 0 THEN 0
-        WHEN COALESCE(job_stats.app_store_job_count, 0)+COALESCE(job_stats.official_web_job_count,0) <= 0 THEN 1
-        WHEN latest_run.status = 'failed' THEN 2
-        WHEN latest_success.latest_success_at IS NULL THEN 3
-        WHEN COALESCE(published_stats.published_price_count, 0) <= 0 THEN 4
-        WHEN COALESCE(published_stats.published_stale_price_count, 0) > 0 THEN 5
-        ELSE 6
-      END,
-      COALESCE(observation_stats.pending_observation_count, 0) DESC,
-      product.category ASC,
-      product.sort_order ASC,
-      product.name ASC
-    LIMIT 120
-  `;
-}
-
-async function getPipelineStats() {
-  const rows = await prisma.$queryRaw<PipelineStatsRow[]>`
-    WITH product_status AS (
-      SELECT
-        product.id,
-        COALESCE(job_stats.app_store_job_count, 0)+COALESCE(job_stats.official_web_job_count,0) AS supported_job_count,
-        COALESCE(job_stats.due_job_count, 0) AS due_job_count,
-        latest_run.status AS latest_run_status,
-        latest_success.latest_success_at,
-        COALESCE(observation_stats.pending_observation_count, 0) AS pending_observation_count,
-        COALESCE(published_stats.published_price_count, 0) AS published_price_count,
-        COALESCE(published_stats.published_stale_price_count, 0) AS published_stale_price_count,
-        published_stats.latest_price_checked_at
-      FROM products product
-      LEFT JOIN LATERAL (
-        SELECT
-          COUNT(*) FILTER (
-            WHERE COALESCE(
-              job.job_config ->> 'collector_kind',
-              source.type::text,
-              'unknown'
-            ) = 'app_store'
-          )::int AS app_store_job_count,
-          COUNT(*) FILTER (WHERE ${officialWebJobFilter})::int AS official_web_job_count,
-          COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count
-        FROM collector_jobs job
-        LEFT JOIN price_sources source ON source.id = job.source_id
-        WHERE job.product_id = product.id
-          AND job.job_type IN ('ai_pricing', 'streaming_pricing')
-          AND job.status <> 'archived'
-      ) job_stats ON TRUE
-      ${webPilotScope}
-      LEFT JOIN LATERAL (
-        SELECT run.status
-        FROM collector_jobs scoped_job
-        JOIN collector_job_runs run ON run.job_id = scoped_job.id
-        WHERE scoped_job.product_id = product.id
-          AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
-        ORDER BY run.started_at DESC
-        LIMIT 1
-      ) latest_run ON TRUE
-      LEFT JOIN LATERAL (
-        SELECT MAX(run.started_at) FILTER (WHERE run.status = 'succeeded') AS latest_success_at
-        FROM collector_jobs scoped_job
-        JOIN collector_job_runs run ON run.job_id = scoped_job.id
-        WHERE scoped_job.product_id = product.id
-          AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-          AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
-      ) latest_success ON TRUE
-      LEFT JOIN LATERAL (
-        SELECT COUNT(*)::int AS pending_observation_count
-        FROM price_observations observation
-        WHERE observation.product_id = product.id
-          AND observation.status = 'pending'::observation_status
-          AND observation.billing_platform::text = pricing_scope.billing_platform
-      ) observation_stats ON TRUE
-      LEFT JOIN LATERAL (
-        SELECT
-          COUNT(*)::int AS published_price_count,
-          COUNT(*) FILTER (
-            WHERE price.last_checked_at IS NULL
-              OR price.last_checked_at < NOW() - INTERVAL '14 days'
-          )::int AS published_stale_price_count,
-          MAX(price.last_checked_at) AS latest_price_checked_at
-        FROM region_prices price
-        WHERE price.product_id = product.id
-          AND price.status = 'published'::publish_status
-          AND price.billing_platform::text = pricing_scope.billing_platform
-          AND price.price_usd IS NOT NULL
-      ) published_stats ON TRUE
-      WHERE product.status <> 'archived'::publish_status
-    )
-    SELECT
-      COUNT(*)::int AS product_count,
-      COUNT(*) FILTER (
-        WHERE pending_observation_count = 0
-          AND published_price_count > 0
-          AND published_stale_price_count = 0
-          AND latest_price_checked_at IS NOT NULL
-      )::int AS ready_count,
-      COUNT(*) FILTER (WHERE supported_job_count <= 0)::int AS setup_count,
-      COUNT(*) FILTER (WHERE pending_observation_count > 0)::int AS pending_count,
-      COUNT(*) FILTER (WHERE latest_run_status = 'failed')::int AS failed_count,
-      COUNT(*) FILTER (WHERE due_job_count > 0)::int AS due_count,
-      COUNT(*) FILTER (WHERE latest_run_status = 'running')::int AS running_count,
-      COUNT(*) FILTER (
-        WHERE published_price_count > 0
-          AND (
-            published_stale_price_count > 0
-            OR latest_price_checked_at IS NULL
-          )
-      )::int AS stale_count,
-      COALESCE(SUM(published_price_count), 0)::int AS published_price_count
-    FROM product_status
-  `;
-
-  const row = rows[0];
-  return {
-    productCount: toNumber(row?.product_count),
-    readyCount: toNumber(row?.ready_count),
-    setupCount: toNumber(row?.setup_count),
-    pendingCount: toNumber(row?.pending_count),
-    failedCount: toNumber(row?.failed_count),
-    dueCount: toNumber(row?.due_count),
-    staleCount: toNumber(row?.stale_count),
-    runningCount: toNumber(row?.running_count),
-    publishedPriceCount: toNumber(row?.published_price_count),
-  };
-}
-
-function getPipelineRecommendation(stats: PipelineStats) {
-  if (stats.runningCount > 0) {
-    return {
-      title: "采集器正在运行",
-      body: `当前有 ${stats.runningCount} 个产品正在采集。先等待这一轮完成，再看是否还有异常待决。`,
-      href: "/admin/collector-jobs",
-      action: "查看运行记录",
-      className: "border-blue-200 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200",
-    };
-  }
-
-  if (stats.failedCount > 0) {
-    return {
-      title: "先处理运行失败",
-      body: `${stats.failedCount} 个产品最近运行失败。查看具体失败阶段，采集和审核需要分别处理。`,
-      href: "/admin/collector-jobs",
-      action: "查看失败任务",
-      className: "border-red-200 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
-    };
-  }
-
-  if (stats.setupCount > 0) {
-    return {
-      title: "先补采集任务",
-      body: `${stats.setupCount} 个产品还没有受支持的采集任务。没有任务就不会自动抓价，也不会进入审核。`,
-      href: "/admin/discovery",
-      action: "去线索入口",
-      className: "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200",
-    };
-  }
-
-  if (stats.pendingCount > 0) {
-    return {
-      title: "需要处理待决价格",
-      body: `${stats.pendingCount} 个产品有待决观测。系统会自动放行稳定价格，硬异常会保留到规则修正或重新采集。`,
-      href: "/admin/review",
-      action: "查看待决",
-      className: "border-blue-200 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200",
-    };
-  }
-
-  if (stats.dueCount > 0) {
-    return {
-      title: "有产品到期可复采",
-      body: `${stats.dueCount} 个产品已到定时采集时间。可以交给后台任务，也可以在下方按产品手动触发。`,
-      href: "/admin/collector-jobs",
-      action: "查看到期任务",
-      className: "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-    };
-  }
-
-  if (stats.staleCount > 0) {
-    return {
-      title: "上线价格需要定期复核",
-      body: `${stats.staleCount} 个已上线产品存在超过 14 天未更新的正式价格。稳定结果会自动入库。`,
-      href: "/admin/collector-jobs",
-      action: "查看采集任务",
-      className: "border-admin-border bg-admin-surface-subtle text-admin-text dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text",
-    };
-  }
-
-  return {
-    title: "采集流水线稳定",
-    body: "当前没有明显阻塞。新增产品从线索入口进入，已有产品按计划复采并自动审核。",
-    href: "/admin/system",
-    action: "查看系统状态",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-  };
-}
-
-function emptyPipelineStats(): PipelineStats {
-  return {
-    productCount: 0,
-    readyCount: 0,
-    setupCount: 0,
-    pendingCount: 0,
-    failedCount: 0,
-    dueCount: 0,
-    staleCount: 0,
-    runningCount: 0,
-    publishedPriceCount: 0,
-  };
-}
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  return String(error || "未知错误");
-}
 
 function PipelineRecommendation({ stats }: { stats: PipelineStats }) {
   const recommendation = getPipelineRecommendation(stats);
@@ -691,7 +63,7 @@ function PipelineRecommendation({ stats }: { stats: PipelineStats }) {
         </div>
         <AdminLink
           href={recommendation.href}
-          className={adminButtonClassName({variant:"secondary",size:"md",className:""})}
+          className={adminButtonClassName({ variant: "secondary", size: "md", className: "" })}
         >
           {recommendation.action}
         </AdminLink>
@@ -719,7 +91,7 @@ function ProductPipelineCard({
 }: {
   row: PipelineProductRow;
   growthSignal?: PipelineGrowthSignal;
-  returnTo:string;
+  returnTo: string;
 }) {
   const state = getPipelineState(row);
   const readiness = getPublishReadiness(row);
@@ -729,9 +101,17 @@ function ProductPipelineCard({
   const appStoreJobs = toNumber(row.app_store_job_count);
   const webJobs = toNumber(row.official_web_job_count);
   const stalePublishedCount = toNumber(row.published_stale_price_count);
-  const next=productNextAction({id:row.product_id,slug:row.product_slug,appStoreJobs:appStoreJobs,webJobs,
-    runStatus:row.latest_run_status,pending:pendingCount,blocked:blockedCount,
-    prices:toNumber(row.published_price_count),stale:stalePublishedCount,due:toNumber(row.due_job_count)
+  const next = productNextAction({
+    id: row.product_id,
+    slug: row.product_slug,
+    appStoreJobs,
+    webJobs,
+    runStatus: row.latest_run_status,
+    pending: pendingCount,
+    blocked: blockedCount,
+    prices: toNumber(row.published_price_count),
+    stale: stalePublishedCount,
+    due: toNumber(row.due_job_count),
   });
 
   return (
@@ -739,7 +119,7 @@ function ProductPipelineCard({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <AdminProductLogo slug={row.product_slug} name={row.product_name} size="md"/>
+            <AdminProductLogo slug={row.product_slug} name={row.product_name} size="md" />
             <h3 className="min-w-0 break-words text-lg font-semibold text-admin-text dark:text-admin-text">{row.product_name}</h3>
             <span className="rounded-full bg-admin-chip px-2.5 py-1 text-xs font-semibold text-admin-text-secondary dark:bg-admin-chip dark:text-admin-text-secondary">
               {categoryLabel(row.product_category)}
@@ -756,25 +136,29 @@ function ProductPipelineCard({
         </div>
 
         <div className="max-w-sm space-y-2" data-primary-workflow-action={next.kind}>
-          {next.kind === "collect" ?
-            <ManualCollectionProgressForm productSlug={row.product_slug} buttonLabel={next.label} pendingLabel="正在提交采集请求"/>
-            : <AdminLinkButton href={withAdminReturnTo(next.href,returnTo)} size="sm">{next.label}</AdminLinkButton>}
+          {next.kind === "collect" ? (
+            <ManualCollectionProgressForm productSlug={row.product_slug} buttonLabel={next.label} pendingLabel="正在提交采集请求" />
+          ) : (
+            <AdminLinkButton href={withAdminReturnTo(next.href, returnTo)} size="sm">{next.label}</AdminLinkButton>
+          )}
           <p className="text-xs leading-5 text-admin-text-muted">
             {reviewFailed ? "已有采集证据；修复审核错误后复用证据重试，无需重复采集。" : next.detail}
           </p>
-          {appStoreJobs > 0 && next.kind !== "collect" && next.kind !== "progress" ? <details>
-            <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-xs text-admin-text-muted">
-              需要重新采集？
-            </summary>
-            <p className="mb-2 text-xs text-admin-text-muted">先核对异常或修正来源；重复采集不会跳过稳定样本要求。</p>
-            <ManualCollectionProgressForm productSlug={row.product_slug} buttonLabel="修正后补采" pendingLabel="正在提交补采请求"/>
-          </details> : null}
+          {appStoreJobs > 0 && next.kind !== "collect" && next.kind !== "progress" ? (
+            <details>
+              <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-xs text-admin-text-muted">
+                需要重新采集？
+              </summary>
+              <p className="mb-2 text-xs text-admin-text-muted">先核对异常或修正来源；重复采集不会跳过稳定样本要求。</p>
+              <ManualCollectionProgressForm productSlug={row.product_slug} buttonLabel="修正后补采" pendingLabel="正在提交补采请求" />
+            </details>
+          ) : null}
         </div>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-4">
         <div className="rounded-admin-card bg-admin-surface-subtle p-3 dark:bg-admin-chip">
-          <div className="text-xs font-semibold text-admin-text-faint">{webJobs > 0 && appStoreJobs <= 0 ? '官网采集任务' : '采集任务'}</div>
+          <div className="text-xs font-semibold text-admin-text-faint">{webJobs > 0 && appStoreJobs <= 0 ? "官网采集任务" : "采集任务"}</div>
           <div className="mt-1 text-lg font-semibold text-admin-text dark:text-admin-text">
             {appStoreJobs + webJobs} / {toNumber(row.total_job_count)}
           </div>
@@ -827,35 +211,35 @@ function ProductPipelineCard({
             <span>下一步：{readiness.nextAction}</span>
           </div>
           <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          {row.has_fresh_success ? (
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
-              12 小时内成功采集
-            </span>
-          ) : null}
-          {toNumber(row.changed_observation_count) > 0 ? (
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
-              价格变化 {toNumber(row.changed_observation_count)}
-            </span>
-          ) : null}
-          {toNumber(row.low_confidence_observation_count) > 0 ? (
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800">
-              低可信 {toNumber(row.low_confidence_observation_count)}
-            </span>
-          ) : null}
-          {toNumber(row.discovery_candidate_count) > 0 ? (
-            <span className="rounded-full bg-admin-chip px-2.5 py-1 text-admin-text-secondary ring-1 ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary dark:ring-admin-border-strong">
-              来自线索 {toNumber(row.discovery_candidate_count)}
-            </span>
-          ) : null}
-          {stalePublishedCount > 0 ? (
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800">
-              正式价超过 14 天
-            </span>
-          ) : null}
+            {row.has_fresh_success ? (
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
+                12 小时内成功采集
+              </span>
+            ) : null}
+            {toNumber(row.changed_observation_count) > 0 ? (
+              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
+                价格变化 {toNumber(row.changed_observation_count)}
+              </span>
+            ) : null}
+            {toNumber(row.low_confidence_observation_count) > 0 ? (
+              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800">
+                低可信 {toNumber(row.low_confidence_observation_count)}
+              </span>
+            ) : null}
+            {toNumber(row.discovery_candidate_count) > 0 ? (
+              <span className="rounded-full bg-admin-chip px-2.5 py-1 text-admin-text-secondary ring-1 ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary dark:ring-admin-border-strong">
+                来自线索 {toNumber(row.discovery_candidate_count)}
+              </span>
+            ) : null}
+            {stalePublishedCount > 0 ? (
+              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800">
+                正式价超过 14 天
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="flex gap-3 text-xs font-semibold">
-          <AdminLink href={withAdminReturnTo(`/admin/products/${row.product_id}/edit`,returnTo)} className="text-admin-accent hover:underline">
+          <AdminLink href={withAdminReturnTo(`/admin/products/${row.product_id}/edit`, returnTo)} className="text-admin-accent hover:underline">
             产品资料
           </AdminLink>
           <AdminLink href={`/admin/collector-jobs?product=${encodeURIComponent(row.product_slug)}`} className="text-admin-accent hover:underline">
@@ -910,8 +294,8 @@ export default async function AdminPipelinePage({
 }) {
   const params = searchParams ? await searchParams : {};
   const q = String(params.q ?? "").trim().slice(0, 100);
-  const product=String(params.product || "").trim().toLowerCase().slice(0,120);
-  const category = categories.some((item) => item.value === params.category)
+  const product = String(params.product || "").trim().toLowerCase().slice(0, 120);
+  const category = pipelineCategories.some((item) => item.value === params.category)
     ? String(params.category)
     : "all";
   const stage = pipelineStages.some((item) => item.value === params.stage)
@@ -923,60 +307,72 @@ export default async function AdminPipelinePage({
   const batchProtected = toQueryCount(params.batchProtected);
   const batchSkipped = toQueryCount(params.batchSkipped);
   const batchStartFailed = toQueryCount(params.batchStartFailed);
-  let rows: PipelineProductRow[] = [];
-  let allRows: PipelineProductRow[] = [];
+
+  let pageRows: PipelineProductRow[] = [];
+  let totalAll = 0;
+  let stageCounts = createAdminOperationalCounts();
+  let closestToPublish: PipelineProductRow | null = null;
+  let pagination = { page: 1, pageSize: 10, total: 0, totalPages: 1 };
   let growthSignals: PipelineGrowthSignal[] = [];
   let stats: PipelineStats = emptyPipelineStats();
   let loadError: string | null = null;
 
   try {
-    [allRows, stats, growthSignals] = await measureAdminWorkload(
+    const [pageResult, loadedStats, loadedSignals] = await measureAdminWorkload(
       "pipeline.page-data",
-      () => Promise.all([
-        getPipelineRows({ q, category, product }),
-        getPipelineStats(),
-        getPipelineGrowthSignals().catch(() => []),
-      ]),
+      () =>
+        Promise.all([
+          getPipelinePageProducts({
+            q,
+            category,
+            product,
+            stage,
+            rawPage: params.page,
+            pageSize: 10,
+          }),
+          getPipelineStats(),
+          getPipelineGrowthSignals().catch(() => []),
+        ]),
     );
-    allRows = sortPipelineRows(allRows);
-    rows = stage === "all"
-      ? allRows
-      : allRows.filter((row) => getPipelineOperationalStatus(row) === stage);
+    pageRows = pageResult.items;
+    totalAll = pageResult.totalAll;
+    stageCounts = pageResult.stageCounts;
+    closestToPublish = pageResult.closestToPublish;
+    pagination = pageResult.pagination;
+    stats = loadedStats;
+    growthSignals = loadedSignals;
   } catch (error) {
     loadError = getErrorMessage(error);
   }
 
-  const pagination = paginateAdminItems(rows, params.page, 10);
-  const pageRows = pagination.items;
-  const pageHref = (page: number) => `${buildAdminListHref("/admin/pipeline", {
-    product:product || undefined,
-    q: q || undefined,
-    category: category === "all" ? undefined : category,
-    stage: stage === "all" ? undefined : stage,
-  }, { page })}#pipeline-products`;
+  const pageHref = (page: number) =>
+    `${buildAdminListHref(
+      "/admin/pipeline",
+      {
+        product: product || undefined,
+        q: q || undefined,
+        category: category === "all" ? undefined : category,
+        stage: stage === "all" ? undefined : stage,
+      },
+      { page },
+    )}#pipeline-products`;
 
-  const stageCounts = countAdminOperationalAssessments(
-    allRows.map(getPipelineOperationalAssessment),
-  );
   const growthSignalByProduct = new Map(
     growthSignals.map((signal) => [signal.productId, signal]),
   );
-  const closestToPublish = [...allRows]
-    .filter((row) => getPipelineOperationalStatus(row) !== "published")
-    .sort((left, right) =>
-      getPublishReadiness(right).completed - getPublishReadiness(left).completed
-    )[0];
   const closestReadiness = closestToPublish
     ? getPublishReadiness(closestToPublish)
     : null;
   const stageHref = (nextStage: "all" | AdminOperationalStatus) => {
     const query = new URLSearchParams();
-    if(product)query.set("product",product);
+    if (product) query.set("product", product);
     if (q) query.set("q", q);
     if (category !== "all") query.set("category", category);
     if (nextStage !== "all") query.set("stage", nextStage);
     const suffix = query.toString();
-    return suffix ? `/admin/pipeline?${suffix}#pipeline-products` : "/admin/pipeline#pipeline-products";
+    return suffix
+      ? `/admin/pipeline?${suffix}#pipeline-products`
+      : "/admin/pipeline#pipeline-products";
   };
 
   return (
@@ -988,10 +384,14 @@ export default async function AdminPipelinePage({
       />
 
       <AdminPipelineSteps currentStep="pipeline" productSlug={product || undefined} returnTo={params.returnTo} />
-      {product ? <p className="mb-4 text-sm text-admin-text-muted">当前产品范围：{product}{" "}
-        <AdminLink href="/admin/pipeline" className="inline-flex min-h-11 items-center px-2 text-admin-accent underline">
-          查看全部产品
-        </AdminLink></p> : null}
+      {product ? (
+        <p className="mb-4 text-sm text-admin-text-muted">
+          当前产品范围：{product}{" "}
+          <AdminLink href="/admin/pipeline" className="inline-flex min-h-11 items-center px-2 text-admin-accent underline">
+            查看全部产品
+          </AdminLink>
+        </p>
+      ) : null}
 
       {params.batchError ? (
         <AdminCard className="mb-6">
@@ -1029,154 +429,182 @@ export default async function AdminPipelinePage({
                 请先启动本地 PostgreSQL，再刷新本页。当前错误：{loadError.slice(0, 180)}
               </p>
             </div>
-            <AdminLinkButton
-              href="/admin/system"
-              variant="secondary"
-            >
+            <AdminLinkButton href="/admin/system" variant="secondary">
               查看系统状态
             </AdminLinkButton>
           </div>
         </AdminCard>
       ) : null}
 
-      {!loadError ? <details className="mb-6 rounded-admin-card border border-admin-border bg-admin-surface p-4">
-        <summary className="min-h-11 cursor-pointer text-sm font-semibold text-admin-text">全站运行概况与建议</summary>
-        <div className="mt-4"><PipelineRecommendation stats={stats}/>
-      {closestToPublish && closestReadiness ? (
-        <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <AdminCard>
-            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">最接近完成价格验证</div>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
-                  {closestToPublish.product_name}
-                </div>
-                <div className="mt-1 text-sm text-admin-text-secondary dark:text-admin-text-secondary">
-                  已完成 {closestReadiness.completed}/{closestReadiness.total} 项，下一步：{closestReadiness.nextAction}
-                </div>
+      {!loadError ? (
+        <details className="mb-6 rounded-admin-card border border-admin-border bg-admin-surface p-4">
+          <summary className="min-h-11 cursor-pointer text-sm font-semibold text-admin-text">全站运行概况与建议</summary>
+          <div className="mt-4">
+            <PipelineRecommendation stats={stats} />
+            {closestToPublish && closestReadiness ? (
+              <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+                <AdminCard>
+                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">最接近完成价格验证</div>
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
+                        {closestToPublish.product_name}
+                      </div>
+                      <div className="mt-1 text-sm text-admin-text-secondary dark:text-admin-text-secondary">
+                        已完成 {closestReadiness.completed}/{closestReadiness.total} 项，下一步：{closestReadiness.nextAction}
+                      </div>
+                    </div>
+                    <AdminLinkButton
+                      href={`/admin/pipeline?q=${encodeURIComponent(closestToPublish.product_slug)}`}
+                      variant="secondary"
+                    >
+                      只看这个产品
+                    </AdminLinkButton>
+                  </div>
+                </AdminCard>
+                <AdminCard>
+                  <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">沉睡库存</div>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
+                        {stageCounts.not_started} 个产品未开始
+                      </div>
+                      <div className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">没有采集任务就不会自动产生价格。</div>
+                    </div>
+                    <AdminLinkButton href={stageHref("not_started")} variant="secondary">
+                      查看
+                    </AdminLinkButton>
+                  </div>
+                </AdminCard>
               </div>
-              <AdminLinkButton
-                href={`/admin/pipeline?q=${encodeURIComponent(closestToPublish.product_slug)}`}
-                variant="secondary"
-              >
-                只看这个产品
-              </AdminLinkButton>
-            </div>
-          </AdminCard>
-          <AdminCard>
-            <div className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">沉睡库存</div>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-lg font-semibold text-admin-text dark:text-admin-text">
-                  {stageCounts.not_started} 个产品未开始
-                </div>
-                <div className="mt-1 text-sm text-admin-text-muted dark:text-admin-text-muted">没有采集任务就不会自动产生价格。</div>
-              </div>
-              <AdminLinkButton href={stageHref("not_started")} variant="secondary">
-                查看
-              </AdminLinkButton>
-            </div>
-          </AdminCard>
-        </div>
-      ) : null}
+            ) : null}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">产品</div>
-          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{stats.productCount}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">当前服务库产品。</div>
-        </AdminCard>
-        <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">缺任务</div>
-          <div className="mt-2 text-2xl font-semibold text-amber-700 dark:text-amber-300">{stats.setupCount}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">需要配置受支持的价格来源。</div>
-        </AdminCard>
-        <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">待审核</div>
-          <div className="mt-2 text-2xl font-semibold text-blue-700 dark:text-blue-300">{stats.pendingCount}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">有待决价格观测。</div>
-        </AdminCard>
-        <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">失败</div>
-          <div className="mt-2 text-2xl font-semibold text-red-700 dark:text-red-300">{stats.failedCount}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">最近运行失败，包含采集或审核阶段。</div>
-        </AdminCard>
-        <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">复采提醒</div>
-          <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{stats.dueCount + stats.staleCount}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
-            定时到期 {stats.dueCount}，正式价过期 {stats.staleCount}。
+            <div className="mb-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+              <AdminCard>
+                <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">产品</div>
+                <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{stats.productCount}</div>
+                <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">当前服务库产品。</div>
+              </AdminCard>
+              <AdminCard>
+                <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">缺任务</div>
+                <div className="mt-2 text-2xl font-semibold text-amber-700 dark:text-amber-300">{stats.setupCount}</div>
+                <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">需要配置受支持的价格来源。</div>
+              </AdminCard>
+              <AdminCard>
+                <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">待审核</div>
+                <div className="mt-2 text-2xl font-semibold text-blue-700 dark:text-blue-300">{stats.pendingCount}</div>
+                <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">有待决价格观测。</div>
+              </AdminCard>
+              <AdminCard>
+                <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">失败</div>
+                <div className="mt-2 text-2xl font-semibold text-red-700 dark:text-red-300">{stats.failedCount}</div>
+                <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">最近运行失败，包含采集或审核阶段。</div>
+              </AdminCard>
+              <AdminCard>
+                <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">复采提醒</div>
+                <div className="mt-2 text-2xl font-semibold text-admin-text dark:text-admin-text">{stats.dueCount + stats.staleCount}</div>
+                <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
+                  定时到期 {stats.dueCount}，正式价过期 {stats.staleCount}。
+                </div>
+              </AdminCard>
+              <AdminCard>
+                <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">正式价格</div>
+                <div className="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">{stats.publishedPriceCount}</div>
+                <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">已上线价格记录。</div>
+              </AdminCard>
+            </div>
           </div>
-        </AdminCard>
-        <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">正式价格</div>
-          <div className="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">{stats.publishedPriceCount}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">已上线价格记录。</div>
-        </AdminCard>
-      </div>
-
-      </div></details> : null}
+        </details>
+      ) : null}
 
       <section id="pipeline-products" aria-labelledby="pipeline-products-heading" className="scroll-mt-24">
-      <AdminCard className="mb-6">
-        <AdminSectionHeader id="pipeline-products-heading" title="采集产品" description="按产品查看采集、审核与发布状态；每页展示 10 个产品。" />
-        <div className="mb-4 min-w-0">
-          <AdminSegmentedControl ariaLabel="采集状态" value={stage} items={pipelineStages.map(item => ({
-            value: item.value,
-            label: `${item.label} ${item.value === "all" ? allRows.length : stageCounts[item.value]}`,
-            href: stageHref(item.value),
-          }))} />
-        </div>
-        <AdminFilterBar action="/admin/pipeline#pipeline-products" q={q} searchLabel="搜索产品" searchPlaceholder="产品名或 slug"
-          filters={[{name:"category",label:"分类",value:category === "all" ? "" : category,options:categories.filter(item=>item.value !== "all")} ]}
-          preserve={{product:product || undefined,stage:stage === "all" ? undefined : stage}}
-          clearHref="/admin/pipeline#pipeline-products" />
-        {!loadError ? <AdminPagination {...pagination} pageHref={pageHref} ariaLabel="采集产品顶部分页" unit="个产品" /> : null}
-      </AdminCard>
+        <AdminCard className="mb-6">
+          <AdminSectionHeader id="pipeline-products-heading" title="采集产品" description="按产品查看采集、审核与发布状态；每页展示 10 个产品。" />
+          <div className="mb-4 min-w-0">
+            <AdminSegmentedControl
+              ariaLabel="采集状态"
+              value={stage}
+              items={pipelineStages.map((item) => ({
+                value: item.value,
+                label: `${item.label} ${item.value === "all" ? totalAll : stageCounts[item.value]}`,
+                href: stageHref(item.value),
+              }))}
+            />
+          </div>
+          <AdminFilterBar
+            action="/admin/pipeline#pipeline-products"
+            q={q}
+            searchLabel="搜索产品"
+            searchPlaceholder="产品名或 slug"
+            filters={[
+              {
+                name: "category",
+                label: "分类",
+                value: category === "all" ? "" : category,
+                options: pipelineCategories.filter((item) => item.value !== "all"),
+              },
+            ]}
+            preserve={{
+              product: product || undefined,
+              stage: stage === "all" ? undefined : stage,
+            }}
+            clearHref="/admin/pipeline#pipeline-products"
+          />
+          {!loadError ? (
+            <AdminPagination {...pagination} pageHref={pageHref} ariaLabel="采集产品顶部分页" unit="个产品" />
+          ) : null}
+        </AdminCard>
 
-      {pageRows.filter((row) => toNumber(row.app_store_job_count) > 0 && row.latest_run_status !== "running").length > 1 ? (
-        <BatchCollectionPanel
-          key={`${q}:${category}:${stage}:${pagination.page}`}
-          products={pageRows
-            .filter((row) => toNumber(row.app_store_job_count) > 0 && row.latest_run_status !== "running")
-            .map((row) => ({
-              slug: row.product_slug,
-              name: row.product_name,
-              needsUpdate:
-                getPipelineOperationalStatus(row) !== "published" ||
-                toNumber(row.due_job_count) > 0 ||
-                toNumber(row.published_stale_price_count) > 0,
-            }))}
-        />
-      ) : null}
-
-      <div className="grid gap-4">
-        {pageRows.map((row) => (
-          <article key={row.product_id} id={`pipeline-row-${row.product_id}`} className="scroll-mt-24" data-pipeline-product={row.product_slug} aria-label={row.product_name}>
-            <ProductPipelineCard returnTo={pageHref(pagination.page).split("#")[0]+`#pipeline-row-${row.product_id}`} row={row} growthSignal={growthSignalByProduct.get(row.product_id)} />
-          </article>
-        ))}
-
-        {rows.length === 0 && !loadError ? (
-          <AdminCard>
-            <div className="py-12 text-center">
-              <div className="text-base font-semibold text-admin-text dark:text-admin-text">没有匹配的产品</div>
-              <p className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
-                可以清除筛选，或者先从线索入口加入新产品。
-              </p>
-              <AdminLinkButton
-                href="/admin/discovery"
-                className="mt-5"
-              >
-                去线索入口
-              </AdminLinkButton>
-            </div>
-          </AdminCard>
+        {pageRows.filter((row) => toNumber(row.app_store_job_count) > 0 && row.latest_run_status !== "running").length > 1 ? (
+          <BatchCollectionPanel
+            key={`${q}:${category}:${stage}:${pagination.page}`}
+            products={pageRows
+              .filter((row) => toNumber(row.app_store_job_count) > 0 && row.latest_run_status !== "running")
+              .map((row) => ({
+                slug: row.product_slug,
+                name: row.product_name,
+                needsUpdate:
+                  getPipelineOperationalStatus(row) !== "published" ||
+                  toNumber(row.due_job_count) > 0 ||
+                  toNumber(row.published_stale_price_count) > 0,
+              }))}
+          />
         ) : null}
-      </div>
-      {!loadError && pagination.totalPages > 1 ?
-        <AdminPagination {...pagination} pageHref={pageHref} ariaLabel="采集产品底部分页" unit="个产品"
-          className="mt-5 rounded-admin-card bg-admin-surface p-4 shadow-admin-card" /> : null}
+
+        <div className="grid gap-4">
+          {pageRows.map((row) => (
+            <article key={row.product_id} id={`pipeline-row-${row.product_id}`} className="scroll-mt-24" data-pipeline-product={row.product_slug} aria-label={row.product_name}>
+              <ProductPipelineCard
+                returnTo={pageHref(pagination.page).split("#")[0] + `#pipeline-row-${row.product_id}`}
+                row={row}
+                growthSignal={growthSignalByProduct.get(row.product_id)}
+              />
+            </article>
+          ))}
+
+          {pagination.total === 0 && !loadError ? (
+            <AdminCard>
+              <div className="py-12 text-center">
+                <div className="text-base font-semibold text-admin-text dark:text-admin-text">没有匹配的产品</div>
+                <p className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
+                  可以清除筛选，或者先从线索入口加入新产品。
+                </p>
+                <AdminLinkButton href="/admin/discovery" className="mt-5">
+                  去线索入口
+                </AdminLinkButton>
+              </div>
+            </AdminCard>
+          ) : null}
+        </div>
+        {!loadError && pagination.totalPages > 1 ? (
+          <AdminPagination
+            {...pagination}
+            pageHref={pageHref}
+            ariaLabel="采集产品底部分页"
+            unit="个产品"
+            className="mt-5 rounded-admin-card bg-admin-surface p-4 shadow-admin-card"
+          />
+        ) : null}
       </section>
     </div>
   );
