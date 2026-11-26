@@ -172,22 +172,42 @@ function filterFooterItems(items: SiteNavigationItem[]) {
 
 export default function Footer({
   navItemsByLocale = {},
+  showGameNavigation = false,
 }: {
   navItemsByLocale?: Partial<Record<SiteLocale, SiteNavigationItem[]>>;
+  showGameNavigation?: boolean;
 }) {
   const pathname = usePathname();
   const currentLocale = getSiteLocaleFromPath(pathname);
   const localeNavItems = navItemsByLocale[currentLocale] || [];
-  const footerItems = filterFooterItems(
+  const baseFooterItems = filterFooterItems(
     localeNavItems.length > 0
       ? localeNavItems
       : toSiteNavigationItems(currentLocale),
   );
+  const unified = usesUnifiedPublicStyle(pathname);
+  const footerItems =
+    showGameNavigation && currentLocale === "zh" && unified
+      ? baseFooterItems.map((group) => {
+          const cleanGroupHref = stripSiteLocale(group.href).replace(/\/+$/, "");
+          if (cleanGroupHref !== "/ai-pricing") return group;
+          const existingChildren = group.children ?? [];
+          const hasGames = existingChildren.some(
+            (child) => stripSiteLocale(child.href).replace(/\/+$/, "") === "/games",
+          );
+          return hasGames
+            ? group
+            : {
+                ...group,
+                children: [...existingChildren, { name: "游戏比价", href: "/games" }],
+              };
+        })
+      : baseFooterItems;
   const currentYear = new Date().getFullYear();
   const copy = footerCopy[currentLocale];
   const consentCopy = getAnalyticsConsentCopy(currentLocale);
 
-  if (usesUnifiedPublicStyle(pathname)) return <PublicFooter items={footerItems} copy={copy} settings={consentCopy.settings} locale={currentLocale === "en" ? "en" : "zh"} />;
+  if (unified) return <PublicFooter items={footerItems} copy={copy} settings={consentCopy.settings} locale={currentLocale === "en" ? "en" : "zh"} />;
 
   return (
     <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">

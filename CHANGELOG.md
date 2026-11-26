@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.36.1 - 2026-11-26
+
+- Redesign the Chinese game pricing vertical (`/zh/games` and dynamic `/zh/games/[slug]`) on a scalable multi-game architecture aligned with the 2.36.0 design system: adaptive featured/grid game directory with platform segments and 25-currency switching, H1-row recessed keycap platform/edition switchers, equal-height lowest-price and edition-comparison cards, conditional add-on upgrade notes, ranked six-column store tables, and native canvas FAQs.
+- Integrate published games into global `/` search results, refine the Chinese homepage game category card (removing the duplicate hero shortcut button), add the game pricing entry under the Chinese unified footer, and scope language switching on `/zh/games*` to prevent invalid locale 404 prefetches.
+- Preserve `/api/games/[slug]/offers`, admin game offer review, `/zh/ai-pricing/chatgpt/plus`, English routes, database inputs (`migration_skipped`), and all 534 historical compatibility registrations, adding 28 exact rollback pairs including live production 2.36.0 (`763541e51e979e657c8fdad50d443a2b9b4f45ef`). See the [release readiness record](docs/release-readiness-2.36.1-2026-11-26.md).
+
 ## 2.36.0 - 2026-11-26
 
 - Ship the GeoSub "Horizon Glide G" brand identity kit (adaptive light/dark squircle mark, favicons, app icons, manifest, and Open Graph image), balanced four-entry Chinese unified navigation (preserving the GTA 6 game comparison entry when published), instant zero-debounce search recommendations, and restrained 240ms zero-overshoot segmented controls.

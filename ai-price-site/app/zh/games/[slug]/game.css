@@ -1,0 +1,793 @@
+/* Scoped styles for /zh/games/[slug] detail canvas; aligned with GeoSub 2.36.0 design system. */
+.gs-game-scope [hidden] {
+  display: none !important;
+}
+
+.gs-public-unified .gs-game-page {
+  gap: var(--gs-space-28);
+}
+
+.gs-public-unified .gs-game-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-20) var(--gs-space-28);
+}
+
+.gs-public-unified .gs-game-identity-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-20);
+  min-width: 0;
+}
+
+.gs-public-unified .gs-game-cover {
+  width: 76px;
+  height: 110px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: var(--gs-radius-control);
+  box-shadow: var(--gs-shadow-card);
+}
+
+.gs-public-unified .gs-game-cover-fallback {
+  width: var(--gs-space-64);
+  height: var(--gs-space-64);
+  flex-shrink: 0;
+  border-radius: var(--gs-radius-card);
+}
+
+.gs-public-unified .gs-game-title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-4);
+  min-width: 0;
+}
+
+.gs-public-unified .gs-game-subtitle {
+  margin: 0;
+  font-size: var(--gs-body-size);
+  font-weight: 500;
+  color: var(--gs-text-secondary);
+}
+
+.gs-public-unified .gs-game-byline {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-8);
+  font-size: var(--gs-metadata-size);
+  color: var(--gs-text-muted);
+}
+
+.gs-public-unified .gs-game-byline span + span::before {
+  content: "·";
+  margin-right: var(--gs-space-8);
+}
+
+.gs-public-unified .gs-game-switchers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--gs-space-10);
+}
+
+.gs-public-unified .gs-game-keycap-btn {
+  background: transparent;
+  cursor: pointer;
+}
+
+.gs-public-unified .gs-game-keycap-btn:hover:not([aria-selected="true"]) {
+  color: var(--gs-text);
+  background: var(--gs-surface);
+  border-color: var(--gs-border);
+}
+
+.gs-public-unified .gs-game-keycap-btn[aria-selected="true"] {
+  background: var(--gs-surface);
+  border-color: var(--gs-border-strong);
+  box-shadow: var(--gs-shadow-card-hover);
+  color: var(--gs-text);
+  font-weight: var(--gs-weight-strong);
+}
+
+.gs-public-unified .gs-game-keycap-btn[aria-selected="true"][data-cheaper="true"] .gs-plan-keycap-price {
+  color: var(--gs-low);
+  font-weight: var(--gs-weight-strong);
+}
+
+.gs-public-unified .gs-game-pending-tag {
+  padding: 1px var(--gs-space-6);
+  border-radius: var(--gs-product-mark-radius);
+  border: var(--gs-border-width) dashed var(--gs-border-strong);
+  font-family: var(--gs-font-body);
+}
+
+@media (prefers-color-scheme: dark) {
+  .gs-public-unified .gs-game-keycap-btn:hover:not([aria-selected="true"]),
+  .gs-public-unified .gs-game-keycap-btn[aria-selected="true"] {
+    background: var(--gs-subtle);
+  }
+}
+
+/* Equal-height dual summary cards */
+.gs-public-unified .gs-game-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--gs-space-16);
+  margin-top: 0;
+}
+
+.gs-public-unified .gs-game-lowest-card,
+.gs-public-unified .gs-game-editions-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-12);
+}
+
+.gs-public-unified .gs-game-hero-local-fallback {
+  font-family: var(--gs-font-price);
+  font-size: var(--gs-plan-hero-desktop);
+  font-weight: var(--gs-plan-hero-weight);
+  line-height: var(--gs-plan-hero-line-height);
+  color: var(--gs-low);
+}
+
+.gs-public-unified .gs-game-base-strike {
+  text-decoration: line-through;
+  color: var(--gs-text-muted);
+  font-size: var(--gs-noncritical-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.gs-public-unified .gs-game-empty-hero {
+  margin: var(--gs-space-8) 0;
+  padding: var(--gs-space-16);
+  border-radius: var(--gs-radius-control);
+  background: var(--gs-page);
+  color: var(--gs-text-secondary);
+  font-size: var(--gs-home-meta-size);
+}
+
+.gs-public-unified .gs-game-insight-line {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--gs-space-6);
+  font-size: var(--gs-metadata-size);
+  color: var(--gs-text-secondary);
+}
+
+.gs-public-unified .gs-game-insight-line #quote-selection {
+  font-weight: var(--gs-weight-emphasis);
+  color: var(--gs-text);
+  white-space: nowrap;
+}
+
+.gs-public-unified .gs-game-insight-line strong {
+  color: var(--gs-low);
+  font-family: var(--gs-font-price);
+  font-variant-numeric: tabular-nums;
+}
+
+.gs-public-unified .gs-game-hero-store-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-6);
+  min-height: var(--gs-space-36);
+  padding: 0 var(--gs-space-12);
+  border-radius: var(--gs-radius-control-small);
+  border: var(--gs-border-width) solid var(--gs-border-strong);
+  background: var(--gs-surface);
+  color: var(--gs-text);
+  font-size: var(--gs-metadata-size);
+  font-weight: var(--gs-weight-emphasis);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.gs-public-unified .gs-game-hero-store-btn:hover {
+  background: var(--gs-subtle);
+}
+
+/* Right card: Unified Edition Comparison */
+.gs-public-unified .gs-game-editions-card h2 {
+  font-size: var(--gs-card-title-size);
+}
+
+.gs-public-unified .gs-game-editions-card .edition-premium {
+  color: var(--gs-text);
+  font-weight: var(--gs-weight-emphasis);
+  font-variant-numeric: tabular-nums;
+}
+
+.gs-public-unified .gs-game-edition-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-10);
+  flex: 1;
+}
+
+.gs-public-unified .gs-game-edition-item {
+  border-radius: var(--gs-radius-control);
+  border: var(--gs-border-width) solid var(--gs-border);
+  background: var(--gs-page);
+  overflow: hidden;
+}
+
+.gs-public-unified .gs-game-edition-item[data-active="true"] {
+  border-color: var(--gs-border-strong);
+  background: var(--gs-surface);
+  box-shadow: var(--gs-shadow-card);
+}
+
+.gs-public-unified .gs-game-edition-select {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-6);
+  padding: var(--gs-space-14) var(--gs-space-16);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+}
+
+.gs-public-unified .gs-game-edition-item:not([data-active="true"]) .gs-game-edition-select:hover {
+  background: var(--gs-row-hover);
+}
+
+.gs-public-unified .gs-game-edition-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gs-space-12);
+}
+
+.gs-public-unified .gs-game-edition-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-8);
+}
+
+.gs-public-unified .gs-game-edition-name > strong {
+  font-size: var(--gs-body-compact-size);
+  font-weight: var(--gs-weight-strong);
+  color: var(--gs-text);
+}
+
+.gs-public-unified .gs-game-active-pill,
+.gs-public-unified .gs-game-sub-pill {
+  padding: 2px var(--gs-space-8);
+  border-radius: var(--gs-radius-tag);
+  font-size: var(--gs-listing-badge-size);
+  font-weight: var(--gs-weight-emphasis);
+  white-space: nowrap;
+}
+
+.gs-public-unified .gs-game-active-pill {
+  background: var(--gs-tag-low);
+  color: var(--gs-low-on-soft);
+}
+
+.gs-public-unified .gs-game-sub-pill {
+  background: var(--gs-subtle);
+  color: var(--gs-text-muted);
+}
+
+.gs-public-unified .gs-game-edition-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gs-space-8);
+  flex-shrink: 0;
+  font-family: var(--gs-font-price);
+  font-variant-numeric: tabular-nums;
+}
+
+.gs-public-unified .gs-game-edition-price > strong {
+  font-size: var(--gs-card-title-size);
+  font-weight: var(--gs-weight-strong);
+  color: var(--gs-text);
+}
+
+.gs-public-unified .gs-game-edition-item[data-active="true"] .gs-game-edition-price > strong {
+  color: var(--gs-low);
+}
+
+.gs-public-unified .gs-game-edition-price > small {
+  font-size: var(--gs-noncritical-caption-size);
+  color: var(--gs-text-muted);
+}
+
+.gs-public-unified .gs-game-edition-desc {
+  margin: 0;
+  font-size: var(--gs-metadata-size);
+  line-height: 1.55;
+  color: var(--gs-text-secondary);
+}
+
+.gs-public-unified .gs-game-upgrade-note {
+  margin-top: auto;
+  padding-top: var(--gs-space-12);
+  border-top: var(--gs-border-width) solid var(--gs-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-8) var(--gs-space-16);
+  font-size: var(--gs-metadata-size);
+}
+
+.gs-public-unified .gs-game-upgrade-note > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-6);
+  color: var(--gs-text-secondary);
+}
+
+.gs-public-unified .gs-game-upgrade-note strong {
+  color: var(--gs-text);
+  font-weight: var(--gs-weight-emphasis);
+}
+
+.gs-public-unified .gs-game-upgrade-note a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-4);
+  color: var(--gs-low);
+  font-weight: var(--gs-weight-emphasis);
+  text-decoration: none;
+}
+
+.gs-public-unified .gs-game-upgrade-note a:hover {
+  text-decoration: underline;
+}
+
+/* Unannounced platform card (e.g. PC) */
+.gs-public-unified .gs-game-unannounced {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-20) var(--gs-space-28);
+}
+
+.gs-public-unified .gs-game-unannounced-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gs-space-8);
+  max-width: 640px;
+}
+
+.gs-public-unified .gs-game-status-pill {
+  padding: 2px var(--gs-space-10);
+  border-radius: var(--gs-radius-tag);
+  background: var(--gs-subtle);
+  color: var(--gs-text-secondary);
+  font-size: var(--gs-noncritical-caption-size);
+  font-weight: var(--gs-weight-emphasis);
+}
+
+.gs-public-unified .gs-game-unannounced-copy p {
+  margin: 0;
+  color: var(--gs-text-secondary);
+  font-size: var(--gs-home-meta-size);
+}
+
+.gs-public-unified .gs-game-unannounced-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-10);
+}
+
+.gs-public-unified .gs-game-official-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-6);
+  min-height: var(--gs-min-touch-target);
+  padding-inline: var(--gs-space-12);
+  color: var(--gs-text-secondary);
+  font-size: var(--gs-home-meta-size);
+  font-weight: var(--gs-weight-emphasis);
+  text-decoration: none;
+}
+
+.gs-public-unified .gs-game-official-link:hover {
+  color: var(--gs-text);
+}
+
+/* 6-Column Store Region Table */
+.gs-public-unified .gs-game-region-title p {
+  margin: var(--gs-space-6) 0 0;
+  font-size: var(--gs-home-meta-size);
+  color: var(--gs-text-muted);
+}
+
+.gs-public-unified .gs-game-table-panel {
+  background: var(--gs-surface);
+  border: var(--gs-border-width) solid var(--gs-border);
+  border-radius: var(--gs-radius-panel);
+  overflow: hidden;
+}
+
+.gs-public-unified .gs-game-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.gs-public-unified .gs-game-table thead th {
+  padding: var(--gs-space-12) var(--gs-space-14);
+  font-size: var(--gs-metadata-size);
+  font-weight: 400;
+  color: var(--gs-text-muted);
+  text-align: left;
+  border-bottom: var(--gs-border-width) solid var(--gs-border);
+}
+
+.gs-public-unified .gs-game-table th:first-child,
+.gs-public-unified .gs-game-table td:first-child {
+  padding-left: var(--gs-space-20);
+}
+
+.gs-public-unified .gs-game-table th:last-child,
+.gs-public-unified .gs-game-table td:last-child {
+  padding-right: var(--gs-space-20);
+}
+
+.gs-public-unified .gs-game-table .gs-game-col-rank {
+  width: 48px;
+}
+
+.gs-public-unified .gs-game-table .gs-game-col-num {
+  width: 16%;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.gs-public-unified .gs-game-table .gs-game-col-compare {
+  width: 24%;
+}
+
+.gs-public-unified .gs-game-table .gs-game-col-store {
+  width: 22%;
+  text-align: right;
+}
+
+.gs-public-unified .gs-game-table tbody + tbody .gs-game-row {
+  border-top: var(--gs-border-width) solid var(--gs-border);
+}
+
+.gs-public-unified .gs-game-row > th,
+.gs-public-unified .gs-game-row > td {
+  padding: var(--gs-space-14) var(--gs-space-14);
+  vertical-align: middle;
+}
+
+.gs-public-unified .gs-game-row:hover > th,
+.gs-public-unified .gs-game-row:hover > td {
+  background: var(--gs-row-hover);
+}
+
+.gs-public-unified .gs-game-region-cell {
+  text-align: left;
+  font-weight: 400;
+}
+
+.gs-public-unified .gs-game-disclosure-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-10);
+  min-height: var(--gs-space-40);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gs-text);
+  text-align: left;
+}
+
+.gs-public-unified .gs-game-region-names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gs-public-unified .gs-game-region-names > strong {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-6);
+  font-size: var(--gs-body-compact-size);
+  font-weight: var(--gs-weight-emphasis);
+}
+
+.gs-public-unified .gs-game-region-tag {
+  padding: 1px var(--gs-space-6);
+  border-radius: var(--gs-product-mark-radius);
+  background: var(--gs-subtle);
+  font-size: var(--gs-listing-badge-size);
+  font-weight: 500;
+  color: var(--gs-text-muted);
+}
+
+.gs-public-unified .gs-game-row-chevron {
+  color: var(--gs-text-muted);
+  flex-shrink: 0;
+}
+
+.gs-public-unified .gs-game-disclosure-btn[aria-expanded="true"] .gs-game-row-chevron {
+  transform: rotate(180deg);
+}
+
+.gs-public-unified .gs-game-table .quote-fx > strong {
+  font-family: var(--gs-font-price);
+  font-size: var(--gs-table-size);
+  font-weight: var(--gs-weight-strong);
+  color: var(--gs-text);
+}
+
+.gs-public-unified .gs-game-table .quote-fx > strong[data-tone="low"] {
+  color: var(--gs-low);
+}
+
+.gs-public-unified .gs-game-table .quote-local {
+  font-family: var(--gs-font-price);
+  font-size: var(--gs-body-compact-size);
+  color: var(--gs-text-secondary);
+}
+
+.gs-public-unified .gs-game-table .quote-local > small {
+  display: block;
+  margin-top: 2px;
+}
+
+.gs-public-unified .gs-game-store-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--gs-space-12);
+}
+
+.gs-public-unified .gs-game-tax-label {
+  font-size: var(--gs-metadata-size);
+  color: var(--gs-text-muted);
+  white-space: nowrap;
+}
+
+.gs-public-unified .gs-game-shop-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-6);
+  min-height: var(--gs-space-36);
+  padding: 0 var(--gs-space-12);
+  border-radius: var(--gs-radius-control-small);
+  border: var(--gs-border-width) solid var(--gs-border);
+  background: var(--gs-surface);
+  color: var(--gs-text);
+  font-size: var(--gs-metadata-size);
+  font-weight: var(--gs-weight-emphasis);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.gs-public-unified .gs-game-shop-link:hover {
+  background: var(--gs-subtle);
+  border-color: var(--gs-border-strong);
+}
+
+.gs-public-unified .gs-game-detail-row > td {
+  padding: 0;
+}
+
+.gs-public-unified .gs-game-evidence {
+  margin: 0 var(--gs-space-20) var(--gs-space-14);
+}
+
+.gs-public-unified .gs-game-mobile-local,
+.gs-public-unified .gs-game-mobile-diff {
+  display: none;
+}
+
+.gs-public-unified .gs-game-muted {
+  color: var(--gs-text-muted);
+  font-size: var(--gs-metadata-size);
+}
+
+.gs-public-unified .gs-game-empty-rows button {
+  margin-left: var(--gs-space-10);
+  border: 0;
+  background: transparent;
+  color: var(--gs-low);
+  font-weight: var(--gs-weight-emphasis);
+  text-decoration: underline;
+}
+
+.gs-public-unified .gs-game-sources-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-4);
+  border: 0;
+  background: transparent;
+  color: var(--gs-text-secondary);
+  font-size: var(--gs-metadata-size);
+  font-weight: var(--gs-weight-emphasis);
+}
+
+.gs-public-unified .gs-game-sources-btn:hover {
+  color: var(--gs-text);
+}
+
+/* Sources dialog */
+.gs-public-unified .gs-game-sources-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-12);
+}
+
+.gs-public-unified .gs-game-sources-intro,
+.gs-public-unified .gs-game-sources-meta {
+  margin: 0;
+  font-size: var(--gs-metadata-size);
+  color: var(--gs-text-muted);
+}
+
+.gs-public-unified .gs-game-source-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.gs-public-unified .gs-game-source-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-8) var(--gs-space-16);
+  padding: var(--gs-space-12) 0;
+  border-bottom: var(--gs-border-width) solid var(--gs-border);
+  font-size: var(--gs-body-compact-size);
+}
+
+.gs-public-unified .gs-game-source-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-12);
+}
+
+.gs-public-unified .gs-game-source-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-4);
+  color: var(--gs-low);
+  font-size: var(--gs-metadata-size);
+  font-weight: var(--gs-weight-emphasis);
+  text-decoration: none;
+}
+
+.gs-public-unified .gs-game-source-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 960px) {
+  .gs-public-unified .gs-game-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .gs-public-unified .gs-game-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--gs-space-16);
+  }
+
+  .gs-public-unified .gs-game-cover {
+    width: 60px;
+    height: 88px;
+  }
+
+  .gs-public-unified .gs-game-subtitle {
+    font-size: var(--gs-body-compact-size);
+  }
+
+  .gs-public-unified .gs-game-switchers {
+    justify-content: flex-start;
+  }
+
+  .gs-public-unified .gs-game-keycaps {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  }
+
+  .gs-public-unified .gs-game-hero-local-fallback {
+    font-size: var(--gs-plan-hero-mobile);
+  }
+
+  .gs-public-unified .gs-game-lowest-card .gs-plan-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .gs-public-unified .gs-game-lowest-card .gs-plan-tools {
+    order: 0;
+    width: auto;
+  }
+
+  .gs-public-unified .gs-game-lowest-card .gs-plan-tools > * {
+    flex: 0 0 auto;
+  }
+
+  .gs-public-unified .gs-game-lowest-card .gs-plan-tools > button {
+    width: auto;
+  }
+
+  .gs-public-unified .gs-game-hero-store-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .gs-public-unified .gs-game-col-desktop,
+  .gs-public-unified .gs-game-col-rank {
+    display: none;
+  }
+
+  .gs-public-unified .gs-game-table thead {
+    display: none;
+  }
+
+  .gs-public-unified .gs-game-table tbody .gs-game-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--gs-space-8);
+    padding: var(--gs-space-12) var(--gs-space-14);
+  }
+
+  .gs-public-unified .gs-game-row > th,
+  .gs-public-unified .gs-game-row > td {
+    padding: 0 !important;
+  }
+
+  .gs-public-unified .gs-game-mobile-local,
+  .gs-public-unified .gs-game-mobile-diff {
+    display: block;
+    font-size: var(--gs-listing-badge-size);
+    color: var(--gs-text-muted);
+    font-weight: 400;
+  }
+
+  .gs-public-unified .gs-game-mobile-diff[data-tone="low"] {
+    color: var(--gs-low);
+    font-weight: var(--gs-weight-emphasis);
+  }
+
+  .gs-public-unified .gs-game-shop-link {
+    padding: 0 var(--gs-space-8);
+    min-height: var(--gs-space-32);
+    font-size: var(--gs-noncritical-caption-size);
+  }
+
+  .gs-public-unified .gs-game-evidence {
+    margin: 0 var(--gs-space-12) var(--gs-space-12);
+  }
+}
+
+@media (max-width: 380px) {
+  .gs-public-unified .gs-game-keycap-btn {
+    padding-inline: var(--gs-space-6);
+    font-size: var(--gs-noncritical-caption-size);
+  }
+
+  .gs-public-unified .gs-game-region-tag {
+    display: none;
+  }
+}
