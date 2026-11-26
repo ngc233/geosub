@@ -15,6 +15,7 @@ RuntimeDirectory=geosub
 RuntimeDirectoryMode=0700
 RuntimeDirectoryPreserve=yes
 NoNewPrivileges=true
+TimeoutStartSec=2h
 MemoryMax=1800M
 CPUQuota=120%
 

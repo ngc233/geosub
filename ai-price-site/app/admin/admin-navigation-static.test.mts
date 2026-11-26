@@ -425,6 +425,7 @@ test("database runtime keeps the web pool bounded and audits indexes read-only",
   assert.match(prisma, /GEOSUB_DB_POOL_MAX/);
   assert.match(prisma, /GEOSUB_DB_CONNECTION_TIMEOUT_MS/);
   assert.match(prisma, /GEOSUB_DB_IDLE_TIMEOUT_MS/);
+  assert.match(prisma, /GEOSUB_DB_STATEMENT_TIMEOUT_MS/);
   assert.match(prisma, /maximum: 30/);
   assert.match(prisma, /globalForPrisma\.prisma \?\? createPrismaClient\(\)/);
   assert.match(deploymentEnvironment, /GEOSUB_DB_POOL_MAX=10/);
