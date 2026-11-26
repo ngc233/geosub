@@ -58,7 +58,7 @@ const v4ReaderChanges = {
   },
   "ai-price-site/components/PlanCanvasPricing.tsx": {
     "retained": null,
-    "candidate": "de8ca07f902e55e467e03b92cfcecf6cafeefee2c3b5d6286b6920a9c0d4aa15"
+    "candidate": "873e6e35cd8e27cde366669aa933fed9e67c8ae3e6a120e73a6fd3a525966491"
   },
   "ai-price-site/lib/plan-canvas.ts": {
     "retained": null,
