@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "category": "software",
+  "catalog_source": "software-catalog",
+  "scope": "Generic App Store software subscription catalog (initial 5-product pilot)",
+  "products": [
+    {
+      "slug": "canva",
+      "name": "Canva",
+      "category": "software",
+      "provider": "Canva Pty Ltd",
+      "description": "Compare Canva Pro and Canva Business regional App Store subscription prices.",
+      "official_url": "https://www.canva.com/pricing/",
+      "sort_order": 610,
+      "app_store": {
+        "id": "897446215",
+        "bundle_id": "com.canva.canvaeditor",
+        "collector_enabled": true
+      },
+      "plans": [
+        {
+          "slug": "pro",
+          "name": "Canva Pro",
+          "billing_cycle": "monthly",
+          "sort_order": 10
+        },
+        {
+          "slug": "business",
+          "name": "Canva Business",
+          "billing_cycle": "monthly",
+          "sort_order": 20
+        }
+      ]
+    },
+    {
+      "slug": "notion",
+      "name": "Notion",
+      "category": "software",
+      "provider": "Notion Labs, Incorporated",
+      "description": "Compare Notion Plus regional App Store subscription prices.",
+      "official_url": "https://www.notion.com/pricing",
+      "sort_order": 620,
+      "app_store": {
+        "id": "1232780281",
+        "bundle_id": "notion.id",
+        "collector_enabled": true
+      },
+      "plans": [
+        {
+          "slug": "plus",
+          "name": "Notion Plus",
+          "billing_cycle": "monthly",
+          "sort_order": 10
+        }
+      ]
+    },
+    {
+      "slug": "capcut",
+      "name": "CapCut",
+      "category": "software",
+      "provider": "ByteDance Pte. Ltd.",
+      "description": "Compare CapCut Standard and Pro regional App Store subscription prices.",
+      "official_url": "https://www.capcut.com/",
+      "sort_order": 630,
+      "app_store": {
+        "id": "1500855883",
+        "bundle_id": "com.lemon.lvoverseas",
+        "collector_enabled": true
+      },
+      "plans": [
+        {
+          "slug": "standard",
+          "name": "CapCut Standard",
+          "billing_cycle": "monthly",
+          "sort_order": 10
+        },
+        {
+          "slug": "pro",
+          "name": "CapCut Pro",
+          "billing_cycle": "monthly",
+          "sort_order": 20
+        }
+      ]
+    },
+    {
+      "slug": "adobe-lightroom",
+      "name": "Adobe Lightroom",
+      "category": "software",
+      "provider": "Adobe Inc.",
+      "description": "Compare Adobe Lightroom Premium 40GB and 100GB regional App Store subscription prices.",
+      "official_url": "https://www.adobe.com/products/photoshop-lightroom.html",
+      "sort_order": 640,
+      "app_store": {
+        "id": "878783582",
+        "bundle_id": "com.adobe.lrmobilephone",
+        "collector_enabled": true
+      },
+      "plans": [
+        {
+          "slug": "premium-40gb",
+          "name": "Adobe Lightroom Premium 40GB",
+          "billing_cycle": "monthly",
+          "sort_order": 10
+        },
+        {
+          "slug": "premium-100gb",
+          "name": "Adobe Lightroom Premium 100GB",
+          "billing_cycle": "monthly",
+          "sort_order": 20
+        }
+      ]
+    },
+    {
+      "slug": "goodnotes",
+      "name": "Goodnotes",
+      "category": "software",
+      "provider": "Goodnotes Limited",
+      "description": "Compare Goodnotes Essential, Pro, and AI Pass regional App Store subscription prices.",
+      "official_url": "https://www.goodnotes.com/pricing",
+      "sort_order": 650,
+      "app_store": {
+        "id": "1444383602",
+        "bundle_id": "com.goodnotesapp.x",
+        "collector_enabled": true
+      },
+      "plans": [
+        {
+          "slug": "essential-yearly",
+          "name": "Goodnotes Essential (Yearly)",
+          "billing_cycle": "yearly",
+          "sort_order": 10
+        },
+        {
+          "slug": "pro-yearly",
+          "name": "Goodnotes Pro (Yearly)",
+          "billing_cycle": "yearly",
+          "sort_order": 20
+        },
+        {
+          "slug": "ai-pass",
+          "name": "Goodnotes AI Pass",
+          "billing_cycle": "monthly",
+          "sort_order": 30
+        }
+      ]
+    }
+  ]
+}
