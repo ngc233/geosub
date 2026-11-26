@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canAdmin } from './admin-permissions.ts';
+import {
+  ADMIN_ROLE_CAPABILITIES,
+  DOMAIN_ADMIN_CAPABILITIES,
+  assertAdminCapability,
+  canAdmin,
+  listAdminRoleDomainCapabilities,
+} from './admin-permissions.ts';
 import { workspaceStatus, type WorkspaceRow } from './admin-workspace-model.ts';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -11,9 +17,37 @@ for(const role of ['OWNER','EDITOR','VIEWER','UNKNOWN'])test(`server auth enforc
  const result={exports:{} as {requireAdmin:(cap?:string)=>Promise<unknown>}};
  const mocks:Record<string,unknown>={'server-only':{},'@prisma/client':{},'./admin-permissions':{canAdmin},'next/headers':{cookies:async()=>({get:()=>({value:'test-only-session'})})},'next/navigation':{redirect:(url:string)=>{throw Error('redirect:'+url);}},'./prisma':{prisma:{adminSession:{findUnique:async()=>({expiresAt:new Date(Date.now()+60000),user:{id:'test',status:'ACTIVE',role}})}}}};
  vm.runInNewContext('(function(require,module,exports){'+auth+'\n})')((name:string)=>name in mocks?mocks[name]:require(name),result,result.exports);
- for(const cap of ['read','draft','manage','account'] as const){const promise=result.exports.requireAdmin(cap);if(canAdmin(role,cap))await promise;else await assert.rejects(promise,/permission=denied/);}
+ for(const cap of ['read','draft','manage','account',...DOMAIN_ADMIN_CAPABILITIES] as const){const promise=result.exports.requireAdmin(cap);if(canAdmin(role,cap))await promise;else await assert.rejects(promise,/permission=denied/);}
 });
 test('write boundary does not infer permissions from an unknown role',()=>{assert.equal(canAdmin('VIEWER','draft'),false);assert.equal(canAdmin('EDITOR','manage'),false);assert.equal(canAdmin('OWNER','manage'),true);});
+
+test('fine-grained domain RBAC matrix enforces least privilege per role', () => {
+  assert.deepEqual(listAdminRoleDomainCapabilities('OWNER'), [...DOMAIN_ADMIN_CAPABILITIES]);
+  assert.deepEqual(listAdminRoleDomainCapabilities('EDITOR'), [
+    'catalog.write',
+    'seo.write',
+    'audit.read',
+    'sessions.manage',
+  ]);
+  assert.deepEqual(listAdminRoleDomainCapabilities('VIEWER'), [
+    'audit.read',
+    'sessions.manage',
+  ]);
+  assert.deepEqual(listAdminRoleDomainCapabilities('UNKNOWN'), []);
+
+  assert.equal(canAdmin('EDITOR', 'pricing.review'), false);
+  assert.equal(canAdmin('EDITOR', 'collector.trigger'), false);
+  assert.equal(canAdmin('EDITOR', 'settings.manage'), false);
+  assert.equal(canAdmin('EDITOR', 'users.manage'), false);
+  assert.equal(canAdmin('VIEWER', 'catalog.write'), false);
+  assert.equal(canAdmin('VIEWER', 'seo.write'), false);
+  assert.equal(canAdmin('VIEWER', 'sessions.manage'), true);
+  assert.equal(canAdmin('OWNER', 'users.manage'), true);
+  assert.ok(ADMIN_ROLE_CAPABILITIES.OWNER.includes('pricing.review'));
+
+  assert.throws(() => assertAdminCapability('VIEWER', 'settings.manage'), /没有此操作权限/);
+  assert.doesNotThrow(() => assertAdminCapability('OWNER', 'settings.manage'));
+});
 const row:WorkspaceRow={id:'x',slug:'x',name:'X',publish_status:'published',price_count:4,stale_count:2,latest_checked:null,job_count:1,running_count:1,failed_count:0,queued_count:0};
 test('published and running do not erase stale price action',()=>{const s=workspaceStatus(row,false);assert.equal(s.publication,'已发布');assert.equal(s.collection,'采集执行中');assert.equal(s.needsAction,true);assert.equal(s.progress,true);});
 test('partial snapshot never treats missing operational records as known failure',()=>{const s=workspaceStatus({...row,stale_count:0,failed_count:3},true);assert.equal(s.needsAction,false);assert.equal(s.progress,false);assert.equal(s.collection,'未导入采集记录');});

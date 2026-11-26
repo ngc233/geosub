@@ -51,14 +51,22 @@ test("every admin mutation entry point rechecks authentication", () => {
   const commandPipeline = readProjectFile("lib/admin-command.ts");
   assert.match(commandPipeline, /await requireAdmin\(capability\)/);
 
+  const validMutationCapabilityPattern =
+    "(?:manage|account|settings\\.manage|sessions\\.manage|pricing\\.review|collector\\.trigger|catalog\\.write|seo\\.write|users\\.manage)";
+
   for (const file of actionFiles) {
     const source = readProjectFile(file);
     const exportedActions = source.match(/^export async function/gm)?.length || 0;
     const directAuthChecks =
-      source.match(/await requireAdmin\("(?:manage|account)"\)/g)?.length || 0;
+      source.match(
+        new RegExp(`await requireAdmin\\("${validMutationCapabilityPattern}"\\)`, "g"),
+      )?.length || 0;
     const commandAuthChecks =
       source.match(
-        /await executeAdminCommand\(\{[\s\S]*?capability:\s*"(?:manage|account)"/g,
+        new RegExp(
+          `await executeAdminCommand\\(\\{[\\s\\S]*?capability:\\s*"${validMutationCapabilityPattern}"`,
+          "g",
+        ),
       )?.length || 0;
     const authChecks = directAuthChecks + commandAuthChecks;
 

@@ -90,8 +90,10 @@ test("redactAuditValue and summarizeAuditPayload mask secrets and compute safe d
   ]);
 
   assert.equal(formatAuditActionLabel("approve_price_observation"), "审核通过价格");
+  assert.equal(formatAuditActionLabel("revoke_admin_session"), "强制下线会话");
   assert.equal(getAuditActionTone("approve_price_observation"), "published");
   assert.equal(getAuditActionTone("reject_price_observation"), "danger");
+  assert.equal(getAuditActionTone("revoke_admin_session"), "danger");
   assert.equal(getAuditActionTone("export_events_csv"), "review");
 });
 
@@ -162,7 +164,7 @@ test("audit logs page stays read-only, uses SQL pagination, semantic tokens, and
   const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
   const queries = readFileSync(new URL("./queries.ts", import.meta.url), "utf8");
 
-  assert.match(page, /await requireAdmin\("read"\)/);
+  assert.match(page, /await requireAdmin\("audit\.read"\)/);
   assert.match(page, /<AdminPageHeader/);
   assert.match(page, /<AdminFilterBar/);
   assert.match(page, /<AdminDataTable/);

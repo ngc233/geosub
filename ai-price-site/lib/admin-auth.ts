@@ -593,6 +593,199 @@ export async function changeCurrentAdminPassword({
   };
 }
 
+export type AdminSessionSummary = {
+  id: string;
+  createdAt: Date;
+  expiresAt: Date;
+  isCurrent: boolean;
+};
+
+export type CurrentAdminSessionsSnapshot = {
+  sessions: AdminSessionSummary[];
+  trustedDeviceCount: number;
+  maxActiveSessions: number;
+};
+
+export type RevokeAdminSessionResult =
+  | { ok: true; revokedSessionId: string }
+  | { ok: false; reason: "not_found" | "current_session" };
+
+export type RevokeOtherAdminSessionsResult =
+  | { ok: true; revokedSessions: number; revokedTrustedDevices: number }
+  | { ok: false; reason: "missing_current_session" };
+
+type AdminSessionDbClient = Pick<
+  typeof prisma,
+  "adminSession" | "adminTrustedDevice"
+>;
+
+export async function getCurrentAdminSessions(
+  userId: string,
+): Promise<CurrentAdminSessionsSnapshot> {
+  const now = new Date();
+  const cookieStore = await cookies();
+  const currentToken = cookieStore.get(COOKIE_NAME)?.value;
+  const currentTokenHash = currentToken ? hashSessionToken(currentToken) : null;
+
+  const [sessions, trustedDeviceCount] = await Promise.all([
+    prisma.adminSession.findMany({
+      where: {
+        userId,
+        expiresAt: {
+          gt: now,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        tokenHash: true,
+        createdAt: true,
+        expiresAt: true,
+      },
+    }),
+    prisma.adminTrustedDevice.count({
+      where: {
+        userId,
+        expiresAt: {
+          gt: now,
+        },
+        failureCount: {
+          lt: TRUSTED_DEVICE_MAX_FAILURES,
+        },
+      },
+    }),
+  ]);
+
+  return {
+    sessions: sessions.map((session) => ({
+      id: session.id,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      isCurrent: Boolean(currentTokenHash && session.tokenHash === currentTokenHash),
+    })),
+    trustedDeviceCount,
+    maxActiveSessions: MAX_ACTIVE_SESSIONS,
+  };
+}
+
+export async function revokeAdminSessionById({
+  userId,
+  sessionId,
+  db = prisma,
+}: {
+  userId: string;
+  sessionId: string;
+  db?: AdminSessionDbClient;
+}): Promise<RevokeAdminSessionResult> {
+  const normalizedId = sessionId.trim();
+  if (!normalizedId) {
+    return { ok: false, reason: "not_found" };
+  }
+
+  const cookieStore = await cookies();
+  const currentToken = cookieStore.get(COOKIE_NAME)?.value;
+  const currentTokenHash = currentToken ? hashSessionToken(currentToken) : null;
+
+  const target = await db.adminSession.findFirst({
+    where: {
+      id: normalizedId,
+      userId,
+    },
+    select: {
+      id: true,
+      tokenHash: true,
+    },
+  });
+
+  if (!target) {
+    return { ok: false, reason: "not_found" };
+  }
+
+  if (currentTokenHash && target.tokenHash === currentTokenHash) {
+    return { ok: false, reason: "current_session" };
+  }
+
+  const deleted = await db.adminSession.deleteMany({
+    where: {
+      id: target.id,
+      userId,
+    },
+  });
+
+  if (deleted.count === 0) {
+    return { ok: false, reason: "not_found" };
+  }
+
+  return { ok: true, revokedSessionId: target.id };
+}
+
+export async function revokeOtherAdminSessions({
+  userId,
+  db = prisma,
+}: {
+  userId: string;
+  db?: AdminSessionDbClient;
+}): Promise<RevokeOtherAdminSessionsResult> {
+  const cookieStore = await cookies();
+  const currentToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (!currentToken) {
+    return { ok: false, reason: "missing_current_session" };
+  }
+
+  const currentTokenHash = hashSessionToken(currentToken);
+  const currentSession = await db.adminSession.findFirst({
+    where: {
+      userId,
+      tokenHash: currentTokenHash,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!currentSession) {
+    return { ok: false, reason: "missing_current_session" };
+  }
+
+  const deletedSessions = await db.adminSession.deleteMany({
+    where: {
+      userId,
+      id: {
+        not: currentSession.id,
+      },
+    },
+  });
+
+  const currentDeviceToken = cookieStore.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+  const currentDeviceHash = currentDeviceToken
+    ? hashSessionToken(currentDeviceToken)
+    : null;
+
+  const deletedDevices = await db.adminTrustedDevice.deleteMany({
+    where: currentDeviceHash
+      ? {
+          userId,
+          tokenHash: {
+            not: currentDeviceHash,
+          },
+        }
+      : {
+          userId,
+        },
+  });
+
+  return {
+    ok: true,
+    revokedSessions: deletedSessions.count,
+    revokedTrustedDevices: deletedDevices.count,
+  };
+}
+
 export async function clearAdminSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;

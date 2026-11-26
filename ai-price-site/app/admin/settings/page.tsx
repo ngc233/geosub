@@ -1,9 +1,16 @@
 import { adminControlClassName } from "@/components/admin/admin-control";
 import { ANALYTICS_KEYS, NOTIFICATION_KEYS, settingsVersion } from "../../../lib/admin-settings-version";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
+import { AdminBadge } from "../../../components/admin/AdminBadge";
 import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
 import { AdminButton } from "../../../components/admin/AdminButton";
 import AdminAlert from "../../../components/admin/AdminAlert";
+import { getCurrentAdminSessions, requireAdmin } from "../../../lib/admin-auth";
+import {
+  ADMIN_CAPABILITY_META,
+  getAdminRoleLabel,
+  listAdminRoleDomainCapabilities,
+} from "../../../lib/admin-permissions";
 import { prisma } from "../../../lib/prisma";
 import {
   getOperationsNotificationConfig,
@@ -11,6 +18,8 @@ import {
   type OperationsNotificationStatus,
 } from "../../../lib/operations-notification";
 import {
+  revokeAdminSession,
+  revokeOtherAdminSessionsAction,
   updateAdminPassword,
   updateAnalyticsSettings,
   updateOperationsNotificationSettings,
@@ -91,12 +100,18 @@ export default async function AdminSettingsPage({
 }: {
   searchParams?: Promise<SettingsSearchParams>;
 }) {
-  const [settings, notificationConfig, notificationHistory, query] = await Promise.all([
+  const admin = await requireAdmin("read");
+  const [settings, notificationConfig, notificationHistory, sessionSnapshot, query] = await Promise.all([
     getAnalyticsSettings(),
     getOperationsNotificationConfig(),
     getOperationsNotificationHistory(),
+    getCurrentAdminSessions(admin.id),
     searchParams ?? Promise.resolve<SettingsSearchParams>({}),
   ]);
+  const grantedDomainCapabilities = listAdminRoleDomainCapabilities(admin.role);
+  const otherSessionsCount = sessionSnapshot.sessions.filter(
+    (session) => !session.isCurrent,
+  ).length;
   const notificationRows=await prisma.siteSetting.findMany({where:{settingKey:{in:NOTIFICATION_KEYS}}});
   const notification = {...notificationConfig, enabled: notificationRows.find(row => row.settingKey === "operations_brief_enabled")?.valueText === "true"};
   const saved = query.saved === "1";
@@ -186,7 +201,7 @@ export default async function AdminSettingsPage({
           </span>
         </div>
 
-        <AdminActionForm action={updateAnalyticsSettings} className="mt-6 space-y-6"><input type="hidden" name="recordVersion" value={settings.recordVersion} />
+        <AdminActionForm capability="settings.manage" action={updateAnalyticsSettings} className="mt-6 space-y-6"><input type="hidden" name="recordVersion" value={settings.recordVersion} />
           <label className="block">
             <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">
               GA4 Measurement ID
@@ -249,7 +264,7 @@ export default async function AdminSettingsPage({
           </div>
         </div>
 
-        <AdminActionForm action={updateOperationsNotificationSettings} className="mt-5"><input type="hidden" name="recordVersion" value={settingsVersion(notificationRows,NOTIFICATION_KEYS)} />
+        <AdminActionForm capability="settings.manage" action={updateOperationsNotificationSettings} className="mt-5"><input type="hidden" name="recordVersion" value={settingsVersion(notificationRows,NOTIFICATION_KEYS)} />
           <label className="flex items-start gap-3 rounded-lg border border-admin-border bg-admin-surface p-4 dark:border-admin-border-strong dark:bg-admin-surface">
             <input
               name="operations_brief_enabled"
@@ -309,6 +324,136 @@ export default async function AdminSettingsPage({
           ) : (
             <p className="mt-4 rounded-lg border border-dashed border-admin-border px-4 py-6 text-center text-sm text-admin-text-faint dark:border-admin-border-strong">
               定时简报首次运行后，这里会显示送达结果。
+            </p>
+          )}
+        </div>
+      </AdminCard>
+
+      <AdminCard className="mt-5">
+        <AdminSectionHeader
+          title="当前账号权限与活跃会话"
+          description="查看当前登录角色拥有的细粒度操作权限，以及该账号下所有未过期的后台登录会话，可随时将其他设备强制下线。"
+        />
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="min-w-0 rounded-lg border border-admin-border bg-admin-surface-subtle p-4 dark:border-admin-border-strong dark:bg-admin-chip">
+            <p className="text-xs font-semibold text-admin-text-muted">当前账号角色</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <AdminBadge variant={admin.role === "OWNER" ? "published" : admin.role === "EDITOR" ? "review" : "neutral"}>
+                {getAdminRoleLabel(admin.role)}
+              </AdminBadge>
+              <span className="font-mono text-xs text-admin-text-faint">{admin.role}</span>
+            </div>
+            <p className="mt-2 truncate text-xs text-admin-text-muted">{admin.email}</p>
+          </div>
+          <div className="min-w-0 rounded-lg border border-admin-border bg-admin-surface-subtle p-4 dark:border-admin-border-strong dark:bg-admin-chip">
+            <p className="text-xs font-semibold text-admin-text-muted">活跃登录会话</p>
+            <p className="mt-1.5 text-lg font-semibold tabular-nums text-admin-text">
+              {sessionSnapshot.sessions.length} / {sessionSnapshot.maxActiveSessions}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-admin-text-muted">
+              超过上限时系统会自动回收最早的会话。
+            </p>
+          </div>
+          <div className="min-w-0 rounded-lg border border-admin-border bg-admin-surface-subtle p-4 dark:border-admin-border-strong dark:bg-admin-chip">
+            <p className="text-xs font-semibold text-admin-text-muted">受信任设备</p>
+            <p className="mt-1.5 text-lg font-semibold tabular-nums text-admin-text">
+              {sessionSnapshot.trustedDeviceCount} 台
+            </p>
+            <p className="mt-1 text-xs leading-5 text-admin-text-muted">
+              注销其他全部设备时，非本机受信任设备也会一并清除。
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-admin-border pt-5 dark:border-admin-border">
+          <p className="text-xs font-semibold text-admin-text-muted">
+            已授予的细粒度权限（{grantedDomainCapabilities.length} 项）
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {grantedDomainCapabilities.map((capability) => {
+              const meta = ADMIN_CAPABILITY_META[capability];
+              return (
+                <span
+                  key={capability}
+                  title={meta.description}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-admin-border bg-admin-surface-subtle px-2.5 py-1 text-xs text-admin-text-secondary dark:border-admin-border-strong dark:bg-admin-chip"
+                >
+                  <span className="font-medium text-admin-text">{meta.label}</span>
+                  <span className="font-mono text-[11px] text-admin-text-faint">{capability}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-6 border-t border-admin-border pt-5 dark:border-admin-border">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-admin-text">当前账号活跃会话列表</h3>
+              <p className="mt-1 text-xs leading-5 text-admin-text-muted">
+                时间按新加坡时间显示；仅展示脱敏会话编号，不展示令牌或哈希。
+              </p>
+            </div>
+            {otherSessionsCount > 0 ? (
+              <AdminActionForm
+                capability="sessions.manage"
+                action={revokeOtherAdminSessionsAction}
+                confirmMessage={`确定要注销除当前设备外的另外 ${otherSessionsCount} 个会话吗？对方下次操作将需要重新登录。`}
+              >
+                <AdminButton type="submit" variant="danger" size="sm">
+                  注销其他全部设备（{otherSessionsCount}）
+                </AdminButton>
+              </AdminActionForm>
+            ) : null}
+          </div>
+
+          {sessionSnapshot.sessions.length > 0 ? (
+            <div className="mt-4 divide-y divide-admin-border overflow-hidden rounded-lg border border-admin-border dark:border-admin-border-strong">
+              {sessionSnapshot.sessions.map((session, index) => (
+                <div
+                  key={session.id}
+                  className="flex flex-col gap-3 bg-admin-surface p-4 sm:flex-row sm:items-center sm:justify-between dark:bg-admin-surface"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-admin-text">
+                        会话 #{index + 1}
+                      </span>
+                      <span className="font-mono text-xs text-admin-text-faint">
+                        {session.id.slice(0, 8)}
+                      </span>
+                      <AdminBadge variant={session.isCurrent ? "published" : "neutral"}>
+                        {session.isCurrent ? "当前设备" : "其他设备"}
+                      </AdminBadge>
+                    </div>
+                    <p className="text-xs tabular-nums text-admin-text-muted">
+                      登录于 {formatNotificationTime(session.createdAt)} SGT · 有效期至 {formatNotificationTime(session.expiresAt)} SGT
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center">
+                    {session.isCurrent ? (
+                      <span className="text-xs text-admin-text-faint">如需退出请点击右上角退出登录</span>
+                    ) : (
+                      <AdminActionForm
+                        capability="sessions.manage"
+                        action={revokeAdminSession}
+                        confirmMessage="确定要将该设备强制下线吗？"
+                      >
+                        <input type="hidden" name="sessionId" value={session.id} />
+                        <AdminButton type="submit" variant="secondary" size="sm">
+                          强制下线
+                        </AdminButton>
+                      </AdminActionForm>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-lg border border-dashed border-admin-border px-4 py-6 text-center text-sm text-admin-text-faint dark:border-admin-border-strong">
+              未检测到活跃会话记录。
             </p>
           )}
         </div>
