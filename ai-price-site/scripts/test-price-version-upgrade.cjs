@@ -30,11 +30,15 @@ const controllerChanges = {
 const v4ReaderChanges = {
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "f32c515d21e4b333236e63802d6689dcd949b1cdba09dd283b014586002b23b5"
+    "candidate": "4256bdd2e848b2c9ba4fd7f6a719bc149198418d993cad2d254db44ffb5b0107"
   },
   "ai-price-site/lib/public-pricing-model.ts": {
     "retained": "1bb7f62199c09e8fff34610b8f9380be6a2b25f4e98ea389f83fa30c3f88bba0",
-    "candidate": "79a1c73e90924b368eeda9f4bfd0e6ebe9cd5b1b598c8981092a0938c5f5ddfe"
+    "candidate": "1ba7915d9ac93cb1410e27b822bc385659d3d7e231b90139421631d7ecf51d5c"
+  },
+  "ai-price-site/lib/pricing-detail-adapter.ts": {
+    "retained": "37e866260b652da563b5d24da1bede95c791ef08158c1d7b594d3bff3f9c946b",
+    "candidate": "3255acc81e9529c8f57bb67492fec3ecddf0ab177d6659cf0dc4a582f05b86ff"
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
@@ -54,7 +58,7 @@ const v4ReaderChanges = {
   },
   "ai-price-site/components/PlanCanvasPage.tsx": {
     "retained": null,
-    "candidate": "ef144d6425bd85f1a8db1c73936eee1a2710b57cd77d4e11e6dbe21b01422787"
+    "candidate": "d5aedfbbcea70aac6864847b52be1a764649b5ffde0849114e4ed61e14c9713d"
   },
   "ai-price-site/components/PlanCanvasPricing.tsx": {
     "retained": null,
@@ -62,7 +66,7 @@ const v4ReaderChanges = {
   },
   "ai-price-site/lib/plan-canvas.ts": {
     "retained": null,
-    "candidate": "948e47ae874b10d79ae6ea0122474aed131f73322924bf093095e1c22304dcf4"
+    "candidate": "08f719c902d649c0fedefd377615db2fccb37cec35e8afc8f81a9ecfb327394e"
   }
 };
 const url = new URL(process.env.GEOSUB_VERSION_UPGRADE_DATABASE_URL);

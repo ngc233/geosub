@@ -42,7 +42,7 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
     {
       name: "数字订阅",
       href: "/ai-pricing",
-      match: ["/ai-pricing", "/streaming-pricing"],
+      match: ["/ai-pricing", "/streaming-pricing", "/software-pricing"],
       children: [
         {
           name: "AI 订阅",
@@ -53,6 +53,11 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
           name: "流媒体",
           href: "/streaming-pricing",
           description: "比较 Netflix、YouTube Premium、Spotify 等内容订阅价格。",
+        },
+        {
+          name: "软件订阅",
+          href: "/software-pricing",
+          description: "比较 Canva、Notion、CapCut 等工具与效率软件订阅价格。",
         },
       ],
     },
@@ -95,7 +100,7 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
     {
         name: "數字訂閱",
         href: "/ai-pricing",
-        match: ["/ai-pricing", "/streaming-pricing"],
+        match: ["/ai-pricing", "/streaming-pricing", "/software-pricing"],
         children: [
             {
                 name: "AI 訂閱",
@@ -106,6 +111,11 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
                 name: "流媒體",
                 href: "/streaming-pricing",
                 description: "比較 Netflix、YouTube Premium、Spotify 等內容訂閱價格。",
+            },
+            {
+                name: "軟體訂閱",
+                href: "/software-pricing",
+                description: "比較 Canva、Notion、CapCut 等工具與效率軟體訂閱價格。",
             },
         ],
     },
@@ -138,7 +148,7 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
     {
       name: "Digital Subscriptions",
       href: "/ai-pricing",
-      match: ["/ai-pricing", "/streaming-pricing"],
+      match: ["/ai-pricing", "/streaming-pricing", "/software-pricing"],
       children: [
         {
           name: "AI Subscriptions",
@@ -149,6 +159,11 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
           name: "Streaming",
           href: "/streaming-pricing",
           description: "Compare Netflix, YouTube Premium, Spotify and other subscriptions.",
+        },
+        {
+          name: "Software",
+          href: "/software-pricing",
+          description: "Compare Canva, Notion, CapCut, Adobe Lightroom and Goodnotes prices.",
         },
       ],
     },

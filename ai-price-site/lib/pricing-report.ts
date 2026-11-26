@@ -159,7 +159,13 @@ export function buildPricingReportDataset({
     ...Object.values(exchangeRates).map((rate) => rate.rateDate),
   ]);
   const generatedIso = generatedAt.toISOString();
-  const canonicalPageUrl = `${siteOrigin}/${locale}/${product.category === "streaming" ? "streaming-pricing" : "ai-pricing"}/${product.slug}`;
+  const section =
+    product.category === "streaming"
+      ? "streaming-pricing"
+      : product.category === "software"
+        ? "software-pricing"
+        : "ai-pricing";
+  const canonicalPageUrl = `${siteOrigin}/${locale}/${section}/${product.slug}`;
   const canonicalReportUrl = `${siteOrigin}/reports/${locale}/${product.slug}-global-pricing.pdf`;
   const fingerprintRows = rows.map((row) => ({
     planSlug: row.planSlug,

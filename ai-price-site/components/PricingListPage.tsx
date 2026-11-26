@@ -8,7 +8,6 @@ import {
   PUBLIC_PRICING_LIST_CACHE_TAG,
   PUBLIC_PRICING_REVALIDATE_SECONDS,
 } from "../lib/public-pricing-cache";
-import { isUnifiedPublicLocale } from "../lib/public-style-rollout";
 import type { SiteLocale } from "../lib/site-locale";
 import DbAiPricingClient from "./DbAiPricingClient";
 
@@ -18,6 +17,7 @@ const dbCategoryByPublicCategory: Record<
 > = {
   ai: ProductCategory.AI,
   streaming: ProductCategory.STREAMING,
+  software: ProductCategory.SOFTWARE,
 };
 
 function getCachedPricingListProducts(
@@ -42,10 +42,10 @@ function getCachedUnifiedPricingListProducts(locale: SiteLocale) {
   return unstable_cache(
     () => getDbAiPricingProducts({
       locale,
-      categories: [ProductCategory.AI, ProductCategory.STREAMING],
+      categories: [ProductCategory.AI, ProductCategory.STREAMING, ProductCategory.SOFTWARE],
       compactForListing: true,
     }),
-    ["public-pricing-list-unified-v3", locale],
+    ["public-pricing-list-unified-v4", locale],
     {
       revalidate: PUBLIC_PRICING_REVALIDATE_SECONDS,
       tags: [PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_LIST_CACHE_TAG],
@@ -60,7 +60,7 @@ export default async function PricingListPage({
   locale: SiteLocale;
   category: PublicProductCategory;
 }) {
-  const canvas = isUnifiedPublicLocale(locale);
+  const canvas = locale === "zh" || locale === "en";
   const unifiedCanvas = canvas;
   const products = unifiedCanvas
     ? await getCachedUnifiedPricingListProducts(locale)

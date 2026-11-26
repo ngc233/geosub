@@ -15,6 +15,12 @@ type WidenCopy<T> =
 export type PricingListCopy = WidenCopy<
   ReturnType<typeof getPublicPricingCopy>["listing"]
 >;
+type BasePreparedPricingListCopy = Omit<
+  PricingListCopy,
+  "pages" | "softwareLabel" | "softwareDescription"
+> & {
+  pages: Omit<PricingListCopy["pages"], "software">;
+};
 
 const preparedPricingListCopy = {
   ja: {
@@ -416,13 +422,23 @@ const preparedPricingListCopy = {
   },
 } satisfies Record<
   Exclude<PreparedSiteLocale, "zh" | "zh-tw" | "en">,
-  PricingListCopy
+  BasePreparedPricingListCopy
 >;
 
-export function getPricingListCopy(locale: PreparedSiteLocale) {
+export function getPricingListCopy(locale: PreparedSiteLocale): PricingListCopy {
   if (locale === "zh" || locale === "zh-tw" || locale === "en") {
     return getPublicPricingCopy(locale).listing as PricingListCopy;
   }
 
-  return preparedPricingListCopy[locale];
+  const enFallback = getPublicPricingCopy("en").listing;
+  const localized = preparedPricingListCopy[locale];
+  return {
+    ...localized,
+    softwareLabel: enFallback.softwareLabel,
+    softwareDescription: enFallback.softwareDescription,
+    pages: {
+      ...localized.pages,
+      software: enFallback.pages.software,
+    },
+  };
 }

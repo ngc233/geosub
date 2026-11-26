@@ -7,19 +7,13 @@ import type { getProductEditorialContent } from "../lib/product-editorial-conten
 import type { PlanBillingContent } from "../lib/plan-billing-content";
 import { planWorkHours, planIncomeSources, planDistribution } from "../lib/plan-canvas";
 import { homepageDisplayRates } from "../lib/homepage-summary";
-import { getCanvasPlanDisplayName } from "../lib/homepage-display";
 import { getCoreGuideDefinition } from "../lib/core-guide-content";
 import { publicBillingLabel } from "../lib/public-price-format";
 import { getPricingChannelLabel } from "../lib/pricing-page-facts";
-import { getPlanTabLabel } from "../lib/pricing-labels";
+import { getChinesePlanDisplayName, getPlanDisplayName, getPlanTabLabel } from "../lib/pricing-labels";
 import { getPricingDetailPath, getPricingPlanPath } from "../lib/pricing-routes";
 import { formatPublicDate } from "../lib/public-date";
-import {
-  canvasIntlLocale,
-  canvasUiCopy,
-  isDatePrefixLocale,
-  type CanvasLocale,
-} from "../lib/canvas-ui-copy";
+import { canvasIntlLocale, canvasUiCopy, type CanvasLocale } from "../lib/canvas-ui-copy";
 import PublicIcon from "./PublicIcon";
 import TrackedLink from "./analytics/TrackedLink";
 import PlanCanvasPricing, { PlanKeycapSwitcher, PlanWorkRows } from "./PlanCanvasPricing";
@@ -66,18 +60,24 @@ export default function PlanCanvasPage({
 }) {
   const copy = canvasUiCopy[locale];
   const intlLocale = canvasIntlLocale(locale);
-  const halfwidthPunct = locale === "en" || locale === "es" || locale === "ko";
   const guides = (["payment-account", "price-guide", "methodology"] as const).map((slug) => ({
-    ...getCoreGuideDefinition(locale as Parameters<typeof getCoreGuideDefinition>[0], slug),
+    ...getCoreGuideDefinition(locale, slug),
     href: `/${locale}/guides/${slug}`,
   }));
   const work = planWorkHours(plan, incomes);
   const { us, lowest } = planDistribution(plan);
   const sources = planIncomeSources(work.rows);
-  const displayPlanName = getCanvasPlanDisplayName(product.name, plan.name, locale);
+  const displayPlanName =
+    locale === "en"
+      ? getPlanDisplayName(product.name, plan.name)
+      : getChinesePlanDisplayName(product.name, plan.name);
   const name = getPlanTabLabel(product.name, displayPlanName);
   const updated = formatPublicDate(plan.freshness?.priceCollectedAt, new Date(), locale);
-  const categoryKey = basePath.includes("streaming-pricing") ? "streaming" : "ai";
+  const categoryKey = basePath.includes("streaming-pricing")
+    ? "streaming"
+    : basePath.includes("software-pricing")
+      ? "software"
+      : "ai";
   const overviewHref = getPricingDetailPath(locale, categoryKey, product.slug);
   const editorialLead = editorial?.content.plan.difference
     .trim()
@@ -91,7 +91,10 @@ export default function PlanCanvasPage({
   const displayRates = homepageDisplayRates(rates);
 
   const keycapOptions = product.plans.map((option) => {
-    const optDisplay = getCanvasPlanDisplayName(product.name, option.name, locale);
+    const optDisplay =
+      locale === "en"
+        ? getPlanDisplayName(product.name, option.name)
+        : getChinesePlanDisplayName(product.name, option.name);
     const label = getPlanTabLabel(product.name, optDisplay);
     if (!option.regions.length) {
       return {
@@ -153,7 +156,7 @@ export default function PlanCanvasPage({
                     <>
                       {" "}
                       ·{" "}
-                      {isDatePrefixLocale(locale) ? (
+                      {locale === "en" ? (
                         <>
                           {copy.plan.collectedSuffix}{" "}
                           <time dateTime={updated.dateTime}>{updated.text}</time>
@@ -252,7 +255,7 @@ export default function PlanCanvasPage({
                 <p className="gs-canvas-editorial-note">
                   <strong>
                     {editorial.content.availabilityLabel}
-                    {halfwidthPunct ? ": " : "："}
+                    {locale === "en" ? ": " : "："}
                   </strong>
                   {editorial.content.plan.availabilityNote}
                 </p>
@@ -282,7 +285,7 @@ export default function PlanCanvasPage({
                     {group.source}
                     {sources.length > 1 && (
                       <>
-                        {halfwidthPunct
+                        {locale === "en"
                           ? ` (${group.countries.join(copy.plan.countryJoiner)})`
                           : `（${group.countries.join(copy.plan.countryJoiner)}）`}
                       </>

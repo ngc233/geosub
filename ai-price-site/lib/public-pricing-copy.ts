@@ -25,6 +25,15 @@ const publicPricingCopy = {
           metaDescription:
             "比较 Netflix、Disney+、HBO Max 等流媒体订阅在不同国家和地区的公开价格、汇率换算、税费、购买力与更新时间，查看已核验的地区价差。",
         },
+        software: {
+          eyebrow: "GeoSub 软件订阅价格数据",
+          title: "软件订阅价格对比",
+          description:
+            "比较 Canva、Notion、CapCut、Adobe Lightroom、Goodnotes 等软件在不同国家和地区的 App Store 订阅价格与价差。",
+          metaTitle: "软件订阅价格对比 - Canva、Notion、CapCut 全球价格",
+          metaDescription:
+            "比较 Canva、Notion、CapCut、Adobe Lightroom、Goodnotes 等软件在不同国家和地区的 App Store 订阅价格、汇率换算与更新时间。",
+        },
       },
       categoryAria: "数字服务分类",
       aiLabel: "AI 订阅",
@@ -33,6 +42,9 @@ const publicPricingCopy = {
       streamingLabel: "流媒体",
       streamingDescription:
         "比较 Netflix、Disney+ 等已收录流媒体和数字娱乐订阅价格。",
+      softwareLabel: "软件订阅",
+      softwareDescription:
+        "比较 Canva、Notion、CapCut 等工具与效率软件在不同国家和地区的订阅价格。",
       productCount: (count: number) => `当前收录 ${count} 个产品`,
       empty: "当前分类暂无已发布价格数据。",
       defaultPlanHint: "每个产品展示一个主流月付套餐",
@@ -199,12 +211,21 @@ const publicPricingCopy = {
                 metaTitle: "流媒體訂閱價格對比 - Netflix、Disney+ 全球價格",
                 metaDescription: "比較 Netflix、Disney+ 等已收錄流媒體訂閱在不同國家和地區的價格、稅費、更新時間和區域價格差異。",
             },
+            software: {
+                eyebrow: "GeoSub 軟體訂閱價格資料",
+                title: "軟體訂閱價格對比",
+                description: "比較 Canva、Notion、CapCut、Adobe Lightroom、Goodnotes 等軟體在不同國家和地區的訂閱價格。",
+                metaTitle: "軟體訂閱價格對比 - Canva、Notion、CapCut 全球價格",
+                metaDescription: "比較 Canva、Notion、CapCut、Adobe Lightroom、Goodnotes 等軟體在不同國家和地區的 App Store 訂閱價格。",
+            },
         },
         categoryAria: "數字服務分類",
         aiLabel: "AI 訂閱",
         aiDescription: "比較 ChatGPT、Claude、Gemini 等已收錄 AI 產品在不同國家和地區的價格。",
         streamingLabel: "流媒體",
         streamingDescription: "比較 Netflix、Disney+ 等已收錄流媒體和數字娛樂訂閱價格。",
+        softwareLabel: "軟體訂閱",
+        softwareDescription: "比較 Canva、Notion、CapCut 等工具與效率軟體在不同國家和地區的訂閱價格。",
         productCount: (count: number) => `當前收錄 ${count} 個產品`,
         empty: "當前分類暫無已釋出價格資料。",
         defaultPlanHint: "預設展示主流月付套餐",
@@ -366,6 +387,16 @@ const publicPricingCopy = {
           metaDescription:
             "Compare published Netflix, Disney+ and other streaming subscription prices across countries and regions, with tax and update context.",
         },
+        software: {
+          eyebrow: "GeoSub Software Pricing Data",
+          title: "Software Subscription Pricing",
+          description:
+            "Compare Canva, Notion, CapCut, Adobe Lightroom and Goodnotes subscription prices across countries and regions.",
+          metaTitle:
+            "Software Subscription Pricing - Canva, Notion, CapCut Global Prices",
+          metaDescription:
+            "Compare Canva, Notion, CapCut, Adobe Lightroom and Goodnotes App Store subscription prices across countries and regions.",
+        },
       },
       categoryAria: "Digital service category",
       aiLabel: "AI Subscriptions",
@@ -374,6 +405,9 @@ const publicPricingCopy = {
       streamingLabel: "Streaming",
       streamingDescription:
         "Compare published Netflix, Disney+ and other digital entertainment subscription prices.",
+      softwareLabel: "Software",
+      softwareDescription:
+        "Compare published Canva, Notion, CapCut, Adobe Lightroom and Goodnotes subscription prices across countries and regions.",
       productCount: (count: number) => `Currently tracking ${count} products`,
       empty: "No published pricing data is available for this category yet.",
       defaultPlanHint: "Popular monthly plan shown by default",

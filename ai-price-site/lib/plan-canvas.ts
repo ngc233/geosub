@@ -6,7 +6,7 @@ import type { PlanAffordabilityRow } from "./affordability.ts";
 export function usesPlanCanvas(locale: string, canonicalPath: string) {
   const path = canonicalPath.split(/[?#]/)[0].replace(/\/+$/, "");
   if (locale === "zh") {
-    return /^\/zh\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path)
+    return /^\/zh\/(ai-pricing|streaming-pricing|software-pricing)\/[^/]+\/[^/]+$/.test(path)
       && path !== "/zh/ai-pricing/chatgpt/plus";
   }
   if (
@@ -18,7 +18,7 @@ export function usesPlanCanvas(locale: string, canonicalPath: string) {
   ) {
     return (
       path.startsWith(`/${locale}/`) &&
-      /^\/(?:en|zh-tw|ja|ko|es)\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path)
+      /^\/(?:en|zh-tw|ja|ko|es)\/(ai-pricing|streaming-pricing|software-pricing)\/[^/]+\/[^/]+$/.test(path)
     );
   }
   return false;

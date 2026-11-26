@@ -37,6 +37,7 @@ const copy: Record<
     relatedTitle: {
       ai: "比较更多 AI 订阅",
       streaming: "比较更多流媒体订阅",
+      software: "比较更多软件订阅",
     },
     relatedDescription: "继续查看其他已上线产品的套餐和各地区价格。",
     productAction: "查看套餐和地区价格",
@@ -49,6 +50,7 @@ const copy: Record<
     relatedTitle: {
       ai: "Compare more AI subscriptions",
       streaming: "Compare more streaming subscriptions",
+      software: "Compare more software subscriptions",
     },
     relatedDescription: "Explore plans and regional prices for other published services.",
     productAction: "View plans and prices by country",

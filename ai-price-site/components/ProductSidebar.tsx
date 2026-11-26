@@ -3,7 +3,7 @@ import BrandIcon from "./BrandIcon";
 import { getProductNavigationCopy } from "../lib/product-navigation-copy";
 import type { SiteLocale } from "../lib/site-locale";
 
-export type ProductNavCategory = "ai" | "streaming";
+export type ProductNavCategory = "ai" | "streaming" | "software";
 
 export type ProductNavItem = {
   slug: string;
@@ -20,7 +20,7 @@ type ProductSidebarProps = {
   locale?: SiteLocale;
 };
 
-const categoryOrder: ProductNavCategory[] = ["ai", "streaming"];
+const categoryOrder: ProductNavCategory[] = ["ai", "streaming", "software"];
 
 export function getProductHref(product: ProductNavItem, basePath?: string) {
   if (basePath) {
@@ -28,7 +28,11 @@ export function getProductHref(product: ProductNavItem, basePath?: string) {
   }
 
   const path =
-    product.category === "streaming" ? "/zh/streaming-pricing" : "/zh/ai-pricing";
+    product.category === "streaming"
+      ? "/zh/streaming-pricing"
+      : product.category === "software"
+        ? "/zh/software-pricing"
+        : "/zh/ai-pricing";
 
   return `${path}/${product.slug}`;
 }
@@ -43,6 +47,7 @@ export default function ProductSidebar({
   const categoryLabels: Record<ProductNavCategory, string> = {
     ai: copy.ai,
     streaming: copy.streaming,
+    software: locale === "zh" || locale === "zh-tw" ? "软件订阅" : "Software",
   };
   const groupedProducts = products.reduce<Record<ProductNavCategory, ProductNavItem[]>>(
     (acc, product) => {
@@ -52,6 +57,7 @@ export default function ProductSidebar({
     {
       ai: [],
       streaming: [],
+      software: [],
     },
   );
 

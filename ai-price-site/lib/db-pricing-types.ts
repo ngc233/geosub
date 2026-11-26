@@ -1,4 +1,4 @@
-export type DbPricingCategory = "ai" | "streaming";
+export type DbPricingCategory = "ai" | "streaming" | "software";
 
 export type DbPricingRegion = {
   rank: number;

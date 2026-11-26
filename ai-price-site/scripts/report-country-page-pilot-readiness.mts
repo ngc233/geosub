@@ -332,7 +332,7 @@ async function buildReport(client: InstanceType<typeof Client>, options: ReportO
       searchEvidence: productSearchEvidence(
         observations,
         pilot.productSlug,
-        pilot.category,
+        pilot.category === "streaming" ? "streaming" : "ai",
       ),
       now: options.now,
       }),

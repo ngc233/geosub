@@ -331,7 +331,9 @@ export function getCountryPagePilotPath(
 ) {
   const categoryPath = pilot.category === "streaming"
     ? "streaming-pricing"
-    : "ai-pricing";
+    : pilot.category === "software"
+      ? "software-pricing"
+      : "ai-pricing";
   return `/${locale}/${categoryPath}/${pilot.productSlug}/regions/${pilot.countrySlug}`;
 }
 

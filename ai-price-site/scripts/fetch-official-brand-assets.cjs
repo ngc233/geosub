@@ -44,6 +44,11 @@ const products = [
   { slug: "viki", appStoreId: "445553058", expectedName: /Viki/i },
   { slug: "x-premium", appStoreId: "333903271", expectedName: /^X$/i },
   { slug: "youtube-premium", appStoreId: "544007664", expectedName: /YouTube/i },
+  { slug: "canva", appStoreId: "897446215", expectedName: /Canva/i },
+  { slug: "notion", appStoreId: "1232780281", expectedName: /Notion/i },
+  { slug: "capcut", appStoreId: "1500855883", expectedName: /CapCut/i },
+  { slug: "adobe-lightroom", appStoreId: "878783582", expectedName: /Lightroom/i },
+  { slug: "goodnotes", appStoreId: "1444383602", expectedName: /Goodnotes/i },
 ];
 
 const projectRoot = resolve(__dirname, "..");

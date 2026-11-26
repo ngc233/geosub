@@ -1,4 +1,4 @@
-export type ProductCategory = "ai" | "streaming";
+export type ProductCategory = "ai" | "streaming" | "software";
 
 export type RegionPrice = {
   rank: number;
