@@ -6,6 +6,8 @@ import {
   changeCurrentAdminPassword,
   getAdminPasswordPolicyError,
   requireAdmin,
+  revokeAdminSessionById,
+  revokeOtherAdminSessions,
 } from "../../../lib/admin-auth";
 import type { Prisma } from "@prisma/client";
 import {
@@ -84,7 +86,7 @@ async function upsertSetting(tx: Prisma.TransactionClient, {
 export async function updateAnalyticsSettings(formData: FormData) {
   const result = await executeAdminCommand({
     name: "settings.analytics.update",
-    capability: "manage",
+    capability: "settings.manage",
     input: formData,
     parseInput: (raw) => {
       const fd = raw as FormData;
@@ -145,7 +147,7 @@ export async function updateAnalyticsSettings(formData: FormData) {
 export async function updateOperationsNotificationSettings(formData: FormData) {
   const result = await executeAdminCommand({
     name: "settings.notifications.update",
-    capability: "manage",
+    capability: "settings.manage",
     input: formData,
     parseInput: (raw) => {
       const fd = raw as FormData;
@@ -228,4 +230,94 @@ export async function updateAdminPassword(formData: FormData) {
 
   revalidatePath("/admin/settings");
   redirect(`/admin/settings?passwordChanged=1&revoked=${result.revokedSessions}`);
+}
+
+const SESSION_ID_PATTERN = /^[0-9a-f-]{8,64}$/i;
+
+export async function revokeAdminSession(formData: FormData) {
+  const result = await executeAdminCommand({
+    name: "settings.session.revoke",
+    capability: "sessions.manage",
+    input: formData,
+    parseInput: (raw) => {
+      const fd = raw as FormData;
+      const sessionId = normalizeOptionalText(fd.get("sessionId"));
+      if (!SESSION_ID_PATTERN.test(sessionId)) {
+        throw new AdminCommandInputError("目标会话标识无效，请刷新页面后重试。");
+      }
+      return { sessionId };
+    },
+    execute: async ({ admin, input, tx }) => {
+      const revoked = await revokeAdminSessionById({
+        userId: admin.id,
+        sessionId: input.sessionId,
+        db: tx,
+      });
+
+      if (!revoked.ok) {
+        if (revoked.reason === "current_session") {
+          throw new AdminCommandInputError(
+            "当前正在使用的设备不能在这里强制下线，请使用右上角退出登录。",
+          );
+        }
+        throw new AdminCommandInputError("目标会话不存在或已过期。");
+      }
+
+      return revoked;
+    },
+    audit: ({ input }) => ({
+      action: "revoke_admin_session",
+      targetType: "admin_session",
+      targetId: input.sessionId,
+      newValue: { revoked: true },
+      note: "Administrator revoked an active session from system settings.",
+    }),
+    invalidate: ["system"],
+    revalidatePaths: ["/admin/settings"],
+  });
+
+  if (!result.ok) return { error: result.message };
+  return { ok: true, message: "已将该设备会话强制下线。" };
+}
+
+export async function revokeOtherAdminSessionsAction(formData: FormData) {
+  const result = await executeAdminCommand({
+    name: "settings.sessions.revoke_others",
+    capability: "sessions.manage",
+    input: formData,
+    parseInput: () => ({}),
+    execute: async ({ admin, tx }) => {
+      const revoked = await revokeOtherAdminSessions({
+        userId: admin.id,
+        db: tx,
+      });
+
+      if (!revoked.ok) {
+        throw new AdminCommandInputError("当前登录会话已失效，请重新登录后台。");
+      }
+
+      return revoked;
+    },
+    audit: ({ admin, data }) => ({
+      action: "revoke_other_admin_sessions",
+      targetType: "admin_session",
+      targetId: admin.id,
+      newValue: {
+        revokedSessions: data.revokedSessions,
+        revokedTrustedDevices: data.revokedTrustedDevices,
+      },
+      note: "Administrator revoked all other active sessions from system settings.",
+    }),
+    invalidate: ["system"],
+    revalidatePaths: ["/admin/settings"],
+  });
+
+  if (!result.ok) return { error: result.message };
+  if (result.data.revokedSessions === 0) {
+    return { ok: true, message: "当前没有其他活跃设备会话需要注销。" };
+  }
+  return {
+    ok: true,
+    message: `已注销其他 ${result.data.revokedSessions} 个设备会话。`,
+  };
 }

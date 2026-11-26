@@ -54,7 +54,7 @@ export default async function AdminAuditLogsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin("read");
+  await requireAdmin("audit.read");
   const rawParams = await searchParams;
   const filters = parseAuditLogFilters(rawParams);
 

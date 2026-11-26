@@ -45,7 +45,8 @@ function browser() {
       const navigation = { redirect: (location) => { throw new Redirect(location); } };
       const prisma = { ...tx, $transaction: (work) => typeof work === 'function' ? work(tx) : Promise.all(work) };
       const permissions = load(path.resolve('lib/admin-permissions.ts'), {});
-      const auth = load(path.resolve('lib/admin-auth.ts'), { 'server-only': {}, 'next/headers': nextHeaders, 'next/navigation': navigation, './prisma': { prisma }, './admin-permissions': permissions });
+      const proxyPolicy = load(path.resolve('lib/admin-proxy-policy.ts'), {});
+      const auth = load(path.resolve('lib/admin-auth.ts'), { 'server-only': {}, 'next/headers': nextHeaders, 'next/navigation': navigation, './prisma': { prisma }, './admin-permissions': permissions, './admin-proxy-policy': proxyPolicy });
       const clientIp = load(path.resolve('lib/client-ip.ts'), {});
       const actions = load(path.resolve('app/admin-login/actions.ts'), { 'next/headers': nextHeaders, 'next/navigation': navigation, '../../lib/prisma': { prisma }, '../../lib/admin-auth': auth, '../../lib/client-ip': clientIp });
 

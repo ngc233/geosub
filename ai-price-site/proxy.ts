@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  ADMIN_SESSION_COOKIE_NAME,
   applyAdminResponseHeaders,
+  evaluateAdminHostRouting,
+  hasAnyAdminSessionCookie,
   isAdminRoutePath,
+  normalizeRequestHost,
   shouldRedirectUnauthenticatedAdminNavigation,
 } from "./lib/admin-proxy-policy";
 import { buildContentSecurityPolicy } from "./lib/content-security-policy";
@@ -15,15 +17,41 @@ import { getSiteLocaleFromPath } from "./lib/site-locale";
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const hostDecision = evaluateAdminHostRouting({
+    host: normalizeRequestHost(request.headers, request.nextUrl.host),
+    pathname,
+    search: request.nextUrl.search,
+  });
+
+  if (hostDecision.action === "not_found") {
+    const notFoundResponse = new NextResponse("Not Found", { status: 404 });
+    applyAdminResponseHeaders(notFoundResponse.headers);
+    return notFoundResponse;
+  }
+
+  if (hostDecision.action === "redirect") {
+    const redirectTarget = hostDecision.location.startsWith("/")
+      ? (() => {
+          const nextUrl = request.nextUrl.clone();
+          nextUrl.pathname = hostDecision.location;
+          nextUrl.search = "";
+          return nextUrl;
+        })()
+      : hostDecision.location;
+    const redirectResponse = NextResponse.redirect(
+      redirectTarget,
+      hostDecision.status,
+    );
+    applyAdminResponseHeaders(redirectResponse.headers);
+    return redirectResponse;
+  }
 
   if (
     shouldRedirectUnauthenticatedAdminNavigation({
       pathname,
       method: request.method,
       accept: request.headers.get("accept"),
-      hasSessionCookie: Boolean(
-        request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value,
-      ),
+      hasSessionCookie: hasAnyAdminSessionCookie(request.cookies),
     })
   ) {
     const loginUrl = request.nextUrl.clone();
@@ -71,7 +99,7 @@ export function proxy(request: NextRequest) {
     contentSecurityPolicy,
   );
 
-  if (isAdminRoutePath(pathname)) {
+  if (isAdminRoutePath(pathname) || hostDecision.isDedicatedAdminHost) {
     applyAdminResponseHeaders(response.headers);
   } else if (shouldCachePublicPricingResponse(request)) {
     response.headers.set(

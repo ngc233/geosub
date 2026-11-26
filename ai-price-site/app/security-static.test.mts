@@ -51,14 +51,22 @@ test("every admin mutation entry point rechecks authentication", () => {
   const commandPipeline = readProjectFile("lib/admin-command.ts");
   assert.match(commandPipeline, /await requireAdmin\(capability\)/);
 
+  const validMutationCapabilityPattern =
+    "(?:manage|account|settings\\.manage|sessions\\.manage|pricing\\.review|collector\\.trigger|catalog\\.write|seo\\.write|users\\.manage)";
+
   for (const file of actionFiles) {
     const source = readProjectFile(file);
     const exportedActions = source.match(/^export async function/gm)?.length || 0;
     const directAuthChecks =
-      source.match(/await requireAdmin\("(?:manage|account)"\)/g)?.length || 0;
+      source.match(
+        new RegExp(`await requireAdmin\\("${validMutationCapabilityPattern}"\\)`, "g"),
+      )?.length || 0;
     const commandAuthChecks =
       source.match(
-        /await executeAdminCommand\(\{[\s\S]*?capability:\s*"(?:manage|account)"/g,
+        new RegExp(
+          `await executeAdminCommand\\(\\{[\\s\\S]*?capability:\\s*"${validMutationCapabilityPattern}"`,
+          "g",
+        ),
       )?.length || 0;
     const authChecks = directAuthChecks + commandAuthChecks;
 
@@ -113,7 +121,11 @@ test("global responses carry baseline production security headers", () => {
   assert.match(config, /X-Frame-Options/);
   assert.match(config, /Strict-Transport-Security/);
   assert.match(proxy, /Content-Security-Policy-Report-Only/);
+  assert.match(proxy, /evaluateAdminHostRouting/);
+  assert.match(proxy, /hasAnyAdminSessionCookie/);
   assert.match(proxy, /requestHeaders\.set\("x-nonce", nonce\)/);
+  assert.match(readProjectFile("lib/admin-auth.ts"), /getAdminSessionCookieNames/);
+  assert.match(readProjectFile("lib/admin-auth.ts"), /secure:\s*sessionCookieConfig\.hostLocked \|\| process\.env\.NODE_ENV === "production"/);
   assert.match(proxy, /requestHeaders\.set\("Content-Security-Policy"/);
   assert.match(policy, /default-src 'self'/);
   assert.match(policy, /script-src 'self' 'nonce-\$\{nonce\}' 'strict-dynamic'/);

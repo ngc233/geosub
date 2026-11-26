@@ -27,6 +27,7 @@ function loadGuardModule({
     exports: {} as {
       verifyAdminMutationOrigin: (
         req: Pick<Request, "headers" | "url">,
+        env?: Record<string, string | undefined>,
       ) => { ok: true } | { ok: false; reason: string };
       guardAdminRoute: (
         req: Request,
@@ -301,4 +302,41 @@ test("logout route rejects cross-site POST before clearing session", async () =>
   assert.equal(allowed.status, 303);
   assert.equal(allowed.headers.get("location"), "/admin-login");
   assert.equal(cleared, true);
+});
+
+test("verifyAdminMutationOrigin enforces dedicated admin host when enabled", () => {
+  const { verifyAdminMutationOrigin } = loadGuardModule();
+  const enforcedEnv = {
+    GEOSUB_ADMIN_HOST: "admin.geosub.org",
+    GEOSUB_ADMIN_ENFORCE_DEDICATED_HOST: "true",
+  };
+
+  assert.deepEqual(
+    verifyAdminMutationOrigin(
+      new Request("https://geosub.org/admin/review/collect", {
+        method: "POST",
+        headers: {
+          host: "geosub.org",
+          origin: "https://geosub.org",
+        },
+      }),
+      enforcedEnv,
+    ),
+    { ok: false, reason: "non-admin-host" },
+  );
+
+  assert.deepEqual(
+    verifyAdminMutationOrigin(
+      new Request("http://127.0.0.1:3000/admin/review/collect", {
+        method: "POST",
+        headers: {
+          "x-forwarded-host": "admin.geosub.org",
+          "x-forwarded-proto": "https",
+          origin: "https://admin.geosub.org",
+        },
+      }),
+      enforcedEnv,
+    ),
+    { ok: true },
+  );
 });
