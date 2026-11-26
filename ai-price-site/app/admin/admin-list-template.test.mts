@@ -151,7 +151,7 @@ test("admin navigation and local filters use the same selected treatment and ret
   }));
   assert.match(html,/data-admin-segmented=""/);
   const selected=html.match(/<a[^>]*aria-selected="true"[^>]*>/)?.[0]||"";
-  assert.match(selected,/bg-admin-primary text-white/);
+  assert.match(selected,/bg-admin-primary text-admin-on-primary/);
   assert.match(html,/role="tablist"/);
   assert.match(html,/aria-label="产品状态"/);
   assert.match(html,/<button[^>]*disabled=""/);

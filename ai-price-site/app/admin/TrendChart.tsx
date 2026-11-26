@@ -285,7 +285,7 @@ export function TrendChart({
           </div>
 
           <form
-            action="/admin/analytics/details"
+            action="/admin/analytics"
             method="get"
             className={`flex flex-wrap items-end gap-2 rounded-xl border px-3 py-2 ${
               period.isCustom
@@ -293,6 +293,7 @@ export function TrendChart({
                 : "border-admin-border bg-admin-surface-subtle dark:border-admin-border-strong dark:bg-admin-chip/60"
             }`}
           >
+            <input type="hidden" name="tab" value="details" />
             <label className="grid gap-1 text-[11px] font-semibold text-admin-text-muted dark:text-admin-text-muted">
               开始日期
               <input

@@ -7,15 +7,54 @@ import { workspaceStatus, type WorkspaceRow } from "../../../lib/admin-workspace
 import { adminListLocation, withAdminReturnTo } from "../../../lib/admin-workflow-context.ts";
 import { createAdminListView } from "../../../lib/admin-list-params.ts";
 
+function loadWorkspaceViewModelBuilder() {
+  const source = readFileSync(new URL("../workspace-view-model.ts", import.meta.url), "utf8");
+  const code = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true },
+  }).outputText;
+  const compiled = { exports: {} as { buildWorkspaceViewModel: (...args: unknown[]) => unknown } };
+  vm.runInNewContext(code, {
+    module: compiled,
+    exports: compiled.exports,
+    require(name: string) {
+      if (name.endsWith("admin-workspace-model")) return { workspaceStatus };
+      if (name.endsWith("admin-workflow-context")) return { withAdminReturnTo, adminListLocation };
+      return {};
+    },
+  });
+  return compiled.exports.buildWorkspaceViewModel;
+}
+
+const buildWorkspaceViewModel = loadWorkspaceViewModelBuilder();
+
 function renderRow(platform: "ios" | "web") {
   const row: WorkspaceRow = {
-    id: "fixture-id", slug: platform === "web" ? "spotify" : "chatgpt", name: "Fixture",
-    publish_status: "published", billing_platform: platform, price_count: 5, stale_count: 1,
-    latest_checked: null, job_count: 1, running_count: 0, failed_count: 0, queued_count: 0,
+    id: "fixture-id",
+    slug: platform === "web" ? "spotify" : "chatgpt",
+    name: "Fixture",
+    publish_status: "published",
+    billing_platform: platform,
+    price_count: 5,
+    stale_count: 1,
+    latest_checked: null,
+    job_count: 1,
+    running_count: 0,
+    failed_count: 0,
+    queued_count: 0,
   };
+  const viewModel = buildWorkspaceViewModel([row], {
+    partial: false,
+    failed: false,
+    view: "all",
+    readAt: "fixture",
+  });
+
   const navigations: Array<{ href: string; scroll: boolean }> = [];
   const elements: Array<{
-    href?: string; children?: unknown; ariaLabel?: string; onChange?: (value: string) => void;
+    href?: string;
+    children?: unknown;
+    ariaLabel?: string;
+    onChange?: (value: string) => void;
   }> = [];
   const render = (_type: unknown, props: { href?: string; children?: unknown }) => {
     elements.push(props);
@@ -23,34 +62,49 @@ function renderRow(platform: "ios" | "web") {
   };
   const source = readFileSync(new URL("../Workspace.tsx", import.meta.url), "utf8");
   const code = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      jsx: ts.JsxEmit.ReactJSX,
+      esModuleInterop: true,
+    },
   }).outputText;
   const compiledModule = { exports: {} as { default: (props: object) => unknown } };
   vm.runInNewContext(code, {
-    module: compiledModule, exports: compiledModule.exports, URL,
+    module: compiledModule,
+    exports: compiledModule.exports,
+    URL,
     window: { location: { href: "http://local.test/admin?view=all&page=2" } },
     require(name: string) {
-      if (name === "next/navigation") return { useRouter: () => ({
-        replace: (href: string, options: { scroll: boolean }) => navigations.push({ href, ...options }),
-      }) };
+      if (name === "next/navigation") {
+        return {
+          useRouter: () => ({
+            replace: (href: string, options: { scroll: boolean }) =>
+              navigations.push({ href, ...options }),
+          }),
+        };
+      }
       if (name === "react") return { useState: (value: unknown) => [value, () => {}] };
       if (name === "react/jsx-runtime") return { jsx: render, jsxs: render };
-      if (name.endsWith("admin-workspace-model")) return { workspaceStatus };
-      if (name.endsWith("admin-workflow-context")) return { withAdminReturnTo, adminListLocation };
       if (name.endsWith("admin-list-params")) return { createAdminListView };
-      if (name.endsWith("AdminButton")) return { adminButtonClassName: () => "" };
+      if (name.endsWith("AdminButton")) return { AdminLinkButton: () => null };
+      if (name.endsWith("AdminCard")) return { AdminCard: () => null, AdminPageHeader: () => null };
       return {};
     },
   });
   compiledModule.exports.default({
-    rows: [row], partial: false, failed: false, role: "OWNER", readAt: "fixture",
-    denied: false, initialFilter: "all",
+    viewModel,
+    initialFilter: "all",
+    role: "OWNER",
+    denied: false,
   });
-  elements.find(element => element.ariaLabel === "待办筛选")?.onChange?.("progress");
+  elements.find((element) => element.ariaLabel === "待办筛选")?.onChange?.("progress");
   return {
     navigations,
-    text: elements.flatMap(element => [element.children].flat(Infinity)).filter(value => typeof value === "string").join(" "),
-    hrefs: elements.filter(element => element.href).map(element => element.href!),
+    text: elements
+      .flatMap((element) => [element.children].flat(Infinity))
+      .filter((value) => typeof value === "string")
+      .join(" "),
+    hrefs: elements.filter((element) => element.href).map((element) => element.href!),
   };
 }
 
@@ -58,7 +112,7 @@ test("website work items describe website prices and return from source records 
   const result = renderRow("web");
   assert.match(result.text, /1 条 官网 正式价格/);
   assert.doesNotMatch(result.text, /App Store/);
-  const href = result.hrefs.find(value => value.startsWith("/admin/collector-jobs"));
+  const href = result.hrefs.find((value) => value.startsWith("/admin/collector-jobs"));
   assert.ok(href);
   const url = new URL(href, "http://local.test");
   assert.equal(url.searchParams.get("product"), "spotify");
@@ -68,8 +122,8 @@ test("website work items describe website prices and return from source records 
 test("App Store work items keep their original price description and diagnostic destination", () => {
   const result = renderRow("ios");
   assert.match(result.text, /1 条 App Store 正式价格/);
-  assert.ok(result.hrefs.some(value => value.startsWith("/admin/data-quality/chatgpt?")));
-  assert.ok(!result.hrefs.some(value => value.startsWith("/admin/collector-jobs")));
+  assert.ok(result.hrefs.some((value) => value.startsWith("/admin/data-quality/chatgpt?")));
+  assert.ok(!result.hrefs.some((value) => value.startsWith("/admin/collector-jobs")));
 });
 
 test("workspace filters synchronize the router and clear the old page before leaving and returning", () => {

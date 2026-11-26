@@ -43,11 +43,11 @@ test("token-migrated admin surfaces use admin tokens instead of raw neutral clas
   }
   // Dark values must follow the same selection as the custom dark variant.
   assert.match(globals, /@media \(prefers-color-scheme: dark\) \{\n  \[data-admin-theme\]:not\(\[data-admin-theme="light"\]\) \{/);
-  assert.match(globals, /\[data-admin-theme="dark"\] \{\n  --admin-canvas: #0e1014;/);
+  assert.match(globals, /\[data-admin-theme="dark"\] \{\n  --admin-primary: #fafafa;\n  --admin-primary-hover: #e4e4e7;\n  --admin-on-primary: #09090b;\n  --admin-canvas: #09090b;/);
   for (const token of ["accent-soft", "success-soft", "warning-soft", "danger-soft"]) {
     assert.match(globals, new RegExp(`--color-admin-${token}: var\\(--admin-${token}\\)`));
   }
-  assert.match(globals, /--radius-admin-card: 16px;/);
+  assert.match(globals, /--radius-admin-card: 8px;/);
 
   const migrated = [
     "app/admin/layout.tsx",
@@ -126,7 +126,7 @@ test("admin lists stay click-only while navigation prefetches only its loading b
   assert.match(adminLink, /router\.prefetch/);
   assert.doesNotMatch(adminLink, /data-admin-navigation-progress/);
   assert.doesNotMatch(adminLink, /aria-busy=\{isNavigating \|\| undefined\}/);
-  assert.match(sidebar, /"\/admin\/settings"/);
+  assert.match(readProjectFile("components/admin/admin-nav-config.ts"), /"\/admin\/settings"/);
   assert.match(sidebar, /prefetch="auto"/);
   assert.doesNotMatch(sidebar, /prefetch=\{true\}|prefetchOnIntent=/);
   assert.match(dashboard, /<SegmentedControl[\s\S]*?prefetch=\{false\}/);
@@ -216,8 +216,8 @@ test("affected admin surfaces provide complete dark-mode counterparts", () => {
   assert.match(dashboardComponents, /<AdminCard className="[^"]*dark:bg-admin-surface/);
   assert.match(overview, /<AdminCard className="[^"]*dark:bg-admin-surface/);
   assert.match(dashboardComponents, /text-blue-700 dark:text-blue-300/);
-  assert.match(adminButton, /focus:ring-admin-accent\/30/);
-  assert.match(adminButton, /dark:focus:ring-blue-400\/60/);
+  assert.match(adminButton, /focus:ring-admin-accent\/25/);
+  assert.doesNotMatch(adminButton, /dark:focus:ring-blue-400\/60/);
   assert.equal(
     trendChart.match(/dark:focus-within:ring-blue-400\/60/g)?.length,
     2,
@@ -229,12 +229,12 @@ test("affected admin surfaces provide complete dark-mode counterparts", () => {
   assert.doesNotMatch(overview, /dark:text-slate-500/);
   assert.doesNotMatch(sidebar, /dark:text-slate-500/);
   assert.match(overview, /health\.reasonDetail \? "line-clamp-3" : ""/);
-  assert.match(sidebar, /hover:bg-admin-surface-subtle/, "sidebar hover uses a token with a dark value");
+  assert.match(sidebar, /hover:bg-admin-chip/, "sidebar hover uses a token with a dark value");
   assert.match(sidebar, /focus-visible:ring-2/);
   assert.match(sidebar, /mobileMenuButtonRef\.current\?\.focus\(\)/);
   assert.match(overview, /adminButtonClassName/);
   assert.match(adminButton, /hover:bg-admin-surface-subtle/);
-  assert.match(adminButton, /focus:ring-admin-accent\/30/);
+  assert.match(adminButton, /focus:ring-admin-accent\/25/);
 });
 
 
@@ -253,4 +253,27 @@ test("global form font inheritance excludes admin controls so shared typography 
   assert.match(globals, /:where\(button, select, input, textarea\):not\(\[data-admin-theme\] \*\)\s*\{\s*font: inherit;/);
   assert.doesNotMatch(globals, /(?:^|\n)button,\nselect,\ninput,\ntextarea\s*\{\s*font: inherit;/);
   assert.match(readProjectFile("components/admin/admin-control.ts"), /text-sm font-normal/);
+});
+
+test("phase 1 studio redesign enforces theme persistence, product workspace tabs, and retired legacy surfaces", () => {
+  const layout = readProjectFile("app/admin/layout.tsx");
+  const navConfig = readProjectFile("components/admin/admin-nav-config.ts");
+  const cmdk = readProjectFile("components/admin/AdminCommandPalette.tsx");
+  const productEdit = readProjectFile("app/admin/products/[id]/edit/page.tsx");
+  const analyticsPage = readProjectFile("app/admin/analytics/page.tsx");
+  const analyticsDetails = readProjectFile("app/admin/analytics/details/page.tsx");
+  const pricingPreview = readProjectFile("app/admin/pricing-preview/page.tsx");
+
+  assert.match(layout, /ADMIN_THEME_STORAGE_KEY/);
+  assert.match(navConfig, /geosub_admin_theme/);
+  assert.match(cmdk, /\/admin\/products\?q=/);
+  for (const tab of ["overview", "plans", "sources", "prices", "seo"]) {
+    assert.match(productEdit, new RegExp(`id: "${tab}"`));
+  }
+  assert.match(analyticsPage, /tab=details/);
+  assert.match(analyticsDetails, /redirect\(/);
+  assert.match(pricingPreview, /selectedSlug/);
+  assert.throws(() => readProjectFile("app/admin/commercial/page.tsx"));
+  assert.throws(() => readProjectFile("app/admin/Workspace.module.css"));
+  assert.throws(() => readProjectFile("app/admin/analytics/TrafficDashboard.module.css"));
 });

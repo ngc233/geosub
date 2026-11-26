@@ -1,17 +1,32 @@
-import { requireAdmin } from '../../lib/admin-auth';
-import { preproductionRuntime } from '../../lib/first-party-promotion';
-import { readWorkspaceProducts } from '../../lib/admin-workspace';
-import type { WorkspaceRow } from '../../lib/admin-workspace-model';
-import Workspace from './Workspace';
-import AdminVersionOverview from '../../components/admin/AdminVersionOverview';
-export const dynamic='force-dynamic';
-export default async function AdminDashboardPage({searchParams}:{searchParams:Promise<{permission?:string;view?:string;page?:string}>}){
- const admin=await requireAdmin(); const params=await searchParams;
- let rows:WorkspaceRow[]=[];let failed=false;
- try{rows=await readWorkspaceProducts();}catch{failed=true;}
- return <Workspace key={`${params.view}:${params.page}`} initialPage={params.page}
-  versionOverview={<AdminVersionOverview compact />}
-  initialFilter={params.view==='all'||params.view==='progress'?params.view:'action'} rows={rows}
-  partial={preproductionRuntime()} failed={failed} role={admin.role} denied={params.permission==='denied'}
-  readAt={new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})+' 北京时间'}/>;
+import { requireAdmin } from "../../lib/admin-auth";
+import AdminVersionOverview from "../../components/admin/AdminVersionOverview";
+import Workspace from "./Workspace";
+import { loadWorkspaceViewModel } from "./workspace-adapter";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ permission?: string; view?: string; page?: string }>;
+}) {
+  const [admin, params] = await Promise.all([requireAdmin(), searchParams]);
+  const initialFilter =
+    params.view === "all" || params.view === "progress" ? params.view : "action";
+  const viewModel = await loadWorkspaceViewModel({
+    view: initialFilter,
+    page: params.page,
+  });
+
+  return (
+    <Workspace
+      key={`${initialFilter}:${params.page ?? ""}`}
+      viewModel={viewModel}
+      initialFilter={initialFilter}
+      initialPage={params.page}
+      role={admin.role}
+      denied={params.permission === "denied"}
+      versionOverview={<AdminVersionOverview compact />}
+    />
+  );
 }

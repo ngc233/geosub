@@ -88,7 +88,7 @@ export default function AdminSelect({
         <svg
           className={[
             "ml-3 h-4 w-4 shrink-0 text-admin-text-faint transition",
-            open ? "rotate-180 text-blue-600" : "",
+            open ? "rotate-180 text-admin-accent" : "",
           ].join(" ")}
           viewBox="0 0 20 20"
           fill="none"
@@ -105,13 +105,11 @@ export default function AdminSelect({
       </button>
 
       {helperText ? (
-        <p className="mt-2 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{helperText}</p>
+        <p className="mt-2 text-xs leading-5 text-admin-text-muted">{helperText}</p>
       ) : null}
 
       {open ? (
-        <div id={`${controlId}-options`} className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg
-          border border-admin-border bg-admin-surface p-1 shadow-xl ring-1 ring-slate-950/5
-          dark:bg-admin-surface dark:border-admin-border">
+        <div id={`${controlId}-options`} className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-admin-border-strong bg-admin-surface p-1 shadow-xl">
           <div className="admin-scrollbar max-h-[360px] overflow-y-auto">
             {options.map((option) => {
               const active = option.value === currentValue;
@@ -128,8 +126,8 @@ export default function AdminSelect({
                   className={[
                     "flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm transition",
                     active
-                      ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                      : "text-admin-text-body hover:bg-admin-surface-subtle hover:text-admin-text dark:text-admin-text-body dark:hover:bg-admin-chip dark:hover:text-admin-text",
+                      ? "bg-admin-accent-soft text-admin-accent"
+                      : "text-admin-text-body hover:bg-admin-surface-subtle hover:text-admin-text",
                   ].join(" ")}
                 >
                   <span className="min-w-0">
@@ -140,7 +138,7 @@ export default function AdminSelect({
                       <span
                         className={[
                           "mt-1 block truncate text-xs",
-                          active ? "text-blue-500 dark:text-blue-300" : "text-admin-text-muted dark:text-admin-text-muted",
+                          active ? "text-admin-accent/80" : "text-admin-text-muted",
                         ].join(" ")}
                       >
                         {option.description}
@@ -150,7 +148,7 @@ export default function AdminSelect({
 
                   {active ? (
                     <svg
-                      className="ml-3 h-4 w-4 shrink-0 text-blue-600"
+                      className="ml-3 h-4 w-4 shrink-0 text-admin-accent"
                       viewBox="0 0 20 20"
                       fill="none"
                       aria-hidden="true"

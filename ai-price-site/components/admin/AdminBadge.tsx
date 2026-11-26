@@ -6,9 +6,23 @@ type AdminBadgeVariant =
   | "danger"
   | "neutral";
 
-function joinClasses(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
+const dotColor: Record<AdminBadgeVariant, string> = {
+  published: "bg-admin-success",
+  review: "bg-admin-warning",
+  danger: "bg-admin-danger",
+  draft: "bg-admin-text-faint",
+  archived: "bg-admin-text-faint",
+  neutral: "bg-admin-text-faint",
+};
+
+const pillStyle: Record<AdminBadgeVariant, string> = {
+  published: "border-admin-border bg-admin-surface text-admin-text-body",
+  review: "border-admin-warning/30 bg-admin-warning-soft text-admin-warning",
+  danger: "border-admin-danger/30 bg-admin-danger-soft text-admin-danger",
+  draft: "border-admin-border bg-admin-surface-subtle text-admin-text-muted",
+  archived: "border-admin-border bg-admin-surface-subtle text-admin-text-muted",
+  neutral: "border-admin-border bg-admin-surface-subtle text-admin-text-secondary",
+};
 
 export function AdminBadge({
   children,
@@ -17,22 +31,11 @@ export function AdminBadge({
   children: React.ReactNode;
   variant?: AdminBadgeVariant;
 }) {
-  const variants = {
-    draft: "bg-admin-chip text-admin-text-secondary",
-    review: "bg-admin-warning-soft text-admin-warning",
-    published: "bg-admin-success-soft text-admin-success",
-    archived: "bg-admin-chip text-admin-text-muted",
-    danger: "bg-admin-danger-soft text-admin-danger",
-    neutral: "bg-admin-chip text-admin-text-secondary",
-  };
-
   return (
     <span
-      className={joinClasses(
-        "inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium leading-4",
-        variants[variant]
-      )}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium leading-4 ${pillStyle[variant]}`}
     >
+      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${dotColor[variant]}`} />
       {children}
     </span>
   );

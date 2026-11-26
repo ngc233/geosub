@@ -77,7 +77,10 @@ function readRepoFile(fileName: string) {
 }
 
 test("admin sidebar exposes only operational modules", () => {
-  const source = readProjectFile("components/admin/AdminSidebar.tsx");
+  const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
+  const navConfig = readProjectFile("components/admin/admin-nav-config.ts");
+  const topbar = readProjectFile("components/admin/AdminTopBar.tsx");
+  const combinedNav = [sidebar, navConfig, topbar].join("\n");
 
   for (const href of [
     "/admin/system",
@@ -95,32 +98,27 @@ test("admin sidebar exposes only operational modules", () => {
     "/admin/growth",
     "/admin/navigation",
   ]) {
-    assert.match(source, new RegExp(href.replaceAll("/", "\\/")));
+    assert.match(combinedNav, new RegExp(href.replaceAll("/", "\\/")));
   }
 
-  assert.doesNotMatch(source, /\/admin\/commercial/);
-  assert.doesNotMatch(source, /\/admin\/pricing-preview/);
-  assert.doesNotMatch(source, /\/admin\/affordability-preview/);
-  assert.doesNotMatch(source, /href: "\/admin\/review"/);
-  assert.doesNotMatch(source, /href: "\/admin\/discovery"/);
-  // Groups follow the six business modules (rfc-admin-information-architecture-2026-10-28).
-  for (const group of ["工作台", "产品目录", "价格数据", "内容与增长", "运营", "系统"]) {
-    assert.match(source, new RegExp(`label: "${group}",\\n\\s+items:`));
+  assert.doesNotMatch(combinedNav, /\/admin\/commercial/);
+  assert.doesNotMatch(sidebar, /\/admin\/pricing-preview/);
+  assert.doesNotMatch(sidebar, /\/admin\/affordability-preview/);
+  // Direction A: 6 primary hubs in sidebar, secondary modules in contextual top sub-nav.
+  for (const hub of ["收件箱", "产品目录", "价格运维", "增长分析", "内容管理", "系统运维"]) {
+    assert.match(navConfig, new RegExp(`label: "${hub}"`));
   }
-  assert.match(source, /label: "采集与审核"/);
-  assert.match(source, /function matchesRoute\(pathname: string, route: string\)[\s\S]*?pathname\.startsWith\(`\$\{route\}\/`\)/);
+  assert.match(navConfig, /function matchesAdminRoute\(pathname: string, route: string\)[\s\S]*?pathname\.startsWith\(`\$\{route\}\/`\)/);
 });
 
 test("product pipeline is the single lifecycle entry while specialist pages remain reachable", () => {
-  const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
+  const navConfig = readProjectFile("components/admin/admin-nav-config.ts");
   const steps = readProjectFile("components/admin/AdminPipelineSteps.tsx");
   const pipeline = readProjectFile("app/admin/pipeline/page.tsx");
   const growth = readProjectFile("lib/admin-pipeline-growth.ts");
 
-  assert.match(sidebar, /label: "采集与审核",\s+href: "\/admin\/pipeline"/);
-  assert.match(sidebar, /also: \[[^\]]*"\/admin\/review"[^\]]*"\/admin\/collector-jobs"/);
-  assert.doesNotMatch(sidebar, /href: "\/admin\/review"/);
-  assert.doesNotMatch(sidebar, /href: "\/admin\/discovery"/);
+  assert.match(navConfig, /label: "价格运维",[\s\S]*?href: "\/admin\/pipeline"/);
+  assert.match(navConfig, /also: \[[\s\S]*"\/admin\/review"[\s\S]*"\/admin\/collector-jobs"/);
   assert.match(steps, /href=\{contextHref\("\/admin\/discovery"\)\}/);
   assert.match(steps, /path:"\/admin\/review"/);
 
@@ -140,8 +138,8 @@ test("product pipeline is the single lifecycle entry while specialist pages rema
 test("admin workflows recognize canonical App Store jobs for AI and streaming products", () => {
   const taskScopeFiles = [
     "app/admin/pipeline/page.tsx",
-    "app/admin/products/page.tsx",
-    "app/admin/products/[id]/edit/page.tsx",
+    "app/admin/products/products-adapter.ts",
+    "app/admin/products/[id]/edit/product-workspace-adapter.ts",
     "app/admin/products/actions.ts",
     "app/admin/collector-jobs/actions.ts",
     "app/admin/discovery/actions.ts",
@@ -164,7 +162,7 @@ test("admin workflows recognize canonical App Store jobs for AI and streaming pr
 
   const lifecycleSources = [
     "app/admin/pipeline/page.tsx",
-    "app/admin/products/page.tsx",
+    "app/admin/products/products-adapter.ts",
     "app/admin/collector-jobs/actions.ts",
     "app/admin/review/queries.ts",
     "app/admin/review/collection-runner.ts",
@@ -184,7 +182,7 @@ test("admin navigation remains usable on mobile", () => {
   const layout = readProjectFile("app/admin/layout.tsx");
 
   assert.match(source, /网站版本/);
-  assert.match(source, /href="\/admin\/system#versions" onClick=\{\(\) => setMobileOpen\(false\)\}/);
+  assert.match(source, /href="\/admin\/system#versions"[\s\S]*?onClick=\{\(\) => setMobileOpen\(false\)\}/);
   assert.match(source, /v\{version\}/);
   assert.match(layout, /import packageJson from "\.\.\/\.\.\/package\.json"/);
   assert.match(layout, /version=\{packageJson\.version\}/);
@@ -534,7 +532,7 @@ test("admin quality and review summaries materialize repeated aggregates", () =>
 test("major admin data pages report slow workloads", () => {
   const sources = [
     "app/admin/pipeline/page.tsx",
-    "app/admin/products/page.tsx",
+    "app/admin/products/products-adapter.ts",
     "app/admin/prices/page.tsx",
     "app/admin/discovery/page.tsx",
     "app/admin/affordability/page.tsx",
@@ -568,7 +566,10 @@ test("admin actions preserve scroll while consented analytics stays clearly labe
 test("all admin asset views share one four-level operational status model", () => {
   const sharedStatus = readProjectFile("lib/admin-operational-status.ts");
   const badge = readProjectFile("components/admin/AdminStatusBadge.tsx");
-  const productPage = readProjectFile("app/admin/products/page.tsx");
+  const productPage = [
+    readProjectFile("app/admin/products/page.tsx"),
+    readProjectFile("app/admin/products/products-adapter.ts"),
+  ].join("\n");
   const planPage = readProjectFile("app/admin/plans/page.tsx");
   const pricePage = readProjectFile("app/admin/prices/page.tsx");
   const pipelinePage = readProjectFile("app/admin/pipeline/page.tsx");

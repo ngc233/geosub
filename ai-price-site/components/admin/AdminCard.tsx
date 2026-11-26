@@ -57,12 +57,10 @@ export function AdminStatCard({
         </div>
 
         {href ? (
-          <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white dark:bg-blue-950/60 dark:text-blue-300 dark:group-hover:bg-blue-600 dark:group-hover:text-white">
-            <ArrowRight size={16} strokeWidth={2} />
+          <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-admin-control border border-admin-border bg-admin-surface-subtle text-admin-text-secondary transition group-hover:border-admin-primary group-hover:bg-admin-primary group-hover:text-admin-on-primary">
+            <ArrowRight size={14} strokeWidth={1.8} />
           </span>
-        ) : (
-          null
-        )}
+        ) : null}
       </div>
     </div>
   );

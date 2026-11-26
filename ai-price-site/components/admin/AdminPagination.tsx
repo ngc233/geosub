@@ -22,7 +22,7 @@ export default function AdminPagination({
 }
 
 function PageLink({ href, label, current = false, children }: { href: string | null; label: string; current?: boolean; children: ReactNode }) {
-  const cls = `inline-flex h-11 min-w-10 items-center justify-center rounded-lg px-2 tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/40 ${current ? "bg-admin-primary font-medium text-white" : "text-admin-text-secondary hover:bg-admin-chip"}`;
+  const cls = `inline-flex h-8 min-w-8 items-center justify-center rounded-admin-control px-2 text-xs tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/40 ${current ? "bg-admin-primary font-medium text-admin-on-primary" : "text-admin-text-secondary hover:bg-admin-chip hover:text-admin-text"}`;
   if (!href || current) return <span aria-label={label} aria-current={current ? "page" : undefined} aria-disabled={!href || undefined} className={`${cls} ${!href ? "opacity-40" : ""}`}>{children}</span>;
   return <AdminLink href={href} scroll={href.includes("#") ? true : undefined} aria-label={label} className={cls}>{children}</AdminLink>;
 }
