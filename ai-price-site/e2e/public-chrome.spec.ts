@@ -184,7 +184,8 @@ for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as cons
   await nav.click();await expect(navPanel).toHaveAttribute("data-open","true");
   await language.click();await expect(nav).toHaveAttribute("aria-expanded","false");await expect(navPanel).toHaveAttribute("inert","");
   await expect(languagePanel).toHaveAttribute("data-open","true");await expect(languagePanel).not.toHaveAttribute("inert");
-  await expect(languagePanel.locator('a')).toHaveCount(12); // Existing locale list: preserve the 76-link SEO contract.
+  await expect(languagePanel.locator('a')).toHaveCount(6); // Expose only the 6 unified primary locales while staged locales remain hidden.
+  expect(await languagePanel.locator('a').evaluateAll(es=>es.map(e=>e.getAttribute("href")))).toEqual(["/zh","/zh-tw","/en","/ja","/ko","/es"]);
   expect(await languagePanel.evaluate(e=>e.scrollHeight<=e.clientHeight)).toBe(true);
   await expect(languagePanel.locator('a[aria-current="true"] svg')).toHaveCount(1);
   await page.screenshot({path:path.join(evidence,`round5-language-${width}-${colorScheme}.png`),animations:"disabled"});

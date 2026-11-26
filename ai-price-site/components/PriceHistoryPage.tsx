@@ -7,11 +7,13 @@ import PriceHistoryRadarClient from "./PriceHistoryRadarClient";
 import { PublicSection, PublicSectionHeader } from "./ui/PublicPage";
 import { loadPriceHistoryGlobalRadar } from "../lib/cached-price-history-radar";
 import { homepageMap } from "../lib/homepage-map";
+import type { HubLocale } from "../lib/country-hubs";
 import type { RadarEventItem } from "../lib/public-map-views";
 import { getPriceEvidencePreview } from "../lib/price-evidence-preview";
 import { getPriceHistorySummary } from "../lib/price-records";
 import { getPriceRecordProducts, getProductPriceRecords } from "../lib/price-records-data";
 import { PUBLIC_PRICING_CACHE_TAG, PUBLIC_PRICING_REVALIDATE_SECONDS } from "../lib/public-pricing-cache";
+import { canvasUiCopy } from "../lib/canvas-ui-copy";
 import {
   fictionalPriceHistoryRecords,
   fictionalPriceRecordProducts,
@@ -49,11 +51,188 @@ const loadProducts = () =>
     tags: [PUBLIC_PRICING_CACHE_TAG],
   })();
 
-type HistoryProps = { locale: "zh" | "en"; slug?: string; pageClass?: string };
+const historyPageCopy: Record<
+  HubLocale,
+  {
+    baseTitle: string;
+    productTitle: (productName: string) => string;
+    description: string;
+    allRecords: string;
+    coverageHeading: string;
+    coverageStats: (days: number, countries: number, records: string) => string;
+    coverageNote: string;
+    latest100Note: string;
+    recentSnapshotsTitle: string;
+    recentSnapshotsDesc: string;
+    directoryAria: string;
+    directoryHeading: string;
+    directoryDesc: string;
+    directoryBack: string;
+    changesIn120d: (count: number) => string;
+    stableRecently: string;
+    windowNote: string;
+    truncatedSuffix: string;
+    sequenceBreakNote: string;
+  }
+> = {
+  zh: {
+    baseTitle: "价格变化记录",
+    productTitle: (name) => `${name} 价格变化记录`,
+    description:
+      "追踪同一套餐、地区与计费周期的 App Store 当地官方调价。每条记录均可核对原始采集快照，日常汇率浮动不计入调价。",
+    allRecords: "全部价格变化记录",
+    coverageHeading: "采集覆盖说明",
+    coverageStats: (days, countries, records) =>
+      `${days} 个采样日 · ${countries} 个曾观测地区 · ${records} 条观测记录`,
+    coverageNote: "以上为窗口内读取到的原始采集记录；不推断两次采集之间的具体改价时刻。",
+    latest100Note: "显示最近 100 个已确认事件。",
+    recentSnapshotsTitle: "最近原始采集快照",
+    recentSnapshotsDesc: "查看采集当时保存的 App Store 套餐条目与原始价格文本。",
+    directoryAria: "按产品查阅历史档案",
+    directoryHeading: "按产品查阅历史档案",
+    directoryDesc: "进入单个订阅服务专页，查看该产品近 120 天的地区监测覆盖、调价轨迹与原始商店快照。",
+    directoryBack: "全站调价总览",
+    changesIn120d: (count) => `近 120 天 ${count} 次调价`,
+    stableRecently: "近期价格稳定",
+    windowNote: "观察窗口：最近 120 天，分页读取，安全上限为最近 50,000 条观测；不推断两次采集之间的生效时刻。",
+    truncatedSuffix: " 本次已触及读取上限，当前结果不是完整历史。",
+    sequenceBreakNote: "缺少周期身份、审核中断或来源改变时，不连接两次价格。",
+  },
+  "zh-tw": {
+    baseTitle: "價格變化紀錄",
+    productTitle: (name) => `${name} 價格變化紀錄`,
+    description:
+      "追蹤同一方案、地區與計費週期的 App Store 當地官方調價。每筆紀錄皆可核對原始採集快照，日常匯率波動不計入調價。",
+    allRecords: "全部價格變化紀錄",
+    coverageHeading: "採集涵蓋說明",
+    coverageStats: (days, countries, records) =>
+      `${days} 個取樣日 · ${countries} 個曾觀測地區 · ${records} 筆觀測紀錄`,
+    coverageNote: "以上為視窗內讀取到的原始採集紀錄；不推斷兩次採集之間的具體改價時刻。",
+    latest100Note: "顯示最近 100 筆已確認事件。",
+    recentSnapshotsTitle: "最近原始採集快照",
+    recentSnapshotsDesc: "查看採集當時保存的 App Store 方案項目與原始價格文字。",
+    directoryAria: "按產品查閱歷史檔案",
+    directoryHeading: "按產品查閱歷史檔案",
+    directoryDesc: "進入單一訂閱服務專頁，查看該產品近 120 天的地區監測涵蓋、調價軌跡與原始商店快照。",
+    directoryBack: "全站調價總覽",
+    changesIn120d: (count) => `近 120 天 ${count} 次調價`,
+    stableRecently: "近期價格穩定",
+    windowNote: "觀察視窗：最近 120 天，分頁讀取，安全上限為最近 50,000 筆觀測；不推斷兩次採集之間的生效時刻。",
+    truncatedSuffix: " 本次已觸及讀取上限，目前結果並非完整歷史。",
+    sequenceBreakNote: "缺少週期識別、審核中斷或來源變更時，不連接兩次價格。",
+  },
+  en: {
+    baseTitle: "Price change records",
+    productTitle: (name) => `${name} Price change records`,
+    description:
+      "Track local App Store price changes for the same plan, country and billing period. Each change links to its source records. Exchange-rate movements are not price changes.",
+    allRecords: "All price change records",
+    coverageHeading: "Observation coverage",
+    coverageStats: (days, countries, records) =>
+      `${days} sampled days · ${countries} observed regions · ${records} observations`,
+    coverageNote:
+      "Coverage describes the retrieved raw observations, including unverified records. It does not establish continuous monitoring, current availability or unchanged prices throughout the window.",
+    latest100Note: "Showing the latest 100 confirmed events.",
+    recentSnapshotsTitle: "Recent original observations",
+    recentSnapshotsDesc: "Inspect the plan items and original price text retained at collection.",
+    directoryAria: "Browse price history by product",
+    directoryHeading: "Browse Price History by Product",
+    directoryDesc:
+      "Open a dedicated product archive to inspect 120-day regional monitoring coverage, confirmed adjustments, and raw store snapshots.",
+    directoryBack: "All products overview",
+    changesIn120d: (count) => `${count} ${count === 1 ? "change" : "changes"} in 120d`,
+    stableRecently: "Stable recently",
+    windowNote:
+      "Window: the last 120 days, paginated with a safety limit of 50,000 recent observations. Observation times do not establish exactly when a change took effect.",
+    truncatedSuffix: " The read limit was reached; this is not a complete history.",
+    sequenceBreakNote: "Missing period identity, review interruptions and source changes break the comparison.",
+  },
+  ja: {
+    baseTitle: "価格改定履歴",
+    productTitle: (name) => `${name} 価格改定履歴`,
+    description:
+      "同一プラン・国・請求サイクルにおける App Store の現地公式価格改定を追跡します。各記録から取得時の元スナップショットを確認でき、日々の為替変動は含まれません。",
+    allRecords: "すべての価格改定履歴",
+    coverageHeading: "観測データの範囲",
+    coverageStats: (days, countries, records) =>
+      `取得日数 ${days} 日 · 観測地域 ${countries} か所 · 観測レコード ${records} 件`,
+    coverageNote:
+      "上記は対象期間内に取得された生レコードを示しており、2回の取得間の正確な改定日時を特定するものではありません。",
+    latest100Note: "確認済みの最新 100 件を表示しています。",
+    recentSnapshotsTitle: "最近の取得スナップショット",
+    recentSnapshotsDesc: "取得時点で保存された App Store プラン項目と元の価格テキストを確認できます。",
+    directoryAria: "サービス別の価格履歴アーカイブ",
+    directoryHeading: "サービス別に価格履歴を見る",
+    directoryDesc:
+      "各サービスの専用アーカイブを開き、過去120日間の地域モニタリング状況、確認済み価格改定、元のストアスナップショットを確認できます。",
+    directoryBack: "全サービス一覧へ",
+    changesIn120d: (count) => `直近120日で ${count} 件の改定`,
+    stableRecently: "直近は価格安定",
+    windowNote:
+      "観測期間：直近120日間（最大 50,000 件の安全上限付きページネーション）。観測日時は改定が発効した正確な瞬間を示すものではありません。",
+    truncatedSuffix: " 読み取り上限に達したため、完全な履歴ではありません。",
+    sequenceBreakNote: "請求サイクルの欠落、審査の中断、取得元の変更がある場合は前後の価格を連結しません。",
+  },
+  ko: {
+    baseTitle: "가격 변동 기록",
+    productTitle: (name) => `${name} 가격 변동 기록`,
+    description:
+      "동일 요금제·국가·결제 주기의 App Store 현지 공식 가격 인하·인상을 추적합니다. 모든 기록은 원본 수집 스냅샷과 연결되며 일일 환율 변동은 포함되지 않습니다.",
+    allRecords: "전체 가격 변동 기록",
+    coverageHeading: "관측 커버리지 안내",
+    coverageStats: (days, countries, records) =>
+      `샘플링 ${days}일 · 관측 지역 ${countries}곳 · 관측 레코드 ${records}건`,
+    coverageNote:
+      "위 수치는 기간 내 조회된 원본 관측 기록을 설명하며 두 수집 시점 사이의 정확한 가격 변경 시각을 추정하지 않습니다.",
+    latest100Note: "최근 확인된 이벤트 100건을 표시합니다.",
+    recentSnapshotsTitle: "최근 원본 수집 스냅샷",
+    recentSnapshotsDesc: "수집 시점에 보존된 App Store 요금제 항목과 원본 가격 텍스트를 확인하세요.",
+    directoryAria: "서비스별 가격 변동 기록 탐색",
+    directoryHeading: "서비스별 가격 변동 아카이브",
+    directoryDesc:
+      "개별 구독 서비스 아카이브에서 최근 120일간의 지역별 모니터링 범위, 확정된 가격 조정 및 원본 스토어 스냅샷을 확인하세요.",
+    directoryBack: "전체 서비스 요약",
+    changesIn120d: (count) => `최근 120일 ${count}회 변동`,
+    stableRecently: "최근 가격 안정",
+    windowNote:
+      "관측 기간: 최근 120일(최근 50,000건 안전 상한 페이지네이션). 관측 시각이 실제 가격 변경 발효 시점을 의미하지는 않습니다.",
+    truncatedSuffix: " 읽기 상한에 도달하여 전체 기록이 아닐 수 있습니다.",
+    sequenceBreakNote: "결제 주기 식별 누락, 검토 중단 또는 출처 변경이 있으면 두 가격을 연결하지 않습니다.",
+  },
+  es: {
+    baseTitle: "Historial de cambios de precio",
+    productTitle: (name) => `Historial de precios de ${name}`,
+    description:
+      "Sigue los ajustes oficiales en moneda local de App Store para el mismo plan, país y ciclo de facturación. Cada cambio enlaza con sus capturas originales; las fluctuaciones cambiarias no cuentan como cambios de precio.",
+    allRecords: "Todos los cambios de precio",
+    coverageHeading: "Cobertura de observación",
+    coverageStats: (days, countries, records) =>
+      `${days} días muestreados · ${countries} regiones observadas · ${records} observaciones`,
+    coverageNote:
+      "La cobertura describe las observaciones brutas recuperadas y no establece el instante exacto en que entró en vigor un cambio entre dos capturas.",
+    latest100Note: "Mostrando los últimos 100 eventos confirmados.",
+    recentSnapshotsTitle: "Capturas originales recientes",
+    recentSnapshotsDesc: "Inspecciona los planes y textos originales de precios conservados en cada captura.",
+    directoryAria: "Explorar historial de precios por servicio",
+    directoryHeading: "Historial de Precios por Servicio",
+    directoryDesc:
+      "Abre el archivo dedicado de cada servicio para revisar su cobertura regional de 120 días, ajustes confirmados y capturas originales.",
+    directoryBack: "Resumen de todos los servicios",
+    changesIn120d: (count) => `${count} ${count === 1 ? "cambio" : "cambios"} en 120d`,
+    stableRecently: "Estable recientemente",
+    windowNote:
+      "Ventana: últimos 120 días, paginada con un límite de seguridad de 50.000 observaciones recientes. Las fechas de captura no determinan el momento exacto del ajuste.",
+    truncatedSuffix: " Se alcanzó el límite de lectura; este historial no está completo.",
+    sequenceBreakNote: "La falta de ciclo, interrupciones de revisión o cambios de fuente cortan la comparación.",
+  },
+};
+
+type HistoryProps = { locale: HubLocale; slug?: string; pageClass?: string };
 
 export async function HistoryPage(props: HistoryProps) {
   const { locale, slug } = props;
-  const english = locale === "en";
+  const copy = historyPageCopy[locale];
+  const ui = canvasUiCopy[locale];
   const className = "gs-public-unified gs-evidence-page gs-history-page";
   const useFixture = isHomepageFixtureEnabled();
 
@@ -63,11 +242,7 @@ export async function HistoryPage(props: HistoryProps) {
   } catch {
     return (
       <div className={className}>
-        <PageHeading
-          locale={locale}
-          title={locale === "zh" ? "价格变化记录" : "Price change records"}
-          description="App Store"
-        />
+        <PageHeading locale={locale} title={copy.baseTitle} description="App Store" />
         <Unavailable locale={locale} />
       </div>
     );
@@ -139,17 +314,15 @@ export async function HistoryPage(props: HistoryProps) {
     <div className={className}>
       {useFixture && (
         <aside className="gs-home-test-data" role="note">
-          {english
-            ? "Fictional test data · For local UI verification only, not real prices"
-            : "虚构测试数据 · 仅用于本地界面验收，不代表实际价格"}
+          {ui.home.fixtureBanner}
         </aside>
       )}
 
       {product && (
-        <nav className="gs-history-breadcrumb" aria-label={english ? "Breadcrumb" : "面包屑"}>
+        <nav className="gs-history-breadcrumb" aria-label={ui.common.breadcrumbAria}>
           <Link href={`/${locale}/price-history`}>
             <ArrowLeft size={16} aria-hidden="true" />
-            {english ? "All price change records" : "全部价格变化记录"}
+            {copy.allRecords}
           </Link>
           <span aria-hidden="true">/</span>
           <span>{product.name}</span>
@@ -160,12 +333,8 @@ export async function HistoryPage(props: HistoryProps) {
         centered={false}
         locale={locale}
         identity={product ? <BrandIcon product={product} size="lg" priority /> : undefined}
-        title={`${product ? `${product.name} ` : ""}${locale === "zh" ? "价格变化记录" : "Price change records"}`}
-        description={
-          locale === "zh"
-            ? "追踪同一套餐、地区与计费周期的 App Store 当地官方调价。每条记录均可核对原始采集快照，日常汇率浮动不计入调价。"
-            : "Track local App Store price changes for the same plan, country and billing period. Each change links to its source records. Exchange-rate movements are not price changes."
-        }
+        title={product ? copy.productTitle(product.name) : copy.baseTitle}
+        description={copy.description}
       />
 
       {!unavailable && (
@@ -181,40 +350,30 @@ export async function HistoryPage(props: HistoryProps) {
 
       {result && result.coverage.recordCount > 0 ? (
         <PublicSection className="mb-6 p-5 md:p-6">
-          <h2 className={headingClass}>{locale === "zh" ? "采集覆盖说明" : "Observation coverage"}</h2>
+          <h2 className={headingClass}>{copy.coverageHeading}</h2>
           <p className={`mt-2 ${mutedClass}`}>
-            {locale === "zh"
-              ? `${result.coverage.observedDays} 个采样日 · ${result.coverage.countryCount} 个曾观测地区 · ${result.coverage.recordCount.toLocaleString()} 条观测记录`
-              : `${result.coverage.observedDays} sampled days · ${result.coverage.countryCount} observed regions · ${result.coverage.recordCount.toLocaleString()} observations`}
+            {copy.coverageStats(
+              result.coverage.observedDays,
+              result.coverage.countryCount,
+              result.coverage.recordCount.toLocaleString(),
+            )}
           </p>
           <p className={`mt-2 ${metaClass}`}>
             {dateTime(result.coverage.firstObservedAt!, locale)} → {dateTime(result.coverage.lastObservedAt!, locale)}
           </p>
-          <p className={`mt-2 ${metaClass}`}>
-            {locale === "zh"
-              ? "以上为窗口内读取到的原始采集记录；不推断两次采集之间的具体改价时刻。"
-              : "Coverage describes the retrieved raw observations, including unverified records. It does not establish continuous monitoring, current availability or unchanged prices throughout the window."}
-          </p>
+          <p className={`mt-2 ${metaClass}`}>{copy.coverageNote}</p>
         </PublicSection>
       ) : null}
 
       {unavailable ? <Unavailable locale={locale} /> : null}
 
-      {(result?.eventCount || 0) > 100 ? (
-        <p className={mutedClass}>
-          {locale === "zh" ? "显示最近 100 个已确认事件。" : "Showing the latest 100 confirmed events."}
-        </p>
-      ) : null}
+      {(result?.eventCount || 0) > 100 ? <p className={mutedClass}>{copy.latest100Note}</p> : null}
 
       {snapshots.length ? (
         <PublicSection className="mt-6">
           <PublicSectionHeader
-            title={locale === "zh" ? "最近原始采集快照" : "Recent original observations"}
-            description={
-              locale === "zh"
-                ? "查看采集当时保存的 App Store 套餐条目与原始价格文本。"
-                : "Inspect the plan items and original price text retained at collection."
-            }
+            title={copy.recentSnapshotsTitle}
+            description={copy.recentSnapshotsDesc}
           />
           <div className="divide-y divide-[var(--color-border-default)]">
             {snapshots.map((snapshot) => (
@@ -237,23 +396,16 @@ export async function HistoryPage(props: HistoryProps) {
       ) : null}
 
       {sortedDirectoryProducts.length > 0 && (
-        <nav
-          className="gs-history-directory"
-          aria-label={english ? "Browse price history by product" : "按产品查阅历史档案"}
-        >
+        <nav className="gs-history-directory" aria-label={copy.directoryAria}>
           <div className="gs-history-directory-head">
             <div>
-              <h2>{english ? "Browse Price History by Product" : "按产品查阅历史档案"}</h2>
-              <p>
-                {english
-                  ? "Open a dedicated product archive to inspect 120-day regional monitoring coverage, confirmed adjustments, and raw store snapshots."
-                  : "进入单个订阅服务专页，查看该产品近 120 天的地区监测覆盖、调价轨迹与原始商店快照。"}
-              </p>
+              <h2>{copy.directoryHeading}</h2>
+              <p>{copy.directoryDesc}</p>
             </div>
             {product && (
               <Link className="gs-history-directory-back" href={`/${locale}/price-history`}>
                 <ArrowLeft size={14} aria-hidden="true" />
-                {english ? "All products overview" : "全站调价总览"}
+                {copy.directoryBack}
               </Link>
             )}
           </div>
@@ -271,13 +423,7 @@ export async function HistoryPage(props: HistoryProps) {
                   <div className="gs-history-directory-copy">
                     <strong>{item.name}</strong>
                     <small data-has-changes={count > 0 || undefined}>
-                      {count > 0
-                        ? english
-                          ? `${count} ${count === 1 ? "change" : "changes"} in 120d`
-                          : `近 120 天 ${count} 次调价`
-                        : english
-                          ? "Stable recently"
-                          : "近期价格稳定"}
+                      {count > 0 ? copy.changesIn120d(count) : copy.stableRecently}
                     </small>
                   </div>
                   <ArrowRight size={14} aria-hidden="true" />
@@ -291,20 +437,10 @@ export async function HistoryPage(props: HistoryProps) {
       {result ? (
         <div className={`mt-6 ${metaClass}`}>
           <p>
-            {locale === "zh"
-              ? "观察窗口：最近 120 天，分页读取，安全上限为最近 50,000 条观测；不推断两次采集之间的生效时刻。"
-              : "Window: the last 120 days, paginated with a safety limit of 50,000 recent observations. Observation times do not establish exactly when a change took effect."}
-            {result.truncated
-              ? locale === "zh"
-                ? " 本次已触及读取上限，当前结果不是完整历史。"
-                : " The read limit was reached; this is not a complete history."
-              : ""}
+            {copy.windowNote}
+            {result.truncated ? copy.truncatedSuffix : ""}
           </p>
-          <p className="mt-2">
-            {locale === "zh"
-              ? "缺少周期身份、审核中断或来源改变时，不连接两次价格。"
-              : "Missing period identity, review interruptions and source changes break the comparison."}
-          </p>
+          <p className="mt-2">{copy.sequenceBreakNote}</p>
         </div>
       ) : null}
     </div>

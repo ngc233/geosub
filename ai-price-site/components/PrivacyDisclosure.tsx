@@ -23,6 +23,7 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
       { title: "無識別碼的頁面彙總", body: "為顯示全站頁面瀏覽總量，GeoSub 不會設定或讀取 Cookie，也不會建立訪客或工作階段識別碼，而只將標準化頁面路徑直接計入 UTC 每日彙總。應用程式統計不保存原始 IP、User-Agent、來源頁面或單次瀏覽記錄；此計數無法識別獨立訪客，也不會用於點擊歸因或漏斗分析。" },
       { title: "我們記錄哪些資料", body: "在取得必要同意後，GeoSub 可能記錄匿名訪客識別碼、工作階段識別碼、瀏覽頁面、來源頁面、點擊或互動類型、時間、瀏覽器與裝置類別，以及理解該次互動所需的有限技術資訊。公開瀏覽不要求姓名、身分證件、付款資料或 Apple 帳號資訊。" },
       { title: "使用目的", body: "這些資料用於維持網站安全與穩定、發現錯誤、瞭解內容使用情況，以及改善價格頁面與導覽。我們不會以分析資料評估個人信用，也不會出售可識別個人身分的資訊。" },
+      { title: "聯絡工單", body: "當你主動提交聯絡或勘誤工單時，GeoSub 會保存你填寫的聯絡類型、稱呼、電子郵件、組織、主旨、相關頁面與詳細說明，用於識別、處理並回覆請求。為限制濫用，系統僅保存由請求來源產生的不可逆雜湊值，不保存原始 IP；工單不會公開展示，也不會用於廣告輪廓分析。處理完成後，我們會依營運與安全需求定期刪除或最小化不再必要的工單資訊。" },
       { title: "同意、第三方與保存期間", body: "帶有訪客或工作階段識別碼的第一方行為分析，以及 Google Analytics 或 Google Tag Manager，只會在你選擇接受後執行；Google 會依其政策處理收到的資料。這些第一方原始分析事件預設最多保存 180 天，之後刪除或僅保留彙總統計。上方無識別碼的每日頁面彙總是獨立計數，不會啟用這些工具。" },
       { title: "你的選擇", body: "你可以拒絕分析，或隨時重新開啟頁尾的分析設定。拒絕後，GeoSub 會停止非必要分析並清除本站分析工作階段。如需查詢、更正或刪除與瀏覽器識別碼相關的資料，請透過網站聯絡頁提出要求。" },
     ],
@@ -44,6 +45,7 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
       { title: "識別子を使わないページ集計", body: "サイト全体のページ閲覧数を表示するため、GeoSub は Cookie の設定・読み取りや訪問者・セッション ID の作成を行わず、正規化したページパスだけを UTC 日次集計へ直接加算します。アプリケーション統計には生の IP、User-Agent、参照元、個別の訪問記録を保存しません。この数値はユニーク訪問者の識別、クリックの帰属、ファネル分析には使用できません。" },
       { title: "記録する情報", body: "必要な同意を得た後、匿名の訪問者ID、セッションID、閲覧ページ、参照元、操作の種類、時刻、ブラウザー・端末区分、操作を理解するための限定的な技術情報を記録することがあります。閲覧に氏名、本人確認書類、決済情報、Appleアカウント情報は不要です。" },
       { title: "利用目的", body: "安全性と安定性の確保、不具合の診断、利用されるコンテンツの把握、料金ページやナビゲーションの改善に使用します。分析情報を個人の信用評価に用いたり、個人を特定できる情報を販売したりしません。" },
+      { title: "お問い合わせチケット", body: "お問い合わせや価格訂正の連絡を任意で送信した場合、GeoSub は種別、お名前、メールアドレス、所属組織、件名、対象ページ、詳細内容を確認・返信のために保存します。不正送信を抑止するため、生の IP アドレスではなく送信元から生成した不可逆ハッシュのみを保存し、チケット内容を公開したり広告プロファイリングに利用したりすることはありません。対応完了後は運用・安全上の必要に応じて不要な情報を定期的に削除または最小化します。" },
       { title: "同意・外部サービス・保存期間", body: "訪問者・セッション識別子を使う自社の行動分析と Google Analytics または Google Tag Manager は、同意後にのみ実行されます。Google は受領したデータを同社の方針に従って処理します。自社の生の分析イベントは原則180日以内に削除するか、集計情報のみを残します。上記の識別子を使わない日次ページ集計は独立した計数であり、これらのツールを有効にしません。" },
       { title: "選択とお問い合わせ", body: "分析を拒否したり、フッターからいつでも設定を開き直したりできます。拒否時は不要な分析を停止し、分析セッションを消去します。ブラウザー識別子に関連するデータの照会・訂正・削除は、お問い合わせページからご連絡ください。" },
     ],
@@ -54,6 +56,7 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
       { title: "식별자 없는 페이지 집계", body: "사이트 전체 페이지 조회수를 표시하기 위해 GeoSub는 쿠키를 설정하거나 읽지 않고 방문자 또는 세션 ID도 만들지 않으며, 정규화된 페이지 경로만 UTC 일별 합계에 직접 더합니다. 애플리케이션 통계에는 원본 IP, User-Agent, 유입 경로 또는 개별 방문 기록을 저장하지 않습니다. 이 수치는 순 방문자 식별, 클릭 기여 또는 퍼널 분석에 사용할 수 없습니다." },
       { title: "수집하는 정보", body: "필요한 동의를 받은 뒤 익명 방문자 ID, 세션 ID, 방문 페이지와 유입 경로, 상호작용 유형, 시각, 브라우저·기기 범주 및 해당 상호작용을 이해하는 데 필요한 제한된 기술 정보를 기록할 수 있습니다. 공개 페이지 이용에 이름, 신분증, 결제 정보 또는 Apple 계정 정보는 필요하지 않습니다." },
       { title: "이용 목적", body: "보안과 안정성 유지, 오류 진단, 유용한 콘텐츠 파악, 가격 페이지와 탐색 기능 개선에 사용합니다. 분석 정보를 개인 신용 평가에 사용하지 않으며 개인을 식별할 수 있는 정보를 판매하지 않습니다." },
+      { title: "문의 티켓", body: "문의나 가격 정정 요청을 자발적으로 제출하면 GeoSub는 검토 및 답변을 위해 문의 유형, 이름, 이메일, 소속, 제목, 관련 페이지 및 상세 설명을 저장합니다. 악용을 제한하기 위해 원본 IP 주소 대신 요청 출처에서 생성한 비가역 해시만 보관하며, 티켓은 공개되거나 광고 프로파일링에 사용되지 않습니다. 처리 완료 후에는 운영 및 보안 필요에 따라 불필요한 정보를 정기적으로 삭제하거나 최소화합니다." },
       { title: "동의, 외부 서비스 및 보관", body: "방문자 또는 세션 식별자를 사용하는 자체 행동 분석과 Google Analytics 또는 Google Tag Manager는 동의한 뒤에만 실행됩니다. Google은 자체 정책에 따라 수신 데이터를 처리합니다. 자체 원시 분석 이벤트는 기본적으로 최대 180일 보관한 뒤 삭제하거나 집계 통계만 남깁니다. 위의 식별자 없는 일별 페이지 합계는 별도 카운터이며 이러한 도구를 활성화하지 않습니다." },
       { title: "이용자의 선택", body: "분석을 거부하거나 언제든지 푸터에서 설정을 다시 열 수 있습니다. 거부하면 불필요한 분석을 중단하고 분석 세션을 삭제합니다. 브라우저 식별자와 연결된 데이터의 열람·정정·삭제 요청은 문의 페이지를 이용해 주세요." },
     ],
@@ -64,6 +67,7 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
       { title: "Totales de páginas sin identificadores", body: "Para mostrar el total de páginas vistas, GeoSub suma la ruta normalizada directamente a un agregado diario UTC sin crear ni leer cookies ni identificadores de visitante o sesión. Las estadísticas de la aplicación no conservan direcciones IP sin tratar, agentes de usuario, referencias ni registros de visitas individuales. Este recuento no identifica visitantes únicos ni sirve para atribución de clics o análisis de embudos." },
       { title: "Datos que registramos", body: "Tras obtener el consentimiento necesario, GeoSub puede registrar un identificador anónimo de visitante y de sesión, la página visitada y de referencia, el tipo de interacción, la hora, la categoría de navegador y dispositivo y un contexto técnico limitado. Para navegar no pedimos nombre, documento de identidad, datos de pago ni información de la cuenta de Apple." },
       { title: "Para qué los utilizamos", body: "Los utilizamos para proteger la seguridad y la estabilidad, diagnosticar fallos, saber qué contenido resulta útil y mejorar las páginas de precios y la navegación. No empleamos la analítica para evaluar el crédito personal ni vendemos información que identifique a una persona." },
+      { title: "Consultas y tickets de soporte", body: "Cuando envías voluntariamente una consulta o corrección, GeoSub conserva la categoría, el nombre, el correo electrónico, la organización, el asunto, la página de referencia y los detalles necesarios para revisarla y responder. Para limitar abusos, solo se almacena un hash irreversible derivado del origen de la solicitud en lugar de direcciones IP sin tratar; las consultas nunca se publican ni se usan para perfiles publicitarios, y los datos innecesarios se eliminan o minimizan periódicamente una vez resueltos." },
       { title: "Consentimiento, proveedores y conservación", body: "La analítica propia de comportamiento con identificadores de visitante o sesión, así como Google Analytics o Google Tag Manager, solo funciona después de aceptarla; Google trata los datos recibidos conforme a sus políticas. GeoSub conserva esos eventos analíticos propios sin agregar durante un máximo predeterminado de 180 días y después los elimina o conserva solo estadísticas agregadas. El total diario sin identificadores descrito arriba es independiente y no activa esas herramientas." },
       { title: "Tus opciones", body: "Puedes rechazar la analítica o volver a abrir su configuración desde el pie de página. Al rechazarla, GeoSub detiene la analítica no esencial y borra la sesión analítica. Utiliza la página de contacto para solicitar acceso, rectificación o supresión de datos asociados a un identificador del navegador." },
     ],
@@ -130,6 +134,15 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
   },
 };
 
+const articleHeadingByLocale: Partial<Record<SiteLocale, string>> = {
+  zh: "隐私与数据保存细则",
+  "zh-tw": "隱私與資料保存細則",
+  en: "Detailed privacy and retention rules",
+  ja: "プライバシーとデータ保存の詳細規則",
+  ko: "개인정보 및 데이터 보관 세부 규칙",
+  es: "Reglas detalladas de privacidad y conservación",
+};
+
 export default function PrivacyDisclosure({ locale, articleLayout = false }: { locale: SiteLocale; articleLayout?: boolean }) {
   const text = copy[locale];
 
@@ -138,7 +151,7 @@ export default function PrivacyDisclosure({ locale, articleLayout = false }: { l
       <div className="gs-aux-stack">
         <div className="gs-aux-section-head">
           <p className="gs-aux-kicker">{text.updated}</p>
-          <h2>{locale === "en" ? "Detailed privacy and retention rules" : "隐私与数据保存细则"}</h2>
+          <h2>{articleHeadingByLocale[locale] ?? articleHeadingByLocale.en}</h2>
         </div>
         <div className="gs-aux-stack">
           {text.sections.map((section, index) => (

@@ -8,8 +8,9 @@ export function ConverterStyleResource() {
 }
 
 import { canDisplayConverterRate } from "../lib/converter-display";
-import { zhConverterAmountCopy } from "../lib/currency-converter-copy";
+import { getUnifiedConverterUiCopy } from "../lib/currency-converter-copy";
 import { formatPublicPrice } from "../lib/public-price-format";
+import { isUnifiedPublicLocale } from "../lib/public-style-rollout";
 import { convertZhAmount, formatZhSourceAmount, parseZhConverterAmount } from "../lib/zh-converter-amount";
 import PublicPriceNumber from "./PublicPriceNumber";
 import { ArrowLeftRight, Check, ChevronDown } from "lucide-react";
@@ -67,7 +68,14 @@ function formatCurrency(
   currency: DisplayCurrency,
   locale: SiteLocale,
 ) {
-  if (locale === "zh") return formatPublicPrice(value, currency, "zh-CN", getDisplayCurrencyFractionDigits(currency));
+  if (isUnifiedPublicLocale(locale)) {
+    return formatPublicPrice(
+      value,
+      currency,
+      getSiteLocaleDefinition(locale).intlLocale,
+      getDisplayCurrencyFractionDigits(currency),
+    );
+  }
   const intlLocale = getSiteLocaleDefinition(locale).intlLocale;
   const formatter = new Intl.NumberFormat(intlLocale, {
     style: "currency",
@@ -309,7 +317,7 @@ export default function SubscriptionCurrencyConverter({
     to: DisplayCurrency,
   ) {
     if (
-      (locale === "zh" || locale === "en") &&
+      isUnifiedPublicLocale(locale) &&
       (!canDisplayConverterRate(rateMap.get(from)) || !canDisplayConverterRate(rateMap.get(to)))
     ) {
       return null;
@@ -352,34 +360,29 @@ export default function SubscriptionCurrencyConverter({
     setToCurrency(fromCurrency);
   }
 
-  if (locale === "zh" || locale === "en") {
-    const english = locale === "en";
-    const parsedAmount = parseZhConverterAmount(amount);
+  if (isUnifiedPublicLocale(locale)) {
+    const uiCopy = getUnifiedConverterUiCopy(locale);
+    const separators = getNumberSeparators(locale);
+    const parsedAmount = parseZhConverterAmount(amount, separators);
     const inputError =
       parsedAmount.status === "invalid"
-        ? english
-          ? copy.invalidAmount
-          : zhConverterAmountCopy.invalid
+        ? locale === "zh"
+          ? uiCopy.invalidAmount
+          : copy.invalidAmount
         : parsedAmount.status === "too-large"
-          ? english
-            ? "Amount exceeds the maximum supported value"
-            : zhConverterAmountCopy.inputTooLarge
+          ? uiCopy.inputTooLarge
           : null;
     const converted =
       parsedAmount.status === "ok"
         ? convertZhAmount(parsedAmount, rateMap.get(fromCurrency), rateMap.get(toCurrency), toCurrency)
         : null;
-    const tooLargeResult = english
-      ? "Converted amount exceeds display limit"
-      : zhConverterAmountCopy.resultTooLarge;
+    const tooLargeResult = uiCopy.resultTooLarge;
     const activePresets = getQuickPresetsForCurrency(fromCurrency);
     const presetDigits = getDisplayCurrencyFractionDigits(fromCurrency);
     const quickHint =
       fromCurrency === "USD"
         ? copy.quickDescription
-        : english
-          ? `Quick-fill common ${fromCurrency} subscription price tiers.`
-          : `快速填入 ${fromCurrency} 常见月费档位，即时换算目标币种。`;
+        : uiCopy.quickFillHint(fromCurrency);
     const candidateComparisons = comparisonCurrencies.filter(
       (currency) => currency !== fromCurrency && currency !== toCurrency,
     );
@@ -493,7 +496,12 @@ export default function SubscriptionCurrencyConverter({
           <div className="gs-converter-result-head">
             {parsedAmount.status === "ok" ? (
               <p className="gs-converter-result-source">
-                {formatZhSourceAmount(parsedAmount, fromCurrency)} {copy.approximately}
+                {formatZhSourceAmount(
+                  parsedAmount,
+                  fromCurrency,
+                  localeDefinition.intlLocale,
+                )}{" "}
+                {copy.approximately}
               </p>
             ) : (
               <p id="converter-amount-error" className="gs-converter-result-error">
@@ -546,7 +554,7 @@ export default function SubscriptionCurrencyConverter({
         <section className="gs-converter-comparisons" aria-labelledby="gs-converter-comp-title">
           <div className="gs-converter-comp-head">
             <h2 id="gs-converter-comp-title">{copy.comparisonTitle}</h2>
-            <span>{english ? "Click row to set target" : "点击可切换为目标币种"}</span>
+            <span>{uiCopy.comparisonRowHint}</span>
           </div>
           <div className="gs-converter-comp-list">
             {sortedComparisons.map((currency) => {

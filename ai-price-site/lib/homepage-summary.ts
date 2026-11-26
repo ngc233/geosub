@@ -1,6 +1,8 @@
-import { getChinesePlanDisplayName, getPlanDisplayName, getPlanTabLabel } from "./pricing-labels.ts";
+import { getPlanTabLabel } from "./pricing-labels.ts";
+import { getCanvasPlanDisplayName } from "./homepage-display.ts";
 import { priorityCountries, type getComparablePriceRows, type HubRate } from "./country-hubs.ts";
 import type { getHomepageRepresentatives } from "./homepage-representatives.ts";
+import type { CanvasLocale } from "./canvas-ui-copy.ts";
 
 type Rows = ReturnType<typeof getComparablePriceRows>;
 type Representatives = ReturnType<typeof getHomepageRepresentatives>["representatives"];
@@ -11,14 +13,12 @@ export function homepageStatistics(rows: Rows) {
     regions: new Set(rows.map(row => row.countryCode)).size, prices: rows.length,
     updatedAt: times.sort((a,b) => Date.parse(b)-Date.parse(a))[0] ?? null };
 }
-export function homepageProducts(representatives: Representatives, locale: "zh" | "en" = "zh") {
+export function homepageProducts(representatives: Representatives, locale: CanvasLocale = "zh") {
   return representatives.map(rep => {
     const first = rep.prices[0];
     const prices = rep.prices.map(row => ({ code: row.countryCode, usd: row.usd }));
     const lowest = prices.reduce((a,b) => a.usd <= b.usd ? a : b);
-    const displayName = locale === "en"
-      ? getPlanDisplayName(first.productName, first.planName)
-      : getChinesePlanDisplayName(first.productName, first.planName);
+    const displayName = getCanvasPlanDisplayName(first.productName, first.planName, locale);
     return { slug: rep.productSlug, name: first.productName, plan: getPlanTabLabel(first.productName, displayName),
       planDisplayName: displayName, category: first.category,
       href: `/${locale}/${first.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${rep.productSlug}/${rep.planSlug}/`,
@@ -29,7 +29,7 @@ export function homepageProducts(representatives: Representatives, locale: "zh" 
 export type HomepageRepresentative = ReturnType<typeof homepageProducts>[number];
 /** D8: each product/plan/platform/cycle has one vote, including negative savings.
  * Minimum five comparable plans. No rounded `difference`, no US-as-country row. */
-export function homepageCountries(rows: Rows, locale: "zh" | "en" = "zh") {
+export function homepageCountries(rows: Rows, locale: CanvasLocale = "zh") {
   const countries = new Map<string,Map<string,number>>();
   for (const row of rows) {
     if (row.countryCode === "US" || !row.usPrice || !Number.isFinite(row.usPrice) || row.usPrice <= 0) continue;

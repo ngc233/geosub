@@ -1121,3 +1121,16 @@
   .gs-public-unified :is(.gs-country-overview-map,.gs-history-radar-panel) .gs-home-map-heading > .gs-segments { flex-direction:row; align-items:center; gap:0; width:100%; }
   .gs-public-unified :is(.gs-country-overview-map,.gs-history-radar-panel) .gs-segments button { width:auto; min-width:0; white-space:nowrap; }
 }
+
+/* Intrinsic multi-locale segment & map leader parity across all unified locales. */
+.gs-public-unified .gs-home .gs-en-map-leaders { stroke:var(--gs-border-strong); stroke-width:var(--gs-border-width); pointer-events:none; }
+.gs-public-unified.gs-plan-scope .gs-plan-tax { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-plan-scope .gs-plan-filters,.gs-product-matrix-controls) .gs-segments { display:grid; grid-template-columns:repeat(var(--gs-count),minmax(max-content,1fr)); width:auto; }
+.gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-plan-scope .gs-plan-filters,.gs-product-matrix-controls) .gs-segments button { width:auto; padding-inline:var(--gs-space-14); }
+@media (max-width:767px) {
+  .gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-product-matrix-controls) .gs-segments { grid-template-columns:repeat(var(--gs-count),minmax(0,1fr)); width:100%; }
+  .gs-public-unified .gs-plan-scope :is(.gs-plan-content,.gs-plan-regions,.gs-plan-region-heading,.gs-plan-filters) { min-width:0; }
+  .gs-public-unified .gs-plan-scope .gs-plan-filters .gs-segments { display:grid; grid-template-columns:auto repeat(calc(var(--gs-count) - 1),minmax(0,1fr)); width:100%; max-width:100%; }
+  .gs-public-unified .gs-plan-scope .gs-plan-filters .gs-segments button { min-width:0; overflow:hidden; text-overflow:ellipsis; padding-inline:var(--gs-space-6); font-size:var(--gs-noncritical-caption-size); }
+  .gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-product-matrix-controls) .gs-segments button { padding-inline:var(--gs-space-8); font-size:var(--gs-metadata-size); }
+}

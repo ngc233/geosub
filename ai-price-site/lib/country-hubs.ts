@@ -1,4 +1,5 @@
 import { getAppStoreSourceUrl, isObservationId } from "./price-records.ts";
+import type { CanvasLocale } from "./canvas-ui-copy.ts";
 
 export const priorityCountries = [
   { slug: "turkey", code: "TR", zh: "土耳其", en: "Turkey" },
@@ -6,7 +7,7 @@ export const priorityCountries = [
   { slug: "philippines", code: "PH", zh: "菲律宾", en: "Philippines" },
   { slug: "japan", code: "JP", zh: "日本", en: "Japan" },
 ] as const;
-export type HubLocale = "zh" | "en";
+export type HubLocale = CanvasLocale;
 export function getPriorityCountry(slug: string) { return priorityCountries.find(country => country.slug === slug); }
 export type CountryHubPrice = {
   productSlug: string; productName: string; category: "ai" | "streaming";

@@ -2,6 +2,7 @@
 import { usePublicCurrency } from "./PublicCurrencySelect";
 import { formatPublicPrice, publicBillingLabel } from "../lib/public-price-format";
 import { canvasDefaultCurrency, canvasIntlLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
+import { getGuideArticleUiCopy } from "../lib/guide-hub-copy";
 
 export default function GuidePrice({
   usd,
@@ -24,7 +25,7 @@ export default function GuidePrice({
         <small>/ {publicBillingLabel(cycle, intlLocale)}</small>
       </span>
       {currency !== preferred && (
-        <small>{locale === "en" ? "FX unavailable, showing USD" : "汇率暂不可用，显示美元"}</small>
+        <small>{getGuideArticleUiCopy(locale).fxFallbackUsd}</small>
       )}
     </span>
   );

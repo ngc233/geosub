@@ -3,6 +3,15 @@ import type { ReactNode } from "react";
 import { GuideContents } from "./GuideReadingTools";
 import type { CanvasLocale } from "../lib/canvas-ui-copy";
 
+const defaultSummaryTitleByLocale: Record<CanvasLocale, string> = {
+  zh: "核心原则",
+  en: "Overview",
+  "zh-tw": "核心原則",
+  ja: "基本方針",
+  ko: "핵심 원칙",
+  es: "Principios clave",
+};
+
 /** Article canvas for trust & methodology pages without guide-only query work. */
 export default function AuxiliaryArticle({
   children,
@@ -29,7 +38,7 @@ export default function AuxiliaryArticle({
         <GuideContents
           locale={locale}
           includeH3={false}
-          summaryTitle={summaryTitle ?? (locale === "en" ? "Overview" : "核心原则")}
+          summaryTitle={summaryTitle ?? defaultSummaryTitleByLocale[locale]}
         />
         <article className="gs-guide-article gs-guide-prose gs-aux-prose">{children}</article>
       </div>

@@ -1,11 +1,212 @@
-import type { SiteLocale } from "./site-locale";
-import { zhConverterMaximumAmount } from "./zh-converter-amount";
+import type { CanvasLocale } from "./canvas-ui-copy.ts";
+import type { DisplayCurrency } from "./display-currency.ts";
+import type { SiteLocale } from "./site-locale.ts";
+import { zhConverterMaximumAmount } from "./zh-converter-amount.ts";
 
 export const zhConverterAmountCopy = {
   invalid: "请输入普通数字金额",
   inputTooLarge: `请输入不超过 ${zhConverterMaximumAmount} 的金额`,
   resultTooLarge: "换算结果超过可显示上限",
 };
+
+export type UnifiedConverterBridge = {
+  href: string;
+  title: string;
+  meta: string;
+};
+
+export type UnifiedConverterUiCopy = {
+  invalidAmount: string;
+  inputTooLarge: string;
+  resultTooLarge: string;
+  quickFillHint: (currency: DisplayCurrency) => string;
+  comparisonRowHint: string;
+  oneClickPair: string;
+  bridgesHeading: string;
+  bridgesDescription: string;
+  pricingBridges: UnifiedConverterBridge[];
+  faqHeading: string;
+};
+
+const unifiedConverterUiCopy: Record<CanvasLocale, UnifiedConverterUiCopy> = {
+  zh: {
+    invalidAmount: zhConverterAmountCopy.invalid,
+    inputTooLarge: zhConverterAmountCopy.inputTooLarge,
+    resultTooLarge: zhConverterAmountCopy.resultTooLarge,
+    quickFillHint: (currency) => `快速填入 ${currency} 常见月费档位，即时换算目标币种。`,
+    comparisonRowHint: "点击可切换为目标币种",
+    oneClickPair: "一键切换币种对",
+    bridgesHeading: "去查实测官方订阅价",
+    bridgesDescription: "汇率换算仅估算牌价，各区官方定价往往相差 30%–70%。直接查看实测地区低价：",
+    pricingBridges: [
+      {
+        href: "/zh/ai-pricing",
+        title: "AI 订阅全球比价",
+        meta: "ChatGPT · Claude · Gemini",
+      },
+      {
+        href: "/zh/streaming-pricing",
+        title: "流媒体全球比价",
+        meta: "Spotify · YouTube · Netflix",
+      },
+      {
+        href: "/zh/countries",
+        title: "低价国家与地区榜",
+        meta: "土耳其 · 尼日利亚 · 印度 · 日本",
+      },
+    ],
+    faqHeading: "汇率与实际扣款常见问题",
+  },
+  en: {
+    invalidAmount: "Enter a valid amount",
+    inputTooLarge: "Amount exceeds the maximum supported value",
+    resultTooLarge: "Converted amount exceeds display limit",
+    quickFillHint: (currency) => `Quick-fill common ${currency} subscription price tiers.`,
+    comparisonRowHint: "Click row to set target",
+    oneClickPair: "1-click pair",
+    bridgesHeading: "Compare Verified Store Prices",
+    bridgesDescription:
+      "Exchange rates only estimate FX—official regional pricing across stores often differs by 30%–70%:",
+    pricingBridges: [
+      {
+        href: "/en/ai-pricing",
+        title: "AI Subscription Pricing",
+        meta: "ChatGPT · Claude · Gemini",
+      },
+      {
+        href: "/en/streaming-pricing",
+        title: "Streaming Subscription Pricing",
+        meta: "Spotify · YouTube · Netflix",
+      },
+      {
+        href: "/en/countries",
+        title: "Cheapest Regions Directory",
+        meta: "Turkey · Nigeria · India · Japan",
+      },
+    ],
+    faqHeading: "Exchange Rate & Billing FAQ",
+  },
+  "zh-tw": {
+    invalidAmount: "請輸入有效的數字金額",
+    inputTooLarge: `請輸入不超過 ${zhConverterMaximumAmount} 的金額`,
+    resultTooLarge: "換算結果超過可顯示上限",
+    quickFillHint: (currency) => `快速填入 ${currency} 常見月費方案，即時換算目標幣別。`,
+    comparisonRowHint: "點擊可切換為目標幣別",
+    oneClickPair: "一鍵切換幣別對",
+    bridgesHeading: "查看實測官方訂閱價",
+    bridgesDescription:
+      "匯率換算僅估算參考牌價，各區官方定價往往相差 30%–70%。直接查看實測地區低價：",
+    pricingBridges: [
+      {
+        href: "/zh-tw/ai-pricing",
+        title: "AI 訂閱全球比價",
+        meta: "ChatGPT · Claude · Gemini",
+      },
+      {
+        href: "/zh-tw/streaming-pricing",
+        title: "串流媒體全球比價",
+        meta: "Spotify · YouTube · Netflix",
+      },
+      {
+        href: "/zh-tw/countries",
+        title: "低價國家與地區榜",
+        meta: "土耳其 · 奈及利亞 · 印度 · 日本",
+      },
+    ],
+    faqHeading: "匯率與實際扣款常見問題",
+  },
+  ja: {
+    invalidAmount: "有効な数値の金額を入力してください",
+    inputTooLarge: "入力金額が対応上限を超えています",
+    resultTooLarge: "換算結果が表示上限を超えています",
+    quickFillHint: (currency) => `${currency} の代表的な月額料金をワンクリックで入力できます。`,
+    comparisonRowHint: "行をクリックして換算先に設定",
+    oneClickPair: "ワンクリック切替",
+    bridgesHeading: "検証済みの公式ストア価格を比較",
+    bridgesDescription:
+      "為替換算はあくまで目安です。公式ストアの地域別価格は国によって 30%〜70% 異なることがあります：",
+    pricingBridges: [
+      {
+        href: "/ja/ai-pricing",
+        title: "AI サブスク地域別価格",
+        meta: "ChatGPT · Claude · Gemini",
+      },
+      {
+        href: "/ja/streaming-pricing",
+        title: "動画・音楽配信の地域別価格",
+        meta: "Spotify · YouTube · Netflix",
+      },
+      {
+        href: "/ja/countries",
+        title: "割安な国・地域ランキング",
+        meta: "トルコ · ナイジェリア · インド · 日本",
+      },
+    ],
+    faqHeading: "為替レートと請求に関するよくある質問",
+  },
+  ko: {
+    invalidAmount: "올바른 숫자 금액을 입력하세요",
+    inputTooLarge: "입력 금액이 지원 한도를 초과했습니다",
+    resultTooLarge: "환산 결과가 표시 한도를 초과했습니다",
+    quickFillHint: (currency) => `자주 쓰는 ${currency} 월 구독료를 클릭해 바로 환산하세요.`,
+    comparisonRowHint: "행을 클릭해 환산 통화로 설정",
+    oneClickPair: "원클릭 전환",
+    bridgesHeading: "검증된 공식 스토어 가격 비교",
+    bridgesDescription:
+      "환율 계산은 참고 추정치일 뿐이며, 스토어별 공식 지역 가격은 국가마다 30%~70%까지 차이 날 수 있습니다:",
+    pricingBridges: [
+      {
+        href: "/ko/ai-pricing",
+        title: "AI 구독 글로벌 가격 비교",
+        meta: "ChatGPT · Claude · Gemini",
+      },
+      {
+        href: "/ko/streaming-pricing",
+        title: "스트리밍 구독 가격 비교",
+        meta: "Spotify · YouTube · Netflix",
+      },
+      {
+        href: "/ko/countries",
+        title: "저렴한 국가 및 지역 순위",
+        meta: "튀르키예 · 나이지리아 · 인도 · 일본",
+      },
+    ],
+    faqHeading: "환율 및 실제 청구 자주 묻는 질문",
+  },
+  es: {
+    invalidAmount: "Introduce un importe numérico válido",
+    inputTooLarge: "El importe supera el límite máximo admitido",
+    resultTooLarge: "El importe convertido supera el límite de visualización",
+    quickFillHint: (currency) => `Completa al instante cuotas habituales en ${currency}.`,
+    comparisonRowHint: "Haz clic para fijar moneda destino",
+    oneClickPair: "Par en 1 clic",
+    bridgesHeading: "Compara precios oficiales verificados",
+    bridgesDescription:
+      "El cambio de divisas es solo una referencia: los precios oficiales por tienda suelen variar entre un 30 % y un 70 %:",
+    pricingBridges: [
+      {
+        href: "/es/ai-pricing",
+        title: "Precios de suscripciones de IA",
+        meta: "ChatGPT · Claude · Gemini",
+      },
+      {
+        href: "/es/streaming-pricing",
+        title: "Precios de streaming por país",
+        meta: "Spotify · YouTube · Netflix",
+      },
+      {
+        href: "/es/countries",
+        title: "Índice de países más baratos",
+        meta: "Turquía · Nigeria · India · Japón",
+      },
+    ],
+    faqHeading: "Preguntas frecuentes sobre cambio y cobro",
+  },
+};
+
+export function getUnifiedConverterUiCopy(locale: CanvasLocale): UnifiedConverterUiCopy {
+  return unifiedConverterUiCopy[locale];
+}
 
 export type CurrencyConverterCopy = {
   metadataTitle: string;
@@ -81,44 +282,49 @@ const currencyConverterCopy: Record<SiteLocale, CurrencyConverterCopy> =
       ],
     },
     "zh-tw": {
-    metadataTitle: "訂閱匯率換算器",
-    metadataDescription: "使用 GeoSub 定期更新的參考匯率，換算 AI、流媒體和軟體訂閱的跨幣種月費。",
-    eyebrow: "訂閱實用工具",
-    title: "訂閱匯率換算器",
-    description: "把海外 AI、流媒體和軟體訂閱價格換算成你熟悉的幣種。匯率通常每 12 小時同步一次，適合估算月費與比較不同地區價格。",
-    amountLabel: "金額與原幣種",
-    amountAria: "需要換算的金額",
-    fromAria: "選擇原幣種",
-    toLabel: "換算為",
-    toAria: "選擇目標幣種",
-    swap: "交換幣種",
-    swapAria: "交換原幣種和目標幣種",
-    approximately: "約等於",
-    invalidAmount: "請輸入有效金額",
-    unavailable: "當前匯率不可用",
-    quickTitle: "常見訂閱金額",
-    quickDescription: "快速檢視常見美元月費檔位的本幣估算。",
-    comparisonTitle: "多幣種快速對照",
-    unavailableShort: "不可用",
-    stale: "當前使用最近一次可用匯率，可能與即時匯率有偏差；下次同步後會自動更新。",
-    rateBasis: "匯率基準",
-    pending: "待同步",
-    resultNote: "結果僅供估算，實際扣款以支付平台為準。",
-    questions: [
+      metadataTitle: "訂閱匯率換算器",
+      metadataDescription:
+        "使用 GeoSub 定期更新的參考匯率，換算 AI、串流媒體與軟體訂閱的跨幣別月費。",
+      eyebrow: "訂閱實用工具",
+      title: "訂閱匯率換算器",
+      description:
+        "把海外 AI、串流媒體與軟體訂閱價格換算成你熟悉的幣別。參考匯率通常每 12 小時同步一次，適合估算月費與比較不同地區價格。",
+      amountLabel: "金額與原幣別",
+      amountAria: "需要換算的金額",
+      fromAria: "選擇原幣別",
+      toLabel: "換算為",
+      toAria: "選擇目標幣別",
+      swap: "交換幣別",
+      swapAria: "交換原幣別與目標幣別",
+      approximately: "約等於",
+      invalidAmount: "請輸入有效金額",
+      unavailable: "目前匯率不可用",
+      quickTitle: "常見訂閱金額",
+      quickDescription: "快速查看常見美元月費方案的當地幣估算。",
+      comparisonTitle: "多幣別快速對照",
+      unavailableShort: "不可用",
+      stale: "目前使用最近一次可用匯率，可能與即時匯率有偏差；下次同步後會自動更新。",
+      rateBasis: "匯率基準",
+      pending: "待同步",
+      resultNote: "結果僅供估算，實際扣款以付款平台為準。",
+      questions: [
         {
-            question: "匯率多久更新一次？",
-            answer: "GeoSub 通常每 12 小時同步一次參考匯率，並在換算器底部標出當前匯率的基準日期。",
+          question: "匯率多久更新一次？",
+          answer:
+            "GeoSub 通常每 12 小時同步一次參考匯率，並在換算器下方標出目前匯率的基準日期。",
         },
         {
-            question: "為什麼實際扣款可能不同？",
-            answer: "銀行卡匯率、支付平台換匯、稅費和結算時間都可能使最終扣款與換算結果略有差異。",
+          question: "為什麼實際扣款可能不同？",
+          answer:
+            "發卡銀行匯率、付款平台換匯、稅費與結算時間都可能使最終扣款與換算結果略有差異。",
         },
         {
-            question: "這個工具適合比較什麼？",
-            answer: "它適合快速換算常見訂閱月費。決定是否訂閱前，還應檢視產品頁上的地區價格、稅務說明和更新時間。",
+          question: "這個工具適合比較什麼？",
+          answer:
+            "它適合快速換算常見訂閱月費。決定是否訂閱前，也請查看產品頁上的地區價格、稅務說明與更新時間。",
         },
-    ],
-},
+      ],
+    },
     en: {
       metadataTitle: "Subscription Currency Converter",
       metadataDescription:

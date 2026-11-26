@@ -1,12 +1,16 @@
 import { canDisplayConverterRate } from "../lib/converter-display";
 import { formatPublicPrice } from "../lib/public-price-format";
+import { isUnifiedPublicLocale } from "../lib/public-style-rollout";
 import type { Metadata } from "next";
 import Link from "next/link";
 import SubscriptionCurrencyConverter, {
   ConverterStyleResource,
   type ConverterRate,
 } from "./SubscriptionCurrencyConverter";
-import { getCurrencyConverterCopy, zhConverterAmountCopy } from "../lib/currency-converter-copy";
+import {
+  getCurrencyConverterCopy,
+  getUnifiedConverterUiCopy,
+} from "../lib/currency-converter-copy";
 import { convertZhAmount, parseZhConverterAmount } from "../lib/zh-converter-amount";
 import {
   getCurrencyPairCopy,
@@ -49,7 +53,14 @@ function formatCurrency(
   currency: DisplayCurrency,
   locale: SiteLocale,
 ) {
-  if (locale === "zh") return formatPublicPrice(value, currency, "zh-CN", getDisplayCurrencyFractionDigits(currency));
+  if (isUnifiedPublicLocale(locale)) {
+    return formatPublicPrice(
+      value,
+      currency,
+      getSiteLocaleDefinition(locale).intlLocale,
+      getDisplayCurrencyFractionDigits(currency),
+    );
+  }
   return new Intl.NumberFormat(getSiteLocaleDefinition(locale).intlLocale, {
     style: "currency",
     currency,
@@ -179,7 +190,7 @@ export default async function CurrencyConverterPage({
     pair &&
     fromRate > 0 &&
     toRate > 0 &&
-    (!(locale === "zh" || locale === "en") ||
+    (!isUnifiedPublicLocale(locale) ||
       (canDisplayConverterRate(rateMap.get(pair.from)) &&
         canDisplayConverterRate(rateMap.get(pair.to))))
       ? toRate / fromRate
@@ -187,16 +198,14 @@ export default async function CurrencyConverterPage({
 
   function formatExampleResult(amount: number) {
     if (!pair || pairRate === null) return copy.unavailableShort;
-    if (locale !== "zh" && locale !== "en") return formatCurrency(amount * pairRate, pair.to, locale);
+    if (!isUnifiedPublicLocale(locale)) return formatCurrency(amount * pairRate, pair.to, locale);
 
     const parsed = parseZhConverterAmount(String(amount));
     if (parsed.status !== "ok") return copy.unavailableShort;
     const result = convertZhAmount(parsed, rateMap.get(pair.from), rateMap.get(pair.to), pair.to);
     if (result.status === "ok") return formatCurrency(result.value, pair.to, locale);
     return result.status === "too-large"
-      ? locale === "en"
-        ? "Converted amount exceeds display limit"
-        : zhConverterAmountCopy.resultTooLarge
+      ? getUnifiedConverterUiCopy(locale).resultTooLarge
       : copy.unavailableShort;
   }
 
@@ -258,46 +267,11 @@ export default async function CurrencyConverterPage({
     },
   ];
 
-  const unified = locale === "zh" || locale === "en";
-  if (unified) {
-    const english = locale === "en";
+  if (isUnifiedPublicLocale(locale)) {
+    const uiCopy = getUnifiedConverterUiCopy(locale);
     const featuredPairs = getFeaturedCurrencyPairs(locale);
     const pairSectionCopy = getCurrencyPairCopy(locale);
-    const pricingBridges = english
-      ? [
-          {
-            href: "/en/ai-pricing",
-            title: "AI Subscription Pricing",
-            meta: "ChatGPT · Claude · Gemini",
-          },
-          {
-            href: "/en/streaming-pricing",
-            title: "Streaming Subscription Pricing",
-            meta: "Spotify · YouTube · Netflix",
-          },
-          {
-            href: "/en/countries",
-            title: "Cheapest Regions Directory",
-            meta: "Turkey · Nigeria · India · Japan",
-          },
-        ]
-      : [
-          {
-            href: "/zh/ai-pricing",
-            title: "AI 订阅全球比价",
-            meta: "ChatGPT · Claude · Gemini",
-          },
-          {
-            href: "/zh/streaming-pricing",
-            title: "流媒体全球比价",
-            meta: "Spotify · YouTube · Netflix",
-          },
-          {
-            href: "/zh/countries",
-            title: "低价国家与地区榜",
-            meta: "土耳其 · 尼日利亚 · 印度 · 日本",
-          },
-        ];
+    const pricingBridges = uiCopy.pricingBridges;
 
     return (
       <div className="gs-public-unified gs-tools-scope">
@@ -333,7 +307,7 @@ export default async function CurrencyConverterPage({
             <section className="gs-tool-rail-card" aria-labelledby="gs-tool-pairs-heading">
               <div className="gs-tool-rail-head">
                 <h2 id="gs-tool-pairs-heading">{pairSectionCopy.popularPairs}</h2>
-                <span>{english ? "1-click pair" : "一键切换币种对"}</span>
+                <span>{uiCopy.oneClickPair}</span>
               </div>
               <div className="gs-tool-pairs-grid">
                 {featuredPairs.map((item) => (
@@ -357,15 +331,9 @@ export default async function CurrencyConverterPage({
 
             <section className="gs-tool-rail-card" aria-labelledby="gs-tool-bridges-heading">
               <div className="gs-tool-rail-head">
-                <h2 id="gs-tool-bridges-heading">
-                  {english ? "Compare Verified Store Prices" : "去查实测官方订阅价"}
-                </h2>
+                <h2 id="gs-tool-bridges-heading">{uiCopy.bridgesHeading}</h2>
               </div>
-              <p className="gs-tool-rail-desc">
-                {english
-                  ? "Exchange rates only estimate FX—official regional pricing across stores often differs by 30%–70%:"
-                  : "汇率换算仅估算牌价，各区官方定价往往相差 30%–70%。直接查看实测地区低价："}
-              </p>
+              <p className="gs-tool-rail-desc">{uiCopy.bridgesDescription}</p>
               <div className="gs-tool-bridge-list">
                 {pricingBridges.map((bridge) => (
                   <Link
@@ -440,9 +408,7 @@ export default async function CurrencyConverterPage({
 
           <section className="gs-tool-section" aria-labelledby="gs-tool-faq-heading">
             <div className="gs-tool-section-head">
-              <h2 id="gs-tool-faq-heading">
-                {english ? "Exchange Rate & Billing FAQ" : "汇率与实际扣款常见问题"}
-              </h2>
+              <h2 id="gs-tool-faq-heading">{uiCopy.faqHeading}</h2>
             </div>
             <div className="gs-tool-faq-grid">
               {pairQuestions.map((item, idx) => (

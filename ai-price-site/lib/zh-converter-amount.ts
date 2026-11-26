@@ -29,19 +29,40 @@ function exceedsLimit({ numerator, divisor }: Decimal) {
   return numerator * hundred > maximumCents * divisor;
 }
 
-export function parseZhConverterAmount(input: string): ParsedAmount {
-  const text = input.trim();
-  if (!/^(?:(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?|\.\d+)$/.test(text)) {
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function parseZhConverterAmount(
+  input: string,
+  separators?: { decimal?: string; group?: string },
+): ParsedAmount {
+  const decimal = separators?.decimal || ".";
+  const rawGroup = separators?.group ?? (decimal === "," ? "." : ",");
+  const group = rawGroup === decimal ? (decimal === "," ? "." : ",") : rawGroup;
+  const trimmed = input.trim();
+  const normalizedInput = /\s/.test(group)
+    ? trimmed.replace(/[\s\u00a0\u202f]+/g, group)
+    : trimmed;
+  const escDecimal = escapeRegExp(decimal);
+  const escGroup = escapeRegExp(group);
+  const pattern = new RegExp(
+    `^(?:(?:\\d+|\\d{1,3}(?:${escGroup}\\d{3})+)(?:${escDecimal}\\d*)?|${escDecimal}\\d+)$`,
+  );
+  if (!pattern.test(normalizedInput)) {
     return { status: "invalid" };
   }
 
-  const [whole, fraction = ""] = text.replaceAll(",", "").split(".");
+  const withoutGroups = group ? normalizedInput.replaceAll(group, "") : normalizedInput;
+  const [whole, fraction = ""] = withoutGroups.split(decimal);
   const integerDigits = whole.replace(/^0+/, "") || "0";
   if (integerDigits.length > 10) return { status: "too-large" };
   const fractionalDigits = fraction.replace(/0+$/, "");
   const normalized = fractionalDigits ? `${integerDigits}.${fractionalDigits}` : integerDigits;
-  const decimal = decimalFromText(normalized);
-  return exceedsLimit(decimal) ? { status: "too-large" } : { status: "ok", text: normalized, decimal };
+  const parsedDecimal = decimalFromText(normalized);
+  return exceedsLimit(parsedDecimal)
+    ? { status: "too-large" }
+    : { status: "ok", text: normalized, decimal: parsedDecimal };
 }
 
 function roundToMinorUnits({ numerator, divisor }: Decimal, units: bigint) {
@@ -68,13 +89,25 @@ export function convertZhAmount(amount: Amount, from: Rate | undefined, to: Rate
   return { status: "ok", value: Number(minorUnits) / Number(units) } as const;
 }
 
-export function formatZhSourceAmount(amount: Amount, currency: DisplayCurrency) {
+export function formatZhSourceAmount(
+  amount: Amount,
+  currency: DisplayCurrency,
+  intlLocale = "zh-CN",
+) {
   const digits = getDisplayCurrencyFractionDigits(currency);
   const units = powerOfTen(digits);
   const minorUnits = roundToMinorUnits(amount.decimal, units);
   if (minorUnits === BigInt(0) && amount.decimal.numerator > BigInt(0)) {
+    const decimalSeparator =
+      new Intl.NumberFormat(intlLocale)
+        .formatToParts(1.1)
+        .find((part) => part.type === "decimal")?.value || ".";
+    const localizedText =
+      decimalSeparator === "."
+        ? amount.text
+        : amount.text.replace(".", decimalSeparator);
     // Keep a tiny positive source amount legible instead of labeling it as zero.
-    return formatPublicPrice(0, currency, "zh-CN", 0).replace(/0$/, amount.text);
+    return formatPublicPrice(0, currency, intlLocale, 0).replace(/0$/, localizedText);
   }
-  return formatPublicPrice(Number(minorUnits) / Number(units), currency, "zh-CN", digits);
+  return formatPublicPrice(Number(minorUnits) / Number(units), currency, intlLocale, digits);
 }

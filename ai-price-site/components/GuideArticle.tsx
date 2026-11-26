@@ -4,7 +4,11 @@ import { Suspense, type ReactNode } from "react";
 import GuideIcon from "./GuideIcon";
 import { GuideContents, GuideCopyLink } from "./GuideReadingTools";
 import GuideRelatedPrices from "./GuideRelatedPrices";
-import { getDefaultArticleQuickTools, getGuideHubCopy } from "../lib/guide-hub-copy";
+import {
+  getDefaultArticleQuickTools,
+  getGuideArticleUiCopy,
+  getGuideHubCopy,
+} from "../lib/guide-hub-copy";
 import type { GuideLink } from "../lib/guide-presentation";
 import type { CanvasLocale } from "../lib/canvas-ui-copy";
 
@@ -32,7 +36,8 @@ export default function GuideArticle({
   locale?: CanvasLocale;
 }) {
   const copy = getGuideHubCopy(locale);
-  const resolvedRelatedLabel = relatedLabel ?? (locale === "en" ? "Related reading" : "相关阅读");
+  const uiCopy = getGuideArticleUiCopy(locale);
+  const resolvedRelatedLabel = relatedLabel ?? uiCopy.relatedReading;
   const resolvedQuickTools = quickTools ?? getDefaultArticleQuickTools(locale, "general");
 
   return (
@@ -58,7 +63,7 @@ export default function GuideArticle({
         <article className="gs-guide-article min-w-0 flex flex-col gap-5">
           {description && (
             <aside className="gs-guide-summary p-5 md:py-5 md:pr-6" data-guide-summary>
-              <strong>{locale === "en" ? "Key takeaway" : "先说结论"}</strong>
+              <strong>{uiCopy.summaryLabel}</strong>
               <p className="mt-2" data-guide-description>
                 {description}
               </p>

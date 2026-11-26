@@ -58,3 +58,15 @@ test("empty product has no fabricated cards or timestamps; unavailable display r
   assert.equal(homepageDisplayRates({CNY:rate},new Date("2026-11-08T17:59:59Z")).CNY,7);
   assert.deepEqual(homepageDisplayRates({CNY:rate},new Date("2026-11-08T18:00:01Z")),{USD:1});
 });
+test("6-locale productCanvasModel never leaks Simplified Chinese suffixes into zh-tw, en, ja, ko, es",()=>{
+  const zhTw=productCanvasModel(fixture,"zh-tw");
+  assert.equal(zhTw.plans[1].name,"高級版");
+  assert.equal(zhTw.plans[2].name,"月度會員");
+  assert.equal(zhTw.plans[0].href,"/zh-tw/ai-pricing/fictional-product/plus");
+  for(const loc of ["en","ja","ko","es"] as const){
+    const m=productCanvasModel(fixture,loc);
+    assert.equal(m.plans[1].name,"Premium");
+    assert.equal(m.plans[2].name,"Monthly");
+    assert.equal(m.plans[0].href,`/${loc}/ai-pricing/fictional-product/plus`);
+  }
+});

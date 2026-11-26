@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import GuideArticle from "./GuideArticle";
+import type { CanvasLocale } from "../lib/canvas-ui-copy";
 import type { GuideLink } from "../lib/guide-presentation";
 
 type GuideSection = {
@@ -22,7 +23,7 @@ export default function PublicGuidePage({
   quickTools,
 }: {
   canvas?: boolean;
-  locale?: "zh" | "en";
+  locale?: CanvasLocale;
   metadata?: ReactNode;
   eyebrow: string;
   title: string;

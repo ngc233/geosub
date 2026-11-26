@@ -30,7 +30,7 @@ const controllerChanges = {
 const v4ReaderChanges = {
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "5ff21bec715f1c49fdf68742b692d5f7ba252bf7a87d67ea6dbb130a30c09ca6"
+    "candidate": "f32c515d21e4b333236e63802d6689dcd949b1cdba09dd283b014586002b23b5"
   },
   "ai-price-site/lib/public-pricing-model.ts": {
     "retained": "1bb7f62199c09e8fff34610b8f9380be6a2b25f4e98ea389f83fa30c3f88bba0",
@@ -38,7 +38,7 @@ const v4ReaderChanges = {
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
-    "candidate": "fdc4fdbd66c7346e6c46f86d1f96b030ef754da9f4c97487552baaa1ef0976aa"
+    "candidate": "4cdd5e1cdadc667d808dc17708d61bae130de5d82c70d43f15c52ac3e77a4f7f"
   },
   "ai-price-site/components/ProductCanvasPricing.tsx": {
     "retained": null,
@@ -46,7 +46,7 @@ const v4ReaderChanges = {
   },
   "ai-price-site/lib/product-canvas.ts": {
     "retained": null,
-    "candidate": "56fb053cf7a02b1a73cb839b42ef560925d093438ff329b85cf00cb98de93cdc"
+    "candidate": "def71531671b6bb2ebf1a5504336fdf13707001f37212688abad1ad94249aeef"
   },
   "ai-price-site/lib/product-canvas-order.ts": {
     "retained": null,
@@ -54,15 +54,15 @@ const v4ReaderChanges = {
   },
   "ai-price-site/components/PlanCanvasPage.tsx": {
     "retained": null,
-    "candidate": "228850c2d06ba22d60a1ea355f877a5b90d9300427a454118998969a341f4559"
+    "candidate": "ef144d6425bd85f1a8db1c73936eee1a2710b57cd77d4e11e6dbe21b01422787"
   },
   "ai-price-site/components/PlanCanvasPricing.tsx": {
     "retained": null,
-    "candidate": "873e6e35cd8e27cde366669aa933fed9e67c8ae3e6a120e73a6fd3a525966491"
+    "candidate": "cd7a4611d15b66cd78c64fcf3cb7581c6f5f9196902272a623e040507ae5b51c"
   },
   "ai-price-site/lib/plan-canvas.ts": {
     "retained": null,
-    "candidate": "b92c9ebb031210a8c1ff9e377a6cafb2dbe9181e3a0500dc2730de24600dc959"
+    "candidate": "948e47ae874b10d79ae6ea0122474aed131f73322924bf093095e1c22304dcf4"
   }
 };
 const url = new URL(process.env.GEOSUB_VERSION_UPGRADE_DATABASE_URL);

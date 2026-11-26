@@ -9,8 +9,17 @@ export function usesPlanCanvas(locale: string, canonicalPath: string) {
     return /^\/zh\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path)
       && path !== "/zh/ai-pricing/chatgpt/plus";
   }
-  if (locale === "en") {
-    return /^\/en\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path);
+  if (
+    locale === "en" ||
+    locale === "zh-tw" ||
+    locale === "ja" ||
+    locale === "ko" ||
+    locale === "es"
+  ) {
+    return (
+      path.startsWith(`/${locale}/`) &&
+      /^\/(?:en|zh-tw|ja|ko|es)\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path)
+    );
   }
   return false;
 }

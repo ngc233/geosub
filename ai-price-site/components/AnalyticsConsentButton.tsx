@@ -1,7 +1,10 @@
 "use client";
 
 import { SlidersHorizontal } from "lucide-react";
-import { openAnalyticsConsentPreferences } from "../lib/analytics-consent";
+import {
+  getAnalyticsConsentCopy,
+  openAnalyticsConsentPreferences,
+} from "../lib/analytics-consent";
 import type { CanvasLocale } from "../lib/canvas-ui-copy";
 
 export default function AnalyticsConsentButton({
@@ -19,9 +22,7 @@ export default function AnalyticsConsentButton({
       onClick={openAnalyticsConsentPreferences}
     >
       <SlidersHorizontal size={15} aria-hidden="true" />
-      <span>
-        {locale === "en" ? "Manage analytics settings" : "管理统计与 Cookie 设置"}
-      </span>
+      <span>{getAnalyticsConsentCopy(locale).settings}</span>
     </button>
   );
 }

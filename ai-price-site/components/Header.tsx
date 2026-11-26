@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import PublicHeader from "./PublicHeader";
-import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
+import { resolveCanvasLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
+import { isUnifiedPublicLocale, usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -355,11 +356,13 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
   ],
   };
 
-const languages = supportedSiteLocales.map((code) => ({
-  code,
-  short: siteLocaleDefinitions[code].shortLabel,
-  name: siteLocaleDefinitions[code].label,
-}));
+const languages = supportedSiteLocales
+  .filter((code) => isUnifiedPublicLocale(code))
+  .map((code) => ({
+    code,
+    short: siteLocaleDefinitions[code].shortLabel,
+    name: siteLocaleDefinitions[code].label,
+  }));
 
 const headerCopy: Record<
   PreparedSiteLocale,
@@ -555,10 +558,10 @@ export default function Header({
   const currentLocaleCode = getSiteLocaleFromPath(pathname);
   const currentLocale =
     languages.find((item) => item.code === currentLocaleCode) || languages[0];
-  const availableLanguages = isChineseOnlyGamePath(pathname)
-    ? languages.filter((language) => language.code === "zh")
-    : (isCountryPagePilotPath(pathname) || isBilingualEvidencePath(pathname))
-      ? languages.filter((language) => language.code === "zh" || language.code === "en")
+  const availableLanguages = isCountryPagePilotPath(pathname)
+    ? languages.filter((language) => language.code === "zh" || language.code === "en")
+    : (isChineseOnlyGamePath(pathname) || isBilingualEvidencePath(pathname))
+      ? languages.filter((language) => isUnifiedPublicLocale(language.code))
       : languages;
   const copy = headerCopy[currentLocaleCode];
   const currentLocaleNavItems =
@@ -569,9 +572,122 @@ export default function Header({
       : fallbackNavItemsByLocale[currentLocaleCode],
   );
   const unified = usesUnifiedPublicStyle(pathname);
-  // Preserve the frozen Plus experiment's existing navigation; on unified Chinese
-  // and English public routes, keep core header entries and nest data-sources under guides.
-  const baseNavItems = (currentLocaleCode === "zh" || currentLocaleCode === "en") && unified
+  const unifiedCanvasLocale: CanvasLocale = resolveCanvasLocale(currentLocaleCode);
+  const guideExtrasByLocale: Record<CanvasLocale, NonNullable<NavItem["children"]>> = {
+    zh: [
+      {
+        name: "工具测评",
+        href: "/guides/tool-review",
+        description: "按真实任务、能力边界与持续成本判断订阅价值。",
+      },
+      {
+        name: "方法论",
+        href: "/guides/methodology",
+        description: "了解套餐匹配、样本一致性与四种日期口径。",
+      },
+      {
+        name: "数据来源与口径",
+        href: "/data-sources",
+        description: "了解价格采集来源、汇率基准与核验标准。",
+      },
+    ],
+    "zh-tw": [
+      {
+        name: "工具評測",
+        href: "/guides/tool-review",
+        description: "依真實工作流、額度邊界與持續成本評估訂閱價值。",
+      },
+      {
+        name: "方法論",
+        href: "/guides/methodology",
+        description: "了解方案對應、樣本一致性與四種日期口徑。",
+      },
+      {
+        name: "資料來源與口徑",
+        href: "/data-sources",
+        description: "了解價格採集來源、匯率基準與核驗標準。",
+      },
+    ],
+    en: [
+      {
+        name: "Tool Review",
+        href: "/guides/tool-review",
+        description: "Evaluate tools by real workflows, limits, and ongoing cost.",
+      },
+      {
+        name: "Methodology",
+        href: "/guides/methodology",
+        description: "How regional prices, currencies, and dates are verified.",
+      },
+      {
+        name: "Data Sources & Methodology",
+        href: "/data-sources",
+        description: "How regional prices, FX rates, and verification rules work.",
+      },
+    ],
+    ja: [
+      {
+        name: "ツール評価基準",
+        href: "/guides/tool-review",
+        description: "実際の業務フロー、上限、継続コストでサブスクを評価。",
+      },
+      {
+        name: "調査方法",
+        href: "/guides/methodology",
+        description: "プラン照合、地域サンプル、4つの日付基準の仕組み。",
+      },
+      {
+        name: "データソースと基準",
+        href: "/data-sources",
+        description: "価格取得元、為替レート基準、検証ルールを解説。",
+      },
+    ],
+    ko: [
+      {
+        name: "도구 리뷰 기준",
+        href: "/guides/tool-review",
+        description: "실제 워크플로, 한도 및 지속 비용 기준으로 구독 가치 평가.",
+      },
+      {
+        name: "조사 방법",
+        href: "/guides/methodology",
+        description: "요금제 매칭, 표본 일관성 및 4가지 날짜 기준 안내.",
+      },
+      {
+        name: "데이터 출처 및 기준",
+        href: "/data-sources",
+        description: "가격 수집 출처, 환율 기준 및 검증 원칙 설명.",
+      },
+    ],
+    es: [
+      {
+        name: "Evaluación de herramientas",
+        href: "/guides/tool-review",
+        description: "Evalúa suscripciones según flujo real, límites y coste continuo.",
+      },
+      {
+        name: "Metodología",
+        href: "/guides/methodology",
+        description: "Cómo verificamos planes, regiones, divisas y fechas.",
+      },
+      {
+        name: "Fuentes de datos y criterios",
+        href: "/data-sources",
+        description: "Fuentes oficiales, tipos de cambio y reglas de validación.",
+      },
+    ],
+  };
+  const discoveryLabelsByLocale: Record<CanvasLocale, { countries: string; history: string; games: string }> = {
+    zh: { countries: "国家价格", history: "价格历史", games: "游戏比价" },
+    "zh-tw": { countries: "國家價格", history: "價格歷史", games: "遊戲比價" },
+    en: { countries: "Countries", history: "Price history", games: "Games" },
+    ja: { countries: "国別価格", history: "価格履歴", games: "ゲーム価格" },
+    ko: { countries: "국가별 가격", history: "가격 기록", games: "게임 가격" },
+    es: { countries: "Países", history: "Historial", games: "Juegos" },
+  };
+  // Preserve the frozen Plus experiment's existing navigation; on unified public routes,
+  // keep core header entries and nest data-sources under guides.
+  const baseNavItems = isUnifiedPublicLocale(currentLocaleCode) && unified
     ? rawBaseNavItems
         .filter((item) => {
           const clean = stripSiteLocale(item.href).replace(/\/+$/, "") || "/";
@@ -580,41 +696,7 @@ export default function Header({
         .map((item) => {
           const clean = stripSiteLocale(item.href);
           if (clean !== "/guides") return item;
-          const requiredGuideChildren: NonNullable<NavItem["children"]> = currentLocaleCode === "en"
-            ? [
-                {
-                  name: "Tool Review",
-                  href: "/guides/tool-review",
-                  description: "Evaluate tools by real workflows, limits, and ongoing cost.",
-                },
-                {
-                  name: "Methodology",
-                  href: "/guides/methodology",
-                  description: "How regional prices, currencies, and dates are verified.",
-                },
-                {
-                  name: "Data Sources & Methodology",
-                  href: "/data-sources",
-                  description: "How regional prices, FX rates, and verification rules work.",
-                },
-              ]
-            : [
-                {
-                  name: "工具测评",
-                  href: "/guides/tool-review",
-                  description: "按真实任务、能力边界与持续成本判断订阅价值。",
-                },
-                {
-                  name: "方法论",
-                  href: "/guides/methodology",
-                  description: "了解套餐匹配、样本一致性与四种日期口径。",
-                },
-                {
-                  name: "数据来源与口径",
-                  href: "/data-sources",
-                  description: "了解价格采集来源、汇率基准与核验标准。",
-                },
-              ];
+          const requiredGuideChildren = guideExtrasByLocale[unifiedCanvasLocale];
           const existingChildren = item.children && item.children.length > 0
             ? item.children
             : (fallbackNavItemsByLocale[currentLocaleCode].find((f) => f.href === "/guides")?.children ?? []);
@@ -631,17 +713,18 @@ export default function Header({
           };
         })
     : rawBaseNavItems;
-  const discoveryItems: NavItem[] = (currentLocaleCode === "zh" || currentLocaleCode === "en")
+  const discoveryLabels = discoveryLabelsByLocale[unifiedCanvasLocale];
+  const discoveryItems: NavItem[] = isUnifiedPublicLocale(currentLocaleCode)
     && pathname !== "/zh/ai-pricing/chatgpt/plus" ? [
-      { href: "/countries", name: currentLocaleCode === "zh" ? "国家价格" : "Countries", match: ["/countries"] },
-      { href: "/price-history", name: currentLocaleCode === "zh" ? "价格历史" : "Price history", match: ["/price-history"] },
+      { href: "/countries", name: discoveryLabels.countries, match: ["/countries"] },
+      { href: "/price-history", name: discoveryLabels.history, match: ["/price-history"] },
     ].filter(item => !baseNavItems.some(existing => stripSiteLocale(existing.href) === item.href)) : [];
   const gamePath = "/games";
-  const gameEntry: NavItem[] = showGameNavigation && currentLocaleCode === "zh" && unified
+  const gameEntry: NavItem[] = showGameNavigation && isUnifiedPublicLocale(currentLocaleCode) && unified
     && !baseNavItems.some(item => !item.external && normalizePath(stripSiteLocale(item.href)) === gamePath)
-    ? [{ name: "游戏比价", href: gamePath }] : [];
+    ? [{ name: discoveryLabels.games, href: gamePath, match: ["/games"] }] : [];
   const guidesIndex = baseNavItems.findIndex(item => stripSiteLocale(item.href) === "/guides");
-  const insertIndex = (currentLocaleCode === "zh" || currentLocaleCode === "en") && unified && guidesIndex >= 0 ? guidesIndex : 2;
+  const insertIndex = isUnifiedPublicLocale(currentLocaleCode) && unified && guidesIndex >= 0 ? guidesIndex : 2;
   const navItems = [...baseNavItems.slice(0, insertIndex), ...gameEntry, ...discoveryItems, ...baseNavItems.slice(insertIndex)];
 
   const activeItemName = navItems.find((item) => isNavItemActive(item, pathname))?.name || "";
@@ -688,7 +771,7 @@ export default function Header({
     };
   }, []);
 
-  if (unified) return <PublicHeader items={navItems} active={activeItemName} pathname={pathname} languages={availableLanguages} locale={currentLocaleCode === "en" ? "en" : "zh"} />;
+  if (unified) return <PublicHeader items={navItems} active={activeItemName} pathname={pathname} languages={availableLanguages} locale={unifiedCanvasLocale} />;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-white/85 shadow-sm shadow-zinc-950/[0.03] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/85">
@@ -948,7 +1031,7 @@ export default function Header({
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            {languages.map((language) => {
+            {availableLanguages.map((language) => {
               const active = language.code === currentLocaleCode;
 
               return (

@@ -2,7 +2,7 @@ import Link from "next/link";
 import PublicIcon from "./PublicIcon";
 import HomepageProductMark from "./HomepageProductMark";
 import { formatPublicDate } from "../lib/public-date";
-import { getChinesePlanDisplayName, getPlanDisplayName } from "../lib/pricing-labels";
+import { getCanvasPlanDisplayName } from "../lib/homepage-display";
 import { getLocalizedRegionName } from "../lib/locale-format";
 import { canvasUiCopy, type CanvasLocale } from "../lib/canvas-ui-copy";
 import type { HomepagePriceChange } from "../lib/homepage-price-changes";
@@ -27,10 +27,7 @@ export default function HomepageRecentChanges({
       <ul className="gs-home-change-list">
         {events.map((event) => {
           const date = formatPublicDate(event.observedAt, new Date(), locale);
-          const label =
-            locale === "en"
-              ? getPlanDisplayName(event.productName, event.planName)
-              : getChinesePlanDisplayName(event.productName, event.planName);
+          const label = getCanvasPlanDisplayName(event.productName, event.planName, locale);
           const increase = event.direction === "increase";
           const country = getLocalizedRegionName(event.countryCode, locale) ?? event.countryCode;
           return (

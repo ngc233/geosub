@@ -16,7 +16,7 @@ const fixture: Row[] = [
   { productSlug: "fictional-ai", category: "ai" },
   { productSlug: "fictional-streaming", category: "streaming" },
 ];
-async function render(locale: "zh" | "en", unavailable: string[] = [], empty: string[] = []) {
+async function render(locale: "zh" | "en" | "zh-tw" | "ja" | "ko" | "es", unavailable: string[] = [], empty: string[] = []) {
   const calls: string[] = [];
   const mod = { exports: {} as { CountryIndexPage: (props: { locale: string }) => Promise<ReactNode> } };
   const compile = (file: string) => ts.transpileModule(readFileSync(new URL(file, import.meta.url), "utf8"), {
@@ -88,4 +88,14 @@ test("English uses the unified country directory canvas with localized English c
   assert.equal((html.match(/class="gs-country-index-card"/g) || []).length, 4);
   assert.match(texts(html), /2 products · 3 plans · AI 2 \/ Streaming 1/);
   assert.match(texts(html), /Scope: verified monthly App Store plans\./);
+});
+test("zh-tw, ja, ko and es render localized unified country directory canvas and locale-prefixed links", async () => {
+  for (const locale of ["zh-tw", "ja", "ko", "es"] as const) {
+    const { html } = await render(locale);
+    assert.match(html, /gs-public-unified gs-country-index/);
+    assert.deepEqual([...html.matchAll(/href="([^"]+)"/g)].map(m => m[1]), [
+      ...priorityCountries.map(c => `/${locale}/countries/${c.slug}`),
+    ]);
+    assert.equal((html.match(/class="gs-country-index-card"/g) || []).length, 4);
+  }
 });

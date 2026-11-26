@@ -55,6 +55,8 @@ function compactTaxLabel(tax: string | undefined, locale: CanvasLocale) {
     !normalized ||
     normalized === "以结算页为准" ||
     normalized === "App Store 标价，税费以结算页为准" ||
+    normalized === "以結帳頁為準" ||
+    normalized === "App Store 標價，稅費以結帳頁為準" ||
     /^subject to checkout\.?$/i.test(normalized) ||
     /^app store list price[,;·—-]?\s*tax(?:es)? (?:at|depend on|subject to) checkout\.?$/i.test(normalized)
   ) {
@@ -63,10 +65,23 @@ function compactTaxLabel(tax: string | undefined, locale: CanvasLocale) {
   if (locale === "zh") {
     return normalized.replace(/^App Store 标价，/u, "");
   }
+  if (locale === "zh-tw") {
+    return normalized.replace(/^App Store [標标][價价]，/u, "");
+  }
   const stripped = normalized
     .replace(/^App Store list price[,;·—-]\s*/i, "")
     .replace(/\.$/, "");
-  if (/^sales tax varies by state$/i.test(stripped)) return "Varies by state";
+  if (/^sales tax varies by state$/i.test(stripped)) {
+    const variesByState: Record<CanvasLocale, string> = {
+      zh: "因州而异",
+      "zh-tw": "依各州而異",
+      en: "Varies by state",
+      ja: "州により異なる",
+      ko: "주별로 상이",
+      es: "Varía según el estado",
+    };
+    return variesByState[locale];
+  }
   if (/^taxes? depend on checkout$/i.test(stripped)) return copy.plan.taxAtCheckout;
   return stripped.charAt(0).toUpperCase() + stripped.slice(1);
 }

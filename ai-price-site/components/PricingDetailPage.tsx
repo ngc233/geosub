@@ -26,7 +26,9 @@ import ProductPlanOverview from "./ProductPlanOverview";
 import ProductCanvasOverview from "./ProductCanvasOverview";
 import PlanCanvasPage from "./PlanCanvasPage";
 import { usesPlanCanvas } from "../lib/plan-canvas";
-import { englishPlanCanvasPath } from "../lib/public-style-rollout";
+import { englishPlanCanvasPath, isUnifiedPublicLocale } from "../lib/public-style-rollout";
+import { resolveCanvasLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
+import { getPublicCountryHref } from "../lib/country-route-catalog";
 import PlanDecisionGuidance from "./PlanDecisionGuidance";
 import PlanTabs from "./PlanTabs";
 import MobileProductSwitcher from "./MobileProductSwitcher";
@@ -974,22 +976,92 @@ export async function getPricingDetailMetadata({
   };
 }
 
+const countryAnalysisCopyByLocale: Record<
+  CanvasLocale,
+  {
+    title: string;
+    description: string;
+    action: string;
+    badge: (count: number) => string;
+    cardSub: (country: string) => string;
+    cardTitle: (productName: string, country: string) => string;
+  }
+> = {
+  zh: {
+    title: "地区价格分析",
+    description:
+      "查看已经完成价格与来源复核的重点地区，了解本币变化、套餐结构和购买前需要确认的条件。",
+    action: "查看完整分析",
+    badge: (count) => `重点核验专页 · ${count} 个地区`,
+    cardSub: (country) => `${country} · 本币调价、套餐结构与订阅条件复核`,
+    cardTitle: (productName, country) => `${productName} ${country}价格分析`,
+  },
+  "zh-tw": {
+    title: "地區價格分析",
+    description:
+      "查看已完成價格與來源複核的重點地區，了解當地標價變動、方案結構與訂閱前需確認的條件。",
+    action: "查看完整分析",
+    badge: (count) => `重點核驗專頁 · ${count} 個地區`,
+    cardSub: (country) => `${country} · 當地標價變動、方案結構與訂閱條件複核`,
+    cardTitle: (productName, country) => `${productName} ${country}訂閱價格分析`,
+  },
+  en: {
+    title: "Regional price analysis",
+    description:
+      "Explore reviewed regional pages covering local-price changes, plan structure and conditions to confirm before subscribing.",
+    action: "Read the full analysis",
+    badge: (count) => `Reviewed hubs · ${count} ${count === 1 ? "region" : "regions"}`,
+    cardSub: (country) => `${country} · Local-price changes, plan tiers & billing review`,
+    cardTitle: (productName, country) => `${productName} ${country} price analysis`,
+  },
+  ja: {
+    title: "地域別価格の深掘り分析",
+    description:
+      "価格と出典を検証済みの主要地域ハブで、現地価格の改定、プラン構成、契約前に確認すべき条件を確認できます。",
+    action: "詳細を見る",
+    badge: (count) => `重点検証ハブ · ${count} 地域`,
+    cardSub: (country) => `${country} · 現地価格の推移・プラン構成・契約条件の確認`,
+    cardTitle: (productName, country) => `${productName}（${country}）のサブスク価格比較`,
+  },
+  ko: {
+    title: "국가별 가격 심층 분석",
+    description:
+      "가격과 출처가 검증된 주요 국가 허브에서 현지 정가 변동, 요금제 구조 및 구독 전 유의사항을 확인하세요.",
+    action: "전체 분석 보기",
+    badge: (count) => `중점 검증 허브 · ${count}개 지역`,
+    cardSub: (country) => `${country} · 현지 가격 변동·요금제 구성·결제 조건 검토`,
+    cardTitle: (productName, country) => `${productName} ${country} 구독 가격 비교`,
+  },
+  es: {
+    title: "Análisis regional de precios",
+    description:
+      "Explora páginas regionales revisadas con cambios en moneda local, estructura de planes y condiciones previas a la suscripción.",
+    action: "Ver análisis completo",
+    badge: (count) => `Centros verificados · ${count} ${count === 1 ? "región" : "regiones"}`,
+    cardSub: (country) => `${country} · Cambios en moneda local, planes y condiciones`,
+    cardTitle: (productName, country) => `Precios de ${productName} en ${country}`,
+  },
+};
+
 function CountryAnalysisLinks({
   locale,
   productSlug,
+  productName,
   category,
   concise = false,
   canvas = false,
 }: {
   locale: SiteLocale;
   productSlug: string;
+  productName?: string;
   category: "ai" | "streaming";
   concise?: boolean;
   canvas?: boolean;
 }) {
-  if (locale !== "zh" && locale !== "en") return null;
+  if (!isUnifiedPublicLocale(locale)) return null;
+  if (!canvas && locale !== "zh" && locale !== "en") return null;
 
-  const pilotLocale: CountryPagePilotLocale = locale;
+  const canvasLocale = resolveCanvasLocale(locale);
   const pilots = getIndexApprovedCountryPagePilots().filter(
     (pilot) =>
       pilot.productSlug === productSlug && pilot.category === category,
@@ -997,67 +1069,62 @@ function CountryAnalysisLinks({
 
   if (pilots.length === 0) return null;
 
-  const copy = locale === "zh"
-    ? {
-        title: "地区价格分析",
-        description:
-          "查看已经完成价格与来源复核的重点地区，了解本币变化、套餐结构和购买前需要确认的条件。",
-        action: "查看完整分析",
-      }
-    : {
-        title: "Regional price analysis",
-        description:
-          "Explore reviewed regional pages covering local-price changes, plan structure and conditions to confirm before subscribing.",
-        action: "Read the full analysis",
-      };
+  const copy = countryAnalysisCopyByLocale[canvasLocale];
 
   if (canvas) {
     return (
       <section className="gs-canvas-pilots" aria-label={copy.title}>
         <div className="gs-canvas-section-head">
           <h2>{copy.title}</h2>
-          <span>
-            {locale === "zh"
-              ? `重点核验专页 · ${pilots.length} 个地区`
-              : `Reviewed hubs · ${pilots.length} ${pilots.length === 1 ? "region" : "regions"}`}
-          </span>
+          <span>{copy.badge(pilots.length)}</span>
         </div>
         <div
           className="gs-canvas-pilot-grid"
           data-single={pilots.length === 1 ? "true" : undefined}
         >
-          {pilots.map((pilot) => (
-            <TrackedLink
-              key={`${pilot.productSlug}-${pilot.countryCode}`}
-              href={getCountryPagePilotPath(pilot, pilotLocale)}
-              eventKey="click_country"
-              eventName="Open regional price analysis"
-              buttonKey={`${pilot.productSlug}:${pilot.countryCode}`}
-              countryId={pilot.countryCode}
-              placement="product_country_analysis"
-              className="gs-canvas-pilot-card"
-            >
-              <span className="gs-canvas-pilot-main">
-                <StaticCountryFlag code={pilot.countryCode} />
-                <span className="gs-canvas-pilot-copy">
-                  <strong>{pilot.title[pilotLocale]}</strong>
-                  <small>
-                    {locale === "zh"
-                      ? `${pilot.countryName[pilotLocale]} · 本币调价、套餐结构与订阅条件复核`
-                      : `${pilot.countryName[pilotLocale]} · Local-price changes, plan tiers & billing review`}
-                  </small>
+          {pilots.map((pilot) => {
+            const isBilingualPilot = locale === "zh" || locale === "en";
+            const pilotLocale: CountryPagePilotLocale = locale === "en" ? "en" : "zh";
+            const href = isBilingualPilot
+              ? getCountryPagePilotPath(pilot, pilotLocale)
+              : getPublicCountryHref(pilot.countryCode, canvasLocale) ?? `/${canvasLocale}/countries`;
+            const countryLabel = isBilingualPilot
+              ? pilot.countryName[pilotLocale]
+              : getLocalizedRegionName(pilot.countryCode, canvasLocale) ?? pilot.countryName.en;
+            const cardTitle = isBilingualPilot
+              ? pilot.title[pilotLocale]
+              : copy.cardTitle(productName ?? pilot.productSlug, countryLabel);
+            return (
+              <TrackedLink
+                key={`${pilot.productSlug}-${pilot.countryCode}`}
+                href={href}
+                eventKey="click_country"
+                eventName="Open regional price analysis"
+                buttonKey={`${pilot.productSlug}:${pilot.countryCode}`}
+                countryId={pilot.countryCode}
+                placement="product_country_analysis"
+                className="gs-canvas-pilot-card"
+              >
+                <span className="gs-canvas-pilot-main">
+                  <StaticCountryFlag code={pilot.countryCode} />
+                  <span className="gs-canvas-pilot-copy">
+                    <strong>{cardTitle}</strong>
+                    <small>{copy.cardSub(countryLabel)}</small>
+                  </span>
                 </span>
-              </span>
-              <span className="gs-canvas-pilot-action">
-                {copy.action}
-                <PublicIcon name="ArrowRight" size={16} />
-              </span>
-            </TrackedLink>
-          ))}
+                <span className="gs-canvas-pilot-action">
+                  {copy.action}
+                  <PublicIcon name="ArrowRight" size={16} />
+                </span>
+              </TrackedLink>
+            );
+          })}
         </div>
       </section>
     );
   }
+
+  const legacyPilotLocale: CountryPagePilotLocale = locale === "en" ? "en" : "zh";
 
   return (
     <section className="border-y border-zinc-200 py-6 dark:border-zinc-800">
@@ -1073,7 +1140,7 @@ function CountryAnalysisLinks({
         {pilots.map((pilot) => (
           <TrackedLink
             key={`${pilot.productSlug}-${pilot.countryCode}`}
-            href={getCountryPagePilotPath(pilot, pilotLocale)}
+            href={getCountryPagePilotPath(pilot, legacyPilotLocale)}
             eventKey="click_country"
             eventName="Open regional price analysis"
             buttonKey={`${pilot.productSlug}:${pilot.countryCode}`}
@@ -1083,10 +1150,10 @@ function CountryAnalysisLinks({
           >
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-zinc-950 dark:text-white">
-                {pilot.title[pilotLocale]}
+                {pilot.title[legacyPilotLocale]}
               </span>
               <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
-                {concise ? copy.action : `${pilot.countryName[pilotLocale]} · ${copy.action}`}
+                {concise ? copy.action : `${pilot.countryName[legacyPilotLocale]} · ${copy.action}`}
               </span>
             </span>
             <ArrowRight
@@ -1210,8 +1277,9 @@ export default async function PricingDetailPage({
       stats: null,
     });
 
-    if (locale === "zh" || locale === "en") {
-      return <ProductCanvasOverview locale={locale} product={product} title={pageTitle} description={pageDescription}
+    if (isUnifiedPublicLocale(locale)) {
+      const canvasLocale = resolveCanvasLocale(locale);
+      return <ProductCanvasOverview locale={canvasLocale} product={product} title={pageTitle} description={pageDescription}
         basePath={detailBasePath} backLabel={pageCopy.backToPricing} rates={await getCachedPublicExchangeRates()}
         contentAttributes={{ "data-content-facts-hash": rendered?.factsHash, "data-content-kind": managed ? "managed" : "fallback",
           "data-content-mode-generation": revision?.modeGeneration, "data-content-version": contentPreview !== undefined ? "preview" : revision?.version || "baseline" }}
@@ -1221,7 +1289,7 @@ export default async function PricingDetailPage({
         navigation={<><ProductSidebar products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/>
           <MobileProductSwitcher products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/></>}>
         {managed ? <OverviewEditorialSections content={managed} locale={locale}/> : null}
-        <CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category} canvas/>
+        <CountryAnalysisLinks locale={locale} productSlug={product.slug} productName={product.name} category={product.category} canvas/>
         {overviewFaqs.length > 0 ? <FaqSection title={pageCopy.faqTitle} faqs={overviewFaqs} managed={Boolean(managed)} canvas/> : null}
       </ProductCanvasOverview>;
     }
@@ -1462,14 +1530,14 @@ export default async function PricingDetailPage({
   const englishCanvas = canonicalDetailPath === englishPlanCanvasPath;
 
   if (usesPlanCanvas(locale, canonicalDetailPath)) {
-    return <PlanCanvasPage locale={locale === "en" ? "en" : "zh"} product={product} plan={contentPlan} title={pageTitle} description={heroDescription}
+    return <PlanCanvasPage locale={resolveCanvasLocale(locale)} product={product} plan={contentPlan} title={pageTitle} description={heroDescription}
       rates={exchangeRates} incomes={affordability.rows} basePath={detailBasePath} backLabel={pageCopy.backToPricing}
       schema={<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}/>}
       eligibility={eligibility ? <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={[contentPlan]}/> : null}
       reference={<>{product.officialUrl && <TrackedLink href={product.officialUrl} eventKey="click_official" eventName="Open official website" buttonKey={product.slug} placement="product_hero" target="_blank" rel="noreferrer">{pageCopy.visitOfficial}</TrackedLink>}
         <TrackedLink href={`/reports/${locale}/${product.slug}-global-pricing.pdf`} eventKey="download_price_report" eventName="Download global pricing report" buttonKey={product.slug} placement="product_hero" download={`${product.slug}-${locale}-global-pricing.pdf`}>{reportDownloadLabel[locale]}</TrackedLink></>}
       editorial={editorialContent ? { content: editorialContent, billing: billingContent } : null}
-      pilots={<CountryAnalysisLinks locale={locale} productSlug={product.slug} category={product.category} canvas/>}
+      pilots={<CountryAnalysisLinks locale={locale} productSlug={product.slug} productName={product.name} category={product.category} canvas/>}
       faq={effectiveFaqs.length > 0 ? <FaqSection title={pageCopy.faqTitle} faqs={effectiveFaqs} canvas defaultOpenIndex={editorialContent ? (searchIntentCopy?.faqs.length ?? 0) : 0}/> : null}
       navigation={<><ProductSidebar products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/><MobileProductSwitcher products={sidebarProducts} currentSlug={product.slug} basePath={detailBasePath} locale={locale}/></>}
     />;

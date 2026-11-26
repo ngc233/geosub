@@ -54,4 +54,14 @@ test("metadata follows the same page coverage, localizes the country and links o
     assert.deepEqual(meta.robots, { index: false, follow: true });
     assert.equal(meta.alternates?.languages, undefined);
   }
+  for (const loc of ["zh-tw", "ja", "ko", "es"] as const) {
+    const dirMeta = await getCountryHubMetadata(loc, null, readRows, false);
+    const hubMeta = await getCountryHubMetadata(loc, "japan", readRows, false);
+    assert.deepEqual(dirMeta.robots, { index: false, follow: true });
+    assert.deepEqual(dirMeta.alternates, { canonical: `/${loc}/countries` });
+    assert.doesNotMatch(String(dirMeta.title), /GeoSub/);
+    assert.deepEqual(hubMeta.robots, { index: false, follow: true });
+    assert.deepEqual(hubMeta.alternates, { canonical: `/${loc}/countries/japan` });
+    assert.doesNotMatch(String(hubMeta.title), /GeoSub/);
+  }
 });

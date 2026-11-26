@@ -32,17 +32,65 @@ import {
 import { readGta6OfferSummary } from "../lib/read-game-offers";
 import { isGta6NavigationPublished } from "../lib/site-navigation";
 import { getLocalizedRegionName } from "../lib/locale-format";
-import { canvasIntlLocale, canvasUiCopy, type CanvasLocale } from "../lib/canvas-ui-copy";
+import {
+  canvasIntlLocale,
+  canvasUiCopy,
+  isDatePrefixLocale,
+  type CanvasLocale,
+} from "../lib/canvas-ui-copy";
+
+function countryMedianSrText(median: number, locale: CanvasLocale): string {
+  const pct = savingsPercent(median);
+  switch (locale) {
+    case "en":
+      return median > 0
+        ? `Median savings: ${pct}% cheaper than US`
+        : median === 0
+          ? "Median price matches the US baseline"
+          : `Median price is ${pct}% higher than US`;
+    case "zh-tw":
+      return median > 0
+        ? `一半的訂閱比美國便宜約 ${pct}%`
+        : median === 0
+          ? "訂閱價格的中位水準與美國相同"
+          : `節省率中位數為負：${savingsLabel(median, "zh-tw")}`;
+    case "ja":
+      return median > 0
+        ? `節約率の中央値：米国より ${pct}% 安い`
+        : median === 0
+          ? "価格の中央値は米国基準と同額"
+          : `価格の中央値は米国より ${pct}% 高い`;
+    case "ko":
+      return median > 0
+        ? `절약률 중앙값: 미국보다 ${pct}% 저렴`
+        : median === 0
+          ? "가격 중앙값이 미국 기준과 동일"
+          : `가격 중앙값이 미국보다 ${pct}% 비쌈`;
+    case "es":
+      return median > 0
+        ? `Ahorro mediano: ${pct}% más barato que EE. UU.`
+        : median === 0
+          ? "El precio mediano coincide con EE. UU."
+          : `El precio mediano es un ${pct}% más caro que EE. UU.`;
+    case "zh":
+    default:
+      return median > 0
+        ? `一半的订阅${savingsLabel(median).replace("低 ", "便宜约 ")}`
+        : median === 0
+          ? "订阅价格的中位水平与美国相同"
+          : `节省率中位数为负：${savingsLabel(median)}`;
+  }
+}
 
 export default async function UnifiedHomepageCanvas({ locale }: { locale: CanvasLocale }) {
-  const includeGames = locale === "zh";
+  const includeGames = true;
   const [data, guides, changes, gameOffers, showGameCategory] = await Promise.all([
     Promise.all([
       loadComparablePrices(),
       loadHomepageRepresentatives(),
       isHomepageFixtureEnabled() ? Promise.resolve(fictionalHomepageSource()) : loadVerifiedPriceSource(),
     ]).catch(homepageDataFailure),
-    loadCoreGuideHubStates(locale),
+    loadCoreGuideHubStates(locale as Parameters<typeof loadCoreGuideHubStates>[0]),
     isHomepageFixtureEnabled()
       ? Promise.resolve(homepagePriceChanges(fictionalPriceHistoryRecords(), new Date(), false, locale))
       : loadHomepagePriceChanges(),
@@ -121,7 +169,7 @@ export default async function UnifiedHomepageCanvas({ locale }: { locale: Canvas
               </span>
               {updated && (
                 <span>
-                  {locale === "en" ? (
+                  {isDatePrefixLocale(locale) ? (
                     <>
                       {ui.home.statsUpdatedSuffix} <time dateTime={updated.dateTime}>{updated.text}</time>
                     </>
@@ -143,7 +191,7 @@ export default async function UnifiedHomepageCanvas({ locale }: { locale: Canvas
           rates={homepageDisplayRates(data?.[2].rates ?? {})}
           map={homepageMap}
           recentChanges={changes.length ? <HomepageRecentChanges events={changes} locale={locale} /> : null}
-          gameCategoryHref={includeGames && showGameCategory ? "/zh/games" : undefined}
+          gameCategoryHref={includeGames && showGameCategory ? `/${locale}/games` : undefined}
           gameSavings={includeGames ? gameOffers.savings : null}
         />
 
@@ -161,18 +209,7 @@ export default async function UnifiedHomepageCanvas({ locale }: { locale: Canvas
             <div className="gs-home-countries">
               {countries.slice(0, 6).map((country) => {
                 const name = getLocalizedRegionName(country.code, locale) ?? country.code;
-                const srText =
-                  locale === "en"
-                    ? country.median > 0
-                      ? `Median savings: ${savingsPercent(country.median)}% cheaper than US`
-                      : country.median === 0
-                        ? "Median price matches the US baseline"
-                        : `Median price is ${savingsPercent(country.median)}% higher than US`
-                    : country.median > 0
-                      ? `一半的订阅${savingsLabel(country.median).replace("低 ", "便宜约 ")}`
-                      : country.median === 0
-                        ? "订阅价格的中位水平与美国相同"
-                        : `节省率中位数为负：${savingsLabel(country.median)}`;
+                const srText = countryMedianSrText(country.median, locale);
                 const body = (
                   <>
                     <span className="gs-home-country-code" aria-hidden="true">
@@ -211,7 +248,10 @@ export default async function UnifiedHomepageCanvas({ locale }: { locale: Canvas
             <h2 id="home-guides">{ui.home.guidesHeading}</h2>
             <div className="gs-home-guides">
               {articles.map((slug) => {
-                const guide = getCoreGuideDefinition(locale, slug);
+                const guide = getCoreGuideDefinition(
+                  locale as Parameters<typeof getCoreGuideDefinition>[0],
+                  slug,
+                );
                 return (
                   <Link key={slug} href={`/${locale}/guides/${slug}`} className="gs-home-card" data-gs-motion-card>
                     <span className="gs-home-guide-category">{guide.eyebrow}</span>

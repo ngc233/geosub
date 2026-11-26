@@ -1,4 +1,6 @@
 import { getChinesePlanDisplayName } from "../../../lib/pricing-labels";
+import { type CanvasLocale } from "../../../lib/canvas-ui-copy";
+import { isUnifiedPublicLocale } from "../../../lib/public-style-rollout";
 import { retiredGuideSlugs } from "../../../lib/public-launch-routes";
 import { getPublicPricingProduct } from "../../../lib/pricing-product-store";
 import { loadCountryHub } from "../../../lib/cached-country-hub";
@@ -202,18 +204,61 @@ function getPlanResultTitle(productName: string, planName: string) {
     : `${productName} ${planName}`;
 }
 
+const searchLowestTagByLocale: Record<CanvasLocale, string> = {
+  zh: "最低",
+  "zh-tw": "最低",
+  en: "Lowest",
+  ja: "最安",
+  ko: "최저",
+  es: "Mínimo",
+};
+
+const searchStoreFallbackByLocale: Record<CanvasLocale, string> = {
+  zh: "官方商店",
+  "zh-tw": "官方商店",
+  en: "Official store",
+  ja: "公式ストア",
+  ko: "공식 스토어",
+  es: "Tienda oficial",
+};
+
+const searchEditionByLocale: Record<CanvasLocale, Record<string, string>> = {
+  zh: { standard: "标准版", ultimate: "终极版", ps5: "PS5", xbox: "Xbox", pc: "PC" },
+  "zh-tw": { standard: "標準版", ultimate: "終極版", ps5: "PS5", xbox: "Xbox", pc: "PC" },
+  en: { standard: "Standard", ultimate: "Ultimate", ps5: "PS5", xbox: "Xbox", pc: "PC" },
+  ja: { standard: "通常版", ultimate: "アルティメット版", ps5: "PS5", xbox: "Xbox", pc: "PC" },
+  ko: { standard: "스탠다드 에디션", ultimate: "얼티밋 에디션", ps5: "PS5", xbox: "Xbox", pc: "PC" },
+  es: { standard: "Edición Estándar", ultimate: "Edición Definitiva", ps5: "PS5", xbox: "Xbox", pc: "PC" },
+};
+
+function formatCountryFromPlanSubtitle(locale: CanvasLocale, planText: string) {
+  switch (locale) {
+    case "zh":
+    case "zh-tw":
+      return `${planText} 起`;
+    case "ja":
+      return `${planText} から`;
+    case "ko":
+      return `${planText}부터`;
+    case "es":
+      return `Desde ${planText}`;
+    case "en":
+    default:
+      return `From ${planText}`;
+  }
+}
+
 async function buildChromeSearchIndexUncached(
-  locale: "zh" | "en",
+  locale: CanvasLocale,
 ): Promise<ChromeSearchIndexPayload> {
   const normalizedLocale = normalizeSiteLocale(locale);
+  const lowestTag = searchLowestTagByLocale[locale];
   const [products, controlledAliases, clickedSlugs, countryHubs, gameCatalog] = await Promise.all([
     getPublishedSearchProducts(),
     getChromeSearchAliases(locale),
     getTopClickedProductSlugs(locale),
     Promise.allSettled(priorityCountries.map((country) => loadCountryHub(country.code))),
-    locale === "zh"
-      ? readPublishedGameCatalog().catch(() => ({ games: [] }))
-      : Promise.resolve({ games: [] }),
+    readPublishedGameCatalog(locale).catch(() => ({ games: [] })),
   ]);
 
   const productAliasesById = new Map<string, string[]>();
@@ -246,7 +291,7 @@ async function buildChromeSearchIndexUncached(
         id: `product:${product.id}`,
         kind: "product",
         title: product.name,
-        subtitle: `${planLabel(detail.name, prodMin.plan)} · ${locale === "zh" ? "最低" : "Lowest"} · ${prodMin.country}`,
+        subtitle: `${planLabel(detail.name, prodMin.plan)} · ${lowestTag} · ${prodMin.country}`,
         href: getPricingDetailPath(normalizedLocale, category, product.slug),
         minimumUsd: prodMin.usd,
         cycle: prodMin.cycle,
@@ -273,7 +318,7 @@ async function buildChromeSearchIndexUncached(
         id: `plan:${plan.id}`,
         kind: "plan",
         title: planLabel(detail.name, planMin.plan),
-        subtitle: `${planLabel(detail.name, planMin.plan)} · ${locale === "zh" ? "最低" : "Lowest"} · ${planMin.country}`,
+        subtitle: `${planLabel(detail.name, planMin.plan)} · ${lowestTag} · ${planMin.country}`,
         href: getPricingPlanPath(normalizedLocale, category, product.slug, plan.slug),
         minimumUsd: planMin.usd,
         cycle: planMin.cycle,
@@ -291,20 +336,27 @@ async function buildChromeSearchIndexUncached(
     }
   }
 
+  const editionMap = searchEditionByLocale[locale];
   for (const game of gameCatalog.games) {
     if (!game.bestVariant || game.bestVariant.lowestUsd === null || seenProductSlugs.has(game.slug)) {
       continue;
     }
     seenProductSlugs.add(game.slug);
     const lowestCountry = game.bestVariant.lowestMarket
-      ? getGameMarketName(game.bestVariant.lowestMarket)
-      : "官方商店";
+      ? getLocalizedRegionName(game.bestVariant.lowestMarket, locale) ?? getGameMarketName(game.bestVariant.lowestMarket)
+      : searchStoreFallbackByLocale[locale];
+    const gameTitle =
+      locale === "zh" || locale === "zh-tw"
+        ? game.meta.title
+        : game.meta.englishTitle || game.meta.title;
+    const platText = editionMap[game.bestVariant.platform] ?? gameNames[game.bestVariant.platform];
+    const edText = editionMap[game.bestVariant.edition] ?? gameNames[game.bestVariant.edition];
     entries.push({
       id: `product:${game.id}`,
       kind: "product",
-      title: game.meta.title,
-      subtitle: `${gameNames[game.bestVariant.platform]} ${gameNames[game.bestVariant.edition]} · 最低 · ${lowestCountry}`,
-      href: `/zh/games/${game.slug}`,
+      title: gameTitle,
+      subtitle: `${platText} ${edText} · ${lowestTag} · ${lowestCountry}`,
+      href: `/${locale}/games/${game.slug}`,
       minimumUsd: game.bestVariant.lowestUsd,
       logoSlug: game.slug,
       terms: [
@@ -341,7 +393,7 @@ async function buildChromeSearchIndexUncached(
         id: `product:fixture-${slug}`,
         kind: "product",
         title: cheapest.productName,
-        subtitle: `${planLabel(cheapest.productName, cheapest.planName)} · ${locale === "zh" ? "最低" : "Lowest"} · ${minCountry}`,
+        subtitle: `${planLabel(cheapest.productName, cheapest.planName)} · ${lowestTag} · ${minCountry}`,
         href,
         minimumUsd: cheapest.amount,
         cycle: "monthly",
@@ -356,19 +408,21 @@ async function buildChromeSearchIndexUncached(
     if (hub.status !== "fulfilled") return;
     const minimum = minimumCountrySearchPrice(hub.value);
     if (!minimum) return;
+    const localizedCountryTitle = getLocalizedRegionName(country.code, locale) ?? country.en;
+    const planText =
+      locale === "zh"
+        ? planLabel(minimum.productName, minimum.planName)
+        : `${minimum.productName} ${minimum.planName}`;
     entries.push({
       id: `country:${country.code}`,
       kind: "country",
-      title: locale === "zh" ? country.zh : country.en,
-      subtitle:
-        locale === "zh"
-          ? `${planLabel(minimum.productName, minimum.planName)} 起`
-          : `From ${minimum.productName} ${minimum.planName}`,
+      title: localizedCountryTitle,
+      subtitle: formatCountryFromPlanSubtitle(locale, planText),
       href: `/${locale}/countries/${country.slug}`,
       minimumUsd: minimum.usd!,
       cycle: "monthly",
       countryCode: country.code,
-      terms: [country.zh, country.en, country.code, country.slug],
+      terms: [localizedCountryTitle, country.zh, country.en, country.code, country.slug],
     });
   });
 
@@ -415,7 +469,7 @@ const getCachedChromeSearchIndex = unstable_cache(
   { revalidate: 300, tags: [PUBLIC_PRICING_NAVIGATION_CACHE_TAG] },
 );
 
-async function loadChromeSearchIndex(locale: "zh" | "en"): Promise<ChromeSearchIndexPayload> {
+async function loadChromeSearchIndex(locale: CanvasLocale): Promise<ChromeSearchIndexPayload> {
   if (isHomepageFixtureEnabled()) {
     return buildChromeSearchIndexUncached(locale);
   }
@@ -451,9 +505,9 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const chrome = (locale === "zh" || locale === "en") && request.nextUrl.searchParams.get("view") === "chrome";
+  const chrome = isUnifiedPublicLocale(locale) && request.nextUrl.searchParams.get("view") === "chrome";
 
-  if (chrome && request.nextUrl.searchParams.get("index") === "1") {
+  if (chrome && isUnifiedPublicLocale(locale) && request.nextUrl.searchParams.get("index") === "1") {
     try {
       const index = await loadChromeSearchIndex(locale);
       return json(index);
@@ -471,7 +525,7 @@ export async function GET(request: NextRequest) {
     return json({ query, results: [] });
   }
 
-  if (chrome) {
+  if (chrome && isUnifiedPublicLocale(locale)) {
     try {
       const index = await loadChromeSearchIndex(locale);
       return json({
