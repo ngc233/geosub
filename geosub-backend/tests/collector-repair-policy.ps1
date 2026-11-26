@@ -103,7 +103,7 @@ Expect ($called -eq 0 -and $result.Status -eq 'skipped') 'SKU evidence-only repa
 $script:issues=@($notShown)
 . $dispatch
 Expect ($called -eq 0 -and $result.Status -eq 'skipped') 'public omission skips anomaly request without claiming closure'
-$script:issues=@(@{identity_key='review-only';country_code='US';product_slug='canva';plan_slug='pro'
+$script:issues=@(@{identity_key='review-only';country_code='US';product_slug='chatgpt';plan_slug='pro-500'
   billing_cycle='monthly';reason_code='waiting_for_more_app_store_samples';resolved=$false})
 . $dispatch
 Expect ($called -eq 0 -and $result.Status -eq 'skipped') 'current review-only registration makes no repair request'
