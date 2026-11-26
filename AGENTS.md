@@ -52,6 +52,9 @@ Every user-visible UI change must be verified, as applicable, in:
 
 Also verify keyboard focus, touch access, overflow, loading, error, empty, expanded, and reduced-motion states that the component supports. Use semantic design tokens and existing components; do not add arbitrary colors or character-based operation icons.
 
+- **Cross-locale UI parity**: All unified locales (`zh`, `en`, and future rollouts) must render from the same shared components, DOM order, spacing, and foundation stylesheets (`app/public-*.css`). Never introduce locale-gated CSS or DOM layout forks (such as `[data-gs-english]` or `:not([data-gs-english])`) that make shared chrome or page templates diverge visually across languages; parameterize copy, currency, and date formatting through typed locale dictionaries instead.
+- **Header active indicator alignment**: In desktop primary navigation (`PublicHeader` / `.gs-desktop-nav`), the active green underline (`.gs-nav-indicator` and `a[aria-current="page"]::after`) must stay anchored close beneath the navigation text (`bottom: var(--gs-space-10)` on `.gs-nav-indicator`, `bottom: calc(-1 * var(--gs-space-4))` on fallback `::after`), never detached onto the bottom border of the header (`bottom: 0`).
+
 ## Verification language
 
 Report evidence precisely:
