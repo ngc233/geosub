@@ -229,7 +229,7 @@ export async function getProductSeoQualityAudits({
         slug: product.slug,
         title: product.name,
         category: product.category,
-        path: `/${product.category === ProductCategory.STREAMING ? "zh/streaming-pricing" : "zh/ai-pricing"}/${product.slug}`,
+        path: `/${product.category === ProductCategory.STREAMING ? "zh/streaming-pricing" : product.category === ProductCategory.SOFTWARE ? "zh/software-pricing" : "zh/ai-pricing"}/${product.slug}`,
         editPath: `/admin/products/${product.id}/edit`,
         planCount: product.plans.length,
         currentPlanCount,

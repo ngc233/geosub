@@ -21,37 +21,19 @@ import type {
 import { getPricingListCopy } from "../lib/pricing-list-copy";
 import { getPricingDetailPath, getPricingListPath } from "../lib/pricing-routes";
 import { isSeoIndexableLocale } from "../lib/seo-indexing-policy";
-import { isCanvasLocale, resolveCanvasLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
 import { normalizeSiteLocale, type PreparedSiteLocale } from "../lib/site-locale";
 
-const overviewDirectoryCopy: Record<CanvasLocale, { title: string; description: string }> = {
+const overviewDirectoryCopy = {
   zh: {
     title: "按产品查看全部套餐",
     description: "进入产品总览，比较该产品已发布的全部套餐与地区价格。",
-  },
-  "zh-tw": {
-    title: "按產品查看全部方案",
-    description: "進入產品總覽，比較該產品已發布的全部方案與地區價格。",
   },
   en: {
     title: "Browse all plans by product",
     description:
       "Open a product overview to compare every published plan and its regional prices.",
   },
-  ja: {
-    title: "サービス別に全プランを見る",
-    description: "サービス概要ページを開き、公開中のすべてのプランと地域別価格を比較します。",
-  },
-  ko: {
-    title: "서비스별 전체 요금제 보기",
-    description: "서비스 개요 페이지에서 공개된 모든 요금제와 국가별 가격을 비교하세요.",
-  },
-  es: {
-    title: "Ver todos los planes por servicio",
-    description:
-      "Abre el resumen del servicio para comparar todos los planes publicados y sus precios regionales.",
-  },
-};
+} as const;
 
 type DbAiPricingClientProps = {
   products: DbPricingProduct[];
@@ -70,7 +52,7 @@ export default function DbAiPricingClient({
 }: DbAiPricingClientProps) {
   const ui = (name: string, legacy: string) => canvas ? name : legacy;
   const normalizedLocale = normalizeSiteLocale(locale);
-  const unifiedCanvas = canvas && isCanvasLocale(normalizedLocale);
+  const zhCanvas = canvas && (normalizedLocale === "zh" || normalizedLocale === "en");
   const copy = getPricingListCopy(locale);
   const tabs = useMemo(
     () => [
@@ -83,6 +65,11 @@ export default function DbAiPricingClient({
         key: "streaming" as DbPricingCategory,
         label: copy.streamingLabel,
         desc: copy.streamingDescription,
+      },
+      {
+        key: "software" as DbPricingCategory,
+        label: copy.softwareLabel,
+        desc: copy.softwareDescription,
       },
     ],
     [copy],
@@ -117,9 +104,11 @@ export default function DbAiPricingClient({
   useEffect(() => {
     if (!showCategoryHeader) return;
     const onPopState = () => {
-      const next: DbPricingCategory = window.location.pathname.includes("streaming-pricing")
-        ? "streaming"
-        : "ai";
+      const next: DbPricingCategory = window.location.pathname.includes("software-pricing")
+        ? "software"
+        : window.location.pathname.includes("streaming-pricing")
+          ? "streaming"
+          : "ai";
       if (selectedRef.current === next) return;
       selectedRef.current = next;
       setSelectedCategory(next);
@@ -137,7 +126,13 @@ export default function DbAiPricingClient({
 
   const chooseCategory = useCallback(
     (value: string) => {
-      const next = (value === "streaming" ? "streaming" : "ai") as DbPricingCategory;
+      const next = (
+        value === "streaming"
+          ? "streaming"
+          : value === "software"
+            ? "software"
+            : "ai"
+      ) as DbPricingCategory;
       if (next === activeCategory) return;
       setSelectedCategory(next);
       setSwitchCycle((cycle) => (cycle === 0 ? 1 : 0));
@@ -159,7 +154,7 @@ export default function DbAiPricingClient({
     tabs.find((tab) => tab.key === activeCategory) || tabs[0];
   const pageCopy = copy.pages[activeCategory] || copy.pages.ai;
   const directoryCopy = isSeoIndexableLocale(locale)
-    ? overviewDirectoryCopy[resolveCanvasLocale(locale)]
+    ? overviewDirectoryCopy[locale]
     : null;
 
   const filteredProducts = useMemo(
@@ -201,7 +196,7 @@ export default function DbAiPricingClient({
         </header>
       ) : null}
 
-      {!unifiedCanvas && availableTabs.length > 1 ? (
+      {!zhCanvas && availableTabs.length > 1 ? (
         <div className={ui("gs-listing-tabs", "mb-10 flex justify-center")}>
           <SegmentedControl
             ariaLabel={copy.categoryAria}
@@ -216,7 +211,7 @@ export default function DbAiPricingClient({
         </div>
       ) : null}
 
-      {!unifiedCanvas ? (
+      {!zhCanvas ? (
         <div className={ui("gs-listing-sectionhead", "mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between")}>
           <div>
             <div className={ui("", "flex flex-wrap items-center gap-3")}>
@@ -237,14 +232,14 @@ export default function DbAiPricingClient({
       ) : null}
 
       <div
-        className={unifiedCanvas ? "gs-listing-stage" : undefined}
-        data-listing-switch={unifiedCanvas && switchCycle !== null ? String(switchCycle) : undefined}
+        className={zhCanvas ? "gs-listing-stage" : undefined}
+        data-listing-switch={zhCanvas && switchCycle !== null ? String(switchCycle) : undefined}
       >
         {filteredProducts.length > 0 ? (
           <>
             {cycleGroups
               .map(({ cycle, products: cycleProducts }) => <section key={cycle} className={ui("gs-listing-cycle", "mb-8")}>
-                {!unifiedCanvas || cycleGroups.length > 1 ? (
+                {!zhCanvas || cycleGroups.length > 1 ? (
                   <h3 className={ui("", "mb-4 text-lg font-semibold text-[var(--color-text-primary)]")}>
                     {getBillingCycleLabel(cycle.toLowerCase() as ProductPlan["billing"], locale)}
                   </h3>
@@ -253,8 +248,8 @@ export default function DbAiPricingClient({
                   {cycleProducts.map((product, index) => (
                     <div
                       key={product.slug}
-                      className={unifiedCanvas ? "gs-listing-card-slot" : undefined}
-                      style={unifiedCanvas && switchCycle !== null ? ({ "--gs-stagger": `${Math.min(index, 5) * 35}ms` } as CSSProperties) : undefined}
+                      className={zhCanvas ? "gs-listing-card-slot" : undefined}
+                      style={zhCanvas && switchCycle !== null ? ({ "--gs-stagger": `${Math.min(index, 5) * 35}ms` } as CSSProperties) : undefined}
                     >
                       <DbPricingCard product={product} locale={locale} canvas={canvas} />
                     </div>
@@ -266,7 +261,7 @@ export default function DbAiPricingClient({
               <nav
                 aria-label={directoryCopy.title}
                 className={ui("gs-listing-directory", "mt-10 border-t border-zinc-200 pt-6 dark:border-zinc-800")}
-                style={unifiedCanvas && switchCycle !== null ? ({ "--gs-stagger": `${Math.min(filteredProducts.length, 4) * 35}ms` } as CSSProperties) : undefined}
+                style={zhCanvas && switchCycle !== null ? ({ "--gs-stagger": `${Math.min(filteredProducts.length, 4) * 35}ms` } as CSSProperties) : undefined}
               >
                 <h2 className={ui("", "text-base font-semibold text-zinc-950 dark:text-white")}>
                   {directoryCopy.title}
@@ -274,7 +269,7 @@ export default function DbAiPricingClient({
                 <p className={ui("", "mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400")}>
                   {directoryCopy.description}
                 </p>
-                <div className={unifiedCanvas ? "gs-listing-directory-grid" : ui("gs-listing-directory-links", "mt-4 flex flex-wrap gap-2")}>
+                <div className={zhCanvas ? "gs-listing-directory-grid" : ui("gs-listing-directory-links", "mt-4 flex flex-wrap gap-2")}>
                   {filteredProducts.map((product) => {
                     const defaultPlan = getDefaultPlan(product);
                     const regionCount = defaultPlan
@@ -291,9 +286,9 @@ export default function DbAiPricingClient({
                       <Link
                         key={`${product.slug}-overview`}
                         href={getPricingDetailPath(locale, product.category, product.slug)}
-                        className={unifiedCanvas ? "gs-listing-directory-tile" : ui("", "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-900 dark:hover:text-white")}
+                        className={zhCanvas ? "gs-listing-directory-tile" : ui("", "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-200 hover:text-zinc-950 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lime-500/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-900 dark:hover:text-white")}
                       >
-                        {unifiedCanvas ? (
+                        {zhCanvas ? (
                           <>
                             <BrandIcon
                               product={{

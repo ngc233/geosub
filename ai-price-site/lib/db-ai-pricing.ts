@@ -50,6 +50,7 @@ function isDate(value: Date | null | undefined): value is Date {
 function mapCategory(category: ProductCategory): DbPricingCategory | null {
   if (category === ProductCategory.AI) return "ai";
   if (category === ProductCategory.STREAMING) return "streaming";
+  if (category === ProductCategory.SOFTWARE) return "software";
   return null;
 }
 

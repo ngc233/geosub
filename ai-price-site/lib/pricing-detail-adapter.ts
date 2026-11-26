@@ -142,7 +142,52 @@ function getCountryName(
   return fallbackEn || fallbackZh || countryCode;
 }
 
-function formatLocalPrice(value: unknown, currency: string | null, locale: DetailLocale) {
+function getBillingSuffix(billingCycle: string | null | undefined, locale: DetailLocale) {
+  const cycle = String(billingCycle || "monthly").trim().toLowerCase();
+  if (cycle === "yearly") {
+    if (locale === "zh" || locale === "zh-tw" || locale === "ja") return "/年";
+    if (locale === "ko") return "/년";
+    if (locale === "es" || locale === "pt") return "/año";
+    if (locale === "tr") return "/yıl";
+    if (locale === "ar") return "/سنة";
+    if (locale === "fr") return "/an";
+    if (locale === "it") return "/anno";
+    if (locale === "de") return "/Jahr";
+    return "/yr";
+  }
+  if (cycle === "weekly") {
+    if (locale === "zh" || locale === "zh-tw") return "/周";
+    if (locale === "ja") return "/週";
+    if (locale === "ko") return "/주";
+    if (locale === "es" || locale === "pt") return "/sem";
+    if (locale === "tr") return "/hf";
+    if (locale === "ar") return "/أسبوع";
+    if (locale === "fr") return "/sem.";
+    if (locale === "it") return "/sett.";
+    if (locale === "de") return "/Wo.";
+    return "/wk";
+  }
+  if (cycle !== "monthly") return "";
+  return (
+    locale === "zh" || locale === "zh-tw" || locale === "ja" ? "/月"
+    : locale === "ko" ? "/월"
+    : locale === "es" ? "/mes"
+    : locale === "tr" ? "/ay"
+    : locale === "ar" ? "/شهر"
+    : locale === "fr" ? "/mois"
+    : locale === "it" ? "/mese"
+    : locale === "de" ? "/Monat"
+    : locale === "pt" ? "/mês"
+    : "/mo"
+  );
+}
+
+function formatLocalPrice(
+  value: unknown,
+  currency: string | null,
+  locale: DetailLocale,
+  billingCycle?: string | null,
+) {
   const number = toNumber(value);
 
   if (!currency || number <= 0) {
@@ -159,26 +204,16 @@ function formatLocalPrice(value: unknown, currency: string | null, locale: Detai
     return "Local price pending review";
   }
 
-  const monthlySuffix =
-    locale === "zh" || locale === "ja" ? "/月"
-    : locale === "ko" ? "/월"
-    : locale === "es" ? "/mes"
-    : locale === "tr" ? "/ay"
-    : locale === "ar" ? "/شهر"
-    : locale === "fr" ? "/mois"
-    : locale === "it" ? "/mese"
-    : locale === "de" ? "/Monat"
-    : locale === "pt" ? "/mês"
-    : "/mo";
+  const suffix = getBillingSuffix(billingCycle, locale);
 
   try {
     return `${new Intl.NumberFormat(localeMap[locale] || "en", {
       style: "currency",
       currency,
       maximumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    }).format(number)}${monthlySuffix}`;
+    }).format(number)}${suffix}`;
   } catch {
-    return `${number} ${currency}${monthlySuffix}`;
+    return `${number} ${currency}${suffix}`;
   }
 }
 
@@ -293,7 +328,7 @@ function buildProductFromRows(
       ),
       code: countryCode,
       priceUsd: toNumber(row.price_usd),
-      localPrice: formatLocalPrice(row.local_price, row.currency, locale),
+      localPrice: formatLocalPrice(row.local_price, row.currency, locale, row.billing_cycle),
       localPriceValue: toNumber(row.local_price),
       currencyCode: row.currency?.toUpperCase() || undefined,
       tax: getTaxNote({
@@ -371,7 +406,12 @@ function buildProductFromRows(
   const defaultPlan = plans[0]?.slug || "";
   return {
     slug: firstRow.product_slug,
-    category: firstRow.product_category === "streaming" ? "streaming" : "ai",
+    category:
+      firstRow.product_category === "streaming"
+        ? "streaming"
+        : firstRow.product_category === "software"
+          ? "software"
+          : "ai",
     name: firstRow.product_name,
     brand: firstRow.product_provider || firstRow.product_name,
     description:
@@ -542,7 +582,7 @@ export async function getPricingDetailProduct(
     ) pending ON TRUE
     WHERE p.slug = ${productSlug}
       AND p.status = 'published'
-      AND p.category IN ('ai'::product_category, 'streaming'::product_category)
+      AND p.category IN ('ai'::product_category, 'streaming'::product_category, 'software'::product_category)
       AND pl.status = 'published'
     ORDER BY pl.sort_order ASC, rp.price_usd ASC, rp.billing_platform ASC
   `;

@@ -12,9 +12,10 @@ import { resolveLegacyPricingPlanSlug } from "./legacy-pricing-plan-routes.ts";
 export type PricingLocale = SiteLocale;
 
 export function getPricingSection(category: string) {
-  return category.trim().toLowerCase() === "streaming"
-    ? "streaming-pricing"
-    : "ai-pricing";
+  const normalized = category.trim().toLowerCase();
+  if (normalized === "streaming") return "streaming-pricing";
+  if (normalized === "software") return "software-pricing";
+  return "ai-pricing";
 }
 
 export function getPricingListPath(locale: PricingLocale, category: string) {
@@ -54,7 +55,7 @@ export function getLegacyPricingPlanRedirectPath(
   const [locale, section, productSlug] = segments;
   if (
     !isSiteLocale(locale) ||
-    !["ai-pricing", "streaming-pricing"].includes(section) ||
+    !["ai-pricing", "streaming-pricing", "software-pricing"].includes(section) ||
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(productSlug)
   ) {
     return null;

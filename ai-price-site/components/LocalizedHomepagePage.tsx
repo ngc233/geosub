@@ -39,6 +39,7 @@ async function loadHomepageData(locale: SiteLocale) {
   try {
     const [allProducts, evidence] = await getHomepageProducts(locale);
     const compactProducts = allProducts.flatMap<HomepageProduct>((product) => {
+      if (product.category !== "ai" && product.category !== "streaming") return [];
       const plan = getDefaultPlan(product);
       if (!plan || plan.regions.length === 0) return [];
       return [{

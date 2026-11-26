@@ -152,7 +152,11 @@ export default function PlanTabs({
               plan.regions.length > 0
                 ? getPricingPlanPath(
                     locale,
-                    basePath.includes("streaming-pricing") ? "streaming" : "ai",
+                    basePath.includes("streaming-pricing")
+                      ? "streaming"
+                      : basePath.includes("software-pricing")
+                        ? "software"
+                        : "ai",
                     productSlug,
                     plan.slug,
                   )
