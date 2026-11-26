@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $tokens = $null
 $errors = $null
 $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../scripts/collect-app-store-prices.ps1'), [ref]$tokens, [ref]$errors)
@@ -22,9 +22,9 @@ foreach ($case in $cases) {
  $plan = Resolve-PlanSpec -ProductSpec $spec -ProductName $spec.name -ItemName $case[1]
  if ([string]$plan.slug -ne $case[2]) { throw "Unexpected mapping: $($case[1])" }
  if ($null -ne $plan) {
-  if ((Get-PlanPublishStatus $plan) -ne 'review') { throw 'Software plan must remain review-only' }
+  if ((Get-PlanPublishStatus $plan) -ne 'published') { throw 'Canonical software plan should be eligible for auto-review' }
   $a = Get-AppStoreObservationAnomaly -CountryCurrency USD -ObservedCurrency USD -ConvertedUsd 15 -OriginalObservedPriceText '$15.00' -PlanSpec $plan
-  if (!$a.Flag -or $a.Reason -notmatch 'manual identity') { throw 'Software observation could auto-publish' }
+  if ($a.Flag) { throw "Valid software observation should not be flagged as anomaly: $($a.Reason)" }
  }
 }
-Write-Output "PASS: $($cases.Count) software identity and review-only cases"
+Write-Output "PASS: $($cases.Count) software identity and auto-review cases"

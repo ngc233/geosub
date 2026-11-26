@@ -733,6 +733,15 @@
       "legacyChecksums": [
         "ff408048598ca60f6c84a4d73a6c3eb6701799739470739947eeac4a76adf3e3"
       ]
+    },
+    {
+      "id": "schema:063",
+      "file": "sql/schema/063_software_auto_publication_gate.sql",
+      "legacyBaseline": false,
+      "legacyFile": "sql/schema/063_software_auto_publication_gate.sql",
+      "legacyChecksums": [
+        "d2b39f482fd23b19186a7f1b71134058ac7e23d8b91f2db0d6ef8d907af6d70d"
+      ]
     }
   ],
   "backfill": [

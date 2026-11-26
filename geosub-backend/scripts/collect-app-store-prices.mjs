@@ -218,15 +218,20 @@ export function extractIapItemsFromHtml(html) {
 
 function getAppStoreUrl(countryCode, appId, configuredUrl) {
   const cc = countryCode.toLowerCase();
+  let base = `https://apps.apple.com/${cc}/app/id${appId}`;
   if (configuredUrl) {
     const normalized = /apps\.apple\.com\/[a-z]{2}\//i.test(configuredUrl)
       ? configuredUrl.replace(/apps\.apple\.com\/[a-z]{2}\//i, `apps.apple.com/${cc}/`)
       : configuredUrl.replace(/apps\.apple\.com\//i, `apps.apple.com/${cc}/`);
     if (new RegExp(`/id${appId}(\\?|$)`).test(normalized)) {
-      return normalized;
+      base = normalized;
     }
   }
-  return `https://apps.apple.com/${cc}/app/id${appId}`;
+  const url = new URL(base);
+  if (!url.searchParams.has("l")) {
+    url.searchParams.set("l", "en-US");
+  }
+  return url.toString();
 }
 
 async function fetchStorefront(countryCode, appId, configuredUrl, chromePath, userAgent) {

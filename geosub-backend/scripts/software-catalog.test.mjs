@@ -53,7 +53,7 @@ test("initial 5-product software catalog passes cross-validation against product
     assert.ok(spec, `Missing spec for ${product.slug}`);
     assert.equal(spec.exact_plan_aliases, true);
     for (const plan of spec.plans) {
-      assert.equal(plan.review_only, true, `${product.slug}/${plan.slug} must remain review_only`);
+      assert.notEqual(plan.review_only, true, `${product.slug}/${plan.slug} should allow auto-review`);
     }
   }
 });
@@ -125,22 +125,31 @@ test("scheduler dispatches software App Store jobs to collect-app-store-prices.m
   assert.match(runnerSource, /Join-Path \$PSScriptRoot "collect-app-store-prices\.ps1"/);
 });
 
-test("collect-app-store-prices.mjs parses localized prices, currencies, and review-only anomalies", () => {
+test("collect-app-store-prices.mjs parses localized prices, currencies, and outlier anomalies", () => {
   assert.equal(parsePriceNumber("$14.99"), 14.99);
   assert.equal(parsePriceNumber("₺1.919,99"), 1919.99);
   assert.equal(parsePriceNumber("₹\u00A01,199"), 1199);
   assert.equal(getObservedCurrency("£12.99", "GBP"), "GBP");
   assert.equal(getObservedCurrency("₺239,99", "TRY"), "TRY");
 
-  const anomaly = evaluateObservationAnomaly({
+  const normal = evaluateObservationAnomaly({
     countryCurrency: "USD",
     observedCurrency: "USD",
     convertedUsd: 14.99,
     originalPriceText: "$14.99",
     planSpec: planSpecs.canva.plans[0],
   });
-  assert.equal(anomaly.flag, true);
-  assert.match(anomaly.reason, /manual identity/);
+  assert.equal(normal.flag, false);
+
+  const outlier = evaluateObservationAnomaly({
+    countryCurrency: "TRY",
+    observedCurrency: "TRY",
+    convertedUsd: 0.37,
+    originalPriceText: "₺19,00",
+    planSpec: planSpecs["adobe-lightroom"].plans[0],
+  });
+  assert.equal(outlier.flag, true);
+  assert.match(outlier.reason, /below 1 USD/);
 });
 
 test("buildSoftwareCatalogSql generates idempotent review-only onboarding SQL with price_check app_store jobs", () => {
