@@ -128,7 +128,7 @@ export function SearchOpportunityWorkflowSections({
                 activeGapQueue.map((gap) => (
                   <AdminTr key={gap.query}>
                     <AdminTd>
-                      <span className="inline-flex min-w-11 justify-center rounded-md bg-red-50 px-2 py-1 text-xs font-semibold tabular-nums text-red-700 dark:bg-red-950/60 dark:text-red-300">
+                      <span className="inline-flex min-w-11 justify-center rounded-md bg-admin-danger-soft px-2 py-1 text-xs font-semibold tabular-nums text-admin-danger">
                         {gap.priorityScore}
                       </span>
                     </AdminTd>

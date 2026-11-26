@@ -34,11 +34,11 @@ function statusLabel(status: string) {
 
 function statusClassName(status: string) {
   if (status === "PUBLISHED") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
+    return "bg-admin-success-soft text-admin-success ring-admin-success/25";
   }
 
   if (status === "DRAFT") {
-    return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
+    return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
   }
 
   return "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary dark:ring-admin-border-strong";
@@ -58,10 +58,10 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function linkHealthClassName(tone: string) {
-  if (tone === "success") return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
-  if (tone === "danger") return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
-  if (tone === "warning") return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
-  if (tone === "info") return "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800";
+  if (tone === "success") return "bg-admin-success-soft text-admin-success ring-admin-success/25";
+  if (tone === "danger") return "bg-admin-danger-soft text-admin-danger ring-admin-danger/25";
+  if (tone === "warning") return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
+  if (tone === "info") return "bg-admin-accent-soft text-admin-accent ring-admin-accent/25";
   return "bg-admin-chip text-admin-text-muted ring-admin-border dark:bg-admin-chip dark:text-admin-text-muted dark:ring-admin-border-strong";
 }
 
@@ -125,7 +125,7 @@ function ToggleStatusButton({
     return (
       <span
         title={publishHealth.detail}
-        className="inline-flex rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800"
+        className="inline-flex rounded-full bg-admin-danger-soft px-3 py-1.5 text-xs font-semibold text-admin-danger ring-1 ring-admin-danger/25"
       >
         不可启用
       </span>
@@ -282,7 +282,7 @@ export default async function AdminNavigationPage({
       />
 
       {params?.seeded === "1" ? (
-        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+        <div className="mb-5 rounded-admin-card border border-admin-success/30 bg-admin-success-soft px-4 py-3 text-sm font-semibold text-admin-success">
           已补齐当前语言和位置的推荐导航结构。已有菜单不会被覆盖。
         </div>
       ) : null}
@@ -321,7 +321,7 @@ export default async function AdminNavigationPage({
               }))}
             />
 
-            <div className="rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
+            <div className="rounded-full bg-admin-accent-soft px-4 py-2 text-xs font-semibold text-admin-accent ring-1 ring-admin-accent/25">
               当前管理：{selectedLocale.label} · {selectedPosition.label}
             </div>
           </div>
@@ -381,7 +381,7 @@ export default async function AdminNavigationPage({
             </p>
           </div>
 
-          <div className="rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
+          <div className="rounded-full bg-admin-accent-soft px-4 py-2 text-xs font-semibold text-admin-accent ring-1 ring-admin-accent/25">
             推荐结构：{recommendedGroups.length} 个分组
           </div>
         </div>
@@ -516,7 +516,7 @@ export default async function AdminNavigationPage({
       <AdminPagination {...list.pagination} ariaLabel="列表底部分页" className="mt-4" />
       </AdminCard>
 
-      <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-7 text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+      <div className="mt-6 rounded-admin-card border border-admin-border bg-admin-surface-subtle p-5 text-sm leading-7 text-admin-text-secondary">
         <div className="font-semibold">导航升级说明</div>
         <p className="mt-1">
           前台 Footer 现在即使数据库为空，也会显示推荐兜底结构；后台补齐后会优先使用数据库菜单。后续可以继续扩展为拖拽排序、批量复制语言和导航版本预览。
@@ -529,7 +529,7 @@ export default async function AdminNavigationPage({
           className="inline-flex items-center gap-1.5 text-sm font-medium text-admin-accent hover:underline"
         >
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.8} />
-          返回运营驾驶舱
+          返回收件箱
         </AdminLink>
       </div>
     </div>

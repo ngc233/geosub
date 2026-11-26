@@ -14,7 +14,7 @@ function engineLabel(engine: SeoSearchEngine) {
 
 function engineClassName(engine: SeoSearchEngine) {
   return engine === "google"
-    ? "bg-blue-50 text-blue-700 ring-blue-200"
+    ? "bg-admin-accent-soft text-admin-accent ring-admin-accent/25"
     : "bg-cyan-50 text-cyan-700 ring-cyan-200";
 }
 
@@ -35,8 +35,8 @@ function Metric({
 }) {
   const toneClassName = {
     slate: "text-admin-text dark:text-admin-text",
-    blue: "text-blue-700",
-    emerald: "text-emerald-700",
+    blue: "text-admin-accent",
+    emerald: "text-admin-success",
   }[tone];
 
   return (
@@ -90,7 +90,7 @@ function EngineRow({
         </span>
       </div>
       <div>
-        <span className="font-semibold text-emerald-700">{metric.completedSessions}</span>
+        <span className="font-semibold tabular-nums text-admin-success">{metric.completedSessions}</span>
         <span className="ml-1 text-xs text-admin-text-faint">
           {rateLabel(metric.completedSessions, metric.landingSessions)}
         </span>
@@ -111,7 +111,7 @@ export default function SeoTrafficConversionPanel({
       <div className="flex flex-col gap-4 border-b border-admin-border pb-5 lg:flex-row lg:items-start lg:justify-between dark:border-admin-border-strong">
         <div>
           <div className="flex items-center gap-2">
-            <Search aria-hidden="true" className="size-5 text-blue-700" />
+            <Search aria-hidden="true" className="size-5 text-admin-accent" />
             <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">搜索落地后的用户动作</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">
@@ -233,7 +233,7 @@ export default function SeoTrafficConversionPanel({
                     <span className="ml-1 text-xs text-admin-text-faint">看套餐</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-emerald-700">{item.officialSessions}</span>
+                    <span className="font-semibold tabular-nums text-admin-success">{item.officialSessions}</span>
                     <span className="ml-1 text-xs text-admin-text-faint">进官网</span>
                   </div>
                 </div>

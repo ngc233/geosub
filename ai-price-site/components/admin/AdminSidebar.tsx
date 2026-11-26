@@ -204,11 +204,11 @@ export default function AdminSidebar({
         </button>
       </div>
 
-      <nav className="admin-scrollbar flex-1 overflow-y-auto px-3.5 py-4" aria-label="后台主导航">
-        <div className="space-y-5">
+      <nav className="admin-scrollbar flex-1 overflow-y-auto px-3.5 py-3" aria-label="后台主导航">
+        <div className="space-y-3.5">
           {sidebarSections.map((section) => (
             <div key={section.label}>
-              <p className="mb-1.5 px-2.5 text-[11px] font-medium tracking-wider text-admin-text-faint">
+              <p className="mb-1 px-2.5 text-[11px] font-medium tracking-wider text-admin-text-faint">
                 {section.label}
               </p>
               <div className="space-y-0.5">
@@ -227,7 +227,7 @@ export default function AdminSidebar({
                       onClick={() => setMobileOpen(false)}
                       aria-current={active ? "page" : undefined}
                       className={[
-                        "flex min-h-11 items-center gap-3 rounded-admin-control px-2.5 py-2 text-sm transition-colors lg:min-h-9",
+                        "flex min-h-11 items-center gap-3 rounded-admin-control px-2.5 py-1.5 text-sm transition-colors lg:min-h-8",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent",
                         active
                           ? "bg-admin-chip font-medium text-admin-text"

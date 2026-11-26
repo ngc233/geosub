@@ -118,11 +118,11 @@ function levelLabel(level: string) {
 
 function levelClassName(level: string) {
   if (level === "VERY_HIGH" || level === "HIGH") {
-    return "bg-rose-100 text-rose-700";
+    return "bg-admin-danger-soft text-admin-danger";
   }
 
   if (level === "MODERATE") {
-    return "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300";
+    return "bg-admin-warning-soft text-admin-warning";
   }
 
   if (level === "MODERATE_LOW") {

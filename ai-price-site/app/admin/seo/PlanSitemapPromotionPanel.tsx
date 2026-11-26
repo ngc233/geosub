@@ -11,9 +11,9 @@ import {
 } from "./actions";
 
 function stateClassName(state: PlanPromotionRecommendation["state"]) {
-  if (state === "add") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (state === "swap") return "bg-blue-50 text-blue-700 ring-blue-200";
-  if (state === "blocked") return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (state === "add") return "bg-admin-success-soft text-admin-success ring-admin-success/25";
+  if (state === "swap") return "bg-admin-accent-soft text-admin-accent ring-admin-accent/25";
+  if (state === "blocked") return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
   return "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary";
 }
 
@@ -92,8 +92,8 @@ export default function PlanSitemapPromotionPanel({
       {(saved || rolledBack || failure) ? (
         <div
           className={`mt-4 rounded-lg border px-3 py-2 text-sm ${failure
-            ? "border-red-200 bg-red-50 text-red-700"
-            : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
+            ? "border-admin-danger/30 bg-admin-danger-soft text-admin-danger"
+            : "border-admin-success/30 bg-admin-success-soft text-admin-success"}`}
         >
           {failure
             || (rolledBack
@@ -143,7 +143,7 @@ export default function PlanSitemapPromotionPanel({
               {(item.state === "add" || item.state === "swap") ? (
                 <AdminActionForm
                   action={applyPlanSitemapPromotionAction}
-                  className="mt-4 grid gap-3 rounded-lg border border-blue-100 bg-blue-50/60 p-3 md:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)_auto] md:items-end"
+                  className="mt-4 grid gap-3 rounded-lg border border-admin-border bg-admin-surface-subtle p-3 md:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)_auto] md:items-end"
                 >
                   <input type="hidden" name="targetSlug" value={item.productSlug} />
                   <div className="text-xs font-semibold text-admin-text-body dark:text-admin-text-body">
@@ -164,7 +164,7 @@ export default function PlanSitemapPromotionPanel({
                     ) : (
                       <>
                         <span className="block">预算处理</span>
-                        <div className="mt-2 flex h-10 items-center rounded-lg border border-emerald-200 bg-admin-surface px-3 text-sm text-emerald-700 dark:bg-admin-surface">
+                        <div className="mt-2 flex h-10 items-center rounded-lg border border-admin-success/30 bg-admin-surface px-3 text-sm text-admin-success">
                           使用当前剩余预算
                         </div>
                       </>
@@ -183,7 +183,7 @@ export default function PlanSitemapPromotionPanel({
                     确认调整
                   </AdminButton>
                   {!canApprove ? (
-                    <p className="text-xs text-amber-700 md:col-span-3">
+                    <p className="text-xs text-admin-warning md:col-span-3">
                       当前没有单个产品能释放足够预算，本轮不能提交。
                     </p>
                   ) : null}

@@ -54,11 +54,11 @@ function shortVisitor(value?: string | null) {
 }
 
 function eventTone(eventKey: string) {
-  if (eventKey === "page_view") return "bg-blue-50 text-blue-700 ring-blue-200";
+  if (eventKey === "page_view") return "bg-admin-accent-soft text-admin-accent ring-admin-accent/25";
   if (COMMERCIAL_EVENT_KEYS.includes(eventKey as (typeof COMMERCIAL_EVENT_KEYS)[number])) {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    return "bg-admin-success-soft text-admin-success ring-admin-success/25";
   }
-  return "bg-violet-50 text-violet-700 ring-violet-200";
+  return "bg-admin-chip text-admin-text-body ring-admin-border";
 }
 
 function buildQuery(
@@ -354,7 +354,7 @@ export default async function AdminEventsPage({
                     </div>
                     <div className="min-w-0">
                       {product ? (
-                        <AdminLink href={`/admin/products/${product.id}/edit`} className="font-semibold text-admin-text hover:text-blue-700 dark:text-admin-text-body">{product.name}</AdminLink>
+                        <AdminLink href={`/admin/products/${product.id}/edit`} className="font-semibold text-admin-text hover:text-admin-accent">{product.name}</AdminLink>
                       ) : <span className="text-admin-text-faint">未归属</span>}
                       {productSlug ? <div className="mt-1 font-mono text-[11px] text-admin-text-faint">{productSlug}</div> : null}
                     </div>
@@ -373,10 +373,10 @@ export default async function AdminEventsPage({
                     <div className="font-mono text-xs text-admin-text-muted dark:text-admin-text-muted">
                       {shortVisitor(event.anonymousId)}
                       {!event.sessionId ? (
-                        <div className="mt-1 font-sans text-[10px] font-semibold text-amber-700">缺会话</div>
+                        <div className="mt-1 font-sans text-[10px] font-semibold text-admin-warning">缺会话</div>
                       ) : null}
                       {suspectedAutomated ? (
-                        <div className="mt-1 font-sans text-[10px] font-semibold text-red-600">疑似自动化</div>
+                        <div className="mt-1 font-sans text-[10px] font-semibold text-admin-danger">疑似自动化</div>
                       ) : null}
                     </div>
                   </div>

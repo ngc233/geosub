@@ -19,9 +19,9 @@ import { evaluateArticleContentQuality } from "../../../lib/article-content-qual
 import { archiveArticleAction, moveArticleToTrashAction } from "./actions";
 
 function statusClassName(status: string) {
-  if (status === "PUBLISHED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "SCHEDULED") return "bg-blue-50 text-blue-700 ring-blue-200";
-  if (status === "REVIEW") return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (status === "PUBLISHED") return "bg-admin-success-soft text-admin-success ring-admin-success/25";
+  if (status === "SCHEDULED") return "bg-admin-accent-soft text-admin-accent ring-admin-accent/25";
+  if (status === "REVIEW") return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
   if (status === "ARCHIVED") return "bg-admin-chip text-admin-text-muted ring-admin-border dark:bg-admin-chip dark:text-admin-text-muted";
   return "bg-admin-surface-subtle text-admin-text-secondary ring-admin-border";
 }
@@ -132,7 +132,7 @@ export default async function AdminArticlesPage({
         </AdminCard>
         <AdminCard>
           <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">已发布</div>
-          <div className="mt-2 text-3xl font-semibold text-emerald-700">{publishedCount}</div>
+          <div className="mt-2 text-3xl font-semibold tabular-nums text-admin-success">{publishedCount}</div>
           <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">可在前台展示的文章。</div>
         </AdminCard>
         <AdminCard>
@@ -147,7 +147,7 @@ export default async function AdminArticlesPage({
         </AdminCard>
         <AdminCard>
           <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">内容待完善</div>
-          <div className="mt-2 text-3xl font-semibold text-amber-700">{needsWorkCount}</div>
+          <div className="mt-2 text-3xl font-semibold tabular-nums text-admin-warning">{needsWorkCount}</div>
           <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">正文、内链、搜索表达或技术信息仍有缺口。</div>
         </AdminCard>
       </div>
@@ -206,7 +206,7 @@ export default async function AdminArticlesPage({
                   <div>
                     <AdminLink
                       href={withAdminReturnTo(`/admin/articles/${article.id}/edit`, adminListLocation("/admin/articles",query,`articles-row-${article.id}`))}
-                      className="font-semibold text-admin-text transition hover:text-blue-700 dark:text-admin-text"
+                      className="font-semibold text-admin-text transition hover:text-admin-accent"
                     >
                       {article.title}
                     </AdminLink>
@@ -234,10 +234,10 @@ export default async function AdminArticlesPage({
                   <div>
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
                       quality.status === "ready"
-                        ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                        ? "bg-admin-success-soft text-admin-success ring-admin-success/25"
                         : quality.status === "needs_work"
-                          ? "bg-amber-50 text-amber-700 ring-amber-200"
-                          : "bg-red-50 text-red-700 ring-red-200"
+                          ? "bg-admin-warning-soft text-admin-warning ring-admin-warning/25"
+                          : "bg-admin-danger-soft text-admin-danger ring-admin-danger/25"
                     }`}>
                       {quality.score} · {quality.statusLabel}
                     </span>

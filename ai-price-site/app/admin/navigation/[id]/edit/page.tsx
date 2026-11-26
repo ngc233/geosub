@@ -144,8 +144,7 @@ export default async function EditNavigationItemPage({
                 className={[
                   [
                     "w-full rounded-xl border border-admin-border px-4 py-3 font-mono text-sm font-semibold",
-                    "outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100",
-                    "dark:border-admin-border-strong dark:focus:border-blue-800 dark:focus:ring-blue-800"
+                    "outline-none transition focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20"
                   ].join(" "),
                   lockedHome
                     ? "bg-admin-surface-subtle text-admin-text-faint dark:bg-admin-chip"
@@ -164,7 +163,7 @@ export default async function EditNavigationItemPage({
                   type="checkbox"
                   defaultChecked={item.external}
                   disabled={lockedHome}
-                  className="h-4 w-4 rounded border-admin-border-strong text-blue-700 dark:border-admin-border-strong dark:text-blue-300"
+                  className="h-4 w-4 rounded border-admin-border-strong accent-admin-primary"
                 />
                 <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">
                   外部链接
@@ -211,7 +210,7 @@ export default async function EditNavigationItemPage({
             </p>
           </div>
 
-          <div className="mt-6 rounded-xl bg-blue-50 p-4 text-xs leading-6 text-blue-900 dark:bg-blue-950 dark:text-blue-200">
+          <div className="mt-6 rounded-admin-card border border-admin-border bg-admin-surface-subtle p-4 text-xs leading-6 text-admin-text-secondary">
             保存和取消都会返回当前菜单所属的语言与导航位置。
           </div>
         </AdminCard>

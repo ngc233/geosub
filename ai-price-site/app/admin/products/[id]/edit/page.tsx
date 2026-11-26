@@ -253,7 +253,10 @@ export default async function EditProductPage({
               variant="info"
               title={`权威覆盖任务：${query.reason?.slice(0, 120) || "完善产品资料"}`}
             >
-              <p>{query.evidence?.slice(0, 240) || "请根据产品质量检查结果完善当前页面。"}</p>
+              <p>
+                {query.evidence?.slice(0, 240) || "请根据产品质量检查结果完善当前页面。"}
+                （仅辅助定位缺口，不会自动改写公开内容。）
+              </p>
             </AdminAlert>
           ) : null}
           {query.error === "slug" ? (

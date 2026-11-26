@@ -6,8 +6,8 @@ import {
 } from "../../../lib/seo-search-performance-baseline";
 
 function tierClassName(tier: SeoSearchPagePriority["tier"]) {
-  if (tier === "优先优化") return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
-  if (tier === "继续放大") return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
+  if (tier === "优先优化") return "bg-admin-danger-soft text-admin-danger ring-admin-danger/25";
+  if (tier === "继续放大") return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
   return "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary dark:ring-admin-border-strong";
 }
 

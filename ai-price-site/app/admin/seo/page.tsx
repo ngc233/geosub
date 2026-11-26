@@ -52,31 +52,31 @@ import {
 export const dynamic = "force-dynamic";
 
 function scoreClassName(score: number) {
-  if (score >= 85) return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
-  if (score >= 60) return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
-  return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
+  if (score >= 85) return "bg-admin-success-soft text-admin-success ring-admin-success/25";
+  if (score >= 60) return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
+  return "bg-admin-danger-soft text-admin-danger ring-admin-danger/25";
 }
 
 function statusClassName(status: ProductSeoQualityStatus) {
   if (status === "indexable") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
+    return "bg-admin-success-soft text-admin-success ring-admin-success/25";
   }
   if (status === "needs_work") {
-    return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
+    return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
   }
-  return "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800";
+  return "bg-admin-danger-soft text-admin-danger ring-admin-danger/25";
 }
 
 function promotionClassName(
   state: ReturnType<typeof getProductPlanSitemapPromotion>["state"],
 ) {
   if (state === "promoted") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800";
+    return "bg-admin-success-soft text-admin-success ring-admin-success/25";
   }
   if (state === "waiting") {
-    return "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800";
+    return "bg-admin-accent-soft text-admin-accent ring-admin-accent/25";
   }
-  return "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-800";
+  return "bg-admin-warning-soft text-admin-warning ring-admin-warning/25";
 }
 
 export default async function AdminSeoPage({
@@ -364,7 +364,7 @@ export default async function AdminSeoPage({
                       {item.planCount} 个套餐 · {item.countryCount} 个地区
                     </div>
                     {item.legacyPlanCount > 0 ? (
-                      <div className="font-semibold text-amber-700 dark:text-amber-300">
+                      <div className="font-semibold text-admin-warning">
                         {item.legacyPlanCount} 个历史续订层
                       </div>
                     ) : null}
@@ -430,32 +430,32 @@ export default async function AdminSeoPage({
       <AdminCard className="mb-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <div className="text-sm font-semibold text-blue-950 dark:text-blue-200">
+            <div className="text-sm font-semibold text-admin-text">
               产品级收录门禁：{gateMode === "observe" ? "观察模式" : "执行模式"}
             </div>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-blue-800 dark:text-blue-200">
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-admin-text-secondary">
               {gateMode === "observe"
                 ? "当前只预演结果，不会从 sitemap 移除页面，也不会改变页面 robots。确认评分稳定后，再切换为执行模式。"
                 : "产品概览按质量门槛提交；套餐页再按搜索优先级分批进入 sitemap，避免一次发布过多相似网址。"}
             </p>
           </div>
           <div className="grid shrink-0 gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-blue-200 bg-admin-surface px-4 py-3 text-sm text-blue-950 dark:bg-admin-surface dark:border-blue-800 dark:text-blue-200">
-              <div className="font-semibold">当前主动推广</div>
-              <div className="mt-1 text-2xl font-semibold">
+            <div className="rounded-lg border border-admin-border bg-admin-surface-subtle px-4 py-3 text-sm text-admin-text">
+              <div className="font-medium text-admin-text-muted">当前主动推广</div>
+              <div className="mt-1 text-2xl font-semibold tabular-nums">
                 {promotionSummary.productOverviewPages
                   + promotionSummary.promotedPlanPages} 个价格页
               </div>
-              <div className="mt-1 text-xs leading-5 text-blue-700 dark:text-blue-300">
+              <div className="mt-1 text-xs leading-5 text-admin-text-muted">
                 {promotionSummary.productOverviewPages} 个产品概览 · {promotionSummary.promotedPlanPages} 个套餐页
               </div>
             </div>
-            <div className="rounded-lg border border-blue-200 bg-admin-surface px-4 py-3 text-sm text-blue-950 dark:bg-admin-surface dark:border-blue-800 dark:text-blue-200">
-              <div className="font-semibold">等待下一批</div>
-              <div className="mt-1 text-2xl font-semibold">
+            <div className="rounded-lg border border-admin-border bg-admin-surface-subtle px-4 py-3 text-sm text-admin-text">
+              <div className="font-medium text-admin-text-muted">等待下一批</div>
+              <div className="mt-1 text-2xl font-semibold tabular-nums">
                 {promotionSummary.waitingProducts} 个产品
               </div>
-              <div className="mt-1 text-xs leading-5 text-blue-700 dark:text-blue-300">
+              <div className="mt-1 text-xs leading-5 text-admin-text-muted">
                 共 {promotionSummary.waitingPlanPages} 个双语套餐页待排期
               </div>
             </div>
@@ -465,36 +465,36 @@ export default async function AdminSeoPage({
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">已上线产品</div>
-          <div className="mt-2 text-3xl font-semibold text-admin-text dark:text-admin-text">
+          <div className="text-sm font-semibold text-admin-text-muted">已上线产品</div>
+          <div className="mt-2 text-3xl font-semibold tabular-nums text-admin-text">
             {productAudits.length}
           </div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
+          <div className="mt-2 text-sm text-admin-text-muted">
             当前纳入搜索质量检查的产品。
           </div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">可收录</div>
-          <div className="mt-2 text-3xl font-semibold text-emerald-700 dark:text-emerald-300">
+          <div className="text-sm font-semibold text-admin-text-muted">可收录</div>
+          <div className="mt-2 text-3xl font-semibold tabular-nums text-admin-success">
             {indexable}
           </div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
+          <div className="mt-2 text-sm text-admin-text-muted">
             数据和内容达标，不代表所有套餐页已进入 sitemap。
           </div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">待完善</div>
-          <div className="mt-2 text-3xl font-semibold text-amber-700 dark:text-amber-300">
+          <div className="text-sm font-semibold text-admin-text-muted">待完善</div>
+          <div className="mt-2 text-3xl font-semibold tabular-nums text-admin-warning">
             {needsWork}
           </div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
+          <div className="mt-2 text-sm text-admin-text-muted">
             可以访问，但应先补强再重点推广。
           </div>
         </AdminCard>
         <AdminCard>
-          <div className="text-sm font-semibold text-admin-text-muted dark:text-admin-text-muted">建议暂缓收录</div>
-          <div className="mt-2 text-3xl font-semibold text-red-700 dark:text-red-300">{hold}</div>
-          <div className="mt-2 text-sm text-admin-text-muted dark:text-admin-text-muted">
+          <div className="text-sm font-semibold text-admin-text-muted">建议暂缓收录</div>
+          <div className="mt-2 text-3xl font-semibold tabular-nums text-admin-danger">{hold}</div>
+          <div className="mt-2 text-sm text-admin-text-muted">
             存在覆盖、过期、极端价或重复套餐问题。
           </div>
         </AdminCard>

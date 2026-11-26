@@ -76,13 +76,13 @@ export default async function NewArticlePage({
       />
 
       {params?.error === "missing" ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="mb-5 rounded-admin-card border border-admin-danger/30 bg-admin-danger-soft px-4 py-3 text-sm font-semibold text-admin-danger">
           标题和 URL 标识不能为空。
         </div>
       ) : null}
 
       {params?.error === "slug" ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="mb-5 rounded-admin-card border border-admin-danger/30 bg-admin-danger-soft px-4 py-3 text-sm font-semibold text-admin-danger">
           这个 URL 标识已经存在，请换一个。
         </div>
       ) : null}

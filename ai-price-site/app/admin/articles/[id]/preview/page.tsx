@@ -119,7 +119,7 @@ export default async function ArticlePreviewPage({
         <div
           className="article-body dark:[&_p]:text-admin-text-body! dark:[&_ul]:text-admin-text-body!
             dark:[&_h2]:text-admin-text! dark:[&_h3]:text-admin-text! dark:[&_h4]:text-admin-text!
-            dark:[&_strong]:text-admin-text! dark:[&_a]:text-blue-300! dark:[&_code]:bg-slate-800!
+            dark:[&_strong]:text-admin-text! dark:[&_a]:text-admin-accent! dark:[&_code]:bg-admin-chip!
             dark:[&_code]:text-admin-text! mt-7 rounded-admin-card border border-admin-border
             bg-admin-surface p-5 text-admin-text-body sm:p-8 dark:border-admin-border-strong
             dark:bg-admin-surface dark:text-admin-text-body"

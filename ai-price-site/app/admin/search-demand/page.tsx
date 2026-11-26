@@ -169,8 +169,8 @@ export default async function AdminSearchDemandPage({
           className={[
             "mb-6 rounded-lg border px-4 py-3 text-sm font-semibold",
             params.aliasResult === "insufficient"
-              ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
-              : "border-green-200 bg-green-50 text-green-800",
+              ? "border-admin-warning/30 bg-admin-warning-soft text-admin-warning"
+              : "border-admin-success/30 bg-admin-success-soft text-admin-success",
           ].join(" ")}
         >
           {params.aliasResult === "insufficient"
@@ -184,7 +184,7 @@ export default async function AdminSearchDemandPage({
       ) : null}
 
       {params.repairResult ? (
-        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+        <div className="mb-6 rounded-lg border border-admin-accent/30 bg-admin-accent-soft px-4 py-3 text-sm font-semibold text-admin-accent">
           {params.repairResult === "started"
             ? "转化修复任务已开始，系统已保存当前数据作为比较基线。"
             : params.repairResult === "resolved"
@@ -194,7 +194,7 @@ export default async function AdminSearchDemandPage({
       ) : null}
 
       {params.authorityResult ? (
-        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+        <div className="mb-6 rounded-lg border border-admin-accent/30 bg-admin-accent-soft px-4 py-3 text-sm font-semibold text-admin-accent">
           {params.authorityResult === "queued"
             ? "该产品的定向复采已进入后台运行，后续结果会回到价格审核与数据质量页面。"
             : params.authorityResult === "fresh"

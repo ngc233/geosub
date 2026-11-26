@@ -26,7 +26,7 @@ function StatusBadge({ status }: { status: string }) {
       className={[
         "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
         published
-          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+          ? "bg-admin-success-soft text-admin-success ring-admin-success/25"
           : "bg-admin-chip text-admin-text-muted ring-admin-border dark:bg-admin-chip dark:text-admin-text-muted",
       ].join(" ")}
     >
@@ -123,13 +123,13 @@ export default async function ArticleTaxonomyPage({
       />
 
       {query?.error ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="mb-5 rounded-admin-card border border-admin-danger/30 bg-admin-danger-soft px-4 py-3 text-sm font-semibold text-admin-danger">
           保存失败，请检查名称或 URL 标识是否重复。
         </div>
       ) : null}
 
       {query?.created ? (
-        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+        <div className="mb-5 rounded-admin-card border border-admin-success/30 bg-admin-success-soft px-4 py-3 text-sm font-semibold text-admin-success">
           已创建。
         </div>
       ) : null}

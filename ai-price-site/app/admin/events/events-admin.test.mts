@@ -156,7 +156,7 @@ test("search opportunities require repeat demand from multiple visitors", () => 
 });
 
 test("search demand actions prefill existing growth workflows", () => {
-  const discoveryPage = readProjectFile("app/admin/discovery/page.tsx");
+  const discoveryPage = readProjectFile("app/admin/pipeline/PipelineDiscoveryView.tsx");
   const discoveryForm = readProjectFile(
     "app/admin/discovery/DiscoveryIntakeForms.tsx"
   );
@@ -183,8 +183,8 @@ test("global search records query and destination without duplicate clicks", () 
 });
 
 test("admin navigation exposes search demand as a growth workflow", () => {
-  const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
+  const navConfig = readProjectFile("components/admin/admin-nav-config.ts");
 
-  assert.match(sidebar, /href: "\/admin\/search-demand"/);
-  assert.match(sidebar, /SearchCheck/);
+  assert.match(navConfig, /href: "\/admin\/search-demand"/);
+  assert.match(navConfig, /label: "搜索需求"/);
 });

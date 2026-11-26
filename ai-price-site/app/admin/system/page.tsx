@@ -34,21 +34,21 @@ function joinClasses(...classes: Array<string | false | null | undefined>) {
 
 function getStatusStyle(status: HealthStatus) {
   if (status === "ok") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
+    return "border-admin-success/30 bg-admin-success-soft text-admin-success";
   }
   if (status === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300";
+    return "border-admin-warning/30 bg-admin-warning-soft text-admin-warning";
   }
   if (status === "critical") {
-    return "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300";
+    return "border-admin-danger/30 bg-admin-danger-soft text-admin-danger";
   }
-  return "border-admin-border bg-admin-surface-subtle text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text-muted";
+  return "border-admin-border bg-admin-surface-subtle text-admin-text-muted";
 }
 
 function getStatusDot(status: HealthStatus) {
-  if (status === "ok") return "bg-emerald-500";
-  if (status === "warning") return "bg-amber-500";
-  if (status === "critical") return "bg-red-500";
+  if (status === "ok") return "bg-admin-success";
+  if (status === "warning") return "bg-admin-warning";
+  if (status === "critical") return "bg-admin-danger";
   return "bg-admin-border-strong";
 }
 
@@ -169,7 +169,7 @@ function AutomationTaskRow({ task }: { task: AutomationTask }) {
         </div>
         <p className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">{task.description}</p>
         {task.errorMessage ? (
-          <p className="mt-2 line-clamp-2 text-xs font-semibold text-red-700 dark:text-red-300">
+          <p className="mt-2 line-clamp-2 text-xs font-semibold text-admin-danger">
             {task.errorMessage}
           </p>
         ) : null}
@@ -221,7 +221,7 @@ function OperationalRecoveryPanel({
     <AdminCard className="mb-6 overflow-hidden !p-0">
       <div className="flex flex-col gap-3 border-b border-admin-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-admin-border-strong">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-admin-success-soft text-admin-success">
             <RefreshCw size={18} strokeWidth={2.3} />
           </span>
           <div>
@@ -297,7 +297,7 @@ function OperationalRecoveryPanel({
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-3 px-5 py-5 text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+        <div className="flex items-center gap-3 px-5 py-5 text-sm font-semibold text-admin-success">
           <ShieldAlert size={18} strokeWidth={2.3} />
           没有需要人工介入的采集故障。
         </div>
@@ -328,7 +328,7 @@ export default async function AdminSystemPage() {
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <AdminCard>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-admin-border bg-admin-surface-subtle text-admin-text">
               <Activity size={20} strokeWidth={2.4} />
             </span>
             <div>
@@ -340,7 +340,7 @@ export default async function AdminSystemPage() {
 
         <AdminCard>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-admin-border bg-admin-surface-subtle text-admin-text">
               <Database size={20} strokeWidth={2.4} />
             </span>
             <div>
@@ -370,7 +370,7 @@ export default async function AdminSystemPage() {
       <AdminCard className="mb-6 overflow-hidden !p-0">
         <div className="flex flex-col gap-3 border-b border-admin-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-admin-border-strong">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-admin-border bg-admin-surface-subtle text-admin-text">
               <ServerCog size={18} strokeWidth={2.3} />
             </span>
             <div>
@@ -404,7 +404,7 @@ export default async function AdminSystemPage() {
 
       {health.issues.length > 0 ? (
         <AdminCard className="mb-6">
-          <div className="mb-3 flex items-center gap-2 text-amber-800 dark:text-amber-200">
+          <div className="mb-3 flex items-center gap-2 text-admin-warning">
             <AlertTriangle size={18} strokeWidth={2.4} />
             <h2 className="text-base font-semibold text-admin-text">需要先看的问题</h2>
           </div>
@@ -412,8 +412,8 @@ export default async function AdminSystemPage() {
             {health.issues.map((issue) => (
               <div
                 key={issue}
-                className="rounded-lg border border-amber-200 bg-admin-surface/70 px-4 py-3 text-sm font-semibold
-                  leading-6 text-amber-900 dark:border-amber-800 dark:bg-admin-surface/70 dark:text-amber-200"
+                className="rounded-lg border border-admin-warning/30 bg-admin-warning-soft px-4 py-3 text-sm font-semibold
+                  leading-6 text-admin-warning"
               >
                 {issue}
               </div>

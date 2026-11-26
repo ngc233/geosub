@@ -165,7 +165,7 @@ export default async function NewNavigationItemPage({
                 <input
                   name="external"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-admin-border-strong text-blue-700 dark:border-admin-border-strong dark:text-blue-300"
+                  className="h-4 w-4 rounded border-admin-border-strong accent-admin-primary"
                 />
                 <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">
                   外部链接
@@ -177,7 +177,7 @@ export default async function NewNavigationItemPage({
                   name="publishNow"
                   type="checkbox"
                   defaultChecked
-                  className="h-4 w-4 rounded border-admin-border-strong text-blue-700 dark:border-admin-border-strong dark:text-blue-300"
+                  className="h-4 w-4 rounded border-admin-border-strong accent-admin-primary"
                 />
                 <span className="text-sm font-semibold text-admin-text-body dark:text-admin-text-body">
                   创建后立即启用
@@ -217,7 +217,7 @@ export default async function NewNavigationItemPage({
             </p>
           </div>
 
-          <div className="mt-6 rounded-xl bg-amber-50 p-4 text-xs leading-6 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          <div className="mt-6 rounded-admin-card border border-admin-warning/30 bg-admin-warning-soft p-4 text-xs leading-6 text-admin-warning">
             删除功能暂不开放。站点主导航属于长期结构，先用停用代替删除更安全。
           </div>
         </AdminCard>

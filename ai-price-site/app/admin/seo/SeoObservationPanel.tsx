@@ -49,14 +49,14 @@ function StatusNotice({
 }) {
   if (saved) {
     return (
-      <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+      <div className="mt-4 rounded-lg border border-admin-success/30 bg-admin-success-soft px-4 py-3 text-sm font-semibold text-admin-success">
         {source} 快照已保存。后续请使用相同时间范围复查，数字才具有可比性。
       </div>
     );
   }
   if (error) {
     return (
-      <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+      <div className="mt-4 rounded-lg border border-admin-danger/30 bg-admin-danger-soft px-4 py-3 text-sm font-semibold text-admin-danger">
         数据未保存。请检查日期和非负整数，点击数不能大于展示数。
       </div>
     );

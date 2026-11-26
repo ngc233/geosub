@@ -46,7 +46,7 @@ export function SearchEvidenceSections({
       {summary.totalSearches === 0 ? (
       <AdminCard className="mb-6 dark:border-admin-border dark:bg-admin-surface dark:shadow-black/20">
       <div className="flex flex-col items-center py-10 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+      <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-admin-border bg-admin-surface-subtle text-admin-text">
       <SearchCheck size={22} />
       </span>
       <h2 className="mt-4 text-base font-semibold text-admin-text dark:text-admin-text">
@@ -100,7 +100,7 @@ export function SearchEvidenceSections({
       <span
       className={
       term.noResultCount > 0
-      ? "font-semibold text-red-700 tabular-nums dark:text-red-300"
+      ? "font-semibold text-admin-danger tabular-nums"
       : "text-admin-text-faint dark:text-admin-text-muted"
       }
       >
@@ -296,10 +296,8 @@ export function SearchEvidenceSections({
       href={suggestion.resultHref}
       target="_blank"
       className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-admin-border
-        text-admin-text-muted transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
-        dark:border-admin-border-strong dark:text-admin-text-muted dark:hover:border-blue-700
-        dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+        text-admin-text-muted transition hover:border-admin-border-strong hover:bg-admin-surface-subtle hover:text-admin-text
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
       aria-label={`查看 ${suggestion.resultTitle}`}
       title={`查看 ${suggestion.resultTitle}`}
       >
@@ -366,10 +364,8 @@ export function SearchEvidenceSections({
       href={result.href}
       target="_blank"
       className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-admin-border
-        text-admin-text-muted transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
-        dark:border-admin-border-strong dark:text-admin-text-muted dark:hover:border-blue-700
-        dark:hover:bg-blue-950/60 dark:hover:text-blue-300 dark:focus-visible:ring-blue-400/60"
+        text-admin-text-muted transition hover:border-admin-border-strong hover:bg-admin-surface-subtle hover:text-admin-text
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
       aria-label={`打开 ${result.title}`}
       title={`打开 ${result.title}`}
       >

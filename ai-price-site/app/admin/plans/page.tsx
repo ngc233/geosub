@@ -299,7 +299,7 @@ export default async function AdminPlansPage({
                     </div>
                   </div>
 
-                  <div className="font-semibold text-emerald-700">
+                  <div className="font-semibold tabular-nums text-admin-success">
                     {formatUsd(minPrice)}
                   </div>
 

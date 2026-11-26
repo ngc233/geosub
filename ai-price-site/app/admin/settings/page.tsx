@@ -44,12 +44,12 @@ const notificationStatusCopy: Record<OperationsNotificationStatus, {
   label: string;
   className: string;
 }> = {
-  sent: { label: "已发送", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  suppressed: { label: "重复已抑制", className: "bg-blue-50 text-blue-700 ring-blue-200" },
+  sent: { label: "已发送", className: "bg-admin-success-soft text-admin-success ring-admin-success/25" },
+  suppressed: { label: "重复已抑制", className: "bg-admin-accent-soft text-admin-accent ring-admin-accent/25" },
   no_action: { label: "无需通知", className: "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary" },
   disabled: { label: "外发已关闭", className: "bg-admin-chip text-admin-text-secondary ring-admin-border dark:bg-admin-chip dark:text-admin-text-secondary" },
-  misconfigured: { label: "渠道未就绪", className: "bg-amber-50 text-amber-700 ring-amber-200" },
-  failed: { label: "发送失败", className: "bg-red-50 text-red-700 ring-red-200" },
+  misconfigured: { label: "渠道未就绪", className: "bg-admin-warning-soft text-admin-warning ring-admin-warning/25" },
+  failed: { label: "发送失败", className: "bg-admin-danger-soft text-admin-danger ring-admin-danger/25" },
 };
 
 function formatNotificationTime(value: Date) {
@@ -169,7 +169,7 @@ export default async function AdminSettingsPage({
           <span
             className={
               settings.ga4Id
-                ? "rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-700"
+                ? "rounded-md bg-admin-success-soft px-2.5 py-1.5 text-admin-success"
                 : "rounded-md bg-admin-chip px-2.5 py-1.5 text-admin-text-muted dark:bg-admin-chip dark:text-admin-text-muted"
             }
           >
@@ -178,7 +178,7 @@ export default async function AdminSettingsPage({
           <span
             className={
               settings.gtmId
-                ? "rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-700"
+                ? "rounded-md bg-admin-success-soft px-2.5 py-1.5 text-admin-success"
                 : "rounded-md bg-admin-chip px-2.5 py-1.5 text-admin-text-muted dark:bg-admin-chip dark:text-admin-text-muted"
             }
           >
@@ -237,12 +237,12 @@ export default async function AdminSettingsPage({
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-admin-border bg-admin-surface-subtle p-4 dark:border-admin-border-strong dark:bg-admin-chip">
             <p className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">站内简报</p>
-            <p className="mt-1 text-sm font-semibold text-emerald-700">始终启用</p>
+            <p className="mt-1 text-sm font-semibold text-admin-success">始终启用</p>
             <p className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">进入后台首页即可查看，无需配置。</p>
           </div>
           <div className="rounded-lg border border-admin-border bg-admin-surface-subtle p-4 dark:border-admin-border-strong dark:bg-admin-chip">
             <p className="text-xs font-semibold text-admin-text-muted dark:text-admin-text-muted">安全通知渠道</p>
-            <p className={`mt-1 text-sm font-semibold ${notification.channelConfigured ? "text-emerald-700" : "text-amber-700"}`}>
+            <p className={`mt-1 text-sm font-semibold ${notification.channelConfigured ? "text-admin-success" : "text-admin-warning"}`}>
               {notification.channelConfigured ? `已配置 · ${notification.endpointHost}` : "服务器未配置"}
             </p>
             <p className="mt-1 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">地址和密钥仅保存在服务器环境中，后台不会显示敏感信息。</p>
@@ -256,7 +256,7 @@ export default async function AdminSettingsPage({
               type="checkbox"
               defaultChecked={notification.enabled}
               disabled={!notification.channelConfigured}
-              className="mt-0.5 h-4 w-4 rounded border-admin-border-strong text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed dark:border-admin-border-strong"
+              className="mt-0.5 h-4 w-4 rounded border-admin-border-strong accent-admin-primary focus:ring-admin-accent disabled:cursor-not-allowed"
             />
             <span>
               <span className="block text-sm font-semibold text-admin-text dark:text-admin-text-body">启用外部异常简报</span>

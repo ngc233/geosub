@@ -90,7 +90,7 @@ function ImportSource({
       ) : null}
 
       {latest && lastImported && latest.id !== lastImported.id ? (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <p className="mt-3 rounded-lg bg-admin-warning-soft px-3 py-2 text-xs leading-5 text-admin-warning">
           最近导入窗口为 {lastImported.periodStart} 至 {lastImported.periodEnd}，未替代当前最新观察窗口。撤销最近导入针对这份留档报表。
         </p>
       ) : null}
@@ -110,7 +110,7 @@ function ImportSource({
       ) : null}
 
       {saved || rolledBack ? (
-        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+        <div className="mt-3 rounded-lg border border-admin-success/30 bg-admin-success-soft px-3 py-2 text-xs font-semibold text-admin-success">
           {saved
             ? "页面级搜索数据已导入；当前使用的观察窗口见上方来源说明。"
             : "最近一批导入已按审计撤销；同窗口原批次已恢复，首次导入则移除该窗口。"}
@@ -118,7 +118,7 @@ function ImportSource({
       ) : null}
 
       <details className="mt-4 rounded-lg border border-admin-border bg-admin-surface-subtle open:bg-admin-surface dark:border-admin-border-strong dark:bg-admin-chip dark:open:bg-admin-surface">
-        <summary className="cursor-pointer list-none px-3 py-3 text-sm font-semibold text-blue-700">
+        <summary className="cursor-pointer list-none px-3 py-3 text-sm font-semibold text-admin-accent">
           导入新的完整页面报表
         </summary>
         <SeoPageImportForm key={recordVersion} engine={engine} recordVersion={recordVersion} />
@@ -152,7 +152,7 @@ export default function SeoPageObservationImportPanel({
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+        <div className="mt-4 rounded-lg border border-admin-danger/30 bg-admin-danger-soft px-3 py-2 text-sm font-semibold text-admin-danger">
           {error === "history"
             ? "没有可撤销的导入记录，请刷新页面后重试。"
             : "导入失败。请检查报表日期、表头、域名以及点击和展示数字。"}

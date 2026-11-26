@@ -133,7 +133,7 @@ export function AuthorityCoverageSection({
     {gap}
     </span>
     )) : (
-    <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+    <span className="text-xs font-semibold text-admin-success">
     当前核心资料完整
     </span>
     )}

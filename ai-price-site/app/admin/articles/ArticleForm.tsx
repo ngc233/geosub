@@ -356,9 +356,8 @@ export default function ArticleForm({
                         <span className="flex items-center gap-2">
                           <span className="block truncate">{product.name}</span>
                           {recommendedProductIds.includes(product.id) ? (
-                            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px]
-                              font-semibold text-blue-700 ring-1 ring-blue-100
-                              dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
+                            <span className="shrink-0 rounded-full bg-admin-accent-soft px-2 py-0.5 text-[10px]
+                              font-semibold text-admin-accent ring-1 ring-admin-accent/25">
                               推荐
                             </span>
                           ) : null}
@@ -398,9 +397,8 @@ export default function ArticleForm({
                         <span className="flex items-start gap-2">
                           <span className="block line-clamp-2">{related.title}</span>
                           {recommendedRelatedArticleIds.includes(related.id) ? (
-                            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px]
-                              font-semibold text-blue-700 ring-1 ring-blue-100
-                              dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800">
+                            <span className="shrink-0 rounded-full bg-admin-accent-soft px-2 py-0.5 text-[10px]
+                              font-semibold text-admin-accent ring-1 ring-admin-accent/25">
                               推荐
                             </span>
                           ) : null}

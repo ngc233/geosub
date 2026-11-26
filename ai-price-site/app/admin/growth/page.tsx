@@ -33,9 +33,9 @@ function statusLabel(status: "complete" | "partial" | "unavailable") {
 }
 
 function statusClass(status: "complete" | "partial" | "unavailable") {
-  if (status === "complete") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
-  if (status === "partial") return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300";
-  return "border-admin-border bg-admin-surface-subtle text-admin-text-muted dark:border-admin-border-strong dark:bg-admin-chip dark:text-admin-text-muted";
+  if (status === "complete") return "border-admin-success/30 bg-admin-success-soft text-admin-success";
+  if (status === "partial") return "border-admin-warning/30 bg-admin-warning-soft text-admin-warning";
+  return "border-admin-border bg-admin-surface-subtle text-admin-text-muted";
 }
 
 function sourceModeLabel(source: GrowthIntelligenceOverview["sources"]["bingWebmaster"]) {
@@ -149,13 +149,9 @@ export default async function AdminGrowthPage({
                 <AdminTr key={row.date}>
                   <AdminTd>{row.date}</AdminTd>
                   <AdminTd align="right"><span className="font-semibold tabular-nums">{formatNumber(row.views)}</span></AdminTd>
-                  <AdminTd><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${row.complete ? [
-                    "border-emerald-200 bg-emerald-50 text-emerald-700",
-                    "dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  ].join(" ") : [
-                    "border-amber-200 bg-amber-50 text-amber-700",
-                    "dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                  ].join(" ")}`}>{row.complete ? "完整日" : "进行中"}</span></AdminTd>
+                  <AdminTd><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${row.complete
+                    ? "border-admin-success/30 bg-admin-success-soft text-admin-success"
+                    : "border-admin-warning/30 bg-admin-warning-soft text-admin-warning"}`}>{row.complete ? "完整日" : "进行中"}</span></AdminTd>
                 </AdminTr>
               ))}
             </AdminTableBody>
@@ -194,8 +190,7 @@ export default async function AdminGrowthPage({
             <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">当前证据边界</h2>
             <p className="mt-1 text-sm leading-6 text-admin-text-muted dark:text-admin-text-muted">本页只读展示证据，不会自动执行内容发布、采集或实验解锁。</p>
           </div>
-          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold
-            text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">过渡读模型</span>
+          <span className="rounded-full border border-admin-warning/30 bg-admin-warning-soft px-2.5 py-1 text-xs font-semibold text-admin-warning">过渡读模型</span>
         </div>
         <ul className="mt-4 grid gap-2 text-sm leading-6 text-admin-text-secondary dark:text-admin-text-secondary sm:grid-cols-2">
           {overview.limitations.map((limitation) => <li key={limitation}>· {limitation}</li>)}

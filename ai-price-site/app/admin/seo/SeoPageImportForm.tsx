@@ -51,7 +51,7 @@ export default function SeoPageImportForm({ engine, recordVersion }: { engine: S
     </div>
     <p className="mt-3 text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">预检只在浏览器计算，不保存报表或审计。修改输入后必须重新预检；导入仍按引擎和观察窗口选择，不更改中文 Plus 实验锁。</p>
     {pending ? <p role="status" className="mt-3 text-sm">正在计算预检…</p> : null}
-    {preview ? <div className="mt-4 space-y-3 rounded-lg border border-admin-border-strong p-3 text-sm dark:border-slate-600" aria-live="polite">
+    {preview ? <div className="mt-4 space-y-3 rounded-lg border border-admin-border-strong p-3 text-sm" aria-live="polite">
       <p className="font-semibold">预检：{preview.canImport ? '可导入' : '已阻止导入'}</p>
       <p>原始 {preview.inputRows} 行 · 有效 {preview.acceptedRows} 行 · 排除 {preview.excluded.length} 行 · 合并 {preview.mergedRows} 行 · 最终 {preview.observations.length} 页</p>
       {preview.errors.length ? <ul role="alert" className="list-inside list-disc space-y-2">{preview.errors.map(error => <li key={error}>{error}</li>)}</ul> : null}

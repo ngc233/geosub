@@ -31,8 +31,8 @@ export default async function ContactTicketsPage({ searchParams }: { searchParam
         <MessageSquareText size={16} />共 {counts.reduce((sum,item)=>sum+item._count._all,0)} 条
       </span>} />
     {query.error ? <p role="alert" className="mt-4">工单未更新，请核对输入后重试。</p> : null}
-    {query.updated ? <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3
-      text-sm font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+    {query.updated ? <div className="mt-5 rounded-admin-card border border-admin-success/30 bg-admin-success-soft px-4 py-3
+      text-sm font-semibold text-admin-success">
       工单 {query.updated.toUpperCase()} 已更新。
     </div> : null}
     <AdminSegmentedControl ariaLabel="工单状态" value={status || "all"} items={[
@@ -51,7 +51,7 @@ export default async function ContactTicketsPage({ searchParams }: { searchParam
           sm:p-6 dark:border-admin-border-strong dark:bg-admin-surface">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div><div className="flex flex-wrap items-center gap-2">
-            <span className="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            <span className="rounded bg-admin-accent-soft px-2 py-1 text-xs font-semibold text-admin-accent">
               {categoryLabels[ticket.category] || ticket.category}
             </span>
             <span className="text-xs font-semibold text-admin-text-faint">#{ticket.id.slice(0, 8).toUpperCase()}</span>

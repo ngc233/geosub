@@ -41,8 +41,8 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
     }))} />
     <div className="space-y-6">
       {!targetAllowed && runtime !== "未启用" ? <p role="status">此目标仅开放本地演练，生产保存与发布尚未启用。</p> : null}
-      {revisionIssue ? <p role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">当前内容版本 C{String(state.version).padStart(4, '0')} 缺失或校验失败。本页保存、发布、重试和回退已暂停；请先核对内容修订记录。已有草稿与历史仍可查看，不会自动替换为代码默认内容。</p> : null}
-      {runtime === "未启用" ? <p role="status" className="rounded-xl border border-amber-300 p-4 text-sm">当前环境的内容写入通道未启用，可查看预览与历史；保存、发布和回退暂不可用。</p> : null}
+      {revisionIssue ? <p role="alert" className="rounded-admin-card border border-admin-warning/30 bg-admin-warning-soft p-4 text-sm text-admin-warning">当前内容版本 C{String(state.version).padStart(4, '0')} 缺失或校验失败。本页保存、发布、重试和回退已暂停；请先核对内容修订记录。已有草稿与历史仍可查看，不会自动替换为代码默认内容。</p> : null}
+      {runtime === "未启用" ? <p role="status" className="rounded-admin-card border border-admin-warning/30 bg-admin-surface-subtle p-4 text-sm text-admin-text-secondary">当前环境的内容写入通道未启用，可查看预览与历史；保存、发布和回退暂不可用。</p> : null}
       <p className="text-sm">进入 <AdminLink href={`/admin/content/effects${query}`} className="underline">内容效果观察</AdminLink> 核对此目标的版本与证据。本地回执不代表公网发布，真实推广保持关闭。</p>
       <AdminCard className="dark:border-admin-border dark:bg-admin-surface dark:shadow-none">
         <p>当前内容：{state.version ? `C${String(state.version).padStart(4, '0')}` : '代码默认'} · 草稿代次：{state.generation}</p>

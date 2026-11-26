@@ -65,8 +65,8 @@ export function SearchGrowthPrioritySection({
                 className={[
                   "rounded-md px-3 py-2 text-xs font-semibold transition",
                   growthFocus === focus
-                    ? "bg-blue-700 text-white"
-                    : "text-admin-text-muted hover:bg-admin-chip hover:text-admin-text dark:text-admin-text-muted dark:hover:bg-admin-chip dark:hover:text-admin-text",
+                    ? "bg-admin-primary text-admin-on-primary"
+                    : "text-admin-text-muted hover:bg-admin-chip hover:text-admin-text",
                 ].join(" ")}
               >
                 {label}
@@ -106,7 +106,7 @@ export function SearchGrowthPrioritySection({
                     <AdminTr key={`growth:${normalized}`}>
                       <AdminTd>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex min-w-11 justify-center rounded-md bg-slate-950 px-2 py-1 text-xs font-semibold tabular-nums text-white">
+                          <span className="inline-flex min-w-11 justify-center rounded-md bg-admin-primary px-2 py-1 text-xs font-semibold tabular-nums text-admin-on-primary">
                             {opportunity.priorityScore}
                           </span>
                           <AdminBadge variant={priority.variant}>
