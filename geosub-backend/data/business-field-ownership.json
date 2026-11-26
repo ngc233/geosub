@@ -977,7 +977,6 @@
       "path": "ai-price-site/app/admin/collector-jobs/actions.ts",
       "classification": "admin_action",
       "tables": [
-        "audit_logs",
         "collector_jobs"
       ]
     },
@@ -1025,13 +1024,6 @@
       ]
     },
     {
-      "path": "ai-price-site/app/admin/review/actions.ts",
-      "classification": "admin_action",
-      "tables": [
-        "audit_logs"
-      ]
-    },
-    {
       "path": "ai-price-site/app/admin/review/collection-runner.ts",
       "classification": "admin_action",
       "tables": [
@@ -1068,14 +1060,14 @@
       ]
     },
     {
-      "path": "ai-price-site/app/admin/settings/actions.ts",
-      "classification": "admin_action",
+      "path": "ai-price-site/lib/admin-auth.ts",
+      "classification": "runtime_service",
       "tables": [
         "audit_logs"
       ]
     },
     {
-      "path": "ai-price-site/lib/admin-auth.ts",
+      "path": "ai-price-site/lib/admin-command.ts",
       "classification": "runtime_service",
       "tables": [
         "audit_logs"
