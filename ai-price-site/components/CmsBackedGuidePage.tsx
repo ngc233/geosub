@@ -12,6 +12,12 @@ import {
 } from "../lib/core-guide-content";
 import { stripGeoSubTitleSuffix } from "../lib/pricing-routes";
 import { serializeJsonLd } from "../lib/json-ld";
+import {
+  getDefaultArticleQuickTools,
+  getGuideHubCopy,
+  getSiblingCoreGuideLinks,
+  type FoundationalGuideKey,
+} from "../lib/guide-hub-copy";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
@@ -113,7 +119,10 @@ export default async function CmsBackedGuidePage({
   const title = article?.title || definition.title;
   const description = article?.subtitle || article?.excerpt || definition.description;
   const canonical = article?.canonicalUrl || absoluteUrl(routePath(locale, slug));
-  const relatedLinks = (article?.relations || []).flatMap((relation) => {
+  const copy = getGuideHubCopy(locale);
+  const focusKey: FoundationalGuideKey | "general" =
+    slug === "gift-card-guide" ? "general" : slug;
+  const cmsRelatedLinks = (article?.relations || []).flatMap((relation) => {
     const href = relation.relatedArticle
       ? `/${locale}/guides/${relation.relatedArticle.slug}`
       : relation.product
@@ -134,6 +143,16 @@ export default async function CmsBackedGuidePage({
       },
     ];
   });
+  const relatedLinks =
+    cmsRelatedLinks.length > 0 || focusKey === "general"
+      ? cmsRelatedLinks
+      : getSiblingCoreGuideLinks(locale, focusKey);
+  const relatedLabel =
+    cmsRelatedLinks.length > 0
+      ? locale === "zh"
+        ? "相关阅读"
+        : "Related reading"
+      : copy.articleContinueTitle;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": article?.structuredDataType === "NONE" ? "WebPage" : "Article",
@@ -160,8 +179,22 @@ export default async function CmsBackedGuidePage({
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
       <PublicGuidePage
-        canvas={locale === "zh"}
-        metadata={locale === "zh" && article ? <><span>{formatArticleDate(article.publishedAt)}</span>{article.readingTime ? <span>{article.readingTime} 分钟读完</span> : null}</> : undefined}
+        canvas={locale === "zh" || locale === "en"}
+        locale={locale}
+        metadata={
+          article ? (
+            <>
+              <span>{formatArticleDate(article.publishedAt, locale)}</span>
+              {article.readingTime ? (
+                <span>
+                  {article.readingTime} {locale === "zh" ? "分钟读完" : "min read"}
+                </span>
+              ) : null}
+            </>
+          ) : (
+            <span>{copy.coreArticleMeta(parsed.sections.length, 3)}</span>
+          )
+        }
         eyebrow={
           article
             ? getArticleTypeLabel(article.articleType, locale)
@@ -171,8 +204,9 @@ export default async function CmsBackedGuidePage({
         description={description}
         sections={parsed.sections}
         note={parsed.note}
-        relatedLabel={locale === "zh" ? "相关阅读" : "Related reading"}
+        relatedLabel={relatedLabel}
         relatedLinks={relatedLinks}
+        quickTools={getDefaultArticleQuickTools(locale, focusKey)}
       />
     </>
   );

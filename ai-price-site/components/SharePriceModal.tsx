@@ -209,7 +209,7 @@ export default function SharePriceModal({
       {unifiedTrigger ? <button ref={triggerRef} type="button" data-gs-ui="button" data-share-price-trigger
         data-track-event="open_share_modal" data-track-name="Open price share modal"
         data-track-button={`${product.slug}:${plan.slug}`} data-track-placement="share_modal" onClick={() => setOpen(true)}>
-        <PublicIcon name="Share2" size={16}/><span>分享价格图</span>
+        <PublicIcon name="Share2" size={16}/><span>{locale === 'zh' ? '分享价格图' : text.button}</span>
       </button> : <button
         ref={triggerRef}
         type="button"

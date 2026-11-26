@@ -1016,7 +1016,11 @@ function CountryAnalysisLinks({
       <section className="gs-canvas-pilots" aria-label={copy.title}>
         <div className="gs-canvas-section-head">
           <h2>{copy.title}</h2>
-          <span>重点核验专页 · {pilots.length} 个地区</span>
+          <span>
+            {locale === "zh"
+              ? `重点核验专页 · ${pilots.length} 个地区`
+              : `Reviewed hubs · ${pilots.length} ${pilots.length === 1 ? "region" : "regions"}`}
+          </span>
         </div>
         <div
           className="gs-canvas-pilot-grid"
@@ -1038,7 +1042,9 @@ function CountryAnalysisLinks({
                 <span className="gs-canvas-pilot-copy">
                   <strong>{pilot.title[pilotLocale]}</strong>
                   <small>
-                    {pilot.countryName[pilotLocale]} · 本币调价、套餐结构与订阅条件复核
+                    {locale === "zh"
+                      ? `${pilot.countryName[pilotLocale]} · 本币调价、套餐结构与订阅条件复核`
+                      : `${pilot.countryName[pilotLocale]} · Local-price changes, plan tiers & billing review`}
                   </small>
                 </span>
               </span>
@@ -1204,8 +1210,8 @@ export default async function PricingDetailPage({
       stats: null,
     });
 
-    if (locale === "zh") {
-      return <ProductCanvasOverview product={product} title={pageTitle} description={pageDescription}
+    if (locale === "zh" || locale === "en") {
+      return <ProductCanvasOverview locale={locale} product={product} title={pageTitle} description={pageDescription}
         basePath={detailBasePath} backLabel={pageCopy.backToPricing} rates={await getCachedPublicExchangeRates()}
         contentAttributes={{ "data-content-facts-hash": rendered?.factsHash, "data-content-kind": managed ? "managed" : "fallback",
           "data-content-mode-generation": revision?.modeGeneration, "data-content-version": contentPreview !== undefined ? "preview" : revision?.version || "baseline" }}
@@ -1456,7 +1462,7 @@ export default async function PricingDetailPage({
   const englishCanvas = canonicalDetailPath === englishPlanCanvasPath;
 
   if (usesPlanCanvas(locale, canonicalDetailPath)) {
-    return <PlanCanvasPage product={product} plan={contentPlan} title={pageTitle} description={heroDescription}
+    return <PlanCanvasPage locale={locale === "en" ? "en" : "zh"} product={product} plan={contentPlan} title={pageTitle} description={heroDescription}
       rates={exchangeRates} incomes={affordability.rows} basePath={detailBasePath} backLabel={pageCopy.backToPricing}
       schema={<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}/>}
       eligibility={eligibility ? <PurchaseEligibilityNote locale={locale} productSlug={product.slug} plans={[contentPlan]}/> : null}

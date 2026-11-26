@@ -2,26 +2,67 @@ import Link from "next/link";
 import PublicIcon from "./PublicIcon";
 import HomepageProductMark from "./HomepageProductMark";
 import { formatPublicDate } from "../lib/public-date";
-import { getChinesePlanDisplayName } from "../lib/pricing-labels";
+import { getChinesePlanDisplayName, getPlanDisplayName } from "../lib/pricing-labels";
+import { getLocalizedRegionName } from "../lib/locale-format";
+import { canvasUiCopy, type CanvasLocale } from "../lib/canvas-ui-copy";
 import type { HomepagePriceChange } from "../lib/homepage-price-changes";
 
-const countries = new Intl.DisplayNames(["zh-CN"], { type: "region" });
-export default function HomepageRecentChanges({ events }: { events: HomepagePriceChange[] }) {
+export default function HomepageRecentChanges({
+  events,
+  locale = "zh",
+}: {
+  events: HomepagePriceChange[];
+  locale?: CanvasLocale;
+}) {
   if (!events.length) return null;
-  return <section className="gs-home-recent" aria-labelledby="home-recent-changes">
-    <div className="gs-home-section-heading"><h2 id="home-recent-changes">最近变价</h2>
-      <Link href="/zh/price-history">价格历史 <PublicIcon name="ArrowRight" size={16}/></Link></div>
-    <ul className="gs-home-change-list">{events.map(event => {
-      const date = formatPublicDate(event.observedAt);
-      const label = getChinesePlanDisplayName(event.productName, event.planName);
-      const increase = event.direction === "increase";
-      return <li key={event.id}><Link className="gs-home-change-row" href={event.href} data-direction={event.direction} data-gs-motion-row>
-        <HomepageProductMark product={{ slug: event.productSlug, name: event.productName }} className="gs-home-change-mark"/>
-        <span className="gs-home-change-copy"><span>{label} · {countries.of(event.countryCode)}</span>
-          {date && <time dateTime={date.dateTime}>{date.text}</time>}</span>
-        <span className="gs-home-change-percent"><PublicIcon name={increase ? "TrendingUp" : "TrendingDown"} size={16}/><span className="gs-sr-only">本币标价{increase ? "上涨" : "下降"}</span>{increase ? "+" : "−"}{Math.abs(event.percent)}%</span>
-      </Link></li>;
-    })}</ul>
-    <p className="gs-home-change-note gs-sr-only">最近 30 天已核验的本币标价变化，不含汇率波动</p>
-  </section>;
+  const copy = canvasUiCopy[locale];
+  return (
+    <section className="gs-home-recent" aria-labelledby="home-recent-changes">
+      <div className="gs-home-section-heading">
+        <h2 id="home-recent-changes">{copy.home.recentHeading}</h2>
+        <Link href={`/${locale}/price-history`}>
+          {copy.home.recentLink} <PublicIcon name="ArrowRight" size={16} />
+        </Link>
+      </div>
+      <ul className="gs-home-change-list">
+        {events.map((event) => {
+          const date = formatPublicDate(event.observedAt, new Date(), locale);
+          const label =
+            locale === "en"
+              ? getPlanDisplayName(event.productName, event.planName)
+              : getChinesePlanDisplayName(event.productName, event.planName);
+          const increase = event.direction === "increase";
+          const country = getLocalizedRegionName(event.countryCode, locale) ?? event.countryCode;
+          return (
+            <li key={event.id}>
+              <Link
+                className="gs-home-change-row"
+                href={`/${locale}/price-history/${event.productSlug}`}
+                data-direction={event.direction}
+                data-gs-motion-row
+              >
+                <HomepageProductMark
+                  product={{ slug: event.productSlug, name: event.productName }}
+                  className="gs-home-change-mark"
+                />
+                <span className="gs-home-change-copy">
+                  <span>
+                    {label} · {country}
+                  </span>
+                  {date && <time dateTime={date.dateTime}>{date.text}</time>}
+                </span>
+                <span className="gs-home-change-percent">
+                  <PublicIcon name={increase ? "TrendingUp" : "TrendingDown"} size={16} />
+                  <span className="gs-sr-only">{copy.home.recentSrDirection(increase)}</span>
+                  {increase ? "+" : "−"}
+                  {Math.abs(event.percent)}%
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="gs-home-change-note gs-sr-only">{copy.home.recentSrNote}</p>
+    </section>
+  );
 }

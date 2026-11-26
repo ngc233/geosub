@@ -59,9 +59,9 @@ export default async function PricingListPage({
   locale: SiteLocale;
   category: PublicProductCategory;
 }) {
-  const canvas = locale === "zh" || (locale === "en" && category === "ai");
-  const zhCanvas = canvas && locale === "zh";
-  const products = zhCanvas
+  const canvas = locale === "zh" || locale === "en";
+  const unifiedCanvas = canvas;
+  const products = unifiedCanvas
     ? await getCachedUnifiedPricingListProducts(locale)
     : await getCachedPricingListProducts(locale, category);
   const copy = getPricingListCopy(locale).pages[category];
@@ -69,7 +69,7 @@ export default async function PricingListPage({
 
   const content = (
     <div className={ui("gs-public-unified gs-listing", "mx-auto max-w-6xl overflow-visible px-5 py-12 md:py-14")}>
-      {!zhCanvas ? (
+      {!unifiedCanvas ? (
         <div className={ui("gs-listing-intro", "mb-9 text-center")}>
           {!canvas ? (
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700">
@@ -87,7 +87,7 @@ export default async function PricingListPage({
         </div>
       ) : null}
 
-      <DbAiPricingClient products={products} locale={locale} canvas={canvas} initialCategory={category} showCategoryHeader={zhCanvas} />
+      <DbAiPricingClient products={products} locale={locale} canvas={canvas} initialCategory={category} showCategoryHeader={unifiedCanvas} />
     </div>
   );
   return canvas ? <div className="gs-public-unified gs-listing-page">

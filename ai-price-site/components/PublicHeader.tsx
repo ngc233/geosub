@@ -23,6 +23,13 @@ export default function PublicHeader({ items, active, pathname, languages, local
   const selected = pendingActive?.pathname === pathname && pendingActive.active === active ? pendingActive.name : active;
   const [drawer, setDrawer] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const isHomepage = pathname === "/zh" || pathname === "/zh/" || pathname === "/en" || pathname === "/en/";
+  const [prevIsHome, setPrevIsHome] = useState(isHomepage);
+  const [heroSearchInView, setHeroSearchInView] = useState(isHomepage);
+  if (isHomepage !== prevIsHome) {
+    setPrevIsHome(isHomepage);
+    setHeroSearchInView(isHomepage);
+  }
   const nav = useRef<HTMLElement>(null);
   const [indicator, setIndicator] = useState<{left:number; width:number} | null>(null);
   useLayoutEffect(() => {
@@ -34,6 +41,22 @@ export default function PublicHeader({ items, active, pathname, languages, local
     const update = () => setScrolled(window.scrollY > 8); update();
     window.addEventListener("scroll",update,{passive:true}); return () => window.removeEventListener("scroll",update);
   }, []);
+  useEffect(() => {
+    if (!isHomepage) return;
+    const target = document.querySelector(".gs-home-intro .gs-home-search");
+    if (!target) {
+      const checkScroll = () => setHeroSearchInView(window.scrollY < 240);
+      checkScroll();
+      window.addEventListener("scroll", checkScroll, { passive: true });
+      return () => window.removeEventListener("scroll", checkScroll);
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroSearchInView(entry.isIntersecting),
+      { threshold: 0.05, rootMargin: "-56px 0px 0px 0px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [isHomepage, pathname]);
   useEffect(() => {
     const outside = (event: PointerEvent) => {
       if (!(event.target instanceof Element)) return;
@@ -82,7 +105,7 @@ export default function PublicHeader({ items, active, pathname, languages, local
     <button type="button" className="gs-language-trigger" aria-expanded={languageOpen} aria-controls={`${languageId}-${mobile}`} onClick={() => {setDropdown(null); setLanguageOpen(!languageOpen);}}><PublicIcon name="Globe" size={16} />{english ? "English" : "简体中文"}<PublicIcon name="ChevronDown" className="gs-nav-chevron" size={16}/></button>
     <div id={`${languageId}-${mobile}`} className="gs-popover" data-open={languageOpen} inert={!languageOpen}>{languages.map(lang => <Link key={lang.code} href={getLanguageSwitchHref(pathname,lang.code)} hrefLang={lang.code} rel={lang.code === "zh" || lang.code === "en" ? undefined : "nofollow"} aria-current={lang.code === locale ? "true" : undefined} onClick={() => {setLanguageOpen(false); setDrawer(false);}}>{lang.name}{lang.code === locale && <PublicIcon name="Check" size={16}/>}</Link>)}</div>
   </div>;
-  return <header className="gs-public-unified gs-header" data-scrolled={scrolled} data-gs-english={english || undefined}>
+  return <header className="gs-public-unified gs-header" data-scrolled={scrolled} data-hide-header-search={isHomepage && heroSearchInView ? "true" : undefined}>
     <div className="gs-header-inner">
       <Link href={english ? withSiteLocale("/",locale) : "/zh/"} aria-label={english ? "GeoSub home" : "GeoSub 首页"} className="gs-brand"><GeoSubLogo size={28} /></Link>
       <nav ref={nav} aria-label={english ? "Main navigation" : "主导航"} className="gs-desktop-nav" data-measured={Boolean(indicator)}>

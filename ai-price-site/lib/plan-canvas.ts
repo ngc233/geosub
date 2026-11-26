@@ -5,8 +5,14 @@ import type { PlanAffordabilityRow } from "./affordability.ts";
  * are both checked so aliases/query parameters cannot opt a locked page in. */
 export function usesPlanCanvas(locale: string, canonicalPath: string) {
   const path = canonicalPath.split(/[?#]/)[0].replace(/\/+$/, "");
-  return locale === "zh" && /^\/zh\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path)
-    && path !== "/zh/ai-pricing/chatgpt/plus";
+  if (locale === "zh") {
+    return /^\/zh\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path)
+      && path !== "/zh/ai-pricing/chatgpt/plus";
+  }
+  if (locale === "en") {
+    return /^\/en\/(ai-pricing|streaming-pricing)\/[^/]+\/[^/]+$/.test(path);
+  }
+  return false;
 }
 
 export function planSaving(usd: number, usPrice?: number) {

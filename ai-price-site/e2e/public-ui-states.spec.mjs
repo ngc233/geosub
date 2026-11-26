@@ -47,7 +47,7 @@ test("homepage and search remain usable across desktop mobile light and dark sta
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "light" });
   await page.reload();
-  await page.getByRole("button", { name: "搜索产品或国家", exact: true }).click();
+  await page.locator(".gs-home-search-field").click();
   const searchDialog = page.getByRole("dialog", { name: "搜索", exact: true });
   await expect(searchDialog).toBeVisible();
   await expect(searchDialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
@@ -55,7 +55,7 @@ test("homepage and search remain usable across desktop mobile light and dark sta
   await expect(searchDialog).toBeHidden();
 
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.getByRole("button", { name: "搜索产品或国家", exact: true }).click();
+  await page.locator(".gs-home-search-field").click();
   await expect(searchDialog).toBeVisible();
   expect(await getRenderedBackgroundRgb(searchDialog)).toEqual([26, 29, 32]);
   await page.keyboard.press("Escape");

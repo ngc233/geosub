@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import GuideArticle from "./GuideArticle";
+import type { GuideLink } from "../lib/guide-presentation";
 
 type GuideSection = {
   title: string;
@@ -9,6 +10,7 @@ type GuideSection = {
 
 export default function PublicGuidePage({
   canvas = false,
+  locale = "zh",
   metadata,
   eyebrow,
   title,
@@ -17,8 +19,10 @@ export default function PublicGuidePage({
   note,
   relatedLabel,
   relatedLinks = [],
+  quickTools,
 }: {
   canvas?: boolean;
+  locale?: "zh" | "en";
   metadata?: ReactNode;
   eyebrow: string;
   title: string;
@@ -26,13 +30,42 @@ export default function PublicGuidePage({
   sections: GuideSection[];
   note: string;
   relatedLabel?: string;
-  relatedLinks?: Array<{
-    href: string;
-    title: string;
-    description?: string | null;
-  }>;
+  relatedLinks?: GuideLink[];
+  quickTools?: GuideLink[];
 }) {
-  if (canvas) return <GuideArticle metadata={metadata} eyebrow={eyebrow} title={title} description={description} relatedLabel={relatedLabel} relatedLinks={relatedLinks}><div className="gs-guide-prose" data-guide-body>{sections.map((section, index) => <section key={`${section.title}-${index}`}><h2>{section.title}</h2><p>{section.body}</p></section>)}<p className="gs-guide-note">{note}</p></div></GuideArticle>;
+  if (canvas) {
+    return (
+      <GuideArticle
+        locale={locale}
+        metadata={metadata}
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        relatedLabel={relatedLabel}
+        relatedLinks={relatedLinks}
+        quickTools={quickTools}
+      >
+        <div className="gs-guide-prose gs-guide-checkpoints" data-guide-body>
+          {sections.map((section, index) => (
+            <section key={`${section.title}-${index}`} className="gs-guide-checkpoint">
+              <div className="gs-guide-checkpoint-head flex items-center gap-2.5">
+                <span
+                  data-gs-ui="tag"
+                  className="gs-guide-checkpoint-num shrink-0 inline-flex items-center justify-center w-6 h-6"
+                  aria-hidden="true"
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h2>{section.title}</h2>
+              </div>
+              <p>{section.body}</p>
+            </section>
+          ))}
+          <p className="gs-guide-note">{note}</p>
+        </div>
+      </GuideArticle>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">

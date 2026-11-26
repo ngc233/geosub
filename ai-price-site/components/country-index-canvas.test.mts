@@ -79,10 +79,13 @@ test("empty coverage is zero, all failures remain unavailable, never invented co
   assert.equal((texts(failed.html).match(/覆盖数量暂时无法读取/g) || []).length, 4);
   assert.doesNotMatch(texts(failed.html), /0 个产品/);
 });
-test("English retains the legacy branch and receives neither directory styles nor motion", async () => {
+test("English uses the unified country directory canvas with localized English copy and links", async () => {
   const { html } = await render("en");
-  assert.match(html, /legacy-page/);
-  assert.match(texts(html), /GEOSUB SUBSCRIPTION PRICE DATA/);
-  assert.doesNotMatch(html, /gs-country-index|data-gs-motion-card|data-gs-auxiliary/);
+  assert.match(html, /gs-public-unified gs-country-index/);
+  assert.deepEqual([...html.matchAll(/href="([^"]+)"/g)].map(m => m[1]), [
+    ...priorityCountries.map(c => `/en/countries/${c.slug}`),
+  ]);
+  assert.equal((html.match(/class="gs-country-index-card"/g) || []).length, 4);
   assert.match(texts(html), /2 products · 3 plans · AI 2 \/ Streaming 1/);
+  assert.match(texts(html), /Scope: verified monthly App Store plans\./);
 });

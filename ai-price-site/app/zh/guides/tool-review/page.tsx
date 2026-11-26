@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import PublicGuidePage from "../../../../components/PublicGuidePage";
+import {
+  getDefaultArticleQuickTools,
+  getGuideHubCopy,
+  getSiblingCoreGuideLinks,
+} from "../../../../lib/guide-hub-copy";
 
 export const metadata: Metadata = {
   title: "工具测评",
@@ -7,12 +12,15 @@ export const metadata: Metadata = {
 };
 
 export default function GuideCategoryPage() {
+  const copy = getGuideHubCopy("zh");
   return (
     <PublicGuidePage
       canvas
-      eyebrow="Tool Review"
-      title="怎样判断一个数字工具是否值得订阅"
-      description="不要只看功能清单或单次跑分。先明确使用场景，再比较能力、限制和持续成本。"
+      locale="zh"
+      eyebrow={copy.toolReview.eyebrow}
+      title={copy.toolReview.title}
+      description={copy.toolReview.articleDescription}
+      metadata={<span>{copy.coreArticleMeta(3, 3)}</span>}
       sections={[
         {
           title: "从自己的任务出发",
@@ -28,6 +36,9 @@ export default function GuideCategoryPage() {
         },
       ]}
       note="最可靠的选择来自真实任务试用。评分和价格比较用于缩小范围，不应替代你的实际体验。"
+      relatedLabel={copy.articleContinueTitle}
+      relatedLinks={getSiblingCoreGuideLinks("zh", "tool-review")}
+      quickTools={getDefaultArticleQuickTools("zh", "tool-review")}
     />
   );
 }

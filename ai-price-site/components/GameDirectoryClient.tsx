@@ -272,7 +272,8 @@ export default function GameDirectoryClient({
                             <PublicPriceNumber
                               value={bestForFilter.lowestUsd * rate}
                               currency={currency}
-                              changeKey={currency}
+                              changeKey={`${currency}:${bestForFilter.platform}:${bestForFilter.edition}`}
+                              countIn
                             />
                           </strong>
                           {bestForFilter.lowestCurrency && bestForFilter.lowestLocalPrice && (
