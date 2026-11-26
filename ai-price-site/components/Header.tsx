@@ -75,6 +75,16 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
           href: "/guides/payment-account",
           description: "跨区支付、账号注册和订阅注意事项。",
         },
+        {
+          name: "工具测评",
+          href: "/guides/tool-review",
+          description: "按真实任务、能力边界与持续成本判断订阅价值。",
+        },
+        {
+          name: "方法论",
+          href: "/guides/methodology",
+          description: "了解套餐匹配、样本一致性与四种日期口径。",
+        },
       ],
     },
     { name: "数据来源", href: "/data-sources", match: ["/data-sources"] },
@@ -160,6 +170,16 @@ const fallbackNavItemsByLocale: Record<PreparedSiteLocale, NavItem[]> =
           name: "Payment & Account",
           href: "/guides/payment-account",
           description: "Account setup, payment methods, and subscription notes.",
+        },
+        {
+          name: "Tool Review",
+          href: "/guides/tool-review",
+          description: "Evaluate tools by real workflows, limits, and ongoing cost.",
+        },
+        {
+          name: "Methodology",
+          href: "/guides/methodology",
+          description: "How regional prices, currencies, and dates are verified.",
         },
       ],
     },
@@ -550,8 +570,8 @@ export default function Header({
   );
   const unified = usesUnifiedPublicStyle(pathname);
   // Preserve the frozen Plus experiment's existing navigation; on unified Chinese
-  // public routes, keep core header entries and nest data-sources under guides.
-  const baseNavItems = currentLocaleCode === "zh" && unified
+  // and English public routes, keep core header entries and nest data-sources under guides.
+  const baseNavItems = (currentLocaleCode === "zh" || currentLocaleCode === "en") && unified
     ? rawBaseNavItems
         .filter((item) => {
           const clean = stripSiteLocale(item.href).replace(/\/+$/, "") || "/";
@@ -560,23 +580,54 @@ export default function Header({
         .map((item) => {
           const clean = stripSiteLocale(item.href);
           if (clean !== "/guides") return item;
-          const existingChildren = item.children && item.children.length > 0
-            ? item.children
+          const requiredGuideChildren: NonNullable<NavItem["children"]> = currentLocaleCode === "en"
+            ? [
+                {
+                  name: "Tool Review",
+                  href: "/guides/tool-review",
+                  description: "Evaluate tools by real workflows, limits, and ongoing cost.",
+                },
+                {
+                  name: "Methodology",
+                  href: "/guides/methodology",
+                  description: "How regional prices, currencies, and dates are verified.",
+                },
+                {
+                  name: "Data Sources & Methodology",
+                  href: "/data-sources",
+                  description: "How regional prices, FX rates, and verification rules work.",
+                },
+              ]
             : [
-                ...(fallbackNavItemsByLocale.zh.find((f) => f.href === "/guides")?.children ?? []),
+                {
+                  name: "工具测评",
+                  href: "/guides/tool-review",
+                  description: "按真实任务、能力边界与持续成本判断订阅价值。",
+                },
+                {
+                  name: "方法论",
+                  href: "/guides/methodology",
+                  description: "了解套餐匹配、样本一致性与四种日期口径。",
+                },
                 {
                   name: "数据来源与口径",
                   href: "/data-sources",
                   description: "了解价格采集来源、汇率基准与核验标准。",
                 },
               ];
-          const hasDataSources = existingChildren.some((c) => stripSiteLocale(c.href) === "/data-sources");
+          const existingChildren = item.children && item.children.length > 0
+            ? item.children
+            : (fallbackNavItemsByLocale[currentLocaleCode].find((f) => f.href === "/guides")?.children ?? []);
+          const mergedChildren = [...existingChildren];
+          for (const extra of requiredGuideChildren) {
+            if (!mergedChildren.some((c) => stripSiteLocale(c.href) === extra.href)) {
+              mergedChildren.push(extra);
+            }
+          }
           return {
             ...item,
             match: [...new Set([...(item.match ?? ["/guides", "/articles"]), "/data-sources"])],
-            children: hasDataSources
-              ? existingChildren
-              : [...existingChildren, { name: "数据来源与口径", href: "/data-sources" }],
+            children: mergedChildren,
           };
         })
     : rawBaseNavItems;
@@ -590,7 +641,7 @@ export default function Header({
     && !baseNavItems.some(item => !item.external && normalizePath(stripSiteLocale(item.href)) === gamePath)
     ? [{ name: "游戏比价", href: gamePath }] : [];
   const guidesIndex = baseNavItems.findIndex(item => stripSiteLocale(item.href) === "/guides");
-  const insertIndex = currentLocaleCode === "zh" && unified && guidesIndex >= 0 ? guidesIndex : 2;
+  const insertIndex = (currentLocaleCode === "zh" || currentLocaleCode === "en") && unified && guidesIndex >= 0 ? guidesIndex : 2;
   const navItems = [...baseNavItems.slice(0, insertIndex), ...gameEntry, ...discoveryItems, ...baseNavItems.slice(insertIndex)];
 
   const activeItemName = navItems.find((item) => isNavItemActive(item, pathname))?.name || "";

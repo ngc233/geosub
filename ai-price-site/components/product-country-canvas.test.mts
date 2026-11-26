@@ -99,8 +99,8 @@ test("other pilots keep active event display and current source fallback", async
   assert.match(html, /<span class="gs-product-country-event-price">KRW 49,000<\/span>/);
   assert.match(html, /<span class="gs-product-country-event-next"><svg\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/svg>KRW 14,000<\/span>/);
   const english = await execute({ product: p, slug: "grok", locale: "en" });
-  assert.doesNotMatch(english.html, /gs-product-country-event-/);
-  assert.match(english.html, /KRW 49,000<svg\b[^>]*class="[^"]*\binline\b[^"]*"[^>]*>[\s\S]*?<\/svg>KRW 14,000/);
+  assert.match(english.html, /<span class="gs-product-country-event-price">KRW 49,000<\/span>/);
+  assert.match(english.html, /<span class="gs-product-country-event-next"><svg\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/svg>KRW 14,000<\/span>/);
   assert.doesNotMatch(text(html), /历史调价/);
   assert.doesNotMatch(text(html), /暂无同套餐美国参考价/);
 });
@@ -157,7 +157,8 @@ test("metadata keeps approved alternates, noindex boundaries and original titles
     assert.deepEqual(metadata.robots, { index: true, follow: true });
     assert.deepEqual(metadata.alternates, { canonical: `/${locale}/ai-pricing/claude/regions/south-korea`, languages: { "zh-CN": "/zh/ai-pricing/claude/regions/south-korea", "en-US": "/en/ai-pricing/claude/regions/south-korea", "x-default": "/en/ai-pricing/claude/regions/south-korea" } });
     assert.equal(metadata.title, locale === "zh" ? "Claude 韩国价格与套餐" : "Claude prices and plans in South Korea");
-    if (locale === "en") { assert.doesNotMatch(html, /gs-public-unified|data-gs-ui|gs-product-country|gs-pilot-|pilot-page/); assert.match(text(html), /Global price position 2\/2/); }
+    assert.match(html, /gs-public-unified gs-product-country/);
+    if (locale === "en") { assert.match(text(html), /Global price position 2\/2/); }
   }
   const p = product(); p.slug = "gemini"; p.plans.forEach(plan => { plan.regions[0].code = "JP"; });
   const { html, metadata } = await execute({ product: p, slug: "gemini", country: "japan" });

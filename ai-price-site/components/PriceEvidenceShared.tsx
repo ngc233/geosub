@@ -30,9 +30,6 @@ export function PageHeading({ title, description, locale, centered = false, iden
 }) {
   const preview = getPriceEvidencePreview();
   return <header className={`mb-8 ${centered ? "text-center" : ""}`}>
-    {locale !== "zh" && <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-      GEOSUB SUBSCRIPTION PRICE DATA
-    </p>}
     <div className={`flex items-center gap-4 ${centered ? "justify-center" : ""}`}>
       {identity}
       <h1 className="min-w-0 text-3xl font-semibold tracking-[-0.025em] text-[var(--color-text-primary)] md:text-4xl">{title}</h1>

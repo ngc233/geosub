@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import PublicGuidePage from "../../../../components/PublicGuidePage";
+import {
+  getDefaultArticleQuickTools,
+  getGuideHubCopy,
+  getSiblingCoreGuideLinks,
+} from "../../../../lib/guide-hub-copy";
 
 export const metadata: Metadata = {
   title: "Tool Reviews",
@@ -8,11 +13,15 @@ export const metadata: Metadata = {
 };
 
 export default function EnglishToolReviewPage() {
+  const copy = getGuideHubCopy("en");
   return (
     <PublicGuidePage
-      eyebrow="Tool Review"
-      title="How to decide whether a digital tool is worth subscribing to"
-      description="Do not rely on a feature list or one benchmark. Define the use case, then compare capability, limits and ongoing cost."
+      canvas
+      locale="en"
+      eyebrow={copy.toolReview.eyebrow}
+      title={copy.toolReview.title}
+      description={copy.toolReview.articleDescription}
+      metadata={<span>{copy.coreArticleMeta(3, 3)}</span>}
       sections={[
         {
           title: "Start with your actual tasks",
@@ -28,6 +37,9 @@ export default function EnglishToolReviewPage() {
         },
       ]}
       note="The most reliable decision comes from testing your own tasks. Scores and price comparisons should narrow the options, not replace direct experience."
+      relatedLabel={copy.articleContinueTitle}
+      relatedLinks={getSiblingCoreGuideLinks("en", "tool-review")}
+      quickTools={getDefaultArticleQuickTools("en", "tool-review")}
     />
   );
 }

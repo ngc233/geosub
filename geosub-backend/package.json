@@ -1,15 +1,15 @@
 {
-    "name": "geosub-backend-tools",
-    "version": "2.36.1",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "render:app-store": "node scripts/render-app-store-prices.mjs",
-        "render:web-snapshot": "node scripts/render-web-snapshot.mjs",
-        "collect:growth:bing": "node scripts/growth-bing-shadow.mjs",
-        "collect:growth:google": "node scripts/growth-google-shadow.mjs"
-    },
-    "dependencies": {
-        "playwright-core": "^1.57.0"
-    }
+  "name": "geosub-backend-tools",
+  "version": "2.37.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render:app-store": "node scripts/render-app-store-prices.mjs",
+    "render:web-snapshot": "node scripts/render-web-snapshot.mjs",
+    "collect:growth:bing": "node scripts/growth-bing-shadow.mjs",
+    "collect:growth:google": "node scripts/growth-google-shadow.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.57.0"
+  }
 }

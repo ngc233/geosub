@@ -30,9 +30,9 @@ for(const width of [1280,390])for(const colorScheme of ["light","dark"] as const
       await expect(page.getByRole("navigation",{name:"主导航"}).locator('[aria-current="page"]')).toHaveCount(0);
     }
   });
-  test(`locked ${width} ${colorScheme}: Chinese Plus and English routes outside the rollout are pixel-identical`,async({browser},testInfo)=>{
+  test(`locked ${width} ${colorScheme}: Chinese Plus route outside the rollout is pixel-identical`,async({browser},testInfo)=>{
     test.skip(testInfo.project.name !== "local-chrome-acceptance", "Pixel comparison requires the separately retained main preview; run playwright.chrome.config.ts locally.");
-    for(const route of ["/zh/ai-pricing/chatgpt/plus","/en/ai-pricing/chatgpt/plus"]){
+    for(const route of ["/zh/ai-pricing/chatgpt/plus"]){
       const values=[];
       for(const origin of [baseline,"http://127.0.0.1:3143"]){
         const context=await browser.newContext({viewport:{width,height:width===390?844:720},colorScheme,reducedMotion:"reduce"});
@@ -106,7 +106,7 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
     const logo=page.locator('header a[aria-label="GeoSub 首页"]');
     const before=(await logo.boundingBox())!.x;
     const stable=async()=>expect((await logo.boundingBox())!.x).toBe(before);
-    await page.getByRole("button",{name:"搜索产品或国家"}).click();await expect(page.getByRole("dialog",{name:"搜索",exact:true})).toBeVisible();await stable();
+    await page.locator(".gs-home-search-field").click();await expect(page.getByRole("dialog",{name:"搜索",exact:true})).toBeVisible();await stable();
     await page.keyboard.press("Escape");await stable();
     if(width===390){
       await page.getByRole("button",{name:"打开菜单"}).click();await expect(page.getByRole("dialog",{name:"菜单",exact:true})).toBeVisible();await stable();
@@ -141,7 +141,7 @@ for (const width of [1280,390]) for (const colorScheme of ["light","dark"] as co
   test(`search minimum equals the destination overview: ${width} ${colorScheme}`, async({page})=>{
     await page.addInitScript(()=>localStorage.setItem("geosub-public-display-currency","USD"));
     await page.setViewportSize({width,height:844}); await page.emulateMedia({colorScheme,reducedMotion:"reduce"});
-    await page.goto("/zh"); await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();
+    await page.goto("/zh"); await page.locator(".gs-home-search-field").click();
     const responsePromise=page.waitForResponse(response=>response.url().includes("/api/search?") && response.url().includes("view=chrome"));
     await page.getByRole("combobox",{name:"搜索产品或国家"}).fill("E2E Atlas");
     const response=await responsePromise; expect(response.ok()).toBe(true);
@@ -201,7 +201,7 @@ for(const width of [1280,390]) for(const colorScheme of ["light","dark"] as cons
   await language.click();await languagePanel.locator('a').first().focus();await page.keyboard.press("Escape");
   await expect(language).toBeFocused();await expect(languagePanel).toHaveAttribute("inert","");
   if(width===390)await page.keyboard.press("Escape");
-  else {await language.click();await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();await expect(language).toHaveAttribute("aria-expanded","false");await page.keyboard.press("Escape");}
+  else {await language.click();await page.locator(".gs-home-search-field").click();await expect(language).toHaveAttribute("aria-expanded","false");await page.keyboard.press("Escape");}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  });
 }

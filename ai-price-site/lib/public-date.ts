@@ -4,6 +4,8 @@ const calendar = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
 });
 
+const EN_SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
 function calendarDate(value: Date | string): string | null {
   // Date-only evidence must keep its recorded calendar day, independent of TZ.
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -20,15 +22,22 @@ function calendarDate(value: Date | string): string | null {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
-/** Future callers render <time dateTime={label.dateTime}>{label.text}</time>.
- * No existing page consumes this helper in U1. Missing/invalid dates stay absent.
- */
-export function formatPublicDate(value: Date | string | null | undefined, now: Date = new Date()): PublicDateLabel | null {
+/** Deterministic calendar label in zh or en without client/server timezone drift. */
+export function formatPublicDate(
+  value: Date | string | null | undefined,
+  now: Date = new Date(),
+  locale: "zh" | "en" = "zh",
+): PublicDateLabel | null {
   if (value == null || value === "") return null;
   const day = calendarDate(value);
   const today = calendarDate(now);
   if (!day || !today) return null;
   const [year, month, date] = day.split("-");
+  if (locale === "en") {
+    const monthName = EN_SHORT_MONTHS[Number(month) - 1] ?? month;
+    const sameYear = year === today.slice(0, 4);
+    return { text: sameYear ? `${monthName} ${Number(date)}` : `${monthName} ${Number(date)}, ${year}`, dateTime: day };
+  }
   const yearLabel = year === today.slice(0, 4) ? "" : `${year}年`;
   return { text: `${yearLabel}${Number(month)}月${Number(date)}日`, dateTime: day };
 }

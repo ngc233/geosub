@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import LocalizedHomepagePage from "../../components/LocalizedHomepagePage";
+import UnifiedHomepageCanvas from "../../components/UnifiedHomepageCanvas";
 
 export const metadata: Metadata = {
   title: "Global Digital Subscription Pricing",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function EnglishPage() {
-  return <LocalizedHomepagePage locale="en" />;
+  return <UnifiedHomepageCanvas locale="en" />;
 }

@@ -112,7 +112,7 @@ test("admin can log in and approve a pending observation", async ({ page }) => {
 });
 
 test("a country click opens persistent price details while the map remains pannable", async ({ page }) => {
-  await page.goto(`/en/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`);
+  await page.goto(`/es/ai-pricing/${fixture.productSlug}/${fixture.planSlug}`);
   const map = page.locator("[data-detail-geo-pricing]");
   await map.scrollIntoViewIfNeeded();
   const country = page.locator('[data-detail-map-country="US"]');
@@ -130,7 +130,7 @@ test("a country click opens persistent price details while the map remains panna
   await page.mouse.click(point.x, point.y);
   const selection = page.locator("[data-detail-map-selection]");
   await expect(selection.getByRole("button")).toBeVisible();
-  await expect(selection).toContainText("United States");
+  await expect(selection).toContainText("Estados Unidos");
   await page.mouse.move(point.x + 40, point.y + 40);
   await expect(selection.getByRole("button")).toBeVisible();
   await selection.getByRole("button").click();

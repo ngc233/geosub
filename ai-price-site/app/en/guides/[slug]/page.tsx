@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import GuideArticle from "../../../../components/GuideArticle";
 import {
   formatArticleDate,
   getArticleTypeLabel,
@@ -119,41 +119,49 @@ export default async function EnglishGuideArticlePage({
           mainEntityOfPage: url,
         };
 
+  const relatedLinks = article.relations.flatMap((relation) => {
+    const href = relation.relatedArticle
+      ? `/en/guides/${relation.relatedArticle.slug}`
+      : relation.product
+        ? `/en/${relation.product.category === "STREAMING" ? "streaming-pricing" : "ai-pricing"}/${relation.product.slug}`
+        : null;
+    return href
+      ? [
+          {
+            href,
+            title: relation.title || relation.relatedArticle?.title || relation.product?.name || "",
+            description: relation.description,
+          },
+        ]
+      : [];
+  });
+
+  const typeLabel = getArticleTypeLabel(article.articleType, "en");
+
   return (
-    <main className="min-h-screen bg-[#faf8f2] px-5 py-12">
+    <>
       {structuredData ? (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
       ) : null}
-
-      <article className="mx-auto max-w-3xl">
-        <Link href="/en/guides" className="text-sm font-black text-blue-700 hover:text-blue-900">
-          Back to guides
-        </Link>
-
-        <header className="mt-8">
-          <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-zinc-500">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
-              {getArticleTypeLabel(article.articleType, "en")}
-            </span>
+      <GuideArticle
+        locale="en"
+        eyebrow={article.category?.name || typeLabel}
+        title={article.title}
+        description={article.subtitle || article.excerpt}
+        relatedLinks={relatedLinks}
+        relatedLabel="Related reading"
+        tocEnabled={article.tocEnabled}
+        metadata={
+          <>
+            <span>{typeLabel}</span>
             <span>{formatArticleDate(article.publishedAt, "en")}</span>
             <span>{article.readingTime || 1} min read</span>
-            {article.category ? <span>{article.category.name}</span> : null}
-          </div>
-
-          <h1 className="mt-5 text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
-            {article.title}
-          </h1>
-
-          {article.subtitle || article.excerpt ? (
-            <p className="mt-5 text-lg leading-8 text-zinc-600">
-              {article.subtitle || article.excerpt}
-            </p>
-          ) : null}
-        </header>
-
+          </>
+        }
+      >
         {article.coverImageUrl ? (
           <Image
             src={article.coverImageUrl}
@@ -161,47 +169,11 @@ export default async function EnglishGuideArticlePage({
             width={1200}
             height={675}
             unoptimized
-            className="mt-10 aspect-[16/9] w-full rounded-xl object-cover"
+            className="gs-guide-cover"
           />
         ) : null}
-
-        <div
-          className="article-body mt-10 rounded-xl border border-zinc-200 bg-white p-7 text-zinc-700 shadow-sm shadow-zinc-950/[0.03] md:p-9"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-
-        {article.relations.length > 0 ? (
-          <aside className="mt-8 rounded-xl border border-zinc-200 bg-white p-6">
-            <h2 className="text-base font-black text-zinc-950">Related reading</h2>
-            <div className="mt-4 grid gap-3">
-              {article.relations.map((relation) => {
-                const href = relation.relatedArticle
-                  ? `/en/guides/${relation.relatedArticle.slug}`
-                  : relation.product
-                    ? `/en/${relation.product.category === "STREAMING" ? "streaming-pricing" : "ai-pricing"}/${relation.product.slug}`
-                    : null;
-
-                if (!href) return null;
-
-                return (
-                  <Link
-                    key={relation.id}
-                    href={href}
-                    className="rounded-lg border border-zinc-200 px-4 py-3 transition hover:border-blue-200 hover:bg-blue-50"
-                  >
-                    <div className="font-bold text-zinc-950">
-                      {relation.title || relation.relatedArticle?.title || relation.product?.name}
-                    </div>
-                    {relation.description ? (
-                      <div className="mt-1 text-sm text-zinc-500">{relation.description}</div>
-                    ) : null}
-                  </Link>
-                );
-              })}
-            </div>
-          </aside>
-        ) : null}
-      </article>
-    </main>
+        <div className="gs-guide-prose" data-guide-body dangerouslySetInnerHTML={{ __html: html }} />
+      </GuideArticle>
+    </>
   );
 }

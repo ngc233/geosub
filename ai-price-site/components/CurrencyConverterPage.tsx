@@ -176,17 +176,28 @@ export default async function CurrencyConverterPage({
   const fromRate = pair ? rateMap.get(pair.from)?.rate || 0 : 0;
   const toRate = pair ? rateMap.get(pair.to)?.rate || 0 : 0;
   const pairRate =
-    pair && fromRate > 0 && toRate > 0 && (locale !== "zh" || (canDisplayConverterRate(rateMap.get(pair.from)) && canDisplayConverterRate(rateMap.get(pair.to)))) ? toRate / fromRate : null;
+    pair &&
+    fromRate > 0 &&
+    toRate > 0 &&
+    (!(locale === "zh" || locale === "en") ||
+      (canDisplayConverterRate(rateMap.get(pair.from)) &&
+        canDisplayConverterRate(rateMap.get(pair.to))))
+      ? toRate / fromRate
+      : null;
 
   function formatExampleResult(amount: number) {
     if (!pair || pairRate === null) return copy.unavailableShort;
-    if (locale !== "zh") return formatCurrency(amount * pairRate, pair.to, locale);
+    if (locale !== "zh" && locale !== "en") return formatCurrency(amount * pairRate, pair.to, locale);
 
     const parsed = parseZhConverterAmount(String(amount));
     if (parsed.status !== "ok") return copy.unavailableShort;
     const result = convertZhAmount(parsed, rateMap.get(pair.from), rateMap.get(pair.to), pair.to);
     if (result.status === "ok") return formatCurrency(result.value, pair.to, locale);
-    return result.status === "too-large" ? zhConverterAmountCopy.resultTooLarge : copy.unavailableShort;
+    return result.status === "too-large"
+      ? locale === "en"
+        ? "Converted amount exceeds display limit"
+        : zhConverterAmountCopy.resultTooLarge
+      : copy.unavailableShort;
   }
 
   const pairRateDate = pair
@@ -247,22 +258,222 @@ export default async function CurrencyConverterPage({
     },
   ];
 
+  const unified = locale === "zh" || locale === "en";
+  if (unified) {
+    const english = locale === "en";
+    const featuredPairs = getFeaturedCurrencyPairs(locale);
+    const pairSectionCopy = getCurrencyPairCopy(locale);
+    const pricingBridges = english
+      ? [
+          {
+            href: "/en/ai-pricing",
+            title: "AI Subscription Pricing",
+            meta: "ChatGPT · Claude · Gemini",
+          },
+          {
+            href: "/en/streaming-pricing",
+            title: "Streaming Subscription Pricing",
+            meta: "Spotify · YouTube · Netflix",
+          },
+          {
+            href: "/en/countries",
+            title: "Cheapest Regions Directory",
+            meta: "Turkey · Nigeria · India · Japan",
+          },
+        ]
+      : [
+          {
+            href: "/zh/ai-pricing",
+            title: "AI 订阅全球比价",
+            meta: "ChatGPT · Claude · Gemini",
+          },
+          {
+            href: "/zh/streaming-pricing",
+            title: "流媒体全球比价",
+            meta: "Spotify · YouTube · Netflix",
+          },
+          {
+            href: "/zh/countries",
+            title: "低价国家与地区榜",
+            meta: "土耳其 · 尼日利亚 · 印度 · 日本",
+          },
+        ];
+
+    return (
+      <div className="gs-public-unified gs-tools-scope">
+        <ConverterStyleResource />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
+        />
+        <div className="gs-tools-layout">
+          <header className="gs-tool-intro">
+            <p className="gs-tool-eyebrow">
+              <span className="gs-tool-eyebrow-dot" aria-hidden="true" />
+              {pairCopy?.eyebrow || copy.eyebrow}
+            </p>
+            <h1>{pageTitle}</h1>
+            <p className="gs-tool-lead">{pageDescription}</p>
+            {pair && pairCopy ? (
+              <Link href={basePath} className="gs-tool-back-link">
+                <span aria-hidden="true">←</span> {pairCopy.backToConverter}
+              </Link>
+            ) : null}
+          </header>
+
+          <SubscriptionCurrencyConverter
+            rates={rates}
+            locale={locale}
+            copy={copy}
+            initialFromCurrency={pair?.from}
+            initialToCurrency={pair?.to}
+          />
+
+          <div className="gs-tool-rail-stack">
+            <section className="gs-tool-rail-card" aria-labelledby="gs-tool-pairs-heading">
+              <div className="gs-tool-rail-head">
+                <h2 id="gs-tool-pairs-heading">{pairSectionCopy.popularPairs}</h2>
+                <span>{english ? "1-click pair" : "一键切换币种对"}</span>
+              </div>
+              <div className="gs-tool-pairs-grid">
+                {featuredPairs.map((item) => (
+                  <Link
+                    key={item.slug}
+                    href={`${basePath}/${item.slug}`}
+                    className="gs-tool-pair-chip"
+                    data-gs-motion-card
+                    aria-current={pair?.slug === item.slug ? "page" : undefined}
+                  >
+                    <strong>
+                      {item.from} <span aria-hidden="true">→</span> {item.to}
+                    </strong>
+                    <small>
+                      {getCurrencyName(item.from, locale)} → {getCurrencyName(item.to, locale)}
+                    </small>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            <section className="gs-tool-rail-card" aria-labelledby="gs-tool-bridges-heading">
+              <div className="gs-tool-rail-head">
+                <h2 id="gs-tool-bridges-heading">
+                  {english ? "Compare Verified Store Prices" : "去查实测官方订阅价"}
+                </h2>
+              </div>
+              <p className="gs-tool-rail-desc">
+                {english
+                  ? "Exchange rates only estimate FX—official regional pricing across stores often differs by 30%–70%:"
+                  : "汇率换算仅估算牌价，各区官方定价往往相差 30%–70%。直接查看实测地区低价："}
+              </p>
+              <div className="gs-tool-bridge-list">
+                {pricingBridges.map((bridge) => (
+                  <Link
+                    key={bridge.href}
+                    href={bridge.href}
+                    className="gs-tool-bridge-link"
+                    data-gs-motion-card
+                  >
+                    <div>
+                      <strong>{bridge.title}</strong>
+                      <small>{bridge.meta}</small>
+                    </div>
+                    <span className="gs-tool-bridge-arrow" aria-hidden="true">
+                      →
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          {pair && pairCopy && pairPresentation ? (
+            <>
+              <section className="gs-tool-section gs-tool-pair-grid">
+                <article className="gs-tool-card">
+                  <span className="gs-tool-card-kicker">{pairCopy.currentRate}</span>
+                  <p className="gs-tool-pair-rate">
+                    {pairRate === null
+                      ? copy.unavailable
+                      : `1 ${pair.from} = ${new Intl.NumberFormat(
+                          localeDefinition.intlLocale,
+                          {
+                            minimumFractionDigits: pairRate >= 1000 ? 0 : 2,
+                            maximumFractionDigits: pairRate >= 1000 ? 2 : 6,
+                          },
+                        ).format(pairRate)} ${pair.to}`}
+                  </p>
+                  <p className="gs-tool-card-meta">
+                    {pairRateDate
+                      ? `${copy.rateBasis} ${pairRateDate}`
+                      : copy.pending}
+                  </p>
+                  <div className="gs-tool-pair-notes">
+                    <div>
+                      <h3>{pairCopy.methodologyTitle}</h3>
+                      <p>{pairCopy.methodology}</p>
+                    </div>
+                    <div>
+                      <h3>{pairCopy.paymentTitle}</h3>
+                      <p>{pairCopy.paymentNote}</p>
+                    </div>
+                  </div>
+                </article>
+
+                <article className="gs-tool-card">
+                  <div className="gs-tool-card-head">
+                    <h2>{pairCopy.examplesTitle}</h2>
+                    <p>{pairCopy.examplesDescription(pair.from, pair.to)}</p>
+                  </div>
+                  <div className="gs-tool-examples-list">
+                    {[5, 10, 20, 50, 100].map((amount) => (
+                      <div key={amount} className="gs-tool-example-row">
+                        <span>{formatCurrency(amount, pair.from, locale)}</span>
+                        <strong>{formatExampleResult(amount)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              </section>
+            </>
+          ) : null}
+
+          <section className="gs-tool-section" aria-labelledby="gs-tool-faq-heading">
+            <div className="gs-tool-section-head">
+              <h2 id="gs-tool-faq-heading">
+                {english ? "Exchange Rate & Billing FAQ" : "汇率与实际扣款常见问题"}
+              </h2>
+            </div>
+            <div className="gs-tool-faq-grid">
+              {pairQuestions.map((item, idx) => (
+                <article key={item.question} className="gs-tool-faq-card">
+                  <span className="gs-tool-faq-index">0{idx + 1}</span>
+                  <h3>{item.question}</h3>
+                  <p>{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={locale === "zh" ? "gs-public-unified gs-tools-scope" : "min-h-screen bg-[#faf8f3]"}>
-      {locale === "zh" && <ConverterStyleResource/>}
+    <div className="min-h-screen bg-[#faf8f3]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
-      <div className={locale === "zh" ? "gs-tools-layout" : "mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 md:py-14"}>
-        <header className={locale === "zh" ? "gs-tool-intro" : "mb-7 max-w-3xl"}>
-          <p className={locale === "zh" ? "" : "text-sm font-semibold text-lime-700"}>
+      <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 md:py-14">
+        <header className="mb-7 max-w-3xl">
+          <p className="text-sm font-semibold text-lime-700">
             {pairCopy?.eyebrow || copy.eyebrow}
           </p>
-          <h1 className={locale === "zh" ? "mt-2" : "mt-2 text-3xl font-bold text-zinc-950 md:text-4xl"}>
+          <h1 className="mt-2 text-3xl font-bold text-zinc-950 md:text-4xl">
             {pageTitle}
           </h1>
-          <p className={locale === "zh" ? "mt-4 leading-7" : "mt-4 text-base leading-7 text-zinc-600"}>
+          <p className="mt-4 text-base leading-7 text-zinc-600">
             {pageDescription}
           </p>
         </header>
@@ -277,12 +488,12 @@ export default async function CurrencyConverterPage({
 
         {pair && pairCopy && pairPresentation ? (
           <>
-            <section className={locale === "zh" ? "gs-tool-section" : "mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-[0.9fr_1.1fr]"}>
+            <section className="mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-[0.9fr_1.1fr]">
               <article>
-                <h2 className={locale === "zh" ? "" : "text-base font-semibold text-zinc-950"}>
+                <h2 className="text-base font-semibold text-zinc-950">
                   {pairCopy.currentRate}
                 </h2>
-                <p className={locale === "zh" ? "mt-3 tabular-nums" : "mt-3 text-3xl font-bold tabular-nums text-zinc-950"}>
+                <p className="mt-3 text-3xl font-bold tabular-nums text-zinc-950">
                   {pairRate === null
                     ? copy.unavailable
                     : `1 ${pair.from} = ${new Intl.NumberFormat(
@@ -293,7 +504,7 @@ export default async function CurrencyConverterPage({
                         },
                       ).format(pairRate)} ${pair.to}`}
                 </p>
-                <p className={locale === "zh" ? "mt-2" : "mt-2 text-sm text-zinc-500"}>
+                <p className="mt-2 text-sm text-zinc-500">
                   {pairRateDate
                     ? `${copy.rateBasis} ${pairRateDate}`
                     : copy.pending}
@@ -301,22 +512,22 @@ export default async function CurrencyConverterPage({
               </article>
 
               <article>
-                <h2 className={locale === "zh" ? "" : "text-base font-semibold text-zinc-950"}>
+                <h2 className="text-base font-semibold text-zinc-950">
                   {pairCopy.examplesTitle}
                 </h2>
-                <p className={locale === "zh" ? "mt-1 leading-6" : "mt-1 text-sm leading-6 text-zinc-500"}>
+                <p className="mt-1 text-sm leading-6 text-zinc-500">
                   {pairCopy.examplesDescription(pair.from, pair.to)}
                 </p>
-                <div className={locale === "zh" ? "mt-3 divide-y divide-zinc-100" : "mt-3 divide-y divide-zinc-100 border-y border-zinc-100"}>
+                <div className="mt-3 divide-y divide-zinc-100 border-y border-zinc-100">
                   {[5, 10, 20, 50, 100].map((amount) => (
                     <div
                       key={amount}
-                      className={locale === "zh" ? "flex min-h-10 items-center justify-between gap-4 py-2" : "flex min-h-10 items-center justify-between gap-4 py-2 text-sm"}
+                      className="flex min-h-10 items-center justify-between gap-4 py-2 text-sm"
                     >
-                      <span className={locale === "zh" ? "" : "text-zinc-500"}>
+                      <span className="text-zinc-500">
                         {formatCurrency(amount, pair.from, locale)}
                       </span>
-                      <strong className={locale === "zh" ? "tabular-nums" : "tabular-nums text-zinc-950"}>
+                      <strong className="tabular-nums text-zinc-950">
                         {formatExampleResult(amount)}
                       </strong>
                     </div>
@@ -325,27 +536,27 @@ export default async function CurrencyConverterPage({
               </article>
             </section>
 
-            <section className={locale === "zh" ? "gs-tool-section" : "mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-2"}>
+            <section className="mt-8 grid gap-6 border-t border-zinc-200 pt-7 md:grid-cols-2">
               <article>
-                <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
+                <h2 className="text-sm font-semibold text-zinc-950">
                   {pairCopy.methodologyTitle}
                 </h2>
-                <p className={locale === "zh" ? "mt-2 leading-6" : "mt-2 text-sm leading-6 text-zinc-500"}>
+                <p className="mt-2 text-sm leading-6 text-zinc-500">
                   {pairCopy.methodology}
                 </p>
               </article>
               <article>
-                <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
+                <h2 className="text-sm font-semibold text-zinc-950">
                   {pairCopy.paymentTitle}
                 </h2>
-                <p className={locale === "zh" ? "mt-2 leading-6" : "mt-2 text-sm leading-6 text-zinc-500"}>
+                <p className="mt-2 text-sm leading-6 text-zinc-500">
                   {pairCopy.paymentNote}
                 </p>
               </article>
             </section>
 
-            <section className={locale === "zh" ? "gs-tool-section" : "mt-8 border-t border-zinc-200 pt-7"}>
-              <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
+            <section className="mt-8 border-t border-zinc-200 pt-7">
+              <h2 className="text-sm font-semibold text-zinc-950">
                 {pairCopy.popularPairs}
               </h2>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -355,14 +566,14 @@ export default async function CurrencyConverterPage({
                     <Link
                       key={item.slug}
                       href={`${basePath}/${item.slug}`}
-                      className={locale === "zh" ? "gs-tool-link" : "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"}
+                      className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
                     >
                       {item.from}/{item.to}
                     </Link>
                   ))}
                 <Link
                   href={basePath}
-                  className={locale === "zh" ? "gs-tool-link" : "rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950"}
+                  className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950"
                 >
                   {pairCopy.backToConverter}
                 </Link>
@@ -370,8 +581,8 @@ export default async function CurrencyConverterPage({
             </section>
           </>
         ) : (
-          <section className={locale === "zh" ? "gs-tool-section" : "mt-8 border-t border-zinc-200 pt-7"}>
-            <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
+          <section className="mt-8 border-t border-zinc-200 pt-7">
+            <h2 className="text-sm font-semibold text-zinc-950">
               {getCurrencyPairCopy(locale).popularPairs}
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -379,7 +590,7 @@ export default async function CurrencyConverterPage({
                 <Link
                   key={item.slug}
                   href={`${basePath}/${item.slug}`}
-                  className={locale === "zh" ? "gs-tool-link" : "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"}
+                  className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:border-lime-300 hover:bg-lime-50 hover:text-lime-800"
                 >
                   {item.from}/{item.to}
                 </Link>
@@ -388,14 +599,14 @@ export default async function CurrencyConverterPage({
           </section>
         )}
 
-        <section className={locale === "zh" ? "gs-tool-section" : "mt-8 border-t border-zinc-200 pt-7"}>
+        <section className="mt-8 border-t border-zinc-200 pt-7">
           <div className="grid gap-x-8 gap-y-7 md:grid-cols-3">
             {pairQuestions.map((item) => (
               <article key={item.question}>
-                <h2 className={locale === "zh" ? "" : "text-sm font-semibold text-zinc-950"}>
+                <h2 className="text-sm font-semibold text-zinc-950">
                   {item.question}
                 </h2>
-                <p className={locale === "zh" ? "mt-2 leading-6" : "mt-2 text-sm leading-6 text-zinc-500"}>
+                <p className="mt-2 text-sm leading-6 text-zinc-500">
                   {item.answer}
                 </p>
               </article>
