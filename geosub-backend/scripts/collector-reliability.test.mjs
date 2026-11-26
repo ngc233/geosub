@@ -90,7 +90,7 @@ test("actual batch runner exposes failed children and retains narrow legacy job 
   assert.match(result.stdout, /PASS: legacy official-site scope/);
 });
 
-test("software monthly identities exclude annual, consumable and ambiguous items and remain review-only", async () => {
+test("software monthly identities exclude annual, consumable and ambiguous items and allow auto-review", async () => {
   const { spawnSync } = await import("node:child_process");
   const result = spawnSync(process.platform === "win32" ? "powershell.exe" : "pwsh", [
     "-NoProfile", "-NonInteractive", "-File", path.join(scriptsDir, "../tests/software-plan-identity.ps1"),
