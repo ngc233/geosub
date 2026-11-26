@@ -76,16 +76,16 @@ test("one migration layout classifies every schema, backfill and Prisma migratio
   assert.equal(summary.retired, manifest.retiredFiles.size);
   assert.equal(summary.legacy, 100);
   assert.equal(summary.prisma, manifest.prismaMigrations.length);
-  assert.equal(summary.schema, 62);
-  assert.equal(summary.activeSchema, 58);
+  assert.equal(summary.schema, 63);
+  assert.equal(summary.activeSchema, 59);
   assert.equal(summary.postCutoverSchema, 4);
   assert.equal(summary.backfill, 53);
   assert.equal(manifest.baselineCutoverFile, "sql/063_system_task_runs.sql");
   assert.ok(manifest.legacyBaselineFiles.includes("sql/062_app_store_coverage_gap_rechecks.sql"));
   assert.ok(!manifest.legacyBaselineFiles.includes(manifest.baselineCutoverFile));
   assert.equal(summary.prisma, 21);
-  assert.equal(manifest.entriesForMode("schema").length, 58);
-  assert.equal(manifest.entriesForMode("complete-schema").length, 62);
+  assert.equal(manifest.entriesForMode("schema").length, 59);
+  assert.equal(manifest.entriesForMode("complete-schema").length, 63);
   assert.deepEqual(
     manifest.entriesForMode("post-cutover").map((entry: { file: string }) => entry.file),
     [

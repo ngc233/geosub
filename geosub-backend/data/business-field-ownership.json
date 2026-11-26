@@ -1184,6 +1184,14 @@
       ]
     },
     {
+      "path": "geosub-backend/scripts/collect-app-store-prices.mjs",
+      "classification": "controlled_script",
+      "tables": [
+        "price_observations",
+        "price_sources"
+      ]
+    },
+    {
       "path": "geosub-backend/scripts/collect-app-store-prices.ps1",
       "classification": "controlled_script",
       "tables": [
@@ -1234,6 +1242,16 @@
     },
     {
       "path": "geosub-backend/scripts/generate-catalog-expansion-sql.cjs",
+      "classification": "controlled_script",
+      "tables": [
+        "collector_jobs",
+        "plans",
+        "product_source_profiles",
+        "products"
+      ]
+    },
+    {
+      "path": "geosub-backend/scripts/generate-software-catalog-sql.mjs",
       "classification": "controlled_script",
       "tables": [
         "collector_jobs",
@@ -1728,6 +1746,14 @@
       "classification": "schema_or_function_definition",
       "tables": [
         "price_observations"
+      ]
+    },
+    {
+      "path": "geosub-backend/sql/schema/063_software_auto_publication_gate.sql",
+      "classification": "schema_or_function_definition",
+      "tables": [
+        "plans",
+        "products"
       ]
     }
   ],
