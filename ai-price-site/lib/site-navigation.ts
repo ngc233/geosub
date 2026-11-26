@@ -47,14 +47,16 @@ type LocalizedNavigationRow = NavigationRow & {
 
 const SITE_NAVIGATION_REVALIDATE_SECONDS = 6 * 60 * 60;
 
-export const isGta6NavigationPublished = cache(unstable_cache(
-  async () => Boolean(await prisma.product.findUnique({
-    where: { slug: "gta-6", category: ProductCategory.GAME, status: PublishStatus.PUBLISHED },
+export const isGameNavigationPublished = cache(unstable_cache(
+  async () => Boolean(await prisma.product.findFirst({
+    where: { category: ProductCategory.GAME, status: PublishStatus.PUBLISHED },
     select: { slug: true },
   })),
-  ["gta6-navigation-published"],
+  ["game-navigation-published-v1"],
   { revalidate: 60, tags: [PUBLIC_PRICING_NAVIGATION_CACHE_TAG] },
 ));
+
+export const isGta6NavigationPublished = isGameNavigationPublished;
 
 const getCachedNavigationRows = unstable_cache(
   async (locale: Locale, position: NavigationPosition) => prisma.navigationItem.findMany({

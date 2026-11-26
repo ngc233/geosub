@@ -13,7 +13,7 @@ export type ChromeSearchResult = {
   subtitle: string;
   href: string;
   minimumUsd: number;
-  cycle: string;
+  cycle?: string;
   logoSlug?: string;
   countryCode?: string;
 };

@@ -6,7 +6,7 @@ import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { getLanguageSwitchHref, isBilingualEvidencePath } from "../lib/language-switch-route";
+import { getLanguageSwitchHref, isBilingualEvidencePath, isChineseOnlyGamePath } from "../lib/language-switch-route";
 import { shouldHideFromPublicNavigation } from "../lib/public-launch-routes";
 import {
   getSiteLocaleFromPath,
@@ -535,9 +535,11 @@ export default function Header({
   const currentLocaleCode = getSiteLocaleFromPath(pathname);
   const currentLocale =
     languages.find((item) => item.code === currentLocaleCode) || languages[0];
-  const availableLanguages = (isCountryPagePilotPath(pathname) || isBilingualEvidencePath(pathname))
-    ? languages.filter((language) => language.code === "zh" || language.code === "en")
-    : languages;
+  const availableLanguages = isChineseOnlyGamePath(pathname)
+    ? languages.filter((language) => language.code === "zh")
+    : (isCountryPagePilotPath(pathname) || isBilingualEvidencePath(pathname))
+      ? languages.filter((language) => language.code === "zh" || language.code === "en")
+      : languages;
   const copy = headerCopy[currentLocaleCode];
   const currentLocaleNavItems =
     initialNavItemsByLocale[currentLocaleCode] || [];

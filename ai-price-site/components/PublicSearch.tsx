@@ -17,7 +17,7 @@ const searchCopy = {
   zh: {
     search: "搜索",
     label: "搜索产品或国家",
-    placeholder: "搜索产品、套餐或国家（如 ChatGPT、Netflix、土耳其）",
+    placeholder: "搜索产品、游戏或国家（如 ChatGPT、GTA 6、土耳其）",
     clear: "清空输入",
     close: undefined,
     pending: "正在搜索…",

@@ -1,21 +1,57 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { msPerWeek, type GameResponse, type Selection } from "@/lib/game-offers";
 
-export function useGameOffers(selection: Selection, initial: GameResponse | null) {
-  const { platform, currency } = selection;
-  const [data, setData] = useState(initial);
-  const [now, setNow] = useState(initial ? Date.parse(initial.as_of) : 0);
+import { useEffect, useRef, useState } from "react";
+import { msPerWeek, type Currency, type GameResponse, type Platform } from "@/lib/game-offers";
+
+function buildInitialCache(
+  initial: GameResponse | null,
+  offersByPlatform: Partial<Record<Platform, GameResponse>>,
+) {
+  const seeded: Record<string, GameResponse> = {};
+  for (const [p, entry] of Object.entries(offersByPlatform)) {
+    if (entry) {
+      seeded[`${p}:${entry.display_currency}`] = entry;
+    }
+  }
+  if (initial) {
+    seeded[`${initial.platform}:${initial.display_currency}`] = initial;
+  }
+  return seeded;
+}
+
+export function useGameOffers(
+  slug: string,
+  platform: Platform,
+  apiCurrency: Currency,
+  initial: GameResponse | null,
+  offersByPlatform: Partial<Record<Platform, GameResponse>>,
+) {
+  const [cache, setCache] = useState<Record<string, GameResponse>>(() =>
+    buildInitialCache(initial, offersByPlatform),
+  );
+
+  const activeKey = `${platform}:${apiCurrency}`;
+  const currentData = cache[activeKey] ?? null;
+  const [now, setNow] = useState(() => (currentData ? Date.parse(currentData.as_of) : 0));
   const [error, setError] = useState(false);
-  const initialRef = useRef(initial);
+  const cacheRef = useRef<Record<string, GameResponse>>({});
+
   useEffect(() => {
-    let live = true,
-      serial = 0,
-      offset = 0;
+    cacheRef.current = cache;
+  }, [cache]);
+
+  useEffect(() => {
+    let live = true;
+    let serial = 0;
+    let offset = 0;
     let active: AbortController | undefined;
     let wake: ReturnType<typeof setTimeout>;
-    let current = initialRef.current;
-    if (current?.platform !== platform || current.display_currency !== currency) current = null;
+    let current = cacheRef.current[`${platform}:${apiCurrency}`] ?? null;
+
+    if (current) {
+      offset = Date.parse(current.as_of) - Date.now();
+    }
+
     function tick() {
       const at = Date.now() + offset;
       setNow(at);
@@ -33,6 +69,7 @@ export function useGameOffers(selection: Selection, initial: GameResponse | null
         void refresh();
       }, delay + 5);
     }
+
     async function refresh() {
       const id = ++serial;
       active?.abort();
@@ -41,16 +78,22 @@ export function useGameOffers(selection: Selection, initial: GameResponse | null
       const timeout = setTimeout(() => controller.abort(), 12_000);
       try {
         const response = await fetch(
-          "/api/games/gta-6/offers?" + new URLSearchParams({ platform, display_currency: currency }),
+          `/api/games/${encodeURIComponent(slug)}/offers?` +
+            new URLSearchParams({ platform, display_currency: apiCurrency }),
           { cache: "no-store", signal: controller.signal },
         );
         if (!response.ok) throw new Error("offers unavailable");
         const next: GameResponse = await response.json();
-        if (!live || id !== serial || next.platform !== platform || next.display_currency !== currency)
+        if (!live || id !== serial || next.platform !== platform || next.display_currency !== apiCurrency) {
           return;
+        }
         current = next;
         offset = Date.parse(next.as_of) - Date.now();
-        setData(next);
+        setCache((prev) => {
+          const updated = { ...prev, [`${platform}:${apiCurrency}`]: next };
+          cacheRef.current = updated;
+          return updated;
+        });
         setError(false);
         tick();
       } catch {
@@ -59,12 +102,14 @@ export function useGameOffers(selection: Selection, initial: GameResponse | null
         clearTimeout(timeout);
       }
     }
+
     function resume() {
       if (document.visibilityState !== "hidden") {
         tick();
         void refresh();
       }
     }
+
     tick();
     void refresh();
     window.addEventListener("online", resume);
@@ -78,9 +123,10 @@ export function useGameOffers(selection: Selection, initial: GameResponse | null
       window.removeEventListener("pageshow", resume);
       document.removeEventListener("visibilitychange", resume);
     };
-  }, [platform, currency]);
+  }, [slug, platform, apiCurrency]);
+
   return {
-    data: data?.platform === platform && data.display_currency === currency ? data : null,
+    data: currentData,
     now,
     error,
   };

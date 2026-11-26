@@ -77,14 +77,14 @@ export default function HomepagePricing({products,rates,map,recentChanges,gameCa
     <section data-gs-enter="a" className="gs-home-section gs-home-discovery" aria-labelledby="home-categories"><div className="gs-home-category-panel"><h2 id="home-categories">按分类找</h2><div className="gs-home-categories">
       {(["ai","streaming"] as const).map(kind=>{const items=ranked.filter(p=>p.category===kind);if(!items.length)return null;return <article key={kind} className="gs-home-card" data-gs-motion-card><div className="gs-home-brand-stack gs-home-category-avatars">{items.slice(0,3).map(p=><Link key={p.slug} className="gs-home-category-product-link" href={p.href} prefetch={false} aria-label={p.planDisplayName}><HomepageProductMark product={p} className="gs-home-category-avatar"/></Link>)}{items.length>3&&<span className="gs-home-brand-more">+{items.length-3}</span>}</div><Link className="gs-home-category-link" href={`/zh/${kind==="ai"?"ai-pricing":"streaming-pricing"}/`}><div className="gs-home-category-title"><h3>{kind==="ai"?"AI 订阅":"流媒体"}</h3><p>{items.length} 个产品</p></div><p className="gs-home-category-saving">最多能省 <strong>{savingsPercent(items[0].saving)}%</strong><span className="gs-sr-only"> · {items[0].planDisplayName}</span></p><span className="gs-home-category-action gs-sr-only">查看全部{kind==="ai"?" AI 订阅":"流媒体"}<PublicIcon name="ArrowRight" size={20}/></span></Link></article>;})}
       {gameCategoryHref && <article className="gs-home-card gs-home-game-category" data-gs-motion-card>
-        <div className="gs-home-brand-stack gs-home-category-avatars">
-          <HomepageProductMark product={{slug:"gta-6",name:"GTA 6"}} className="gs-home-category-avatar"/>
+        <div className="gs-home-brand-stack gs-home-category-avatars gs-home-game-avatars">
+          <HomepageProductMark product={{slug:"gta-6",name:"GTA 6"}} className="gs-home-game-avatar"/>
         </div>
         <Link href={gameCategoryHref} className="gs-home-category-link" prefetch={false}>
-          <div className="gs-home-category-title"><h3>游戏</h3><p>GTA 6</p></div>
-          {gameSavings && <div>
-            <p className="gs-home-category-saving">比美服最多能省 <strong>{gameSavings.percent}%</strong></p>
-            <p>{gameNames[gameSavings.platform]} {gameNames[gameSavings.edition]}</p>
+          <div className="gs-home-category-title"><h3>游戏</h3><p>GTA 6 · 官方买断</p></div>
+          {gameSavings && <div className="gs-home-game-saving-group">
+            <p className="gs-home-category-saving">最多能省 <strong>{gameSavings.percent}%</strong></p>
+            <p className="gs-home-game-edition-hint">{gameNames[gameSavings.platform]} {gameNames[gameSavings.edition]}</p>
           </div>}
           <span className={gameSavings ? "gs-home-category-action gs-sr-only" : "gs-home-category-action"}>查看游戏比价 <PublicIcon name="ArrowRight" size={16}/></span>
         </Link>

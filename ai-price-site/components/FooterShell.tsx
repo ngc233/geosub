@@ -2,17 +2,17 @@ import { filterPublicNavigation } from "../lib/public-navigation-filter";
 import Footer from "./Footer";
 import {
   getSiteNavigationByLocale,
+  isGameNavigationPublished,
   type SiteNavigationByLocale,
 } from "../lib/site-navigation";
 
 export default async function FooterShell() {
-  let navItemsByLocale: SiteNavigationByLocale = {};
+  const [navItemsByLocale, showGameNavigation] = await Promise.all([
+    getSiteNavigationByLocale("FOOTER")
+      .then(filterPublicNavigation)
+      .catch((): SiteNavigationByLocale => ({})),
+    isGameNavigationPublished().catch(() => false),
+  ]);
 
-  try {
-    navItemsByLocale = filterPublicNavigation(await getSiteNavigationByLocale("FOOTER"));
-  } catch {
-    navItemsByLocale = {};
-  }
-
-  return <Footer navItemsByLocale={navItemsByLocale} />;
+  return <Footer navItemsByLocale={navItemsByLocale} showGameNavigation={showGameNavigation} />;
 }

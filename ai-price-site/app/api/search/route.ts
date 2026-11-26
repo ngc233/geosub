@@ -29,9 +29,13 @@ import {
   type PreparedSiteLocale,
 } from "../../../lib/site-locale";
 import { prisma } from "../../../lib/prisma";
+import { PUBLIC_PRICING_NAVIGATION_CACHE_TAG } from "../../../lib/public-pricing-cache";
 import { getPlanEditorialIndexingStatus } from "../../../lib/product-editorial-content";
 import { getActiveSearchAliases } from "../../../lib/search-aliases";
 import { fictionalHomepageSource, isHomepageFixtureEnabled } from "../../../lib/test-fixtures/homepage";
+import { getGameMarketName } from "../../../lib/game-catalog-meta";
+import { names as gameNames } from "../../../lib/game-offers";
+import { readPublishedGameCatalog } from "../../../lib/read-game-offers";
 
 export const dynamic = "force-dynamic";
 
@@ -202,11 +206,14 @@ async function buildChromeSearchIndexUncached(
   locale: "zh" | "en",
 ): Promise<ChromeSearchIndexPayload> {
   const normalizedLocale = normalizeSiteLocale(locale);
-  const [products, controlledAliases, clickedSlugs, countryHubs] = await Promise.all([
+  const [products, controlledAliases, clickedSlugs, countryHubs, gameCatalog] = await Promise.all([
     getPublishedSearchProducts(),
     getChromeSearchAliases(locale),
     getTopClickedProductSlugs(locale),
     Promise.allSettled(priorityCountries.map((country) => loadCountryHub(country.code))),
+    locale === "zh"
+      ? readPublishedGameCatalog().catch(() => ({ games: [] }))
+      : Promise.resolve({ games: [] }),
   ]);
 
   const productAliasesById = new Map<string, string[]>();
@@ -282,6 +289,34 @@ async function buildChromeSearchIndexUncached(
         ].filter(Boolean),
       });
     }
+  }
+
+  for (const game of gameCatalog.games) {
+    if (!game.bestVariant || game.bestVariant.lowestUsd === null || seenProductSlugs.has(game.slug)) {
+      continue;
+    }
+    seenProductSlugs.add(game.slug);
+    const lowestCountry = game.bestVariant.lowestMarket
+      ? getGameMarketName(game.bestVariant.lowestMarket)
+      : "官方商店";
+    entries.push({
+      id: `product:${game.id}`,
+      kind: "product",
+      title: game.meta.title,
+      subtitle: `${gameNames[game.bestVariant.platform]} ${gameNames[game.bestVariant.edition]} · 最低 · ${lowestCountry}`,
+      href: `/zh/games/${game.slug}`,
+      minimumUsd: game.bestVariant.lowestUsd,
+      logoSlug: game.slug,
+      terms: [
+        game.meta.title,
+        game.name,
+        game.slug,
+        game.meta.englishTitle || "",
+        game.meta.publisher,
+        ...game.meta.searchAliases,
+        ...(productAliasesById.get(game.id) || []),
+      ].filter(Boolean),
+    });
   }
 
   // In local dev fixture mode, supplement any missing fictional products so instant
@@ -376,8 +411,8 @@ async function buildChromeSearchIndexUncached(
 
 const getCachedChromeSearchIndex = unstable_cache(
   buildChromeSearchIndexUncached,
-  ["public-chrome-search-index-v2"],
-  { revalidate: 300 },
+  ["public-chrome-search-index-v3"],
+  { revalidate: 300, tags: [PUBLIC_PRICING_NAVIGATION_CACHE_TAG] },
 );
 
 async function loadChromeSearchIndex(locale: "zh" | "en"): Promise<ChromeSearchIndexPayload> {

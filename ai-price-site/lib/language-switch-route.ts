@@ -11,11 +11,19 @@ export function isBilingualEvidencePath(pathname: string) {
   return /^\/(?:countries|price-history|price-records)(?:\/|$)/.test(stripSiteLocale(pathname));
 }
 
+export function isChineseOnlyGamePath(pathname: string) {
+  return /^\/games(?:\/|$)/.test(stripSiteLocale(pathname || "/"));
+}
+
 export function getLanguageSwitchHref(
   pathname: string,
   nextLocale: SiteLocale,
 ) {
   const relativePath = stripSiteLocale(pathname || "/").replace(/\/+$/, "") || "/";
+
+  if (isChineseOnlyGamePath(pathname)) {
+    return nextLocale === "zh" ? replaceSiteLocaleInPath(pathname, "zh") : withSiteLocale("/", nextLocale);
+  }
 
   if (isBilingualEvidencePath(pathname) && nextLocale !== "zh" && nextLocale !== "en") {
     return withSiteLocale("/", nextLocale);
