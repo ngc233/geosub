@@ -22,15 +22,21 @@ if [[ -f "$ROOT/collector-current.env" ]] && ! grep -qx "GEOSUB_COMMIT=$COMMIT" 
 fi
 install -d -m 0755 "$ROOT/controllers"
 mkdir "$ROOT/rolling.lock" || { echo 'Another release/control operation is running'; exit 1; }
-trap 'rmdir "$ROOT/rolling.lock"' EXIT
 TARGET="$ROOT/controllers/$COMMIT"
+STAGE="$ROOT/controllers/.staging-$COMMIT-$$"
+cleanup() {
+  rm -rf "$STAGE"
+  rmdir "$ROOT/rolling.lock"
+}
+trap cleanup EXIT
 [[ ! -e "$TARGET" ]] || { echo 'Control commit already installed; use its retained entry point'; exit 1; }
-install -d -m 0755 "$TARGET"
-sudo -u geosub git -C "$REPO" archive "$COMMIT" geosub-backend/deploy/linux-arm64 | tar -x -C "$TARGET" --strip-components=3
-chown -R root:root "$TARGET"
-chmod -R go-w "$TARGET"
-for file in "$TARGET"/*.sh; do bash -n "$file"; done
-node --test "$TARGET/rolling-release.test.mjs" "$TARGET/component-release.test.mjs"
+install -d -m 0755 "$STAGE"
+sudo -u geosub git -C "$REPO" archive "$COMMIT" geosub-backend/deploy/linux-arm64 | tar -x -C "$STAGE" --strip-components=3
+chown -R root:root "$STAGE"
+chmod -R go-w "$STAGE"
+for file in "$STAGE"/*.sh; do bash -n "$file"; done
+node --test "$STAGE/rolling-release.test.mjs" "$STAGE/component-release.test.mjs"
+mv -Tf "$STAGE" "$TARGET"
 ln -s "$TARGET" "$ROOT/control.pending"
 mv -Tf "$ROOT/control.pending" "$ROOT/control"
 printf 'Control installed from %s. Application and proxy unchanged.\n' "$COMMIT"
