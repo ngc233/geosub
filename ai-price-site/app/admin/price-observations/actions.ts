@@ -7,6 +7,7 @@ import {
   rejectPriceObservation,
 } from "../../../lib/admin-price-review";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { invalidateAdminPricingReadModels } from "../../../lib/admin-read-model-cache";
 import { prisma } from "../../../lib/prisma";
 import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
 
@@ -49,6 +50,7 @@ export async function ignoreObservation(formData: FormData) {
   const id = getObservationId(formData);
 
   await ignorePriceObservation(id, "Ignored from admin review page", admin.id);
+  invalidateAdminPricingReadModels();
 
   revalidatePath("/admin/price-observations");
 }
@@ -58,6 +60,7 @@ export async function rejectObservation(formData: FormData) {
   const id = getObservationId(formData);
 
   await rejectPriceObservation(id, "Rejected from admin review page", admin.id);
+  invalidateAdminPricingReadModels();
 
   revalidatePath("/admin/price-observations");
 }

@@ -31,6 +31,7 @@ function fixture({role='OWNER',claudePrice=true,failAudit=false}={}) {
         return callback({$queryRaw:(parts:TemplateStringsArray)=>runRaw(parts,true)});
       },
     }};
+    if(name.endsWith('/admin-read-model-cache')) return {invalidateAdminPricingReadModels() {}};
     if(name.endsWith('/collection-runner')) return {startCollectorJobRunInBackground:async(id:string)=>{started.push(id);}};
     throw Error('Unexpected import '+name);
   }});

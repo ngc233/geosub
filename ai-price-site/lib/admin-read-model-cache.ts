@@ -80,6 +80,16 @@ export async function readAdminReadModel<T>(
   }
 }
 
+export const ADMIN_READ_MODEL_PREFIXES = {
+  dataQuality: "data-quality:",
+  dashboard: "dashboard:",
+  productSeoQuality: "product-seo-quality:",
+  seoTrafficConversion: "seo-traffic-conversion:",
+  searchDemand: "search-demand:",
+  pipelineGrowthSignals: "pipeline:growth-signals:",
+  versionsOverview: "versions.overview",
+} as const;
+
 export function invalidateAdminReadModels(prefix?: string) {
   const normalizedPrefix = prefix?.trim();
   if (!normalizedPrefix) {
@@ -90,4 +100,47 @@ export function invalidateAdminReadModels(prefix?: string) {
   for (const key of adminReadModelCache.keys()) {
     if (key.startsWith(normalizedPrefix)) adminReadModelCache.delete(key);
   }
+}
+
+function invalidateAdminReadModelPrefixes(prefixes: readonly string[]) {
+  for (const prefix of prefixes) {
+    invalidateAdminReadModels(prefix);
+  }
+}
+
+export function invalidateAdminPricingReadModels() {
+  invalidateAdminReadModelPrefixes([
+    ADMIN_READ_MODEL_PREFIXES.dataQuality,
+    ADMIN_READ_MODEL_PREFIXES.dashboard,
+    ADMIN_READ_MODEL_PREFIXES.productSeoQuality,
+    ADMIN_READ_MODEL_PREFIXES.pipelineGrowthSignals,
+    ADMIN_READ_MODEL_PREFIXES.versionsOverview,
+  ]);
+}
+
+export function invalidateAdminCatalogReadModels() {
+  invalidateAdminReadModelPrefixes([
+    ADMIN_READ_MODEL_PREFIXES.dataQuality,
+    ADMIN_READ_MODEL_PREFIXES.dashboard,
+    ADMIN_READ_MODEL_PREFIXES.productSeoQuality,
+    ADMIN_READ_MODEL_PREFIXES.pipelineGrowthSignals,
+    ADMIN_READ_MODEL_PREFIXES.versionsOverview,
+  ]);
+}
+
+export function invalidateAdminSeoReadModels() {
+  invalidateAdminReadModelPrefixes([
+    ADMIN_READ_MODEL_PREFIXES.productSeoQuality,
+    ADMIN_READ_MODEL_PREFIXES.seoTrafficConversion,
+    ADMIN_READ_MODEL_PREFIXES.searchDemand,
+    ADMIN_READ_MODEL_PREFIXES.pipelineGrowthSignals,
+    ADMIN_READ_MODEL_PREFIXES.dashboard,
+  ]);
+}
+
+export function invalidateAdminSystemReadModels() {
+  invalidateAdminReadModelPrefixes([
+    ADMIN_READ_MODEL_PREFIXES.versionsOverview,
+    ADMIN_READ_MODEL_PREFIXES.dashboard,
+  ]);
 }

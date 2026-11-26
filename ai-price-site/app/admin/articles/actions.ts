@@ -5,6 +5,7 @@ import { type Prisma, ArticleStatus, ArticleType, Locale, StructuredDataType } f
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { invalidateAdminSeoReadModels } from "../../../lib/admin-read-model-cache";
 import { linkSearchOpportunity } from "../../../lib/admin-search-opportunities";
 import { getArticleSeoDraft } from "../../../lib/article-seo-draft";
 import { estimateReadingTime, normalizeArticleSlug } from "../../../lib/articles";
@@ -74,6 +75,7 @@ function parseDate(value: FormDataEntryValue | null) {
 }
 
 function revalidateArticlePaths(slug?: string | null) {
+  invalidateAdminSeoReadModels();
   revalidatePath("/zh/guides");
   revalidatePath("/en/guides");
   revalidatePath("/sitemap.xml");

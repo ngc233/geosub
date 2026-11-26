@@ -11,6 +11,7 @@ import type { Prisma } from "@prisma/client";
 import { attemptAdminSave } from "../../../lib/admin-save";
 import { ANALYTICS_KEYS, NOTIFICATION_KEYS, settingsVersion, assertSettingsVersion } from "../../../lib/admin-settings-version";
 import { prisma } from "../../../lib/prisma";
+import { invalidateAdminSystemReadModels } from "../../../lib/admin-read-model-cache";
 import { getOperationsNotificationConfig } from "../../../lib/operations-notification";
 import { PUBLIC_SITE_SETTINGS_CACHE_TAG } from "../../../lib/public-site-settings-cache";
 
@@ -113,6 +114,7 @@ export async function updateAnalyticsSettings(formData: FormData) {
    return settingsVersion(await tx.siteSetting.findMany({where:{settingKey:{in:ANALYTICS_KEYS}}}),ANALYTICS_KEYS);
   });
   if(!result.ok)return {error:result.error};
+  invalidateAdminSystemReadModels();
   updateTag(PUBLIC_SITE_SETTINGS_CACHE_TAG);
 
   revalidatePath("/");
@@ -147,6 +149,7 @@ export async function updateOperationsNotificationSettings(formData: FormData) {
    return settingsVersion(await tx.siteSetting.findMany({where:{settingKey:{in:NOTIFICATION_KEYS}}}),NOTIFICATION_KEYS);
   });
   if(!result.ok)return {error:result.error};
+  invalidateAdminSystemReadModels();
   revalidatePath("/admin");
   revalidatePath("/admin/settings");
   return {recordVersion:result.value};

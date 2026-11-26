@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { fetchAdminExternalJson } from "../../../lib/admin-external-fetch";
+import { invalidateAdminCatalogReadModels } from "../../../lib/admin-read-model-cache";
 import { requireAdmin } from "../../../lib/admin-auth";
 import { linkSearchOpportunity } from "../../../lib/admin-search-opportunities";
 import { prisma } from "../../../lib/prisma";
@@ -62,28 +64,21 @@ function normalizeNameForMatch(value: string) {
 }
 
 async function findAppStoreApp(productName: string) {
-  const response = await fetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(productName)}&entity=software&limit=5`,
-    {
-      headers: {
-        "User-Agent": "GeoSubAdmin/1.0",
-      },
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const data = (await response.json()) as {
+  const data = await fetchAdminExternalJson<{
     results?: Array<{
       trackId?: number;
       trackName?: string;
       trackViewUrl?: string;
       sellerName?: string;
     }>;
-  };
+  }>(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(productName)}&entity=software&limit=5`,
+    { label: "itunes_discovery_search" },
+  );
+
+  if (!data) {
+    return null;
+  }
 
   const expected = normalizeNameForMatch(productName);
   const candidates = data.results || [];
@@ -927,6 +922,7 @@ export async function promoteCandidate(formData: FormData): Promise<void> {
     )
   `;
 
+    invalidateAdminCatalogReadModels();
     revalidatePath("/admin/discovery");
     revalidatePath("/admin/pipeline");
     revalidatePath("/admin/products");

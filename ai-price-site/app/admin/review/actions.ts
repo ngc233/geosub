@@ -9,6 +9,7 @@ import {
   runAppStoreStabilityAutoReview,
 } from "../../../lib/admin-price-review";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { invalidateAdminPricingReadModels } from "../../../lib/admin-read-model-cache";
 import { prisma } from "../../../lib/prisma";
 import { invalidatePublicPricing } from "../../../lib/public-pricing-cache-actions";
 import { buildCollectionRedirectPath } from "./collection-status";
@@ -54,6 +55,7 @@ export async function ignoreObservation(formData: FormData) {
   const id = getObservationId(formData);
 
   await ignorePriceObservation(id, "Ignored from review center", admin.id);
+  invalidateAdminPricingReadModels();
 
   revalidatePath("/admin/review");
 }
@@ -63,6 +65,7 @@ export async function rejectObservation(formData: FormData) {
   const id = getObservationId(formData);
 
   await rejectPriceObservation(id, "Rejected from review center", admin.id);
+  invalidateAdminPricingReadModels();
 
   revalidatePath("/admin/review");
 }
@@ -99,5 +102,6 @@ export async function queueAppStoreCollectionAndReview(formData?: FormData) {
     },
   });
 
+  invalidateAdminPricingReadModels();
   redirect(buildCollectionRedirectPath(result, productSlug));
 }

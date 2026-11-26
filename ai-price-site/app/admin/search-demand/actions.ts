@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { invalidateAdminSeoReadModels } from "../../../lib/admin-read-model-cache";
 import {
   isSearchOpportunityWorkflowStatus,
   saveSearchOpportunity,
@@ -164,6 +165,7 @@ export async function startSearchOpportunityAction(formData: FormData) {
     status: opportunity.status,
     query,
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(appendOpportunity(destination, query));
 }
@@ -193,6 +195,7 @@ export async function updateSearchOpportunityAction(formData: FormData) {
     status,
     query,
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(`/admin/search-demand?days=${days}`);
 }
@@ -235,6 +238,7 @@ export async function startSearchConversionRepairAction(formData: FormData) {
       note: "Started a product-level search conversion repair task.",
     },
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(`/admin/search-demand?days=${days}&repairResult=started`);
 }
@@ -264,6 +268,7 @@ export async function updateSearchConversionRepairAction(formData: FormData) {
       note: "Updated a product-level search conversion repair task.",
     },
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(`/admin/search-demand?days=${days}&repairResult=${status}`);
 }
@@ -301,6 +306,7 @@ export async function approveSearchAliasAction(formData: FormData) {
       note: "Approved a search alias backed by repeat visitor clicks.",
     },
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(`/admin/search-demand?days=${days}&aliasResult=approved`);
 }
@@ -325,6 +331,7 @@ export async function updateSearchAliasAction(formData: FormData) {
       note: "Updated a controlled search alias.",
     },
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(`/admin/search-demand?days=${days}&aliasResult=${status}`);
 }
@@ -368,6 +375,7 @@ export async function startAuthorityCoverageTaskAction(formData: FormData) {
       note: `Started an authority coverage task for ${audit.title}.`,
     },
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(item.actionHref);
 }
@@ -410,6 +418,7 @@ export async function updateAuthorityCoverageTaskAction(formData: FormData) {
       note: "Updated an evidence-backed authority coverage task.",
     },
   });
+  invalidateAdminSeoReadModels();
   revalidatePath("/admin/search-demand");
   redirect(`/admin/search-demand?days=${days}&authorityResult=${requestedStatus}`);
 }

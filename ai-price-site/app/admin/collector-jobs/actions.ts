@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "../../../lib/admin-auth";
+import { invalidateAdminPricingReadModels } from "../../../lib/admin-read-model-cache";
 import { prisma } from "../../../lib/prisma";
 import { startCollectorJobRunInBackground } from "../review/collection-runner";
 
@@ -68,6 +69,7 @@ export async function runCollectorJobNow(formData: FormData) {
 
   await startCollectorJobRunInBackground(id);
 
+  invalidateAdminPricingReadModels();
   revalidatePath("/admin/collector-jobs");
   revalidatePath("/admin/review");
   revalidatePath("/admin/pipeline");
@@ -132,6 +134,7 @@ export async function runProductCollectorJobsNow(formData: FormData) {
     await startCollectorJobRunInBackground(jobId);
   }
 
+  invalidateAdminPricingReadModels();
   revalidatePath("/admin/collector-jobs");
   revalidatePath("/admin/review");
   revalidatePath("/admin/pipeline");
@@ -172,5 +175,6 @@ export async function pauseCollectorJob(formData: FormData) {
     `;
   });
 
+  invalidateAdminPricingReadModels();
   revalidatePath("/admin/collector-jobs");
 }
