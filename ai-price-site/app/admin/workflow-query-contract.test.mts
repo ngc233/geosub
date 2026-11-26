@@ -40,16 +40,17 @@ function loadRouteGuard(role:string|null){
 test("collection status endpoint rejects malformed run IDs before querying history",async()=>{
  let queried=false;
  let reconciled=false;
- const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-route-guard":loadRouteGuard("VIEWER"),"../collection-runner":{reconcileStaleCollectorRuns:async()=>{reconciled=true;}},"../collector-run-history-query":{getCollectorRunHistoryRows:async()=>{queried=true;return [];}}});
+ const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-route-guard":loadRouteGuard("VIEWER"),"../collection-runner":{getCollectorDispatchMode:()=>"spawn",reconcileStaleCollectorRuns:async()=>{reconciled=true;}},"../collector-run-history-query":{getCollectorRunHistoryRows:async()=>{queried=true;return [];}}});
  const response=await (loaded.GET as (r:Request)=>Promise<Response>)(new Request("http://local/admin/review/collection-runs?runId=bad"));
  assert.equal(response.status,400);assert.equal(queried,false);assert.equal(reconciled,false);
 });
 test("collection status reads the exact product/run and disables caching",async()=>{
  let seen:unknown[]=[];
- const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-route-guard":loadRouteGuard("VIEWER"),"../collection-runner":{reconcileStaleCollectorRuns:async()=>{}},"../collector-run-history-query":{getCollectorRunHistoryRows:async(...args:unknown[])=>{seen=args;return [];}}});
+ let reconciled=false;
+ const loaded=load("app/admin/review/collection-runs/route.ts",{"../../../../lib/admin-route-guard":loadRouteGuard("VIEWER"),"../collection-runner":{getCollectorDispatchMode:()=>"queue",reconcileStaleCollectorRuns:async()=>{reconciled=true;}},"../collector-run-history-query":{getCollectorRunHistoryRows:async(...args:unknown[])=>{seen=args;return [];}}});
  const id="11111111-1111-4111-8111-111111111111";
  const response=await (loaded.GET as (r:Request)=>Promise<Response>)(new Request(`http://local/admin/review/collection-runs?product=spotify&runId=${id}`));
- assert.deepEqual(seen,["",12,{product:"spotify",runId:id}]);assert.match(response.headers.get("cache-control")||"",/no-store/);
+ assert.deepEqual(seen,["",12,{product:"spotify",runId:id}]);assert.match(response.headers.get("cache-control")||"",/no-store/);assert.equal(reconciled,false);
 });
 test("collect submission denies non-managers without starting a worker",async()=>{
  let called=false;

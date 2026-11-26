@@ -7,7 +7,11 @@ import ts from "typescript";
 
 const require = createRequire(import.meta.url);
 
-function loadRunner(spawnFailure = false, existing = false) {
+function loadRunner(
+  spawnFailure = false,
+  existing = false,
+  dispatchMode: "spawn" | "queue" = "spawn",
+) {
   const queries: string[] = [];
   const invalidated: unknown[] = [];
   let spawns = 0;
@@ -16,8 +20,15 @@ function loadRunner(spawnFailure = false, existing = false) {
   const code = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true },
   }).outputText;
+  const fakeProcess = {
+    ...process,
+    env: {
+      ...process.env,
+      GEOSUB_COLLECTOR_DISPATCH_MODE: dispatchMode,
+    },
+  };
   vm.runInNewContext(code, {
-    module: compiledModule, exports: compiledModule.exports, process,
+    module: compiledModule, exports: compiledModule.exports, process: fakeProcess,
     require(name: string) {
       if (name === "server-only") return {};
       if (name === "node:fs") return { existsSync: () => true };
@@ -78,4 +89,16 @@ test("an existing running record is reused without spawning another process", as
   const fixture = loadRunner(false, true);
   await fixture.run("local-fixture");
   assert.equal(fixture.spawns(), 0);
+});
+
+test("queue dispatch mode creates the DB run record without spawning a child process", async () => {
+  const fixture = loadRunner(false, false, "queue");
+  const result = await fixture.run("local-fixture");
+  assert.equal(
+    JSON.stringify(result),
+    JSON.stringify({ queuedCount: 1, runStatus: "queued", runIds: ["run"] }),
+  );
+  assert.equal(fixture.spawns(), 0);
+  assert.deepEqual(fixture.invalidated, ["local-fixture"]);
+  assert.ok(fixture.queries.some((sql) => sql.includes("'dispatch_mode'")));
 });

@@ -1232,6 +1232,13 @@
       ]
     },
     {
+      "path": "geosub-backend/scripts/collector-queue-worker.mjs",
+      "classification": "controlled_script",
+      "tables": [
+        "collector_job_runs"
+      ]
+    },
+    {
       "path": "geosub-backend/scripts/configure-official-web-job.mjs",
       "classification": "controlled_script",
       "tables": [
