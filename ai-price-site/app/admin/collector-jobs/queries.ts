@@ -1,17 +1,37 @@
 import { claudeReviewPolicyId } from "./claude-reuse-model";
 import { parseAdminProductFilter } from "@/lib/admin-workflow-context";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
-import { prisma } from "../../../lib/prisma";
+import { parseRequestedSqlPage } from "../../../lib/admin-product-summary-model";
+import { adminPrisma } from "../../../lib/prisma";
 import type { AvailabilityRow, JobRow, RunRow } from "./model";
 
-export async function getCollectorJobsPageData(raw: {product?:string;q?:string;platform?:string} = {}) {
-  const {product:productSlug,q,platform} = parseAdminProductFilter(raw);
+export const COLLECTOR_PRODUCT_PAGE_SIZE = 10;
+export const COLLECTOR_RUN_PAGE_SIZE = 25;
+export const COLLECTOR_CHECK_PAGE_SIZE = 25;
+
+export async function getCollectorJobsPageData(
+  raw: {
+    product?: string;
+    q?: string;
+    platform?: string;
+    page?: string | string[];
+    runPage?: string | string[];
+    checkPage?: string | string[];
+  } = {},
+) {
+  const { product: productSlug, q, platform } = parseAdminProductFilter(raw);
   const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
-  return measureAdminWorkload(
-    "collector-jobs.page-data",
-    () => Promise.all([
-    prisma.$queryRaw<JobRow[]>`
-      WITH job_scope AS (
+  const productPage = parseRequestedSqlPage(raw.page);
+  const runPage = parseRequestedSqlPage(raw.runPage);
+  const checkPage = parseRequestedSqlPage(raw.checkPage);
+  const productOffset = (productPage - 1) * COLLECTOR_PRODUCT_PAGE_SIZE;
+  const runOffset = (runPage - 1) * COLLECTOR_RUN_PAGE_SIZE;
+  const checkOffset = (checkPage - 1) * COLLECTOR_CHECK_PAGE_SIZE;
+
+  return measureAdminWorkload("collector-jobs.page-data", () =>
+    Promise.all([
+      adminPrisma.$queryRaw<JobRow[]>`
+      WITH filtered_jobs AS (
         SELECT
           job.id,
           job.product_id,
@@ -46,17 +66,46 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
             AND (COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown')
               IN ('official_page','official_site','pricing_page')
               OR source.type::text = 'official_page')))
+      ),
+      product_buckets AS (
+        SELECT
+          product_id,
+          MIN(
+            CASE status
+              WHEN 'failed' THEN 1
+              WHEN 'active' THEN 2
+              WHEN 'paused' THEN 3
+              ELSE 4
+            END
+          ) AS status_rank,
+          MAX(priority) AS top_priority,
+          MIN(next_run_at) AS earliest_next_run,
+          MAX(created_at) AS latest_created_at,
+          COUNT(*) FILTER (WHERE status = 'active')::int AS active_job_count
+        FROM filtered_jobs
+        GROUP BY product_id
+      ),
+      paged_products AS (
+        SELECT
+          product_id,
+          COUNT(*) OVER()::int AS total_product_count,
+          COALESCE(SUM(active_job_count) OVER(), 0)::int AS total_active_job_count
+        FROM product_buckets
         ORDER BY
-          CASE job.status
-            WHEN 'failed' THEN 1
-            WHEN 'active' THEN 2
-            WHEN 'paused' THEN 3
-            ELSE 4
-          END,
-          job.priority DESC,
-          job.next_run_at NULLS FIRST,
-          job.created_at DESC
-        LIMIT 160
+          status_rank ASC,
+          top_priority DESC,
+          earliest_next_run NULLS FIRST,
+          latest_created_at DESC
+        LIMIT ${COLLECTOR_PRODUCT_PAGE_SIZE}
+        OFFSET ${productOffset}
+      ),
+      job_scope AS (
+        SELECT
+          job.*,
+          paged.total_product_count,
+          paged.total_active_job_count
+        FROM filtered_jobs job
+        JOIN paged_products paged ON paged.product_id = job.product_id
       ),
       published_price_state AS (
         SELECT
@@ -167,7 +216,9 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
             latest_runs.started_at IS NULL
             OR job.updated_at > latest_runs.started_at
           )
-        ) AS queue_pending
+        ) AS queue_pending,
+        job.total_product_count,
+        job.total_active_job_count
       FROM job_scope job
       LEFT JOIN LATERAL (
         SELECT
@@ -194,9 +245,8 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
         job.priority DESC,
         job.next_run_at NULLS FIRST,
         job.created_at DESC
-      LIMIT 160
     `,
-    prisma.$queryRaw<RunRow[]>`
+      adminPrisma.$queryRaw<RunRow[]>`
       SELECT
         run.id::text,
         run.job_id::text,
@@ -205,6 +255,8 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
         source.name AS source_name,
         run.status,
         run.collector_kind,
+        run.raw_payload ->> 'failure_phase' AS failure_phase,
+        run.raw_payload ->> 'failure_stage' AS failure_stage,
         run.raw_payload ->> 'collector_status' AS collector_status,
         run.raw_payload ->> 'auto_review_status' AS auto_review_status,
         run.raw_payload ->> 'collection_outcome' AS collection_outcome,
@@ -220,8 +272,7 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
         run.duration_ms,
         run.error_message,
         run.output_excerpt,
-        run.raw_payload ->> 'diagnosis' AS diagnosis
-        ,
+        run.raw_payload ->> 'diagnosis' AS diagnosis,
         run.raw_payload ->> 'pid' AS process_id,
         run.raw_payload ->> 'state' AS runner_state,
         GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(run.finished_at, NOW()) - run.started_at)))::int AS run_age_seconds,
@@ -261,7 +312,8 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
           (run.raw_payload #>> '{review_outcome,published_price_count}')::int,
           published_outcome.published_price_count,
           0
-        )::int AS published_price_count
+        )::int AS published_price_count,
+        COUNT(*) OVER()::int AS total_run_count
       FROM collector_job_runs run
       LEFT JOIN products product ON product.id = run.product_id
       LEFT JOIN price_sources source ON source.id = run.source_id
@@ -324,9 +376,10 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
               IN ('official_page','official_site','pricing_page')
               OR source.type::text = 'official_page')))
       ORDER BY run.started_at DESC
-      LIMIT 50
+      LIMIT ${COLLECTOR_RUN_PAGE_SIZE}
+      OFFSET ${runOffset}
     `,
-    prisma.$queryRaw<AvailabilityRow[]>`
+      adminPrisma.$queryRaw<AvailabilityRow[]>`
       SELECT
         availability.id::text,
         availability.product_name,
@@ -339,15 +392,16 @@ export async function getCollectorJobsPageData(raw: {product?:string;q?:string;p
         availability.subscription_item_count,
         availability.ignored_item_count,
         availability.reason,
-        availability.checked_at
+        availability.checked_at,
+        COUNT(*) OVER()::int AS total_check_count
       FROM app_store_availability_latest_view availability
       WHERE (${productSlug} = '' OR availability.product_slug = ${productSlug})
         AND (${q} = '' OR availability.product_slug ILIKE ${pattern} OR availability.product_name ILIKE ${pattern})
         AND ${platform} <> 'web'
       ORDER BY availability.checked_at DESC, availability.product_name, availability.country_code
-      LIMIT 80
+      LIMIT ${COLLECTOR_CHECK_PAGE_SIZE}
+      OFFSET ${checkOffset}
     `,
     ]),
   );
-
 }

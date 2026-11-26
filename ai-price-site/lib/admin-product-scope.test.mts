@@ -246,10 +246,13 @@ test("workspace, pipeline, and collector-jobs actions have no hardcoded product 
     new URL("./admin-workspace.ts", import.meta.url),
     "utf8",
   );
-  const pipeline = readFileSync(
-    new URL("../app/admin/pipeline/page.tsx", import.meta.url),
-    "utf8",
-  );
+  const pipeline = [
+    "../app/admin/pipeline/page.tsx",
+    "../app/admin/pipeline/queries.ts",
+    "./admin-product-summary-read-model.ts",
+  ]
+    .map((rel) => readFileSync(new URL(rel, import.meta.url), "utf8"))
+    .join("\n");
   const collectorActions = readFileSync(
     new URL("../app/admin/collector-jobs/actions.ts", import.meta.url),
     "utf8",

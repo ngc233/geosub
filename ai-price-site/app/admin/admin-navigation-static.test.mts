@@ -114,7 +114,12 @@ test("admin sidebar exposes only operational modules", () => {
 test("product pipeline is the single lifecycle entry while specialist pages remain reachable", () => {
   const sidebar = readProjectFile("components/admin/AdminSidebar.tsx");
   const steps = readProjectFile("components/admin/AdminPipelineSteps.tsx");
-  const pipeline = readProjectFile("app/admin/pipeline/page.tsx");
+  const pipeline = [
+    "app/admin/pipeline/page.tsx",
+    "app/admin/pipeline/model.ts",
+    "app/admin/pipeline/queries.ts",
+    "lib/admin-product-summary-read-model.ts",
+  ].map(readProjectFile).join("\n");
   const growth = readProjectFile("lib/admin-pipeline-growth.ts");
 
   assert.match(sidebar, /label: "采集与审核",\s+href: "\/admin\/pipeline"/);
@@ -139,7 +144,7 @@ test("product pipeline is the single lifecycle entry while specialist pages rema
 
 test("admin workflows recognize canonical App Store jobs for AI and streaming products", () => {
   const taskScopeFiles = [
-    "app/admin/pipeline/page.tsx",
+    "lib/admin-product-summary-read-model.ts",
     "app/admin/products/page.tsx",
     "app/admin/products/[id]/edit/page.tsx",
     "app/admin/products/actions.ts",
@@ -163,7 +168,7 @@ test("admin workflows recognize canonical App Store jobs for AI and streaming pr
   }
 
   const lifecycleSources = [
-    "app/admin/pipeline/page.tsx",
+    "lib/admin-product-summary-read-model.ts",
     "app/admin/products/page.tsx",
     "app/admin/collector-jobs/actions.ts",
     "app/admin/review/queries.ts",
@@ -571,7 +576,10 @@ test("all admin asset views share one four-level operational status model", () =
   const productPage = readProjectFile("app/admin/products/page.tsx");
   const planPage = readProjectFile("app/admin/plans/page.tsx");
   const pricePage = readProjectFile("app/admin/prices/page.tsx");
-  const pipelinePage = readProjectFile("app/admin/pipeline/page.tsx");
+  const pipelinePage = [
+    "app/admin/pipeline/page.tsx",
+    "app/admin/pipeline/model.ts",
+  ].map(readProjectFile).join("\n");
   const qualityModel = readProjectFile("app/admin/data-quality/model.ts");
   const qualityOverview = readProjectFile("app/admin/data-quality/DataQualityOverview.tsx");
 
