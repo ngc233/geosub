@@ -264,14 +264,31 @@ test('legacy and current task units launch 0644 scripts through Bash, including 
   assert.equal(result.status,7);assert.equal(result.stdout,'preserved');
   assert.throws(()=>taskLaunch(`[Service]\nExecStart=${wrapper} fixture -- ${child}`),/explicit Bash/);
 });
-test('all shipped scheduled task templates have explicit interpreters and readable shell sources', () => {
+const DEPLOY_SCRIPT_PREFIX = '/opt/geosub/geosub-backend/deploy/linux-arm64/';
+function shippedTaskScriptUrl(script, baseUrl = import.meta.url) {
+  if (script.startsWith(DEPLOY_SCRIPT_PREFIX)) {
+    return new URL('./' + script.slice(DEPLOY_SCRIPT_PREFIX.length), baseUrl);
+  }
+  return new URL('../../../' + script.replace('/opt/geosub/', ''), baseUrl);
+}
+test('all shipped scheduled task templates have explicit interpreters and readable shell sources', (t) => {
   const dir=new URL('./systemd/',import.meta.url);
+  const strippedRoot=fixture(t);
+  const strippedController=join(strippedRoot,'releases','controllers','0'.repeat(40));
+  mkdirSync(strippedController,{recursive:true});
   for(const file of readdirSync(dir).filter(x=>x.endsWith('.service')&&x!=='geosub-web.service')) {
     const text=readFileSync(new URL(file,dir),'utf8');
     const launch=taskLaunch(text); assert.equal(launch.executable,'/bin/bash',file);
     for(const script of launch.scripts){
-      const source=new URL('../../../'+script.replace('/opt/geosub/',''),import.meta.url);
+      const source=shippedTaskScriptUrl(script);
       assert.equal(spawnSync('/bin/bash',['-n',source.pathname]).status,0,file+': '+script);
+      if(script.startsWith(DEPLOY_SCRIPT_PREFIX)){
+        const rel=script.slice(DEPLOY_SCRIPT_PREFIX.length);
+        writeFileSync(join(strippedController,rel),readFileSync(source));
+        const strippedSource=shippedTaskScriptUrl(script,new URL(`file://${strippedController}/rolling-release.test.mjs`));
+        assert.equal(strippedSource.pathname,join(strippedController,rel));
+        assert.equal(spawnSync('/bin/bash',['-n',strippedSource.pathname]).status,0,file+' (stripped controller): '+script);
+      }
     }
   }
 });
