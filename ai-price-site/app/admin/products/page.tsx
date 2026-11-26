@@ -176,7 +176,7 @@ export default async function AdminProductsPage({
         </div>
 
         <div className="flex items-center gap-2">
-          <AdminLinkButton href="/admin/discovery" variant="secondary" size="sm">
+          <AdminLinkButton href="/admin/pipeline?tab=discovery" variant="secondary" size="sm">
             线索导入
           </AdminLinkButton>
           <AdminLinkButton

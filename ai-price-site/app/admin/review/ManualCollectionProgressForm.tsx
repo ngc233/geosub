@@ -23,7 +23,7 @@ export default function ManualCollectionProgressForm({productSlug,buttonLabel="�
      const payload=await response.json().catch(()=>null) as {ok?:boolean;redirectPath?:string;message?:string}|null;
      if(!response.ok||payload?.ok!==true)throw new Error(payload?.message||"未能确认采集请求。请先查看运行记录，再决定是否重试。");
      acknowledged=true;
-     router.push(safeAdminHref(payload.redirectPath,`/admin/review?q=${encodeURIComponent(productSlug||"")}`));
+     router.push(safeAdminHref(payload.redirectPath,`/admin/pipeline?tab=runs&product=${encodeURIComponent(productSlug||"")}`));
    }catch(err){setError(err instanceof Error?err.message:"暂时无法确认请求结果，请先查看运行记录。");}
    finally{if(!acknowledged){inFlight.current=false;setPending(false);}}
  }}>

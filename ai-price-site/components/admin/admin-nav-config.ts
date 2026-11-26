@@ -64,7 +64,12 @@ export const ADMIN_HUBS: readonly AdminHubConfig[] = [
       "/admin/pricing-preview",
     ],
     subNav: [
-      { label: "产品队列", href: "/admin/pipeline", keywords: "pipeline 队列 流水线" },
+      {
+        label: "采集中心",
+        href: "/admin/pipeline",
+        keywords: "pipeline collector jobs discovery 队列 流水线 采集 任务 运行记录 线索 录入",
+        also: ["/admin/collector-jobs", "/admin/discovery"],
+      },
       {
         label: "异常审核",
         href: "/admin/review",
@@ -74,8 +79,6 @@ export const ADMIN_HUBS: readonly AdminHubConfig[] = [
       { label: "正式价格", href: "/admin/prices", keywords: "prices 正式价格" },
       { label: "数据质量", href: "/admin/data-quality", keywords: "quality 健康 诊断" },
       { label: "购买力", href: "/admin/affordability", keywords: "affordability 购买力" },
-      { label: "运行记录", href: "/admin/collector-jobs", keywords: "collector jobs 任务 采集" },
-      { label: "线索录入", href: "/admin/discovery", keywords: "discovery 线索 发现" },
     ],
   },
   {

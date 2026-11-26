@@ -570,7 +570,7 @@ export default async function EditProductPage({
                   保存来源并准备采集
                 </AdminButton>
                 <AdminLinkButton
-                  href={`/admin/collector-jobs?product=${encodeURIComponent(product.slug)}`}
+                  href={`/admin/pipeline?tab=runs&product=${encodeURIComponent(product.slug)}`}
                   variant="secondary"
                   size="sm"
                 >

@@ -1,5 +1,4 @@
 import AdminProductLogo from "@/components/admin/AdminProductLogo";
-import AdminPipelineSteps from "@/components/admin/AdminPipelineSteps";
 import { withAdminReturnTo, adminListLocation } from "@/lib/admin-workflow-context";
 import AdminProductContext from "@/components/admin/AdminProductContext";
 import AdminPagination from "@/components/admin/AdminPagination";
@@ -482,11 +481,10 @@ export default async function AdminPricesPage({
       </p> : null}
 
       <AdminPageHeader
-        eyebrow="Prices"
+        eyebrow="价格运维 · 正式价格"
         title="正式价格库"
-        description={productSlug ? "查看当前产品的套餐、地区、来源与正式价格；筛选和分页保持在该产品内。" : "按分类、产品、套餐和地区管理正式价格。这里是全站价格资产的总览。"}
+        description={productSlug ? "查看当前产品的套餐、地区、来源与正式价格；筛选和分页保持在该产品内。" : "按分类、产品、套餐和地区管理正式生效价格。"}
       />
-      <AdminPipelineSteps currentStep="published" productSlug={productSlug || undefined} returnTo={params.returnTo}/>
 
       <div className="mb-6 grid gap-4 md:grid-cols-5">
         <AdminCard>

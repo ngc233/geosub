@@ -56,16 +56,16 @@ export function DataQualityOverview({
   return (
     <div>
       <AdminPageHeader
-        eyebrow="数据质量"
+        eyebrow="价格运维 · 数据质量"
         title="产品数据健康总览"
-        description="把采集、自动审核、地区覆盖和正式价格按产品归因。日常先处理红色产品，蓝色状态由系统继续采集和判断。"
+        description="把采集、自动审核、地区覆盖和正式价格按产品归因。异常项可直接切入采集运行记录、异常审核台或单产品诊断。"
         action={
           <AdminLink
-            href="/admin/collector-jobs"
-            className={adminButtonClassName({variant:"secondary",size:"md",className:""})}
+            href="/admin/pipeline?tab=runs"
+            className={adminButtonClassName({variant:"secondary",size:"sm",className:""})}
           >
-            查看采集任务
-            <ArrowRight size={16} strokeWidth={2} />
+            采集运行记录
+            <ArrowRight size={15} strokeWidth={2} />
           </AdminLink>
         }
       />
@@ -81,38 +81,38 @@ export function DataQualityOverview({
       <AdminCard className="mb-6">
         <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <div className="flex gap-3">
-            <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
-              <DatabaseZap size={20} strokeWidth={2.2} />
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-admin-border bg-admin-surface-subtle text-admin-text">
+              <DatabaseZap size={18} strokeWidth={2} />
             </span>
             <div>
-              <h2 className="text-base font-semibold text-blue-950 dark:text-blue-100 text-admin-text">
-              产品更新判断
+              <h2 className="text-sm font-semibold text-admin-text">
+                产品更新判断
               </h2>
-              <p className="mt-1 max-w-4xl text-sm leading-6 text-blue-800 dark:text-blue-200">
+              <p className="mt-1 max-w-4xl text-xs leading-5 text-admin-text-muted">
                 系统按 App Store、官网和一次性商品等来源分别判断采集状态，再检查覆盖、价格时效、极端值、重复套餐和税务资料。
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-blue-800 2xl:min-w-[620px] 2xl:grid-cols-4 dark:text-blue-200">
-            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
+          <div className="grid grid-cols-2 gap-2 text-xs font-medium text-admin-text-secondary 2xl:min-w-[620px] 2xl:grid-cols-4">
+            <div className="rounded-md border border-admin-border bg-admin-surface-subtle px-3 py-2 tabular-nums">
               最近质量扫描：{latestRepairCycle ? formatRelative(latestRepairCycle.created_at) : "等待首次运行"}
             </div>
-            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
+            <div className="rounded-md border border-admin-border bg-admin-surface-subtle px-3 py-2 tabular-nums">
               本轮排队：{latestRepairCycle
                 ? latestRepairCycle.anomaly_jobs_queued +
                   latestRepairCycle.stale_jobs_queued +
                   latestRepairCycle.coverage_jobs_queued
                 : 0}
             </div>
-            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
+            <div className="rounded-md border border-admin-border bg-admin-surface-subtle px-3 py-2 tabular-nums">
               本轮隔离：{latestRepairCycle
                 ? latestRepairCycle.anomaly_observations_closed +
                   latestRepairCycle.published_outliers_quarantined +
                   latestRepairCycle.stale_prices_quarantined
                 : 0}
             </div>
-            <div className="rounded-admin-card bg-admin-surface/70 px-3 py-2 dark:bg-admin-surface/70">
+            <div className="rounded-md border border-admin-border bg-admin-surface-subtle px-3 py-2 tabular-nums">
               覆盖缺口：{coverageGapProductCount} 个产品
             </div>
           </div>
@@ -278,10 +278,10 @@ export function DataQualityOverview({
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
                     {collection.supportsManualCollection && row.running_run_count > 0 ?
-                      <AdminLinkButton href={`/admin/collector-jobs?product=${encodeURIComponent(row.slug)}`}
-                        variant="secondary" size="sm">查看运行进度</AdminLinkButton>
+                      <AdminLinkButton href={`/admin/pipeline?tab=runs&product=${encodeURIComponent(row.slug)}`}
+                        variant="secondary" size="sm">运行进度</AdminLinkButton>
                       : collection.supportsManualCollection ? (
-                      <AdminLinkButton href={productWorkflowHref("/admin/pipeline",row.slug)} variant="secondary" size="sm">进入产品队列</AdminLinkButton>
+                      <AdminLinkButton href={productWorkflowHref("/admin/pipeline",row.slug)} variant="secondary" size="sm">采集队列</AdminLinkButton>
                     ) : null}
                     <AdminLink
                       href={`/admin/review?product=${encodeURIComponent(row.slug)}`}
@@ -296,10 +296,10 @@ export function DataQualityOverview({
                       诊断
                     </AdminLink>
                     <AdminLink
-                      href={`/admin/collector-jobs?product=${encodeURIComponent(row.slug)}`}
+                      href={`/admin/pipeline?tab=runs&product=${encodeURIComponent(row.slug)}`}
                       className={adminButtonClassName({variant:"secondary",size:"sm",className:""})}
                     >
-                      任务
+                      运行
                     </AdminLink>
                   </div>
                 </div>

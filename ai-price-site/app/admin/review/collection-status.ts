@@ -38,6 +38,7 @@ export function buildCollectionRedirectPath(
   productSlug?: string,
 ) {
   const redirectParams = new URLSearchParams({
+    tab: "runs",
     collectionQueued: String(queuedCount),
     collectionRun: runStatus,
   });
@@ -46,11 +47,11 @@ export function buildCollectionRedirectPath(
   if (trimmedProductSlug) {
     redirectParams.set("collectionScope", trimmedProductSlug);
     redirectParams.set("q", trimmedProductSlug);
-    redirectParams.set("product",trimmedProductSlug);
+    redirectParams.set("product", trimmedProductSlug);
   }
 
-  if(runIds?.[0]) redirectParams.set("runId",runIds[0]);
-  return `/admin/review?${redirectParams.toString()}${runIds?.[0] ? "#collection-runs" : ""}`;
+  if (runIds?.[0]) redirectParams.set("runId", runIds[0]);
+  return `/admin/pipeline?${redirectParams.toString()}${runIds?.[0] ? "#collection-runs" : ""}`;
 }
 
 export function getCollectionStatusTone(status: string | null | undefined): CollectionStatusTone {

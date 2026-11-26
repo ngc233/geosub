@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import AdminPipelineSteps from "@/components/admin/AdminPipelineSteps";
 import { AdminPageHeader } from "@/components/admin/AdminCard";
 import { productWorkflowHref } from "@/lib/admin-product-next-action";
 import { adminControlClassName } from "@/components/admin/admin-control";
@@ -61,26 +60,68 @@ export function ReviewOverviewSections({
   collectionScope,
   latestAutoReview,
   productContext,
-  returnTo,
 }: ReviewOverviewSectionsProps) {
-  const hasSelectedProduct = Boolean(
-    discoveryPromoted || selectedProductCollector,
-  );
+  const hasSelectedProduct = Boolean(discoveryPromoted || selectedProductCollector);
   const tone = getCollectionStatusTone(collectionRun);
+  const runsHref = productQuery
+    ? `/admin/pipeline?tab=runs&product=${encodeURIComponent(productQuery)}`
+    : "/admin/pipeline?tab=runs";
+
   return (
     <>
       <AdminPageHeader
-        eyebrow="价格工作流"
-        title="异常审核"
-        action={<AdminLinkButton href={"/admin/review?source=games" + (productQuery ? "&product=" + encodeURIComponent(productQuery) : "")} variant="secondary">游戏报价审核</AdminLinkButton>}
-        description="稳定价格通过验证后自动写入正式库；这里处理未通过的记录。"
+        eyebrow="价格运维 · 异常审核"
+        title="异常审核台"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <AdminLinkButton href={runsHref} variant="secondary" size="sm">
+              采集运行记录
+            </AdminLinkButton>
+            <AdminLinkButton
+              href={
+                productQuery
+                  ? `/admin/prices?product=${encodeURIComponent(productQuery)}`
+                  : "/admin/prices"
+              }
+              variant="secondary"
+              size="sm"
+            >
+              正式价格库
+            </AdminLinkButton>
+          </div>
+        }
+        description="专注价格变动与异常观测审批。稳定价格自动入库，这里仅处理未通过自动门禁的记录。"
       />
-      <AdminPipelineSteps
-        currentStep="review"
-        productSlug={productQuery || undefined}
-        returnTo={returnTo}
-      />
+
       {productContext}
+
+      <div className="grid grid-cols-2 divide-y divide-admin-border rounded-admin-card border border-admin-border bg-admin-surface sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+        <div className="px-4 py-3">
+          <div className="text-xs font-medium text-admin-text-muted">待审异常</div>
+          <div className="mt-1 text-xl font-semibold tabular-nums text-admin-warning">
+            {pendingTotal}
+          </div>
+        </div>
+        <div className="px-4 py-3">
+          <div className="text-xs font-medium text-admin-text-muted">已通过</div>
+          <div className="mt-1 text-xl font-semibold tabular-nums text-admin-success">
+            {approvedCount}
+          </div>
+        </div>
+        <div className="px-4 py-3">
+          <div className="text-xs font-medium text-admin-text-muted">已忽略</div>
+          <div className="mt-1 text-xl font-semibold tabular-nums text-admin-text">
+            {ignoredCount}
+          </div>
+        </div>
+        <div className="px-4 py-3">
+          <div className="text-xs font-medium text-admin-text-muted">已拒绝</div>
+          <div className="mt-1 text-xl font-semibold tabular-nums text-admin-danger">
+            {rejectedCount}
+          </div>
+        </div>
+      </div>
+
       <section className="rounded-admin-card border border-admin-border bg-admin-surface p-4">
         <form
           action="/admin/review#review-pending"
@@ -96,48 +137,52 @@ export function ReviewOverviewSections({
               name="q"
               defaultValue={productQuery}
               maxLength={100}
-              placeholder="产品名称或 slug"
-              className={`${adminControlClassName} h-11 w-full px-3`}
+              placeholder="输入产品名称或 slug"
+              className={`${adminControlClassName} h-10 w-full px-3`}
             />
           </label>
-          <AdminButton type="submit">筛选</AdminButton>
+          <AdminButton type="submit" size="sm">
+            筛选
+          </AdminButton>
           {productQuery ? (
-            <AdminLinkButton href="/admin/review" variant="secondary">
+            <AdminLinkButton href="/admin/review" variant="secondary" size="sm">
               清除
             </AdminLinkButton>
           ) : null}
         </form>
+
         {hasSelectedProduct ? (
-          <div className="mt-4 border-t border-admin-border pt-3 text-sm text-admin-text-secondary">
-            <p className="font-semibold text-admin-text">
-              {selectedProductName || selectedProductSlug} · {pendingTotal}{" "}
-              条待审
-            </p>
-            <p className="mt-1 text-xs leading-5 text-admin-text-muted">
-              {selectedProductCollector?.latest_run_status === "running"
-                ? "采集仍在运行，请查看本次进度；不要重复提交。"
-                : pendingTotal > 0
-                  ? "展开产品查看当前页异常与证据，修正规则或按需补采。"
-                  : "本页没有待审异常，可直接查看正式价格。"}
-            </p>
+          <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 border-t border-admin-border pt-3 text-sm">
+            <div>
+              <p className="font-semibold text-admin-text">
+                {selectedProductName || selectedProductSlug} · {pendingTotal} 条待审
+              </p>
+              <p className="mt-0.5 text-xs leading-5 text-admin-text-muted">
+                {selectedProductCollector?.latest_run_status === "running"
+                  ? "采集仍在运行，可在采集中心查看实时进度；不要重复提交。"
+                  : pendingTotal > 0
+                    ? "展开下方产品查看当前页异常与证据，修正规则或按需补采。"
+                    : "当前没有待审异常，可直接查看正式价格。"}
+              </p>
+            </div>
             {selectedAppStoreJobCount === 0 ? (
               <AdminLink
-                href={productWorkflowHref(
-                  "/admin/collector-jobs",
-                  selectedProductSlug,
-                )}
-                className="mt-2 inline-flex min-h-11 items-center text-admin-accent"
+                href={productWorkflowHref("/admin/pipeline", selectedProductSlug, "", {
+                  tab: "runs",
+                })}
+                className="text-xs font-medium text-admin-accent hover:underline"
               >
-                查看来源验证
+                查看官网来源验证
               </AdminLink>
             ) : null}
           </div>
         ) : productQuery ? (
-          <p className="mt-3 text-sm text-admin-text-muted">
+          <p className="mt-3 text-xs text-admin-text-muted">
             未找到指定产品，不会显示其他产品的异常。
           </p>
         ) : null}
       </section>
+
       {queuedCount !== null ? (
         <AdminStatusNotice
           title="本轮采集状态"
@@ -150,45 +195,21 @@ export function ReviewOverviewSections({
           })}
         </AdminStatusNotice>
       ) : null}
-      <details className="rounded-admin-card border border-admin-border bg-admin-surface">
-        <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-semibold text-admin-text">
-          说明
-        </summary>
-        <div className="space-y-3 border-t border-admin-border p-4 text-sm leading-6 text-admin-text-muted">
-          <p>
-            此列表按 App Store
-            异常口径展示。补采不会跳过稳定样本、硬异常和独立证据门禁；无需逐国人工核验。官网记录在来源页核对。
-          </p>
-          <p>
-            产品资料与文章的发布状态单独管理。人工覆盖只在已有独立结算证据时使用。
-          </p>
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div>
-              <dt>待审</dt>
-              <dd>{pendingTotal}</dd>
-            </div>
-            <div>
-              <dt>已通过</dt>
-              <dd>{approvedCount}</dd>
-            </div>
-            <div>
-              <dt>已忽略</dt>
-              <dd>{ignoredCount}</dd>
-            </div>
-            <div>
-              <dt>已拒绝</dt>
-              <dd>{rejectedCount}</dd>
-            </div>
-          </dl>
-          {latestAutoReview ? (
-            <p>
-              最近自动审核：{latestAutoReview.status}；
-              {latestAutoReview.dry_run ? "仅预检" : "正式执行"}，通过{" "}
-              {latestAutoReview.auto_approved_count} 条。
-            </p>
-          ) : null}
+
+      {latestAutoReview ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-admin-card border border-admin-border bg-admin-surface-subtle px-4 py-2.5 text-xs text-admin-text-muted">
+          <span>
+            最近自动审核：<strong className="font-medium text-admin-text">{latestAutoReview.status}</strong>
+            {" · "}
+            {latestAutoReview.dry_run ? "仅预检" : "正式执行"}，自动通过{" "}
+            <strong className="font-semibold tabular-nums text-admin-text">
+              {latestAutoReview.auto_approved_count}
+            </strong>{" "}
+            条
+          </span>
+          <span>人工覆盖仅在已有独立结算证据时使用；官网记录在采集中心运行记录核对。</span>
         </div>
-      </details>
+      ) : null}
     </>
   );
 }

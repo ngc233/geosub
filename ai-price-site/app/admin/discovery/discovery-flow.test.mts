@@ -21,7 +21,7 @@ test("discovery promotion redirects into the product-level collection workspace"
 
   assert.equal(
     path,
-    "/admin/review?q=grok&discoveryPromoted=1&discoveryProduct=Grok&discoveryJobs=2",
+    "/admin/pipeline?product=grok&discoveryPromoted=1&discoveryProduct=Grok&discoveryJobs=2",
   );
   assert.equal(path.startsWith("http"), false);
   assert.equal(path.includes("localhost"), false);
@@ -34,7 +34,7 @@ test("discovery promotion normalizes missing job count and missing product", () 
       productName: "",
       appStoreJobCount: -1,
     }),
-    "/admin/review?q=netflix&discoveryPromoted=1&discoveryProduct=netflix&discoveryJobs=0",
+    "/admin/pipeline?product=netflix&discoveryPromoted=1&discoveryProduct=netflix&discoveryJobs=0",
   );
 
   assert.equal(
@@ -43,13 +43,13 @@ test("discovery promotion normalizes missing job count and missing product", () 
       productName: "Missing",
       appStoreJobCount: 1,
     }),
-    "/admin/discovery?promotionError=1",
+    "/admin/pipeline?tab=discovery&promotionError=1",
   );
 });
 
 test("discovery UI and action keep the clue to collection handoff explicit", () => {
   const actionSource = readAppFile("admin/discovery/actions.ts");
-  const pageSource = readAppFile("admin/discovery/page.tsx");
+  const pageSource = readAppFile("admin/pipeline/PipelineDiscoveryView.tsx");
   const formSource = readAppFile("admin/discovery/DiscoveryIntakeForms.tsx");
 
   assert.match(actionSource, /buildDiscoveryReviewRedirectPath/);

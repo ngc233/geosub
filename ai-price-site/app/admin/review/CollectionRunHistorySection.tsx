@@ -260,7 +260,9 @@ export default function CollectionRunHistorySection({
   const needsDiagnosis = !["succeeded", "skipped"].includes(progressState.runStatus || "");
   const contextHref = (href: string) => returnTo ? withAdminReturnTo(href, returnTo) : href;
   const sourceHref = contextHref(productSlug
-    ? `/admin/collector-jobs?product=${encodeURIComponent(productSlug)}` : "/admin/collector-jobs");
+    ? `/admin/pipeline?tab=runs&product=${encodeURIComponent(productSlug)}#collector-runs` : "/admin/pipeline?tab=runs#collector-runs");
+  const reviewHref = contextHref(productSlug
+    ? `/admin/review?product=${encodeURIComponent(productSlug)}#review-pending` : "/admin/review#review-pending");
   const priceHref = contextHref(productSlug
     ? `/admin/prices?product=${encodeURIComponent(productSlug)}` : "/admin/prices");
 
@@ -374,7 +376,7 @@ export default function CollectionRunHistorySection({
             : "本页无待审异常；可直接查看正式价格，无需重复发布。"}</p>
           <AdminLink href={needsDiagnosis
             ? sourceHref
-            : pendingCount>0 ? "#review-pending"
+            : pendingCount>0 ? reviewHref
               : priceHref}
             className={adminButtonClassName({variant:"primary",size:"sm"})}>
             {needsDiagnosis ? "查看运行原因" : pendingCount>0 ? "继续处理异常" : "查看正式价格"}

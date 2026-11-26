@@ -12,17 +12,17 @@ export function buildDiscoveryReviewRedirectPath({
   const slug = String(productSlug || "").trim();
 
   if (!slug) {
-    return "/admin/discovery?promotionError=1";
+    return "/admin/pipeline?tab=discovery&promotionError=1";
   }
 
   const safeJobCount = Math.max(0, Math.round(Number(appStoreJobCount || 0)));
   const displayName = String(productName || slug).trim() || slug;
   const params = new URLSearchParams({
-    q: slug,
+    product: slug,
     discoveryPromoted: "1",
     discoveryProduct: displayName,
     discoveryJobs: String(safeJobCount),
   });
 
-  return `/admin/review?${params.toString()}`;
+  return `/admin/pipeline?${params.toString()}`;
 }

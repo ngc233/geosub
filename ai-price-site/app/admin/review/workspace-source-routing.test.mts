@@ -112,7 +112,7 @@ test("website work items describe website prices and return from source records 
   const result = renderRow("web");
   assert.match(result.text, /1 条 官网 正式价格/);
   assert.doesNotMatch(result.text, /App Store/);
-  const href = result.hrefs.find((value) => value.startsWith("/admin/collector-jobs"));
+  const href = result.hrefs.find((value) => value.startsWith("/admin/pipeline?tab=runs"));
   assert.ok(href);
   const url = new URL(href, "http://local.test");
   assert.equal(url.searchParams.get("product"), "spotify");
@@ -123,7 +123,7 @@ test("App Store work items keep their original price description and diagnostic 
   const result = renderRow("ios");
   assert.match(result.text, /1 条 App Store 正式价格/);
   assert.ok(result.hrefs.some((value) => value.startsWith("/admin/data-quality/chatgpt?")));
-  assert.ok(!result.hrefs.some((value) => value.startsWith("/admin/collector-jobs")));
+  assert.ok(!result.hrefs.some((value) => value.startsWith("/admin/pipeline?tab=runs")));
 });
 
 test("workspace filters synchronize the router and clear the old page before leaving and returning", () => {

@@ -16,7 +16,7 @@ test("collection redirect stays relative and preserves product scope", () => {
       },
       " netflix ",
     ),
-    "/admin/review?collectionQueued=2&collectionRun=queued&collectionScope=netflix&q=netflix&product=netflix",
+    "/admin/pipeline?tab=runs&collectionQueued=2&collectionRun=queued&collectionScope=netflix&q=netflix&product=netflix",
   );
 });
 
@@ -26,7 +26,7 @@ test("collection redirect without product scope does not leak hostnames", () => 
     runStatus: "none",
   });
 
-  assert.equal(path, "/admin/review?collectionQueued=0&collectionRun=none");
+  assert.equal(path, "/admin/pipeline?tab=runs&collectionQueued=0&collectionRun=none");
   assert.equal(path.includes("localhost"), false);
   assert.equal(path.startsWith("http"), false);
 });

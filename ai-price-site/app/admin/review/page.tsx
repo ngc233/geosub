@@ -1,25 +1,28 @@
-import LazyReviewDetails from "./LazyReviewDetails";
 import GameOfferReview from "./GameOfferReview";
-import { getCollectorRunHistoryRows } from "./collector-run-history-query";
 import AdminProductContext from "../../../components/admin/AdminProductContext";
+import AdminTabs, { type AdminTabItem } from "@/components/admin/AdminTabs";
+import AdminAlert from "@/components/admin/AdminAlert";
+import { AdminLinkButton } from "@/components/admin/AdminButton";
 import { prisma } from "../../../lib/prisma";
 import { getReviewPageData } from "./queries";
 import { ReviewOverviewSections } from "./ReviewOverviewSections";
 import { PendingProductReviewSection } from "./PendingProductReviewSection";
 import { ReviewHistorySection } from "./ReviewHistorySection";
-import CollectionRunHistorySection from "./CollectionRunHistorySection";
 
 export const dynamic = "force-dynamic";
+
+type ReviewTab = "pending" | "games" | "history";
 
 export default async function ReviewPage({
   searchParams,
 }: {
   searchParams?: Promise<{
+    tab?: string;
     source?: string;
     gameView?: string;
     gamePage?: string;
-    runId?:string;
-    returnTo?:string;
+    runId?: string;
+    returnTo?: string;
     detailProduct?: string;
     detailPage?: string;
     collectionQueued?: string;
@@ -30,7 +33,7 @@ export default async function ReviewPage({
     discoveryJobs?: string;
     page?: string;
     historyPage?: string;
-    product?:string;
+    product?: string;
     q?: string;
     showHistory?: string;
     showRuns?: string;
@@ -41,38 +44,75 @@ export default async function ReviewPage({
     params.collectionQueued === undefined ? null : Number(params.collectionQueued);
   const collectionRun = params.collectionRun ?? null;
   const collectionScope = params.collectionScope ?? null;
-  const productQuery = String(params.product ?? params.q ?? "").trim().slice(0,100);
-  let exactProduct=String(params.product || "").trim().toLowerCase();
-  if(!exactProduct && productQuery){
-    const exact=await prisma.product.findUnique({where:{slug:productQuery.toLowerCase()},select:{slug:true}});
-    const found=exact || await prisma.product.findFirst({where:{OR:[
-      {slug:{contains:productQuery,mode:"insensitive"}},
-      {name:{contains:productQuery,mode:"insensitive"}}
-    ]},orderBy:[{sortOrder:"asc"},{name:"asc"}],select:{slug:true}});
-    exactProduct=found?.slug || productQuery.toLowerCase();
+  const productQuery = String(params.product ?? params.q ?? "").trim().slice(0, 100);
+  let exactProduct = String(params.product || "").trim().toLowerCase();
+  if (!exactProduct && productQuery) {
+    const exact = await prisma.product.findUnique({
+      where: { slug: productQuery.toLowerCase() },
+      select: { slug: true },
+    });
+    const found =
+      exact ||
+      (await prisma.product.findFirst({
+        where: {
+          OR: [
+            { slug: { contains: productQuery, mode: "insensitive" } },
+            { name: { contains: productQuery, mode: "insensitive" } },
+          ],
+        },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { slug: true },
+      }));
+    exactProduct = found?.slug || productQuery.toLowerCase();
   }
-  const discoveryPromoted = params.discoveryPromoted === "1";
-  if (params.source === "games") {
+
+  const activeTab: ReviewTab =
+    params.tab === "games" || params.source === "games"
+      ? "games"
+      : params.tab === "history" || params.showHistory === "1"
+        ? "history"
+        : "pending";
+
+  const tabHref = (nextTab: ReviewTab) => {
+    const query = new URLSearchParams();
+    if (nextTab === "games") query.set("tab", "games");
+    if (nextTab === "history") query.set("tab", "history");
+    if (exactProduct || productQuery) query.set("product", exactProduct || productQuery);
+    if (params.returnTo) query.set("returnTo", params.returnTo);
+    const suffix = query.toString();
+    return suffix ? `/admin/review?${suffix}` : "/admin/review";
+  };
+
+  if (activeTab === "games") {
     const requestedPage = Number(params.gamePage);
-    return <GameOfferReview product={exactProduct} history={params.gameView === "history"}
-      page={Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1}/>;
+    const gameTabs: AdminTabItem[] = [
+      { id: "pending", label: "订阅异常", href: tabHref("pending") },
+      { id: "games", label: "游戏报价", href: tabHref("games") },
+      { id: "history", label: "审核历史", href: tabHref("history") },
+    ];
+    return (
+      <div className="space-y-6">
+        <AdminTabs items={gameTabs} activeId="games" ariaLabel="异常审核视图" />
+        <GameOfferReview
+          product={exactProduct}
+          history={params.gameView === "history"}
+          page={Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1}
+        />
+      </div>
+    );
   }
+
+  const discoveryPromoted = params.discoveryPromoted === "1";
   const discoveryProduct = String(params.discoveryProduct ?? productQuery).trim();
   const discoveryJobs = Math.max(0, Number(params.discoveryJobs ?? 0) || 0);
   const pendingPage = Math.max(1, Number(params.page ?? 1) || 1);
   const historyPage = Math.max(1, Number(params.historyPage ?? 1) || 1);
-  const showHistory = params.showHistory === "1";
-  const showRuns = params.showRuns === "1";
-  const detailProduct = showHistory || showRuns ? "" : String(params.detailProduct || exactProduct || "").trim().toLowerCase();
-  function sectionHref(section: "showHistory" | "showRuns") {
-    const query = new URLSearchParams(
-      Object.entries(params).filter((entry): entry is [string, string] => typeof entry[1] === "string")
-    );
-    for (const key of ["showHistory", "showRuns", "detailProduct", "detailPage"]) query.delete(key);
-    query.set(section, "1");
-    return `/admin/review?${query}#review-${section}`;
-  }
+  const detailProduct =
+    activeTab === "history"
+      ? ""
+      : String(params.detailProduct || exactProduct || "").trim().toLowerCase();
   const detailPage = Math.max(1, Number.parseInt(params.detailPage || "1", 10) || 1);
+
   const {
     historyPageSize,
     detailRowsPerProduct,
@@ -86,7 +126,6 @@ export default async function ReviewPage({
     ignoredCount,
     rejectedCount,
     collectorStatus,
-    collectorRunHistoryRows,
     latestAutoReview,
     selectedProductCollector,
     selectedProductName,
@@ -112,24 +151,33 @@ export default async function ReviewPage({
     detailPage,
   });
 
-  const runId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.runId || "") ? params.runId! : null;
-  const scopedRuns=runId ? await getCollectorRunHistoryRows(productQuery,12,{product:exactProduct || collectionScope || productQuery,runId}) : collectorRunHistoryRows;
-  const contextProduct = selectedProductSlug ? await prisma.product.findUnique({where:{slug:selectedProductSlug},select:{id:true,slug:true,name:true}}) : null;
-  const showLiveRun=Boolean(runId || collectionRun || scopedRuns.some(row=>row.status==="running"));
-  const runSection=(
-      <CollectionRunHistorySection
-        key={`${productQuery || "all-products"}:${runId || "latest"}`}
-        pendingCount={pendingTotal}
-        productSlug={contextProduct?.slug}
-        runId={runId}
-        returnTo={params.returnTo}
-        rows={scopedRuns}
-        collectionRun={collectionRun}
-        collectionScope={collectionScope}
-        productQuery={exactProduct || productQuery}
-      />
+  const contextProduct = selectedProductSlug
+    ? await prisma.product.findUnique({
+        where: { slug: selectedProductSlug },
+        select: { id: true, slug: true, name: true },
+      })
+    : null;
 
-  );
+  const reviewTabs: AdminTabItem[] = [
+    {
+      id: "pending",
+      label: "订阅异常",
+      href: tabHref("pending"),
+      badge: pendingTotal > 0 ? pendingTotal : undefined,
+    },
+    { id: "games", label: "游戏报价", href: tabHref("games") },
+    {
+      id: "history",
+      label: "审核历史",
+      href: tabHref("history"),
+      badge: historyTotal > 0 ? historyTotal : undefined,
+    },
+  ];
+
+  const runsHref = exactProduct
+    ? `/admin/pipeline?tab=runs&product=${encodeURIComponent(exactProduct)}`
+    : "/admin/pipeline?tab=runs";
+
   return (
     <div className="space-y-6">
       <ReviewOverviewSections
@@ -142,7 +190,9 @@ export default async function ReviewPage({
         selectedAppStoreJobCount={selectedAppStoreJobCount}
         pendingTotal={pendingTotal}
         approvedCount={approvedCount}
-        productContext={contextProduct ? <AdminProductContext {...contextProduct} returnTo={params.returnTo} /> : null}
+        productContext={
+          contextProduct ? <AdminProductContext {...contextProduct} returnTo={params.returnTo} /> : null
+        }
         ignoredCount={ignoredCount}
         rejectedCount={rejectedCount}
         queuedCount={queuedCount}
@@ -158,56 +208,47 @@ export default async function ReviewPage({
         evidenceSummaryRows={evidenceSummaryRows}
       />
 
-      {showLiveRun ? runSection : null}
+      <AdminTabs items={reviewTabs} activeId={activeTab} ariaLabel="异常审核视图" />
 
-      <PendingProductReviewSection
-        collectorStatus={collectorStatus}
-        productQuery={exactProduct || productQuery}
-        pendingPage={pendingPage}
-        detailProduct={detailProduct}
-        detailPage={detailPage}
-        returnTo={params.returnTo}
-        pendingTotalPages={pendingTotalPages}
-        detailRowsPerProduct={detailRowsPerProduct}
-        detailRowsLimited={detailRowsLimited}
-        pendingProductTotal={pendingProductTotal}
-        pendingTotal={pendingTotal}
-        historyPage={historyPage}
-        pendingProductGroups={pendingProductGroups}
-      />
-
-      {!showLiveRun ? (
-        <LazyReviewDetails key={`runs:${showRuns}`} id="review-showRuns" loadHref={sectionHref("showRuns")}
-          loaded={showRuns} initiallyOpen={showRuns} summary={
-            <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-semibold text-admin-text">
-              采集运行记录 · {scopedRuns.length} 条最近记录
-            </summary>
-          }>
-          {showRuns ? runSection : null}
-        </LazyReviewDetails>
+      {params.showRuns === "1" ? (
+        <AdminAlert variant="info" title="采集运行记录已统一迁移至采集中心">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>实时进度、历史运行日志与失败排查现已全部收口在「采集中心 · 运行与任务」。</span>
+            <AdminLinkButton href={runsHref} variant="secondary" size="sm">
+              前往采集运行记录
+            </AdminLinkButton>
+          </div>
+        </AdminAlert>
       ) : null}
 
-      <LazyReviewDetails key={`history:${showHistory}`} id="review-showHistory" loadHref={sectionHref("showHistory")}
-        loaded={showHistory} initiallyOpen={showHistory} summary={
-          <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-admin-card
-            border border-admin-border bg-admin-surface px-4 py-3 text-sm font-semibold text-admin-text">
-            <span>查看以前的审核记录</span>
-            <span className="shrink-0 whitespace-nowrap text-xs font-medium text-admin-text-faint">共 {historyTotal} 条</span>
-          </summary>
-        }>
-        {showHistory ? <div className="mt-3">
-          <ReviewHistorySection
-            historyRows={historyRows}
-            historyPage={historyPage}
-            historyTotalPages={historyTotalPages}
-            historyPageSize={historyPageSize}
-            historyTotal={historyTotal}
-            pendingPage={pendingPage}
-            productQuery={exactProduct || productQuery}
-            returnTo={params.returnTo}
-          />
-        </div> : null}
-      </LazyReviewDetails>
+      {activeTab === "history" ? (
+        <ReviewHistorySection
+          historyRows={historyRows}
+          historyPage={historyPage}
+          historyTotalPages={historyTotalPages}
+          historyPageSize={historyPageSize}
+          historyTotal={historyTotal}
+          pendingPage={pendingPage}
+          productQuery={exactProduct || productQuery}
+          returnTo={params.returnTo}
+        />
+      ) : (
+        <PendingProductReviewSection
+          collectorStatus={collectorStatus}
+          productQuery={exactProduct || productQuery}
+          pendingPage={pendingPage}
+          detailProduct={detailProduct}
+          detailPage={detailPage}
+          returnTo={params.returnTo}
+          pendingTotalPages={pendingTotalPages}
+          detailRowsPerProduct={detailRowsPerProduct}
+          detailRowsLimited={detailRowsLimited}
+          pendingProductTotal={pendingProductTotal}
+          pendingTotal={pendingTotal}
+          historyPage={historyPage}
+          pendingProductGroups={pendingProductGroups}
+        />
+      )}
     </div>
   );
 }

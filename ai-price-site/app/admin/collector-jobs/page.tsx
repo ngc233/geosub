@@ -1,18 +1,22 @@
-import CollectorJobsView from "./CollectorJobsView";
-import { getCollectorJobsPageData } from "./queries";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function CollectorJobsPage({ searchParams }: { searchParams?: Promise<Record<string, string | undefined>> }) {
+export default async function CollectorJobsRedirectPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const params = searchParams ? await searchParams : {};
-  const [jobs, runs, availabilityChecks] = await getCollectorJobsPageData(params);
+  const query = new URLSearchParams({ tab: "runs" });
 
-  return (
-    <CollectorJobsView
-      listParams={params}
-      jobs={jobs}
-      runs={runs}
-      availabilityChecks={availabilityChecks}
-    />
-  );
+  for (const [key, rawValue] of Object.entries(params)) {
+    if (key === "tab") continue;
+    const value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
+    if (typeof value === "string" && value.trim()) {
+      query.set(key, value);
+    }
+  }
+
+  redirect(`/admin/pipeline?${query.toString()}`);
 }

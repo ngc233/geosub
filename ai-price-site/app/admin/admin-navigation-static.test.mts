@@ -534,7 +534,7 @@ test("major admin data pages report slow workloads", () => {
     "app/admin/pipeline/page.tsx",
     "app/admin/products/products-adapter.ts",
     "app/admin/prices/page.tsx",
-    "app/admin/discovery/page.tsx",
+    "app/admin/pipeline/PipelineDiscoveryView.tsx",
     "app/admin/affordability/page.tsx",
     "app/admin/events/page.tsx",
   ].map(readProjectFile).join("\n");

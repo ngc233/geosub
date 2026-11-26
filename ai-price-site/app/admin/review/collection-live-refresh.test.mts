@@ -102,7 +102,8 @@ test("completed and failed next steps retain the original filtered row", async (
       (status === "succeeded" ? "查看正式价格" : "查看运行原因"));
     assert.ok(action);
     const next = new URL(action.href, "http://local.test");
-    assert.equal(next.pathname, status === "succeeded" ? "/admin/prices" : "/admin/collector-jobs");
+    assert.equal(next.pathname, status === "succeeded" ? "/admin/prices" : "/admin/pipeline");
+    if (status === "failed") assert.equal(next.searchParams.get("tab"), "runs");
     assert.equal(next.searchParams.get("product"), "fixture");
     assert.equal(next.searchParams.get("returnTo"), result.returnTo);
   }

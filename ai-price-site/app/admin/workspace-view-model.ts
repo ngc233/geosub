@@ -75,11 +75,11 @@ function buildSummary(row: WorkspaceRow, partial: boolean): string {
 function buildPrimaryHref(row: WorkspaceRow, partial: boolean, returnTo: string): string {
   const target =
     row.billing_platform === "web"
-      ? `/admin/collector-jobs?product=${encodeURIComponent(row.slug)}`
+      ? `/admin/pipeline?tab=runs&product=${encodeURIComponent(row.slug)}`
       : row.stale_count > 0
         ? `/admin/data-quality/${encodeURIComponent(row.slug)}`
         : !partial && row.failed_count > 0
-          ? `/admin/review?q=${encodeURIComponent(row.slug)}`
+          ? `/admin/pipeline?tab=runs&product=${encodeURIComponent(row.slug)}`
           : `/admin/products/${row.id}/edit`;
   return withAdminReturnTo(target, returnTo);
 }

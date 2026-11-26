@@ -3,12 +3,18 @@ type AdminBadgeVariant =
   | "review"
   | "published"
   | "archived"
+  | "success"
+  | "warning"
+  | "info"
   | "danger"
   | "neutral";
 
 const dotColor: Record<AdminBadgeVariant, string> = {
   published: "bg-admin-success",
+  success: "bg-admin-success",
   review: "bg-admin-warning",
+  warning: "bg-admin-warning",
+  info: "bg-admin-accent",
   danger: "bg-admin-danger",
   draft: "bg-admin-text-faint",
   archived: "bg-admin-text-faint",
@@ -17,7 +23,10 @@ const dotColor: Record<AdminBadgeVariant, string> = {
 
 const pillStyle: Record<AdminBadgeVariant, string> = {
   published: "border-admin-border bg-admin-surface text-admin-text-body",
+  success: "border-admin-success/30 bg-admin-success-soft text-admin-success",
   review: "border-admin-warning/30 bg-admin-warning-soft text-admin-warning",
+  warning: "border-admin-warning/30 bg-admin-warning-soft text-admin-warning",
+  info: "border-admin-accent/30 bg-admin-accent-soft text-admin-accent",
   danger: "border-admin-danger/30 bg-admin-danger-soft text-admin-danger",
   draft: "border-admin-border bg-admin-surface-subtle text-admin-text-muted",
   archived: "border-admin-border bg-admin-surface-subtle text-admin-text-muted",
