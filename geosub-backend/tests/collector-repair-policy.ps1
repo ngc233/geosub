@@ -30,8 +30,8 @@ foreach ($case in @(
   Expect ($action -eq $case.action) $case.action
 }
 foreach ($case in @(
-  @{product='canva';plan='pro';cycle='monthly';expected='verify_plan_eligibility'},
-  @{product='notion';plan='plus';cycle='monthly';expected='verify_plan_eligibility'},
+  @{product='canva';plan='pro';cycle='monthly';expected='collect_independent_evidence'},
+  @{product='notion';plan='plus';cycle='monthly';expected='collect_independent_evidence'},
   @{product='canva';plan='teams';cycle='monthly';expected='repair_plan_mapping'},
   @{product='kimi';plan='give-some-snacks';cycle='monthly';expected='repair_plan_mapping'},
   @{product='disney';plan='premier-access-black-widow';cycle='monthly';expected='repair_plan_mapping'},
