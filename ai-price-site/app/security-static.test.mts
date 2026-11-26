@@ -60,12 +60,17 @@ test("every admin mutation entry point rechecks authentication", () => {
 
 test("public event ingestion is bounded and accepts known analytics keys only", () => {
   const route = readProjectFile("app/api/events/route.ts");
+  const contactRoute = readProjectFile("app/api/contact-tickets/route.ts");
 
   assert.match(route, /MAX_REQUEST_BYTES = 32 \* 1024/);
   assert.match(route, /MAX_METADATA_BYTES = 8 \* 1024/);
+  assert.match(route, /Buffer\.byteLength\(rawBody, "utf8"\) > MAX_REQUEST_BYTES/);
   assert.match(route, /ALLOWED_EVENT_KEYS/);
   assert.match(route, /Unsupported eventKey/);
   assert.match(route, /status: 413/);
+  assert.match(contactRoute, /getTrustedClientIp\(request\.headers\)/);
+  assert.doesNotMatch(contactRoute, /x-forwarded-for|cf-connecting-ip/i);
+  assert.match(contactRoute, /Buffer\.byteLength\(rawPayload, "utf8"\) > MAX_REQUEST_BYTES/);
 });
 
 test("cookieless page views store daily counters without browser identifiers", () => {
