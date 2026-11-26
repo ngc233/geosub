@@ -56,6 +56,8 @@ export type CollectorStatusRow = {
 };
 
 export type CollectorRunHistoryRow = {
+  failure_phase?: string | null;
+  failure_stage?: string | null;
   collector_status?: string | null;
   auto_review_status?: string | null;
   id: string;

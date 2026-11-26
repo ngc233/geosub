@@ -974,6 +974,7 @@ function New-AppStoreReviewFailure {
       collector_payload = $Result.RawPayload
       auto_review_status = "failed"
       failure_stage = "review"
+      failure_phase = "auto_review"
     }
   }
 }

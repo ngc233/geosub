@@ -35,13 +35,14 @@ test("analytics settings return inline errors and committed versions without dis
   assert.match(source, /\\bG-\[A-Z0-9\]\{4,\}\\b/);
   assert.match(source, /\\bGTM-\[A-Z0-9\]\{4,\}\\b/);
   assert.match(source, /extractTrackingId/);
-  assert.match(source, /return \{error:"统计 ID 格式无效/);
+  assert.match(source, /统计 ID 格式无效/);
+  assert.match(source, /if \(!result\.ok\) return \{ error: result\.message \}/);
   assert.match(source, /ga4_id/);
   assert.match(source, /gtm_id/);
   assert.match(source, /updateTag\(PUBLIC_SITE_SETTINGS_CACHE_TAG\)/);
-  assert.match(source, /return \{recordVersion:result\.value\}/);
+  assert.match(source, /return \{ recordVersion: result\.data \}/);
   assert.match(source, /assertSettingsVersion/);
-  assert.match(source, /attemptAdminSave/);
+  assert.match(source, /executeAdminCommand/);
   assert.doesNotMatch(source, /throw new Error\("GA4/);
   assert.match(scripts, /unstable_cache/);
   assert.match(scripts, /PUBLIC_SITE_SETTINGS_CACHE_TAG/);
@@ -82,7 +83,7 @@ test("settings page keeps external operations notifications explicit and disable
   assert.match(page, /安全通知渠道/);
   assert.match(page, /disabled=\{!notification\.channelConfigured\}/);
   assert.match(actions, /operations_brief_enabled/);
-  assert.match(actions, /return \{error:"通知渠道尚未配置/);
+  assert.match(actions, /通知渠道尚未配置，本次设置未保存/);
   assert.match(notification, /GEOSUB_OPERATIONS_WEBHOOK_URL/);
   assert.match(notification, /GEOSUB_OPERATIONS_WEBHOOK_ALLOWED_HOSTS/);
   assert.match(notification, /url\.protocol !== "https:"/);

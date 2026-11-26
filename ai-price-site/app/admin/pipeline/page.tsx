@@ -33,18 +33,23 @@ import { isCollectorReviewFailure } from "../collector-jobs/execution-status";
 import AdminSegmentedControl from "../../../components/admin/AdminSegmentedControl";
 import AdminFilterBar from "../../../components/admin/AdminFilterBar";
 import AdminPagination from "../../../components/admin/AdminPagination";
+import {
+  officialWebEligibleJobSql,
+  webPricingScopeJoinSql,
+} from "../../../lib/admin-product-scope";
 import { buildAdminListHref, paginateAdminItems } from "../../../lib/admin-list-params";
 
 export const dynamic = "force-dynamic";
 
-// Source-specific Web pilot; existing App Store products keep their current
-// scope. This is shared by the row query and aggregate counters below.
-const webPilotScope = Prisma.sql`LEFT JOIN LATERAL (
-  SELECT CASE WHEN product.slug IN ('spotify','apple-music')
-    AND COALESCE(job_stats.official_web_job_count,0)>0
-    AND COALESCE(job_stats.app_store_job_count,0)=0
-    THEN 'web' ELSE 'ios' END AS billing_platform
-) pricing_scope ON TRUE`;
+// Config-driven official-Web scope; existing App Store products keep their
+// current scope. Shared by the row query and aggregate counters below.
+const officialWebJobFilter = officialWebEligibleJobSql("product", "job");
+const webPilotScope = webPricingScopeJoinSql({
+  statsAlias: "job_stats",
+  officialWebCountColumn: "official_web_job_count",
+  appStoreCountColumn: "app_store_job_count",
+  scopeAlias: "pricing_scope",
+});
 
 const categories = [
   { value: "all", label: "全部" },
@@ -88,6 +93,8 @@ type PipelineProductRow = {
   latest_run_status: string | null;
   latest_run_started_at: Date | string | null;
   latest_run_error: string | null;
+  failure_phase?: string | null;
+  failure_stage?: string | null;
   collector_status?: string | null;
   auto_review_status?: string | null;
   latest_success_at: Date | string | null;
@@ -347,6 +354,8 @@ async function getPipelineRows({ q, category, product }: { q: string; category: 
       latest_run.status AS latest_run_status,
       latest_run.started_at AS latest_run_started_at,
       latest_run.error_message AS latest_run_error,
+      latest_run.raw_payload ->> 'failure_phase' AS failure_phase,
+      latest_run.raw_payload ->> 'failure_stage' AS failure_stage,
       latest_run.raw_payload ->> 'collector_status' AS collector_status,
       latest_run.raw_payload ->> 'auto_review_status' AS auto_review_status,
       latest_success.latest_success_at,
@@ -377,8 +386,7 @@ async function getPipelineRows({ q, category, product }: { q: string; category: 
             'unknown'
           ) = 'app_store'
         )::int AS app_store_job_count,
-        COUNT(*) FILTER (WHERE product.slug IN ('spotify','apple-music') AND job.job_config->>'collector_kind'='pricing_page'
-          AND job.job_config->>'official_web_source_key'=product.slug)::int AS official_web_job_count,
+        COUNT(*) FILTER (WHERE ${officialWebJobFilter})::int AS official_web_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active')::int AS active_job_count,
         COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count,
         COUNT(DISTINCT job.source_id)::int AS source_count,
@@ -491,8 +499,7 @@ async function getPipelineStats() {
               'unknown'
             ) = 'app_store'
           )::int AS app_store_job_count,
-          COUNT(*) FILTER (WHERE product.slug IN ('spotify','apple-music') AND job.job_config->>'collector_kind'='pricing_page'
-            AND job.job_config->>'official_web_source_key'=product.slug)::int AS official_web_job_count,
+          COUNT(*) FILTER (WHERE ${officialWebJobFilter})::int AS official_web_job_count,
           COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count
         FROM collector_jobs job
         LEFT JOIN price_sources source ON source.id = job.source_id

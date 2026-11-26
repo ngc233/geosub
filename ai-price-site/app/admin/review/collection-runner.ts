@@ -24,6 +24,16 @@ const COLLECTOR_START_TIMEOUT_MINUTES = 3;
 const COLLECTOR_RUN_TIMEOUT_MINUTES = 20;
 const BATCH_IMMEDIATE_START_LIMIT = 1;
 
+export type CollectorDispatchMode = "spawn" | "queue";
+
+export function getCollectorDispatchMode(
+  env: NodeJS.ProcessEnv = process.env,
+): CollectorDispatchMode {
+  return env.GEOSUB_COLLECTOR_DISPATCH_MODE?.trim().toLowerCase() === "queue"
+    ? "queue"
+    : "spawn";
+}
+
 type StartedCollectorProcess = {
   pid: number | null;
   backendRoot: string;
@@ -91,6 +101,8 @@ async function markCollectorRunProcessExit(
     return;
   }
 
+  const failurePhase = status === "spawn_failed" ? "spawn" : "collector";
+
   try {
     await prisma.$queryRaw`
       UPDATE collector_job_runs
@@ -99,7 +111,11 @@ async function markCollectorRunProcessExit(
         finished_at = COALESCE(finished_at, NOW()),
         duration_ms = GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(finished_at, NOW()) - started_at)) * 1000)::int,
         error_message = COALESCE(error_message, ${message}),
-        raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object('state', ${status}::text)
+        raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object(
+          'state', ${status}::text,
+          'failure_phase', ${failurePhase}::text,
+          'error_code', ${status}::text
+        )
       WHERE id = ${runId}::uuid
         AND status = 'running'
     `;
@@ -218,7 +234,10 @@ export function startCollectorJobInBackground(
   };
 }
 
-async function createRunningCollectorRun(jobId: string) {
+async function createRunningCollectorRun(
+  jobId: string,
+  dispatchMode: CollectorDispatchMode = getCollectorDispatchMode(),
+) {
   await reconcileStaleCollectorRuns(jobId);
 
   const rows = await prisma.$queryRaw<Array<{ run_id: string; should_start: boolean }>>`
@@ -270,7 +289,10 @@ async function createRunningCollectorRun(jobId: string) {
         'running',
         collector_kind,
         NOW(),
-        '{"state":"queued_from_admin"}'::jsonb,
+        jsonb_build_object(
+          'state', 'queued_from_admin',
+          'dispatch_mode', ${dispatchMode}::text
+        ),
         NOW()
       FROM scoped_job
       WHERE NOT EXISTS (SELECT 1 FROM existing_run)
@@ -291,18 +313,19 @@ async function createRunningCollectorRun(jobId: string) {
 }
 
 export async function startCollectorJobRunInBackground(jobId: string) {
+  const dispatchMode = getCollectorDispatchMode();
   let runId: string | null = null;
   let shouldStart = true;
 
   try {
-    const runningRun = await createRunningCollectorRun(jobId);
+    const runningRun = await createRunningCollectorRun(jobId, dispatchMode);
     runId = runningRun.runId;
     shouldStart = runningRun.shouldStart;
   } catch {
     runId = null;
   }
 
-  if (!shouldStart) {
+  if (!shouldStart || dispatchMode === "queue") {
     return runId;
   }
 
@@ -405,7 +428,12 @@ export async function queueBatchAppStoreCollections(
   let startedCount = 0;
   let failedToStartCount = 0;
 
-  for (const candidate of queueableJobs.slice(0, BATCH_IMMEDIATE_START_LIMIT)) {
+  const immediateBatchTargets =
+    getCollectorDispatchMode() === "queue"
+      ? queueableJobs
+      : queueableJobs.slice(0, BATCH_IMMEDIATE_START_LIMIT);
+
+  for (const candidate of immediateBatchTargets) {
     try {
       await startCollectorJobRunInBackground(candidate.job_id);
       startedCount += 1;

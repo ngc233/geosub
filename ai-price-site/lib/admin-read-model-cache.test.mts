@@ -145,7 +145,7 @@ test("production mutation modules wire admin read-model invalidation", () => {
     const source = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.match(
       source,
-      /invalidateAdmin(?:Pricing|Catalog|Seo|System)ReadModels\(/,
+      /invalidateAdmin(?:Pricing|Catalog|Seo|System)ReadModels\(|invalidate:\s*\[[^\]]*["'](?:pricing|catalog|seo|system)["']/,
       `${file} must invalidate admin read models after mutations`,
     );
   }
