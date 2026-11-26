@@ -5,7 +5,7 @@ import { productCanvasModel } from "../lib/product-canvas";
 import { homepageDisplayRates } from "../lib/homepage-summary";
 import type { ExchangeRateSnapshot } from "../lib/exchange-rates";
 import { formatPublicDate } from "../lib/public-date";
-import { canvasUiCopy, type CanvasLocale } from "../lib/canvas-ui-copy";
+import { canvasUiCopy, isDatePrefixLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
 import BrandIcon from "./BrandIcon";
 import ProductCanvasPricing from "./ProductCanvasPricing";
 import TrackedLink from "./analytics/TrackedLink";
@@ -103,7 +103,7 @@ export default function ProductCanvasOverview({
                             <>
                               {" "}
                               ·{" "}
-                              {locale === "en" ? (
+                              {isDatePrefixLocale(locale) ? (
                                 <>
                                   {copy.product.updatedSuffix}{" "}
                                   <time dateTime={date.dateTime}>{date.text}</time>

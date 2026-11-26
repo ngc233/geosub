@@ -7,6 +7,8 @@ import {
   getArticleTypeLabel,
   type ArticleListItem,
 } from "../lib/articles";
+import { isCanvasLocale } from "../lib/canvas-ui-copy";
+import { getGuideHubCopy } from "../lib/guide-hub-copy";
 import type { SiteLocale } from "../lib/site-locale";
 
 export default function ArticleCollectionView({
@@ -32,11 +34,19 @@ export default function ArticleCollectionView({
   tags?: Array<{ id: string; slug: string; name: string }>;
   beforeArticles?: ReactNode;
 }) {
-  const zhCategoryName = (name?: string | null) => (!name ? undefined : /^guides?$/i.test(name.trim()) ? "订阅指南" : name);
-  if (locale === "zh" || locale === "en") {
+  const zhCategoryName = (name?: string | null) =>
+    !name ? undefined : /^guides?$/i.test(name.trim()) ? "订阅指南" : name;
+  const zhTwCategoryName = (name?: string | null) =>
+    !name ? undefined : /^guides?$/i.test(name.trim()) ? "訂閱指南" : name;
+  if (isCanvasLocale(locale)) {
     const canvasLocale = locale;
+    const hubCopy = getGuideHubCopy(canvasLocale);
     const catLabel = (name?: string | null) =>
-      canvasLocale === "zh" ? zhCategoryName(name) : (name ?? undefined);
+      canvasLocale === "zh"
+        ? zhCategoryName(name)
+        : canvasLocale === "zh-tw"
+          ? zhTwCategoryName(name)
+          : (name ?? undefined);
     const hasTaxonomy = categories.length > 0 || tags.length > 0;
     return (
       <GuideCollection
@@ -59,6 +69,7 @@ export default function ArticleCollectionView({
             <section className="gs-guide-taxonomy p-4.5 md:p-5 flex flex-col gap-3">
               {categories.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
+                  <span className="gs-guide-taxonomy-label">{hubCopy.taxonomyCategoriesLabel}</span>
                   {categories.map((category) => (
                     <Link
                       key={category.id}
@@ -72,6 +83,7 @@ export default function ArticleCollectionView({
               )}
               {tags.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
+                  <span className="gs-guide-taxonomy-label">{hubCopy.taxonomyTagsLabel}</span>
                   {tags.slice(0, 18).map((tag) => (
                     <Link
                       key={tag.id}

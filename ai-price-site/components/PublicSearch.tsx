@@ -3,6 +3,12 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  canvasDefaultCurrency,
+  canvasIntlLocale,
+  resolveCanvasLocale,
+  type CanvasLocale,
+} from "../lib/canvas-ui-copy";
+import {
   type ChromePopularItem,
   type ChromeSearchResult,
 } from "../lib/public-chrome-search";
@@ -13,9 +19,43 @@ import PublicPriceNumber from "./PublicPriceNumber";
 import HomepageProductMark from "./HomepageProductMark";
 import HomepageCountryFlag from "./HomepageCountryFlag";
 
-const searchCopy = {
+type FallbackSuggestion =
+  | { term: string; logoSlug: string }
+  | { term: string; countryCode: string };
+
+const searchCopy: Record<
+  CanvasLocale,
+  {
+    search: string;
+    triggerPlaceholder: string;
+    heroAria: string;
+    stateAria: string;
+    heroPlaceholder: string;
+    label: string;
+    placeholder: string;
+    clear: string;
+    close?: string;
+    pending: string;
+    empty: string;
+    failed: string;
+    results: string;
+    groups: { product: string; plan: string; country: string };
+    retry: string;
+    popularTitle: string;
+    suggestions: string;
+    fallbackSuggestions: readonly FallbackSuggestion[];
+    contact: string;
+    helpSelect: string;
+    helpOpen: string;
+    helpClose: string;
+  }
+> = {
   zh: {
     search: "搜索",
+    triggerPlaceholder: "搜产品 / 地区",
+    heroAria: "首页搜索产品或国家",
+    stateAria: "查找产品或国家",
+    heroPlaceholder: "搜 ChatGPT、Netflix，或者土耳其",
     label: "搜索产品或国家",
     placeholder: "搜索产品、游戏或国家（如 ChatGPT、GTA 6、土耳其）",
     clear: "清空输入",
@@ -39,10 +79,43 @@ const searchCopy = {
     helpOpen: "打开",
     helpClose: "关闭",
   },
+  "zh-tw": {
+    search: "搜尋",
+    triggerPlaceholder: "搜產品 / 地區",
+    heroAria: "首頁搜尋產品或國家",
+    stateAria: "搜尋產品或國家",
+    heroPlaceholder: "搜 ChatGPT、Netflix 或土耳其",
+    label: "搜尋產品或國家",
+    placeholder: "搜尋產品、遊戲或國家（如 ChatGPT、GTA 6、土耳其）",
+    clear: "清除輸入",
+    close: "關閉搜尋",
+    pending: "正在搜尋…",
+    empty: "找不到可顯示最低價的結果，請試試其他產品或國家名稱",
+    failed: "搜尋暫時無法使用，請重試",
+    results: "搜尋結果",
+    groups: { product: "產品", plan: "方案", country: "國家" },
+    retry: "重試",
+    popularTitle: "熱門瀏覽",
+    suggestions: "搜尋建議",
+    fallbackSuggestions: [
+      { term: "ChatGPT", logoSlug: "chatgpt" },
+      { term: "Claude", logoSlug: "claude" },
+      { term: "Netflix", logoSlug: "netflix" },
+      { term: "印度", countryCode: "IN" },
+    ],
+    contact: "聯絡我們",
+    helpSelect: "選擇",
+    helpOpen: "開啟",
+    helpClose: "關閉",
+  },
   en: {
     search: "Search",
+    triggerPlaceholder: "Search…",
+    heroAria: "Search products or countries",
+    stateAria: "Search products or countries",
+    heroPlaceholder: "Search ChatGPT, Netflix, or Turkey",
     label: "Search products or countries",
-    placeholder: "Search products, plans, or countries (e.g. ChatGPT, Netflix, Turkey)",
+    placeholder: "Search products, games, or countries (e.g. ChatGPT, GTA 6, Turkey)",
     clear: "Clear query",
     close: "Close search",
     pending: "Searching…",
@@ -64,24 +137,113 @@ const searchCopy = {
     helpOpen: "Open",
     helpClose: "Close",
   },
-} as const;
-
-const defaultPopularByLocale: Record<"zh" | "en", ChromePopularItem[]> = {
-  zh: [
-    { id: "pop-chatgpt", title: "ChatGPT", href: "/zh/ai-pricing/chatgpt", logoSlug: "chatgpt" },
-    { id: "pop-netflix", title: "Netflix", href: "/zh/streaming-pricing/netflix", logoSlug: "netflix" },
-    { id: "pop-claude", title: "Claude", href: "/zh/ai-pricing/claude", logoSlug: "claude" },
-    { id: "pop-yt", title: "YouTube Premium", href: "/zh/streaming-pricing/youtube-premium", logoSlug: "youtube-premium" },
-    { id: "pop-tr", title: "土耳其", href: "/zh/countries/turkey", countryCode: "TR" },
-  ],
-  en: [
-    { id: "pop-chatgpt", title: "ChatGPT", href: "/en/ai-pricing/chatgpt", logoSlug: "chatgpt" },
-    { id: "pop-netflix", title: "Netflix", href: "/en/streaming-pricing/netflix", logoSlug: "netflix" },
-    { id: "pop-claude", title: "Claude", href: "/en/ai-pricing/claude", logoSlug: "claude" },
-    { id: "pop-yt", title: "YouTube Premium", href: "/en/streaming-pricing/youtube-premium", logoSlug: "youtube-premium" },
-    { id: "pop-tr", title: "Turkey", href: "/en/countries/turkey", countryCode: "TR" },
-  ],
+  ja: {
+    search: "検索",
+    triggerPlaceholder: "検索…",
+    heroAria: "サービスや国・地域を検索",
+    stateAria: "サービスや国・地域を検索",
+    heroPlaceholder: "ChatGPT、Netflix、トルコなどを検索",
+    label: "サービスや国・地域を検索",
+    placeholder: "サービス、ゲーム、国名で検索（例：ChatGPT、GTA 6、トルコ）",
+    clear: "入力をクリア",
+    close: "検索を閉じる",
+    pending: "検索中…",
+    empty: "該当する価格データが見つかりませんでした。別の名称でお試しください。",
+    failed: "検索が一時的に利用できません。再度お試しください。",
+    results: "検索結果",
+    groups: { product: "サービス", plan: "プラン", country: "国・地域" },
+    retry: "再試行",
+    popularTitle: "人気の検索",
+    suggestions: "検索候補",
+    fallbackSuggestions: [
+      { term: "ChatGPT", logoSlug: "chatgpt" },
+      { term: "Claude", logoSlug: "claude" },
+      { term: "Netflix", logoSlug: "netflix" },
+      { term: "インド", countryCode: "IN" },
+    ],
+    contact: "お問い合わせ",
+    helpSelect: "選択",
+    helpOpen: "開く",
+    helpClose: "閉じる",
+  },
+  ko: {
+    search: "검색",
+    triggerPlaceholder: "검색…",
+    heroAria: "서비스 또는 국가 검색",
+    stateAria: "서비스 또는 국가 검색",
+    heroPlaceholder: "ChatGPT, Netflix 또는 튀르키예 검색",
+    label: "서비스 또는 국가 검색",
+    placeholder: "서비스, 게임 또는 국가 검색 (예: ChatGPT, GTA 6, 튀르키예)",
+    clear: "입력 지우기",
+    close: "검색 닫기",
+    pending: "검색 중…",
+    empty: "가격이 있는 결과를 찾지 못했습니다. 다른 서비스나 국가명을 입력해 보세요.",
+    failed: "검색을 일시적으로 사용할 수 없습니다. 다시 시도해 주세요.",
+    results: "검색 결과",
+    groups: { product: "서비스", plan: "요금제", country: "국가" },
+    retry: "다시 시도",
+    popularTitle: "인기 탐색",
+    suggestions: "추천 검색어",
+    fallbackSuggestions: [
+      { term: "ChatGPT", logoSlug: "chatgpt" },
+      { term: "Claude", logoSlug: "claude" },
+      { term: "Netflix", logoSlug: "netflix" },
+      { term: "인도", countryCode: "IN" },
+    ],
+    contact: "문의하기",
+    helpSelect: "선택",
+    helpOpen: "열기",
+    helpClose: "닫기",
+  },
+  es: {
+    search: "Buscar",
+    triggerPlaceholder: "Buscar…",
+    heroAria: "Buscar servicios o países",
+    stateAria: "Buscar servicios o países",
+    heroPlaceholder: "Busca ChatGPT, Netflix o Turquía",
+    label: "Buscar servicios o países",
+    placeholder: "Busca servicios, juegos o países (ej. ChatGPT, GTA 6, Turquía)",
+    clear: "Borrar búsqueda",
+    close: "Cerrar búsqueda",
+    pending: "Buscando…",
+    empty: "No hay resultados con precio disponible. Prueba con otro servicio o país.",
+    failed: "La búsqueda no está disponible temporalmente. Inténtalo de nuevo.",
+    results: "Resultados de búsqueda",
+    groups: { product: "Servicios", plan: "Planes", country: "Países" },
+    retry: "Reintentar",
+    popularTitle: "Populares",
+    suggestions: "Sugerencias",
+    fallbackSuggestions: [
+      { term: "ChatGPT", logoSlug: "chatgpt" },
+      { term: "Claude", logoSlug: "claude" },
+      { term: "Netflix", logoSlug: "netflix" },
+      { term: "India", countryCode: "IN" },
+    ],
+    contact: "Contacto",
+    helpSelect: "Elegir",
+    helpOpen: "Abrir",
+    helpClose: "Cerrar",
+  },
 };
+
+const turkeyNameByLocale: Record<CanvasLocale, string> = {
+  zh: "土耳其",
+  "zh-tw": "土耳其",
+  en: "Turkey",
+  ja: "トルコ",
+  ko: "튀르키예",
+  es: "Turquía",
+};
+
+function getDefaultPopularForLocale(locale: CanvasLocale): ChromePopularItem[] {
+  return [
+    { id: "pop-chatgpt", title: "ChatGPT", href: `/${locale}/ai-pricing/chatgpt`, logoSlug: "chatgpt" },
+    { id: "pop-netflix", title: "Netflix", href: `/${locale}/streaming-pricing/netflix`, logoSlug: "netflix" },
+    { id: "pop-claude", title: "Claude", href: `/${locale}/ai-pricing/claude`, logoSlug: "claude" },
+    { id: "pop-yt", title: "YouTube Premium", href: `/${locale}/streaming-pricing/youtube-premium`, logoSlug: "youtube-premium" },
+    { id: "pop-tr", title: turkeyNameByLocale[locale], href: `/${locale}/countries/turkey`, countryCode: "TR" },
+  ];
+}
 
 // Module-level result cache for 0ms repeat-query feedback while still revalidating against /api/search.
 const queryResultCache = new Map<string, ChromeSearchResult[]>();
@@ -111,13 +273,14 @@ export default function PublicSearch({
   locale = "zh",
 }: {
   variant?: "header" | "hero" | "state";
-  locale?: "zh" | "en";
+  locale?: CanvasLocale;
 }) {
-  const copy = searchCopy[locale];
-  const display = useSearchDisplayCurrency(locale === "en" ? "USD" : "CNY");
+  const resolvedLocale = resolveCanvasLocale(locale);
+  const copy = searchCopy[resolvedLocale];
+  const display = useSearchDisplayCurrency(canvasDefaultCurrency(resolvedLocale));
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const popular = defaultPopularByLocale[locale];
+  const popular = getDefaultPopularForLocale(resolvedLocale);
   const [results, setResults] = useState<ChromeSearchResult[]>([]);
   const [status, setStatus] = useState<string>("");
   const [active, setActive] = useState(0);
@@ -162,11 +325,11 @@ export default function PublicSearch({
     const trimmed = query.trim();
     if (!open || trimmed.length < 1) return;
     const controller = new AbortController();
-    const cacheKey = `${locale}:${trimmed.toLowerCase()}`;
+    const cacheKey = `${resolvedLocale}:${trimmed.toLowerCase()}`;
     (async () => {
       try {
         const response = await fetch(
-          `/api/search?locale=${locale}&view=chrome&q=${encodeURIComponent(trimmed)}`,
+          `/api/search?locale=${resolvedLocale}&view=chrome&q=${encodeURIComponent(trimmed)}`,
           { signal: controller.signal },
         );
         if (!response.ok) throw new Error("unavailable");
@@ -187,7 +350,7 @@ export default function PublicSearch({
       }
     })();
     return () => controller.abort();
-  }, [query, open, retry, copy, locale]);
+  }, [query, open, retry, copy, resolvedLocale]);
 
   useEffect(() => {
     if (open) document.getElementById(`${id}-${active}`)?.scrollIntoView({ block: "nearest" });
@@ -203,7 +366,7 @@ export default function PublicSearch({
       input.current?.focus();
       return;
     }
-    const cached = queryResultCache.get(`${locale}:${trimmed.toLowerCase()}`);
+    const cached = queryResultCache.get(`${resolvedLocale}:${trimmed.toLowerCase()}`);
     if (cached && cached.length > 0) {
       setResults(cached);
       setStatus("");
@@ -240,18 +403,8 @@ export default function PublicSearch({
           >
             <PublicIcon name="Search" />
             <input
-              aria-label={
-                locale === "en"
-                  ? "Search products or countries"
-                  : variant === "state"
-                    ? "查找产品或国家"
-                    : "首页搜索产品或国家"
-              }
-              placeholder={
-                locale === "en"
-                  ? "Search ChatGPT, Netflix, or Turkey"
-                  : "搜 ChatGPT、Netflix，或者土耳其"
-              }
+              aria-label={variant === "state" ? copy.stateAria : copy.heroAria}
+              placeholder={copy.heroPlaceholder}
               value={query}
               maxLength={80}
               onChange={(e) => {
@@ -275,7 +428,7 @@ export default function PublicSearch({
         >
           <PublicIcon name="Search" size={16} />
           <span className="gs-search-trigger-placeholder">
-            {locale === "en" ? "Search…" : "搜产品 / 地区"}
+            {copy.triggerPlaceholder}
           </span>
           <kbd aria-hidden="true">/</kbd>
         </button>
@@ -361,7 +514,7 @@ export default function PublicSearch({
                             currency={display.currency}
                             cycle={result.cycle}
                             changeKey={display.changeKey}
-                            locale={locale === "en" ? "en-US" : "zh-CN"}
+                            locale={canvasIntlLocale(resolvedLocale)}
                           />
                         </span>
                       </div>
@@ -441,7 +594,7 @@ export default function PublicSearch({
               </div>
               <Link
                 className="gs-search-contact"
-                href={locale === "zh" ? "/zh/contact" : "/en/about"}
+                href={`/${resolvedLocale}/contact`}
                 onClick={() => setOpen(false)}
               >
                 {copy.contact}

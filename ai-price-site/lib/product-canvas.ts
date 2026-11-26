@@ -1,5 +1,6 @@
 import { getProductOverviewDecisionPlans, getPricingProductOverviewCopy, getProductOverviewRegionCount, getProductOverviewPriceFact } from "./pricing-product-overview-copy.ts";
-import { getChinesePlanDisplayName, getPlanDisplayName, getPlanTabLabel } from "./pricing-labels.ts";
+import { getPlanTabLabel } from "./pricing-labels.ts";
+import { getCanvasPlanDisplayName } from "./homepage-display.ts";
 import { getProductEditorialContent } from "./product-editorial-content.ts";
 import { getPricingPlanPath } from "./pricing-routes.ts";
 import { productSaving } from "./product-canvas-order.ts";
@@ -16,9 +17,7 @@ export function productCanvasModel(product: SubscriptionProduct, locale: CanvasL
     const lowest = prices.reduce((a, b) => (a.usd - b.usd || a.code.localeCompare(b.code)) <= 0 ? a : b);
     const usPrice = prices.find(price => price.code === "US")?.usd;
     const platform = plan.regions[0]?.billingPlatform;
-    const displayName = locale === "en"
-      ? getPlanDisplayName(product.name, plan.name)
-      : getChinesePlanDisplayName(product.name, plan.name);
+    const displayName = getCanvasPlanDisplayName(product.name, plan.name, locale);
     return { slug: plan.slug, name: getPlanTabLabel(product.name, displayName),
       href: getPricingPlanPath(locale, product.category, product.slug, plan.slug), cycle: plan.billing,
       channel: platform === "web" ? "Web" : ["android", "google_play"].includes(platform || "") ? "Google Play" : "App Store",

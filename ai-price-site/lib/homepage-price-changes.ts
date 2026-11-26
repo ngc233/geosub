@@ -1,4 +1,5 @@
 import { getPriceChanges, type PriceObservationRecord } from "./price-records.ts";
+import type { CanvasLocale } from "./canvas-ui-copy.ts";
 
 export const HOMEPAGE_CHANGE_DAYS = 30;
 export const HOMEPAGE_CHANGE_LIMIT = 6;
@@ -9,7 +10,7 @@ export function homepagePriceChanges(
   records: PriceObservationRecord[],
   now = new Date(),
   truncated = false,
-  locale: "zh" | "en" = "zh",
+  locale: CanvasLocale = "zh",
 ) {
   if (truncated) return [];
   const end = now.getTime(), start = end - HOMEPAGE_CHANGE_DAYS * day;

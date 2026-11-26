@@ -66,7 +66,15 @@ test("language switching never links staged locales to unpublished guide details
   );
   assert.equal(
     getLanguageSwitchHref("/en/guides/payment-account", "zh-tw"),
-    "/zh-tw/guides",
+    "/zh-tw/guides/payment-account",
+  );
+  assert.equal(
+    getLanguageSwitchHref("/en/guides/payment-account", "fr"),
+    "/fr/guides",
+  );
+  assert.equal(
+    getLanguageSwitchHref("/zh/guides/cms-only-article", "ja"),
+    "/ja/guides",
   );
   assert.equal(
     getLanguageSwitchHref("/zh/guides/gift-card-guide", "en"),
@@ -76,8 +84,9 @@ test("language switching never links staged locales to unpublished guide details
     getLanguageSwitchHref("/zh/ai-pricing/chatgpt/plus", "ja"),
     "/ja/ai-pricing/chatgpt/plus",
   );
-  assert.equal(getLanguageSwitchHref("/zh/contact", "en"), "/en");
-  assert.equal(getLanguageSwitchHref("/zh/contact", "zh-tw"), "/zh-tw");
+  assert.equal(getLanguageSwitchHref("/zh/contact", "en"), "/en/contact");
+  assert.equal(getLanguageSwitchHref("/zh/contact", "zh-tw"), "/zh-tw/contact");
+  assert.equal(getLanguageSwitchHref("/zh/contact", "fr"), "/fr");
   assert.equal(getLanguageSwitchHref("/zh/contact", "zh"), "/zh/contact");
 });
 

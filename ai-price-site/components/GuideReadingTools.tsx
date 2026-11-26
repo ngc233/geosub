@@ -2,8 +2,15 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Link as LinkIcon } from "lucide-react";
+import { getGuideArticleUiCopy } from "../lib/guide-hub-copy";
 import { guideProgress } from "../lib/guide-presentation";
-import type { CanvasLocale } from "../lib/canvas-ui-copy";
+import { resolveCanvasLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
+
+function resolveReadingLocale(locale: CanvasLocale | undefined, pathname: string | null): CanvasLocale {
+  if (locale) return locale;
+  const segment = pathname?.split("/")[1]?.toLowerCase();
+  return resolveCanvasLocale(segment);
+}
 
 export function GuideContents({
   enabled = true,
@@ -17,10 +24,11 @@ export function GuideContents({
   locale?: CanvasLocale;
 }) {
   const pathname = usePathname();
-  const english = locale ? locale === "en" : pathname?.startsWith("/en");
-  const tocLabel = english ? "On this page" : "本文目录";
-  const summaryLabel = summaryTitle ?? (english ? "Key takeaway" : "先说结论");
-  const tableAria = english ? "Horizontally scrollable table" : "可横向滚动的表格";
+  const resolvedLocale = resolveReadingLocale(locale, pathname);
+  const uiCopy = getGuideArticleUiCopy(resolvedLocale);
+  const tocLabel = uiCopy.tocLabel;
+  const summaryLabel = summaryTitle ?? uiCopy.summaryLabel;
+  const tableAria = uiCopy.tableAria;
 
   const root = useRef<HTMLDivElement>(null);
   const mobileDetails = useRef<HTMLDetailsElement>(null);
@@ -195,7 +203,7 @@ export function GuideContents({
               <ChevronDown size={16} className="gs-guide-toc-chevron shrink-0" aria-hidden="true" />
             </summary>
             <noscript>
-              <p>{english ? "Scroll down to read the full article." : "向下阅读完整正文。"}</p>
+              <p>{uiCopy.scrollHint}</p>
             </noscript>
             {content}
           </details>
@@ -207,7 +215,8 @@ export function GuideContents({
 
 export function GuideCopyLink({ locale }: { locale?: CanvasLocale }) {
   const pathname = usePathname();
-  const english = locale ? locale === "en" : pathname?.startsWith("/en");
+  const resolvedLocale = resolveReadingLocale(locale, pathname);
+  const uiCopy = getGuideArticleUiCopy(resolvedLocale);
   const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
 
   useEffect(() => {
@@ -216,18 +225,8 @@ export function GuideCopyLink({ locale }: { locale?: CanvasLocale }) {
     return () => window.clearTimeout(timer);
   }, [status]);
 
-  const label =
-    status === "copied"
-      ? english
-        ? "Link copied"
-        : "已复制文章链接"
-      : english
-        ? "Copy article link"
-        : "复制文章链接";
-
-  const errorText = english
-    ? "Copy failed; please copy from the address bar"
-    : "复制失败，请从地址栏复制链接";
+  const label = status === "copied" ? uiCopy.copyLinkCopied : uiCopy.copyLinkIdle;
+  const errorText = uiCopy.copyLinkError;
 
   return (
     <div className="gs-guide-copy">

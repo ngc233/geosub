@@ -1,14 +1,24 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { resolveCanvasLocale, type CanvasLocale } from "../../../lib/canvas-ui-copy";
 import { getTrustedClientIp } from "../../../lib/client-ip";
+import { getContactCopy } from "../../../lib/contact-copy";
 import { createInMemoryEventRateLimiter } from "../../../lib/event-rate-limit";
 import { prisma } from "../../../lib/prisma";
 import { notifyNewContactTicket } from "../../../lib/contact-ticket-notification";
+import { getSiteLocaleFromPath } from "../../../lib/site-locale";
 
 const MAX_REQUEST_BYTES = 24 * 1024;
 const CONTACT_TICKET_LIMIT_PER_HOUR = 3;
 const CONTACT_TICKET_WINDOW_MS = 60 * 60 * 1000;
-const ALLOWED_CATEGORIES = new Set(["correction", "suggestion", "data", "advertising", "privacy", "other"]);
+const ALLOWED_CATEGORIES = new Set([
+  "correction",
+  "suggestion",
+  "data",
+  "advertising",
+  "privacy",
+  "other",
+]);
 const inMemoryContactRateLimiter = createInMemoryEventRateLimiter({
   limit: CONTACT_TICKET_LIMIT_PER_HOUR,
   windowMs: CONTACT_TICKET_WINDOW_MS,
@@ -34,32 +44,50 @@ function isSameOrigin(request: NextRequest) {
   }
 }
 
+function inferRequestLocale(request: NextRequest, sourcePath?: string | null): CanvasLocale {
+  if (sourcePath) {
+    return resolveCanvasLocale(getSiteLocaleFromPath(sourcePath));
+  }
+  const referer = request.headers.get("referer");
+  if (referer) {
+    try {
+      return resolveCanvasLocale(getSiteLocaleFromPath(new URL(referer).pathname));
+    } catch {
+      return "zh";
+    }
+  }
+  return "zh";
+}
+
 export async function POST(request: NextRequest) {
+  const initialErrors = getContactCopy(inferRequestLocale(request)).apiErrors;
   const contentLength = Number(request.headers.get("content-length") || "0");
-  if (!isSameOrigin(request)) return NextResponse.json({ ok: false, error: "请求来源无效。" }, { status: 403 });
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ ok: false, error: initialErrors.invalidOrigin }, { status: 403 });
+  }
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
-    return NextResponse.json({ ok: false, error: "提交内容过长。" }, { status: 413 });
+    return NextResponse.json({ ok: false, error: initialErrors.payloadTooLarge }, { status: 413 });
   }
 
   let rawPayload: string;
   try {
     rawPayload = await request.text();
   } catch {
-    return NextResponse.json({ ok: false, error: "提交格式无效。" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: initialErrors.invalidFormat }, { status: 400 });
   }
   if (Buffer.byteLength(rawPayload, "utf8") > MAX_REQUEST_BYTES) {
-    return NextResponse.json({ ok: false, error: "提交内容过长。" }, { status: 413 });
+    return NextResponse.json({ ok: false, error: initialErrors.payloadTooLarge }, { status: 413 });
   }
 
   let body: Record<string, unknown>;
   try {
     const parsed = JSON.parse(rawPayload);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return NextResponse.json({ ok: false, error: "提交格式无效。" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: initialErrors.invalidFormat }, { status: 400 });
     }
     body = parsed as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ ok: false, error: "提交格式无效。" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: initialErrors.invalidFormat }, { status: 400 });
   }
 
   if (clean(body.website, 200)) return NextResponse.json({ ok: true }, { status: 201 });
@@ -73,27 +101,45 @@ export async function POST(request: NextRequest) {
   const pageUrl = clean(body.pageUrl, 1000) || null;
   const sourcePath = clean(body.sourcePath, 500) || null;
 
-  if (!ALLOWED_CATEGORIES.has(category) || name.length < 2 || subject.length < 4 || message.length < 20) {
-    return NextResponse.json({ ok: false, error: "请完整填写必填内容。" }, { status: 400 });
+  const locale = inferRequestLocale(request, sourcePath);
+  const errors = getContactCopy(locale).apiErrors;
+
+  if (
+    !ALLOWED_CATEGORIES.has(category) ||
+    name.length < 2 ||
+    subject.length < 4 ||
+    message.length < 20
+  ) {
+    return NextResponse.json({ ok: false, error: errors.missingRequired }, { status: 400 });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ ok: false, error: "请输入有效邮箱。" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: errors.invalidEmail }, { status: 400 });
   }
 
   const rateKeyHash = createHash("sha256").update(`contact:${clientIp(request)}`).digest("hex");
   const memoryDecision = inMemoryContactRateLimiter.consume(rateKeyHash);
   if (!memoryDecision.allowed) {
-    return NextResponse.json({ ok: false, error: "提交过于频繁，请稍后再试。" }, { status: 429 });
+    return NextResponse.json({ ok: false, error: errors.rateLimited }, { status: 429 });
   }
   const recentCount = await prisma.contactTicket.count({
     where: { rateKeyHash, createdAt: { gte: new Date(Date.now() - CONTACT_TICKET_WINDOW_MS) } },
   });
   if (recentCount >= CONTACT_TICKET_LIMIT_PER_HOUR) {
-    return NextResponse.json({ ok: false, error: "提交过于频繁，请稍后再试。" }, { status: 429 });
+    return NextResponse.json({ ok: false, error: errors.rateLimited }, { status: 429 });
   }
 
   const ticket = await prisma.contactTicket.create({
-    data: { category, name, email, organization, subject, message, pageUrl, sourcePath, rateKeyHash },
+    data: {
+      category,
+      name,
+      email,
+      organization,
+      subject,
+      message,
+      pageUrl,
+      sourcePath,
+      rateKeyHash,
+    },
     select: { id: true, createdAt: true },
   });
 
@@ -108,5 +154,8 @@ export async function POST(request: NextRequest) {
     console.warn("Contact ticket notification delivery failed; ticket was persisted.");
   }
 
-  return NextResponse.json({ ok: true, ticketId: ticket.id.slice(0, 8).toUpperCase() }, { status: 201 });
+  return NextResponse.json(
+    { ok: true, ticketId: ticket.id.slice(0, 8).toUpperCase() },
+    { status: 201 },
+  );
 }

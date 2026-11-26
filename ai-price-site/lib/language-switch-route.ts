@@ -1,4 +1,5 @@
-import { isRetiredPublicPath } from "./public-launch-routes.ts";
+import { indexableStaticGuidePaths, isRetiredPublicPath } from "./public-launch-routes.ts";
+import { isUnifiedPublicLocale } from "./public-style-rollout.ts";
 import { isSeoIndexableLocale } from "./seo-indexing-policy.ts";
 import {
   replaceSiteLocaleInPath,
@@ -15,32 +16,49 @@ export function isChineseOnlyGamePath(pathname: string) {
   return /^\/games(?:\/|$)/.test(stripSiteLocale(pathname || "/"));
 }
 
+const unifiedGuideSubpaths = new Set<string>(indexableStaticGuidePaths);
+
 export function getLanguageSwitchHref(
   pathname: string,
   nextLocale: SiteLocale,
 ) {
   const relativePath = stripSiteLocale(pathname || "/").replace(/\/+$/, "") || "/";
 
+  // Games vertical is available across all primary unified locales (zh, en, zh-tw, ja, ko, es).
   if (isChineseOnlyGamePath(pathname)) {
-    return nextLocale === "zh" ? replaceSiteLocaleInPath(pathname, "zh") : withSiteLocale("/", nextLocale);
+    return isUnifiedPublicLocale(nextLocale)
+      ? replaceSiteLocaleInPath(pathname, nextLocale)
+      : withSiteLocale("/", nextLocale);
   }
 
-  if (isBilingualEvidencePath(pathname) && nextLocale !== "zh" && nextLocale !== "en") {
+  // Product-specific region pilot pages (/ai-pricing/[slug]/regions/[country]) remain zh/en only.
+  const regionPilotMatch = /^\/(ai-pricing|streaming-pricing)\/([^/]+)\/regions\/[^/]+(?:\/|$)/.exec(relativePath);
+  if (regionPilotMatch && nextLocale !== "zh" && nextLocale !== "en") {
+    return withSiteLocale(`/${regionPilotMatch[1]}/${regionPilotMatch[2]}`, nextLocale);
+  }
+
+  // Country hubs, price history, and original snapshots are available across all primary unified locales.
+  if (isBilingualEvidencePath(pathname) && !isUnifiedPublicLocale(nextLocale)) {
     return withSiteLocale("/", nextLocale);
   }
 
-  // Detailed guide translations are published only for indexable locales.
-  // Keep every language available without linking to an unpublished detail page.
-  if (
-    relativePath.startsWith("/guides/") &&
-    (!isSeoIndexableLocale(nextLocale) || isRetiredPublicPath(relativePath))
-  ) {
-    return withSiteLocale("/guides", nextLocale);
+  if (relativePath.startsWith("/guides/")) {
+    if (isRetiredPublicPath(relativePath)) {
+      return withSiteLocale("/guides", nextLocale);
+    }
+    if (unifiedGuideSubpaths.has(relativePath)) {
+      return isUnifiedPublicLocale(nextLocale)
+        ? replaceSiteLocaleInPath(pathname, nextLocale)
+        : withSiteLocale("/guides", nextLocale);
+    }
+    // Dynamic CMS article slugs remain published per indexable locale unless mirrored.
+    if (!isSeoIndexableLocale(nextLocale)) {
+      return withSiteLocale("/guides", nextLocale);
+    }
   }
 
-  // The private ticket inbox is currently published in Simplified Chinese only.
-  // Never generate a localized contact URL that resolves to a 404 page.
-  if (relativePath === "/contact" && nextLocale !== "zh") {
+  // Private support ticket inbox is available across all primary unified locales.
+  if (relativePath === "/contact" && !isUnifiedPublicLocale(nextLocale)) {
     return withSiteLocale("/", nextLocale);
   }
 

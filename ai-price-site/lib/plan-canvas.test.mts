@@ -6,10 +6,14 @@ import type { PlanAffordabilityRow } from "./affordability.ts";
 // Synthetic unit-test prices/incomes, never production or canvas sample data.
 const plan = (values: number[], codes = ["AA", "BB", "CC", "DD", "US", "FF"]): ProductPlan => ({ slug: "monthly", name: "Monthly", billing: "monthly",
   regions: values.map((usd, i) => ({ code: codes[i], country: codes[i], priceUsd: usd, localPrice: `${usd}`, tax: "unknown", rank: i + 1, billingPlatform: "ios" })) });
-test("usesPlanCanvas enables /zh (except Plus experiment) and /en plan detail routes only", () => {
-  for (const [locale, path] of [["zh", "/zh/ai-pricing/chatgpt/plus"], ["zh", "/zh/ai-pricing/chatgpt/plus/?x=1"], ["zh-tw", "/zh-tw/ai-pricing/claude/pro"], ["zh", "/zh/ai-pricing/claude"], ["en", "/en/ai-pricing/claude"]]) assert.equal(usesPlanCanvas(locale, path), false);
+test("usesPlanCanvas enables unified primary locales (/zh except Plus experiment, plus /en, /zh-tw, /ja, /ko, /es) plan detail routes only", () => {
+  for (const [locale, path] of [["zh", "/zh/ai-pricing/chatgpt/plus"], ["zh", "/zh/ai-pricing/chatgpt/plus/?x=1"], ["tr", "/tr/ai-pricing/claude/pro"], ["fr", "/fr/streaming-pricing/netflix/standard"], ["ja", "/en/ai-pricing/claude/pro"], ["zh", "/zh/ai-pricing/claude"], ["en", "/en/ai-pricing/claude"], ["zh-tw", "/zh-tw/ai-pricing/claude"]]) assert.equal(usesPlanCanvas(locale, path), false);
   assert(usesPlanCanvas("zh", "/zh/ai-pricing/claude/pro"));assert(usesPlanCanvas("zh", "/zh/streaming-pricing/netflix/standard"));
-  assert(usesPlanCanvas("en", "/en/ai-pricing/claude/pro"));assert(usesPlanCanvas("en", "/en/ai-pricing/chatgpt/plus"));assert(usesPlanCanvas("en", "/en/streaming-pricing/netflix/standard"));
+  for (const locale of ["en", "zh-tw", "ja", "ko", "es"]) {
+    assert(usesPlanCanvas(locale, `/${locale}/ai-pricing/claude/pro`));
+    assert(usesPlanCanvas(locale, `/${locale}/ai-pricing/chatgpt/plus`));
+    assert(usesPlanCanvas(locale, `/${locale}/streaming-pricing/netflix/standard`));
+  }
 });
 test("distribution uses exact table values, even median and strict raw US comparison", () => {
   const input = plan([1, 2, 3, 9.999, 10, 12]), before = structuredClone(input), d = planDistribution(input);

@@ -43,6 +43,10 @@ test("rows sort by original savings, not rounded difference; FX-missing local pr
   const rows = [row(0, 99.99), row(1, 99.9), row(2, null), row(3, 120)];
   assert.deepEqual(countryCanvasRows(rows).map(x => x.productSlug), ["fictional-1", "fictional-0", "fictional-3", "fictional-2"]);
   assert.equal(countryCanvasRows(rows)[3].amount, 999);assert.equal(countryCanvasRows(rows)[3].planName, "Fictional 2 标准版");
+  assert.equal(countryCanvasRows(rows, new Date(), "zh-tw")[3].planName, "Fictional 2 標準版");
+  for (const loc of ["en", "ja", "ko", "es"] as const) {
+    assert.equal(countryCanvasRows(rows, new Date(), loc)[3].planName, "Fictional 2 Standard");
+  }
   assert.deepEqual(rows.map(x => x.productSlug), ["fictional-0", "fictional-1", "fictional-2", "fictional-3"]);
 });
 test("server date labels exactly match the existing formatter across years, offsets and missing values", () => {

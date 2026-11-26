@@ -4,12 +4,13 @@ import { minimumSearchPrice } from "../lib/public-chrome-search";
 import { getLatestUsdExchangeRates } from "../lib/exchange-rates";
 import { supportedDisplayCurrencies } from "../lib/display-currency";
 import { homepageDisplayRates } from "../lib/homepage-summary";
+import { getGuideArticleUiCopy } from "../lib/guide-hub-copy";
 import { guidePriceLinks, type GuideLink } from "../lib/guide-presentation";
 import type { CanvasLocale } from "../lib/canvas-ui-copy";
 import GuidePrice from "./GuidePrice";
 
 async function readRelatedPrices(links: GuideLink[], locale: CanvasLocale) {
-  const candidates = guidePriceLinks(links, locale);
+  const candidates = guidePriceLinks(links, locale as "zh" | "en");
   if (!candidates.length) return null;
   try {
     const [products, snapshots] = await Promise.all([
@@ -40,12 +41,10 @@ export default async function GuideRelatedPrices({
   const result = await readRelatedPrices(links, locale);
   if (!result) return null;
   const { rows, rates } = result;
-  const english = locale === "en";
+  const uiCopy = getGuideArticleUiCopy(locale);
   return (
     <section className="gs-guide-prices p-3.5">
-      <h2 className="mt-1 mx-2.5 mb-1.5">
-        {english ? "Related Live Prices" : "用得上这篇的价格"}
-      </h2>
+      <h2 className="mt-1 mx-2.5 mb-1.5">{uiCopy.relatedPricesHeading}</h2>
       {rows.map(({ link, price }) => (
         <Link
           key={link.href}
@@ -55,18 +54,14 @@ export default async function GuideRelatedPrices({
           <span className="flex flex-col gap-0.5 min-w-0">
             <strong className="font-semibold">{link.title}</strong>
             <small>
-              {english ? "Lowest · " : "最低 · "}
+              {uiCopy.lowestPrefix}
               {price.country}
             </small>
           </span>
           <GuidePrice usd={price.usd} cycle={price.cycle} rates={rates} locale={locale} />
         </Link>
       ))}
-      <p className="mt-1.5 mx-2.5 mb-0.5">
-        {english
-          ? "Same verified pricing scope as the linked plan pages"
-          : "价格口径与对应产品或套餐页一致"}
-      </p>
+      <p className="mt-1.5 mx-2.5 mb-0.5">{uiCopy.relatedPricesNote}</p>
     </section>
   );
 }

@@ -703,8 +703,16 @@
 
   .gs-public-unified .gs-game-keycaps {
     width: 100%;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gs-space-6);
+  }
+
+  .gs-public-unified .gs-game-keycap-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: var(--gs-space-10);
+    font-size: var(--gs-metadata-size);
   }
 
   .gs-public-unified .gs-game-hero-local-fallback {

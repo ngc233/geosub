@@ -1,55 +1,100 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SpanishInfoPage from "../../../components/SpanishInfoPage";
+import GuideCollection from "../../../components/GuideCollection";
+import { guideHubExcludedArticleSlugs } from "../../../components/CoreGuideHub";
+import {
+  formatArticleDate,
+  getArticleTypeLabel,
+  getPublishedArticleCategories,
+  getPublishedArticleTags,
+  getPublishedArticles,
+} from "../../../lib/articles";
+import { loadCoreGuideHubStates } from "../../../lib/core-guide-cms";
+import {
+  buildFoundationalGuideSteps,
+  getGuideHubCopy,
+} from "../../../lib/guide-hub-copy";
+import { getLocaleRobotsPolicy } from "../../../lib/seo-indexing-policy";
 
 export const metadata: Metadata = {
-  title: "Guías de precios de suscripciones",
+  title: "Guías de suscripciones y precios regionales",
   description:
-    "Aprende a interpretar precios regionales, tipos de cambio, impuestos, pagos, cuentas y calidad de los datos.",
+    "Consulta guías prácticas sobre suscripciones digitales, precios regionales, tipos de cambio, impuestos, pagos, cuentas y evaluación de herramientas.",
+  robots: getLocaleRobotsPolicy("es"),
 };
 
-const guides = [
-  {
-    title: "Cómo leer los precios regionales",
-    description:
-      "Interpreta el precio local, su equivalencia en USD y la diferencia frente a EE. UU.",
-    href: "/es/guides/price-guide/",
-  },
-  {
-    title: "Pago y cuenta",
-    description:
-      "Revisa los métodos de pago y las condiciones de cuenta en suscripciones entre regiones.",
-    href: "/es/guides/payment-account/",
-  },
-  {
-    title: "Metodología",
-    description:
-      "Así recopila, revisa y publica GeoSub los precios regionales.",
-    href: "/es/guides/methodology/",
-  },
-];
+export default async function SpanishGuidesPage() {
+  const [articles, categories, tags, states] = await Promise.all([
+    getPublishedArticles("ES"),
+    getPublishedArticleCategories("ES"),
+    getPublishedArticleTags("ES"),
+    loadCoreGuideHubStates("es"),
+  ]);
+  const copy = getGuideHubCopy("es");
+  const editorialArticles = articles.filter(
+    (article) => !guideHubExcludedArticleSlugs.has(article.slug),
+  );
 
-export default function SpanishGuidesPage() {
+  const core = buildFoundationalGuideSteps("es", (slug) => {
+    const state = states.get(slug);
+    return !state?.managed || state.published;
+  });
+
+  const cards = editorialArticles.map((article) => ({
+    href: `/es/guides/${article.slug}`,
+    title: article.title,
+    description: article.excerpt,
+    category: article.category?.name || getArticleTypeLabel(article.articleType, "es"),
+    date: formatArticleDate(article.publishedAt, "es"),
+    minutes: article.readingTime,
+  }));
+
+  const hasTaxonomy = categories.length > 0 || tags.length > 0;
+
   return (
-    <SpanishInfoPage
-      eyebrow="Guías"
-      title="Guías de precios de suscripciones"
-      description="Reunimos los conceptos necesarios para interpretar las tablas de precios y revisar las condiciones antes de pagar."
-    >
-      <div className="grid gap-4 md:grid-cols-3">
-        {guides.map((guide) => (
-          <Link
-            key={guide.href}
-            href={guide.href}
-            className="rounded-lg border border-zinc-200 p-5 transition hover:border-lime-300 hover:bg-lime-50/40"
-          >
-            <h2 className="font-black text-zinc-950">{guide.title}</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-600">
-              {guide.description}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </SpanishInfoPage>
+    <GuideCollection
+      locale="es"
+      eyebrow={copy.hubEyebrow}
+      title={copy.hubTitle}
+      description={copy.hubDescription}
+      cards={cards}
+      steps={core}
+      emptyText="Todavía no hay guías editoriales adicionales publicadas en español."
+      showBack={false}
+      navigation={
+        hasTaxonomy ? (
+          <section className="gs-guide-taxonomy p-4.5 md:p-5 flex flex-col gap-3">
+            {categories.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="gs-guide-taxonomy-label">{copy.taxonomyCategoriesLabel}</span>
+                {categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/es/guides/category/${category.slug}`}
+                    className="gs-guide-taxonomy-pill"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="gs-guide-taxonomy-label">{copy.taxonomyTagsLabel}</span>
+                {tags.slice(0, 18).map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/es/guides/tag/${tag.slug}`}
+                    className="gs-guide-taxonomy-tag"
+                  >
+                    #{tag.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : undefined
+      }
+    />
   );
 }

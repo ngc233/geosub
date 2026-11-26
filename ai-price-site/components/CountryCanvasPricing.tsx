@@ -17,6 +17,151 @@ import CountryDataDisclosure from "./CountryDataDisclosure";
 import { PublicComparisonBar, PublicSegments } from "./PublicControls";
 import PublicCurrencySelect, { usePageDisplayRates, usePublicCurrency } from "./PublicCurrencySelect";
 
+const countryPricingCopy: Record<
+  CanvasLocale,
+  {
+    heading: (name: string) => string;
+    subheading: string;
+    categoryLabel: string;
+    cols: [string, string, string, string, string];
+    fxPending: string;
+    noUsBaseline: string;
+    sameShort: string;
+    noSamePlanUs: string;
+    emptyCategory: string;
+    sourcesTitle: string;
+    collectedPrefix: string;
+    fxPrefix: string;
+    compareAllRegions: string;
+    originalSnapshot: string;
+    officialSource: string;
+    priceHistory: string;
+    planCategoriesAria: string;
+    categoryLinkLabel: (category: "ai" | "streaming") => string;
+  }
+> = {
+  zh: {
+    heading: (name) => `${name}的订阅价格`,
+    subheading: "按比美国低多少排序 · 每月 · App Store",
+    categoryLabel: "订阅分类",
+    cols: ["订阅", "本地标价", "折合", "美国", "和美国比"],
+    fxPending: "汇率待更新",
+    noUsBaseline: "美国基准缺失",
+    sameShort: "相同",
+    noSamePlanUs: "暂无有效美国同套餐比较",
+    emptyCategory: "当前分类没有符合条件的套餐",
+    sourcesTitle: "价格来源与记录",
+    collectedPrefix: "价格采集 ",
+    fxPrefix: "汇率基准 ",
+    compareAllRegions: "比较所有地区",
+    originalSnapshot: "原始快照",
+    officialSource: "官方来源",
+    priceHistory: "价格历史",
+    planCategoriesAria: "套餐分类",
+    categoryLinkLabel: (cat) => (cat === "ai" ? "AI 订阅" : "流媒体订阅"),
+  },
+  "zh-tw": {
+    heading: (name) => `${name}的訂閱價格`,
+    subheading: "按比美國低多少排序 · 每月 · App Store",
+    categoryLabel: "訂閱分類",
+    cols: ["訂閱", "當地標價", "折合", "美國", "和美國比"],
+    fxPending: "匯率待更新",
+    noUsBaseline: "缺少美國基準",
+    sameShort: "相同",
+    noSamePlanUs: "暫無有效美國同方案比較",
+    emptyCategory: "目前分類沒有符合條件的方案",
+    sourcesTitle: "價格來源與紀錄",
+    collectedPrefix: "價格採集 ",
+    fxPrefix: "匯率基準 ",
+    compareAllRegions: "比較所有地區",
+    originalSnapshot: "原始快照",
+    officialSource: "官方來源",
+    priceHistory: "價格歷史",
+    planCategoriesAria: "方案分類",
+    categoryLinkLabel: (cat) => (cat === "ai" ? "AI 訂閱" : "串流媒體訂閱"),
+  },
+  en: {
+    heading: (name) => `Subscription Prices in ${name}`,
+    subheading: "Sorted by savings vs US · Monthly · App Store",
+    categoryLabel: "Subscription category",
+    cols: ["Subscription", "Local price", "Converted", "US", "vs US"],
+    fxPending: "FX pending",
+    noUsBaseline: "No US baseline",
+    sameShort: "Same",
+    noSamePlanUs: "No same-plan US baseline",
+    emptyCategory: "No eligible plans in this category",
+    sourcesTitle: "Price Sources & Snapshots",
+    collectedPrefix: "Collected ",
+    fxPrefix: "FX ",
+    compareAllRegions: "Compare all regions",
+    originalSnapshot: "Original snapshot",
+    officialSource: "Official source",
+    priceHistory: "Price history",
+    planCategoriesAria: "Plan categories",
+    categoryLinkLabel: (cat) => (cat === "ai" ? "AI Subscriptions" : "Streaming"),
+  },
+  ja: {
+    heading: (name) => `${name}のサブスクリプション価格`,
+    subheading: "米国基準との節約率順 · 月額 · App Store",
+    categoryLabel: "カテゴリー",
+    cols: ["サービス", "現地価格", "換算価格", "米国", "米国比"],
+    fxPending: "為替更新待ち",
+    noUsBaseline: "米国基準なし",
+    sameShort: "同額",
+    noSamePlanUs: "米国の同一プラン基準なし",
+    emptyCategory: "このカテゴリーには該当プランがありません",
+    sourcesTitle: "価格の出典とスナップショット",
+    collectedPrefix: "取得日 ",
+    fxPrefix: "為替基準 ",
+    compareAllRegions: "すべての地域を比較",
+    originalSnapshot: "元スナップショット",
+    officialSource: "公式ストア",
+    priceHistory: "価格履歴",
+    planCategoriesAria: "プランカテゴリー",
+    categoryLinkLabel: (cat) => (cat === "ai" ? "AI サブスク" : "動画配信"),
+  },
+  ko: {
+    heading: (name) => `${name} 구독 가격`,
+    subheading: "미국 대비 절약률 순 · 월간 · App Store",
+    categoryLabel: "구독 카테고리",
+    cols: ["서비스", "현지 정가", "환산가", "미국", "미국 대비"],
+    fxPending: "환율 대기 중",
+    noUsBaseline: "미국 기준 없음",
+    sameShort: "동일",
+    noSamePlanUs: "미국 동일 요금제 기준 없음",
+    emptyCategory: "이 카테고리에 해당하는 요금제가 없습니다",
+    sourcesTitle: "가격 출처 및 스냅샷",
+    collectedPrefix: "수집일 ",
+    fxPrefix: "환율 기준 ",
+    compareAllRegions: "모든 지역 비교",
+    originalSnapshot: "원본 스냅샷",
+    officialSource: "공식 스토어",
+    priceHistory: "가격 변동 기록",
+    planCategoriesAria: "요금제 카테고리",
+    categoryLinkLabel: (cat) => (cat === "ai" ? "AI 구독" : "스트리밍"),
+  },
+  es: {
+    heading: (name) => `Precios de Suscripciones en ${name}`,
+    subheading: "Ordenado por ahorro frente a EE. UU. · Mensual · App Store",
+    categoryLabel: "Categoría de suscripción",
+    cols: ["Suscripción", "Precio local", "Convertido", "EE. UU.", "vs EE. UU."],
+    fxPending: "FX pendiente",
+    noUsBaseline: "Sin base EE. UU.",
+    sameShort: "Igual",
+    noSamePlanUs: "Sin mismo plan en EE. UU.",
+    emptyCategory: "No hay planes elegibles en esta categoría",
+    sourcesTitle: "Fuentes y Capturas de Precios",
+    collectedPrefix: "Capturado ",
+    fxPrefix: "Cambio ",
+    compareAllRegions: "Comparar todas las regiones",
+    originalSnapshot: "Captura original",
+    officialSource: "Fuente oficial",
+    priceHistory: "Historial de precios",
+    planCategoriesAria: "Categorías de planes",
+    categoryLinkLabel: (cat) => (cat === "ai" ? "Suscripciones IA" : "Streaming"),
+  },
+};
+
 export default function CountryCanvasPricing({
   name,
   rows,
@@ -33,8 +178,8 @@ export default function CountryCanvasPricing({
   locale?: CanvasLocale;
 }) {
   usePageDisplayRates(rates);
-  const english = locale === "en";
   const copy = canvasUiCopy[locale];
+  const localCopy = countryPricingCopy[locale];
   const intlLocale = canvasIntlLocale(locale);
   const defaultCurrency = canvasDefaultCurrency(locale, rates);
   const [preferred] = usePublicCurrency(defaultCurrency);
@@ -71,19 +216,13 @@ export default function CountryCanvasPricing({
       <section className="gs-country-pricing" aria-labelledby="country-prices-title">
         <div className="gs-country-table-tools">
           <div>
-            <h2 id="country-prices-title">
-              {english ? `Subscription Prices in ${name}` : `${name}的订阅价格`}
-            </h2>
-            <p>
-              {english
-                ? "Sorted by savings vs US · Monthly · App Store"
-                : "按比美国低多少排序 · 每月 · App Store"}
-            </p>
+            <h2 id="country-prices-title">{localCopy.heading(name)}</h2>
+            <p>{localCopy.subheading}</p>
           </div>
           <div>
             <PublicCurrencySelect displayCurrency={currency} locale={locale} />
             <PublicSegments
-              label={english ? "Subscription category" : "订阅分类"}
+              label={localCopy.categoryLabel}
               value={filter}
               onChange={setFilter}
               options={[
@@ -99,11 +238,9 @@ export default function CountryCanvasPricing({
         )}
         <div className="gs-country-table">
           <div className="gs-country-columns" aria-hidden="true">
-            <span>{english ? "Subscription" : "订阅"}</span>
-            <span>{english ? "Local price" : "本地标价"}</span>
-            <span>{english ? "Converted" : "折合"}</span>
-            <span>{english ? "US" : "美国"}</span>
-            <span>{english ? "vs US" : "和美国比"}</span>
+            {localCopy.cols.map((col) => (
+              <span key={col}>{col}</span>
+            ))}
           </div>
           <div ref={outer} className="gs-country-list-viewport">
             <div ref={inner}>
@@ -115,14 +252,7 @@ export default function CountryCanvasPricing({
                     : row.saving > 0
                       ? "low"
                       : "high";
-                const diffAria =
-                  row.saving !== null
-                    ? english
-                      ? row.saving === 0
-                        ? "Same as US"
-                        : `${savingsPercent(row.saving)}% ${row.saving > 0 ? "cheaper" : "higher"} than US`
-                      : savingsLabel(row.saving)
-                    : "";
+                const diffAria = row.saving !== null ? savingsLabel(row.saving, locale) : "";
                 return (
                   <article
                     id={
@@ -161,17 +291,13 @@ export default function CountryCanvasPricing({
                         {formatPublicPrice(row.amount, row.currency, intlLocale)}
                       </span>
                       <span className="gs-country-price" data-tone={tone}>
-                        {row.usd !== null ? (
-                          price(row.usd)
-                        ) : (
-                          <small>{english ? "FX pending" : "汇率待更新"}</small>
-                        )}
+                        {row.usd !== null ? price(row.usd) : <small>{localCopy.fxPending}</small>}
                       </span>
                       <span className="gs-country-us">
                         {row.usPrice !== null ? (
                           price(row.usPrice)
                         ) : (
-                          <small>{english ? "No US baseline" : "美国基准缺失"}</small>
+                          <small>{localCopy.noUsBaseline}</small>
                         )}
                       </span>
                       <div className="gs-country-saving">
@@ -186,16 +312,12 @@ export default function CountryCanvasPricing({
                             />
                             <span data-tone={tone} aria-label={diffAria}>
                               {row.saving === 0
-                                ? english
-                                  ? "Same"
-                                  : "相同"
+                                ? localCopy.sameShort
                                 : `${row.saving > 0 ? "−" : "+"}${savingsPercent(row.saving)}%`}
                             </span>
                           </>
                         ) : (
-                          <small>
-                            {english ? "No same-plan US baseline" : "暂无有效美国同套餐比较"}
-                          </small>
+                          <small>{localCopy.noSamePlanUs}</small>
                         )}
                       </div>
                     </Link>
@@ -204,7 +326,7 @@ export default function CountryCanvasPricing({
               })}
               {!rows.some((row) => filter === "all" || row.category === filter) && (
                 <p className="gs-country-empty" role="status">
-                  {english ? "No eligible plans in this category" : "当前分类没有符合条件的套餐"}
+                  {localCopy.emptyCategory}
                 </p>
               )}
             </div>
@@ -214,21 +336,19 @@ export default function CountryCanvasPricing({
       {support}
       <CountryDataDisclosure locale={locale}>
         {method}
-        <h3 className="gs-country-source-title">
-          {english ? "Price Sources & Snapshots" : "价格来源与记录"}
-        </h3>
+        <h3 className="gs-country-source-title">{localCopy.sourcesTitle}</h3>
         {rows.map((row) => (
           <div className="gs-country-source-row" key={`${row.productSlug}:${row.planSlug}`}>
             <strong>
               {row.productName} {row.planName.replace(row.productName, "").trim()}
             </strong>
             <span>
-              {english ? "Collected " : "价格采集 "}
+              {localCopy.collectedPrefix}
               {row.checkedAtText}
               {row.fxText !== null && (
                 <>
                   {" "}
-                  · {english ? "FX " : "汇率基准 "}
+                  · {localCopy.fxPrefix}
                   {row.fxText}
                 </>
               )}
@@ -236,36 +356,28 @@ export default function CountryCanvasPricing({
             <Link
               href={`/${locale}/${row.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${row.productSlug}/${row.planSlug}`}
             >
-              {english ? "Compare all regions" : "比较所有地区"}
+              {localCopy.compareAllRegions}
               <PublicIcon name="ArrowRight" size={16} />
             </Link>
             {row.observationId ? (
               <Link href={`/${locale}/price-records/${row.observationId}`}>
-                {english ? "Original snapshot" : "原始快照"}
+                {localCopy.originalSnapshot}
               </Link>
             ) : (
               <a href={row.sourceUrl} rel="noreferrer" target="_blank">
-                {english ? "Official source" : "官方来源"}
+                {localCopy.officialSource}
                 <PublicIcon name="ExternalLink" size={16} />
               </a>
             )}
-            <Link href={`/${locale}/price-history/${row.productSlug}`}>
-              {english ? "Price history" : "价格历史"}
-            </Link>
+            <Link href={`/${locale}/price-history/${row.productSlug}`}>{localCopy.priceHistory}</Link>
           </div>
         ))}
-        <nav className="gs-country-category-links" aria-label={english ? "Plan categories" : "套餐分类"}>
+        <nav className="gs-country-category-links" aria-label={localCopy.planCategoriesAria}>
           {(["ai", "streaming"] as const)
             .filter((category) => rows.some((row) => row.category === category))
             .map((category) => (
               <a key={category} href={`#${category}-plans`} onClick={() => setFilter(category)}>
-                {category === "ai"
-                  ? english
-                    ? "AI Subscriptions"
-                    : "AI 订阅"
-                  : english
-                    ? "Streaming"
-                    : "流媒体订阅"}{" "}
+                {localCopy.categoryLinkLabel(category)}{" "}
                 {rows.filter((row) => row.category === category).length}
               </a>
             ))}

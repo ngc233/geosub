@@ -12,67 +12,85 @@ import PublicCurrencySelect, {
 import { PublicSegments } from "./PublicControls";
 import PublicIcon from "./PublicIcon";
 import PublicPriceNumber from "./PublicPriceNumber";
+import { getGameDirectoryCopy } from "./games/game-ui-copy";
+import {
+  canvasDefaultCurrency,
+  canvasIntlLocale,
+  resolveCanvasLocale,
+  type CanvasLocale,
+} from "../lib/canvas-ui-copy";
+import { getDisplayCurrencyFractionDigits } from "../lib/display-currency";
 import { getGameMarketName, getGameMarketStoreTag } from "../lib/game-catalog-meta";
-import { localMoney, names } from "../lib/game-offers";
+import { getGameEditionLabel, localMoney, names } from "../lib/game-offers";
 import type { GameCatalogItem, GameCatalogVariantRow } from "../lib/read-game-offers";
 
 type PlatformFilter = "all" | "ps5" | "xbox";
 
 function VariantRows({
+  locale,
   game,
   variants,
   currency,
   rate,
+  fractionDigits,
 }: {
+  locale: CanvasLocale;
   game: GameCatalogItem;
   variants: GameCatalogVariantRow[];
   currency: string;
   rate: number;
+  fractionDigits: number;
 }) {
+  const copy = getGameDirectoryCopy(locale);
+  const intlLocale = canvasIntlLocale(locale);
+
   return (
     <div className="gs-game-matrix-wrap">
-      <table className="gs-game-matrix-table" aria-label={`${game.meta.title} 各版本价格`}>
+      <table className="gs-game-matrix-table" aria-label={copy.matrixAriaLabel(game.meta.title)}>
         <thead>
           <tr>
-            <th scope="col">平台 / 版本</th>
-            <th scope="col">最低区服</th>
-            <th scope="col">折合价</th>
+            <th scope="col">{copy.matrixCols[0]}</th>
+            <th scope="col">{copy.matrixCols[1]}</th>
+            <th scope="col">{copy.matrixCols[2]}</th>
             <th scope="col" className="gs-game-col-local">
-              当地标价 / 美服
+              {copy.matrixCols[3]}
             </th>
-            <th scope="col">相比美服</th>
+            <th scope="col">{copy.matrixCols[4]}</th>
           </tr>
         </thead>
         <tbody>
           {variants.map((variant) => {
-            const href = `/zh/games/${game.slug}?platform=${variant.platform}&edition=${variant.edition}`;
+            const href = `/${locale}/games/${game.slug}?platform=${variant.platform}&edition=${variant.edition}`;
             const hasLowest = Boolean(variant.lowestMarket && variant.lowestLocalPrice);
+            const editionLabel =
+              game.meta.editions[variant.edition]?.label ??
+              getGameEditionLabel(variant.edition, locale);
             const savingText =
               variant.savingPercent !== null
-                ? `低 ${variant.savingPercent}%`
+                ? copy.savingShort(variant.savingPercent)
                 : variant.savingRatio === 0
-                  ? "与美服同价"
+                  ? copy.sameAsUsStore
                   : variant.usPrice
-                    ? "基准"
-                    : "待核验";
+                    ? copy.baselineShort
+                    : copy.pendingVerify;
 
             return (
               <tr key={`${variant.platform}:${variant.edition}`} className="gs-game-matrix-row">
                 <td className="gs-game-cell-version">
                   <Link href={href} className="gs-game-row-link" prefetch={false}>
                     <strong>{names[variant.platform]}</strong>
-                    <span>{names[variant.edition]}</span>
+                    <span>{editionLabel}</span>
                   </Link>
                 </td>
                 <td className="gs-game-cell-region">
                   {hasLowest && variant.lowestMarket ? (
                     <span className="gs-game-region-chip">
                       <HomepageCountryFlag code={variant.lowestMarket} />
-                      <span>{getGameMarketName(variant.lowestMarket)}</span>
-                      <small>{getGameMarketStoreTag(variant.lowestMarket)}</small>
+                      <span>{getGameMarketName(variant.lowestMarket, locale)}</span>
+                      <small>{getGameMarketStoreTag(variant.lowestMarket, locale)}</small>
                     </span>
                   ) : (
-                    <span className="gs-game-muted">待核验</span>
+                    <span className="gs-game-muted">{copy.pendingVerify}</span>
                   )}
                 </td>
                 <td className="gs-game-cell-converted">
@@ -84,6 +102,8 @@ function VariantRows({
                       <PublicPriceNumber
                         value={variant.lowestUsd * rate}
                         currency={currency}
+                        locale={intlLocale}
+                        fractionDigits={fractionDigits}
                         changeKey={currency}
                       />
                     </span>
@@ -96,11 +116,13 @@ function VariantRows({
                     <div className="gs-game-local-pair">
                       <span>{localMoney(variant.lowestCurrency, variant.lowestLocalPrice)}</span>
                       <small>
-                        {variant.usPrice ? `美服 ${localMoney("USD", variant.usPrice)}` : "美服待核验"}
+                        {variant.usPrice
+                          ? copy.usStorePrice(localMoney("USD", variant.usPrice))
+                          : copy.usStorePending}
                       </small>
                     </div>
                   ) : (
-                    <span className="gs-game-muted">待核验</span>
+                    <span className="gs-game-muted">{copy.pendingVerify}</span>
                   )}
                 </td>
                 <td className="gs-game-cell-diff">
@@ -130,17 +152,24 @@ function VariantRows({
 }
 
 export default function GameDirectoryClient({
+  locale = "zh",
   games,
   rates,
 }: {
+  locale?: CanvasLocale;
   games: GameCatalogItem[];
   rates: Record<string, number>;
 }) {
+  const resolvedLocale = resolveCanvasLocale(locale);
+  const copy = getGameDirectoryCopy(resolvedLocale);
+  const intlLocale = canvasIntlLocale(resolvedLocale);
+
   usePageDisplayRates(rates);
-  const defaultCurrency = rates.CNY > 0 ? "CNY" : "USD";
+  const defaultCurrency = canvasDefaultCurrency(resolvedLocale, rates);
   const [preferred] = usePublicCurrency(defaultCurrency);
   const currency = rates[preferred] > 0 ? preferred : "USD";
   const rate = rates[currency] ?? 1;
+  const fractionDigits = getDisplayCurrencyFractionDigits(currency);
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
 
   const allMarkets = new Set(games.flatMap((game) => game.marketCodes));
@@ -150,34 +179,32 @@ export default function GameDirectoryClient({
     <>
       <div className="gs-listing-toprow">
         <div className="gs-listing-intro">
-          <p className="gs-listing-eyebrow">官方数字商店买断比价</p>
-          <h1>游戏比价</h1>
-          <p>
-            对比 PS5 与 Xbox 数字版游戏在各区官方商店的公开买断价格，同平台、同版本按实时汇率折算。
-          </p>
+          <p className="gs-listing-eyebrow">{copy.eyebrow}</p>
+          <h1>{copy.heading}</h1>
+          <p>{copy.intro}</p>
         </div>
         <div className="gs-listing-controls gs-game-directory-controls">
           <PublicSegments
-            label="游戏平台筛选"
+            label={copy.platformFilterLabel}
             value={platformFilter}
             onChange={(value) => setPlatformFilter(value as PlatformFilter)}
             options={[
-              { value: "all", label: "全部平台" },
+              { value: "all", label: copy.allPlatforms },
               { value: "ps5", label: "PS5" },
               { value: "xbox", label: "Xbox" },
             ]}
           />
-          <PublicCurrencySelect displayCurrency={currency} />
+          <PublicCurrencySelect locale={resolvedLocale} displayCurrency={currency} />
         </div>
       </div>
 
       <div className="gs-listing-sectionhead">
         <div>
-          <h2>已收录游戏</h2>
-          <p>点击任意平台版本行或详情入口，可查看各区服完整标价、税费说明与核价记录。</p>
+          <h2>{copy.sectionHeading}</h2>
+          <p>{copy.sectionDesc}</p>
         </div>
         <span className="gs-listing-count">
-          {games.length} 款游戏 · {Math.max(allMarkets.size, 2)} 个官方商店区服
+          {copy.countSummary(games.length, Math.max(allMarkets.size, 2))}
         </span>
       </div>
 
@@ -194,8 +221,12 @@ export default function GameDirectoryClient({
               game.bestVariant;
             const detailHref =
               platformFilter === "all"
-                ? `/zh/games/${game.slug}`
-                : `/zh/games/${game.slug}?platform=${platformFilter}`;
+                ? `/${resolvedLocale}/games/${game.slug}`
+                : `/${resolvedLocale}/games/${game.slug}?platform=${platformFilter}`;
+            const bestEditionLabel = bestForFilter
+              ? (game.meta.editions[bestForFilter.edition]?.label ??
+                getGameEditionLabel(bestForFilter.edition, resolvedLocale))
+              : "";
 
             return (
               <article
@@ -209,7 +240,7 @@ export default function GameDirectoryClient({
                       href={detailHref}
                       className="gs-game-cover-link"
                       prefetch={false}
-                      aria-label={`查看 ${game.meta.title} 地区比价`}
+                      aria-label={copy.coverLinkAria(game.meta.title)}
                     >
                       {game.meta.coverSrc ? (
                         <Image
@@ -232,7 +263,7 @@ export default function GameDirectoryClient({
                       <div className="gs-game-title-badges">
                         <span className="gs-listing-plan">PS5 / Xbox</span>
                         {game.meta.unannouncedPlatforms.pc && (
-                          <span className="gs-game-muted-badge">PC 待官宣</span>
+                          <span className="gs-game-muted-badge">{copy.pcPendingBadge}</span>
                         )}
                       </div>
                       <h3 id={`game-title-${game.slug}`}>
@@ -240,7 +271,7 @@ export default function GameDirectoryClient({
                           {game.meta.title}
                         </Link>
                       </h3>
-                      {game.meta.englishTitle && (
+                      {game.meta.englishTitle && game.meta.englishTitle !== game.meta.title && (
                         <p className="gs-game-english-sub" lang="en">
                           {game.meta.englishTitle}
                         </p>
@@ -258,12 +289,15 @@ export default function GameDirectoryClient({
                         <div className="gs-game-callout-top">
                           <span className="gs-game-callout-label">
                             <HomepageCountryFlag code={bestForFilter.lowestMarket} />
-                            {getGameMarketStoreTag(bestForFilter.lowestMarket)}最低 ·{" "}
-                            {names[bestForFilter.platform]} {names[bestForFilter.edition]}
+                            {copy.calloutLowestLabel(
+                              getGameMarketStoreTag(bestForFilter.lowestMarket, resolvedLocale),
+                              names[bestForFilter.platform],
+                              bestEditionLabel,
+                            )}
                           </span>
                           {game.bestSavingPercent !== null && (
                             <span className="gs-game-diff-pill" data-tone="low">
-                              比美服最多低 {game.bestSavingPercent}%
+                              {copy.calloutMaxSaving(game.bestSavingPercent)}
                             </span>
                           )}
                         </div>
@@ -272,23 +306,25 @@ export default function GameDirectoryClient({
                             <PublicPriceNumber
                               value={bestForFilter.lowestUsd * rate}
                               currency={currency}
+                              locale={intlLocale}
+                              fractionDigits={fractionDigits}
                               changeKey={`${currency}:${bestForFilter.platform}:${bestForFilter.edition}`}
                               countIn
                             />
                           </strong>
                           {bestForFilter.lowestCurrency && bestForFilter.lowestLocalPrice && (
                             <small>
-                              当地标价{" "}
+                              {copy.localPricePrefix}
                               {localMoney(bestForFilter.lowestCurrency, bestForFilter.lowestLocalPrice)}
                             </small>
                           )}
                         </div>
                       </>
                     ) : (
-                      <p className="gs-game-muted">官方商店报价核验中，点击查看各区商品页。</p>
+                      <p className="gs-game-muted">{copy.verifyingFallback}</p>
                     )}
                     <Link href={detailHref} className="gs-game-detail-cta" prefetch={false}>
-                      <span>查看全部区服与版本对照</span>
+                      <span>{copy.viewAllRegionsCta}</span>
                       <PublicIcon name="ArrowRight" size={16} />
                     </Link>
                   </div>
@@ -296,10 +332,12 @@ export default function GameDirectoryClient({
 
                 <div className="gs-game-featured-matrix">
                   <VariantRows
+                    locale={resolvedLocale}
                     game={game}
                     variants={visibleVariants}
                     currency={currency}
                     rate={rate}
+                    fractionDigits={fractionDigits}
                   />
                 </div>
               </article>
@@ -314,8 +352,8 @@ export default function GameDirectoryClient({
             );
             const detailHref =
               platformFilter === "all"
-                ? `/zh/games/${game.slug}`
-                : `/zh/games/${game.slug}?platform=${platformFilter}`;
+                ? `/${resolvedLocale}/games/${game.slug}`
+                : `/${resolvedLocale}/games/${game.slug}?platform=${platformFilter}`;
 
             return (
               <article
@@ -341,7 +379,7 @@ export default function GameDirectoryClient({
                             </h3>
                             <span className="gs-listing-plan">{game.meta.publisher}</span>
                           </div>
-                          {game.meta.englishTitle && (
+                          {game.meta.englishTitle && game.meta.englishTitle !== game.meta.title && (
                             <p className="gs-listing-plan-meta" lang="en">
                               {game.meta.englishTitle}
                             </p>
@@ -349,7 +387,7 @@ export default function GameDirectoryClient({
                         </div>
                         {game.bestSavingPercent !== null && (
                           <span className="gs-game-diff-pill" data-tone="low">
-                            低 {game.bestSavingPercent}%
+                            {copy.savingShort(game.bestSavingPercent)}
                           </span>
                         )}
                       </div>
@@ -357,15 +395,17 @@ export default function GameDirectoryClient({
                   </div>
                 </header>
                 <VariantRows
+                  locale={resolvedLocale}
                   game={game}
                   variants={visibleVariants}
                   currency={currency}
                   rate={rate}
+                  fractionDigits={fractionDigits}
                 />
                 <div className="gs-listing-card-foot">
-                  <span className="gs-listing-updated">同平台、同版本按汇率折算</span>
+                  <span className="gs-listing-updated">{copy.gridFootNote}</span>
                   <Link href={detailHref} className="gs-listing-detail" prefetch={false}>
-                    查看各区详情 <PublicIcon name="ArrowRight" size={16} />
+                    {copy.gridViewDetails} <PublicIcon name="ArrowRight" size={16} />
                   </Link>
                 </div>
               </article>

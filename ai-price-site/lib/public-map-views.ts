@@ -1,6 +1,7 @@
 import { type getComparablePriceRows } from "./country-hubs.ts";
 import { getPublicCountryHref } from "./country-route-catalog.ts";
 import { getPriceChanges, type PriceObservationRecord } from "./price-records.ts";
+import type { CanvasLocale } from "./canvas-ui-copy.ts";
 
 type ComparableRows = ReturnType<typeof getComparablePriceRows>;
 
@@ -18,7 +19,7 @@ export type CountrySavingsMapItem = {
 export function computeCountrySavingsForRows(
   rows: ComparableRows,
   minPlans: number,
-  locale: "zh" | "en" = "zh",
+  locale: CanvasLocale = "zh",
 ): CountrySavingsMapItem[] {
   const countries = new Map<string, Map<string, number>>();
   for (const row of rows) {
@@ -49,7 +50,7 @@ export function computeCountrySavingsForRows(
     .sort((a, b) => b.median - a.median || a.code.localeCompare(b.code));
 }
 
-export function buildCountrySavingsViews(rows: ComparableRows, locale: "zh" | "en" = "zh") {
+export function buildCountrySavingsViews(rows: ComparableRows, locale: CanvasLocale = "zh") {
   const hasUsBaseline = rows.some((row) => row.countryCode === "US");
   return {
     hasUsBaseline,

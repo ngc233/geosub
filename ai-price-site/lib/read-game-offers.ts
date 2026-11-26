@@ -1,8 +1,13 @@
 import { Prisma, ProductCategory, PublishStatus } from "@prisma/client";
+import { canvasDefaultCurrency, resolveCanvasLocale, type CanvasLocale } from "./canvas-ui-copy";
 import { prisma } from "./prisma";
 import {
+  currencies,
   editions,
+  memberOf,
   msPerWeek,
+  platforms,
+  selectionFrom,
   type Currency,
   type Edition,
   type GameOffer,
@@ -178,7 +183,9 @@ export async function readGameOffers(
   slug: string,
   platform: Platform,
   currency: Currency,
+  locale: CanvasLocale = "zh",
 ): Promise<GameResponse | null> {
+  const resolvedLocale = resolveCanvasLocale(locale);
   const rows = await prisma.$queryRaw<Result[]>`
     WITH fx AS (${gameOffersFx})
     SELECT now() AS stamp, fx.rate_date AS fx_date, s.offer_type AS kind,
@@ -196,7 +203,7 @@ export async function readGameOffers(
   `;
   if (!rows.length) return null;
 
-  const meta = getGameCatalogMeta({ slug, name: slug });
+  const meta = getGameCatalogMeta({ slug, name: slug }, resolvedLocale);
   const hasRows = rows.some((row) => row.offer !== null);
   const unannounced = !hasRows && (platform === "pc" || Boolean(meta.unannouncedPlatforms[platform]));
   const now = rows[0].stamp.getTime();
@@ -235,10 +242,13 @@ function toUsdAmount(amountStr: string | null, currency: string, rates: Record<s
   return amount / rate;
 }
 
-export async function readPublishedGameCatalog(): Promise<{
+export async function readPublishedGameCatalog(
+  locale: CanvasLocale = "zh",
+): Promise<{
   games: GameCatalogItem[];
   displayRates: GameDisplayRateBundle;
 }> {
+  const resolvedLocale = resolveCanvasLocale(locale);
   const [products, displayRates] = await Promise.all([
     prisma.product.findMany({
       where: {
@@ -283,7 +293,7 @@ export async function readPublishedGameCatalog(): Promise<{
 
   const consolePlatforms = ["ps5", "xbox"] as const;
   const games: GameCatalogItem[] = products.map((product) => {
-    const meta = getGameCatalogMeta(product);
+    const meta = getGameCatalogMeta(product, resolvedLocale);
     const productRows = stateRows.filter((row) => row.product_id === product.id);
     const marketSet = new Set<string>();
     let latestVerifiedMs = 0;
@@ -369,11 +379,50 @@ export async function readPublishedGameCatalog(): Promise<{
   return { games, displayRates };
 }
 
+type RawSearchParams = URLSearchParams | Record<string, string | string[] | undefined>;
+
 export async function readGameDetailPage(
   slug: string,
   platform: Platform,
   currency: Currency,
+  locale?: CanvasLocale,
+): Promise<GameDetailBundle | null>;
+export async function readGameDetailPage(
+  slug: string,
+  searchParams: RawSearchParams,
+  locale?: CanvasLocale,
+): Promise<GameDetailBundle | null>;
+export async function readGameDetailPage(
+  slug: string,
+  platformOrParams: Platform | RawSearchParams,
+  currencyOrLocale?: Currency | CanvasLocale,
+  maybeLocale: CanvasLocale = "zh",
 ): Promise<GameDetailBundle | null> {
+  let platform: Platform;
+  let currency: Currency;
+  let resolvedLocale: CanvasLocale;
+
+  if (typeof platformOrParams === "string" && memberOf(platforms, platformOrParams)) {
+    platform = platformOrParams;
+    currency = memberOf(currencies, currencyOrLocale) ? currencyOrLocale : "CNY";
+    resolvedLocale = resolveCanvasLocale(maybeLocale);
+  } else {
+    resolvedLocale = resolveCanvasLocale(currencyOrLocale as CanvasLocale | undefined);
+    const query =
+      platformOrParams instanceof URLSearchParams
+        ? platformOrParams
+        : (() => {
+            const next = new URLSearchParams();
+            for (const [k, v] of Object.entries(platformOrParams ?? {})) {
+              if (typeof v === "string") next.set(k, v);
+            }
+            return next;
+          })();
+    const selection = selectionFrom(query, canvasDefaultCurrency(resolvedLocale));
+    platform = selection.platform;
+    currency = memberOf(currencies, selection.currency) ? selection.currency : "USD";
+  }
+
   const product = await prisma.product.findFirst({
     where: {
       slug,
@@ -392,7 +441,7 @@ export async function readGameDetailPage(
 
   if (!product) return null;
 
-  const meta = getGameCatalogMeta(product);
+  const meta = getGameCatalogMeta(product, resolvedLocale);
   const consoleTargets = (["ps5", "xbox"] as const).filter(
     (p) => meta.supportedPlatforms.includes(p) && !meta.unannouncedPlatforms[p],
   );
@@ -402,7 +451,7 @@ export async function readGameDetailPage(
     Promise.all(
       platformsToLoad.map(async (targetPlatform) => [
         targetPlatform,
-        await readGameOffers(slug, targetPlatform, currency),
+        await readGameOffers(slug, targetPlatform, currency, resolvedLocale),
       ] as const),
     ),
     readGameDisplayRates(),

@@ -1,7 +1,7 @@
 /** Shared display-price policy for the rebuilt public pages. Currency selection
  * still shows ISO codes; this formatter changes presentation, never conversion. */
 const symbols: Readonly<Record<string, string>> = {
-  CNY: "¥", USD: "$", JPY: "JP¥", HKD: "HK$", TWD: "NT$", EUR: "€", GBP: "£",
+  CNY: "¥", USD: "$", JPY: "JP¥", HKD: "HK$", TWD: "NT$", EUR: "€", GBP: "£", KRW: "₩",
 };
 // Prices in a matrix share the same locale/precision. Reuse the formatter
 // across cells and animation frames; bound memory for nonstandard callers.
@@ -21,10 +21,16 @@ export function formatPublicPrice(value: number, currency: string, locale = "zh-
   const amount = number.format(value);
   return code in symbols ? `${symbols[code]}${amount}` : `${code} ${amount}`;
 }
+const billingByIntlLocale: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  "zh-CN": { monthly: "月", yearly: "年", weekly: "周" },
+  "zh-TW": { monthly: "月", yearly: "年", weekly: "週" },
+  "en-US": { monthly: "mo", yearly: "yr", weekly: "wk" },
+  "ja-JP": { monthly: "月", yearly: "年", weekly: "週" },
+  "ko-KR": { monthly: "월", yearly: "년", weekly: "주" },
+  "es-ES": { monthly: "mes", yearly: "año", weekly: "sem" },
+};
 export function publicBillingLabel(cycle: string, locale = "zh-CN") {
   const normalized = cycle.toLowerCase();
-  const labels: Record<string, string> = locale === "en-US"
-    ? { monthly: "mo", yearly: "yr", weekly: "wk" }
-    : { monthly: "月", yearly: "年", weekly: "周" };
+  const labels = billingByIntlLocale[locale] ?? billingByIntlLocale["zh-CN"];
   return labels[normalized] ?? cycle;
 }

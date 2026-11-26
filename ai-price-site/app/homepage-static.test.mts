@@ -15,13 +15,16 @@ function readRootFile(...segments: string[]) {
   return readFileSync(resolve(rootDir, ...segments), "utf8");
 }
 
-const localizedLocales = ["zh-tw", "ja", "ko", "es", "tr", "ar", "fr", "it", "de", "pt"] as const;
+const unifiedLocales = ["en", "zh-tw", "ja", "ko", "es"] as const;
+const localizedLocales = ["tr", "ar", "fr", "it", "de", "pt"] as const;
 
-test("English uses UnifiedHomepageCanvas while staged locales use LocalizedHomepagePage", () => {
-  const enSource = readAppFile("en", "page.tsx");
-  assert.match(enSource, /UnifiedHomepageCanvas/);
-  assert.match(enSource, /locale="en"/);
-  assert.doesNotMatch(enSource, /EuropeanHomePage|TraditionalChineseHomePage/);
+test("primary unified locales use UnifiedHomepageCanvas while remaining staged locales use LocalizedHomepagePage", () => {
+  for (const locale of unifiedLocales) {
+    const source = readAppFile(locale, "page.tsx");
+    assert.match(source, /UnifiedHomepageCanvas/);
+    assert.match(source, new RegExp(`locale="${locale}"`));
+    assert.doesNotMatch(source, /EuropeanHomePage|TraditionalChineseHomePage/);
+  }
 
   for (const locale of localizedLocales) {
     const source = readAppFile(locale, "page.tsx");
@@ -52,7 +55,7 @@ test("the shared homepage links only to available locale-scoped sections", () =>
 
 test("every launched locale has complete homepage copy", async () => {
   const { getHomepageCopy } = await import("../lib/homepage-copy.ts");
-  const requiredLocales = ["zh", "en", ...localizedLocales] as const;
+  const requiredLocales = ["zh", ...unifiedLocales, ...localizedLocales] as const;
 
   for (const locale of requiredLocales) {
     const copy = getHomepageCopy(locale);

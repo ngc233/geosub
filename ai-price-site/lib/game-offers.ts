@@ -1,3 +1,6 @@
+import type { CanvasLocale } from "./canvas-ui-copy.ts";
+import { isSupportedDisplayCurrency, type DisplayCurrency } from "./display-currency.ts";
+
 export const platforms = ["ps5", "xbox", "pc"] as const;
 export const currencies = ["CNY", "HKD", "USD"] as const;
 export const editions = ["standard", "ultimate"] as const;
@@ -97,7 +100,7 @@ export type Selection = {
   edition: Edition;
   region: Market | "all";
   editionRegion: Market;
-  currency: Currency;
+  currency: DisplayCurrency;
 };
 
 export const defaults: Selection = {
@@ -108,11 +111,31 @@ export const defaults: Selection = {
   currency: "CNY",
 };
 
+const editionLabelsByLocale: Record<CanvasLocale, Record<Edition, string>> = {
+  zh: { standard: "标准版", ultimate: "终极版" },
+  "zh-tw": { standard: "標準版", ultimate: "終極版" },
+  en: { standard: "Standard Edition", ultimate: "Ultimate Edition" },
+  ja: { standard: "通常版", ultimate: "アルティメット版" },
+  ko: { standard: "스탠다드 에디션", ultimate: "얼티밋 에디션" },
+  es: { standard: "Edición Estándar", ultimate: "Edición Definitiva" },
+};
+
+export function getGameEditionLabel(edition: Edition, locale: CanvasLocale = "zh"): string {
+  return editionLabelsByLocale[locale]?.[edition] ?? editionLabelsByLocale.zh[edition];
+}
+
+export function getGamePlatformLabel(platform: Platform): string {
+  return names[platform];
+}
+
 export function memberOf<T extends string>(options: readonly T[], value: unknown): value is T {
   return options.some((option) => option === value);
 }
 
-export function selectionFrom(params: URLSearchParams): Selection {
+export function selectionFrom(
+  params: URLSearchParams,
+  defaultCurrency: DisplayCurrency = defaults.currency,
+): Selection {
   const p = params.get("platform"),
     e = params.get("edition"),
     r = params.get("region"),
@@ -123,7 +146,7 @@ export function selectionFrom(params: URLSearchParams): Selection {
     edition: memberOf(editions, e) ? e : defaults.edition,
     region: memberOf(markets, r) ? r : defaults.region,
     editionRegion: memberOf(markets, er) ? er : defaults.editionRegion,
-    currency: memberOf(currencies, c) ? c : defaults.currency,
+    currency: c && isSupportedDisplayCurrency(c) ? c : defaultCurrency,
   };
 }
 

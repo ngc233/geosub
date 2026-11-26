@@ -1,5 +1,6 @@
 import { priorityCountries } from "./country-hubs.ts";
 import { getLocalizedRegionName } from "./locale-format.ts";
+import type { CanvasLocale } from "./canvas-ui-copy.ts";
 
 // Complete ISO 3166-1 alpha-2 codes supported across App Store / public pricing.
 const PUBLIC_COUNTRY_CODES = [
@@ -57,7 +58,16 @@ export function resolvePublicCountryByCode(code: string): PublicCountryEntry | u
   return byCode.get(code.trim().toUpperCase());
 }
 
-export function getPublicCountryHref(code: string, locale: "zh" | "en" = "zh"): string | null {
+export function getCountryDisplayName(
+  country: { code: string; zh: string; en: string },
+  locale: CanvasLocale = "zh",
+): string {
+  if (locale === "zh") return country.zh;
+  if (locale === "en") return country.en;
+  return getLocalizedRegionName(country.code, locale) ?? country.en;
+}
+
+export function getPublicCountryHref(code: string, locale: CanvasLocale = "zh"): string | null {
   const entry = resolvePublicCountryByCode(code);
   return entry ? `/${locale}/countries/${entry.slug}` : null;
 }

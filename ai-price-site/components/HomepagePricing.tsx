@@ -4,7 +4,7 @@ import { useCallback, useId, useLayoutEffect, useRef, useState, type ReactNode }
 import type { HomepageRepresentative } from "../lib/homepage-summary";
 import type { HomepageGameSavings } from "../lib/homepage-game-savings";
 import { names as gameNames } from "../lib/game-offers.ts";
-import { savingsPercent } from "../lib/homepage-display";
+import { savingsPercent, toTraditionalChinesePlanText } from "../lib/homepage-display";
 import { getLocalizedRegionName } from "../lib/locale-format.ts";
 import {
   canvasDefaultCurrency,
@@ -21,6 +21,97 @@ import HomepageCountryFlag from "./HomepageCountryFlag";
 import HomepageMap from "./HomepageMap";
 
 const rankingPageSize = 6;
+
+const gameCategoryCopy: Record<
+  CanvasLocale,
+  {
+    title: string;
+    subtitle: string;
+    action: string;
+    editions: Record<string, string>;
+  }
+> = {
+  zh: {
+    title: "游戏",
+    subtitle: "GTA 6 · 官方买断",
+    action: "查看游戏比价",
+    editions: {},
+  },
+  "zh-tw": {
+    title: "遊戲",
+    subtitle: "GTA 6 · 官方買斷",
+    action: "查看遊戲比價",
+    editions: {
+      standard: "標準版",
+      deluxe: "豪華版",
+      ultimate: "終極版",
+      collector: "典藏版",
+    },
+  },
+  en: {
+    title: "Games",
+    subtitle: "GTA 6 · Official store buy-out",
+    action: "Compare game prices",
+    editions: {
+      standard: "Standard Edition",
+      deluxe: "Deluxe Edition",
+      ultimate: "Ultimate Edition",
+      collector: "Collector's Edition",
+    },
+  },
+  ja: {
+    title: "ゲーム",
+    subtitle: "GTA 6 · 公式買い切り",
+    action: "ゲーム価格を比較",
+    editions: {
+      standard: "スタンダード版",
+      deluxe: "デラックス版",
+      ultimate: "アルティメット版",
+      collector: "コレクターズ版",
+    },
+  },
+  ko: {
+    title: "게임",
+    subtitle: "GTA 6 · 공식 단품 구매",
+    action: "게임 가격 비교",
+    editions: {
+      standard: "스탠다드 에디션",
+      deluxe: "디럭스 에디션",
+      ultimate: "얼티밋 에디션",
+      collector: "컬렉터스 에디션",
+    },
+  },
+  es: {
+    title: "Juegos",
+    subtitle: "GTA 6 · Compra oficial",
+    action: "Comparar precios de juegos",
+    editions: {
+      standard: "Edición Estándar",
+      deluxe: "Edición Deluxe",
+      ultimate: "Edición Definitiva",
+      collector: "Edición Coleccionista",
+    },
+  },
+};
+
+function formatGameEditionHint(
+  platform: keyof typeof gameNames,
+  edition: keyof typeof gameNames,
+  locale: CanvasLocale,
+): string {
+  const platformLabel = gameNames[platform] ?? String(platform);
+  if (locale === "zh") {
+    return `${platformLabel} ${gameNames[edition]}`;
+  }
+  const localizedEdition = gameCategoryCopy[locale].editions[String(edition)];
+  if (localizedEdition) {
+    return `${platformLabel} ${localizedEdition}`;
+  }
+  if (locale === "zh-tw") {
+    return `${platformLabel} ${toTraditionalChinesePlanText(gameNames[edition] ?? String(edition))}`;
+  }
+  return `${platformLabel} ${String(edition).charAt(0).toUpperCase()}${String(edition).slice(1)}`;
+}
 
 export default function HomepagePricing({
   products,
@@ -41,6 +132,7 @@ export default function HomepagePricing({
 }) {
   usePageDisplayRates(rates);
   const copy = canvasUiCopy[locale];
+  const gameCopy = gameCategoryCopy[locale];
   const intlLocale = canvasIntlLocale(locale);
   const defaultCurrency = canvasDefaultCurrency(locale, rates);
   const [preferred] = usePublicCurrency(defaultCurrency);
@@ -271,21 +363,22 @@ export default function HomepagePricing({
                 </div>
                 <Link href={gameCategoryHref} className="gs-home-category-link" prefetch={false}>
                   <div className="gs-home-category-title">
-                    <h3>游戏</h3>
-                    <p>GTA 6 · 官方买断</p>
+                    <h3>{gameCopy.title}</h3>
+                    <p>{gameCopy.subtitle}</p>
                   </div>
                   {gameSavings && (
                     <div className="gs-home-game-saving-group">
                       <p className="gs-home-category-saving">
-                        最多能省 <strong>{gameSavings.percent}%</strong>
+                        {copy.home.categoryMaxSavingPrefix}
+                        <strong>{gameSavings.percent}%</strong>
                       </p>
                       <p className="gs-home-game-edition-hint">
-                        {gameNames[gameSavings.platform]} {gameNames[gameSavings.edition]}
+                        {formatGameEditionHint(gameSavings.platform, gameSavings.edition, locale)}
                       </p>
                     </div>
                   )}
                   <span className={gameSavings ? "gs-home-category-action gs-sr-only" : "gs-home-category-action"}>
-                    查看游戏比价 <PublicIcon name="ArrowRight" size={16} />
+                    {gameCopy.action} <PublicIcon name="ArrowRight" size={16} />
                   </span>
                 </Link>
               </article>

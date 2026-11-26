@@ -43,7 +43,7 @@ for (const width of [1280, 390, 320]) {
       const mobile = width < 768;
       test.use({ viewport: { width, height: mobile ? 844 : 720 }, colorScheme, hasTouch: mobile });
 
-      test("the same menu opens and highlights the game, and stays out of Plus and English", async ({
+      test("the same menu opens and highlights the game, stays out of Plus, and uses localized href on English", async ({
         page,
       }) => {
         const navigation = page.getByRole("navigation", {
@@ -134,12 +134,18 @@ for (const width of [1280, 390, 320]) {
         }
         await expect(page).toHaveURL(new RegExp(`${overview}$`));
 
-        for (const route of ["/zh/ai-pricing/chatgpt/plus", "/en"]) {
-          expect((await page.goto(route))?.status()).toBe(200);
-          await expect(
-            page.locator("header").first().locator(`a[href="${overview}"], a[href="${path}"]`),
-          ).toHaveCount(0);
-        }
+        expect((await page.goto("/zh/ai-pricing/chatgpt/plus"))?.status()).toBe(200);
+        await expect(
+          page.locator("header").first().locator(`a[href="${overview}"], a[href="${path}"]`),
+        ).toHaveCount(0);
+
+        expect((await page.goto("/en"))?.status()).toBe(200);
+        await expect(
+          page.locator("header").first().locator(`a[href="${overview}"], a[href="${path}"]`),
+        ).toHaveCount(0);
+        await expect(
+          page.locator("header").first().locator('a[href="/en/games"]'),
+        ).toHaveCount(1);
       });
     });
   }

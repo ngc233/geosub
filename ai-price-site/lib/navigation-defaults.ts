@@ -114,6 +114,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
                 { label: "全部指南", href: "/zh-tw/guides" },
                 { label: "價格指南", href: "/zh-tw/guides/price-guide" },
                 { label: "支付與帳號", href: "/zh-tw/guides/payment-account" },
+                { label: "工具評測", href: "/zh-tw/guides/tool-review" },
                 { label: "方法論", href: "/zh-tw/guides/methodology" },
             ],
         },
@@ -176,6 +177,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
         children: [
           { label: "About GeoSub", href: "/en/about" },
           { label: "Data Sources", href: "/en/data-sources" },
+          { label: "Contact", href: "/en/contact" },
         ],
       },
       {
@@ -218,6 +220,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
           { label: "すべてのガイド", href: "/ja/guides" },
           { label: "料金ガイド", href: "/ja/guides/price-guide" },
           { label: "支払いとアカウント", href: "/ja/guides/payment-account" },
+          { label: "ツール評価基準", href: "/ja/guides/tool-review" },
           { label: "調査方法", href: "/ja/guides/methodology" },
         ],
       },
@@ -227,6 +230,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
         children: [
           { label: "GeoSub について", href: "/ja/about" },
           { label: "データソース", href: "/ja/data-sources" },
+          { label: "お問い合わせ", href: "/ja/contact" },
         ],
       },
       {
@@ -269,6 +273,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
           { label: "전체 가이드", href: "/ko/guides" },
           { label: "가격 가이드", href: "/ko/guides/price-guide" },
           { label: "결제 및 계정", href: "/ko/guides/payment-account" },
+          { label: "도구 리뷰 기준", href: "/ko/guides/tool-review" },
           { label: "조사 방법", href: "/ko/guides/methodology" },
         ],
       },
@@ -278,6 +283,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
         children: [
           { label: "GeoSub 소개", href: "/ko/about" },
           { label: "데이터 출처", href: "/ko/data-sources" },
+          { label: "문의하기", href: "/ko/contact" },
         ],
       },
       {
@@ -320,6 +326,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
           { label: "Todas las guías", href: "/es/guides" },
           { label: "Guía de precios", href: "/es/guides/price-guide" },
           { label: "Pagos y cuentas", href: "/es/guides/payment-account" },
+          { label: "Evaluación de herramientas", href: "/es/guides/tool-review" },
           { label: "Metodología", href: "/es/guides/methodology" },
         ],
       },
@@ -329,6 +336,7 @@ export const defaultNavigationItems: DefaultNavigationMap =
         children: [
           { label: "Acerca de GeoSub", href: "/es/about" },
           { label: "Fuentes de datos", href: "/es/data-sources" },
+          { label: "Contacto", href: "/es/contact" },
         ],
       },
       {

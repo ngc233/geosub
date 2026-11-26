@@ -4,7 +4,8 @@ import { ArrowLeftRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import GeoSubLogo from "./GeoSubLogo";
 import PublicFooter from "./PublicFooter";
-import { usesUnifiedPublicStyle } from "../lib/public-style-rollout";
+import { resolveCanvasLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
+import { isUnifiedPublicLocale, usesUnifiedPublicStyle } from "../lib/public-style-rollout";
 import { usePathname } from "next/navigation";
 import {
   getAnalyticsConsentCopy,
@@ -186,8 +187,17 @@ export default function Footer({
       : toSiteNavigationItems(currentLocale),
   );
   const unified = usesUnifiedPublicStyle(pathname);
+  const canvasLocale: CanvasLocale = resolveCanvasLocale(currentLocale);
+  const footerGameLabel: Record<CanvasLocale, string> = {
+    zh: "游戏比价",
+    "zh-tw": "遊戲比價",
+    en: "Game Pricing",
+    ja: "ゲーム価格比較",
+    ko: "게임 가격 비교",
+    es: "Precios de juegos",
+  };
   const footerItems =
-    showGameNavigation && currentLocale === "zh" && unified
+    showGameNavigation && isUnifiedPublicLocale(currentLocale) && unified
       ? baseFooterItems.map((group) => {
           const cleanGroupHref = stripSiteLocale(group.href).replace(/\/+$/, "");
           if (cleanGroupHref !== "/ai-pricing") return group;
@@ -199,7 +209,7 @@ export default function Footer({
             ? group
             : {
                 ...group,
-                children: [...existingChildren, { name: "游戏比价", href: "/games" }],
+                children: [...existingChildren, { name: footerGameLabel[canvasLocale], href: "/games" }],
               };
         })
       : baseFooterItems;
@@ -207,7 +217,7 @@ export default function Footer({
   const copy = footerCopy[currentLocale];
   const consentCopy = getAnalyticsConsentCopy(currentLocale);
 
-  if (unified) return <PublicFooter items={footerItems} copy={copy} settings={consentCopy.settings} locale={currentLocale === "en" ? "en" : "zh"} />;
+  if (unified) return <PublicFooter items={footerItems} copy={copy} settings={consentCopy.settings} locale={canvasLocale} />;
 
   return (
     <footer className="mt-auto border-t border-zinc-200 bg-white/80 dark:border-zinc-900 dark:bg-zinc-950/90">

@@ -1,22 +1,44 @@
 import "server-only";
 
+import type { Locale } from "@prisma/client";
 import { cache } from "react";
 import { getPublishedArticleBySlug } from "./articles";
+import type { CanvasLocale } from "./canvas-ui-copy";
 import {
   coreGuideSlugs,
-  type CoreGuideLocale,
   type CoreGuideSlug,
 } from "./core-guide-content";
 import { prisma } from "./prisma";
 
-function toDatabaseLocale(locale: CoreGuideLocale) {
-  return locale === "zh" ? ("ZH" as const) : ("EN" as const);
+export function toGuideDatabaseLocale(locale: CanvasLocale): Locale | null {
+  switch (locale) {
+    case "zh":
+      return "ZH";
+    case "en":
+      return "EN";
+    case "ja":
+      return "JA";
+    case "ko":
+      return "KO";
+    case "es":
+      return "ES";
+    case "zh-tw":
+      return null;
+  }
 }
 
 export const loadCoreGuideCmsState = cache(
-  async (locale: CoreGuideLocale, slug: CoreGuideSlug) => {
+  async (locale: CanvasLocale, slug: CoreGuideSlug) => {
+    const databaseLocale = toGuideDatabaseLocale(locale);
+    if (!databaseLocale) {
+      return {
+        article: null,
+        managed: false,
+        databaseAvailable: true,
+      };
+    }
+
     try {
-      const databaseLocale = toDatabaseLocale(locale);
       const [article, record] = await Promise.all([
         getPublishedArticleBySlug(slug, databaseLocale),
         prisma.article.findUnique({
@@ -53,9 +75,13 @@ export const loadCoreGuideCmsState = cache(
   },
 );
 
-export const loadCoreGuideHubStates = cache(async (locale: CoreGuideLocale) => {
+export const loadCoreGuideHubStates = cache(async (locale: CanvasLocale) => {
+  const databaseLocale = toGuideDatabaseLocale(locale);
+  if (!databaseLocale) {
+    return new Map<string, { managed: boolean; published: boolean }>();
+  }
+
   try {
-    const databaseLocale = toDatabaseLocale(locale);
     const now = new Date();
     const records = await prisma.article.findMany({
       where: {

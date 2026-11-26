@@ -1,23 +1,59 @@
 import type { DisplayCurrency } from "./display-currency.ts";
+import { isUnifiedPublicLocale, unifiedPublicLocales } from "./public-style-rollout.ts";
 import type { SiteLocale } from "./site-locale.ts";
 
-export type CanvasLocale = "zh" | "en";
+export { unifiedPublicLocales as canvasLocales };
+export type CanvasLocale = "zh" | "en" | "zh-tw" | "ja" | "ko" | "es";
 
-export function resolveCanvasLocale(locale?: SiteLocale | string): CanvasLocale {
-  return locale === "en" ? "en" : "zh";
+export function isCanvasLocale(locale?: string | null): locale is CanvasLocale {
+  return isUnifiedPublicLocale(locale);
 }
 
-export function canvasIntlLocale(locale: CanvasLocale): "zh-CN" | "en-US" {
-  return locale === "en" ? "en-US" : "zh-CN";
+export function resolveCanvasLocale(locale?: SiteLocale | string | null): CanvasLocale {
+  return isCanvasLocale(locale) ? locale : "zh";
 }
+
+export function isDatePrefixLocale(locale: CanvasLocale): boolean {
+  return locale === "en" || locale === "es";
+}
+
+export function canvasIntlLocale(
+  locale: CanvasLocale,
+): "zh-CN" | "en-US" | "zh-TW" | "ja-JP" | "ko-KR" | "es-ES" {
+  switch (locale) {
+    case "en":
+      return "en-US";
+    case "zh-tw":
+      return "zh-TW";
+    case "ja":
+      return "ja-JP";
+    case "ko":
+      return "ko-KR";
+    case "es":
+      return "es-ES";
+    case "zh":
+    default:
+      return "zh-CN";
+  }
+}
+
+const defaultCurrencyByCanvasLocale: Record<CanvasLocale, DisplayCurrency> = {
+  zh: "CNY",
+  en: "USD",
+  "zh-tw": "TWD",
+  ja: "JPY",
+  ko: "KRW",
+  es: "EUR",
+};
 
 export function canvasDefaultCurrency(
   locale: CanvasLocale,
   rates?: Readonly<Record<string, number>>,
 ): DisplayCurrency {
-  if (locale === "en") return "USD";
-  if (rates && !(rates.CNY > 0)) return "USD";
-  return "CNY";
+  const preferred = defaultCurrencyByCanvasLocale[locale] ?? "USD";
+  if (preferred === "USD") return "USD";
+  if (rates && !(rates[preferred] > 0)) return "USD";
+  return preferred;
 }
 
 export function canvasSavingsText(
@@ -28,30 +64,60 @@ export function canvasSavingsText(
   if (value === null || !Number.isFinite(value)) return null;
   const pct = Math.round(Math.abs(value) * 100);
   if (pct === 0) {
+    const baselineByLocale: Record<CanvasLocale, { compact: string; full: string }> = {
+      zh: { compact: "持平", full: "与美国同价" },
+      "zh-tw": { compact: "持平", full: "與美國同價" },
+      en: { compact: "Same", full: "Same as US" },
+      ja: { compact: "同額", full: "米国と同額" },
+      ko: { compact: "동일", full: "미국과 동일" },
+      es: { compact: "Igual", full: "Igual que EE. UU." },
+    };
+    const item = baselineByLocale[locale];
     return {
-      text:
-        locale === "en"
-          ? compact
-            ? "Same"
-            : "Same as US"
-          : compact
-            ? "持平"
-            : "与美国同价",
+      text: compact ? item.compact : item.full,
       tone: "baseline",
     };
   }
   const higher = value < 0;
-  return {
-    text:
-      locale === "en"
-        ? compact
-          ? `${higher ? "+" : "−"}${pct}%`
-          : `${pct}% ${higher ? "higher" : "cheaper"} than US`
-        : compact
-          ? `${higher ? "+" : "−"}${pct}%`
-          : `比美国${higher ? "高" : "低"} ${pct}%`,
-    tone: higher ? "high" : "low",
-  };
+  if (compact) {
+    return {
+      text: `${higher ? "+" : "−"}${pct}%`,
+      tone: higher ? "high" : "low",
+    };
+  }
+  switch (locale) {
+    case "en":
+      return {
+        text: `${pct}% ${higher ? "higher" : "cheaper"} than US`,
+        tone: higher ? "high" : "low",
+      };
+    case "zh-tw":
+      return {
+        text: `比美國${higher ? "高" : "低"} ${pct}%`,
+        tone: higher ? "high" : "low",
+      };
+    case "ja":
+      return {
+        text: `米国より ${pct}% ${higher ? "高い" : "安い"}`,
+        tone: higher ? "high" : "low",
+      };
+    case "ko":
+      return {
+        text: `미국보다 ${pct}% ${higher ? "비쌈" : "저렴"}`,
+        tone: higher ? "high" : "low",
+      };
+    case "es":
+      return {
+        text: `${pct}% ${higher ? "más caro" : "más barato"} que EE. UU.`,
+        tone: higher ? "high" : "low",
+      };
+    case "zh":
+    default:
+      return {
+        text: `比美国${higher ? "高" : "低"} ${pct}%`,
+        tone: higher ? "high" : "low",
+      };
+  }
 }
 
 export const canvasUiCopy = {
@@ -208,7 +274,7 @@ export const canvasUiCopy = {
       medianTitle: "中位数",
       medianSub: "半数地区更便宜",
       multipleSub: (mult: string) => `最低价的 ${mult} 倍`,
-      cheaperNote: (cheaper: number, total: number) =>
+      cheaperNote: (_cheaper: number, total: number) =>
         ` / ${total} 个地区比美国便宜`,
       regionsHeading: "地区价格",
       filterLabel: "地区价格筛选",
@@ -458,6 +524,811 @@ export const canvasUiCopy = {
       howToBuyHeading: "How Regional Subscription Pricing Works",
       officialPricingRef: "Official pricing reference: ",
       beforeBuyHeading: "Before You Subscribe",
+    },
+  },
+  "zh-tw": {
+    common: {
+      fxFallbackStatus: (preferred: string) =>
+        `${preferred} 匯率不可用，目前顯示 USD；可選擇其他幣別。`,
+      breadcrumbAria: "麵包屑導覽",
+      productNavAria: "產品導覽",
+      all: "全部",
+      ai: "AI 訂閱",
+      streaming: "串流媒體",
+      sortAsc: "由低到高",
+      sortDesc: "由高到低",
+      shareButton: "分享價格圖",
+      notProvided: "未提供",
+    },
+    home: {
+      fixtureBanner: "虛構測試資料 · 僅用於本機介面驗收，不代表實際價格",
+      heroLead: "同一個訂閱，",
+      heroAccent: "換個地區能省多少",
+      heroDescLead: "比較 AI 與串流媒體訂閱在全球各地區的真實價格，",
+      heroDescStrong: "每天自動核驗",
+      heroDescTail: "。",
+      statsAria: "收錄統計",
+      statsProducts: "個產品",
+      statsRegions: "個地區",
+      statsPrices: "筆已核驗價格",
+      statsUpdatedSuffix: "更新",
+      mapRegionAria: "代表方案地區價格",
+      rankingHeading: "省錢排行榜",
+      rankingDesc: "每個產品一個代表方案，按比美國低多少排序",
+      rankingSegmentLabel: "排行榜分類",
+      rankingListAria: "訂閱省錢排名",
+      rankingCols: ["#", "訂閱", "最便宜地區", "每月", "比美國低"] as const,
+      rankingEmpty: "此分類沒有符合代表方案條件的產品。",
+      rankingViewAll: "查看全部",
+      loadMore: "載入更多",
+      loadMoreHint: (remaining: number) => `還有 ${remaining} 個產品`,
+      loadMoreStatus: (shown: number, total: number) =>
+        `已顯示 ${shown} 個，共 ${total} 個產品`,
+      categoriesHeading: "按分類找",
+      categoryProductsCount: (count: number) => `${count} 個產品`,
+      categoryMaxSavingPrefix: "最多能省 ",
+      categoryViewAll: (kind: "ai" | "streaming") =>
+        `查看全部${kind === "ai" ? " AI 訂閱" : "串流媒體"}`,
+      recentHeading: "最近變價",
+      recentLink: "價格歷史",
+      recentSrDirection: (increase: boolean) =>
+        `當地標價${increase ? "上漲" : "下降"}`,
+      recentSrNote: "最近 30 天已核驗的當地標價變化，不含匯率波動",
+      countriesHeading: "哪些國家整體更便宜",
+      countriesDesc:
+        "App Store 月付方案逐個與美國比較，按節省率中位數排序；每個方案權重相同，進度條刻度 0–20%。",
+      countriesLink: "全部國家",
+      countriesSrSummary: (count: number, cheaper: number) =>
+        `按 ${count} 個訂閱計算 · ${cheaper} 個比美國便宜`,
+      guidesHeading: "訂閱前先看",
+      emptyHowToReadTitle: "如何閱讀地區價格",
+    },
+    product: {
+      plansCount: (count: number) => `${count} 個方案`,
+      regionsCount: (count: number) => `${count} 個地區`,
+      updatedSuffix: "更新",
+      conciseDesc: (planCount: number, regionCount: number) =>
+        `涵蓋 ${planCount} 個在售訂閱方案與最多 ${regionCount} 個國家/地區的核驗價格，支援按目標幣別橫向對比方案月費與地區價差。`,
+      kickerLow: (name: string) => `低價結論 · ${name}`,
+      kickerDefault: (name: string) => `代表方案 · ${name}`,
+      cheapestInPrefix: "在",
+      cheapestInSuffix: "最便宜",
+      baselineSuffix: "基準價",
+      usBaselineNote: "· 同一方案、同一通路",
+      usBaselinePrefix: "美國基準",
+      usOnlyNote: "目前僅收錄美區公開價格",
+      sameAsUsNote: "目前最低價與美區基準一致",
+      viewPlanRegions: (name: string) => `查看 ${name} 各地區價格`,
+      plansSectionHeading: "方案概覽",
+      planCardMeta: (channel: string, cycleLabel: string, coverage: number) =>
+        `${channel} · 每${cycleLabel} · ${coverage} 個地區`,
+      lowestTag: " 最低",
+      baselineTag: " 基準",
+      usShortPrefix: "美國 ",
+      usOnlyBadge: "僅美區基準",
+      sameAsUsBadge: "與美區同價",
+      noUsBadge: "暫無美區基準",
+      bestForDt: "適合",
+      differenceDt: "差異",
+      planCardCtaMulti: (name: string, coverage: number) =>
+        `查看 ${name} 全部 ${coverage} 個地區與當地幣明細`,
+      planCardCtaSingle: (name: string) => `查看 ${name} 價格與訂閱說明`,
+      planCardSrLink: (name: string) => `查看 ${name} 地區價格`,
+      matrixHeading: "代表地區跨方案對比",
+      matrixDesc: (count: number, asc: boolean, hasUs: boolean) =>
+        `精選前 ${count} 個${asc ? "低價" : "高價"}代表地區${hasUs ? "與美區基準" : ""}橫向對照；點擊方案欄名可切換排序基準`,
+      matrixSortLabel: "價格排序",
+      matrixTableAria: "代表地區方案價格",
+      matrixCountryCol: "國家 / 地區",
+      matrixActionCol: "詳情",
+      usBadge: "基準",
+      usCellSub: "美區基準",
+      emptyCellAria: "沒有可比價格",
+      matrixRowView: "查看",
+      matrixFooterNote: (shown: number, total: number) =>
+        `僅展示 ${shown} / ${total} 個代表地區樣本 · 完整排名、當地原價與稅費快照請進入單一方案頁`,
+      matrixDrilldownMulti: (name: string, coverage: number) =>
+        `查看 ${name} 全部 ${coverage} 個地區完整排行`,
+      matrixDrilldownSingle: (name: string) => `查看 ${name} 價格詳情`,
+    },
+    plan: {
+      metaLine: (channel: string, cycleLabel: string, count: number) =>
+        `${channel} · 每${cycleLabel} · ${count} 個地區`,
+      collectedSuffix: "採集",
+      conciseDesc: (
+        lead: string | undefined,
+        regionCount: number,
+        channel: string,
+        hasWork: boolean,
+      ) =>
+        `${lead ? `${lead}。` : ""}涵蓋 ${regionCount} 個國家/地區的 ${channel} 核驗價格，支援多幣別換算、美國基準對比${hasWork ? "與當地工時負擔參考" : "與原始採集快照核查"}。`,
+      keycapAria: "同產品方案切換",
+      keycapOverview: "方案總覽",
+      disabledPending: "待審",
+      disabledUnavailable: "暫無",
+      emptyTitle: "暫無已發布價格",
+      emptyDesc: "目前沒有可比較的地區價格。",
+      lowestAria: "最低價",
+      lowestKicker: "全球最低 · ",
+      noUsRef: "缺少美國基準",
+      sameAsUs: "與美國相同",
+      localPricePrefix: "當地標價 ",
+      taxAtCheckout: "結帳頁計稅",
+      usSamePlan: "美國同方案",
+      noBaseline: "暫無基準",
+      annualSaved: "按 12 個月折算少付",
+      periodSaved: "較美國單期少付",
+      maxMultiple: "最高價倍數",
+      trustVerified: "已核驗",
+      trustReviewed: "已審核",
+      trustPending: "待覆核",
+      collectedLabel: "採集",
+      usdOriginal: "美元原價",
+      fxLabel: "匯率",
+      distAria: "各地區價格分布",
+      distTitle: "各地區價格分布",
+      distCount: (count: number) => `已收錄 ${count} 個地區`,
+      distChartAria: (hasUs: boolean) =>
+        `各地區價格由低到高分布${hasUs ? "，豎線為美國價格" : "，沒有美國基準"}`,
+      usName: "美國",
+      lowestPrefix: "最低 · ",
+      highestPrefix: "最貴 · ",
+      usBaselineTitle: "美國基準",
+      missingBaseline: "缺少基準",
+      noneShort: "暫無",
+      medianTitle: "中位數",
+      medianSub: "半數地區更便宜",
+      multipleSub: (mult: string) => `最低價的 ${mult} 倍`,
+      cheaperNote: (_cheaper: number, total: number) =>
+        ` / ${total} 個地區比美國便宜`,
+      regionsHeading: "地區價格",
+      filterLabel: "地區價格篩選",
+      filterCheaper: "比美國便宜",
+      filterHigher: "比美國貴",
+      sortToggleAria: "切換價格排序",
+      searchRegionLabel: "找地區",
+      searchRegionPlaceholder: "搜尋地區，例如 日本",
+      cols: ["#", "地區", "折合", "當地標價", "和美國比", "稅費說明"] as const,
+      usBaselineMobile: "美國基準",
+      usBaselineShort: "基準",
+      evidenceSource: "來源：",
+      evidenceCollected: "採集：",
+      evidenceFx: "匯率：",
+      evidenceStatus: "狀態：",
+      qualityVerified: "已核驗",
+      qualityEstimated: "估算",
+      qualityPending: "待核驗",
+      officialSource: "官方來源",
+      viewSnapshot: "查看當時的原始方案快照",
+      noMatchingRegions: "沒有符合條件的地區價格",
+      tableFooter: (shown: number, total: number) =>
+        `顯示 ${shown} / ${total} 個地區 · 均為平台公開標價，最終稅費以結帳頁為準`,
+      collapseRegions: "收起地區",
+      expandRegions: (total: number) => `展開全部 ${total} 個地區`,
+      remainingHint: (remaining: number) => `還有 ${remaining} 個`,
+      editorialHeading: (name: string) => `${name} 方案定位`,
+      workHeading: "為什麼各地價格不同",
+      workDesc:
+        "價格比較與當地收入負擔是兩個不同的角度。較低的換算價格，不一定代表當地收入負擔更低。",
+      workNote:
+        "按同一方案的美元月費與當地名目收入換算，不代表實際薪資或購買資格。",
+      workFootnote:
+        "世界銀行人均國民所得或名目人均 GDP（各列註明年份），按每月 160 工作小時換算；不使用購買力平價收入。",
+      workCols: ["地區", "月費折合", "當地需工作多久"] as const,
+      hoursUnit: "小時",
+      gniLabel: "人均國民所得",
+      gdpLabel: "名目人均 GDP",
+      workOrderNote: "按工作時數由短到長排列；灰色條不代表購買推薦。",
+      sourcePrefix: "來源：",
+      countryJoiner: "、",
+      howToBuyHeading: "如何取得這個地區價格",
+      officialPricingRef: "官方定價參考：",
+      beforeBuyHeading: "訂閱前注意事項",
+    },
+  },
+  ja: {
+    common: {
+      fxFallbackStatus: (preferred: string) =>
+        `${preferred} の為替レートを取得できないため USD で表示しています。別の通貨を選択できます。`,
+      breadcrumbAria: "パンくずリスト",
+      productNavAria: "サービス一覧ナビゲーション",
+      all: "すべて",
+      ai: "AI サブスク",
+      streaming: "動画配信",
+      sortAsc: "安い順",
+      sortDesc: "高い順",
+      shareButton: "価格カードを共有",
+      notProvided: "記載なし",
+    },
+    home: {
+      fixtureBanner: "検証用ダミーデータ · ローカル UI 検証専用であり実際の価格ではありません",
+      heroLead: "同じサブスクでも、",
+      heroAccent: "国や地域でこれだけ違う",
+      heroDescLead: "AI・動画配信サブスクリプションの世界各国の公式価格を比較。",
+      heroDescStrong: "毎日自動検証",
+      heroDescTail: "しています。",
+      statsAria: "収録データ統計",
+      statsProducts: "サービス",
+      statsRegions: "国・地域",
+      statsPrices: "件の検証済み価格",
+      statsUpdatedSuffix: "更新",
+      mapRegionAria: "代表プランの地域別価格",
+      rankingHeading: "節約額ランキング",
+      rankingDesc: "各サービスの代表プランを米国基準との価格差でランキング",
+      rankingSegmentLabel: "カテゴリー絞り込み",
+      rankingListAria: "サブスクリプション節約ランキング",
+      rankingCols: ["#", "サービス", "最安地域", "月額換算", "米国比"] as const,
+      rankingEmpty: "このカテゴリーには該当する代表プランがありません。",
+      rankingViewAll: "すべて見る",
+      loadMore: "さらに表示",
+      loadMoreHint: (remaining: number) => `残り ${remaining} 件`,
+      loadMoreStatus: (shown: number, total: number) =>
+        `${total} 件中 ${shown} 件を表示中`,
+      categoriesHeading: "カテゴリーから探す",
+      categoryProductsCount: (count: number) => `${count} サービス`,
+      categoryMaxSavingPrefix: "最大節約 ",
+      categoryViewAll: (kind: "ai" | "streaming") =>
+        `${kind === "ai" ? "AI サブスク" : "動画配信"}をすべて見る`,
+      recentHeading: "最近の価格改定",
+      recentLink: "価格履歴",
+      recentSrDirection: (increase: boolean) =>
+        `現地価格が${increase ? "値上げ" : "値下げ"}`,
+      recentSrNote: "過去30日間に確認された現地通貨建て価格の変更（為替変動を除く）",
+      countriesHeading: "全体的に割安な国・地域",
+      countriesDesc:
+        "App Store 月額プランを米国と個別に比較し、節約率の中央値で順位付け（0–20% スケール）。",
+      countriesLink: "すべての国・地域",
+      countriesSrSummary: (count: number, cheaper: number) =>
+        `${count} 件のサブスクで算出 · ${cheaper} 件が米国より割安`,
+      guidesHeading: "契約前にチェック",
+      emptyHowToReadTitle: "地域別価格の見方",
+    },
+    product: {
+      plansCount: (count: number) => `${count} プラン`,
+      regionsCount: (count: number) => `${count} 地域`,
+      updatedSuffix: "更新",
+      conciseDesc: (planCount: number, regionCount: number) =>
+        `提供中の ${planCount} プラン・最大 ${regionCount} の国と地域の検証済み価格を収録。希望通貨への換算や米国基準との比較に対応しています。`,
+      kickerLow: (name: string) => `最安サマリー · ${name}`,
+      kickerDefault: (name: string) => `代表プラン · ${name}`,
+      cheapestInPrefix: "の最安地域は",
+      cheapestInSuffix: "",
+      baselineSuffix: "基準価格",
+      usBaselineNote: "· 同一プラン・同一経路",
+      usBaselinePrefix: "米国基準",
+      usOnlyNote: "現在は米国の公開価格のみ収録しています",
+      sameAsUsNote: "最安価格は米国基準と同額です",
+      viewPlanRegions: (name: string) => `${name} の地域別価格を見る`,
+      plansSectionHeading: "プラン一覧",
+      planCardMeta: (channel: string, cycleLabel: string, coverage: number) =>
+        `${channel} · /${cycleLabel} · ${coverage} 地域`,
+      lowestTag: " · 最安",
+      baselineTag: " · 基準",
+      usShortPrefix: "米国 ",
+      usOnlyBadge: "米国基準のみ",
+      sameAsUsBadge: "米国と同額",
+      noUsBadge: "米国基準なし",
+      bestForDt: "おすすめ対象",
+      differenceDt: "主な違い",
+      planCardCtaMulti: (name: string, coverage: number) =>
+        `${name} の全 ${coverage} 地域の価格と現地通貨を見る`,
+      planCardCtaSingle: (name: string) => `${name} の料金と契約条件を見る`,
+      planCardSrLink: (name: string) => `${name} の地域別価格を見る`,
+      matrixHeading: "主要地域のプラン横断比較",
+      matrixDesc: (count: number, asc: boolean, hasUs: boolean) =>
+        `${asc ? "割安" : "割高"}な上位 ${count} 地域${hasUs ? "と米国基準" : ""}を横断比較。プラン名をクリックして並び替え可能`,
+      matrixSortLabel: "並び順",
+      matrixTableAria: "代表地域のプラン別価格",
+      matrixCountryCol: "国 / 地域",
+      matrixActionCol: "詳細",
+      usBadge: "基準",
+      usCellSub: "米国基準",
+      emptyCellAria: "比較可能な価格なし",
+      matrixRowView: "詳細",
+      matrixFooterNote: (shown: number, total: number) =>
+        `代表 ${shown} / ${total} 地域を表示 · 全ランキング・現地価格・税区分は各プランページで確認できます`,
+      matrixDrilldownMulti: (name: string, coverage: number) =>
+        `${name} の全 ${coverage} 地域ランキングを見る`,
+      matrixDrilldownSingle: (name: string) => `${name} の価格詳細を見る`,
+    },
+    plan: {
+      metaLine: (channel: string, cycleLabel: string, count: number) =>
+        `${channel} · /${cycleLabel} · ${count} 地域`,
+      collectedSuffix: "取得",
+      conciseDesc: (
+        lead: string | undefined,
+        regionCount: number,
+        channel: string,
+        hasWork: boolean,
+      ) =>
+        `${lead ? `${lead}。` : ""}${regionCount} の国・地域における ${channel} の検証済み価格を比較。通貨換算、米国比${hasWork ? "、現地の労働時間目安" : "、取得スナップショット"}を確認できます。`,
+      keycapAria: "同サービスのプラン切り替え",
+      keycapOverview: "プラン一覧",
+      disabledPending: "審査中",
+      disabledUnavailable: "なし",
+      emptyTitle: "公開中の価格データがありません",
+      emptyDesc: "現在比較可能な地域別価格はありません。",
+      lowestAria: "最安価格",
+      lowestKicker: "世界最安 · ",
+      noUsRef: "米国基準なし",
+      sameAsUs: "米国と同額",
+      localPricePrefix: "現地価格 ",
+      taxAtCheckout: "決済時に課税",
+      usSamePlan: "米国の同一プラン",
+      noBaseline: "基準なし",
+      annualSaved: "12か月換算の節約額",
+      periodSaved: "1回あたりの米国比節約額",
+      maxMultiple: "最高 / 最安倍率",
+      trustVerified: "検証済み",
+      trustReviewed: "確認済み",
+      trustPending: "確認待ち",
+      collectedLabel: "取得日",
+      usdOriginal: "米ドル定価",
+      fxLabel: "為替",
+      distAria: "地域別価格の分布",
+      distTitle: "地域別価格の分布",
+      distCount: (count: number) => `${count} 地域を収録`,
+      distChartAria: (hasUs: boolean) =>
+        `地域別価格の安い順分布${hasUs ? "（縦線は米国価格）" : "（米国基準なし）"}`,
+      usName: "米国",
+      lowestPrefix: "最安 · ",
+      highestPrefix: "最高 · ",
+      usBaselineTitle: "米国基準",
+      missingBaseline: "基準なし",
+      noneShort: "なし",
+      medianTitle: "中央値",
+      medianSub: "半数の地域がこれ以下",
+      multipleSub: (mult: string) => `最安値の ${mult} 倍`,
+      cheaperNote: (_cheaper: number, total: number) =>
+        ` / ${total} 地域が米国より割安`,
+      regionsHeading: "地域別価格一覧",
+      filterLabel: "地域別価格の絞り込み",
+      filterCheaper: "米国より安い",
+      filterHigher: "米国より高い",
+      sortToggleAria: "価格の並び順を切り替え",
+      searchRegionLabel: "地域を検索",
+      searchRegionPlaceholder: "国・地域名で検索（例：日本）",
+      cols: ["#", "国・地域", "換算価格", "現地価格", "米国比", "税区分"] as const,
+      usBaselineMobile: "米国基準",
+      usBaselineShort: "基準",
+      evidenceSource: "出典：",
+      evidenceCollected: "取得：",
+      evidenceFx: "為替基準日：",
+      evidenceStatus: "状態：",
+      qualityVerified: "検証済み",
+      qualityEstimated: "推計",
+      qualityPending: "確認待ち",
+      officialSource: "公式ストア",
+      viewSnapshot: "取得時の元スナップショットを見る",
+      noMatchingRegions: "条件に一致する地域がありません",
+      tableFooter: (shown: number, total: number) =>
+        `${shown} / ${total} 地域を表示 · 公式ストアの公開価格であり、最終税額は決済画面で確定します`,
+      collapseRegions: "折りたたむ",
+      expandRegions: (total: number) => `全 ${total} 地域を表示`,
+      remainingHint: (remaining: number) => `残り ${remaining} 件`,
+      editorialHeading: (name: string) => `${name} プラン概要`,
+      workHeading: "現地の所得水準と労働時間の目安",
+      workDesc:
+        "為替換算後の名目価格と、現地の所得に対する負担感は別物です。換算価格が安くても現地の負担が軽いとは限りません。",
+      workNote:
+        "同一プランの米ドル月額と各国の名目所得指標から算出した参考値であり、実際の賃金や購入可否を保証するものではありません。",
+      workFootnote:
+        "世界銀行の1人あたりGNIまたは名目GDP（各行に年を記載）を月160時間労働として換算。購買力平価（PPP）は不使用。",
+      workCols: ["国・地域", "月額換算", "必要な労働時間"] as const,
+      hoursUnit: "時間",
+      gniLabel: "1人あたりGNI",
+      gdpLabel: "名目GDP/人",
+      workOrderNote: "労働時間が短い順に表示。バーは購入推奨を意味しません。",
+      sourcePrefix: "出典：",
+      countryJoiner: "・",
+      howToBuyHeading: "地域別料金の仕組み",
+      officialPricingRef: "公式料金ページ：",
+      beforeBuyHeading: "契約前の注意点",
+    },
+  },
+  ko: {
+    common: {
+      fxFallbackStatus: (preferred: string) =>
+        `${preferred} 환율 정보를 불러올 수 없어 USD로 표시합니다. 다른 통화를 선택할 수 있습니다.`,
+      breadcrumbAria: "이동 경로",
+      productNavAria: "서비스 탐색",
+      all: "전체",
+      ai: "AI 구독",
+      streaming: "스트리밍",
+      sortAsc: "낮은 가격순",
+      sortDesc: "높은 가격순",
+      shareButton: "가격 카드 공유",
+      notProvided: "미제공",
+    },
+    home: {
+      fixtureBanner: "가상 테스트 데이터 · 로컬 UI 검증 전용이며 실제 가격이 아닙니다",
+      heroLead: "같은 구독 서비스, ",
+      heroAccent: "국가별로 얼마나 차이 날까요?",
+      heroDescLead: "전 세계 AI 및 스트리밍 구독의 공식 현지 가격을 비교하고, ",
+      heroDescStrong: "매일 자동 검증",
+      heroDescTail: "합니다.",
+      statsAria: "수록 통계",
+      statsProducts: "개 서비스",
+      statsRegions: "개 국가·지역",
+      statsPrices: "건 검증된 가격",
+      statsUpdatedSuffix: " 업데이트",
+      mapRegionAria: "대표 요금제 국가별 가격",
+      rankingHeading: "절약 랭킹",
+      rankingDesc: "서비스별 대표 요금제를 미국 기준 대비 절약 폭 순으로 정렬",
+      rankingSegmentLabel: "카테고리 필터",
+      rankingListAria: "구독 절약 순위",
+      rankingCols: ["#", "서비스", "최저가 지역", "월 환산가", "미국 대비"] as const,
+      rankingEmpty: "이 카테고리에 해당하는 대표 요금제가 없습니다.",
+      rankingViewAll: "전체 보기",
+      loadMore: "더 보기",
+      loadMoreHint: (remaining: number) => `${remaining}개 서비스 더 있음`,
+      loadMoreStatus: (shown: number, total: number) =>
+        `총 ${total}개 중 ${shown}개 표시`,
+      categoriesHeading: "카테고리별 탐색",
+      categoryProductsCount: (count: number) => `${count}개 서비스`,
+      categoryMaxSavingPrefix: "최대 절약 ",
+      categoryViewAll: (kind: "ai" | "streaming") =>
+        `${kind === "ai" ? "AI 구독" : "스트리밍"} 전체 보기`,
+      recentHeading: "최근 가격 변동",
+      recentLink: "가격 변동 기록",
+      recentSrDirection: (increase: boolean) =>
+        `현지 표시가 ${increase ? "인상" : "인하"}`,
+      recentSrNote: "최근 30일 이내 검증된 현지 통화 정가 변동(환율 변동 제외)",
+      countriesHeading: "전반적으로 저렴한 국가",
+      countriesDesc:
+        "App Store 월간 요금제를 미국과 개별 비교하여 절약률 중앙값 순으로 정렬했습니다(0–20% 눈금).",
+      countriesLink: "전체 국가",
+      countriesSrSummary: (count: number, cheaper: number) =>
+        `구독 ${count}개 기준 · ${cheaper}개가 미국보다 저렴`,
+      guidesHeading: "구독 전 필독 가이드",
+      emptyHowToReadTitle: "국가별 가격 읽는 법",
+    },
+    product: {
+      plansCount: (count: number) => `요금제 ${count}개`,
+      regionsCount: (count: number) => `${count}개 지역`,
+      updatedSuffix: " 업데이트",
+      conciseDesc: (planCount: number, regionCount: number) =>
+        `판매 중인 ${planCount}개 요금제와 최대 ${regionCount}개 국가·지역의 검증된 가격을 수록하며, 통화 환산 및 미국 기준가 비교를 지원합니다.`,
+      kickerLow: (name: string) => `최저가 요약 · ${name}`,
+      kickerDefault: (name: string) => `대표 요금제 · ${name}`,
+      cheapestInPrefix: "최저가 지역:",
+      cheapestInSuffix: "",
+      baselineSuffix: "기준 가격",
+      usBaselineNote: "· 동일 요금제·동일 결제 경로",
+      usBaselinePrefix: "미국 기준",
+      usOnlyNote: "현재 미국 공개 가격만 수록되어 있습니다",
+      sameAsUsNote: "최저가가 미국 기준가와 동일합니다",
+      viewPlanRegions: (name: string) => `${name} 국가별 가격 보기`,
+      plansSectionHeading: "요금제 개요",
+      planCardMeta: (channel: string, cycleLabel: string, coverage: number) =>
+        `${channel} · /${cycleLabel} · ${coverage}개 지역`,
+      lowestTag: " · 최저",
+      baselineTag: " · 기준",
+      usShortPrefix: "미국 ",
+      usOnlyBadge: "미국 기준만 있음",
+      sameAsUsBadge: "미국과 동일",
+      noUsBadge: "미국 기준 없음",
+      bestForDt: "추천 대상",
+      differenceDt: "주요 차이",
+      planCardCtaMulti: (name: string, coverage: number) =>
+        `${name} 전체 ${coverage}개 지역 및 현지 통화 보기`,
+      planCardCtaSingle: (name: string) => `${name} 요금 및 결제 안내 보기`,
+      planCardSrLink: (name: string) => `${name} 국가별 가격 보기`,
+      matrixHeading: "주요 국가 요금제 교차 비교",
+      matrixDesc: (count: number, asc: boolean, hasUs: boolean) =>
+        `${asc ? "저렴한" : "높은"} 상위 ${count}개 대표 지역${hasUs ? "과 미국 기준" : ""} 비교 · 요금제 열 제목을 클릭해 정렬 변경`,
+      matrixSortLabel: "정렬 순서",
+      matrixTableAria: "대표 지역 요금제별 가격",
+      matrixCountryCol: "국가 / 지역",
+      matrixActionCol: "상세",
+      usBadge: "기준",
+      usCellSub: "미국 기준",
+      emptyCellAria: "비교 가능한 가격 없음",
+      matrixRowView: "보기",
+      matrixFooterNote: (shown: number, total: number) =>
+        `대표 ${shown} / ${total}개 지역 표시 · 전체 순위·현지 정가·세금 스냅샷은 개별 요금제 페이지에서 확인하세요`,
+      matrixDrilldownMulti: (name: string, coverage: number) =>
+        `${name} 전체 ${coverage}개 지역 순위 보기`,
+      matrixDrilldownSingle: (name: string) => `${name} 가격 상세 보기`,
+    },
+    plan: {
+      metaLine: (channel: string, cycleLabel: string, count: number) =>
+        `${channel} · /${cycleLabel} · ${count}개 지역`,
+      collectedSuffix: " 수집",
+      conciseDesc: (
+        lead: string | undefined,
+        regionCount: number,
+        channel: string,
+        hasWork: boolean,
+      ) =>
+        `${lead ? `${lead}. ` : ""}${regionCount}개 국가·지역의 검증된 ${channel} 가격을 실시간 환율, 미국 기준 대비 차이${hasWork ? " 및 현지 근로시간 부담 지표" : " 및 원본 스냅샷"}와 함께 비교합니다.`,
+      keycapAria: "동일 서비스 내 요금제 전환",
+      keycapOverview: "요금제 전체",
+      disabledPending: "검토 중",
+      disabledUnavailable: "없음",
+      emptyTitle: "공개된 가격 데이터가 없습니다",
+      emptyDesc: "현재 비교 가능한 국가별 가격이 없습니다.",
+      lowestAria: "최저가",
+      lowestKicker: "전 세계 최저 · ",
+      noUsRef: "미국 기준 없음",
+      sameAsUs: "미국과 동일",
+      localPricePrefix: "현지 정가 ",
+      taxAtCheckout: "결제 시 세금 부과",
+      usSamePlan: "미국 동일 요금제",
+      noBaseline: "기준 없음",
+      annualSaved: "12개월 환산 절약액",
+      periodSaved: "결제 주기당 미국 대비 절약",
+      maxMultiple: "최고가 / 최저가 배율",
+      trustVerified: "검증됨",
+      trustReviewed: "검토됨",
+      trustPending: "검토 대기",
+      collectedLabel: "수집일",
+      usdOriginal: "미국 달러 정가",
+      fxLabel: "환율",
+      distAria: "국가별 가격 분포",
+      distTitle: "국가별 가격 분포",
+      distCount: (count: number) => `${count}개 지역 수록`,
+      distChartAria: (hasUs: boolean) =>
+        `낮은 가격부터 높은 가격 순 국가별 분포${hasUs ? ", 세로선은 미국 가격" : ", 미국 기준 없음"}`,
+      usName: "미국",
+      lowestPrefix: "최저 · ",
+      highestPrefix: "최고 · ",
+      usBaselineTitle: "미국 기준",
+      missingBaseline: "기준 없음",
+      noneShort: "없음",
+      medianTitle: "중앙값",
+      medianSub: "절반의 지역이 이보다 저렴",
+      multipleSub: (mult: string) => `최저가의 ${mult}배`,
+      cheaperNote: (_cheaper: number, total: number) =>
+        ` / ${total}개 지역이 미국보다 저렴`,
+      regionsHeading: "국가별 가격",
+      filterLabel: "국가별 가격 필터",
+      filterCheaper: "미국보다 저렴",
+      filterHigher: "미국보다 비쌈",
+      sortToggleAria: "가격 정렬 순서 전환",
+      searchRegionLabel: "지역 검색",
+      searchRegionPlaceholder: "국가·지역 검색 (예: 일본)",
+      cols: ["#", "지역", "환산가", "현지 정가", "미국 대비", "세금 안내"] as const,
+      usBaselineMobile: "미국 기준",
+      usBaselineShort: "기준",
+      evidenceSource: "출처: ",
+      evidenceCollected: "수집일: ",
+      evidenceFx: "환율 기준일: ",
+      evidenceStatus: "상태: ",
+      qualityVerified: "검증됨",
+      qualityEstimated: "추정치",
+      qualityPending: "대기 중",
+      officialSource: "공식 스토어",
+      viewSnapshot: "수집 당시 원본 스냅샷 보기",
+      noMatchingRegions: "조건에 맞는 지역 가격이 없습니다",
+      tableFooter: (shown: number, total: number) =>
+        `${shown} / ${total}개 지역 표시 · 공식 스토어 공개 표시가 기준이며 최종 세금은 결제 시 확정됩니다`,
+      collapseRegions: "지역 접기",
+      expandRegions: (total: number) => `전체 ${total}개 지역 펼치기`,
+      remainingHint: (remaining: number) => `${remaining}개 더 보기`,
+      editorialHeading: (name: string) => `${name} 요금제 안내`,
+      workHeading: "현지 소득 대비 부담 맥락",
+      workDesc:
+        "환율 환산 가격과 현지 소득 대비 체감 부담은 서로 다른 지표입니다. 환산 가격이 낮더라도 현지 근로 시간 부담이 낮다는 뜻은 아닙니다.",
+      workNote:
+        "동일 요금제의 미화 월 요금과 국가별 명목 소득 지표로 계산한 참고치이며 실제 임금이나 구매 자격을 보증하지 않습니다.",
+      workFootnote:
+        "세계은행 1인당 국민총소득(GNI) 또는 명목 GDP(행별 연도 표기)를 월 160시간 근로 기준으로 환산했으며 구매력평가(PPP)는 사용하지 않습니다.",
+      workCols: ["지역", "월 환산가", "필요 근로 시간"] as const,
+      hoursUnit: "시간",
+      gniLabel: "1인당 GNI",
+      gdpLabel: "1인당 명목 GDP",
+      workOrderNote: "근로 시간이 짧은 순으로 정렬됨 · 막대는 구매 추천을 의미하지 않습니다.",
+      sourcePrefix: "출처: ",
+      countryJoiner: ", ",
+      howToBuyHeading: "지역별 구독 가격 작동 방식",
+      officialPricingRef: "공식 요금 안내: ",
+      beforeBuyHeading: "구독 전 유의사항",
+    },
+  },
+  es: {
+    common: {
+      fxFallbackStatus: (preferred: string) =>
+        `El tipo de cambio de ${preferred} no está disponible. Mostrando USD; puedes elegir otra divisa.`,
+      breadcrumbAria: "Ruta de navegación",
+      productNavAria: "Navegación de productos",
+      all: "Todos",
+      ai: "Suscripciones IA",
+      streaming: "Streaming",
+      sortAsc: "Menor a mayor",
+      sortDesc: "Mayor a menor",
+      shareButton: "Compartir tarjeta",
+      notProvided: "No indicado",
+    },
+    home: {
+      fixtureBanner:
+        "Datos ficticios de prueba · Solo para verificación local de interfaz, no son precios reales",
+      heroLead: "La misma suscripción. ",
+      heroAccent: "Descubre cuánto paga cada país.",
+      heroDescLead:
+        "Compara precios reales de suscripciones de IA y streaming en todo el mundo, ",
+      heroDescStrong: "verificados a diario",
+      heroDescTail: ".",
+      statsAria: "Estadísticas de cobertura",
+      statsProducts: "servicios",
+      statsRegions: "regiones",
+      statsPrices: "precios verificados",
+      statsUpdatedSuffix: "Actualizado el",
+      mapRegionAria: "Precios regionales del plan representativo",
+      rankingHeading: "Ranking de Ahorro",
+      rankingDesc:
+        "Un plan principal por servicio, ordenado por mayor ahorro frente a EE. UU.",
+      rankingSegmentLabel: "Categoría del ranking",
+      rankingListAria: "Ranking de ahorro en suscripciones",
+      rankingCols: ["#", "Suscripción", "Región más barata", "Mensual", "vs EE. UU."] as const,
+      rankingEmpty: "No hay planes representativos disponibles en esta categoría.",
+      rankingViewAll: "Ver todos",
+      loadMore: "Cargar más",
+      loadMoreHint: (remaining: number) => `${remaining} servicios más`,
+      loadMoreStatus: (shown: number, total: number) =>
+        `Mostrando ${shown} de ${total} servicios`,
+      categoriesHeading: "Explorar por Categoría",
+      categoryProductsCount: (count: number) => `${count} servicios`,
+      categoryMaxSavingPrefix: "Ahorra hasta ",
+      categoryViewAll: (kind: "ai" | "streaming") =>
+        `Ver todo en ${kind === "ai" ? "IA" : "streaming"}`,
+      recentHeading: "Cambios Recientes de Precio",
+      recentLink: "Historial de precios",
+      recentSrDirection: (increase: boolean) =>
+        `El precio local ${increase ? "subió" : "bajó"}`,
+      recentSrNote:
+        "Cambios verificados en moneda local en los últimos 30 días, sin fluctuación cambiaria",
+      countriesHeading: "Países Más Baratos en General",
+      countriesDesc:
+        "Planes mensuales de App Store comparados uno a uno frente a EE. UU. y ordenados por ahorro mediano (escala 0–20%).",
+      countriesLink: "Todos los países",
+      countriesSrSummary: (count: number, cheaper: number) =>
+        `Basado en ${count} suscripciones · ${cheaper} más baratas que EE. UU.`,
+      guidesHeading: "Leer Antes de Suscribirse",
+      emptyHowToReadTitle: "Cómo interpretar los precios regionales",
+    },
+    product: {
+      plansCount: (count: number) => `${count} ${count === 1 ? "plan" : "planes"}`,
+      regionsCount: (count: number) => `${count} ${count === 1 ? "región" : "regiones"}`,
+      updatedSuffix: "Actualizado el",
+      conciseDesc: (planCount: number, regionCount: number) =>
+        `Cubre ${planCount} ${planCount === 1 ? "plan activo" : "planes activos"} en hasta ${regionCount} regiones verificadas, con conversión de divisas y comparación frente a EE. UU.`,
+      kickerLow: (name: string) => `Precio mínimo · ${name}`,
+      kickerDefault: (name: string) => `Plan destacado · ${name}`,
+      cheapestInPrefix: "es más barato en",
+      cheapestInSuffix: "",
+      baselineSuffix: "precio base",
+      usBaselineNote: "· Mismo plan y canal",
+      usBaselinePrefix: "Base EE. UU.",
+      usOnlyNote: "Actualmente solo figura el precio público de EE. UU.",
+      sameAsUsNote: "El precio mínimo coincide con la base de EE. UU.",
+      viewPlanRegions: (name: string) => `Ver precios regionales de ${name}`,
+      plansSectionHeading: "Resumen de Planes",
+      planCardMeta: (channel: string, cycleLabel: string, coverage: number) =>
+        `${channel} · /${cycleLabel} · ${coverage} ${coverage === 1 ? "región" : "regiones"}`,
+      lowestTag: " · Mínimo",
+      baselineTag: " · Base",
+      usShortPrefix: "EE. UU. ",
+      usOnlyBadge: "Solo base EE. UU.",
+      sameAsUsBadge: "Igual que EE. UU.",
+      noUsBadge: "Sin base EE. UU.",
+      bestForDt: "Ideal para",
+      differenceDt: "Diferencia clave",
+      planCardCtaMulti: (name: string, coverage: number) =>
+        `Comparar las ${coverage} regiones y precios locales de ${name}`,
+      planCardCtaSingle: (name: string) => `Ver precios y notas de ${name}`,
+      planCardSrLink: (name: string) => `Ver precios por región de ${name}`,
+      matrixHeading: "Comparación de Regiones entre Planes",
+      matrixDesc: (count: number, asc: boolean, hasUs: boolean) =>
+        `Las ${count} regiones ${asc ? "más baratas" : "más caras"}${hasUs ? " junto a la base de EE. UU." : ""}; pulsa cualquier plan para reordenar`,
+      matrixSortLabel: "Orden de precios",
+      matrixTableAria: "Precios regionales representativos por plan",
+      matrixCountryCol: "País / Región",
+      matrixActionCol: "Detalle",
+      usBadge: "Base",
+      usCellSub: "Base EE. UU.",
+      emptyCellAria: "Sin precio comparable",
+      matrixRowView: "Ver",
+      matrixFooterNote: (shown: number, total: number) =>
+        `Mostrando ${shown} de ${total} regiones representativas · Abre un plan para ver el ranking completo y notas fiscales`,
+      matrixDrilldownMulti: (name: string, coverage: number) =>
+        `Ver ranking completo de ${coverage} regiones de ${name}`,
+      matrixDrilldownSingle: (name: string) => `Ver detalles de precios de ${name}`,
+    },
+    plan: {
+      metaLine: (channel: string, cycleLabel: string, count: number) =>
+        `${channel} · /${cycleLabel} · ${count} ${count === 1 ? "región" : "regiones"}`,
+      collectedSuffix: "Verificado el",
+      conciseDesc: (
+        lead: string | undefined,
+        regionCount: number,
+        channel: string,
+        hasWork: boolean,
+      ) =>
+        `${lead ? `${lead}. ` : ""}Compara precios verificados de ${channel} en ${regionCount === 1 ? "1 país" : `${regionCount} países y regiones`} con conversión de moneda, diferencia frente a EE. UU.${hasWork ? " y esfuerzo salarial local" : " y capturas originales"}.`,
+      keycapAria: "Cambiar de plan en este servicio",
+      keycapOverview: "Todos los planes",
+      disabledPending: "Pendiente",
+      disabledUnavailable: "N/D",
+      emptyTitle: "Aún no hay precios publicados",
+      emptyDesc: "No hay precios regionales comparables en este momento.",
+      lowestAria: "Precio más bajo",
+      lowestKicker: "Mínimo global · ",
+      noUsRef: "Sin base EE. UU.",
+      sameAsUs: "Igual que EE. UU.",
+      localPricePrefix: "Precio local ",
+      taxAtCheckout: "Impuestos al pagar",
+      usSamePlan: "Mismo plan en EE. UU.",
+      noBaseline: "Sin base",
+      annualSaved: "Ahorro en 12 meses vs EE. UU.",
+      periodSaved: "Ahorro por ciclo vs EE. UU.",
+      maxMultiple: "Relación máx. / mín.",
+      trustVerified: "Verificado",
+      trustReviewed: "Revisado",
+      trustPending: "En revisión",
+      collectedLabel: "Capturado",
+      usdOriginal: "Precio lista USD",
+      fxLabel: "Cambio",
+      distAria: "Distribución de precios por región",
+      distTitle: "Distribución Regional de Precios",
+      distCount: (count: number) => `${count} regiones registradas`,
+      distChartAria: (hasUs: boolean) =>
+        `Precios regionales de menor a mayor${hasUs ? ", la línea vertical indica EE. UU." : ", sin referencia de EE. UU."}`,
+      usName: "EE. UU.",
+      lowestPrefix: "Mínimo · ",
+      highestPrefix: "Máximo · ",
+      usBaselineTitle: "Base EE. UU.",
+      missingBaseline: "Sin base",
+      noneShort: "N/D",
+      medianTitle: "Mediana",
+      medianSub: "La mitad de regiones cuesta menos",
+      multipleSub: (mult: string) => `${mult}x el precio mínimo`,
+      cheaperNote: (_cheaper: number, total: number) =>
+        ` / ${total} regiones más baratas que EE. UU.`,
+      regionsHeading: "Precios por Región",
+      filterLabel: "Filtrar precios por región",
+      filterCheaper: "Menor vs EE. UU.",
+      filterHigher: "Mayor vs EE. UU.",
+      sortToggleAria: "Cambiar orden de precios",
+      searchRegionLabel: "Buscar región",
+      searchRegionPlaceholder: "Buscar país o región...",
+      cols: ["#", "Región", "Convertido", "Precio local", "vs EE. UU.", "Impuestos"] as const,
+      usBaselineMobile: "Base EE. UU.",
+      usBaselineShort: "Base",
+      evidenceSource: "Fuente: ",
+      evidenceCollected: "Capturado: ",
+      evidenceFx: "Fecha FX: ",
+      evidenceStatus: "Estado: ",
+      qualityVerified: "Verificado",
+      qualityEstimated: "Estimado",
+      qualityPending: "Pendiente",
+      officialSource: "Fuente oficial",
+      viewSnapshot: "Ver captura original de tienda",
+      noMatchingRegions: "Ninguna región coincide con el filtro",
+      tableFooter: (shown: number, total: number) =>
+        `Mostrando ${shown} de ${total} regiones · Precios públicos de lista; impuestos finales según página de pago`,
+      collapseRegions: "Mostrar menos regiones",
+      expandRegions: (total: number) => `Ver las ${total} regiones`,
+      remainingHint: (remaining: number) => `${remaining} más`,
+      editorialHeading: (name: string) => `Resumen del Plan ${name}`,
+      workHeading: "Ingresos Locales y Horas de Trabajo",
+      workDesc:
+        "El precio convertido nominal y el esfuerzo salarial local miden cosas distintas. Un precio menor en dólares no implica menor carga para el ingreso local.",
+      workNote:
+        "Calculado a partir de la tarifa mensual en USD y referencias de renta nacional; no constituye oferta salarial ni garantía de compra.",
+      workFootnote:
+        "INB per cápita (Atlas) o PIB nominal per cápita del Banco Mundial (año indicado por fila), asumiendo 160 h laborales/mes; no se usa PPA.",
+      workCols: ["Región", "Convertido / mes", "Horas de trabajo"] as const,
+      hoursUnit: "h",
+      gniLabel: "INB per cápita",
+      gdpLabel: "PIB nominal/cápita",
+      workOrderNote:
+        "Ordenado de menos a más horas de trabajo; las barras no implican recomendación de compra.",
+      sourcePrefix: "Fuente: ",
+      countryJoiner: ", ",
+      howToBuyHeading: "Cómo Funciona el Precio Regional",
+      officialPricingRef: "Referencia oficial de precios: ",
+      beforeBuyHeading: "Antes de Suscribirte",
     },
   },
 } as const;

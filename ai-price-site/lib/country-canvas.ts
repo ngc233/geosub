@@ -1,6 +1,6 @@
 import type { getCountryHubRows } from "./country-hubs.ts";
 import { homepageCountries } from "./homepage-summary.ts";
-import { getChinesePlanDisplayName, getPlanDisplayName } from "./pricing-labels.ts";
+import { getCanvasPlanDisplayName } from "./homepage-display.ts";
 import { formatPublicDate } from "./public-date.ts";
 import type { CanvasLocale } from "./canvas-ui-copy.ts";
 
@@ -28,7 +28,7 @@ export function countryCanvasRows(rows: CountryCanvasRow[], now = new Date(), lo
   return [...rows].sort((a, b) => (countrySaving(b) ?? -Infinity) - (countrySaving(a) ?? -Infinity)
     || a.productName.localeCompare(b.productName) || a.planSlug.localeCompare(b.planSlug)).map(row => ({
       productSlug: row.productSlug, productName: row.productName, planSlug: row.planSlug,
-      planName: locale === "en" ? getPlanDisplayName(row.productName, row.planName) : getChinesePlanDisplayName(row.productName, row.planName),
+      planName: getCanvasPlanDisplayName(row.productName, row.planName, locale),
       category: row.category,
       amount: row.amount, currency: row.currency, usd: row.usd, usPrice: row.usPrice,
       saving: countrySaving(row), checkedAtText: formatPublicDate(row.checkedAt, now, locale)?.text ?? "",

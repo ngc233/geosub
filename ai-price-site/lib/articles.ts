@@ -74,13 +74,67 @@ const articleTypeLabelsEn: Record<ArticleType, string> = {
   OTHER: "Other",
 };
 
+const articleTypeLabelsByLocale: Partial<
+  Record<SiteLocale, Record<ArticleType, string>>
+> = {
+  zh: articleTypeLabels,
+  en: articleTypeLabelsEn,
+  "zh-tw": {
+    GUIDE: "指南",
+    HOW_TO: "教學",
+    COMPARISON: "比較",
+    RANKING: "排行榜",
+    NEWS: "更新",
+    METHODOLOGY: "研究方法",
+    FAQ_HUB: "常見問答",
+    REVIEW: "評測",
+    ANNOUNCEMENT: "公告",
+    OTHER: "其他",
+  },
+  ja: {
+    GUIDE: "ガイド",
+    HOW_TO: "ハウツー",
+    COMPARISON: "比較",
+    RANKING: "ランキング",
+    NEWS: "更新情報",
+    METHODOLOGY: "調査方法",
+    FAQ_HUB: "よくある質問",
+    REVIEW: "レビュー",
+    ANNOUNCEMENT: "お知らせ",
+    OTHER: "その他",
+  },
+  ko: {
+    GUIDE: "가이드",
+    HOW_TO: "활용법",
+    COMPARISON: "비교",
+    RANKING: "순위",
+    NEWS: "업데이트",
+    METHODOLOGY: "방법론",
+    FAQ_HUB: "FAQ",
+    REVIEW: "리뷰",
+    ANNOUNCEMENT: "공지",
+    OTHER: "기타",
+  },
+  es: {
+    GUIDE: "Guía",
+    HOW_TO: "Tutorial",
+    COMPARISON: "Comparativa",
+    RANKING: "Ranking",
+    NEWS: "Actualización",
+    METHODOLOGY: "Metodología",
+    FAQ_HUB: "Preguntas frecuentes",
+    REVIEW: "Análisis",
+    ANNOUNCEMENT: "Aviso",
+    OTHER: "Otros",
+  },
+};
+
 export function getArticleTypeLabel(
   articleType: ArticleType,
   locale: SiteLocale = "zh",
 ) {
-  return locale === "en"
-    ? articleTypeLabelsEn[articleType]
-    : articleTypeLabels[articleType];
+  const labels = articleTypeLabelsByLocale[locale] ?? articleTypeLabelsEn;
+  return labels[articleType];
 }
 
 export const articleStatusLabels: Record<ArticleStatus, string> = {
@@ -502,13 +556,37 @@ export async function getAdminArticles({
   });
 }
 
+const unpublishedByLocale: Partial<Record<SiteLocale, string>> = {
+  zh: "未发布",
+  "zh-tw": "未發布",
+  en: "Unpublished",
+  ja: "未公開",
+  ko: "미게시",
+  es: "Sin publicar",
+};
+
+const articleIntlLocaleBySiteLocale: Record<SiteLocale, string> = {
+  zh: "zh-CN",
+  "zh-tw": "zh-TW",
+  en: "en-US",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  es: "es-ES",
+  tr: "tr-TR",
+  ar: "ar",
+  fr: "fr-FR",
+  it: "it-IT",
+  de: "de-DE",
+  pt: "pt-PT",
+};
+
 export function formatArticleDate(
   value: Date | null | undefined,
   locale: SiteLocale = "zh",
 ) {
-  if (!value) return locale === "en" ? "Unpublished" : "未发布";
+  if (!value) return unpublishedByLocale[locale] ?? "Unpublished";
 
-  return value.toLocaleDateString(locale === "en" ? "en-US" : "zh-CN", {
+  return value.toLocaleDateString(articleIntlLocaleBySiteLocale[locale] || "en-US", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

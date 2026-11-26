@@ -2,18 +2,24 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublicGuidePage from "./PublicGuidePage";
 import { getArticleTypeLabel, formatArticleDate } from "../lib/articles";
+import type { CanvasLocale } from "../lib/canvas-ui-copy";
 import { loadCoreGuideCmsState } from "../lib/core-guide-cms";
 import {
   getCoreGuideDefinition,
   parseCoreGuideMarkdown,
   type CoreGuideDefinition,
-  type CoreGuideLocale,
   type CoreGuideSlug,
 } from "../lib/core-guide-content";
 import { stripGeoSubTitleSuffix } from "../lib/pricing-routes";
 import { serializeJsonLd } from "../lib/json-ld";
+import { isUnifiedPublicLocale } from "../lib/public-style-rollout";
+import {
+  getLocaleRobotsPolicy,
+  isSeoIndexableLocale,
+} from "../lib/seo-indexing-policy";
 import {
   getDefaultArticleQuickTools,
+  getGuideArticleUiCopy,
   getGuideHubCopy,
   getSiblingCoreGuideLinks,
   type FoundationalGuideKey,
@@ -21,7 +27,7 @@ import {
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://geosub.org").replace(/\/$/, "");
 
-function routePath(locale: CoreGuideLocale, slug: CoreGuideSlug) {
+function routePath(locale: CanvasLocale, slug: CoreGuideSlug) {
   return `/${locale}/guides/${slug}`;
 }
 
@@ -49,7 +55,7 @@ export async function getCoreGuideMetadata({
   locale,
   slug,
 }: {
-  locale: CoreGuideLocale;
+  locale: CanvasLocale;
   slug: CoreGuideSlug;
 }): Promise<Metadata> {
   const definition = getCoreGuideDefinition(locale, slug);
@@ -68,21 +74,26 @@ export async function getCoreGuideMetadata({
   const canonical = article?.canonicalUrl || absoluteUrl(path);
   const image = article?.ogImageUrl || article?.coverImageUrl || undefined;
   const isUnavailableInCms = state.managed && !article;
+  const baseRobots = getLocaleRobotsPolicy(locale);
 
   return {
     title,
     description,
     alternates: {
       canonical,
-      languages: {
-        "zh-CN": routePath("zh", slug),
-        en: routePath("en", slug),
-        "x-default": routePath("en", slug),
-      },
+      ...(isSeoIndexableLocale(locale)
+        ? {
+            languages: {
+              "zh-CN": routePath("zh", slug),
+              en: routePath("en", slug),
+              "x-default": routePath("en", slug),
+            },
+          }
+        : {}),
     },
     robots: {
-      index: !isUnavailableInCms && !article?.noindex,
-      follow: !article?.nofollow,
+      index: baseRobots.index && !isUnavailableInCms && !article?.noindex,
+      follow: baseRobots.follow && !article?.nofollow,
     },
     openGraph: {
       type: "article",
@@ -106,7 +117,7 @@ export default async function CmsBackedGuidePage({
   locale,
   slug,
 }: {
-  locale: CoreGuideLocale;
+  locale: CanvasLocale;
   slug: CoreGuideSlug;
 }) {
   const definition = getCoreGuideDefinition(locale, slug);
@@ -120,6 +131,7 @@ export default async function CmsBackedGuidePage({
   const description = article?.subtitle || article?.excerpt || definition.description;
   const canonical = article?.canonicalUrl || absoluteUrl(routePath(locale, slug));
   const copy = getGuideHubCopy(locale);
+  const uiCopy = getGuideArticleUiCopy(locale);
   const focusKey: FoundationalGuideKey | "general" =
     slug === "gift-card-guide" ? "general" : slug;
   const cmsRelatedLinks = (article?.relations || []).flatMap((relation) => {
@@ -148,11 +160,7 @@ export default async function CmsBackedGuidePage({
       ? cmsRelatedLinks
       : getSiblingCoreGuideLinks(locale, focusKey);
   const relatedLabel =
-    cmsRelatedLinks.length > 0
-      ? locale === "zh"
-        ? "相关阅读"
-        : "Related reading"
-      : copy.articleContinueTitle;
+    cmsRelatedLinks.length > 0 ? uiCopy.relatedReading : copy.articleContinueTitle;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": article?.structuredDataType === "NONE" ? "WebPage" : "Article",
@@ -162,7 +170,7 @@ export default async function CmsBackedGuidePage({
     ...(article?.updatedAt ? { dateModified: article.updatedAt.toISOString() } : {}),
     author: {
       "@type": "Organization",
-      name: article?.authorName || (locale === "zh" ? "GeoSub 编辑部" : "GeoSub Editorial"),
+      name: article?.authorName || uiCopy.editorialAuthor,
     },
     publisher: {
       "@type": "Organization",
@@ -179,16 +187,14 @@ export default async function CmsBackedGuidePage({
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
       <PublicGuidePage
-        canvas={locale === "zh" || locale === "en"}
+        canvas={isUnifiedPublicLocale(locale)}
         locale={locale}
         metadata={
           article ? (
             <>
               <span>{formatArticleDate(article.publishedAt, locale)}</span>
               {article.readingTime ? (
-                <span>
-                  {article.readingTime} {locale === "zh" ? "分钟读完" : "min read"}
-                </span>
+                <span>{copy.minutesLabel(article.readingTime)}</span>
               ) : null}
             </>
           ) : (

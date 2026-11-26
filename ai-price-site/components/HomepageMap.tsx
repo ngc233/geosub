@@ -11,7 +11,100 @@ import { parseCarouselDuration } from "../lib/carousel-duration";
 import { homepageMapHeight, homepageMapWidth, spaceHomepageMapDots } from "../lib/homepage-map-spacing";
 import { getDisplayCurrencyFractionDigits, isSupportedDisplayCurrency } from "../lib/display-currency";
 import { getLocalizedRegionName } from "../lib/locale-format";
-import { canvasIntlLocale, type CanvasLocale } from "../lib/canvas-ui-copy";
+import { canvasIntlLocale, canvasUiCopy, type CanvasLocale } from "../lib/canvas-ui-copy";
+
+const mapUiCopy: Record<
+  CanvasLocale,
+  {
+    heading: string;
+    viewAllRegions: string;
+    svgAria: (active: HomepageRepresentative) => string;
+    bubbleLabel: (isLowest: boolean, isUs: boolean) => string;
+    viewRegion: string;
+    mapRegionAria: string;
+    mapProductsAria: string;
+    noteReduced: string;
+    notePaused: string;
+    noteRunning: string;
+  }
+> = {
+  zh: {
+    heading: "各地区价格 · App Store · 每月",
+    viewAllRegions: "查看全部地区",
+    svgAria: (active) => `${active.name} ${active.plan} 各地区价格地图`,
+    bubbleLabel: (isLowest) => `${isLowest ? "全球最低" : "地区价格"} ·`,
+    viewRegion: "查看地区",
+    mapRegionAria: "地图查看地区",
+    mapProductsAria: "地图产品",
+    noteReduced: "已按系统设置关闭自动轮换",
+    notePaused: "自动轮换已暂停",
+    noteRunning: "每 4.5 秒轮换一个产品；悬停或聚焦预览，点击查看详情",
+  },
+  "zh-tw": {
+    heading: "各地區價格 · App Store · 每月",
+    viewAllRegions: "查看全部地區",
+    svgAria: (active) => `${active.name} ${active.plan} 各地區價格地圖`,
+    bubbleLabel: (isLowest, isUs) => `${isLowest ? "全球最低" : isUs ? "美國基準" : "地區價格"} ·`,
+    viewRegion: "查看地區",
+    mapRegionAria: "地圖查看地區",
+    mapProductsAria: "地圖產品",
+    noteReduced: "已依系統設定關閉自動輪播",
+    notePaused: "自動輪播已暫停",
+    noteRunning: "每 4.5 秒輪播一個產品；懸停或聚焦預覽，點擊查看詳情",
+  },
+  en: {
+    heading: "Regional prices · App Store · Monthly",
+    viewAllRegions: "View all regions",
+    svgAria: (active) => `${active.planDisplayName} regional prices`,
+    bubbleLabel: (isLowest, isUs) =>
+      isLowest ? "Global lowest ·" : isUs ? "US baseline ·" : "Regional price ·",
+    viewRegion: "View region",
+    mapRegionAria: "Map region",
+    mapProductsAria: "Map products",
+    noteReduced: "Autoplay is off with reduced motion.",
+    notePaused: "Autoplay paused · Hover or focus a product pill to preview, click to open details",
+    noteRunning: "Rotates every 4.5s · Hover or focus to preview, click to open plan details",
+  },
+  ja: {
+    heading: "地域別価格 · App Store · 月額",
+    viewAllRegions: "すべての地域を見る",
+    svgAria: (active) => `${active.planDisplayName} の地域別価格マップ`,
+    bubbleLabel: (isLowest, isUs) =>
+      `${isLowest ? "世界最安" : isUs ? "米国基準" : "地域別価格"} ·`,
+    viewRegion: "地域を選択",
+    mapRegionAria: "地図の表示地域",
+    mapProductsAria: "対象サービス",
+    noteReduced: "視差効果を減らす設定により自動切り替えはオフです",
+    notePaused: "自動切り替え一時停止中 · ホバーやフォーカスでプレビュー、クリックで詳細へ",
+    noteRunning: "4.5秒ごとに切り替え · ホバーでプレビュー、クリックでプラン詳細へ",
+  },
+  ko: {
+    heading: "국가별 가격 · App Store · 월간",
+    viewAllRegions: "전체 지역 보기",
+    svgAria: (active) => `${active.planDisplayName} 국가별 가격 지도`,
+    bubbleLabel: (isLowest, isUs) =>
+      `${isLowest ? "전 세계 최저" : isUs ? "미국 기준" : "국가별 가격"} ·`,
+    viewRegion: "지역 선택",
+    mapRegionAria: "지도 표시 지역",
+    mapProductsAria: "지도 서비스",
+    noteReduced: "동작 줄이기 설정에 따라 자동 전환이 꺼져 있습니다",
+    notePaused: "자동 전환 일시정지됨 · 호버·포커스로 미리보기, 클릭하여 상세 보기",
+    noteRunning: "4.5초마다 자동 전환 · 호버하여 미리보기, 클릭하여 요금제 상세 보기",
+  },
+  es: {
+    heading: "Precios regionales · App Store · Mensual",
+    viewAllRegions: "Ver todas las regiones",
+    svgAria: (active) => `Mapa de precios regionales de ${active.planDisplayName}`,
+    bubbleLabel: (isLowest, isUs) =>
+      `${isLowest ? "Mínimo global" : isUs ? "Base EE. UU." : "Precio regional"} ·`,
+    viewRegion: "Ver región",
+    mapRegionAria: "Región del mapa",
+    mapProductsAria: "Servicios en el mapa",
+    noteReduced: "La rotación automática está desactivada por reducción de movimiento.",
+    notePaused: "Rotación en pausa · Pasa el cursor o enfoca para previsualizar, haz clic para abrir",
+    noteRunning: "Rota cada 4,5 s · Pasa el cursor para previsualizar, haz clic para ver detalles",
+  },
+};
 
 export default function HomepageMap({
   products,
@@ -30,8 +123,10 @@ export default function HomepageMap({
   locale?: CanvasLocale;
   englishRegionNames?: Readonly<Record<string, string>>;
 }) {
-  const english = locale === "en" || Boolean(englishRegionNames);
-  const effectiveLocale: CanvasLocale = english ? "en" : "zh";
+  const effectiveLocale: CanvasLocale = englishRegionNames ? "en" : locale;
+  const spacedMap = effectiveLocale !== "zh" || Boolean(englishRegionNames);
+  const copy = mapUiCopy[effectiveLocale];
+  const usName = canvasUiCopy[effectiveLocale].plan.usName;
   const regionName = (code: string) =>
     englishRegionNames
       ? englishRegionNames[code] ?? code
@@ -55,7 +150,7 @@ export default function HomepageMap({
   const [bounds, setBounds] = useState({ width: 0, height: 0, dot: 0, lowest: 0 });
 
   const positions = useMemo(() => {
-    if (!english || !bounds.width || !bounds.height) return map.points;
+    if (!spacedMap || !bounds.width || !bounds.height) return map.points;
     const dots = active.prices.flatMap((row) => {
       const point = map.points[row.code];
       return point
@@ -70,7 +165,7 @@ export default function HomepageMap({
         : [];
     });
     return Object.fromEntries(spaceHomepageMapDots(dots, bounds.width, bounds.height, active.lowest.code));
-  }, [active, bounds, english, map.points]);
+  }, [active, bounds, spacedMap, map.points]);
 
   const [jelly, setJelly] = useState<{
     x: number;
@@ -185,7 +280,7 @@ export default function HomepageMap({
   }, []);
 
   useLayoutEffect(() => {
-    if (!english || !stage.current) return;
+    if (!spacedMap || !stage.current) return;
     const element = stage.current;
     const measure = () => {
       const { width, height } = element.getBoundingClientRect();
@@ -201,7 +296,7 @@ export default function HomepageMap({
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [active.slug, english]);
+  }, [active.slug, spacedMap]);
 
   const choose = (next: number) => {
     setPaused(true);
@@ -224,18 +319,12 @@ export default function HomepageMap({
         : shown.usd < active.usPrice
           ? "low"
           : "baseline";
-  const label = english
-    ? shown.code === active.lowest.code
-      ? "Global lowest ·"
-      : shown.code === "US"
-        ? "US baseline ·"
-        : "Regional price ·"
-    : `${shown.code === active.lowest.code ? "全球最低" : "地区价格"} ·`;
+  const label = copy.bubbleLabel(shown.code === active.lowest.code, shown.code === "US");
 
   const choosePoint = (event: MouseEvent<HTMLButtonElement>, code: string) => {
     const pointer = touchPoint.current ?? { x: event.clientX, y: event.clientY };
     touchPoint.current = null;
-    if (!english || !event.detail || !stage.current) return selectRegion(code);
+    if (!spacedMap || !event.detail || !stage.current) return selectRegion(code);
     let closest = event.currentTarget;
     let distance = Infinity;
     for (const button of stage.current.querySelectorAll<HTMLButtonElement>("[data-map-region]")) {
@@ -262,13 +351,11 @@ export default function HomepageMap({
     >
       <div className="gs-home-map-heading">
         <div>
-          <strong>
-            {english ? "Regional prices · App Store · Monthly" : "各地区价格 · App Store · 每月"}
-          </strong>
+          <strong>{copy.heading}</strong>
           <div className="gs-home-map-caption">
             <Link href={active.productHref}>{active.planDisplayName}</Link>
-            <Link href={active.href} data-map-link={english || undefined}>
-              {english ? "View all regions" : "查看全部地区"} <PublicIcon name="ArrowRight" size={16} />
+            <Link href={active.href} data-map-link={spacedMap || undefined}>
+              {copy.viewAllRegions} <PublicIcon name="ArrowRight" size={16} />
             </Link>
           </div>
         </div>
@@ -279,11 +366,7 @@ export default function HomepageMap({
           <svg
             viewBox="0 0 600 220"
             role="img"
-            aria-label={
-              english
-                ? `${active.planDisplayName} regional prices`
-                : `${active.name} ${active.plan} 各地区价格地图`
-            }
+            aria-label={copy.svgAria(active)}
           >
             <defs>
               <pattern id={`${id}-dots`} width="10" height="10" patternUnits="userSpaceOnUse">
@@ -302,7 +385,7 @@ export default function HomepageMap({
                 d={`M${us[0]},${us[1]} Q${(us[0] + low[0]) / 2},${Math.min(us[1], low[1]) - 70} ${low[0]},${low[1]}`}
               />
             )}
-            {english && (
+            {spacedMap && (
               <g className="gs-en-map-leaders" aria-hidden="true">
                 {active.prices.map(({ code }) => {
                   const original = map.points[code];
@@ -327,7 +410,7 @@ export default function HomepageMap({
             const xy = positions[row.code];
             if (!xy) return null;
             const tone =
-              row.code === "US" || (english && row.usd === active.usPrice)
+              row.code === "US" || (spacedMap && row.usd === active.usPrice)
                 ? "baseline"
                 : row.usd >= active.usPrice
                   ? "high"
@@ -335,20 +418,24 @@ export default function HomepageMap({
                     ? "deep-low"
                     : "low";
             const difference = (row.usd / active.usPrice - 1) * 100;
+            const pointAria =
+              effectiveLocale === "en"
+                ? `${regionName(row.code)} ${Math.round(difference)}% vs US`
+                : `${regionName(row.code)} ${savingsLabel(1 - row.usd / active.usPrice, effectiveLocale)}`;
             return (
               <button
                 key={row.code}
                 type="button"
                 className="gs-home-point"
-                data-map-region={english ? row.code : undefined}
+                data-map-region={spacedMap ? row.code : undefined}
                 style={{ left: `${xy[0] / 6}%`, top: `${xy[1] / 2.2}%` }}
-                aria-label={`${regionName(row.code)} ${english ? `${Math.round(difference)}% vs US` : savingsLabel(1 - row.usd / active.usPrice)}`}
+                aria-label={pointAria}
                 aria-pressed={shown.code === row.code}
                 onClick={(event) => choosePoint(event, row.code)}
-                onPointerDown={english ? () => { touchPoint.current = null; } : undefined}
-                onPointerCancel={english ? () => { touchPoint.current = null; } : undefined}
+                onPointerDown={spacedMap ? () => { touchPoint.current = null; } : undefined}
+                onPointerCancel={spacedMap ? () => { touchPoint.current = null; } : undefined}
                 onPointerUp={
-                  english
+                  spacedMap
                     ? (event) => {
                         if (event.pointerType === "touch" && event.isPrimary) {
                           touchPoint.current = { x: event.clientX, y: event.clientY };
@@ -374,7 +461,7 @@ export default function HomepageMap({
           {us && (
             <span className="gs-home-us" style={{ left: `${us[0] / 6}%`, top: `${us[1] / 2.2}%` }}>
               <HomepageCountryFlag code="US" />
-              {english ? "US" : "美国"}{" "}
+              {usName}{" "}
               <PublicPriceNumber
                 value={active.usPrice * rate}
                 currency={currency}
@@ -418,9 +505,9 @@ export default function HomepageMap({
         </div>
       </div>
       <label className="gs-home-region-picker">
-        {english ? "View region" : "查看地区"}
+        {copy.viewRegion}
         <select
-          aria-label={english ? "Map region" : "地图查看地区"}
+          aria-label={copy.mapRegionAria}
           value={shown.code}
           onChange={(event) => selectRegion(event.target.value)}
         >
@@ -434,7 +521,7 @@ export default function HomepageMap({
       <nav
         ref={pills}
         className="gs-home-products"
-        aria-label={english ? "Map products" : "地图产品"}
+        aria-label={copy.mapProductsAria}
         data-jelly-ready={Boolean(jelly)}
         data-jelly-cycle={jelly?.changed ? jelly.cycle : undefined}
       >
@@ -479,17 +566,7 @@ export default function HomepageMap({
         })}
       </nav>
       <p className="gs-home-carousel-note">
-        {english
-          ? reduced
-            ? "Autoplay is off with reduced motion."
-            : paused
-              ? "Autoplay paused · Hover or focus a product pill to preview, click to open details"
-              : "Rotates every 4.5s · Hover or focus to preview, click to open plan details"
-          : reduced
-            ? "已按系统设置关闭自动轮换"
-            : paused
-              ? "自动轮换已暂停"
-              : "每 4.5 秒轮换一个产品；悬停或聚焦预览，点击查看详情"}
+        {reduced ? copy.noteReduced : paused ? copy.notePaused : copy.noteRunning}
       </p>
     </div>
   );
