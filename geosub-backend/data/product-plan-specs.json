@@ -657,8 +657,7 @@
         "billing_cycle": "monthly",
         "sort_order": 10,
         "expected_monthly_usd_min": 2,
-        "expected_monthly_usd_max": 30,
-        "review_only": true
+        "expected_monthly_usd_max": 30
       },
       {
         "slug": "business",
@@ -669,8 +668,7 @@
         "billing_cycle": "monthly",
         "sort_order": 20,
         "expected_monthly_usd_min": 4,
-        "expected_monthly_usd_max": 45,
-        "review_only": true
+        "expected_monthly_usd_max": 45
       }
     ]
   },
@@ -690,8 +688,7 @@
         "billing_cycle": "monthly",
         "sort_order": 10,
         "expected_monthly_usd_min": 4,
-        "expected_monthly_usd_max": 25,
-        "review_only": true
+        "expected_monthly_usd_max": 25
       }
     ]
   },
@@ -711,8 +708,7 @@
         "billing_cycle": "monthly",
         "sort_order": 10,
         "expected_monthly_usd_min": 3,
-        "expected_monthly_usd_max": 25,
-        "review_only": true
+        "expected_monthly_usd_max": 25
       },
       {
         "slug": "pro",
@@ -723,8 +719,7 @@
         "billing_cycle": "monthly",
         "sort_order": 20,
         "expected_monthly_usd_min": 6,
-        "expected_monthly_usd_max": 45,
-        "review_only": true
+        "expected_monthly_usd_max": 45
       }
     ]
   },
@@ -745,8 +740,7 @@
         "billing_cycle": "monthly",
         "sort_order": 10,
         "expected_monthly_usd_min": 1,
-        "expected_monthly_usd_max": 10,
-        "review_only": true
+        "expected_monthly_usd_max": 10
       },
       {
         "slug": "premium-100gb",
@@ -757,8 +751,7 @@
         "billing_cycle": "monthly",
         "sort_order": 20,
         "expected_monthly_usd_min": 1,
-        "expected_monthly_usd_max": 20,
-        "review_only": true
+        "expected_monthly_usd_max": 20
       }
     ]
   },
@@ -778,8 +771,7 @@
         "billing_cycle": "yearly",
         "sort_order": 10,
         "expected_monthly_usd_min": 4,
-        "expected_monthly_usd_max": 25,
-        "review_only": true
+        "expected_monthly_usd_max": 25
       },
       {
         "slug": "pro-yearly",
@@ -791,8 +783,7 @@
         "billing_cycle": "yearly",
         "sort_order": 20,
         "expected_monthly_usd_min": 12,
-        "expected_monthly_usd_max": 70,
-        "review_only": true
+        "expected_monthly_usd_max": 70
       },
       {
         "slug": "ai-pass",
@@ -803,8 +794,7 @@
         "billing_cycle": "monthly",
         "sort_order": 30,
         "expected_monthly_usd_min": 3,
-        "expected_monthly_usd_max": 25,
-        "review_only": true
+        "expected_monthly_usd_max": 25
       }
     ]
   },
