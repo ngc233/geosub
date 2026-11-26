@@ -36,6 +36,10 @@ const v4ReaderChanges = {
     "retained": "1bb7f62199c09e8fff34610b8f9380be6a2b25f4e98ea389f83fa30c3f88bba0",
     "candidate": "1ba7915d9ac93cb1410e27b822bc385659d3d7e231b90139421631d7ecf51d5c"
   },
+  "ai-price-site/lib/pricing-detail-adapter.ts": {
+    "retained": "37e866260b652da563b5d24da1bede95c791ef08158c1d7b594d3bff3f9c946b",
+    "candidate": "3255acc81e9529c8f57bb67492fec3ecddf0ab177d6659cf0dc4a582f05b86ff"
+  },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
     "candidate": "4cdd5e1cdadc667d808dc17708d61bae130de5d82c70d43f15c52ac3e77a4f7f"
