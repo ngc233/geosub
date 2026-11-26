@@ -5,7 +5,20 @@ import { prisma } from "../../../lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const HEALTH_SNAPSHOT_TTL_MS = 5_000;
+const DEFAULT_HEALTH_SNAPSHOT_TTL_MS = 5_000;
+const MAX_HEALTH_SNAPSHOT_TTL_MS = 60_000;
+
+function getHealthSnapshotTtlMs() {
+  const raw = process.env.GEOSUB_HEALTH_SNAPSHOT_TTL_MS;
+  if (raw === undefined || raw.trim() === "") {
+    return DEFAULT_HEALTH_SNAPSHOT_TTL_MS;
+  }
+  const configured = Number(raw);
+  if (!Number.isFinite(configured)) {
+    return DEFAULT_HEALTH_SNAPSHOT_TTL_MS;
+  }
+  return Math.min(Math.max(Math.trunc(configured), 0), MAX_HEALTH_SNAPSHOT_TTL_MS);
+}
 
 type BusinessDataSnapshot = {
   publishedProducts: number;
@@ -25,8 +38,9 @@ let cachedFreshness: { expiresAt: number; value: FreshnessSnapshot } | null = nu
 let inFlightFreshness: Promise<FreshnessSnapshot> | null = null;
 
 async function getCachedBusinessData(): Promise<BusinessDataSnapshot> {
+  const ttlMs = getHealthSnapshotTtlMs();
   const now = Date.now();
-  if (cachedBusinessData && cachedBusinessData.expiresAt > now) {
+  if (ttlMs > 0 && cachedBusinessData && cachedBusinessData.expiresAt > now) {
     return cachedBusinessData.value;
   }
   if (inFlightBusinessData) {
@@ -48,7 +62,11 @@ async function getCachedBusinessData(): Promise<BusinessDataSnapshot> {
       publishedPrices: Number(row?.published_prices || 0),
       activeExchangeRates: Number(row?.active_exchange_rates || 0),
     };
-    cachedBusinessData = { expiresAt: Date.now() + HEALTH_SNAPSHOT_TTL_MS, value };
+    if (ttlMs > 0) {
+      cachedBusinessData = { expiresAt: Date.now() + ttlMs, value };
+    } else {
+      cachedBusinessData = null;
+    }
     return value;
   })().finally(() => {
     inFlightBusinessData = null;
@@ -57,8 +75,9 @@ async function getCachedBusinessData(): Promise<BusinessDataSnapshot> {
 }
 
 async function getCachedFreshness(): Promise<FreshnessSnapshot> {
+  const ttlMs = getHealthSnapshotTtlMs();
   const now = Date.now();
-  if (cachedFreshness && cachedFreshness.expiresAt > now) {
+  if (ttlMs > 0 && cachedFreshness && cachedFreshness.expiresAt > now) {
     return cachedFreshness.value;
   }
   if (inFlightFreshness) {
@@ -81,7 +100,11 @@ async function getCachedFreshness(): Promise<FreshnessSnapshot> {
       lastSuccessfulCollectionAt: row?.last_successful_collection_at ?? null,
       pricesNotCheckedOver3Days: row?.prices_not_checked_over_3_days ?? null,
     };
-    cachedFreshness = { expiresAt: Date.now() + HEALTH_SNAPSHOT_TTL_MS, value };
+    if (ttlMs > 0) {
+      cachedFreshness = { expiresAt: Date.now() + ttlMs, value };
+    } else {
+      cachedFreshness = null;
+    }
     return value;
   })().finally(() => {
     inFlightFreshness = null;
