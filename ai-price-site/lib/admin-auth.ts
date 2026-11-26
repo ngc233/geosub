@@ -1,4 +1,8 @@
 import { canAdmin, type AdminCapability } from "./admin-permissions";
+import {
+  getAdminSessionCookieNames,
+  getAdminTrustedDeviceCookieNames,
+} from "./admin-proxy-policy";
 import "server-only";
 
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
@@ -21,6 +25,29 @@ const TRUSTED_DEVICE_COOKIE_NAME = "geosub_admin_device";
 const TRUSTED_DEVICE_DAYS = 30;
 const MAX_TRUSTED_DEVICES = 10;
 const TRUSTED_DEVICE_MAX_FAILURES = 5;
+
+function readCookieByNames(
+  cookieStore: { get(name: string): { value?: string } | undefined },
+  names: readonly string[],
+): string | undefined {
+  for (const name of names) {
+    const value = cookieStore.get(name)?.value;
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function readAllCookieTokensByNames(
+  cookieStore: { get(name: string): { value?: string } | undefined },
+  names: readonly string[],
+): string[] {
+  const seen = new Set<string>();
+  for (const name of names) {
+    const value = cookieStore.get(name)?.value;
+    if (value) seen.add(value);
+  }
+  return [...seen];
+}
 
 type LoginThrottleKey = {
   keyHash: string;
@@ -165,7 +192,10 @@ export function isTrustedDeviceUsable(
 
 export async function findTrustedDevice(userId: string) {
   const cookieStore = await cookies();
-  const token = cookieStore.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+  const token = readCookieByNames(
+    cookieStore,
+    getAdminTrustedDeviceCookieNames().readNames,
+  );
 
   if (!token) {
     return null;
@@ -214,7 +244,8 @@ export async function rememberTrustedDevice(userId: string, existingDeviceId: st
   const now = new Date();
   const expiresAt = new Date(now.getTime() + TRUSTED_DEVICE_DAYS * 24 * 60 * 60 * 1000);
   const cookieStore = await cookies();
-  let token = cookieStore.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+  const deviceCookieConfig = getAdminTrustedDeviceCookieNames();
+  let token = readCookieByNames(cookieStore, deviceCookieConfig.readNames);
 
   if (existingDeviceId && token) {
     await prisma.adminTrustedDevice.update({
@@ -271,13 +302,16 @@ export async function rememberTrustedDevice(userId: string, existingDeviceId: st
     });
   }
 
-  cookieStore.set(TRUSTED_DEVICE_COOKIE_NAME, token, {
+  cookieStore.set(deviceCookieConfig.writeName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: deviceCookieConfig.hostLocked || process.env.NODE_ENV === "production",
     path: "/",
     expires: expiresAt,
   });
+  if (deviceCookieConfig.hostLocked) {
+    cookieStore.delete(TRUSTED_DEVICE_COOKIE_NAME);
+  }
 }
 
 const SCRYPT_DEFAULT_COST = 16384;
@@ -426,20 +460,27 @@ export async function createAdminSession(userId: string) {
   }
 
   const cookieStore = await cookies();
+  const sessionCookieConfig = getAdminSessionCookieNames();
 
-  cookieStore.set(COOKIE_NAME, token, {
+  cookieStore.set(sessionCookieConfig.writeName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: sessionCookieConfig.hostLocked || process.env.NODE_ENV === "production",
     path: "/",
     expires: expiresAt,
     priority: "high",
   });
+  if (sessionCookieConfig.hostLocked) {
+    cookieStore.delete(COOKIE_NAME);
+  }
 }
 
 async function loadCurrentAdminUncached() {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const token = readCookieByNames(
+    cookieStore,
+    getAdminSessionCookieNames().readNames,
+  );
 
   if (!token) {
     return null;
@@ -513,7 +554,10 @@ export async function changeCurrentAdminPassword({
   newPassword: string;
 }) {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const token = readCookieByNames(
+    cookieStore,
+    getAdminSessionCookieNames().readNames,
+  );
 
   if (!token) {
     return { ok: false as const, reason: "session" as const };
@@ -624,7 +668,10 @@ export async function getCurrentAdminSessions(
 ): Promise<CurrentAdminSessionsSnapshot> {
   const now = new Date();
   const cookieStore = await cookies();
-  const currentToken = cookieStore.get(COOKIE_NAME)?.value;
+  const currentToken = readCookieByNames(
+    cookieStore,
+    getAdminSessionCookieNames().readNames,
+  );
   const currentTokenHash = currentToken ? hashSessionToken(currentToken) : null;
 
   const [sessions, trustedDeviceCount] = await Promise.all([
@@ -685,7 +732,10 @@ export async function revokeAdminSessionById({
   }
 
   const cookieStore = await cookies();
-  const currentToken = cookieStore.get(COOKIE_NAME)?.value;
+  const currentToken = readCookieByNames(
+    cookieStore,
+    getAdminSessionCookieNames().readNames,
+  );
   const currentTokenHash = currentToken ? hashSessionToken(currentToken) : null;
 
   const target = await db.adminSession.findFirst({
@@ -729,7 +779,10 @@ export async function revokeOtherAdminSessions({
   db?: AdminSessionDbClient;
 }): Promise<RevokeOtherAdminSessionsResult> {
   const cookieStore = await cookies();
-  const currentToken = cookieStore.get(COOKIE_NAME)?.value;
+  const currentToken = readCookieByNames(
+    cookieStore,
+    getAdminSessionCookieNames().readNames,
+  );
   if (!currentToken) {
     return { ok: false, reason: "missing_current_session" };
   }
@@ -761,7 +814,10 @@ export async function revokeOtherAdminSessions({
     },
   });
 
-  const currentDeviceToken = cookieStore.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+  const currentDeviceToken = readCookieByNames(
+    cookieStore,
+    getAdminTrustedDeviceCookieNames().readNames,
+  );
   const currentDeviceHash = currentDeviceToken
     ? hashSessionToken(currentDeviceToken)
     : null;
@@ -788,17 +844,20 @@ export async function revokeOtherAdminSessions({
 
 export async function clearAdminSession() {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const { readNames } = getAdminSessionCookieNames();
+  const tokens = readAllCookieTokensByNames(cookieStore, readNames);
 
-  if (token) {
-    const tokenHash = hashSessionToken(token);
-
+  if (tokens.length > 0) {
     await prisma.adminSession.deleteMany({
       where: {
-        tokenHash,
+        tokenHash: {
+          in: tokens.map((token) => hashSessionToken(token)),
+        },
       },
     });
   }
 
-  cookieStore.delete(COOKIE_NAME);
+  for (const name of readNames) {
+    cookieStore.delete(name);
+  }
 }

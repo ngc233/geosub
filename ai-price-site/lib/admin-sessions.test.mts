@@ -409,3 +409,23 @@ test("revokeOtherAdminSessions preserves current session and current trusted dev
     ["dev-current"],
   );
 });
+
+test("getCurrentAdminSessions recognizes __Host- session cookie seamlessly", async () => {
+  const future = new Date(Date.now() + 60 * 60 * 1000);
+  const { exports } = loadAdminAuthForSessions({
+    sessions: [
+      {
+        id: "55555555-5555-5555-5555-555555555555",
+        userId: "admin-1",
+        tokenHash: sha256("host-cookie-token"),
+        createdAt: new Date(Date.now() - 5_000),
+        expiresAt: future,
+      },
+    ],
+    cookieMap: { "__Host-geosub_admin_session": "host-cookie-token" },
+  });
+
+  const snapshot = await exports.getCurrentAdminSessions("admin-1");
+  assert.equal(snapshot.sessions.length, 1);
+  assert.equal(snapshot.sessions[0].isCurrent, true);
+});

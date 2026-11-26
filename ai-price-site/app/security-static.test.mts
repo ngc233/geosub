@@ -121,7 +121,11 @@ test("global responses carry baseline production security headers", () => {
   assert.match(config, /X-Frame-Options/);
   assert.match(config, /Strict-Transport-Security/);
   assert.match(proxy, /Content-Security-Policy-Report-Only/);
+  assert.match(proxy, /evaluateAdminHostRouting/);
+  assert.match(proxy, /hasAnyAdminSessionCookie/);
   assert.match(proxy, /requestHeaders\.set\("x-nonce", nonce\)/);
+  assert.match(readProjectFile("lib/admin-auth.ts"), /getAdminSessionCookieNames/);
+  assert.match(readProjectFile("lib/admin-auth.ts"), /secure:\s*sessionCookieConfig\.hostLocked \|\| process\.env\.NODE_ENV === "production"/);
   assert.match(proxy, /requestHeaders\.set\("Content-Security-Policy"/);
   assert.match(policy, /default-src 'self'/);
   assert.match(policy, /script-src 'self' 'nonce-\$\{nonce\}' 'strict-dynamic'/);

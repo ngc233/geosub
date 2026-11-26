@@ -8,6 +8,7 @@ import {
   listAdminRoleDomainCapabilities,
 } from './admin-permissions.ts';
 import { workspaceStatus, type WorkspaceRow } from './admin-workspace-model.ts';
+import * as proxyPolicy from './admin-proxy-policy.ts';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
@@ -15,7 +16,7 @@ const require=createRequire(import.meta.url),ts=require('typescript');
 const auth=ts.transpileModule(readFileSync(new URL('./admin-auth.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 for(const role of ['OWNER','EDITOR','VIEWER','UNKNOWN'])test(`server auth enforces ${role} capabilities`,async()=>{
  const result={exports:{} as {requireAdmin:(cap?:string)=>Promise<unknown>}};
- const mocks:Record<string,unknown>={'server-only':{},'@prisma/client':{},'./admin-permissions':{canAdmin},'next/headers':{cookies:async()=>({get:()=>({value:'test-only-session'})})},'next/navigation':{redirect:(url:string)=>{throw Error('redirect:'+url);}},'./prisma':{prisma:{adminSession:{findUnique:async()=>({expiresAt:new Date(Date.now()+60000),user:{id:'test',status:'ACTIVE',role}})}}}};
+ const mocks:Record<string,unknown>={'server-only':{},'@prisma/client':{},'./admin-permissions':{canAdmin},'./admin-proxy-policy':proxyPolicy,'next/headers':{cookies:async()=>({get:()=>({value:'test-only-session'})})},'next/navigation':{redirect:(url:string)=>{throw Error('redirect:'+url);}},'./prisma':{prisma:{adminSession:{findUnique:async()=>({expiresAt:new Date(Date.now()+60000),user:{id:'test',status:'ACTIVE',role}})}}}};
  vm.runInNewContext('(function(require,module,exports){'+auth+'\n})')((name:string)=>name in mocks?mocks[name]:require(name),result,result.exports);
  for(const cap of ['read','draft','manage','account',...DOMAIN_ADMIN_CAPABILITIES] as const){const promise=result.exports.requireAdmin(cap);if(canAdmin(role,cap))await promise;else await assert.rejects(promise,/permission=denied/);}
 });
