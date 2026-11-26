@@ -6,19 +6,54 @@ export type Platform = (typeof platforms)[number];
 export type Currency = (typeof currencies)[number];
 export type Edition = (typeof editions)[number];
 export type Market = (typeof markets)[number];
-export const names = {
+
+export const names: Record<string, string> & {
+  ps5: string;
+  xbox: string;
+  pc: string;
+  HK: string;
+  US: string;
+  standard: string;
+  ultimate: string;
+  CNY: string;
+  HKD: string;
+  USD: string;
+} = {
   ps5: "PS5",
   xbox: "Xbox",
   pc: "PC",
   HK: "香港",
   US: "美国",
+  JP: "日本",
+  TR: "土耳其",
+  BR: "巴西",
+  GB: "英国",
+  TW: "台湾",
+  KR: "韩国",
+  SG: "新加坡",
   standard: "标准版",
   ultimate: "终极版",
   CNY: "人民币",
   HKD: "港元",
   USD: "美元",
 };
-export const signs = { CNY: "¥", HKD: "HK$", USD: "US$" };
+
+export const signs: Record<string, string> & { CNY: string; HKD: string; USD: string } = {
+  CNY: "¥",
+  HKD: "HK$",
+  USD: "US$",
+  JPY: "JP¥",
+  KRW: "₩",
+  TWD: "NT$",
+  SGD: "S$",
+  GBP: "£",
+  EUR: "€",
+  TRY: "₺",
+  BRL: "R$",
+  CAD: "CA$",
+  AUD: "A$",
+};
+
 export const msPerWeek = 7 * 24 * 60 * 60 * 1000;
 
 export type GamePrice = {
@@ -31,6 +66,7 @@ export type GamePrice = {
   promo_ends_at: string | null;
   included_in_subscription: boolean | null;
 };
+
 export type GameOffer = {
   market: Market;
   edition: Edition;
@@ -43,6 +79,7 @@ export type GameOffer = {
   tax_included: boolean | null;
   price: GamePrice | null;
 };
+
 export type GameResponse = {
   game: string;
   platform: Platform;
@@ -54,6 +91,7 @@ export type GameResponse = {
   full_games: GameOffer[];
   upgrades: GameOffer[];
 };
+
 export type Selection = {
   platform: Platform;
   edition: Edition;
@@ -61,6 +99,7 @@ export type Selection = {
   editionRegion: Market;
   currency: Currency;
 };
+
 export const defaults: Selection = {
   platform: "ps5",
   edition: "standard",
@@ -68,9 +107,11 @@ export const defaults: Selection = {
   editionRegion: "HK",
   currency: "CNY",
 };
+
 export function memberOf<T extends string>(options: readonly T[], value: unknown): value is T {
   return options.some((option) => option === value);
 }
+
 export function selectionFrom(params: URLSearchParams): Selection {
   const p = params.get("platform"),
     e = params.get("edition"),
@@ -85,9 +126,12 @@ export function selectionFrom(params: URLSearchParams): Selection {
     currency: memberOf(currencies, c) ? c : defaults.currency,
   };
 }
-export function localMoney(currency: Currency, value: string) {
-  return signs[currency] + value.replace(/\.00$/, "");
+
+export function localMoney(currency: string, value: string) {
+  const prefix = signs[currency] ?? `${currency} `;
+  return prefix + value.replace(/\.00$/, "");
 }
+
 export function currentOffer(row: GameOffer, at: number, data: GameResponse): GameOffer {
   if (row.valid_until && at >= Date.parse(row.valid_until))
     return { ...row, status: "stale_expired", price: null };
