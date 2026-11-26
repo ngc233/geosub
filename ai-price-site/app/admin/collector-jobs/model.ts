@@ -45,6 +45,8 @@ export type JobRow = CollectorExecutionFields & {
   recent_app_store_observation_count: number;
   is_due: boolean;
   queue_pending: boolean;
+  total_product_count?: number;
+  total_active_job_count?: number;
 };
 
 export type RunRow = CollectorExecutionFields & {
@@ -58,6 +60,7 @@ export type RunRow = CollectorExecutionFields & {
   started_at: Date | string;
   finished_at: Date | string | null;
   duration_ms: number | null;
+  total_run_count?: number;
   error_message: string | null;
   output_excerpt: string | null;
   diagnosis: string | null;
@@ -86,6 +89,7 @@ export type AvailabilityRow = {
   ignored_item_count: number;
   reason: string | null;
   checked_at: Date | string;
+  total_check_count?: number;
 };
 
 export type ProductJobGroup = {

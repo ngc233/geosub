@@ -5,25 +5,34 @@ import {createRequire} from "node:module";
 import {resolve,dirname} from "node:path";
 import {fileURLToPath} from "node:url";
 import * as context from "../../lib/admin-workflow-context.ts";
+import * as summaryModel from "../../lib/admin-product-summary-model.ts";
 import * as claudeReuse from "./collector-jobs/claude-reuse-model.ts";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 const require=createRequire(resolve(root,"package.json"));
 const ts=require("typescript");
 function load(file:string,stubs:Record<string,unknown>){const source=readFileSync(resolve(root,file),"utf8");const {outputText}=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});const m={exports:{} as Record<string,unknown>};new Function("require","module","exports",outputText)((name:string)=>name in stubs?stubs[name]:require(name),m,m.exports);return m.exports;}
-test("collector product/source predicates bind values before each existing history limit",async()=>{
+test("collector product/source predicates bind values before each SQL pagination limit",async()=>{
  const queries:Array<{sql:string;values:unknown[]}>=[];
  const loaded=load("app/admin/collector-jobs/queries.ts",{
   "@/lib/admin-workflow-context":context,
   "./claude-reuse-model":claudeReuse,
   "../../../lib/admin-performance":{measureAdminWorkload:(_name:string,fn:()=>unknown)=>fn()},
-  "../../../lib/prisma":{prisma:{$queryRaw:(strings:TemplateStringsArray,...values:unknown[])=>{
+  "../../../lib/admin-product-summary-model":summaryModel,
+  "../../../lib/prisma":{adminPrisma:{$queryRaw:(strings:TemplateStringsArray,...values:unknown[])=>{
    queries.push({sql:strings.join("?"),values});return Promise.resolve([]);
   }}},
  });
- await (loaded.getCollectorJobsPageData as (p:unknown)=>Promise<unknown>)({product:"spotify",q:"a%b",platform:"web"});
+ await (loaded.getCollectorJobsPageData as (p:unknown)=>Promise<unknown>)({product:"spotify",q:"a%b",platform:"web",page:"3",runPage:"2",checkPage:"4"});
  assert.equal(queries.length,3);
  assert.ok(queries[0].values.includes(claudeReuse.claudeReviewPolicyId));
  assert.ok(!queries[0].sql.includes(claudeReuse.claudeReviewPolicyId));
+ assert.doesNotMatch(queries[0].sql,/LIMIT 160/);
+ assert.ok(queries[0].values.includes(10));
+ assert.ok(queries[0].values.includes(20));
+ assert.ok(queries[1].values.includes(25));
+ assert.ok(queries[1].values.includes(25));
+ assert.ok(queries[2].values.includes(25));
+ assert.ok(queries[2].values.includes(75));
  for(const q of queries){assert.ok(q.values.includes("spotify"));assert.ok(q.values.includes("web"));assert.ok(q.values.includes("%a\\%b%"));assert.ok(q.sql.indexOf("WHERE")<q.sql.indexOf("LIMIT"));assert.ok(!q.sql.includes("spotify"));}
  assert.match(queries[2].sql,/AND \? <> 'web'/);
 });
