@@ -279,31 +279,81 @@ export async function rememberTrustedDevice(userId: string, existingDeviceId: st
   });
 }
 
+const SCRYPT_DEFAULT_COST = 16384;
+const SCRYPT_DEFAULT_BLOCK_SIZE = 8;
+const SCRYPT_DEFAULT_PARALLELIZATION = 1;
+const SCRYPT_MAX_MEM_BYTES = 64 * 1024 * 1024;
+
 export function verifyPassword(password: string, passwordHash: string) {
   const parts = passwordHash.split(":");
 
-  if (parts.length !== 3 || parts[0] !== "scrypt") {
+  let cost = SCRYPT_DEFAULT_COST;
+  let blockSize = SCRYPT_DEFAULT_BLOCK_SIZE;
+  let parallelization = SCRYPT_DEFAULT_PARALLELIZATION;
+  let salt = "";
+  let storedHash = "";
+
+  if (parts.length === 3 && parts[0] === "scrypt") {
+    salt = parts[1];
+    storedHash = parts[2];
+  } else if (parts.length === 6 && parts[0] === "scrypt") {
+    cost = Number(parts[1]);
+    blockSize = Number(parts[2]);
+    parallelization = Number(parts[3]);
+    salt = parts[4];
+    storedHash = parts[5];
+
+    if (
+      !Number.isInteger(cost) ||
+      cost < 16384 ||
+      cost > 131072 ||
+      (cost & (cost - 1)) !== 0 ||
+      !Number.isInteger(blockSize) ||
+      blockSize < 1 ||
+      blockSize > 32 ||
+      !Number.isInteger(parallelization) ||
+      parallelization < 1 ||
+      parallelization > 16
+    ) {
+      return false;
+    }
+  } else {
     return false;
   }
 
-  const salt = parts[1];
-  const storedHash = parts[2];
-
-  const inputHash = scryptSync(password, salt, 64);
-  const storedBuffer = Buffer.from(storedHash, "hex");
-
-  if (inputHash.length !== storedBuffer.length) {
+  if (!salt || !/^[0-9a-f]+$/i.test(storedHash) || storedHash.length % 2 !== 0) {
     return false;
   }
 
-  return timingSafeEqual(inputHash, storedBuffer);
+  try {
+    const inputHash = scryptSync(password, salt, 64, {
+      N: cost,
+      r: blockSize,
+      p: parallelization,
+      maxmem: SCRYPT_MAX_MEM_BYTES,
+    });
+    const storedBuffer = Buffer.from(storedHash, "hex");
+
+    if (inputHash.length !== storedBuffer.length) {
+      return false;
+    }
+
+    return timingSafeEqual(inputHash, storedBuffer);
+  } catch {
+    return false;
+  }
 }
 
 export function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
+  const hash = scryptSync(password, salt, 64, {
+    N: SCRYPT_DEFAULT_COST,
+    r: SCRYPT_DEFAULT_BLOCK_SIZE,
+    p: SCRYPT_DEFAULT_PARALLELIZATION,
+    maxmem: SCRYPT_MAX_MEM_BYTES,
+  }).toString("hex");
 
-  return `scrypt:${salt}:${hash}`;
+  return `scrypt:${SCRYPT_DEFAULT_COST}:${SCRYPT_DEFAULT_BLOCK_SIZE}:${SCRYPT_DEFAULT_PARALLELIZATION}:${salt}:${hash}`;
 }
 
 export function getAdminPasswordPolicyError(password: string) {
@@ -410,7 +460,7 @@ export async function getCurrentAdmin() {
   }
 
   if (session.expiresAt.getTime() < Date.now()) {
-    await prisma.adminSession.delete({
+    await prisma.adminSession.deleteMany({
       where: {
         id: session.id,
       },
@@ -420,7 +470,7 @@ export async function getCurrentAdmin() {
   }
 
   if (session.user.status !== "ACTIVE") {
-    await prisma.adminSession.delete({
+    await prisma.adminSession.deleteMany({
       where: {
         id: session.id,
       },
