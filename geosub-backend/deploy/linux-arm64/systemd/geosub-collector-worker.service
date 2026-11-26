@@ -8,7 +8,7 @@ Type=simple
 EnvironmentFile=-/etc/geosub/geosub.env
 Environment=GEOSUB_COLLECTOR_LOCK_DIR=/run/geosub
 WorkingDirectory=/opt/geosub/geosub-backend
-ExecStart=/usr/bin/env node /opt/geosub/geosub-backend/scripts/collector-queue-worker.mjs
+ExecStart=/bin/bash /opt/geosub/geosub-backend/deploy/linux-arm64/run-collector-queue-worker.sh
 Restart=always
 RestartSec=5
 TimeoutStopSec=60

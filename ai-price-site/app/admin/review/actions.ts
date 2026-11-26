@@ -54,8 +54,8 @@ export async function approveObservation(formData: FormData) {
     },
     invalidate: ["pricing"],
     revalidatePaths: ["/admin/review", "/admin/affordability"],
-    afterCommit: ({ data }) => {
-      invalidatePublicPricing(data.productSlug);
+    afterCommit: ({ data: { productSlug } }) => {
+      invalidatePublicPricing(productSlug);
     },
   });
 

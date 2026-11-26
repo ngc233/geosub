@@ -15,6 +15,7 @@ if [[ ! -f /etc/geosub/geosub.env ]]; then
 fi
 
 chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-collector-jobs.sh"
+chmod +x "$BACKEND_DIR/deploy/linux-arm64/run-collector-queue-worker.sh"
 install -m 0644 \
   "$BACKEND_DIR/deploy/linux-arm64/systemd/geosub-collector-worker.service" \
   /etc/systemd/system/geosub-collector-worker.service
