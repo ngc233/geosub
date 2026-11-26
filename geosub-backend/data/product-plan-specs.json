@@ -643,9 +643,10 @@
   },
   "canva": {
     "name": "Canva",
+    "app_store_id": "897446215",
     "exact_plan_aliases": true,
     "evidence_url": "https://apps.apple.com/us/app/id897446215",
-    "evidence_checked_at": "2026-10-18",
+    "evidence_checked_at": "2026-11-27",
     "plans": [
       {
         "slug": "pro",
@@ -655,6 +656,8 @@
         ],
         "billing_cycle": "monthly",
         "sort_order": 10,
+        "expected_monthly_usd_min": 2,
+        "expected_monthly_usd_max": 30,
         "review_only": true
       },
       {
@@ -665,15 +668,18 @@
         ],
         "billing_cycle": "monthly",
         "sort_order": 20,
+        "expected_monthly_usd_min": 4,
+        "expected_monthly_usd_max": 45,
         "review_only": true
       }
     ]
   },
   "notion": {
     "name": "Notion",
+    "app_store_id": "1232780281",
     "exact_plan_aliases": true,
     "evidence_url": "https://apps.apple.com/us/app/id1232780281",
-    "evidence_checked_at": "2026-10-18",
+    "evidence_checked_at": "2026-11-27",
     "plans": [
       {
         "slug": "plus",
@@ -683,6 +689,121 @@
         ],
         "billing_cycle": "monthly",
         "sort_order": 10,
+        "expected_monthly_usd_min": 4,
+        "expected_monthly_usd_max": 25,
+        "review_only": true
+      }
+    ]
+  },
+  "capcut": {
+    "name": "CapCut",
+    "app_store_id": "1500855883",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/us/app/id1500855883",
+    "evidence_checked_at": "2026-11-27",
+    "plans": [
+      {
+        "slug": "standard",
+        "name": "CapCut Standard",
+        "aliases": [
+          "Standard Monthly Subscription"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 10,
+        "expected_monthly_usd_min": 3,
+        "expected_monthly_usd_max": 25,
+        "review_only": true
+      },
+      {
+        "slug": "pro",
+        "name": "CapCut Pro",
+        "aliases": [
+          "Pro Monthly Subscription"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 20,
+        "expected_monthly_usd_min": 6,
+        "expected_monthly_usd_max": 45,
+        "review_only": true
+      }
+    ]
+  },
+  "adobe-lightroom": {
+    "name": "Adobe Lightroom",
+    "app_store_id": "878783582",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/us/app/id878783582",
+    "evidence_checked_at": "2026-11-27",
+    "plans": [
+      {
+        "slug": "premium-40gb",
+        "name": "Adobe Lightroom Premium 40GB",
+        "aliases": [
+          "Premium monthly 40GB",
+          "Premium Monthly 40GB"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 10,
+        "expected_monthly_usd_min": 1,
+        "expected_monthly_usd_max": 10,
+        "review_only": true
+      },
+      {
+        "slug": "premium-100gb",
+        "name": "Adobe Lightroom Premium 100GB",
+        "aliases": [
+          "Premium Monthly 100GB"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 20,
+        "expected_monthly_usd_min": 1,
+        "expected_monthly_usd_max": 20,
+        "review_only": true
+      }
+    ]
+  },
+  "goodnotes": {
+    "name": "Goodnotes",
+    "app_store_id": "1444383602",
+    "exact_plan_aliases": true,
+    "evidence_url": "https://apps.apple.com/us/app/id1444383602",
+    "evidence_checked_at": "2026-11-27",
+    "plans": [
+      {
+        "slug": "essential-yearly",
+        "name": "Goodnotes Essential (Yearly)",
+        "aliases": [
+          "Essential (Yearly)"
+        ],
+        "billing_cycle": "yearly",
+        "sort_order": 10,
+        "expected_monthly_usd_min": 4,
+        "expected_monthly_usd_max": 25,
+        "review_only": true
+      },
+      {
+        "slug": "pro-yearly",
+        "name": "Goodnotes Pro (Yearly)",
+        "aliases": [
+          "Goodnotes Pro (Yearly)",
+          "Pro (Yearly)"
+        ],
+        "billing_cycle": "yearly",
+        "sort_order": 20,
+        "expected_monthly_usd_min": 12,
+        "expected_monthly_usd_max": 70,
+        "review_only": true
+      },
+      {
+        "slug": "ai-pass",
+        "name": "Goodnotes AI Pass",
+        "aliases": [
+          "AI Pass (Monthly)"
+        ],
+        "billing_cycle": "monthly",
+        "sort_order": 30,
+        "expected_monthly_usd_min": 3,
+        "expected_monthly_usd_max": 25,
         "review_only": true
       }
     ]

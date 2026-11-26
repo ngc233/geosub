@@ -150,6 +150,7 @@ WITH ranked_jobs AS (
     job.job_config,
     product.slug AS product_slug,
     product.name AS product_name,
+    product.category::text AS product_category,
     source.type::text AS source_type,
     source.base_url AS source_url,
     job.priority,
@@ -176,6 +177,10 @@ WITH ranked_jobs AS (
         job.job_type = 'price_check' AND product.category = 'game'
         AND job.job_config ->> 'collector_kind' = 'pricing_page'
         AND job.job_config ->> 'official_web_source_key' IN ('playstation-store','xbox-store')
+      )
+      OR (
+        job.job_type = 'price_check' AND product.category = 'software'
+        AND COALESCE(job.job_config ->> 'collector_kind', source.type::text, 'unknown') = 'app_store'
       )
     )
     $jobFilterSql
@@ -211,6 +216,7 @@ FROM (
     job_config,
     product_slug,
     product_name,
+    product_category,
     source_type,
     source_url
   FROM ranked_jobs
@@ -740,22 +746,43 @@ function Invoke-CollectorScript {
         throw "App Store collector job is missing app_store_id."
       }
 
-      $scriptPath = Join-Path $PSScriptRoot "collect-app-store-prices.ps1"
       $appStoreUrl = Get-ConfigValue -Config $config -Name "url" -Fallback $Job.source_url
-      $scriptParameters = @{
-        ProductSlug = $productSlug
-        AppId = $appId
-        AppStoreUrl = $appStoreUrl
-        CountryCodes = @($countryCodes)
-        ContainerName = $ContainerName
-        DbName = $DbName
-        DbUser = $DbUser
-        Force = $Force
-      }
       $expectedIdentity = "Using App Store app id $appId for $productSlug."
+      $collectorRuntime = Get-ConfigValue -Config $config -Name "collector_runtime"
 
-      if (![string]::IsNullOrWhiteSpace($ChromePath)) {
-        $scriptParameters.ChromePath = $ChromePath
+      if ([string]$Job.product_category -eq "software" -or $collectorRuntime -eq "mjs") {
+        $scriptPath = Join-Path $PSScriptRoot "collect-app-store-prices.mjs"
+        $nodeArguments = @(
+          $scriptPath,
+          "--product-slug", $productSlug,
+          "--app-id", $appId,
+          "--country-codes", ($countryCodes -join ",")
+        )
+        if (![string]::IsNullOrWhiteSpace($appStoreUrl)) {
+          $nodeArguments += @("--app-store-url", $appStoreUrl)
+        }
+        if ($Force) {
+          $nodeArguments += "--force"
+        }
+        if (![string]::IsNullOrWhiteSpace($ChromePath)) {
+          $nodeArguments += @("--chrome-path", $ChromePath)
+        }
+      } else {
+        $scriptPath = Join-Path $PSScriptRoot "collect-app-store-prices.ps1"
+        $scriptParameters = @{
+          ProductSlug = $productSlug
+          AppId = $appId
+          AppStoreUrl = $appStoreUrl
+          CountryCodes = @($countryCodes)
+          ContainerName = $ContainerName
+          DbName = $DbName
+          DbUser = $DbUser
+          Force = $Force
+        }
+
+        if (![string]::IsNullOrWhiteSpace($ChromePath)) {
+          $scriptParameters.ChromePath = $ChromePath
+        }
       }
     }
     "google_play" {
