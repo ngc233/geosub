@@ -44,7 +44,7 @@ export default function AdminTabs({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={[
-                "relative inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap px-3 text-[13px] transition-colors",
+                "relative inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap px-3.5 text-sm transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent",
                 active
                   ? "font-medium text-admin-text"

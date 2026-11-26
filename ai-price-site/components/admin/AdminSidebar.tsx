@@ -8,6 +8,7 @@ import {
   Activity,
   Boxes,
   FileText,
+  Globe2,
   Inbox,
   LineChart,
   LogOut,
@@ -15,6 +16,7 @@ import {
   Moon,
   Route,
   Search,
+  ShieldCheck,
   Sun,
   X,
   type LucideIcon,
@@ -26,6 +28,7 @@ import {
   ADMIN_THEME_STORAGE_KEY,
   getActiveAdminHub,
   isHubActive,
+  matchesAdminRoute,
   type AdminHubId,
 } from "./admin-nav-config";
 
@@ -37,6 +40,18 @@ const hubIcons: Record<AdminHubId, LucideIcon> = {
   content: FileText,
   system: Activity,
 };
+
+const sidebarSections: Array<{ label: string; hubIds: AdminHubId[] }> = [
+  { label: "核心工作区", hubIds: ["inbox", "catalog", "pricing"] },
+  { label: "增长与内容", hubIds: ["growth", "content"] },
+  { label: "基础设施", hubIds: ["system"] },
+];
+
+const quickViews = [
+  { label: "异常审核", href: "/admin/review", icon: ShieldCheck },
+  { label: "正式价格", href: "/admin/prices", icon: Globe2 },
+  { label: "数据质量", href: "/admin/data-quality", icon: Activity },
+] as const;
 
 function isDarkShell(shell: HTMLElement) {
   return (
@@ -51,7 +66,7 @@ function persistAdminTheme(next: "light" | "dark") {
   try {
     window.localStorage.setItem(ADMIN_THEME_STORAGE_KEY, next);
   } catch {
-    // Ignore private-mode storage failures; cookie still persists.
+    // Ignore storage failures in private browsing.
   }
 }
 
@@ -101,22 +116,22 @@ function NightModeSwitch() {
         persistAdminTheme(next);
         window.dispatchEvent(new Event(ADMIN_THEME_EVENT));
       }}
-      className="flex min-h-11 w-full items-center gap-2.5 rounded-admin-control px-2.5 py-1.5 text-[13px] text-admin-text-secondary transition hover:bg-admin-chip hover:text-admin-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent lg:min-h-8"
+      className="flex min-h-11 w-full items-center gap-2.5 rounded-admin-control px-3 py-2 text-sm text-admin-text-secondary transition hover:bg-admin-chip hover:text-admin-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent lg:min-h-9"
     >
       {dark ? (
-        <Sun size={15} strokeWidth={1.75} aria-hidden="true" />
+        <Sun size={16} strokeWidth={1.75} aria-hidden="true" />
       ) : (
-        <Moon size={15} strokeWidth={1.75} aria-hidden="true" />
+        <Moon size={16} strokeWidth={1.75} aria-hidden="true" />
       )}
       <span className="flex-1 text-left">夜间模式</span>
       <span
-        className={`relative h-4 w-7 rounded-full transition ${
+        className={`relative h-5 w-9 rounded-full transition ${
           dark ? "bg-admin-primary" : "bg-admin-chip-hover"
         }`}
       >
         <span
-          className={`absolute top-0.5 h-3 w-3 rounded-full bg-admin-on-primary transition-all ${
-            dark ? "left-3.5" : "left-0.5"
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-admin-on-primary transition-all ${
+            dark ? "left-[18px]" : "left-0.5"
           }`}
         />
       </span>
@@ -150,82 +165,122 @@ export default function AdminSidebar({
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [closeMobileNavigation, mobileOpen]);
 
+  const hubMap = new Map(ADMIN_HUBS.map((hub) => [hub.id, hub]));
+
   const navigation = (
     <>
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-admin-border px-4">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-admin-border px-4">
         <AdminLink
           href="/admin"
           onClick={() => setMobileOpen(false)}
-          className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
+          className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
         >
-          <span className="flex h-6 w-6 items-center justify-center rounded bg-admin-primary text-[11px] font-semibold tracking-tight text-admin-on-primary">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-admin-primary text-xs font-semibold tracking-tight text-admin-on-primary">
             G
           </span>
-          <span className="text-[13px] font-semibold tracking-tight text-admin-text">GeoSub</span>
-          <span className="rounded border border-admin-border bg-admin-surface px-1.5 py-0.5 font-mono text-[10px] text-admin-text-faint">
+          <span className="text-sm font-semibold tracking-tight text-admin-text">GeoSub</span>
+          <span className="rounded border border-admin-border bg-admin-surface px-1.5 py-0.5 font-mono text-[10px] font-medium text-admin-text-muted">
             OPS
           </span>
         </AdminLink>
       </div>
 
-      <div className="px-3 pt-3">
+      <div className="px-3.5 pt-3.5">
         <button
           type="button"
           onClick={() => {
             setMobileOpen(false);
             window.dispatchEvent(new Event(ADMIN_CMDK_EVENT));
           }}
-          className="flex h-8 w-full items-center justify-between gap-2 rounded-admin-control border border-admin-border bg-admin-surface px-2.5 text-xs text-admin-text-faint transition hover:border-admin-border-strong hover:text-admin-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
+          className="flex h-9 w-full items-center justify-between gap-2 rounded-admin-control border border-admin-border-strong bg-admin-surface px-3 text-[13px] text-admin-text-muted transition hover:border-admin-text/30 hover:text-admin-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
         >
           <span className="flex items-center gap-2 truncate">
-            <Search size={13} aria-hidden="true" />
-            <span>搜索或跳转…</span>
+            <Search size={14} aria-hidden="true" />
+            <span>搜索产品或跳转…</span>
           </span>
-          <kbd className="rounded border border-admin-border bg-admin-surface-subtle px-1 font-mono text-[10px] text-admin-text-faint">
+          <kbd className="rounded border border-admin-border bg-admin-surface-subtle px-1.5 py-0.5 font-mono text-[11px] text-admin-text-faint">
             ⌘K
           </kbd>
         </button>
       </div>
 
-      <nav className="admin-scrollbar flex-1 overflow-y-auto px-3 py-3" aria-label="后台主导航">
-        <div className="space-y-0.5">
-          {ADMIN_HUBS.map((hub) => {
-            const active = isHubActive(pathname, hub);
-            const Icon = hubIcons[hub.id];
+      <nav className="admin-scrollbar flex-1 overflow-y-auto px-3.5 py-4" aria-label="后台主导航">
+        <div className="space-y-5">
+          {sidebarSections.map((section) => (
+            <div key={section.label}>
+              <p className="mb-1.5 px-2.5 text-[11px] font-medium tracking-wider text-admin-text-faint">
+                {section.label}
+              </p>
+              <div className="space-y-0.5">
+                {section.hubIds.map((hubId) => {
+                  const hub = hubMap.get(hubId);
+                  if (!hub) return null;
+                  const active = isHubActive(pathname, hub);
+                  const Icon = hubIcons[hub.id];
 
-            return (
-              <AdminLink
-                key={hub.id}
-                href={hub.href}
-                prefetch="auto"
-                showPending
-                onClick={() => setMobileOpen(false)}
-                aria-current={active ? "page" : undefined}
-                className={[
-                  "flex min-h-11 items-center gap-2.5 rounded-admin-control px-2.5 py-1.5 text-[13px] transition-colors lg:min-h-8",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent",
-                  active
-                    ? "bg-admin-chip font-medium text-admin-text"
-                    : "text-admin-text-secondary hover:bg-admin-chip/60 hover:text-admin-text",
-                ].join(" ")}
-              >
-                <Icon
-                  size={15}
-                  strokeWidth={active ? 2 : 1.75}
-                  className={active ? "text-admin-text" : "text-admin-text-faint"}
-                  aria-hidden="true"
-                />
-                <span className="truncate">{hub.label}</span>
-              </AdminLink>
-            );
-          })}
-        </div>
+                  return (
+                    <AdminLink
+                      key={hub.id}
+                      href={hub.href}
+                      prefetch="auto"
+                      showPending
+                      onClick={() => setMobileOpen(false)}
+                      aria-current={active ? "page" : undefined}
+                      className={[
+                        "flex min-h-11 items-center gap-3 rounded-admin-control px-2.5 py-2 text-sm transition-colors lg:min-h-9",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent",
+                        active
+                          ? "bg-admin-chip font-medium text-admin-text"
+                          : "text-admin-text-secondary hover:bg-admin-chip/65 hover:text-admin-text",
+                      ].join(" ")}
+                    >
+                      <Icon
+                        size={16}
+                        strokeWidth={active ? 2 : 1.75}
+                        className={active ? "text-admin-text" : "text-admin-text-faint"}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">{hub.label}</span>
+                    </AdminLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
 
-        <div className="mt-5 border-t border-admin-border pt-3 lg:hidden">
+          <div className="border-t border-admin-border pt-4">
+            <p className="mb-1.5 px-2.5 text-[11px] font-medium tracking-wider text-admin-text-faint">
+              高频直达
+            </p>
+            <div className="space-y-0.5">
+              {quickViews.map((item) => {
+                const active = matchesAdminRoute(pathname, item.href);
+                const Icon = item.icon;
+                return (
+                  <AdminLink
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={[
+                      "flex min-h-11 items-center gap-3 rounded-admin-control px-2.5 py-1.5 text-[13px] transition-colors lg:min-h-8",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent",
+                      active
+                        ? "bg-admin-chip font-medium text-admin-text"
+                        : "text-admin-text-muted hover:bg-admin-chip/65 hover:text-admin-text",
+                    ].join(" ")}
+                  >
+                    <Icon size={15} strokeWidth={1.75} className="text-admin-text-faint" aria-hidden="true" />
+                    <span className="truncate">{item.label}</span>
+                  </AdminLink>
+                );
+              })}
+            </div>
+          </div>
+
           {currentHub.subNav.length > 0 ? (
-            <>
+            <div className="border-t border-admin-border pt-4 lg:hidden">
               <p className="mb-1.5 px-2.5 text-[11px] font-medium text-admin-text-faint">
-                {currentHub.label}
+                {currentHub.label}子页
               </p>
               <div className="space-y-0.5">
                 {currentHub.subNav.map((sub) => (
@@ -239,39 +294,42 @@ export default function AdminSidebar({
                   </AdminLink>
                 ))}
               </div>
-            </>
+            </div>
           ) : null}
         </div>
       </nav>
 
-      <div className="space-y-1 border-t border-admin-border px-3 py-3">
+      <div className="shrink-0 space-y-2 border-t border-admin-border px-3.5 py-3.5">
         <NightModeSwitch />
-        <div className="flex items-center justify-between gap-2 px-2.5 pt-1">
-          <p className="truncate text-[11px] text-admin-text-muted" title={email}>
-            {email}
-          </p>
+        <div className="flex items-center justify-between gap-2 rounded-admin-control bg-admin-surface px-3 py-2 border border-admin-border">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-admin-text" title={email}>
+              {email}
+            </p>
+            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-admin-text-faint">
+              <span>
+                网站版本 <span className="font-mono tabular-nums">v{version}</span>
+              </span>
+              <span>·</span>
+              <AdminLink
+                href="/admin/system#versions"
+                onClick={() => setMobileOpen(false)}
+                className="text-admin-text-muted hover:text-admin-text hover:underline"
+              >
+                版本总览
+              </AdminLink>
+            </div>
+          </div>
           <AdminActionForm capability="account" action="/admin/logout" method="post">
             <button
               type="submit"
               aria-label="退出登录"
               title="退出登录"
-              className="flex h-7 w-7 items-center justify-center rounded-admin-control text-admin-text-faint transition hover:bg-admin-danger-soft hover:text-admin-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-danger"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-admin-control text-admin-text-muted transition hover:bg-admin-danger-soft hover:text-admin-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-danger"
             >
-              <LogOut size={14} strokeWidth={1.8} aria-hidden="true" />
+              <LogOut size={15} strokeWidth={1.8} aria-hidden="true" />
             </button>
           </AdminActionForm>
-        </div>
-        <div className="flex items-center justify-between px-2.5 pt-1 text-[11px] text-admin-text-faint">
-          <span>
-            网站版本 <span className="font-mono tabular-nums">v{version}</span>
-          </span>
-          <AdminLink
-            href="/admin/system#versions"
-            onClick={() => setMobileOpen(false)}
-            className="text-admin-text-muted hover:text-admin-text hover:underline"
-          >
-            版本总览
-          </AdminLink>
         </div>
       </div>
     </>
@@ -279,13 +337,13 @@ export default function AdminSidebar({
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[220px] shrink-0 border-r border-admin-border bg-admin-surface-subtle lg:flex lg:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-[252px] shrink-0 border-r border-admin-border bg-admin-surface-subtle lg:flex lg:flex-col">
         {navigation}
       </aside>
 
-      <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-admin-border bg-admin-surface/95 px-4 backdrop-blur lg:hidden">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-admin-primary text-[11px] font-semibold text-admin-on-primary">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-admin-border bg-admin-surface/95 px-4 backdrop-blur lg:hidden">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-admin-primary text-xs font-semibold text-admin-on-primary">
             G
           </span>
           <p className="truncate text-sm font-semibold text-admin-text">{currentHub.label}</p>
@@ -307,7 +365,7 @@ export default function AdminSidebar({
             onClick={() => setMobileOpen(true)}
             className="flex h-11 w-11 items-center justify-center rounded-admin-control text-admin-text-secondary transition hover:bg-admin-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
           >
-            <Menu size={19} strokeWidth={1.8} />
+            <Menu size={20} strokeWidth={1.8} />
           </button>
         </div>
       </header>
@@ -320,14 +378,14 @@ export default function AdminSidebar({
             onClick={closeMobileNavigation}
             className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
           />
-          <aside className="relative flex h-full w-[min(86vw,280px)] flex-col border-r border-admin-border bg-admin-surface-subtle shadow-2xl">
+          <aside className="relative flex h-full w-[min(86vw,296px)] flex-col border-r border-admin-border bg-admin-surface-subtle shadow-2xl">
             <button
               type="button"
               aria-label="关闭后台导航"
               onClick={closeMobileNavigation}
-              className="absolute right-2 top-0.5 z-10 flex h-11 w-11 items-center justify-center rounded-admin-control text-admin-text-secondary transition hover:bg-admin-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
+              className="absolute right-2.5 top-1.5 z-10 flex h-11 w-11 items-center justify-center rounded-admin-control text-admin-text-secondary transition hover:bg-admin-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent"
             >
-              <X size={17} strokeWidth={1.8} />
+              <X size={18} strokeWidth={1.8} />
             </button>
             {navigation}
           </aside>

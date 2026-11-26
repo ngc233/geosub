@@ -2,11 +2,7 @@
 
 import AdminLink from "@/components/admin/AdminLink";
 import { usePathname } from "next/navigation";
-import {
-  ADMIN_CMDK_EVENT,
-  getActiveAdminHub,
-  isSubNavActive,
-} from "./admin-nav-config";
+import { getActiveAdminHub, isSubNavActive } from "./admin-nav-config";
 
 const roleLabels: Record<string, string> = {
   OWNER: "管理员",
@@ -15,17 +11,17 @@ const roleLabels: Record<string, string> = {
 };
 
 /**
- * 48px Linear / Vercel contextual top bar:
- * displays the active Hub + horizontal secondary sub-navigation tabs + compact role/⌘K controls.
+ * 56px Linear / Vercel contextual top bar:
+ * active Hub + horizontal secondary sub-navigation tabs + compact role badge (no duplicate Cmd+K).
  */
 export default function AdminTopBar({ name, role }: { name: string; role: string }) {
   const pathname = usePathname();
   const hub = getActiveAdminHub(pathname);
 
   return (
-    <header className="sticky top-0 z-30 hidden h-12 items-center justify-between gap-4 border-b border-admin-border bg-admin-surface/95 px-6 backdrop-blur lg:flex">
-      <div className="flex min-w-0 items-center gap-3 overflow-hidden">
-        <span className="shrink-0 text-[13px] font-semibold tracking-tight text-admin-text">
+    <header className="sticky top-0 z-30 hidden h-14 items-center justify-between gap-4 border-b border-admin-border bg-admin-surface/95 px-6 backdrop-blur lg:flex">
+      <div className="flex min-w-0 items-center gap-4 overflow-hidden">
+        <span className="shrink-0 text-sm font-semibold tracking-tight text-admin-text">
           {hub.label}
         </span>
 
@@ -44,7 +40,7 @@ export default function AdminTopBar({ name, role }: { name: string; role: string
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={[
-                      "relative inline-flex h-12 shrink-0 items-center whitespace-nowrap px-2.5 text-[13px] transition-colors",
+                      "relative inline-flex h-14 shrink-0 items-center whitespace-nowrap px-3 text-sm transition-colors",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent",
                       active
                         ? "font-medium text-admin-text"
@@ -55,7 +51,7 @@ export default function AdminTopBar({ name, role }: { name: string; role: string
                     {active ? (
                       <span
                         aria-hidden="true"
-                        className="absolute inset-x-1.5 bottom-0 h-[2px] bg-admin-text"
+                        className="absolute inset-x-2 bottom-0 h-[2px] bg-admin-text"
                       />
                     ) : null}
                   </AdminLink>
@@ -66,22 +62,14 @@ export default function AdminTopBar({ name, role }: { name: string; role: string
         ) : null}
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new Event(ADMIN_CMDK_EVENT))}
-          className="inline-flex h-7 items-center gap-1.5 rounded-admin-control border border-admin-border bg-admin-surface-subtle px-2 text-xs text-admin-text-muted transition hover:border-admin-border-strong hover:text-admin-text"
-        >
-          <span>快速跳转</span>
-          <kbd className="font-mono text-[10px] text-admin-text-faint">⌘K</kbd>
-        </button>
-        <span className="inline-flex h-7 items-center rounded-admin-control border border-admin-border bg-admin-surface-subtle px-2 text-xs font-medium text-admin-text-secondary">
+      <div className="flex shrink-0 items-center gap-2.5">
+        <span className="inline-flex h-7 items-center rounded-full border border-admin-border bg-admin-surface-subtle px-2.5 text-xs font-medium text-admin-text-secondary">
           {roleLabels[role] || "未知"}
         </span>
         <span
           title={name}
           aria-hidden="true"
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-admin-chip text-[11px] font-semibold text-admin-text"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-chip text-xs font-semibold text-admin-text"
         >
           {name.slice(0, 1).toUpperCase()}
         </span>

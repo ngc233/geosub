@@ -54,12 +54,12 @@ html { scrollbar-gutter: stable; }
   --admin-on-primary: #ffffff;
   --admin-canvas: #ffffff;
   --admin-surface: #ffffff;
-  --admin-surface-subtle: #fafafa;
-  --admin-surface-head: #fafafa;
-  --admin-row-hover: #f7f7f8;
-  --admin-chip: #f4f4f5;
-  --admin-chip-hover: #e4e4e7;
-  --admin-border: #eaeaea;
+  --admin-surface-subtle: #f4f4f5;
+  --admin-surface-head: #f8f8f9;
+  --admin-row-hover: #f4f4f5;
+  --admin-chip: #e9e9ec;
+  --admin-chip-hover: #dedee3;
+  --admin-border: #e4e4e7;
   --admin-border-strong: #d4d4d8;
   --admin-text: #09090b;
   --admin-text-body: #27272a;
@@ -74,7 +74,7 @@ html { scrollbar-gutter: stable; }
   --admin-warning-soft: #fefce8;
   --admin-danger: #dc2626;
   --admin-danger-soft: #fef2f2;
-  --admin-shadow: rgb(9 9 11 / 0.04);
+  --admin-shadow: rgb(9 9 11 / 0.05);
   --admin-card-shadow: none;
   color-scheme: light;
 }

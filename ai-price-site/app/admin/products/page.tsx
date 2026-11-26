@@ -136,42 +136,42 @@ export default async function AdminProductsPage({
   return (
     <div className="-mx-4 -my-5 flex flex-col sm:-mx-6 lg:-mx-8 lg:-my-6">
       {/* Compact Metric Strip + Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-admin-border bg-admin-surface px-4 py-3 sm:px-6">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-admin-border bg-admin-surface px-4 py-3.5 sm:px-6">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
           <div className="flex items-baseline gap-1.5">
             <span className="text-admin-text-muted">活跃产品</span>
-            <strong className="text-sm font-semibold tabular-nums text-admin-text">
+            <strong className="text-base font-semibold tabular-nums text-admin-text">
               {view.activeTotal}
             </strong>
           </div>
-          <span aria-hidden="true" className="hidden h-3.5 w-px bg-admin-border sm:inline-block" />
+          <span aria-hidden="true" className="hidden h-4 w-px bg-admin-border sm:inline-block" />
           <div className="flex items-baseline gap-1.5">
             <span className="text-admin-text-muted">套餐</span>
-            <strong className="text-sm font-semibold tabular-nums text-admin-text">
+            <strong className="text-base font-semibold tabular-nums text-admin-text">
               {view.totalPlans}
             </strong>
           </div>
-          <span aria-hidden="true" className="hidden h-3.5 w-px bg-admin-border sm:inline-block" />
+          <span aria-hidden="true" className="hidden h-4 w-px bg-admin-border sm:inline-block" />
           <div className="flex items-baseline gap-1.5">
             <span className="text-admin-text-muted">区域价格</span>
-            <strong className="text-sm font-semibold tabular-nums text-admin-text">
+            <strong className="text-base font-semibold tabular-nums text-admin-text">
               {view.totalPrices.toLocaleString("zh-CN")}
             </strong>
           </div>
-          <span aria-hidden="true" className="hidden h-3.5 w-px bg-admin-border sm:inline-block" />
+          <span aria-hidden="true" className="hidden h-4 w-px bg-admin-border sm:inline-block" />
           <div className="flex items-baseline gap-1.5">
             <span className="text-admin-text-muted">覆盖国家</span>
-            <strong className="text-sm font-semibold tabular-nums text-admin-text">
+            <strong className="text-base font-semibold tabular-nums text-admin-text">
               {view.countryCoverage}
             </strong>
           </div>
-          <span aria-hidden="true" className="hidden h-3.5 w-px bg-admin-border sm:inline-block" />
+          <span aria-hidden="true" className="hidden h-4 w-px bg-admin-border sm:inline-block" />
           <div className="flex items-baseline gap-1.5">
             <span className="text-admin-text-muted">待处理</span>
-            <strong className="text-sm font-semibold tabular-nums text-admin-text">
+            <strong className="text-base font-semibold tabular-nums text-admin-text">
               {view.issueCount}
             </strong>
-            <span className="text-admin-text-faint">（归档 {view.archivedCount}）</span>
+            <span className="text-xs text-admin-text-faint">（归档 {view.archivedCount}）</span>
           </div>
         </div>
 
@@ -191,7 +191,7 @@ export default async function AdminProductsPage({
       </div>
 
       {/* Single-Row Unified Filter Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface-subtle/60 px-4 py-2.5 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface-subtle/60 px-4 py-3 sm:px-6">
         <form
           action="/admin/products"
           method="get"
@@ -208,7 +208,7 @@ export default async function AdminProductsPage({
             <Search
               size={14}
               aria-hidden="true"
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-admin-text-faint"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-admin-text-faint"
             />
             <input
               type="search"
@@ -217,7 +217,7 @@ export default async function AdminProductsPage({
               maxLength={100}
               aria-label="搜索产品"
               placeholder="搜索产品或 slug…"
-              className={`${adminControlClassName} h-8 w-52 pl-8 text-xs sm:w-60`}
+              className={`${adminControlClassName} h-9 w-56 pl-9 text-sm sm:w-64`}
             />
           </div>
 
@@ -225,7 +225,7 @@ export default async function AdminProductsPage({
             aria-label="按分类筛选"
             name="category"
             defaultValue={view.selectedCategory.value === "all" ? "" : view.selectedCategory.value}
-            className={`${adminControlClassName} h-8 text-xs`}
+            className={`${adminControlClassName} h-9 text-sm`}
           >
             {view.categoryCounts.map((cat) => (
               <option key={cat.value} value={cat.value === "all" ? "" : cat.value}>
@@ -241,9 +241,9 @@ export default async function AdminProductsPage({
           {hasFilters ? (
             <AdminLink
               href="/admin/products"
-              className="inline-flex h-8 items-center gap-1 rounded-admin-control px-2 text-xs text-admin-text-muted hover:bg-admin-chip hover:text-admin-text"
+              className="inline-flex h-9 items-center gap-1 rounded-admin-control px-2.5 text-[13px] text-admin-text-muted hover:bg-admin-chip hover:text-admin-text"
             >
-              <X size={13} aria-hidden="true" />
+              <X size={14} aria-hidden="true" />
               重置
             </AdminLink>
           ) : null}

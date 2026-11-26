@@ -90,3 +90,16 @@
 - **`structurally checked`**：`prefers-reduced-motion` 保护与其余未修改子页对新 6 大中心外壳及上下文二级顶栏的继承兼容性。
 - **`not verified`**：Safari / WebKit 与物理手机软键盘；生产数据写入与真实采集触发（本批严格只读，未修改任何写入逻辑、Prisma 连接池或受保护文件）；远端 GitHub CI（尚未推送）。
 
+## 7. 总体里程碑与 M2-A 采集链路三面收口设计（2026-11-27）
+
+基于宽屏实测反馈与产品负责人拍板，确立 M1 → M4 总体路线：
+- **M1（已完成）**：Linear/Vercel 极简冷灰外壳、宽屏比例校准（252px 侧栏、56px 顶栏、14px 正文/表格、全宽自适应三栏收件箱与流体容器）、核心工作台（`/admin`、`/admin/products`、`/admin/products/[id]/edit` 5 页签）、遗留页清理。
+- **M2-A（本批次）**：价格运维采集链路重构——解决 7 个重叠页面与路由互相跳转问题：
+  1. **采集中心（`/admin/pipeline`）**：保留 canonical URL `/admin/pipeline`，通过 `?tab=queue|runs|discovery` 统一承接待采队列、全站唯一运行与任务记录（合并原 `/admin/collector-jobs`，移除 `ClaudeJobReuseWorkbench`）、线索录入（合并原 `/admin/discovery`）。单产品/批量触发采集后原地反馈进度，不再强行跳入 `/admin/review`。
+  2. **异常审核（`/admin/review`）**：剥离采集触发器与通用运行记录，专注「旧价 vs 新观测价」对比审批（`?tab=pending|games|history`）。
+  3. **正式价格（`/admin/prices`）与数据质量（`/admin/data-quality`）**：保留各自独立二级 Tab，移除重复的 `AdminPipelineSteps` 双重导航条，统一到 Linear/Vercel 视觉规范，所有“下一步动作”收口到 `/admin/pipeline?tab=queue|runs`、`/admin/review` 或单产品工作区 `/admin/products/[id]/edit?tab=sources|prices`。
+  4. **旧路由兼容**：`/admin/collector-jobs` 重定向至 `/admin/pipeline?tab=runs`（保留 `product`/`q`/`status` 等查询参数），`/admin/discovery` 重定向至 `/admin/pipeline?tab=discovery`，`/admin/price-observations` 重定向至 `/admin/review`。
+- **M2-B**：其余后台模块（增长分析、内容管理、系统运维、跨产品套餐、购买力）全量收口至 4 套标准模板并清零原始 Tailwind 色板。
+- **M3 / M4（阶段 2 底层收口）**：单权威状态读模型 + 全量 `adminPrisma` + SQL 真分页；写操作收口至统一命令管道与原地反馈。
+
+

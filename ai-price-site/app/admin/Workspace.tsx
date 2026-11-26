@@ -96,9 +96,9 @@ export default function Workspace({
     list.items.find((item) => item.id === selectedId) ?? list.items[0] ?? null;
 
   return (
-    <div className="-mx-4 -my-5 flex min-h-[calc(100vh-48px)] flex-col sm:-mx-6 lg:-mx-8 lg:-my-6">
-      {/* Compact edge-to-edge triage bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-4 py-2.5 sm:px-6">
+    <div className="-mx-4 -my-5 flex min-h-[calc(100vh-56px)] flex-col sm:-mx-6 lg:-mx-8 lg:-my-6">
+      {/* Full-width triage toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-4 py-3 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
           <AdminSegmentedControl
             ariaLabel="待办筛选"
@@ -122,14 +122,14 @@ export default function Workspace({
           />
           <span
             id="workspace-list"
-            className="hidden text-xs tabular-nums text-admin-text-faint md:inline"
+            className="hidden text-xs tabular-nums text-admin-text-muted md:inline"
           >
-            {viewModel.failed ? "读取失败" : `${displayed.length} 项`}
+            {viewModel.failed ? "读取失败" : `共 ${displayed.length} 项`}
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-admin-text-muted">
-          <span className="hidden tabular-nums xl:inline">{viewModel.readAt}</span>
+        <div className="flex items-center gap-4 text-[13px] text-admin-text-muted">
+          <span className="hidden text-xs tabular-nums xl:inline">{viewModel.readAt}</span>
           <AdminLink
             href="/admin/products"
             className="font-medium text-admin-text-secondary hover:text-admin-text hover:underline"
@@ -161,19 +161,19 @@ export default function Workspace({
         </div>
       ) : null}
 
-      {/* Linear-style Split-Pane Inbox */}
-      <div className="grid flex-1 grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)]">
+      {/* Full-width 3-Column Adaptive Linear Layout: Queue | Main Inspector | Right Properties Rail */}
+      <div className="grid w-full flex-1 grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)_320px]">
         {/* Left Pane: Triage Queue */}
         <section
           aria-label="待办队列"
           className="flex flex-col border-b border-admin-border bg-admin-surface lg:border-b-0 lg:border-r"
         >
           {displayed.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="px-6 py-14 text-center">
               <CheckCircle2
                 size={24}
                 strokeWidth={1.6}
-                className="text-admin-text-faint"
+                className="mx-auto text-admin-text-faint"
                 aria-hidden="true"
               />
               <p className="mt-3 text-sm font-medium text-admin-text">
@@ -183,7 +183,7 @@ export default function Workspace({
                     ? "当前没有需要人工处理的异常"
                     : "当前筛选下暂无记录"}
               </p>
-              <p className="mt-1 max-w-xs text-xs leading-5 text-admin-text-muted">
+              <p className="mx-auto mt-1.5 max-w-xs text-xs leading-5 text-admin-text-muted">
                 {viewModel.partial && filter === "progress"
                   ? "本地快照未导入运行记录，无法判断生产采集进度。"
                   : "可切换上方“全部产品”或按 ⌘K 跳转到指定产品。"}
@@ -205,14 +205,14 @@ export default function Workspace({
                     {selected ? (
                       <span
                         aria-hidden="true"
-                        className="absolute inset-y-0 left-0 w-[2px] bg-admin-text"
+                        className="absolute inset-y-0 left-0 w-[3px] bg-admin-text"
                       />
                     ) : null}
                     <button
                       type="button"
                       onClick={() => setSelectedId(item.id)}
                       aria-pressed={selected}
-                      className="flex w-full items-start gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-admin-accent"
+                      className="flex w-full items-start gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-admin-accent"
                     >
                       <span
                         aria-hidden="true"
@@ -221,14 +221,14 @@ export default function Workspace({
                       <AdminProductLogo slug={item.slug} name={item.name} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[13px] font-medium text-admin-text">
+                          <span className="truncate text-sm font-medium text-admin-text">
                             {item.name}
                           </span>
-                          <span className="shrink-0 rounded border border-admin-border bg-admin-surface px-1.5 py-0.5 font-mono text-[10px] text-admin-text-faint">
+                          <span className="shrink-0 rounded border border-admin-border bg-admin-surface px-1.5 py-0.5 font-mono text-[10px] text-admin-text-muted">
                             {item.billingPlatform === "web" ? "WEB" : "iOS"}
                           </span>
                         </div>
-                        <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-admin-text-muted">
+                        <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-admin-text-muted">
                           {item.summary}
                         </p>
                       </div>
@@ -244,29 +244,30 @@ export default function Workspace({
               {...list.pagination}
               showCount={false}
               ariaLabel="待办底部分页"
-              className="mt-auto border-t border-admin-border px-4 py-2.5"
+              className="mt-auto border-t border-admin-border px-4 py-3"
             />
           ) : null}
         </section>
 
-        {/* Right Pane: Live Inspector */}
-        <section aria-label="选中项详情" className="flex min-w-0 flex-col bg-admin-surface">
+        {/* Center Pane: Live Inspector */}
+        <section aria-label="选中项详情" className="min-w-0 bg-admin-surface">
           {activeItem ? (
-            <div className="flex-1 p-5 sm:p-7">
-              <div className="flex flex-col gap-4 border-b border-admin-border pb-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-col gap-4 border-b border-admin-border pb-6 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex min-w-0 items-center gap-3.5">
                   <AdminProductLogo slug={activeItem.slug} name={activeItem.name} size="md" />
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-lg font-semibold tracking-tight text-admin-text">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl font-semibold tracking-tight text-admin-text">
                         {activeItem.name}
                       </h1>
                       <span className="font-mono text-xs text-admin-text-faint">
                         {activeItem.slug}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-admin-text-muted">
-                      主计费口径：{activeItem.billingPlatform === "web" ? "官网直采 (Web)" : "App Store (iOS)"}
+                    <p className="mt-1 text-[13px] text-admin-text-muted">
+                      主计费口径：
+                      {activeItem.billingPlatform === "web" ? "官网直采 (Web)" : "App Store (iOS)"}
                     </p>
                   </div>
                 </div>
@@ -289,12 +290,10 @@ export default function Workspace({
                   { title: "价格数据", badge: activeItem.quality },
                   { title: "采集运行", badge: activeItem.collection },
                 ].map(({ title, badge }) => (
-                  <div key={title} className="py-4 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-admin-text-faint">
-                      {title}
-                    </p>
+                  <div key={title} className="py-5 sm:px-5 sm:first:pl-0 sm:last:pr-0">
+                    <p className="text-xs font-medium text-admin-text-muted">{title}</p>
                     <p
-                      className={`mt-1.5 flex items-center gap-2 text-sm font-medium ${textTone[badge.tone]}`}
+                      className={`mt-2 flex items-center gap-2 text-sm font-medium ${textTone[badge.tone]}`}
                     >
                       <span
                         aria-hidden="true"
@@ -307,83 +306,156 @@ export default function Workspace({
               </div>
 
               {/* Diagnostic Brief */}
-              <div className="border-b border-admin-border py-5">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-admin-text-faint">
-                  当前诊断与建议动作
+              <div className="py-6">
+                <p className="text-xs font-medium text-admin-text-muted">当前诊断与建议动作</p>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-admin-text-body">
+                  {activeItem.summary}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-admin-text-body">{activeItem.summary}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
+
+                <p className="mt-6 text-xs font-medium text-admin-text-muted">单产品工作区快捷直达</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {[
-                    { label: "概览与资料", href: activeItem.workspaceHref },
+                    { label: "概览与资料", desc: "基础字段、分类与品牌资产", href: activeItem.workspaceHref },
                     {
                       label: "套餐配置",
+                      desc: "查看与维护订阅套餐",
                       href: `/admin/products/${activeItem.id}/edit?tab=plans`,
                     },
                     {
                       label: "采集来源",
+                      desc:
+                        activeItem.billingPlatform === "web"
+                          ? "官网采集任务与运行记录"
+                          : "App Store 来源与运行记录",
                       href: `/admin/products/${activeItem.id}/edit?tab=sources`,
                     },
                     {
                       label: "正式价格",
+                      desc: "各地区美元折算与质量",
                       href: `/admin/products/${activeItem.id}/edit?tab=prices`,
                     },
                     {
                       label: "SEO 配置",
+                      desc: "标题、Canonical 与结构化数据",
                       href: `/admin/products/${activeItem.id}/edit?tab=seo`,
                     },
                     {
                       label: "质量诊断",
+                      desc: "覆盖缺口与采集健康详情",
                       href: `/admin/data-quality/${encodeURIComponent(activeItem.slug)}`,
                     },
                   ].map((shortcut) => (
                     <AdminLink
                       key={shortcut.label}
                       href={shortcut.href}
-                      className="inline-flex h-8 items-center gap-1 rounded-admin-control border border-admin-border bg-admin-surface-subtle px-2.5 text-xs font-medium text-admin-text-secondary transition hover:border-admin-border-strong hover:text-admin-text"
+                      className="group flex items-start justify-between gap-2 rounded-admin-card border border-admin-border bg-admin-surface-subtle/50 p-3.5 transition hover:border-admin-border-strong hover:bg-admin-surface-subtle"
                     >
-                      {shortcut.label}
-                      <ArrowUpRight size={12} aria-hidden="true" className="opacity-60" />
+                      <div className="min-w-0">
+                        <span className="block text-[13px] font-medium text-admin-text">
+                          {shortcut.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-admin-text-muted">
+                          {shortcut.desc}
+                        </span>
+                      </div>
+                      <ArrowUpRight
+                        size={14}
+                        aria-hidden="true"
+                        className="mt-0.5 shrink-0 text-admin-text-faint transition group-hover:text-admin-text"
+                      />
                     </AdminLink>
                   ))}
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="p-6 sm:p-8">
+              <div className="rounded-admin-card border border-admin-border bg-admin-surface-subtle/60 px-6 py-10 text-center">
+                <p className="text-sm font-medium text-admin-text">当前无选中项</p>
+                <p className="mt-1.5 text-[13px] text-admin-text-muted">
+                  从左侧队列选择一项查看详情，或按{" "}
+                  <kbd className="rounded border border-admin-border bg-admin-surface px-1.5 py-0.5 font-mono text-xs text-admin-text">
+                    ⌘K
+                  </kbd>{" "}
+                  快速跳转。
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
 
-              {/* Compact Runtime Footer */}
-              <div className="pt-5">
-                {versionOverview ? <div className="mb-4">{versionOverview}</div> : null}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-admin-text-muted">
-                  <span>
-                    角色：<strong className="font-medium text-admin-text">{roleNames[role] || "未知"}</strong>
-                  </span>
-                  <span className="tabular-nums">
-                    最新价格核验：
+        {/* Right Properties / System Rail (Linear-style contextual metadata panel) */}
+        <aside
+          aria-label="运行概况与系统边界"
+          className="border-t border-admin-border bg-admin-surface-subtle/40 p-5 lg:col-span-2 xl:col-span-1 xl:border-l xl:border-t-0"
+        >
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-admin-text-muted">
+                队列统计
+              </h2>
+              <dl className="mt-3 divide-y divide-admin-border rounded-admin-card border border-admin-border bg-admin-surface px-3.5 text-[13px]">
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-admin-text-muted">需要处理</dt>
+                  <dd className="font-semibold tabular-nums text-admin-text">
+                    {viewModel.failed ? "—" : viewModel.counts.action}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-admin-text-muted">系统执行中</dt>
+                  <dd className="font-semibold tabular-nums text-admin-text">
+                    {viewModel.failed || viewModel.partial ? "—" : viewModel.counts.progress}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-admin-text-muted">全部活跃产品</dt>
+                  <dd className="font-semibold tabular-nums text-admin-text">
+                    {viewModel.failed ? "—" : viewModel.counts.all}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-admin-text-muted">
+                运行环境
+              </h2>
+              <dl className="mt-3 divide-y divide-admin-border rounded-admin-card border border-admin-border bg-admin-surface px-3.5 text-[13px]">
+                <div className="flex items-center justify-between gap-2 py-2.5">
+                  <dt className="text-admin-text-muted">当前角色</dt>
+                  <dd className="font-medium text-admin-text">{roleNames[role] || "未知"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2 py-2.5">
+                  <dt className="text-admin-text-muted">最新价格核验</dt>
+                  <dd className="tabular-nums text-admin-text-secondary">
                     {viewModel.latestChecked
                       ? new Date(viewModel.latestChecked).toLocaleDateString("zh-CN", {
                           timeZone: "Asia/Shanghai",
                         })
                       : "不可用"}
-                  </span>
-                  <span>数据源：{viewModel.partial ? "本地快照" : "当前数据库"}</span>
+                  </dd>
                 </div>
-                <details className="mt-3 text-xs text-admin-text-faint">
-                  <summary className="cursor-pointer hover:text-admin-text-secondary">
-                    口径与操作边界说明
-                  </summary>
-                  <p className="mt-2 max-w-2xl leading-6 text-admin-text-muted">
-                    发布状态、价格时效与采集状态相互独立；点选与查看详情均为只读查询，不会触发采集或发布。管理员维护正式数据，编辑仅维护独立草稿，只读成员仅浏览。
-                  </p>
-                </details>
-              </div>
+                <div className="flex items-center justify-between gap-2 py-2.5">
+                  <dt className="text-admin-text-muted">数据源</dt>
+                  <dd className="text-admin-text-secondary">
+                    {viewModel.partial ? "本地快照" : "当前数据库"}
+                  </dd>
+                </div>
+              </dl>
             </div>
-          ) : (
-            <div className="flex flex-1 flex-col justify-between p-6">
-              <div className="py-10 text-center text-sm text-admin-text-muted">
-                从左侧队列选择一项查看详情，或按 <kbd className="rounded border border-admin-border px-1.5 py-0.5 font-mono text-xs">⌘K</kbd> 跳转。
-              </div>
-              {versionOverview}
-            </div>
-          )}
-        </section>
+
+            {versionOverview ? <div>{versionOverview}</div> : null}
+
+            <details className="rounded-admin-card border border-admin-border bg-admin-surface px-3.5 py-3 text-xs text-admin-text-muted">
+              <summary className="cursor-pointer font-medium text-admin-text-secondary">
+                口径与操作边界
+              </summary>
+              <p className="mt-2 leading-5 text-admin-text-muted">
+                发布状态、价格时效与采集状态相互独立；点选与查看详情均为只读查询，不会触发采集或发布。
+              </p>
+            </details>
+          </div>
+        </aside>
       </div>
     </div>
   );

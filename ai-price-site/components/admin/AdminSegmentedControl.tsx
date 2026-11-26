@@ -15,7 +15,7 @@ export default function AdminSegmentedControl({ items, value, ariaLabel, size = 
       className={`admin-scrollbar inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-admin-surface-subtle p-1 ${className}`}>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = `inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/40 motion-reduce:transition-none ${size === "sm" ? "h-7 px-2.5 text-xs" : "h-9 px-3.5 text-sm"} ${active ? "bg-admin-primary text-admin-on-primary" : "text-admin-text-secondary hover:bg-admin-chip-hover hover:text-admin-text"} ${item.disabled ? "cursor-not-allowed opacity-40" : ""}`;
+        const classes = `inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/40 motion-reduce:transition-none ${size === "sm" ? "h-8 px-3 text-[13px]" : "h-9 px-3.5 text-sm"} ${active ? "bg-admin-primary text-admin-on-primary" : "text-admin-text-secondary hover:bg-admin-chip-hover hover:text-admin-text"} ${item.disabled ? "cursor-not-allowed opacity-40" : ""}`;
         const content = <>{item.icon ? <span aria-hidden="true" className="shrink-0">{item.icon}</span> : null}{item.shortLabel ? <><span className="sm:hidden">{item.shortLabel}</span><span className="hidden sm:inline">{item.label}</span></> : item.label}</>;
         const tracking = item.tracking ? {
           "data-track-event": item.tracking.event, "data-track-name": item.tracking.name,

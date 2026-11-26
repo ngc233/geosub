@@ -66,9 +66,9 @@ export default function AdminDataTable({
       }
     >
       <div className="admin-scrollbar max-h-[72vh] overflow-auto">
-        <table className="min-w-full divide-y divide-admin-border text-[13px]">
+        <table className="min-w-full divide-y divide-admin-border text-sm">
           <caption className="sr-only">{caption}</caption>
-          <thead className="sticky top-0 z-10 bg-admin-surface-head text-[11px] font-medium uppercase tracking-wider text-admin-text-muted">
+          <thead className="sticky top-0 z-10 bg-admin-surface-head text-xs font-medium text-admin-text-muted">
             <tr>
               {selection ? (
                 <th scope="col" className="w-10 px-4 py-2.5">
