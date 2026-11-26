@@ -81,6 +81,7 @@ test("admin sidebar exposes only operational modules", () => {
 
   for (const href of [
     "/admin/system",
+    "/admin/audit-logs",
     "/admin/settings",
     "/admin/events",
     "/admin/pipeline",
