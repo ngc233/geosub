@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { BillingCycle, BillingPlatform, DataQuality, Product, PublishStatus, SeoMeta } from "@prisma/client";
-import { prisma } from "../../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../../lib/prisma";
 
 export type ProductWorkspaceTab = "overview" | "plans" | "sources" | "prices" | "seo";
 

@@ -12,11 +12,8 @@ import AdminStatusBadge from "@/components/admin/AdminStatusBadge";
 import AdminSegmentedControl from "@/components/admin/AdminSegmentedControl";
 import AdminFilterBar from "@/components/admin/AdminFilterBar";
 import AdminPagination from "@/components/admin/AdminPagination";
-import { Prisma } from "@prisma/client";
 import {
-  adminOperationalStatusPriority,
   assessProductOperationalStatus,
-  countAdminOperationalAssessments,
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
 import {
@@ -31,7 +28,12 @@ import {
   getCollectionStatusMessage,
   getCollectionStatusTone,
 } from "../review/collection-status";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
+import {
+  queryCanonicalPipelinePage,
+  type CanonicalOperationalCounts,
+  type CanonicalProductStatusRow,
+} from "../../../lib/admin-product-status-read-model";
 import BatchCollectionPanel from "./BatchCollectionPanel";
 import CollectorJobsView from "../collector-jobs/CollectorJobsView";
 import { getCollectorJobsPageData } from "../collector-jobs/queries";
@@ -41,7 +43,7 @@ import {
   officialWebEligibleJobSql,
   webPricingScopeJoinSql,
 } from "../../../lib/admin-product-scope";
-import { buildAdminListHref, paginateAdminItems } from "../../../lib/admin-list-params";
+import { buildAdminListHref } from "../../../lib/admin-list-params";
 
 export const dynamic = "force-dynamic";
 
@@ -303,183 +305,6 @@ function getPublishReadiness(row: PipelineProductRow) {
       ? "修复自动审核"
       : checks.find((check) => !check.ready)?.missing || "保持定期复采",
   };
-}
-
-function sortPipelineRows(rows: PipelineProductRow[]) {
-  return [...rows].sort((left, right) => {
-    const leftStatus = getPipelineOperationalStatus(left);
-    const rightStatus = getPipelineOperationalStatus(right);
-    const statusDifference =
-      adminOperationalStatusPriority[leftStatus] -
-      adminOperationalStatusPriority[rightStatus];
-    if (statusDifference !== 0) return statusDifference;
-
-    const readinessDifference =
-      getPublishReadiness(right).completed - getPublishReadiness(left).completed;
-    if (readinessDifference !== 0) return readinessDifference;
-
-    return left.product_name.localeCompare(right.product_name, "zh-CN");
-  });
-}
-
-async function getPipelineRows({
-  q,
-  category,
-  product,
-}: {
-  q: string;
-  category: string;
-  product: string;
-}) {
-  const productFilter = product ? Prisma.sql`AND product.slug = ${product}` : Prisma.empty;
-  const searchFilter =
-    q && !product
-      ? Prisma.sql`AND (product.slug ILIKE ${`%${q}%`} OR product.name ILIKE ${`%${q}%`})`
-      : Prisma.empty;
-  const categoryFilter =
-    category && category !== "all"
-      ? Prisma.sql`AND product.category = ${category}::product_category`
-      : Prisma.empty;
-
-  return prisma.$queryRaw<PipelineProductRow[]>`
-    SELECT
-      product.id::text AS product_id,
-      product.slug AS product_slug,
-      product.name AS product_name,
-      product.category::text AS product_category,
-      product.status::text AS product_status,
-      product.provider,
-      COALESCE(plan_stats.plan_count, 0)::int AS plan_count,
-      COALESCE(job_stats.total_job_count, 0)::int AS total_job_count,
-      COALESCE(job_stats.app_store_job_count, 0)::int AS app_store_job_count,
-      COALESCE(job_stats.official_web_job_count, 0)::int AS official_web_job_count,
-      COALESCE(job_stats.active_job_count, 0)::int AS active_job_count,
-      COALESCE(job_stats.due_job_count, 0)::int AS due_job_count,
-      COALESCE(job_stats.source_count, 0)::int AS source_count,
-      job_stats.next_run_at,
-      latest_run.status AS latest_run_status,
-      latest_run.started_at AS latest_run_started_at,
-      latest_run.error_message AS latest_run_error,
-      latest_run.raw_payload ->> 'failure_phase' AS failure_phase,
-      latest_run.raw_payload ->> 'failure_stage' AS failure_stage,
-      latest_run.raw_payload ->> 'collector_status' AS collector_status,
-      latest_run.raw_payload ->> 'auto_review_status' AS auto_review_status,
-      latest_success.latest_success_at,
-      COALESCE(latest_success.has_fresh_success, FALSE) AS has_fresh_success,
-      COALESCE(observation_stats.pending_observation_count, 0)::int AS pending_observation_count,
-      COALESCE(observation_stats.blocked_observation_count, 0)::int AS blocked_observation_count,
-      COALESCE(observation_stats.waiting_observation_count, 0)::int AS waiting_observation_count,
-      COALESCE(observation_stats.changed_observation_count, 0)::int AS changed_observation_count,
-      COALESCE(observation_stats.low_confidence_observation_count, 0)::int AS low_confidence_observation_count,
-      COALESCE(published_stats.published_price_count, 0)::int AS published_price_count,
-      COALESCE(published_stats.published_region_count, 0)::int AS published_region_count,
-      COALESCE(published_stats.published_stale_price_count, 0)::int AS published_stale_price_count,
-      published_stats.latest_price_checked_at,
-      COALESCE(candidate_stats.discovery_candidate_count, 0)::int AS discovery_candidate_count
-    FROM products product
-    LEFT JOIN LATERAL (
-      SELECT COUNT(*)::int AS plan_count
-      FROM plans plan
-      WHERE plan.product_id = product.id
-    ) plan_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS total_job_count,
-        COUNT(*) FILTER (
-          WHERE COALESCE(
-            job.job_config ->> 'collector_kind',
-            source.type::text,
-            'unknown'
-          ) = 'app_store'
-        )::int AS app_store_job_count,
-        COUNT(*) FILTER (WHERE ${officialWebJobFilter})::int AS official_web_job_count,
-        COUNT(*) FILTER (WHERE job.status = 'active')::int AS active_job_count,
-        COUNT(*) FILTER (WHERE job.status = 'active' AND (job.next_run_at IS NULL OR job.next_run_at <= NOW()))::int AS due_job_count,
-        COUNT(DISTINCT job.source_id)::int AS source_count,
-        MIN(job.next_run_at) FILTER (WHERE job.status = 'active') AS next_run_at
-      FROM collector_jobs job
-      LEFT JOIN price_sources source ON source.id = job.source_id
-      WHERE job.product_id = product.id
-        AND job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND job.status <> 'archived'
-    ) job_stats ON TRUE
-    ${webPilotScope}
-    LEFT JOIN LATERAL (
-      SELECT run.status, run.started_at, run.error_message, run.raw_payload
-      FROM collector_jobs scoped_job
-      JOIN collector_job_runs run ON run.job_id = scoped_job.id
-      WHERE scoped_job.product_id = product.id
-        AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
-      ORDER BY run.started_at DESC
-      LIMIT 1
-    ) latest_run ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        MAX(run.started_at) FILTER (WHERE run.status = 'succeeded') AS latest_success_at,
-        COALESCE(BOOL_OR(
-          run.status = 'succeeded'
-          AND run.started_at > NOW() - INTERVAL '12 hours'
-        ), FALSE) AS has_fresh_success
-      FROM collector_jobs scoped_job
-      JOIN collector_job_runs run ON run.job_id = scoped_job.id
-      WHERE scoped_job.product_id = product.id
-        AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = CASE WHEN pricing_scope.billing_platform='web' THEN 'pricing_page' ELSE 'app_store' END
-    ) latest_success ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS pending_observation_count,
-        COUNT(*) FILTER (WHERE COALESCE(observation.anomaly_flag, FALSE))::int AS blocked_observation_count,
-        COUNT(*) FILTER (WHERE observation.raw_payload ->> 'auto_review_reason_code' = 'waiting_for_more_app_store_samples')::int AS waiting_observation_count,
-        COUNT(*) FILTER (WHERE observation.raw_payload ->> 'auto_review_reason_code' = 'app_store_price_changed')::int AS changed_observation_count,
-        COUNT(*) FILTER (WHERE observation.raw_payload ->> 'auto_review_reason_code' = 'low_confidence')::int AS low_confidence_observation_count
-      FROM price_observations observation
-      WHERE observation.product_id = product.id
-        AND observation.status = 'pending'::observation_status
-        AND observation.billing_platform::text = pricing_scope.billing_platform
-    ) observation_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS published_price_count,
-        COUNT(DISTINCT price.country_id)::int AS published_region_count,
-        COUNT(*) FILTER (
-          WHERE price.last_checked_at IS NULL
-            OR price.last_checked_at < NOW() - INTERVAL '14 days'
-        )::int AS published_stale_price_count,
-        MAX(price.last_checked_at) AS latest_price_checked_at
-      FROM region_prices price
-      WHERE price.product_id = product.id
-        AND price.status = 'published'::publish_status
-        AND price.billing_platform::text = pricing_scope.billing_platform
-        AND price.price_usd IS NOT NULL
-    ) published_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT COUNT(*)::int AS discovery_candidate_count
-      FROM product_discovery_candidates candidate
-      WHERE candidate.promoted_product_id = product.id
-        OR candidate.matched_product_id = product.id
-    ) candidate_stats ON TRUE
-    WHERE product.status <> 'archived'::publish_status
-      ${productFilter}
-      ${searchFilter}
-      ${categoryFilter}
-    ORDER BY
-      CASE
-        WHEN COALESCE(observation_stats.pending_observation_count, 0) > 0 THEN 0
-        WHEN COALESCE(job_stats.app_store_job_count, 0)+COALESCE(job_stats.official_web_job_count,0) <= 0 THEN 1
-        WHEN latest_run.status = 'failed' THEN 2
-        WHEN latest_success.latest_success_at IS NULL THEN 3
-        WHEN COALESCE(published_stats.published_price_count, 0) <= 0 THEN 4
-        WHEN COALESCE(published_stats.published_stale_price_count, 0) > 0 THEN 5
-        ELSE 6
-      END,
-      COALESCE(observation_stats.pending_observation_count, 0) DESC,
-      product.category ASC,
-      product.sort_order ASC,
-      product.name ASC
-    LIMIT 120
-  `;
 }
 
 async function getPipelineStats(): Promise<PipelineStats> {
@@ -1036,31 +861,53 @@ export default async function AdminPipelinePage({
   const discoveryProduct = String(param("discoveryProduct") ?? product).trim();
   const discoveryJobs = Math.max(0, Number(param("discoveryJobs") ?? 0) || 0);
 
-  let rows: PipelineProductRow[] = [];
-  let allRows: PipelineProductRow[] = [];
+  let pageRows: CanonicalProductStatusRow[] = [];
+  let allCount = 0;
+  let stageCounts: CanonicalOperationalCounts = {
+    not_started: 0,
+    pending: 0,
+    exception: 0,
+    published: 0,
+  };
+  let closestToPublish: CanonicalProductStatusRow | null = null;
+  let pagination = { page: 1, totalPages: 1, total: 0, pageSize: 10 };
   let growthSignals: PipelineGrowthSignal[] = [];
   let stats: PipelineStats = emptyPipelineStats();
   let loadError: string | null = null;
 
   try {
-    [allRows, stats, growthSignals] = await measureAdminWorkload("pipeline.page-data", () =>
-      Promise.all([
-        getPipelineRows({ q, category, product }),
-        getPipelineStats(),
-        getPipelineGrowthSignals().catch(() => []),
-      ]),
+    const [canonicalPage, pipelineStats, signals] = await measureAdminWorkload(
+      "pipeline.page-data",
+      () =>
+        Promise.all([
+          queryCanonicalPipelinePage({
+            q,
+            category,
+            product,
+            stage,
+            page: rawParams.page,
+            pageSize: 10,
+          }),
+          getPipelineStats(),
+          getPipelineGrowthSignals().catch(() => []),
+        ]),
     );
-    allRows = sortPipelineRows(allRows);
-    rows =
-      stage === "all"
-        ? allRows
-        : allRows.filter((row) => getPipelineOperationalStatus(row) === stage);
+    pageRows = canonicalPage.rows;
+    allCount = canonicalPage.allCount;
+    stageCounts = canonicalPage.stageCounts;
+    closestToPublish = canonicalPage.closestToPublish;
+    pagination = {
+      page: canonicalPage.pagination.page,
+      totalPages: canonicalPage.pagination.totalPages,
+      total: canonicalPage.pagination.total,
+      pageSize: canonicalPage.pagination.pageSize,
+    };
+    stats = pipelineStats;
+    growthSignals = signals;
   } catch (error) {
     loadError = getErrorMessage(error);
   }
 
-  const pagination = paginateAdminItems(rows, rawParams.page, 10);
-  const pageRows = pagination.items;
   const pageHref = (page: number) =>
     `${buildAdminListHref(
       "/admin/pipeline",
@@ -1073,18 +920,9 @@ export default async function AdminPipelinePage({
       { page },
     )}#pipeline-products`;
 
-  const stageCounts = countAdminOperationalAssessments(
-    allRows.map(getPipelineOperationalAssessment),
-  );
   const growthSignalByProduct = new Map(
     growthSignals.map((signal) => [signal.productId, signal]),
   );
-  const closestToPublish = [...allRows]
-    .filter((row) => getPipelineOperationalStatus(row) !== "published")
-    .sort(
-      (left, right) =>
-        getPublishReadiness(right).completed - getPublishReadiness(left).completed,
-    )[0];
   const closestReadiness = closestToPublish ? getPublishReadiness(closestToPublish) : null;
   const recommendation = getPipelineRecommendation(stats);
 
@@ -1286,7 +1124,7 @@ export default async function AdminPipelinePage({
             <h2 id="pipeline-products-heading" className="text-sm font-semibold text-admin-text">
               待采产品队列
             </h2>
-            <span className="text-xs tabular-nums text-admin-text-muted">共 {rows.length} 个产品</span>
+            <span className="text-xs tabular-nums text-admin-text-muted">共 {pagination.total} 个产品</span>
           </div>
           <div className="mb-4 min-w-0">
             <AdminSegmentedControl
@@ -1294,7 +1132,7 @@ export default async function AdminPipelinePage({
               value={stage}
               items={pipelineStages.map((item) => ({
                 value: item.value,
-                label: `${item.label} ${item.value === "all" ? allRows.length : stageCounts[item.value]}`,
+                label: `${item.label} ${item.value === "all" ? allCount : stageCounts[item.value]}`,
                 href: stageHref(item.value),
               }))}
             />
@@ -1366,7 +1204,7 @@ export default async function AdminPipelinePage({
             </article>
           ))}
 
-          {rows.length === 0 && !loadError ? (
+          {pageRows.length === 0 && !loadError ? (
             <AdminCard>
               <div className="py-12 text-center">
                 <div className="text-sm font-semibold text-admin-text">没有匹配的产品</div>

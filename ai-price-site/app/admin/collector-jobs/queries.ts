@@ -1,7 +1,7 @@
 import { claudeReviewPolicyId } from "./claude-reuse-model";
 import { parseAdminProductFilter } from "@/lib/admin-workflow-context";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import type { AvailabilityRow, JobRow, RunRow } from "./model";
 
 export async function getCollectorJobsPageData(raw: {product?:string;q?:string;platform?:string} = {}) {

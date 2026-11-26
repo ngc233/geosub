@@ -4,7 +4,7 @@ import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminCard, AdminPageHeader, AdminSectionHeader } from "../../../components/admin/AdminCard";
 import { AdminButton } from "../../../components/admin/AdminButton";
 import AdminAlert from "../../../components/admin/AdminAlert";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import {
   getOperationsNotificationConfig,
   getOperationsNotificationHistory,

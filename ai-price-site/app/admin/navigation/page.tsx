@@ -18,7 +18,7 @@ import {
   navigationLocales,
   navigationPositions,
 } from "../../../lib/navigation-config";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import {
   moveNavigationItem,
   seedDefaultNavigation,

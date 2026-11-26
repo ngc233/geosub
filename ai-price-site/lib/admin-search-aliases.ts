@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Prisma, PublishStatus } from "@prisma/client";
-import { prisma } from "./prisma";
+import { adminPrisma as prisma } from "./prisma";
 import { normalizeSearchOpportunityQuery } from "./search-opportunity";
 
 export const SEARCH_ALIAS_STATUSES = ["active", "disabled"] as const;

@@ -6,7 +6,7 @@ import { adminControlClassName } from "@/components/admin/admin-control";
 import { adminRecordVersion } from "../../../lib/admin-save";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { Mail, MessageSquareText } from "lucide-react";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import { updateContactTicket } from "./actions";
 
 const statusLabels: Record<string, string> = { new: "新工单", in_progress: "处理中", replied: "已回复", closed: "已关闭" };

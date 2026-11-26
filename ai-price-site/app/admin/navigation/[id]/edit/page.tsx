@@ -4,7 +4,7 @@ import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { notFound } from "next/navigation";
 import { AdminCard, AdminPageHeader } from "../../../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../../../components/admin/AdminButton";
-import { prisma } from "../../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../../lib/prisma";
 import {
   getNavigationLocaleByDbValue,
   getNavigationPositionByDbValue,

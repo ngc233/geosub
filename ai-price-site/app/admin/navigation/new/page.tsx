@@ -3,7 +3,7 @@ import { adminControlClassName } from "@/components/admin/admin-control";
 import { AdminActionForm } from "@/components/admin/AdminPermissions";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { AdminButton, AdminLinkButton } from "../../../../components/admin/AdminButton";
-import { prisma } from "../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../lib/prisma";
 import {
   getNavigationLocaleByValue,
   getNavigationPositionByValue,

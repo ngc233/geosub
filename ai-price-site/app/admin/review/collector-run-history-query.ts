@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import type { CollectorRunHistoryRow } from "./types";
 
 function getPayloadText(rawPayload: Prisma.JsonValue, key: string) {

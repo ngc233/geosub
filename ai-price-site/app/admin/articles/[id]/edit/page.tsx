@@ -7,7 +7,7 @@ import { AdminButton, AdminLinkButton } from "../../../../../components/admin/Ad
 import { AdminPageHeader } from "../../../../../components/admin/AdminCard";
 import { getArticleSeoDraft } from "../../../../../lib/article-seo-draft";
 import { getArticleCategories, getArticleTags } from "../../../../../lib/articles";
-import { prisma } from "../../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../../lib/prisma";
 import { generateArticleSeoDraftAction } from "../../actions";
 import ArticleForm from "../../ArticleForm";
 

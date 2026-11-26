@@ -6,7 +6,7 @@ import { AdminButton } from "@/components/admin/AdminButton";
 import { AdminBadge } from "@/components/admin/AdminBadge";
 import AdminAlert from "@/components/admin/AdminAlert";
 import { measureAdminWorkload } from "@/lib/admin-performance";
-import { prisma } from "@/lib/prisma";
+import { adminPrisma as prisma } from "@/lib/prisma";
 import AdminLink from "@/components/admin/AdminLink";
 import {
   ignoreCandidate,

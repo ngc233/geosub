@@ -2,7 +2,7 @@ import "server-only";
 
 import { Prisma } from "@prisma/client";
 import { getAuthorityCoverageTaskRecords } from "./admin-authority-coverage-tasks.ts";
-import { prisma } from "./prisma.ts";
+import { adminPrisma as prisma } from "./prisma.ts";
 import { getCachedProductSeoQualityAudits } from "./product-seo-quality-data.ts";
 import {
   buildAuthorityCoverageQueue,

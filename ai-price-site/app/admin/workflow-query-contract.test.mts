@@ -16,7 +16,7 @@ test("collector product/source predicates bind values before each existing histo
   "@/lib/admin-workflow-context":context,
   "./claude-reuse-model":claudeReuse,
   "../../../lib/admin-performance":{measureAdminWorkload:(_name:string,fn:()=>unknown)=>fn()},
-  "../../../lib/prisma":{prisma:{$queryRaw:(strings:TemplateStringsArray,...values:unknown[])=>{
+  "../../../lib/prisma":{adminPrisma:{$queryRaw:(strings:TemplateStringsArray,...values:unknown[])=>{
    queries.push({sql:strings.join("?"),values});return Promise.resolve([]);
   }}},
  });

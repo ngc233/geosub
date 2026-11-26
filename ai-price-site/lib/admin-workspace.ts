@@ -1,5 +1,5 @@
 import 'server-only';
-import { prisma } from './prisma';
+import { adminPrisma as prisma } from './prisma';
 import {
   isAutoReviewFailureSql,
   officialWebEligibleJobSql,

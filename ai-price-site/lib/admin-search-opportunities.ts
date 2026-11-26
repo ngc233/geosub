@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { prisma } from "./prisma";
+import { adminPrisma as prisma } from "./prisma";
 import {
   isSearchOpportunityWorkflowStatus,
   normalizeSearchOpportunityQuery,

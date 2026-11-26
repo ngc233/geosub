@@ -83,6 +83,7 @@ export async function readAdminReadModel<T>(
 export const ADMIN_READ_MODEL_PREFIXES = {
   dataQuality: "data-quality:",
   dashboard: "dashboard:",
+  productStatus: "product-status:",
   productSeoQuality: "product-seo-quality:",
   seoTrafficConversion: "seo-traffic-conversion:",
   searchDemand: "search-demand:",
@@ -112,6 +113,7 @@ export function invalidateAdminPricingReadModels() {
   invalidateAdminReadModelPrefixes([
     ADMIN_READ_MODEL_PREFIXES.dataQuality,
     ADMIN_READ_MODEL_PREFIXES.dashboard,
+    ADMIN_READ_MODEL_PREFIXES.productStatus,
     ADMIN_READ_MODEL_PREFIXES.productSeoQuality,
     ADMIN_READ_MODEL_PREFIXES.pipelineGrowthSignals,
     ADMIN_READ_MODEL_PREFIXES.versionsOverview,
@@ -122,6 +124,7 @@ export function invalidateAdminCatalogReadModels() {
   invalidateAdminReadModelPrefixes([
     ADMIN_READ_MODEL_PREFIXES.dataQuality,
     ADMIN_READ_MODEL_PREFIXES.dashboard,
+    ADMIN_READ_MODEL_PREFIXES.productStatus,
     ADMIN_READ_MODEL_PREFIXES.productSeoQuality,
     ADMIN_READ_MODEL_PREFIXES.pipelineGrowthSignals,
     ADMIN_READ_MODEL_PREFIXES.versionsOverview,

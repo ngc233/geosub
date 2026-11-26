@@ -5,7 +5,7 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminCard";
 import { evaluateArticleContentQuality } from "@/lib/article-content-quality";
 import { articleStatusLabels, renderArticleMarkdown } from "@/lib/articles";
 import { sanitizeArticleHtml } from "@/lib/content-safety";
-import { prisma } from "@/lib/prisma";
+import { adminPrisma as prisma } from "@/lib/prisma";
 
 export default async function ArticlePreviewPage({
   params,

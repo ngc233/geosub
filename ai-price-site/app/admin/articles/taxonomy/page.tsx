@@ -8,7 +8,7 @@ import AdminLink from "@/components/admin/AdminLink";
 import type { Locale } from "@prisma/client";
 import { AdminButton } from "../../../../components/admin/AdminButton";
 import { AdminCard, AdminPageHeader } from "../../../../components/admin/AdminCard";
-import { prisma } from "../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../lib/prisma";
 import {
   createArticleCategoryAction,
   createArticleTagAction,

@@ -5,18 +5,20 @@ import {
   assessProductOperationalStatus,
   countAdminOperationalAssessments,
   getAdminOperationalTotal,
-  isArchivedPublishStatus,
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
 import {
   buildAdminListHref,
-  paginateAdminItems,
   parseAdminListParams,
   type AdminSortDirection,
 } from "../../../lib/admin-list-params";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
-import { matchesAdminProduct, parseAdminProductFilter } from "../../../lib/admin-workflow-context";
-import { prisma } from "../../../lib/prisma";
+import { parseAdminProductFilter } from "../../../lib/admin-workflow-context";
+import { adminPrisma as prisma } from "../../../lib/prisma";
+import {
+  queryCanonicalProductsPage,
+  type CanonicalCatalogSort,
+} from "../../../lib/admin-product-status-read-model";
 
 export type CategoryValue =
   | "all"
@@ -112,33 +114,6 @@ export const PRODUCT_SORT_COLUMNS = [
 
 export type ProductSortColumn = (typeof PRODUCT_SORT_COLUMNS)[number];
 
-type ProductAssetRow = {
-  id: string;
-  slug: string;
-  name: string;
-  category: string;
-  provider: string | null;
-  status: string;
-  sort_order: number | null;
-  created_at: Date | string;
-  plan_count: unknown;
-  price_count: unknown;
-  country_count: unknown;
-  min_price_usd: unknown;
-  max_price_usd: unknown;
-  verified_price_count: unknown;
-  stale_price_count: unknown;
-  pending_price_count: unknown;
-  missing_source_count: unknown;
-  app_store_job_count: unknown;
-  latest_run_status: string | null;
-  pending_observation_count: unknown;
-  blocked_observation_count: unknown;
-  published_price_count: unknown;
-  published_stale_price_count: unknown;
-  last_checked_at: Date | string | null;
-};
-
 export type ProductCatalogItem = {
   id: string;
   slug: string;
@@ -171,7 +146,12 @@ export type ProductsCatalogViewModel = {
   countryCoverage: number;
   issueCount: number;
   operationalCounts: ReturnType<typeof countAdminOperationalAssessments>;
-  categoryCounts: Array<{ value: CategoryValue; shortLabel: string; count: number; issueCount: number }>;
+  categoryCounts: Array<{
+    value: CategoryValue;
+    shortLabel: string;
+    count: number;
+    issueCount: number;
+  }>;
   items: ProductCatalogItem[];
   pagination: {
     page: number;
@@ -209,104 +189,6 @@ function getSelectedCategory(value?: string): CategoryConfig {
   return PRODUCT_CATEGORIES.find((item) => item.value === normalized) || PRODUCT_CATEGORIES[0];
 }
 
-async function getProductAssets() {
-  return prisma.$queryRaw<ProductAssetRow[]>`
-    SELECT
-      product.id::text,
-      product.slug,
-      product.name,
-      product.category::text AS category,
-      product.provider,
-      product.status::text AS status,
-      product.sort_order,
-      product.created_at,
-      COALESCE(plan_stats.plan_count, 0)::int AS plan_count,
-      COALESCE(price_stats.price_count, 0)::int AS price_count,
-      COALESCE(price_stats.country_count, 0)::int AS country_count,
-      price_stats.min_price_usd,
-      price_stats.max_price_usd,
-      COALESCE(price_stats.verified_price_count, 0)::int AS verified_price_count,
-      COALESCE(price_stats.stale_price_count, 0)::int AS stale_price_count,
-      COALESCE(price_stats.pending_price_count, 0)::int AS pending_price_count,
-      COALESCE(price_stats.missing_source_count, 0)::int AS missing_source_count,
-      COALESCE(job_stats.app_store_job_count, 0)::int AS app_store_job_count,
-      latest_run.status AS latest_run_status,
-      COALESCE(observation_stats.pending_observation_count, 0)::int AS pending_observation_count,
-      COALESCE(observation_stats.blocked_observation_count, 0)::int AS blocked_observation_count,
-      COALESCE(published_stats.published_price_count, 0)::int AS published_price_count,
-      COALESCE(published_stats.published_stale_price_count, 0)::int AS published_stale_price_count,
-      price_stats.last_checked_at
-    FROM products product
-    LEFT JOIN LATERAL (
-      SELECT COUNT(*)::int AS plan_count
-      FROM plans plan
-      WHERE plan.product_id = product.id
-        AND plan.status <> 'archived'::publish_status
-    ) plan_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS price_count,
-        COUNT(DISTINCT price.country_id)::int AS country_count,
-        MIN(price.price_usd) AS min_price_usd,
-        MAX(price.price_usd) AS max_price_usd,
-        COUNT(*) FILTER (WHERE price.data_quality = 'verified'::data_quality)::int AS verified_price_count,
-        COUNT(*) FILTER (WHERE price.data_quality = 'stale'::data_quality)::int AS stale_price_count,
-        COUNT(*) FILTER (WHERE price.data_quality = 'pending_review'::data_quality)::int AS pending_price_count,
-        COUNT(*) FILTER (WHERE price.primary_source_id IS NULL)::int AS missing_source_count,
-        MAX(COALESCE(price.last_checked_at, price.updated_at)) AS last_checked_at
-      FROM region_prices price
-      WHERE price.product_id = product.id
-        AND price.status <> 'archived'::publish_status
-    ) price_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT COUNT(*) FILTER (
-        WHERE COALESCE(
-          job.job_config ->> 'collector_kind',
-          source.type::text,
-          'unknown'
-        ) = 'app_store'
-      )::int AS app_store_job_count
-      FROM collector_jobs job
-      LEFT JOIN price_sources source ON source.id = job.source_id
-      WHERE job.product_id = product.id
-        AND job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND job.status <> 'archived'
-    ) job_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT run.status
-      FROM collector_jobs scoped_job
-      JOIN collector_job_runs run ON run.job_id = scoped_job.id
-      WHERE scoped_job.product_id = product.id
-        AND scoped_job.job_type IN ('ai_pricing', 'streaming_pricing')
-        AND COALESCE(scoped_job.job_config ->> 'collector_kind', run.collector_kind, 'unknown') = 'app_store'
-      ORDER BY run.started_at DESC
-      LIMIT 1
-    ) latest_run ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS pending_observation_count,
-        COUNT(*) FILTER (WHERE COALESCE(observation.anomaly_flag, FALSE))::int AS blocked_observation_count
-      FROM price_observations observation
-      WHERE observation.product_id = product.id
-        AND observation.status = 'pending'::observation_status
-        AND observation.billing_platform = 'ios'::billing_platform
-    ) observation_stats ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT
-        COUNT(*)::int AS published_price_count,
-        COUNT(*) FILTER (
-          WHERE price.last_checked_at IS NULL
-            OR price.last_checked_at < NOW() - INTERVAL '14 days'
-        )::int AS published_stale_price_count
-      FROM region_prices price
-      WHERE price.product_id = product.id
-        AND price.status = 'published'::publish_status
-        AND price.billing_platform = 'ios'::billing_platform
-    ) published_stats ON TRUE
-    ORDER BY product.sort_order ASC, product.created_at ASC, product.name ASC
-  `;
-}
-
 async function getCountryCoverage(category?: CategoryValue) {
   const categoryFilter =
     category && category !== "all"
@@ -325,24 +207,6 @@ async function getCountryCoverage(category?: CategoryValue) {
   return toNumber(rows[0]?.country_count);
 }
 
-function compareItems(
-  left: ProductCatalogItem,
-  right: ProductCatalogItem,
-  sort: ProductSortColumn,
-  direction: AdminSortDirection,
-) {
-  const factor = direction === "desc" ? -1 : 1;
-  if (sort === "plans") return (left.planCount - right.planCount) * factor;
-  if (sort === "countries") return (left.countryCount - right.countryCount) * factor;
-  if (sort === "prices") return (left.priceCount - right.priceCount) * factor;
-  if (sort === "checked") {
-    const a = left.lastCheckedAt?.getTime() ?? 0;
-    const b = right.lastCheckedAt?.getTime() ?? 0;
-    return (a - b) * factor;
-  }
-  return left.name.localeCompare(right.name, "zh-CN") * factor;
-}
-
 export function buildProductsHref(
   current: Record<string, string | undefined>,
   patch: Record<string, string | number | undefined>,
@@ -351,9 +215,9 @@ export function buildProductsHref(
 }
 
 /**
- * Thin ViewModel adapter for /admin/products.
- * Keeps existing SQL queries untouched in Phase 1 while giving the UI a clean,
- * sortable table contract ready for Phase 2 SQL pagination & adminPrisma cutover.
+ * ViewModel adapter for /admin/products backed by the canonical
+ * adminPrisma product-status read model with SQL-level filtering, sorting,
+ * and LIMIT/OFFSET pagination.
  */
 export async function loadProductsCatalogView(rawParams: {
   category?: string;
@@ -381,20 +245,37 @@ export async function loadProductsCatalogView(rawParams: {
     defaultDirection: "asc",
   });
 
-  const [rawRows, countryCoverage] = await measureAdminWorkload("products.page-data", () =>
-    Promise.all([getProductAssets(), getCountryCoverage(selectedCategory.value)]),
+  const sqlSort: CanonicalCatalogSort = rawParams.sort
+    ? (listParams.sort as ProductSortColumn)
+    : "default";
+
+  const [canonicalPage, countryCoverage] = await measureAdminWorkload("products.page-data", () =>
+    Promise.all([
+      queryCanonicalProductsPage({
+        product: productFilter.product || undefined,
+        q: productFilter.q || undefined,
+        category: selectedCategory.value,
+        state: selectedState,
+        sort: sqlSort,
+        direction: listParams.direction,
+        page: rawParams.page,
+        pageSize: 25,
+      }),
+      getCountryCoverage(selectedCategory.value),
+    ]),
   );
 
-  const normalized = rawRows.map((row) => {
-    const category = row.category.toUpperCase() as ProductCategory;
-    const status = row.status.toUpperCase();
+  const items: ProductCatalogItem[] = canonicalPage.rows.map((row) => {
+    const category = row.product_category.toUpperCase() as ProductCategory;
+    const status = row.product_status.toUpperCase();
     const planCount = toNumber(row.plan_count);
     const priceCount = toNumber(row.price_count);
     const countryCount = toNumber(row.country_count);
     const assessment = assessProductOperationalStatus({
       publishStatus: status,
       planCount,
-      activeCollectorJobCount: toNumber(row.app_store_job_count),
+      activeCollectorJobCount:
+        toNumber(row.app_store_job_count) + toNumber(row.official_web_job_count),
       latestRunStatus: row.latest_run_status,
       pendingWorkCount: toNumber(row.pending_observation_count),
       blockedCount: toNumber(row.blocked_observation_count),
@@ -408,76 +289,45 @@ export async function loadProductsCatalogView(rawParams: {
     const catConfig = PRODUCT_CATEGORIES.find((item) => item.dbValue === category);
 
     return {
-      assessment,
-      item: {
-        id: row.id,
-        slug: row.slug,
-        name: row.name,
-        category,
-        categoryLabel: catConfig?.shortLabel || String(category),
-        provider: row.provider,
-        status,
-        planCount,
-        priceCount,
-        countryCount,
-        minPriceUsd: toNullableNumber(row.min_price_usd),
-        maxPriceUsd: toNullableNumber(row.max_price_usd),
-        lastCheckedAt: toDate(row.last_checked_at),
-        operationalStatus: assessment?.status ?? "not_started",
-        operationalReason: assessment?.reason ?? "",
-      } satisfies ProductCatalogItem,
+      id: row.product_id,
+      slug: row.product_slug,
+      name: row.product_name,
+      category,
+      categoryLabel: catConfig?.shortLabel || String(category),
+      provider: row.provider,
+      status,
+      planCount,
+      priceCount,
+      countryCount,
+      minPriceUsd: toNullableNumber(row.min_price_usd),
+      maxPriceUsd: toNullableNumber(row.max_price_usd),
+      lastCheckedAt: toDate(row.last_checked_at),
+      operationalStatus: row.operational_status,
+      operationalReason: assessment?.reason ?? "",
     };
   });
 
-  const archivedCount = normalized.filter((entry) =>
-    isArchivedPublishStatus(entry.item.status),
-  ).length;
-
-  const activeEntries = normalized.filter(
-    (entry) =>
-      !isArchivedPublishStatus(entry.item.status) &&
-      matchesAdminProduct(entry.item, productFilter),
-  );
-
-  const categoryEntries =
-    selectedCategory.value === "all"
-      ? activeEntries
-      : activeEntries.filter((entry) => entry.item.category === selectedCategory.dbValue);
-
-  const operationalCounts = countAdminOperationalAssessments(
-    categoryEntries.map((entry) => entry.assessment),
-  );
+  const operationalCounts = canonicalPage.operationalCounts;
   const activeTotal = getAdminOperationalTotal(operationalCounts);
 
-  const stateEntries =
-    selectedState === "all"
-      ? categoryEntries
-      : categoryEntries.filter((entry) => entry.item.operationalStatus === selectedState);
-
-  const sortedItems = stateEntries.map((entry) => entry.item);
-  if (rawParams.sort) {
-    sortedItems.sort((left, right) =>
-      compareItems(
-        left,
-        right,
-        listParams.sort as ProductSortColumn,
-        listParams.direction,
-      ),
-    );
-  }
-
-  const paged = paginateAdminItems(sortedItems, rawParams.page, 25);
-
   const categoryCounts = PRODUCT_CATEGORIES.map((category) => {
-    const matched =
-      category.value === "all"
-        ? activeEntries
-        : activeEntries.filter((entry) => entry.item.category === category.dbValue);
+    let count = 0;
+    let issueCount = 0;
+    for (const summary of canonicalPage.summaryRows) {
+      if (category.value !== "all" && summary.category.toLowerCase() !== category.value) {
+        continue;
+      }
+      const n = toNumber(summary.product_count);
+      count += n;
+      if (summary.operational_status !== "published") {
+        issueCount += n;
+      }
+    }
     return {
       value: category.value,
       shortLabel: category.shortLabel,
-      count: matched.length,
-      issueCount: matched.filter((entry) => entry.item.operationalStatus !== "published").length,
+      count,
+      issueCount,
     };
   });
 
@@ -488,7 +338,7 @@ export async function loadProductsCatalogView(rawParams: {
     state: selectedState !== "all" ? selectedState : undefined,
     sort: rawParams.sort ? listParams.sort : undefined,
     dir: rawParams.sort ? listParams.direction : undefined,
-    page: paged.page > 1 ? String(paged.page) : undefined,
+    page: canonicalPage.pagination.page > 1 ? String(canonicalPage.pagination.page) : undefined,
   };
 
   return {
@@ -499,21 +349,20 @@ export async function loadProductsCatalogView(rawParams: {
     sort: (rawParams.sort ? listParams.sort : "name") as ProductSortColumn,
     direction: listParams.direction,
     activeTotal,
-    archivedCount,
-    totalPlans: categoryEntries.reduce((sum, entry) => sum + entry.item.planCount, 0),
-    totalPrices: categoryEntries.reduce((sum, entry) => sum + entry.item.priceCount, 0),
+    archivedCount: canonicalPage.archivedCount,
+    totalPlans: canonicalPage.totalPlans,
+    totalPrices: canonicalPage.totalPrices,
     countryCoverage,
-    issueCount: categoryEntries.filter(
-      (entry) => entry.item.operationalStatus !== "published",
-    ).length,
+    issueCount:
+      operationalCounts.not_started + operationalCounts.pending + operationalCounts.exception,
     operationalCounts,
     categoryCounts,
-    items: paged.items,
+    items,
     pagination: {
-      page: paged.page,
-      totalPages: paged.totalPages,
-      total: paged.total,
-      pageSize: paged.pageSize,
+      page: canonicalPage.pagination.page,
+      totalPages: canonicalPage.pagination.totalPages,
+      total: canonicalPage.pagination.total,
+      pageSize: canonicalPage.pagination.pageSize,
     },
     currentParams,
   };

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { prisma } from "./prisma.ts";
+import { adminPrisma as prisma } from "./prisma.ts";
 import { readAdminReadModel } from "./admin-read-model-cache.ts";
 import {
   COMMERCIAL_ACTION_EVENT_KEYS,

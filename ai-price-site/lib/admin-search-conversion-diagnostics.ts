@@ -1,4 +1,4 @@
-import { prisma } from "./prisma.ts";
+import { adminPrisma as prisma } from "./prisma.ts";
 import {
   getProductSeoQualityAudits,
   type ProductSeoQualityAudit,

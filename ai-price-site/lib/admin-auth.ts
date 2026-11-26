@@ -6,7 +6,7 @@ import { cache as reactCache } from "react";
 import { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { prisma } from "./prisma";
+import { adminPrisma as prisma } from "./prisma";
 
 const COOKIE_NAME = "geosub_admin_session";
 const DEFAULT_SESSION_HOURS = 24;

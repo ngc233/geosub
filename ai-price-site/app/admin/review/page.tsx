@@ -3,7 +3,7 @@ import AdminProductContext from "../../../components/admin/AdminProductContext";
 import AdminTabs, { type AdminTabItem } from "@/components/admin/AdminTabs";
 import AdminAlert from "@/components/admin/AdminAlert";
 import { AdminLinkButton } from "@/components/admin/AdminButton";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import { getReviewPageData } from "./queries";
 import { ReviewOverviewSections } from "./ReviewOverviewSections";
 import { PendingProductReviewSection } from "./PendingProductReviewSection";

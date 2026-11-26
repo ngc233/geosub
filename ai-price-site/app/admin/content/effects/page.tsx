@@ -2,7 +2,7 @@ import AdminPagination from "@/components/admin/AdminPagination";
 import AdminSegmentedControl from "@/components/admin/AdminSegmentedControl";
 import { createAdminListView } from "@/lib/admin-list-params";
 import { requireAdmin } from '../../../../lib/admin-auth';
-import { prisma } from '../../../../lib/prisma';
+import { adminPrisma as prisma } from '../../../../lib/prisma';
 import { contentStore } from '../../../../lib/managed-content-store';
 import { readContentEffects } from '../../../../lib/content-effects-store';
 import { effectWindows } from '../../../../lib/content-effects';

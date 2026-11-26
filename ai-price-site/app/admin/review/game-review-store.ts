@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { adminPrisma as prisma } from "@/lib/prisma";
 import { clampAdminPage } from "@/lib/admin-list-params";
 import type { Edition, Market } from "@/lib/game-offers";
 

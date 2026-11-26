@@ -25,7 +25,7 @@ import {
   sourceNameZh,
 } from "../../../lib/admin-event-analytics";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 

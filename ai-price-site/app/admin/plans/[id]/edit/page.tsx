@@ -7,7 +7,7 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminCard";
 import { AdminInput } from "@/components/admin/AdminInput";
 import AdminSelect from "@/components/admin/AdminSelect";
 import { adminRecordVersion } from "@/lib/admin-save";
-import { prisma } from "@/lib/prisma";
+import { adminPrisma as prisma } from "@/lib/prisma";
 import { updatePlanAction } from "../../actions";
 
 const cycleOptions = [

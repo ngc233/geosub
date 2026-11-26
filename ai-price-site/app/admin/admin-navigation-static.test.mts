@@ -138,7 +138,7 @@ test("product pipeline is the single lifecycle entry while specialist pages rema
 test("admin workflows recognize canonical App Store jobs for AI and streaming products", () => {
   const taskScopeFiles = [
     "app/admin/pipeline/page.tsx",
-    "app/admin/products/products-adapter.ts",
+    "lib/admin-product-status-read-model.ts",
     "app/admin/products/[id]/edit/product-workspace-adapter.ts",
     "app/admin/products/actions.ts",
     "app/admin/collector-jobs/actions.ts",
@@ -162,7 +162,7 @@ test("admin workflows recognize canonical App Store jobs for AI and streaming pr
 
   const lifecycleSources = [
     "app/admin/pipeline/page.tsx",
-    "app/admin/products/products-adapter.ts",
+    "lib/admin-product-status-read-model.ts",
     "app/admin/collector-jobs/actions.ts",
     "app/admin/review/queries.ts",
     "app/admin/review/collection-runner.ts",

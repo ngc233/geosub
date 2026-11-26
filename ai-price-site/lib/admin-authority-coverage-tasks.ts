@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { prisma } from "./prisma.ts";
+import { adminPrisma as prisma } from "./prisma.ts";
 import type { AuthorityProductAudit } from "./search-authority-coverage.ts";
 import {
   classifyAuthorityCoverageBusinessEffect,

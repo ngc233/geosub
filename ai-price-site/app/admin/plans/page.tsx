@@ -19,7 +19,7 @@ import {
   isArchivedPublishStatus,
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 
 function cycleLabel(cycle: string) {
   if (cycle === "MONTHLY") return "月付";

@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "./prisma.ts";
+import { adminPrisma as prisma } from "./prisma.ts";
 import type { SearchDemandTerm } from "./search-opportunity.ts";
 import { readAdminReadModel } from "./admin-read-model-cache.ts";
 

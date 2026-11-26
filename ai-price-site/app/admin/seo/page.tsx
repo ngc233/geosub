@@ -6,7 +6,7 @@ import { findSeoSearchImportAudit, seoSearchImportVersion } from "../../../lib/s
 import { planSeoSearchImportRecovery, strictSeoSearchImportState } from "../../../lib/seo-search-import-recovery";
 import AdminLink from "@/components/admin/AdminLink";
 import { AdminCard, AdminPageHeader } from "../../../components/admin/AdminCard";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 import {
   getProductPlanSitemapPromotion,
   getProductSeoGateMode,

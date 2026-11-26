@@ -1,6 +1,6 @@
 import 'server-only';
 import { readFile } from 'node:fs/promises';
-import { prisma } from './prisma';
+import { adminPrisma as prisma } from './prisma';
 import { ADMIN_TRAFFIC_SQL } from './admin-traffic-query';
 import { validateTrafficSnapshot, type TrafficSnapshot } from './admin-traffic-model';
 export async function readAdminTraffic():Promise<TrafficSnapshot>{

@@ -4,7 +4,7 @@ import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { join } from "node:path";
 import packageJson from "../package.json";
-import { prisma } from "./prisma";
+import { adminPrisma as prisma } from "./prisma";
 import { readAdminReadModel } from "./admin-read-model-cache";
 import { parseCollectorMetadata, priceVersionLabel, type VersionItem } from "./admin-version-model";
 import { contentTargets } from "./content-target-registry";

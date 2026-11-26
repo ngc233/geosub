@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { latestObservationIdsSql } from "../../../../lib/admin-current-observations";
 import { DEFAULT_APP_STORE_COUNTRY_CODES } from "../../../../lib/app-store-country-policy";
-import { prisma } from "../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../lib/prisma";
 import type {
   AvailabilitySummaryRow,
   MissingCountryRow,

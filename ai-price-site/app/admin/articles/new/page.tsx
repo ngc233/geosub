@@ -4,7 +4,7 @@ import AdminLink from "@/components/admin/AdminLink";
 import type { Locale } from "@prisma/client";
 import { AdminPageHeader } from "../../../../components/admin/AdminCard";
 import { getArticleCategories, getArticleTags } from "../../../../lib/articles";
-import { prisma } from "../../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../../lib/prisma";
 import ArticleForm from "../ArticleForm";
 
 export default async function NewArticlePage({

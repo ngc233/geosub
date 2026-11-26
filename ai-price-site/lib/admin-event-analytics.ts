@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "./prisma";
+import { adminPrisma as prisma } from "./prisma";
 
 export const COMMERCIAL_EVENT_KEYS = [
   "click_affiliate",

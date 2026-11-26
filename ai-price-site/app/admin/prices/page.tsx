@@ -17,7 +17,7 @@ import {
   type AdminOperationalStatus,
 } from "../../../lib/admin-operational-status";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 
 const categoryOrder = ["ai", "software", "streaming", "game", "gift_card", "payment", "vpn", "other"];
 

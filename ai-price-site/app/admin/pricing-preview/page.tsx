@@ -14,7 +14,7 @@ import {
   AdminTr,
 } from "@/components/admin/AdminTable";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 
 function formatUsd(value: unknown) {
   const numberValue = Number(value);

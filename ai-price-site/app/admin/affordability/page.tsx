@@ -2,7 +2,7 @@ import AdminPagination from "@/components/admin/AdminPagination";
 import { createAdminListView } from "@/lib/admin-list-params";
 import { AdminPageHeader } from "../../../components/admin/AdminCard";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
-import { prisma } from "../../../lib/prisma";
+import { adminPrisma as prisma } from "../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
