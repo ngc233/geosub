@@ -1,4 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  ADMIN_SESSION_COOKIE_NAME,
+  applyAdminResponseHeaders,
+  isAdminRoutePath,
+  shouldRedirectUnauthenticatedAdminNavigation,
+} from "./lib/admin-proxy-policy";
 import { buildContentSecurityPolicy } from "./lib/content-security-policy";
 import { getLegacyPricingPlanRedirectPath } from "./lib/pricing-routes";
 import {
@@ -8,8 +14,28 @@ import {
 import { getSiteLocaleFromPath } from "./lib/site-locale";
 
 export function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (
+    shouldRedirectUnauthenticatedAdminNavigation({
+      pathname,
+      method: request.method,
+      accept: request.headers.get("accept"),
+      hasSessionCookie: Boolean(
+        request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value,
+      ),
+    })
+  ) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/admin-login";
+    loginUrl.search = "";
+    const redirectResponse = NextResponse.redirect(loginUrl, 307);
+    applyAdminResponseHeaders(redirectResponse.headers);
+    return redirectResponse;
+  }
+
   const legacyPlanRedirectPath = getLegacyPricingPlanRedirectPath(
-    request.nextUrl.pathname,
+    pathname,
     request.nextUrl.searchParams.get("plan"),
   );
 
@@ -30,9 +56,9 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
   requestHeaders.set(
     "x-geosub-locale",
-    getSiteLocaleFromPath(request.nextUrl.pathname),
+    getSiteLocaleFromPath(pathname),
   );
-  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  requestHeaders.set("x-pathname", pathname);
 
   const response = NextResponse.next({
     request: {
@@ -45,7 +71,9 @@ export function proxy(request: NextRequest) {
     contentSecurityPolicy,
   );
 
-  if (shouldCachePublicPricingResponse(request)) {
+  if (isAdminRoutePath(pathname)) {
+    applyAdminResponseHeaders(response.headers);
+  } else if (shouldCachePublicPricingResponse(request)) {
     response.headers.set(
       "Cache-Control",
       PUBLIC_PRICING_SHARED_CACHE_CONTROL,

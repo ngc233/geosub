@@ -2,6 +2,7 @@ import { canAdmin, type AdminCapability } from "./admin-permissions";
 import "server-only";
 
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { cache as reactCache } from "react";
 import { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -436,7 +437,7 @@ export async function createAdminSession(userId: string) {
   });
 }
 
-export async function getCurrentAdmin() {
+async function loadCurrentAdminUncached() {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -480,6 +481,15 @@ export async function getCurrentAdmin() {
   }
 
   return session.user;
+}
+
+const loadCurrentAdminForRequest =
+  typeof reactCache === "function"
+    ? reactCache(loadCurrentAdminUncached)
+    : loadCurrentAdminUncached;
+
+export async function getCurrentAdmin() {
+  return loadCurrentAdminForRequest();
 }
 
 export async function requireAdmin(capability: AdminCapability = "read") {
