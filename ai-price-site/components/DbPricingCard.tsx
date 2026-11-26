@@ -63,7 +63,8 @@ function formatCompactLocalPrice(localPrice: string) {
 
 export default function DbPricingCard({ product, locale, canvas = false }: DbPricingCardProps) {
   const ui = (name: string, legacy: string) => canvas ? name : legacy;
-  const zhCanvas = canvas && normalizeSiteLocale(locale) === "zh";
+  const normalizedLocale = normalizeSiteLocale(locale);
+  const zhCanvas = canvas && (normalizedLocale === "zh" || normalizedLocale === "en");
   const defaultPlan = getDefaultPlan(product);
 
   if (!defaultPlan) {
@@ -106,9 +107,9 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
   const planCount = product.totalPlans ?? product.plans.length;
   const hasMultiplePlans = zhCanvas && planCount > 1;
   const detailHref = hasMultiplePlans
-    ? getPricingDetailPath("zh", product.category, product.slug)
+    ? getPricingDetailPath(normalizedLocale, product.category, product.slug)
     : getPricingPlanPath(
-        normalizeSiteLocale(locale),
+        normalizedLocale,
         product.category,
         product.slug,
         defaultPlan.slug,
@@ -145,14 +146,18 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
                   </div>
                   <p className="gs-listing-plan-meta">
                     {hasMultiplePlans
-                      ? `代表低价：${shortPlanName} · ${cycleLabel} · 共 ${planCount} 个套餐`
+                      ? normalizedLocale === "en"
+                        ? `Lowest tier: ${shortPlanName} · ${cycleLabel} · ${planCount} plans`
+                        : `代表低价：${shortPlanName} · ${cycleLabel} · 共 ${planCount} 个套餐`
                       : `${shortPlanName} · ${cycleLabel}`}
                   </p>
                 </div>
 
                 <div className="gs-listing-card-meta gs-listing-card-meta-compact">
                   <span className="gs-listing-spread-pill">
-                    {hasSpread ? `${copy.spread} ${spread}%` : `${regionCount} ${copy.regions}`}
+                    {hasSpread
+                      ? `${copy.spread} ${spread}%`
+                      : `${regionCount} ${normalizedLocale === "en" && regionCount === 1 ? "region" : copy.regions}`}
                   </span>
                 </div>
               </div>
@@ -331,9 +336,13 @@ export default function DbPricingCard({ product, locale, canvas = false }: DbPri
 
           <span className={ui("gs-listing-detail", "inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 transition group-hover:border-zinc-300 group-hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:group-hover:border-zinc-600 dark:group-hover:text-white")}>
             {hasMultiplePlans
-              ? `对比 ${planCount} 个套餐与地区价格`
+              ? normalizedLocale === "en"
+                ? `Compare ${planCount} plans & regions`
+                : `对比 ${planCount} 个套餐与地区价格`
               : zhCanvas && regionCount > displayRegions.length
-                ? `查看全部 ${regionCount} ${copy.regions}`
+                ? normalizedLocale === "en"
+                  ? `View all ${regionCount} ${copy.regions}`
+                  : `查看全部 ${regionCount} ${copy.regions}`
                 : copy.detail}
             <ArrowRight size={14} strokeWidth={2} />
           </span>

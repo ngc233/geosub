@@ -33,6 +33,7 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
       { title: "Page totals without identifiers", body: "To show total site page views, GeoSub adds the normalized page path directly to a UTC daily aggregate without setting or reading cookies or creating visitor or session identifiers. The application statistics do not retain raw IP addresses, user agents, referrers, or individual visit records. This count cannot identify unique visitors and is not used for click attribution or funnel analysis." },
       { title: "Data we record", body: "After any required consent, GeoSub may record an anonymous visitor ID, session ID, page and referrer, interaction type, timestamp, browser and device category, and limited technical context needed to understand the event. Public browsing does not require a name, identity document, payment details, or Apple account information." },
       { title: "Why we use it", body: "We use this information to protect reliability and security, diagnose failures, understand which content is useful, and improve pricing pages and navigation. We do not use analytics to assess personal credit and do not sell personally identifiable information." },
+      { title: "Contact tickets", body: "When you voluntarily submit an inquiry or correction ticket, GeoSub stores the category, name, email, organization, subject, referenced page, and details needed to review and reply. To limit abuse, only an irreversible hash derived from the request origin is stored rather than raw IP addresses; tickets are never published publicly or used for advertising profiles." },
       { title: "Consent, providers, and retention", body: "First-party behavioural analytics with visitor or session identifiers, and Google Analytics or Google Tag Manager, run only after you accept; Google processes received data under its own policies. GeoSub retains those first-party raw analytics events for up to 180 days by default, then deletes them or keeps only aggregated statistics. The identifier-free daily page total above is a separate counter and does not enable those tools." },
       { title: "Your choices", body: "You may reject analytics or reopen analytics settings from the footer at any time. When rejected, GeoSub stops non-essential analytics and clears its analytics session. Use the site contact page to request access, correction, or deletion of data associated with a browser identifier." },
     ],
@@ -132,19 +133,45 @@ const copy: Record<SiteLocale, DisclosureCopy> = {
 export default function PrivacyDisclosure({ locale, articleLayout = false }: { locale: SiteLocale; articleLayout?: boolean }) {
   const text = copy[locale];
 
+  if (articleLayout) {
+    return (
+      <div className="gs-aux-stack">
+        <div className="gs-aux-section-head">
+          <p className="gs-aux-kicker">{text.updated}</p>
+          <h2>{locale === "en" ? "Detailed privacy and retention rules" : "隐私与数据保存细则"}</h2>
+        </div>
+        <div className="gs-aux-stack">
+          {text.sections.map((section, index) => (
+            <article key={section.title} className="gs-aux-block">
+              <div className="gs-aux-card-top">
+                <div className="gs-aux-card-title-group">
+                  <span data-gs-ui="tag" className="gs-aux-step-num" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3>{section.title}</h3>
+                </div>
+              </div>
+              <p>{section.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <section className={articleLayout ? "" : "mt-10"}>
-      <p className={articleLayout ? "" : "text-xs font-bold tracking-[0.1em] text-zinc-500 dark:text-zinc-400"}>
+    <section className="mt-10">
+      <p className="text-xs font-bold tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
         {text.updated}
       </p>
-      <div className={articleLayout ? "" : "mt-6 grid gap-px border border-black/10 bg-black/10 md:grid-cols-2"}>
+      <div className="mt-6 grid gap-px border border-black/10 bg-black/10 md:grid-cols-2">
         {text.sections.map((section, index) => (
-          <article key={section.title} className={articleLayout ? "" : "bg-white p-6 sm:p-8 dark:bg-zinc-900"}>
-            <span className={articleLayout ? "" : "text-xs font-black text-lime-700 dark:text-lime-400"}>{String(index + 1).padStart(2, "0")}</span>
-            <h2 className={articleLayout ? "" : "mt-5 text-lg font-black text-zinc-950 dark:text-white"}>
+          <article key={section.title} className="bg-white p-6 sm:p-8 dark:bg-zinc-900">
+            <span className="text-xs font-black text-lime-700 dark:text-lime-400">{String(index + 1).padStart(2, "0")}</span>
+            <h2 className="mt-5 text-lg font-black text-zinc-950 dark:text-white">
               {section.title}
             </h2>
-            <p className={articleLayout ? "" : "mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300"}>
+            <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
               {section.body}
             </p>
           </article>

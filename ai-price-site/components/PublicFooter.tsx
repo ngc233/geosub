@@ -16,7 +16,6 @@ export default function PublicFooter({ items, copy, settings, locale = "zh" }: {
   const href = (item: {href:string;external?:boolean}) => item.external ? item.href : withSiteLocale(item.href,locale);
   const about = <div className="gs-footer-about"><Link href={english ? withSiteLocale("/",locale) : "/zh"} aria-label="GeoSub"><GeoSubLogo size={24} /></Link><p>{copy.description}</p><p>{copy.independence}</p><Link href={withSiteLocale("/tools/currency-converter",locale)}>{copy.converterLabel}</Link></div>;
   return <footer className="gs-public-unified gs-footer"><div className="gs-frame-container">
-    {english && about}
     <div className="gs-footer-groups">{items.map((group,index) => {
       const open = desktop || expanded.includes(group.href);
       return <section key={group.href} data-gs-disclosure data-open={open}>
@@ -24,7 +23,7 @@ export default function PublicFooter({ items, copy, settings, locale = "zh" }: {
         <div className="gs-disclosure-grid"><div id={`gs-footer-${index}`} inert={!open}>{group.children?.map(item => <Link key={`${item.name}-${item.href}`} href={href(item)}>{item.name}</Link>)}</div></div>
       </section>;
     })}</div>
-    {!english && about}
+    {about}
     <div className="gs-footer-bottom"><span>© {new Date().getFullYear()} GeoSub. {copy.rights}</span><button type="button" onClick={openAnalyticsConsentPreferences}>{settings}</button></div>
     <p className="gs-footer-note">{copy.note}</p><p className="gs-footer-note">{copy.tagline}</p>
   </div></footer>;

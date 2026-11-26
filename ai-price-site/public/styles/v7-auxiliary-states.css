@@ -1,23 +1,24 @@
-/* Shared Chinese fallback state components. */
+/* Shared unified fallback state components across /zh and /en. */
 
-.gs-public-unified .gs-state-page, .gs-public-unified.gs-state-page { min-height:70vh; padding:64px 24px; }
-.gs-public-unified .gs-state-panel { max-width:740px; margin:auto; padding:56px 48px; background:var(--gs-surface); border-radius:var(--gs-radius-panel); text-align:center; }
-.gs-public-unified .gs-state-panel h1 { font-size:var(--gs-plan-title-mobile); margin:16px 0; }
-.gs-public-unified .gs-state-panel p { color:var(--gs-text-secondary); font-size:var(--gs-body-compact-size); line-height:1.7; }
-.gs-public-unified .gs-state-globe { position:relative; width:120px; height:120px; border-radius:50%; border:1px solid var(--gs-border-strong); margin:0 auto 20px; background:radial-gradient(circle,var(--gs-border-strong) 2px,transparent 2px) center/10px 10px; }
-.gs-public-unified .gs-state-globe::after { content:""; position:absolute; width:12px; height:12px; border-radius:50%; background:var(--gs-accent); top:28px; right:24px; }
-.gs-public-unified .gs-state-panel .gs-home-search { width:100%; margin:24px 0 16px; }
-.gs-public-unified .gs-state-panel nav { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
-.gs-public-unified .gs-state-panel nav a { display:inline-flex; align-items:center; border:1px solid var(--gs-border); border-radius:var(--gs-radius-tag); padding:0 14px; font-size:var(--gs-home-meta-size); }
-.gs-public-unified .gs-state-error { display:flex; align-items:center; gap:24px; text-align:left; padding:28px; }
-.gs-public-unified .gs-state-error h1 { font-size:var(--gs-h2-desktop); }
-.gs-public-unified .gs-state-error-icon { display:flex; align-items:center; justify-content:center; flex:0 0 56px; height:56px; color:var(--gs-text-secondary); }
-.gs-public-unified .gs-state-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+.gs-public-unified .gs-state-page, .gs-public-unified.gs-state-page { min-height:70vh; padding:var(--gs-space-64) var(--gs-desktop-page-padding); }
+.gs-public-unified .gs-state-panel { max-width:740px; margin:auto; padding:var(--gs-space-56) var(--gs-space-48); background:var(--gs-surface); border:1px solid var(--gs-border); border-radius:var(--gs-radius-panel); text-align:center; }
+.gs-public-unified .gs-state-code { display:inline-flex; align-items:center; padding:var(--gs-space-4) var(--gs-space-12); border:1px solid var(--gs-border); border-radius:var(--gs-radius-tag); background:var(--gs-page); font-family:var(--gs-font-price); font-size:var(--gs-metadata-size); font-weight:var(--gs-weight-strong); color:var(--gs-low); margin:0; }
+.gs-public-unified .gs-state-panel h1 { font-size:var(--gs-plan-title-mobile); margin:var(--gs-space-16) 0 var(--gs-space-12); color:var(--gs-text); }
+.gs-public-unified .gs-state-panel p:not(.gs-state-code) { color:var(--gs-text-secondary); font-size:var(--gs-body-compact-size); line-height:1.7; margin:0; }
+.gs-public-unified .gs-state-globe { position:relative; width:112px; height:112px; border-radius:var(--gs-radius-tag); border:1px solid var(--gs-border-strong); margin:0 auto var(--gs-space-18); background:radial-gradient(circle,var(--gs-border-strong) 2px,transparent 2px) center/10px 10px; }
+.gs-public-unified .gs-state-globe::after { content:""; position:absolute; width:var(--gs-space-12); height:var(--gs-space-12); border-radius:var(--gs-radius-tag); background:var(--gs-bar-low); top:26px; right:22px; }
+.gs-public-unified .gs-state-panel .gs-home-search { width:100%; margin:var(--gs-space-24) 0 var(--gs-space-18); }
+.gs-public-unified .gs-state-panel nav { display:flex; flex-wrap:wrap; justify-content:center; gap:var(--gs-space-8); }
+.gs-public-unified .gs-state-panel nav a { display:inline-flex; align-items:center; min-height:36px; border:1px solid var(--gs-border); border-radius:var(--gs-radius-tag); padding:0 var(--gs-space-14); background:var(--gs-page); color:var(--gs-text-secondary); font-size:var(--gs-home-meta-size); font-weight:var(--gs-weight-emphasis); text-decoration:none; }
+.gs-public-unified .gs-state-panel nav a:hover { border-color:var(--gs-border-strong); background:var(--gs-surface); color:var(--gs-text); }
+.gs-public-unified .gs-state-error { display:flex; align-items:center; gap:var(--gs-space-24); text-align:left; padding:var(--gs-space-28); }
+.gs-public-unified .gs-state-error h1 { font-size:var(--gs-h2-desktop); margin:0 0 var(--gs-space-8); }
+.gs-public-unified .gs-state-error-icon { display:flex; align-items:center; justify-content:center; flex:0 0 56px; height:56px; border-radius:var(--gs-radius-card); border:1px solid var(--gs-border); background:var(--gs-page); color:var(--gs-text-secondary); }
+.gs-public-unified .gs-state-actions { display:flex; flex-wrap:wrap; gap:var(--gs-space-10); margin-top:var(--gs-space-20); }
+.gs-public-unified .gs-state-actions button { background:var(--gs-text); color:var(--gs-on-primary); border-color:var(--gs-text); }
+.gs-public-unified .gs-state-panel:not(.gs-state-error) > * { max-width:440px; margin-left:auto; margin-right:auto; }
 @media (max-width:767px) {
-  .gs-public-unified.gs-state-page { padding:32px 16px; }
-  .gs-public-unified .gs-state-panel { padding:32px 20px; }
+  .gs-public-unified.gs-state-page, .gs-public-unified .gs-state-page { padding:var(--gs-space-32) var(--gs-mobile-page-padding); }
+  .gs-public-unified .gs-state-panel { padding:var(--gs-space-32) var(--gs-space-20); }
   .gs-public-unified .gs-state-error { flex-direction:column; align-items:flex-start; }
 }
-.gs-public-unified .gs-state-actions button { background:var(--gs-accent); color:var(--gs-on-accent); border-color:var(--gs-accent); }
-
-.gs-public-unified .gs-state-panel:not(.gs-state-error) > * { max-width:420px; margin-left:auto; margin-right:auto; }

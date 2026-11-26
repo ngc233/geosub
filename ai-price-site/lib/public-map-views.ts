@@ -15,7 +15,11 @@ export type CountrySavingsMapItem = {
   href: string | null;
 };
 
-export function computeCountrySavingsForRows(rows: ComparableRows, minPlans: number): CountrySavingsMapItem[] {
+export function computeCountrySavingsForRows(
+  rows: ComparableRows,
+  minPlans: number,
+  locale: "zh" | "en" = "zh",
+): CountrySavingsMapItem[] {
   const countries = new Map<string, Map<string, number>>();
   for (const row of rows) {
     if (row.countryCode === "US" || !row.usPrice || !Number.isFinite(row.usPrice) || row.usPrice <= 0) continue;
@@ -38,26 +42,28 @@ export function computeCountrySavingsForRows(rows: ComparableRows, minPlans: num
           best,
           count: values.length,
           cheaper: values.filter((v) => v > 0).length,
-          href: getPublicCountryHref(code, "zh"),
+          href: getPublicCountryHref(code, locale),
         },
       ];
     })
     .sort((a, b) => b.median - a.median || a.code.localeCompare(b.code));
 }
 
-export function buildCountrySavingsViews(rows: ComparableRows) {
+export function buildCountrySavingsViews(rows: ComparableRows, locale: "zh" | "en" = "zh") {
   const hasUsBaseline = rows.some((row) => row.countryCode === "US");
   return {
     hasUsBaseline,
     byCategory: {
-      all: computeCountrySavingsForRows(rows, 5),
+      all: computeCountrySavingsForRows(rows, 5, locale),
       ai: computeCountrySavingsForRows(
         rows.filter((row) => row.category === "ai"),
         3,
+        locale,
       ),
       streaming: computeCountrySavingsForRows(
         rows.filter((row) => row.category === "streaming"),
         3,
+        locale,
       ),
     } satisfies Record<CountrySavingsCategory, CountrySavingsMapItem[]>,
   };

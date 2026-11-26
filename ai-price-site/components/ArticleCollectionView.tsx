@@ -33,26 +33,72 @@ export default function ArticleCollectionView({
   beforeArticles?: ReactNode;
 }) {
   const zhCategoryName = (name?: string | null) => (!name ? undefined : /^guides?$/i.test(name.trim()) ? "订阅指南" : name);
-  if (locale === "zh") return <GuideCollection eyebrow={eyebrow} title={title} description={description} emptyText={emptyText} showBack={showBack} cards={articles.map(article => ({ href: `/zh/guides/${article.slug}`, title: article.title, description: article.excerpt, category: zhCategoryName(article.category?.name) || getArticleTypeLabel(article.articleType, "zh"), date: formatArticleDate(article.publishedAt, "zh"), minutes: article.readingTime }))} navigation={<div className="gs-guide-taxonomy gap-y-2 gap-x-4 flex flex-wrap">{categories.map(category => <Link key={category.id} href={`/zh/guides/category/${category.slug}`}>{zhCategoryName(category.name) ?? category.name}</Link>)}{tags.slice(0, 18).map(tag => <Link key={tag.id} href={`/zh/guides/tag/${tag.slug}`}>#{tag.name}</Link>)}</div>}/>;
+  if (locale === "zh" || locale === "en") {
+    const canvasLocale = locale;
+    const catLabel = (name?: string | null) =>
+      canvasLocale === "zh" ? zhCategoryName(name) : (name ?? undefined);
+    const hasTaxonomy = categories.length > 0 || tags.length > 0;
+    return (
+      <GuideCollection
+        locale={canvasLocale}
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        emptyText={emptyText}
+        showBack={showBack}
+        cards={articles.map((article) => ({
+          href: `/${canvasLocale}/guides/${article.slug}`,
+          title: article.title,
+          description: article.excerpt,
+          category: catLabel(article.category?.name) || getArticleTypeLabel(article.articleType, canvasLocale),
+          date: formatArticleDate(article.publishedAt, canvasLocale),
+          minutes: article.readingTime,
+        }))}
+        navigation={
+          hasTaxonomy ? (
+            <section className="gs-guide-taxonomy p-4.5 md:p-5 flex flex-col gap-3">
+              {categories.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {categories.map((category) => (
+                    <Link
+                      key={category.id}
+                      href={`/${canvasLocale}/guides/category/${category.slug}`}
+                      className="gs-guide-taxonomy-pill"
+                    >
+                      {catLabel(category.name) ?? category.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {tags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {tags.slice(0, 18).map((tag) => (
+                    <Link
+                      key={tag.id}
+                      href={`/${canvasLocale}/guides/tag/${tag.slug}`}
+                      className="gs-guide-taxonomy-tag"
+                    >
+                      #{tag.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : undefined
+        }
+      />
+    );
+  }
   const featured = articles[0] || null;
   const rest = featured ? articles.slice(1) : articles;
   const guidesPath = `/${locale}/guides`;
-  const copy =
-    locale === "en"
-      ? {
-          back: "Back to guides",
-          minutes: "min read",
-          read: "Read article",
-          categories: "Browse categories",
-          tags: "Popular tags",
-        }
-      : {
-          back: "返回指南",
-          minutes: "分钟读完",
-          read: "阅读全文",
-          categories: "按分类浏览",
-          tags: "热门标签",
-        };
+  const copy = {
+    back: "返回指南",
+    minutes: "分钟读完",
+    read: "阅读全文",
+    categories: "按分类浏览",
+    tags: "热门标签",
+  };
 
   return (
     <main className="min-h-screen bg-[#faf8f2] px-5 py-16">

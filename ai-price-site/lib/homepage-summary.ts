@@ -1,4 +1,4 @@
-import { getChinesePlanDisplayName, getPlanTabLabel } from "./pricing-labels.ts";
+import { getChinesePlanDisplayName, getPlanDisplayName, getPlanTabLabel } from "./pricing-labels.ts";
 import { priorityCountries, type getComparablePriceRows, type HubRate } from "./country-hubs.ts";
 import type { getHomepageRepresentatives } from "./homepage-representatives.ts";
 
@@ -11,22 +11,25 @@ export function homepageStatistics(rows: Rows) {
     regions: new Set(rows.map(row => row.countryCode)).size, prices: rows.length,
     updatedAt: times.sort((a,b) => Date.parse(b)-Date.parse(a))[0] ?? null };
 }
-export function homepageProducts(representatives: Representatives) {
+export function homepageProducts(representatives: Representatives, locale: "zh" | "en" = "zh") {
   return representatives.map(rep => {
     const first = rep.prices[0];
     const prices = rep.prices.map(row => ({ code: row.countryCode, usd: row.usd }));
     const lowest = prices.reduce((a,b) => a.usd <= b.usd ? a : b);
-    return { slug: rep.productSlug, name: first.productName, plan: getPlanTabLabel(first.productName, getChinesePlanDisplayName(first.productName, first.planName)),
-      planDisplayName: getChinesePlanDisplayName(first.productName, first.planName), category: first.category,
-      href: `/zh/${first.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${rep.productSlug}/${rep.planSlug}/`,
-      productHref: `/zh/${first.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${rep.productSlug}/`,
+    const displayName = locale === "en"
+      ? getPlanDisplayName(first.productName, first.planName)
+      : getChinesePlanDisplayName(first.productName, first.planName);
+    return { slug: rep.productSlug, name: first.productName, plan: getPlanTabLabel(first.productName, displayName),
+      planDisplayName: displayName, category: first.category,
+      href: `/${locale}/${first.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${rep.productSlug}/${rep.planSlug}/`,
+      productHref: `/${locale}/${first.category === "ai" ? "ai-pricing" : "streaming-pricing"}/${rep.productSlug}/`,
       usPrice: rep.usPrice, prices, lowest, saving: (rep.usPrice-lowest.usd)/rep.usPrice };
   });
 }
 export type HomepageRepresentative = ReturnType<typeof homepageProducts>[number];
 /** D8: each product/plan/platform/cycle has one vote, including negative savings.
  * Minimum five comparable plans. No rounded `difference`, no US-as-country row. */
-export function homepageCountries(rows: Rows) {
+export function homepageCountries(rows: Rows, locale: "zh" | "en" = "zh") {
   const countries = new Map<string,Map<string,number>>();
   for (const row of rows) {
     if (row.countryCode === "US" || !row.usPrice || !Number.isFinite(row.usPrice) || row.usPrice <= 0) continue;
@@ -41,7 +44,7 @@ export function homepageCountries(rows: Rows) {
     const median = values.length%2 ? values[middle] : (values[middle-1]+values[middle])/2;
     const country = priorityCountries.find(item=>item.code===code);
     return [{ code, median, count: values.length, cheaper: values.filter(value=>value>0).length,
-      href: country ? `/zh/countries/${country.slug}` : null }];
+      href: country ? `/${locale}/countries/${country.slug}` : null }];
   }).sort((a,b)=>b.median-a.median || a.code.localeCompare(b.code));
 }
 export function homepageDisplayRates(rates: Record<string,HubRate>, now = new Date()) {

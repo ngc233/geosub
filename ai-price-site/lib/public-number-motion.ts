@@ -19,3 +19,22 @@ export function parseNumberMotion(duration: string, easing: string) {
   if (!curve || curve.length !== 4 || curve.some(n => !Number.isFinite(n)) || ms <= 0) return null;
   return { ms, curve };
 }
+
+/** Compute a width-stable starting value for restrained initial hero count-up. */
+export function countInStartValue(value: number, fractionDigits = 2): number {
+  if (!Number.isFinite(value) || value === 0) return 0;
+  const sign = value < 0 ? -1 : 1;
+  const abs = Math.abs(value);
+  if (fractionDigits === 0) {
+    const whole = Math.round(abs);
+    if (whole < 10) return 0;
+    const floorPower = 10 ** Math.floor(Math.log10(whole));
+    const candidate = Math.max(Math.floor(whole * 0.38), floorPower);
+    return sign * (candidate >= whole ? Math.max(1, Math.floor(whole * 0.55)) : candidate);
+  }
+  if (abs < 1) return sign * (abs * 0.42);
+  const floorPower = 10 ** Math.floor(Math.log10(abs));
+  const scaled = abs * 0.38;
+  const candidate = Math.max(scaled, floorPower);
+  return sign * (candidate >= abs * 0.92 ? abs * 0.58 : candidate);
+}

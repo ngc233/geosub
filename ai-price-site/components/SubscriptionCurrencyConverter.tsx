@@ -38,6 +38,17 @@ export type ConverterRate = {
 
 const quickAmounts = [4.99, 9.99, 19.99, 24.99];
 
+function getQuickPresetsForCurrency(currency: DisplayCurrency): number[] {
+  if (currency === "JPY") return [500, 980, 1500, 2900];
+  if (currency === "KRW") return [5900, 9900, 14900, 29000];
+  if (currency === "TWD") return [150, 300, 650, 990];
+  if (currency === "CNY" || currency === "HKD") return [18, 38, 68, 128];
+  if (currency === "TRY" || currency === "INR" || currency === "MXN" || currency === "THB") {
+    return [99, 199, 399, 699];
+  }
+  return quickAmounts;
+}
+
 function getCurrencyName(currency: DisplayCurrency, locale: SiteLocale) {
   try {
     return (
@@ -297,7 +308,12 @@ export default function SubscriptionCurrencyConverter({
     from: DisplayCurrency,
     to: DisplayCurrency,
   ) {
-    if (locale === "zh" && (!canDisplayConverterRate(rateMap.get(from)) || !canDisplayConverterRate(rateMap.get(to)))) return null;
+    if (
+      (locale === "zh" || locale === "en") &&
+      (!canDisplayConverterRate(rateMap.get(from)) || !canDisplayConverterRate(rateMap.get(to)))
+    ) {
+      return null;
+    }
     const fromRate = rateMap.get(from)?.rate || 0;
     const toRate = rateMap.get(to)?.rate || 0;
     if (fromRate <= 0 || toRate <= 0) return null;
@@ -318,13 +334,16 @@ export default function SubscriptionCurrencyConverter({
     new Set<DisplayCurrency>([
       preferredCurrency,
       "USD",
-      "EUR",
       "CNY",
+      "EUR",
       "JPY",
-      "KRW",
-      "TWD",
       "HKD",
+      "GBP",
+      "CAD",
+      "AUD",
       "SGD",
+      "TWD",
+      "KRW",
     ]),
   );
 
@@ -333,46 +352,245 @@ export default function SubscriptionCurrencyConverter({
     setToCurrency(fromCurrency);
   }
 
-  if (locale === "zh") {
+  if (locale === "zh" || locale === "en") {
+    const english = locale === "en";
     const parsedAmount = parseZhConverterAmount(amount);
-    const inputError = parsedAmount.status === "invalid" ? zhConverterAmountCopy.invalid
-      : parsedAmount.status === "too-large" ? zhConverterAmountCopy.inputTooLarge : null;
-    const converted = parsedAmount.status === "ok"
-      ? convertZhAmount(parsedAmount, rateMap.get(fromCurrency), rateMap.get(toCurrency), toCurrency)
-      : null;
-    const currencySelect = (value: DisplayCurrency, set: (value: DisplayCurrency) => void, label: string) =>
-      <label className="gs-converter-select"><span>{label}</span><select aria-label={label} value={value} onChange={event => set(event.target.value as DisplayCurrency)}>
-        {supportedDisplayCurrencies.map(currency => <option key={currency} value={currency} disabled={disabledCurrencies.includes(currency)}>{currency} · {getCurrencyName(currency, locale)}</option>)}
-      </select></label>;
-    return <div className="gs-converter">
-      <div className="gs-converter-currencies">
-        {currencySelect(fromCurrency, setFromCurrency, copy.fromAria)}
-        <button type="button" data-gs-ui="icon-button" className="gs-converter-swap" onClick={swapCurrencies} aria-label={copy.swapAria}><ArrowLeftRight size={20} strokeWidth={1.75} aria-hidden="true"/></button>
-        {currencySelect(toCurrency, setToCurrency, copy.toAria)}
-      </div>
-      <label className="gs-converter-amount"><span>{copy.amountLabel}</span><span className="gs-field"><b>{fromCurrency}</b><input value={amount} onChange={event => setAmount(event.target.value)} inputMode="decimal" aria-label={copy.amountAria} aria-invalid={inputError ? true : undefined} aria-describedby={inputError ? "converter-amount-error" : undefined}/></span></label>
-      <div className="gs-converter-quick"><h2>{copy.quickTitle}</h2><p>{copy.quickDescription}</p><div>{quickAmounts.map(value => <button type="button" key={value} aria-pressed={parsedAmount.status === "ok" && parsedAmount.text === String(value) && fromCurrency === initialFromCurrency} onClick={() => { setAmount(new Intl.NumberFormat(localeDefinition.intlLocale, { minimumFractionDigits:2, maximumFractionDigits:2 }).format(value)); setFromCurrency(initialFromCurrency); }}>{formatCurrency(value, initialFromCurrency, locale)}</button>)}</div></div>
-      <div className="gs-converter-result" aria-live="polite">
-        {parsedAmount.status === "ok"
-          ? <p>{formatZhSourceAmount(parsedAmount, fromCurrency)} {copy.approximately}</p>
-          : <p id="converter-amount-error">{inputError}</p>}
-        {converted && <div>
-          {converted.status === "ok"
-            ? <PublicPriceNumber value={converted.value} currency={toCurrency} fractionDigits={getDisplayCurrencyFractionDigits(toCurrency)} changeKey={`${amount}:${fromCurrency}:${toCurrency}`}/>
-            : converted.status === "too-large" ? zhConverterAmountCopy.resultTooLarge : copy.unavailable}
-        </div>}
-        {pairRate !== null && <p>1 {fromCurrency} = {formatRate(pairRate, locale)} {toCurrency}</p>}
-      </div>
-      <section className="gs-converter-comparisons"><h2>{copy.comparisonTitle}</h2>{comparisonCurrencies.filter(currency => currency !== fromCurrency).slice(0,5).map(currency => {
-        const comparison = parsedAmount.status === "ok"
-          ? convertZhAmount(parsedAmount, rateMap.get(fromCurrency), rateMap.get(currency), currency)
+    const inputError =
+      parsedAmount.status === "invalid"
+        ? english
+          ? copy.invalidAmount
+          : zhConverterAmountCopy.invalid
+        : parsedAmount.status === "too-large"
+          ? english
+            ? "Amount exceeds the maximum supported value"
+            : zhConverterAmountCopy.inputTooLarge
           : null;
-        const text = comparison?.status === "ok" ? formatCurrency(comparison.value, currency, locale)
-          : comparison?.status === "too-large" ? zhConverterAmountCopy.resultTooLarge : copy.unavailableShort;
-        return <div key={currency}><span>{getCurrencyName(currency,locale)} {currency}</span><strong>{text}</strong></div>;
-      })}</section>
-      <footer><span>{disabledCurrencies.includes(fromCurrency) || disabledCurrencies.includes(toCurrency) ? copy.unavailable : pairIsStale ? copy.stale : `${copy.rateBasis} ${rateDate || copy.pending}`}</span><span>{copy.resultNote}</span></footer>
-    </div>;
+    const converted =
+      parsedAmount.status === "ok"
+        ? convertZhAmount(parsedAmount, rateMap.get(fromCurrency), rateMap.get(toCurrency), toCurrency)
+        : null;
+    const tooLargeResult = english
+      ? "Converted amount exceeds display limit"
+      : zhConverterAmountCopy.resultTooLarge;
+    const activePresets = getQuickPresetsForCurrency(fromCurrency);
+    const presetDigits = getDisplayCurrencyFractionDigits(fromCurrency);
+    const quickHint =
+      fromCurrency === "USD"
+        ? copy.quickDescription
+        : english
+          ? `Quick-fill common ${fromCurrency} subscription price tiers.`
+          : `快速填入 ${fromCurrency} 常见月费档位，即时换算目标币种。`;
+    const candidateComparisons = comparisonCurrencies.filter(
+      (currency) => currency !== fromCurrency && currency !== toCurrency,
+    );
+    const sortedComparisons = [
+      ...candidateComparisons.filter((currency) => canDisplayConverterRate(rateMap.get(currency))),
+      ...candidateComparisons.filter((currency) => !canDisplayConverterRate(rateMap.get(currency))),
+    ].slice(0, 5);
+    const hasUnavailablePair =
+      disabledCurrencies.includes(fromCurrency) || disabledCurrencies.includes(toCurrency);
+
+    const currencySelect = (
+      value: DisplayCurrency,
+      set: (value: DisplayCurrency) => void,
+      otherValue: DisplayCurrency,
+      label: string,
+    ) => (
+      <label className="gs-converter-select">
+        <span className="gs-converter-field-label">{label}</span>
+        <span className="gs-converter-select-box">
+          <span className="gs-converter-select-face" aria-hidden="true">
+            <strong className="gs-converter-select-code">{value}</strong>
+            <span className="gs-converter-select-name">{getCurrencyName(value, locale)}</span>
+            <ChevronDown size={16} strokeWidth={1.75} className="gs-converter-select-chevron" />
+          </span>
+          <select
+            aria-label={label}
+            value={value}
+            onChange={(event) => {
+              const next = event.target.value as DisplayCurrency;
+              if (next === otherValue) {
+                swapCurrencies();
+              } else {
+                set(next);
+              }
+            }}
+          >
+            {supportedDisplayCurrencies.map((currency) => (
+              <option key={currency} value={currency} disabled={disabledCurrencies.includes(currency)}>
+                {currency} · {getCurrencyName(currency, locale)}
+              </option>
+            ))}
+          </select>
+        </span>
+      </label>
+    );
+    return (
+      <div className="gs-converter">
+        <div className="gs-converter-currencies">
+          {currencySelect(fromCurrency, setFromCurrency, toCurrency, copy.fromAria)}
+          <button
+            type="button"
+            data-gs-ui="icon-button"
+            className="gs-converter-swap"
+            onClick={swapCurrencies}
+            title={copy.swap}
+            aria-label={copy.swapAria}
+          >
+            <ArrowLeftRight size={18} strokeWidth={1.85} aria-hidden="true" />
+          </button>
+          {currencySelect(toCurrency, setToCurrency, fromCurrency, copy.toAria)}
+        </div>
+        <label className="gs-converter-amount">
+          <span className="gs-converter-field-label">{copy.amountLabel}</span>
+          <span className="gs-field" data-invalid={inputError ? "true" : undefined}>
+            <b className="gs-converter-currency-badge">
+              <span>{getCurrencySymbol(fromCurrency, locale)}</span>
+              <small>{fromCurrency}</small>
+            </b>
+            <input
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              inputMode="decimal"
+              aria-label={copy.amountAria}
+              aria-invalid={inputError ? true : undefined}
+              aria-describedby={inputError ? "converter-amount-error" : undefined}
+            />
+          </span>
+        </label>
+        <div className="gs-converter-quick">
+          <div className="gs-converter-quick-head">
+            <h2>{copy.quickTitle}</h2>
+            <p>{quickHint}</p>
+          </div>
+          <div className="gs-converter-quick-grid">
+            {activePresets.map((value) => {
+              const isPressed =
+                parsedAmount.status === "ok" && Number(parsedAmount.text) === value;
+              return (
+                <button
+                  type="button"
+                  key={`${fromCurrency}-${value}`}
+                  className="gs-converter-preset"
+                  aria-pressed={isPressed}
+                  onClick={() => {
+                    const decimals = Number.isInteger(value) ? 0 : presetDigits;
+                    setAmount(
+                      new Intl.NumberFormat(localeDefinition.intlLocale, {
+                        minimumFractionDigits: decimals,
+                        maximumFractionDigits: presetDigits,
+                      }).format(value),
+                    );
+                  }}
+                >
+                  {formatCurrency(value, fromCurrency, locale)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="gs-converter-result" aria-live="polite">
+          <div className="gs-converter-result-head">
+            {parsedAmount.status === "ok" ? (
+              <p className="gs-converter-result-source">
+                {formatZhSourceAmount(parsedAmount, fromCurrency)} {copy.approximately}
+              </p>
+            ) : (
+              <p id="converter-amount-error" className="gs-converter-result-error">
+                {inputError}
+              </p>
+            )}
+            {pairRate !== null && (
+              <span className="gs-converter-rate-pill">
+                1 {fromCurrency} = {formatRate(pairRate, locale)} {toCurrency}
+              </span>
+            )}
+          </div>
+          {converted && (
+            <div
+              className="gs-converter-result-hero"
+              data-unavailable={converted.status !== "ok" ? "true" : undefined}
+            >
+              {converted.status === "ok" ? (
+                <PublicPriceNumber
+                  value={converted.value}
+                  currency={toCurrency}
+                  locale={localeDefinition.intlLocale}
+                  fractionDigits={getDisplayCurrencyFractionDigits(toCurrency)}
+                  size="hero"
+                  countIn
+                  changeKey={`${amount}:${fromCurrency}:${toCurrency}`}
+                />
+              ) : converted.status === "too-large" ? (
+                <span className="gs-converter-result-fallback">{tooLargeResult}</span>
+              ) : (
+                <span className="gs-converter-result-fallback">{copy.unavailable}</span>
+              )}
+            </div>
+          )}
+          <div className="gs-converter-result-meta">
+            <span
+              className="gs-converter-status-dot"
+              data-stale={pairIsStale || hasUnavailablePair ? "true" : undefined}
+              aria-hidden="true"
+            />
+            <span>
+              {hasUnavailablePair
+                ? copy.unavailable
+                : pairIsStale
+                  ? copy.stale
+                  : `${copy.rateBasis} ${rateDate || copy.pending}`}
+            </span>
+          </div>
+        </div>
+        <section className="gs-converter-comparisons" aria-labelledby="gs-converter-comp-title">
+          <div className="gs-converter-comp-head">
+            <h2 id="gs-converter-comp-title">{copy.comparisonTitle}</h2>
+            <span>{english ? "Click row to set target" : "点击可切换为目标币种"}</span>
+          </div>
+          <div className="gs-converter-comp-list">
+            {sortedComparisons.map((currency) => {
+              const comparison =
+                parsedAmount.status === "ok"
+                  ? convertZhAmount(
+                      parsedAmount,
+                      rateMap.get(fromCurrency),
+                      rateMap.get(currency),
+                      currency,
+                    )
+                  : null;
+              const isRowDisabled = disabledCurrencies.includes(currency);
+              const text =
+                comparison?.status === "ok"
+                  ? formatCurrency(comparison.value, currency, locale)
+                  : comparison?.status === "too-large"
+                    ? tooLargeResult
+                    : copy.unavailableShort;
+              return (
+                <button
+                  type="button"
+                  key={currency}
+                  className="gs-converter-comp-row"
+                  disabled={isRowDisabled}
+                  onClick={() => setToCurrency(currency)}
+                >
+                  <span className="gs-converter-comp-currency">
+                    <b className="gs-converter-code-pill">{currency}</b>
+                    <span>{getCurrencyName(currency, locale)}</span>
+                  </span>
+                  <strong data-unavailable={comparison?.status !== "ok" ? "true" : undefined}>
+                    {text}
+                  </strong>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+        <footer className="gs-converter-footer">
+          <span>{copy.resultNote}</span>
+        </footer>
+      </div>
+    );
   }
 
   const numericAmount = parseAmount(amount, locale);

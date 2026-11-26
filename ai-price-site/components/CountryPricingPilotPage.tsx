@@ -226,8 +226,8 @@ export default async function CountryPricingPilotPage({
     ? plans.find((plan) => plan.slug === pilot.priceEvent?.planSlug)?.name
     : undefined;
 
-  // Only Chinese presentation opts in; legacy English classes and attributes stay unchanged.
-  const chineseCanvas = locale === "zh";
+  // Both Chinese and English pilot routes use the unified product-country canvas.
+  const chineseCanvas = locale === "zh" || locale === "en";
   const cn = (legacy: string, chinese: string | undefined) => chineseCanvas ? chinese : legacy;
   const renderLocalPrice = (value: string) => {
     const slash = value.lastIndexOf("/");

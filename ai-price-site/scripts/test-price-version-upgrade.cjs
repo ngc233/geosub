@@ -30,7 +30,7 @@ const controllerChanges = {
 const v4ReaderChanges = {
   "ai-price-site/components/PricingDetailPage.tsx": {
     "retained": "fd53b89ef7fa6fbd5933c1d7088e37e61815f0309d46cd7b21c7a1791da11d15",
-    "candidate": "653a93cc798d69660ed3a8b78196f57fe5564bffca5ab8ad0b92083d527ddce9"
+    "candidate": "5ff21bec715f1c49fdf68742b692d5f7ba252bf7a87d67ea6dbb130a30c09ca6"
   },
   "ai-price-site/lib/public-pricing-model.ts": {
     "retained": "1bb7f62199c09e8fff34610b8f9380be6a2b25f4e98ea389f83fa30c3f88bba0",
@@ -38,15 +38,15 @@ const v4ReaderChanges = {
   },
   "ai-price-site/components/ProductCanvasOverview.tsx": {
     "retained": null,
-    "candidate": "91f501d6e889a02f9b6fbdacbb4448f2b935f9a4e9396ba14f59fad5e1d697c6"
+    "candidate": "fdc4fdbd66c7346e6c46f86d1f96b030ef754da9f4c97487552baaa1ef0976aa"
   },
   "ai-price-site/components/ProductCanvasPricing.tsx": {
     "retained": null,
-    "candidate": "1e6f8b5742dc523ec8d45eee258f2faf65b1bd4bdb6eedca0692e895d658cb5f"
+    "candidate": "9270a0ca712f920546bfe604c4396c1446a4646db34f52ed804b973458be35b1"
   },
   "ai-price-site/lib/product-canvas.ts": {
     "retained": null,
-    "candidate": "986323cc440e90129591d4c1c9b81cc05a05e9025df95155d52a7022ac8e4d17"
+    "candidate": "56fb053cf7a02b1a73cb839b42ef560925d093438ff329b85cf00cb98de93cdc"
   },
   "ai-price-site/lib/product-canvas-order.ts": {
     "retained": null,
@@ -54,15 +54,15 @@ const v4ReaderChanges = {
   },
   "ai-price-site/components/PlanCanvasPage.tsx": {
     "retained": null,
-    "candidate": "8c83f4c62ae9c3d2de71e4ac56e46c7cf36dd98abb3db4060abf7ff35558ab5e"
+    "candidate": "228850c2d06ba22d60a1ea355f877a5b90d9300427a454118998969a341f4559"
   },
   "ai-price-site/components/PlanCanvasPricing.tsx": {
     "retained": null,
-    "candidate": "7cc60efa977b323fda5ef8c1d135a54e85149dff881f412ebb3821437fece323"
+    "candidate": "873e6e35cd8e27cde366669aa933fed9e67c8ae3e6a120e73a6fd3a525966491"
   },
   "ai-price-site/lib/plan-canvas.ts": {
     "retained": null,
-    "candidate": "175bf6fdd8ee1dacbd626c277150ac55771f3bacdc85db52234bffaa4d174ed3"
+    "candidate": "b92c9ebb031210a8c1ff9e377a6cafb2dbe9181e3a0500dc2730de24600dc959"
   }
 };
 const url = new URL(process.env.GEOSUB_VERSION_UPGRADE_DATABASE_URL);

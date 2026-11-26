@@ -90,16 +90,17 @@ test("carousel rotates once, then focus pauses it; search preserves logo positio
  await tabs.getByRole("link",{name:/ChatGPT/}).focus();await page.waitForTimeout(4800);
  await expect(tabs.getByRole("link",{name:/ChatGPT/})).toHaveAttribute("data-active","true");
  const logo=page.getByRole("link",{name:"GeoSub 首页",exact:true});const before=await logo.boundingBox();
+ await page.evaluate(()=>window.scrollTo(0,360));
  await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();await expect(page.getByRole("dialog",{name:"搜索",exact:true})).toBeVisible();
  expect((await logo.boundingBox())?.x).toBe(before?.x);await page.keyboard.press("Escape");
 });
 test("search minimum follows the homepage display currency without a rates request",async({page})=>{
  test.skip(!local,"Local fictional fixture only");
  await page.route("**/api/search?**",route=>route.fulfill({json:{results:[{id:"fictional",kind:"plan",title:"虚构搜索套餐",subtitle:"仅测试",href:"/zh/ai-pricing/chatgpt/plus",minimumUsd:20,cycle:"monthly"}]}}));
- await page.goto("/zh");await page.getByLabel("首页搜索产品或国家").fill("虚构");await page.getByRole("button",{name:"搜索",exact:true}).click();
+ await page.goto("/zh");await page.getByLabel("首页搜索产品或国家").fill("虚构");
  await expect(page.getByRole("option",{name:/虚构搜索套餐/})).toContainText("¥140.00");await page.keyboard.press("Escape");
  await page.getByRole("button",{name:"折合为 ¥ CNY",exact:true}).click();await page.getByRole("option",{name:"USD · 美元",exact:true}).click();
- await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();await page.getByRole("combobox",{name:"搜索产品或国家"}).fill("虚构");await expect(page.getByRole("option",{name:/虚构搜索套餐/})).toContainText("$20.00");
+ await page.keyboard.press("/");await page.getByRole("combobox",{name:"搜索产品或国家"}).fill("虚构");await expect(page.getByRole("option",{name:/虚构搜索套餐/})).toContainText("$20.00");
 });
 
 test("canvas controls: outer focus ring, flat row hover, selected segment and exact desktop dimensions",async({page})=>{
@@ -112,12 +113,13 @@ test("canvas controls: outer focus ring, flat row hover, selected segment and ex
  await expect(page.locator(".gs-home-intro h1")).toHaveCSS("font-size","48px");await expect(page.locator(".gs-home-intro h1")).toHaveCSS("line-height","57.6px");
  expect((await page.locator(".gs-home-search").boundingBox())?.width).toBe(620);expect((await field.boundingBox())?.height).toBe(52);expect(before?.height).toBe(56);
  const map=await page.locator(".gs-home-map-stage").boundingBox();expect(map!.width/map!.height).toBeCloseTo(60/22,3);
+ await page.evaluate(()=>window.scrollTo(0,360));
  await page.getByRole("button",{name:"搜索产品或国家",exact:true}).click();const modal=page.getByRole("combobox",{name:"搜索产品或国家",exact:true});await expect(modal).toBeFocused();await expect(modal).toHaveCSS("outline-style","none");await expect(modal.locator("..")).toHaveCSS("box-shadow","rgb(77, 124, 15) 0px 0px 0px 1px");await page.keyboard.press("Escape");
 });
 
 test("canvas review: exact desktop metrics, +N, semantic bubbles, clamp and motion tokens",async({page})=>{
  test.skip(!local,"Local fixture only");await page.setViewportSize({width:1280,height:720});await page.emulateMedia({colorScheme:"light",reducedMotion:"reduce"});await page.goto("/zh");
- const field=page.locator('.gs-home-search-field');await expect(field).toHaveCSS('border-radius','14px');await expect(field).toHaveCSS('border-top-color','rgb(217, 217, 211)');await expect(page.locator('.gs-home-search button')).toHaveCSS('background-color','rgb(163, 230, 53)');
+ const field=page.locator('.gs-home-search-field');await expect(field).toHaveCSS('border-radius','14px');await expect(field).toHaveCSS('border-top-color','rgb(217, 217, 211)');await expect(page.locator('.gs-home-search button')).toHaveCSS('background-color','rgb(21, 23, 26)');
  const normal=page.locator('.gs-home-point > span').first(),lowest=page.locator('.gs-home-low-marker > [data-lowest]');
  expect((await normal.boundingBox())?.width).toBe(12);expect((await lowest.boundingBox())?.width).toBe(18);
  const tab=page.getByRole('navigation',{name:'地图产品'}).getByRole('link').first();expect((await tab.boundingBox())?.height).toBe(44);await expect(tab).toHaveCSS('background-color','rgba(0, 0, 0, 0)');const jelly=page.locator('.gs-home-product-jelly');await expect(jelly).toHaveCSS('background-color','rgb(236, 252, 203)');await expect(jelly).toHaveCSS('border-top-color','rgb(163, 230, 53)');

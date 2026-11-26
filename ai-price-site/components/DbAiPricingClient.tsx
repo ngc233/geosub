@@ -51,7 +51,8 @@ export default function DbAiPricingClient({
   showCategoryHeader = false,
 }: DbAiPricingClientProps) {
   const ui = (name: string, legacy: string) => canvas ? name : legacy;
-  const zhCanvas = canvas && locale === "zh";
+  const normalizedLocale = normalizeSiteLocale(locale);
+  const zhCanvas = canvas && (normalizedLocale === "zh" || normalizedLocale === "en");
   const copy = getPricingListCopy(locale);
   const tabs = useMemo(
     () => [

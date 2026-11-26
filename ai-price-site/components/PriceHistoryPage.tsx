@@ -5,11 +5,9 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import BrandIcon from "./BrandIcon";
 import PriceHistoryRadarClient from "./PriceHistoryRadarClient";
 import { PublicSection, PublicSectionHeader } from "./ui/PublicPage";
-import { getBillingCycleLabel } from "../lib/billing-cycle-label";
 import { loadPriceHistoryGlobalRadar } from "../lib/cached-price-history-radar";
 import { homepageMap } from "../lib/homepage-map";
 import type { RadarEventItem } from "../lib/public-map-views";
-import type { ProductPlan } from "../lib/public-pricing-model";
 import { getPriceEvidencePreview } from "../lib/price-evidence-preview";
 import { getPriceHistorySummary } from "../lib/price-records";
 import { getPriceRecordProducts, getProductPriceRecords } from "../lib/price-records-data";
@@ -22,18 +20,12 @@ import {
 import {
   countryName,
   dateTime,
-  EmptyState,
   headingClass,
-  linkClass,
   metaClass,
-  money,
   mutedClass,
   PageHeading,
-  PageLinks,
   Unavailable,
 } from "./PriceEvidenceShared";
-
-const gridClass = "my-6 grid gap-5 md:grid-cols-2";
 
 const previewCacheScope = () => getPriceEvidencePreview()?.capturedAt || "public";
 const loadRecords = (slug: string) =>
@@ -57,14 +49,13 @@ const loadProducts = () =>
     tags: [PUBLIC_PRICING_CACHE_TAG],
   })();
 
-type HistoryProps =
-  | { locale: "zh"; slug?: string }
-  | { locale: "en"; slug?: string; pageClass: string };
+type HistoryProps = { locale: "zh" | "en"; slug?: string; pageClass?: string };
 
 export async function HistoryPage(props: HistoryProps) {
   const { locale, slug } = props;
-  const className = locale === "zh" ? "gs-public-unified gs-evidence-page gs-history-page" : props.pageClass;
-  const useFixture = locale === "zh" && isHomepageFixtureEnabled();
+  const english = locale === "en";
+  const className = "gs-public-unified gs-evidence-page gs-history-page";
+  const useFixture = isHomepageFixtureEnabled();
 
   let products;
   try {
@@ -78,7 +69,6 @@ export async function HistoryPage(props: HistoryProps) {
           description="App Store"
         />
         <Unavailable locale={locale} />
-        {locale !== "zh" && <PageLinks locale={locale} />}
       </div>
     );
   }
@@ -90,12 +80,10 @@ export async function HistoryPage(props: HistoryProps) {
   let unavailable = false;
   let globalRadar: { events: RadarEventItem[]; observedCodes: string[] } = { events: [], observedCodes: [] };
 
-  if (locale === "zh") {
-    try {
-      globalRadar = await loadPriceHistoryGlobalRadar();
-    } catch {
-      globalRadar = { events: [], observedCodes: [] };
-    }
+  try {
+    globalRadar = await loadPriceHistoryGlobalRadar();
+  } catch {
+    globalRadar = { events: [], observedCodes: [] };
   }
 
   if (product) {
@@ -147,41 +135,21 @@ export async function HistoryPage(props: HistoryProps) {
     return a.name.localeCompare(b.name);
   });
 
-  const legacyProductSelector = (
-    <PublicSection className="px-5 md:px-6">
-      <details open={!slug ? true : undefined} className="group">
-        <summary className={`${linkClass} flex cursor-pointer justify-between py-4`}>
-          <span>Choose a product ({products.length} products)</span>
-        </summary>
-        <div className="flex flex-wrap gap-2 border-t border-[var(--color-border-default)] py-4">
-          {products.map((item) => (
-            <Link
-              key={item.slug}
-              href={`/${locale}/price-history/${item.slug}`}
-              aria-current={slug === item.slug ? "page" : undefined}
-              className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3.5 text-sm font-medium ${slug === item.slug ? "border-[var(--color-text-primary)] bg-[var(--color-bg-subtle)] font-semibold text-[var(--color-text-primary)]" : "border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]"}`}
-            >
-              <span>{item.name}</span>
-            </Link>
-          ))}
-        </div>
-      </details>
-    </PublicSection>
-  );
-
   return (
     <div className={className}>
       {useFixture && (
         <aside className="gs-home-test-data" role="note">
-          虚构测试数据 · 仅用于本地界面验收，不代表实际价格
+          {english
+            ? "Fictional test data · For local UI verification only, not real prices"
+            : "虚构测试数据 · 仅用于本地界面验收，不代表实际价格"}
         </aside>
       )}
 
-      {locale === "zh" && product && (
-        <nav className="gs-history-breadcrumb" aria-label="面包屑">
-          <Link href="/zh/price-history">
+      {product && (
+        <nav className="gs-history-breadcrumb" aria-label={english ? "Breadcrumb" : "面包屑"}>
+          <Link href={`/${locale}/price-history`}>
             <ArrowLeft size={16} aria-hidden="true" />
-            全部价格变化记录
+            {english ? "All price change records" : "全部价格变化记录"}
           </Link>
           <span aria-hidden="true">/</span>
           <span>{product.name}</span>
@@ -189,9 +157,9 @@ export async function HistoryPage(props: HistoryProps) {
       )}
 
       <PageHeading
-        centered={locale !== "zh"}
+        centered={false}
         locale={locale}
-        identity={locale === "zh" && product ? <BrandIcon product={product} size="lg" priority /> : undefined}
+        identity={product ? <BrandIcon product={product} size="lg" priority /> : undefined}
         title={`${product ? `${product.name} ` : ""}${locale === "zh" ? "价格变化记录" : "Price change records"}`}
         description={
           locale === "zh"
@@ -200,19 +168,16 @@ export async function HistoryPage(props: HistoryProps) {
         }
       />
 
-      {locale !== "zh" && <PageLinks locale={locale} active="history" />}
-
-      {locale === "zh" && !unavailable ? (
+      {!unavailable && (
         <PriceHistoryRadarClient
+          locale={locale}
           map={homepageMap}
           events={product ? productRadarEvents : globalRadar.events}
           observedCodes={product ? (result?.observedCodes ?? []) : globalRadar.observedCodes}
           productName={product?.name}
           showProductColumn={!product}
         />
-      ) : locale !== "zh" ? (
-        legacyProductSelector
-      ) : null}
+      )}
 
       {result && result.coverage.recordCount > 0 ? (
         <PublicSection className="mb-6 p-5 md:p-6">
@@ -233,65 +198,7 @@ export async function HistoryPage(props: HistoryProps) {
         </PublicSection>
       ) : null}
 
-      {unavailable ? (
-        <Unavailable locale={locale} />
-      ) : locale !== "zh" && product && !events.length ? (
-        <EmptyState
-          title={result?.truncated ? "Observation window is incomplete" : "No confirmed price-change events yet"}
-        >
-          This does not mean prices have never changed. Older observations may lack a retained billing period. We preserve
-          observations without inventing missing history.
-        </EmptyState>
-      ) : null}
-
-      {locale !== "zh" && events.length > 0 && (
-        <section className="mt-8" aria-label="Confirmed price changes">
-          <h2 className={headingClass}>Confirmed price changes</h2>
-          <div className={gridClass}>
-            {events.slice(0, 100).map((event) => (
-              <PublicSection key={`${event.before.id}:${event.after.id}`}>
-                <div className="p-5 md:p-6">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className={headingClass}>{event.after.planName}</h3>
-                    <span
-                      className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold ${event.direction === "decrease" ? "bg-[var(--color-price-low-soft)] text-[var(--color-price-low)]" : "bg-[var(--color-price-high-soft)] text-[var(--color-price-high)]"}`}
-                    >
-                      {event.direction === "increase" ? "Price increase" : "Price decrease"}{" "}
-                      {event.percent > 0 ? "+" : ""}
-                      {event.percent}%
-                    </span>
-                  </div>
-                  <p className={`mt-2 ${mutedClass}`}>
-                    {countryName(event.after.countryCode, locale)} ·{" "}
-                    {getBillingCycleLabel(event.after.billingCycle as ProductPlan["billing"], locale)} · App Store
-                  </p>
-                  <div className="mt-5 flex items-center gap-4 tabular-nums">
-                    <span className="text-lg text-[var(--color-text-secondary)]">
-                      {money(event.before.amount, event.before.currency, locale)}
-                    </span>
-                    <ArrowRight size={18} className="shrink-0 text-[var(--color-text-muted)]" aria-hidden="true" />
-                    <span className="text-2xl font-semibold text-[var(--color-text-primary)]">
-                      {money(event.after.amount, event.after.currency, locale)}
-                    </span>
-                  </div>
-                  <p className={`mt-3 ${metaClass}`}>
-                    {dateTime(event.before.observedAt, locale)} → {dateTime(event.after.observedAt, locale)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-x-6 border-t border-[var(--color-border-default)] px-5 py-1 md:px-6">
-                  <Link className={linkClass} href={`/${locale}/price-records/${event.before.id}`}>
-                    Before snapshot
-                  </Link>
-                  <Link className={linkClass} href={`/${locale}/price-records/${event.after.id}`}>
-                    After snapshot
-                    <ArrowRight size={14} aria-hidden="true" />
-                  </Link>
-                </div>
-              </PublicSection>
-            ))}
-          </div>
-        </section>
-      )}
+      {unavailable ? <Unavailable locale={locale} /> : null}
 
       {(result?.eventCount || 0) > 100 ? (
         <p className={mutedClass}>
@@ -329,17 +236,24 @@ export async function HistoryPage(props: HistoryProps) {
         </PublicSection>
       ) : null}
 
-      {locale === "zh" && sortedDirectoryProducts.length > 0 && (
-        <nav className="gs-history-directory" aria-label="按产品查阅历史档案">
+      {sortedDirectoryProducts.length > 0 && (
+        <nav
+          className="gs-history-directory"
+          aria-label={english ? "Browse price history by product" : "按产品查阅历史档案"}
+        >
           <div className="gs-history-directory-head">
             <div>
-              <h2>按产品查阅历史档案</h2>
-              <p>进入单个订阅服务专页，查看该产品近 120 天的地区监测覆盖、调价轨迹与原始商店快照。</p>
+              <h2>{english ? "Browse Price History by Product" : "按产品查阅历史档案"}</h2>
+              <p>
+                {english
+                  ? "Open a dedicated product archive to inspect 120-day regional monitoring coverage, confirmed adjustments, and raw store snapshots."
+                  : "进入单个订阅服务专页，查看该产品近 120 天的地区监测覆盖、调价轨迹与原始商店快照。"}
+              </p>
             </div>
             {product && (
-              <Link className="gs-history-directory-back" href="/zh/price-history">
+              <Link className="gs-history-directory-back" href={`/${locale}/price-history`}>
                 <ArrowLeft size={14} aria-hidden="true" />
-                全站调价总览
+                {english ? "All products overview" : "全站调价总览"}
               </Link>
             )}
           </div>
@@ -349,7 +263,7 @@ export async function HistoryPage(props: HistoryProps) {
               return (
                 <Link
                   key={item.slug}
-                  href={`/zh/price-history/${item.slug}`}
+                  href={`/${locale}/price-history/${item.slug}`}
                   aria-current={product?.slug === item.slug ? "page" : undefined}
                   className="gs-history-directory-tile"
                 >
@@ -357,7 +271,13 @@ export async function HistoryPage(props: HistoryProps) {
                   <div className="gs-history-directory-copy">
                     <strong>{item.name}</strong>
                     <small data-has-changes={count > 0 || undefined}>
-                      {count > 0 ? `近 120 天 ${count} 次调价` : "近期价格稳定"}
+                      {count > 0
+                        ? english
+                          ? `${count} ${count === 1 ? "change" : "changes"} in 120d`
+                          : `近 120 天 ${count} 次调价`
+                        : english
+                          ? "Stable recently"
+                          : "近期价格稳定"}
                     </small>
                   </div>
                   <ArrowRight size={14} aria-hidden="true" />

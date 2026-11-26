@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { numberMotionProgress, parseNumberMotion } from "./public-number-motion.ts";
+import { countInStartValue, numberMotionProgress, parseNumberMotion } from "./public-number-motion.ts";
 import tokens from "../design/design-tokens.json" with { type: "json" };
 
 test("number interpolation follows the shared CSS curve with exact endpoints", () => {
@@ -22,4 +22,15 @@ test("missing or malformed motion tokens cause instant final-value rendering", (
   for (const [time, curve] of [["", ""], ["0ms", "linear"], ["480ms", "cubic-bezier(1,2)"], ["480ms", "cubic-bezier(a,b,c,d)"]]) {
     assert.equal(parseNumberMotion(time, curve), null);
   }
+});
+
+test("countInStartValue keeps decimal digit width stable while providing visible upward motion", () => {
+  assert.equal(countInStartValue(0), 0);
+  assert.equal(countInStartValue(7, 0), 0);
+  const cnyStart = countInStartValue(137.73, 2);
+  assert.ok(cnyStart >= 100 && cnyStart < 137.73);
+  const usdStart = countInStartValue(19.99, 2);
+  assert.ok(usdStart >= 10 && usdStart < 19.99);
+  const pctStart = countInStartValue(54, 0);
+  assert.ok(pctStart >= 10 && pctStart < 54 && Number.isInteger(pctStart));
 });

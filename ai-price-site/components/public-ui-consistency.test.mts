@@ -330,3 +330,45 @@ test("missing US prices use the actual fallback region instead of a false US lab
   assert.match(regionTable, /if \(!hasUsReference\)/);
   assert.match(shareModal, /referenceRegion\.code\.toUpperCase\(\) === 'US'/);
 });
+
+test("unified public chrome keeps cross-locale parity and anchors the nav indicator close to the label", () => {
+  const publicHeader = readComponent("PublicHeader.tsx");
+  const publicFooter = readComponent("PublicFooter.tsx");
+  const homepageMap = readComponent("HomepageMap.tsx");
+  const publicBaseCss = readFileSync(resolve(componentsDir, "../app/public-base.css"), "utf8");
+  const publicComponentsCss = readFileSync(resolve(componentsDir, "../app/public-components.css"), "utf8");
+  const publicMotionCss = readFileSync(resolve(componentsDir, "../app/public-motion.css"), "utf8");
+  const publicEnglishCss = readFileSync(resolve(componentsDir, "../app/en/public-english.css"), "utf8");
+
+  for (const [name, source] of [
+    ["PublicHeader.tsx", publicHeader],
+    ["PublicFooter.tsx", publicFooter],
+    ["HomepageMap.tsx", homepageMap],
+    ["public-base.css", publicBaseCss],
+    ["public-components.css", publicComponentsCss],
+    ["public-motion.css", publicMotionCss],
+    ["public-english.css", publicEnglishCss],
+  ] as const) {
+    assert.doesNotMatch(
+      source,
+      /data-gs-english(?![-a-z])/,
+      `${name} must not gate shared unified UI geometry on data-gs-english`,
+    );
+  }
+
+  assert.doesNotMatch(
+    publicFooter,
+    /english && about|!english && about/,
+    "PublicFooter must render identical section ordering across unified locales",
+  );
+  assert.match(
+    publicComponentsCss,
+    /\.gs-public-unified \.gs-nav-item > a\[aria-current="page"\]::after \{[^}]*bottom:calc\(-1 \* var\(--gs-space-4\)\);/,
+    "SSR nav underline must stay close beneath the active nav item text",
+  );
+  assert.match(
+    publicComponentsCss,
+    /\.gs-public-unified \.gs-nav-indicator \{[^}]*bottom:var\(--gs-space-10\);/,
+    "Measured nav indicator must stay anchored at var(--gs-space-10) beneath the label, never bottom:0 on the header border",
+  );
+});

@@ -28,10 +28,25 @@
   width: var(--gs-space-10);
   height: var(--gs-space-10);
 }
-.gs-public-unified.gs-en-home .gs-en-map-leaders {
+.gs-public-unified :is(.gs-home,.gs-en-home) .gs-en-map-leaders {
   stroke: var(--gs-border-strong);
   stroke-width: var(--gs-border-width);
   pointer-events: none;
+}
+.gs-public-unified.gs-plan-scope .gs-plan-tax {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-plan-scope .gs-plan-filters) .gs-segments {
+  display: grid;
+  grid-template-columns: repeat(var(--gs-count), minmax(max-content, 1fr));
+  width: auto;
+}
+.gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-plan-scope .gs-plan-filters) .gs-segments button {
+  width: auto;
+  padding-inline: var(--gs-space-14);
 }
 .gs-public-unified.gs-en-home .gs-home-product-pill {
   -webkit-tap-highlight-color: transparent;
@@ -150,15 +165,15 @@
   padding-block-start: var(--gs-space-16);
 }
 
-@media (max-width:1100px) {
-  .gs-public-unified.gs-header[data-gs-english] :is(.gs-desktop-nav,.gs-desktop-language) {
-    display: none;
-  }
-  .gs-public-unified.gs-header[data-gs-english] .gs-mobile-menu {
-    display: inline-flex;
-  }
-}
 @media (max-width:767px) {
+  .gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-plan-scope .gs-plan-filters) .gs-segments {
+    grid-template-columns: repeat(var(--gs-count), minmax(0, 1fr));
+    width: 100%;
+  }
+  .gs-public-unified :is(.gs-home,.gs-country-overview-map,.gs-history-radar-panel,.gs-plan-scope .gs-plan-filters) .gs-segments button {
+    padding-inline: var(--gs-space-8);
+    font-size: var(--gs-metadata-size);
+  }
   .gs-public-unified.gs-en-home .gs-home-section-heading .gs-segments {
     width: calc(var(--gs-count) * (var(--gs-space-64) + var(--gs-space-48)) + var(--gs-space-10));
   }

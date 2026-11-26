@@ -234,31 +234,50 @@ export default function PublicSearch({
             search(query);
           }}
         >
-          <label className="gs-field gs-home-search-field">
+          <label
+            className="gs-field gs-home-search-field"
+            onClick={() => setOpen(true)}
+          >
             <PublicIcon name="Search" />
             <input
-              aria-label={variant === "state" ? "查找产品或国家" : "首页搜索产品或国家"}
-              placeholder="搜 ChatGPT、Netflix，或者土耳其"
+              aria-label={
+                locale === "en"
+                  ? "Search products or countries"
+                  : variant === "state"
+                    ? "查找产品或国家"
+                    : "首页搜索产品或国家"
+              }
+              placeholder={
+                locale === "en"
+                  ? "Search ChatGPT, Netflix, or Turkey"
+                  : "搜 ChatGPT、Netflix，或者土耳其"
+              }
               value={query}
               maxLength={80}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setOpen(true);
+                search(next);
+              }}
             />
+            <kbd className="gs-home-search-kbd" aria-hidden="true">/</kbd>
           </label>
           <button type="submit" data-gs-ui="button">
-            搜索
+            {copy.search}
           </button>
         </form>
       ) : (
         <button
           type="button"
           className="gs-search-trigger"
-          data-gs-ui="button"
           aria-label={copy.label}
           onClick={() => setOpen(true)}
         >
-          <PublicIcon name="Search" />
-          <span>{copy.search}</span>
-          <kbd>/</kbd>
+          <PublicIcon name="Search" size={16} />
+          <span className="gs-search-trigger-placeholder">
+            {locale === "en" ? "Search…" : "搜产品 / 地区"}
+          </span>
+          <kbd aria-hidden="true">/</kbd>
         </button>
       )}
 

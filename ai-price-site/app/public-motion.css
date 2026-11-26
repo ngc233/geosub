@@ -87,8 +87,10 @@
 .gs-public-unified :is(.gs-nav-item > a,.gs-language-trigger)[aria-expanded="true"] .gs-nav-chevron { rotate:180deg; translate:0 0; }
 .gs-public-unified .gs-nav-item > a { transition:scale var(--gs-motion-fast) var(--gs-motion-ease),color var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease); }
 .gs-public-unified .gs-nav-item > a:active { scale:var(--gs-motion-press); }
+.gs-public-unified .gs-search-trigger { transition:opacity var(--gs-motion-base) var(--gs-motion-ease),visibility var(--gs-motion-base) var(--gs-motion-ease),color var(--gs-motion-fast) var(--gs-motion-ease),background-color var(--gs-motion-fast) var(--gs-motion-ease),border-color var(--gs-motion-fast) var(--gs-motion-ease); }
 @media (prefers-reduced-motion:reduce) {
  .gs-public-unified .gs-nav-chevron { translate:none !important; }
+ .gs-public-unified .gs-search-trigger { transition:none !important; }
 }
 
 /* Round 6+: restrained 240ms ease-out slider without overshoot; subtle tactile settle only. */
@@ -130,9 +132,11 @@
 /* V7 reading progress and TOC use the existing timing policy. */
 .gs-public-unified .gs-guide-progress { transition:width var(--gs-motion-base) var(--gs-motion-ease); }
 .gs-public-unified .gs-guide-toc-items button { transition:color var(--gs-motion-base) var(--gs-motion-ease); }
+.gs-public-unified .gs-guide-toc-chevron { transition:rotate var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified .gs-guide-toc-mobile[open] > summary .gs-guide-toc-chevron { rotate:180deg; }
 .gs-public-unified .gs-guide-price-row { transition:background-color var(--gs-motion-fast) var(--gs-motion-ease); }
 @media (prefers-reduced-motion:reduce) {
- .gs-public-unified :is(.gs-guide-progress,.gs-guide-toc-items button,.gs-guide-price-row) { transition:none; }
+ .gs-public-unified :is(.gs-guide-progress,.gs-guide-toc-items button,.gs-guide-toc-chevron,.gs-guide-price-row) { transition:none; }
 }
 .gs-public-unified .gs-guide-grid-viewport { transition:height var(--gs-motion-base) var(--gs-motion-ease); }
 @media (prefers-reduced-motion:reduce) { .gs-public-unified .gs-guide-grid-viewport { transition:none; } }
@@ -159,12 +163,13 @@
 @keyframes gs-listing-switch-a { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 @keyframes gs-listing-switch-b { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 /* Subtle inline footer link arrow nudge on overview, country, pilot and product plan cards. */
-.gs-public-unified :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg,.gs-product-table-drilldown svg) { transition:translate var(--gs-motion-fast) var(--gs-motion-ease); }
+.gs-public-unified :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg,.gs-product-table-drilldown svg,.gs-tool-bridge-arrow) { transition:translate var(--gs-motion-fast) var(--gs-motion-ease); }
 @media (hover:hover) and (pointer:fine) {
   .gs-public-unified :is(.gs-listing-card,.gs-country-index-card,.gs-canvas-pilot-card,.gs-product-plan):hover :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg),
-  .gs-public-unified .gs-product-table-drilldown:hover svg { translate:2px 0; }
+  .gs-public-unified .gs-product-table-drilldown:hover svg,
+  .gs-public-unified .gs-tool-bridge-link:hover .gs-tool-bridge-arrow { translate:2px 0; }
 }
 @media (prefers-reduced-motion:reduce) {
   .gs-public-unified :is(.gs-listing-intro[data-listing-switch],.gs-listing-stage[data-listing-switch] :is(.gs-listing-card-slot,.gs-listing-directory,.gs-listing-empty)) { animation:none !important; transform:none !important; }
-  .gs-public-unified :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg,.gs-product-table-drilldown svg) { translate:none !important; transition:none !important; }
+  .gs-public-unified :is(.gs-listing-detail svg,.gs-country-index-action svg,.gs-canvas-pilot-action svg,.gs-product-plan-cta svg,.gs-product-table-drilldown svg,.gs-tool-bridge-arrow) { translate:none !important; transition:none !important; }
 }
