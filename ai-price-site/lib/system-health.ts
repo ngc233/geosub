@@ -7,6 +7,10 @@ import {
   type AutomationTask,
   type OperationalRecoveryOverview,
 } from "./system-task-monitor";
+import {
+  getSystemRuntimeObservability,
+  type SystemRuntimeObservability,
+} from "./system-runtime-observability";
 
 export type HealthStatus = "ok" | "warning" | "critical" | "unknown";
 
@@ -34,6 +38,7 @@ export type SystemHealth = {
   sections: HealthSection[];
   automationTasks: AutomationTask[];
   operationalRecovery: OperationalRecoveryOverview | null;
+  runtimeObservability: SystemRuntimeObservability | null;
   issues: string[];
 };
 
@@ -602,6 +607,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       sections,
       automationTasks: [],
       operationalRecovery: null,
+      runtimeObservability: null,
       issues,
     };
   }
@@ -614,6 +620,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     contentSection,
     automationTasks,
     operationalRecovery,
+    runtimeObservability,
   ] = await Promise.all([
     getExchangeSection(issues),
     getCollectorSection(issues),
@@ -631,6 +638,12 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       issues,
       "无法读取任务自恢复记录。请确认最新数据库迁移已执行。",
     ),
+    safeQuery(
+      () => getSystemRuntimeObservability(),
+      null as SystemRuntimeObservability | null,
+      issues,
+      "无法读取连接池与采集队列观测指标。",
+    ),
   ]);
   const sections = [
     databaseSection,
@@ -645,6 +658,9 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     ...sections.map((section) => section.status),
     ...taskStatuses,
     ...(operationalRecovery ? [operationalRecovery.status] : []),
+    ...(runtimeObservability && runtimeObservability.status !== "unknown"
+      ? [runtimeObservability.status]
+      : []),
   ]);
   const taskIssueCount = automationTasks.filter(
     (task) => task.status === "critical" || task.status === "warning",
@@ -664,6 +680,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     sections,
     automationTasks,
     operationalRecovery,
+    runtimeObservability,
     issues,
   };
 }

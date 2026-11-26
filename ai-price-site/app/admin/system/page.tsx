@@ -22,6 +22,7 @@ import {
 } from "../../../lib/system-health";
 import type { AutomationTask } from "../../../lib/system-task-monitor";
 import type { OperationalRecoveryOverview } from "../../../lib/system-task-monitor";
+import type { SystemRuntimeObservability } from "../../../lib/system-runtime-observability";
 import SystemHealthAutoRefresh from "./SystemHealthAutoRefresh";
 import AdminVersionOverview from "../../../components/admin/AdminVersionOverview";
 import { measureAdminWorkload } from "../../../lib/admin-performance";
@@ -306,6 +307,134 @@ function OperationalRecoveryPanel({
   );
 }
 
+function formatDurationMs(ms: number) {
+  if (ms <= 0) return "0 ms";
+  if (ms < 1000) return `${ms} ms`;
+  return `${(ms / 1000).toFixed(1)} s`;
+}
+
+function RuntimeObservabilityPanel({
+  observability,
+}: {
+  observability: SystemRuntimeObservability;
+}) {
+  const { pools, collectorQueue } = observability;
+  const dispatchLabel =
+    collectorQueue.dispatchMode === "queue"
+      ? "队列 Worker（queue）"
+      : "进程直启（spawn）";
+
+  return (
+    <AdminCard className="mb-6 overflow-hidden !p-0">
+      <div className="flex flex-col gap-3 border-b border-admin-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-admin-border-strong">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            <Database size={18} strokeWidth={2.3} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-admin-text dark:text-admin-text">
+              运行态连接池与队列观测
+            </h2>
+            <p className="mt-0.5 text-xs text-admin-text-muted dark:text-admin-text-muted">
+              只读查看前后台数据库连接池隔离占用、采集队列分发状态与近 24 小时分阶段失败分布。
+            </p>
+          </div>
+        </div>
+        <StatusPill
+          status={observability.status}
+          label={
+            observability.status === "ok"
+              ? "隔离正常"
+              : observability.status === "warning"
+                ? "需关注"
+                : observability.status === "critical"
+                  ? "连接紧张"
+                  : "部分不可读"
+          }
+        />
+      </div>
+
+      <div className="grid border-b border-admin-border sm:grid-cols-2 xl:grid-cols-4 dark:border-admin-border">
+        {[
+          {
+            label: `前台连接池（${pools.web.applicationName}）`,
+            value: observability.poolsAvailable
+              ? `${pools.web.total} / ${pools.web.max}`
+              : "不可读",
+            helper: observability.poolsAvailable
+              ? `活跃 ${pools.web.active} · 事务空闲 ${pools.web.idleInTransaction} · 最长 ${formatDurationMs(pools.web.longestActiveMs)}`
+              : "当前账号无 pg_stat_activity 权限",
+          },
+          {
+            label: `后台连接池（${pools.admin.applicationName}）`,
+            value: observability.poolsAvailable
+              ? `${pools.admin.total} / ${pools.admin.max}`
+              : "不可读",
+            helper: observability.poolsAvailable
+              ? `活跃 ${pools.admin.active} · 事务空闲 ${pools.admin.idleInTransaction} · 最长 ${formatDurationMs(pools.admin.longestActiveMs)}`
+              : "当前账号无 pg_stat_activity 权限",
+          },
+          {
+            label: "采集分发与队列",
+            value: dispatchLabel,
+            helper: `排队 ${collectorQueue.queuedRuns} · 执行中 ${collectorQueue.activeRuns} · 其他 DB 连接 ${pools.otherConnections}`,
+          },
+          {
+            label: "Worker 最近领单",
+            value: formatTaskDate(collectorQueue.latestWorkerClaimAt),
+            helper:
+              collectorQueue.dispatchMode === "queue"
+                ? "队列模式下由常驻 Worker 领取任务"
+                : "切换 GEOSUB_COLLECTOR_DISPATCH_MODE=queue 后生效",
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="min-w-0 border-t border-admin-border px-5 py-4 first:border-t-0
+              sm:[&:nth-child(-n+2)]:border-t-0 xl:border-l xl:border-t-0 xl:first:border-l-0
+              dark:border-admin-border"
+          >
+            <p className="truncate text-[11px] font-semibold text-admin-text-faint">
+              {item.label}
+            </p>
+            <p className="mt-1 truncate text-sm font-semibold text-admin-text dark:text-admin-text">
+              {item.value}
+            </p>
+            <p className="mt-1 break-words text-xs leading-5 text-admin-text-muted dark:text-admin-text-muted">
+              {item.helper}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-admin-surface-subtle/70 px-5 py-3 text-xs text-admin-text-secondary dark:bg-admin-surface/70 dark:text-admin-text-secondary">
+        <span className="font-semibold">
+          近 24 小时采集失败分阶段统计（共 {collectorQueue.failures24h.total} 次）：
+        </span>
+        <div className="flex flex-wrap items-center gap-3 font-medium">
+          <span>采集阶段 {collectorQueue.failures24h.collector}</span>
+          <span>自动审核阶段 {collectorQueue.failures24h.autoReview}</span>
+          <span>启动阶段 {collectorQueue.failures24h.spawn}</span>
+          <span>未分类 {collectorQueue.failures24h.unclassified}</span>
+        </div>
+      </div>
+
+      {observability.warnings.length > 0 ? (
+        <div className="grid gap-2 border-t border-admin-border px-5 py-3 dark:border-admin-border">
+          {observability.warnings.map((warning) => (
+            <p
+              key={warning}
+              className="text-xs font-semibold leading-5 text-amber-800 dark:text-amber-300"
+            >
+              {warning}
+            </p>
+          ))}
+        </div>
+      ) : null}
+    </AdminCard>
+  );
+}
+
 export default async function AdminSystemPage() {
   const health = await measureAdminWorkload("system.health", () => getSystemHealth());
 
@@ -400,6 +529,10 @@ export default async function AdminSystemPage() {
 
       {health.operationalRecovery ? (
         <OperationalRecoveryPanel recovery={health.operationalRecovery} />
+      ) : null}
+
+      {health.runtimeObservability ? (
+        <RuntimeObservabilityPanel observability={health.runtimeObservability} />
       ) : null}
 
       {health.issues.length > 0 ? (
