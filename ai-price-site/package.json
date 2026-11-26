@@ -88,7 +88,7 @@
         "dotenv": "^17.4.2",
         "html-to-image": "^1.11.13",
         "lucide-react": "^1.21.0",
-        "next": "16.4.2",
+        "next": "16.4.6",
         "opencc-js": "^1.4.1",
         "pdfkit": "^0.17.2",
         "pg": "^8.22.0",
@@ -111,7 +111,7 @@
         "@types/sanitize-html": "^2.16.1",
         "@types/topojson-client": "^3.1.5",
         "eslint": "^9",
-        "eslint-config-next": "16.4.2",
+        "eslint-config-next": "16.4.6",
         "tailwindcss": "^4",
         "typescript": "^5",
         "fast-glob": "file:vendor/next-eslint-root-glob"
@@ -136,7 +136,7 @@
         "postcss": "8.5.26",
         "source-map-js": "1.2.2",
         "sharp": "0.35.5",
-        "@next/eslint-plugin-next@16.4.2": {
+        "@next/eslint-plugin-next@16.4.6": {
             "fast-glob": "$fast-glob"
         }
     }
