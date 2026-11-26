@@ -596,14 +596,30 @@ async function main() {
           `${market.country_code}: ${observations.map((item) => `${item.plan_slug} ${item.currency} ${item.raw_price}`).join("; ")}`
         );
       } catch (error) {
+        const failureMessage = error instanceof Error ? error.message : String(error);
+        const failureIssues = [failureMessage];
         if (client && source.auto_review && !snapshot?.parser_result?.complete) {
-          await recordMarketFailure({ client,source,market,database,sourceId,snapshot,issues:[error.message] });
+          try {
+            await recordMarketFailure({
+              client,
+              source,
+              market,
+              database,
+              sourceId,
+              snapshot,
+              issues: failureIssues,
+            });
+          } catch (recordError) {
+            failureIssues.push(
+              `record_market_failure_error:${recordError instanceof Error ? recordError.message : String(recordError)}`,
+            );
+          }
         }
         summary.failed_market_count += 1;
         summary.markets.push({
           country_code: market.country_code,
           status: "failed",
-          issues: [error.message]
+          issues: failureIssues
         });
       }
     }
