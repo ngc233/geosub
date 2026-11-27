@@ -8,7 +8,10 @@
         "slug": "basic",
         "name": "Captions Basic",
         "billing_cycle": "monthly",
-        "aliases": ["Captions Basic - monthly", "Captions Basic - mensuelle"],
+        "aliases": [
+          "Captions Basic - monthly",
+          "Captions Basic - mensuelle"
+        ],
         "sort_order": 10,
         "expected_monthly_usd_min": 3,
         "expected_monthly_usd_max": 22
@@ -17,7 +20,9 @@
         "slug": "max",
         "name": "Captions Max",
         "billing_cycle": "monthly",
-        "aliases": ["Captions Max"],
+        "aliases": [
+          "Captions Max"
+        ],
         "sort_order": 20,
         "price_selection_strategy": "lowest_in_expected_range",
         "expected_monthly_usd_min": 12,
@@ -35,7 +40,9 @@
         "slug": "weekly-premium",
         "name": "Pollo AI Weekly Premium",
         "billing_cycle": "weekly",
-        "aliases": ["Pollo Weekly Premium"],
+        "aliases": [
+          "Pollo Weekly Premium"
+        ],
         "sort_order": 10,
         "expected_monthly_usd_min": 2,
         "expected_monthly_usd_max": 15
@@ -44,7 +51,10 @@
         "slug": "lite",
         "name": "Pollo AI Lite",
         "billing_cycle": "monthly",
-        "aliases": ["Pollo Lite - Monthly Plan", "Monthly Subscription Lite"],
+        "aliases": [
+          "Pollo Lite - Monthly Plan",
+          "Monthly Subscription Lite"
+        ],
         "sort_order": 20,
         "expected_monthly_usd_min": 6,
         "expected_monthly_usd_max": 30
@@ -53,7 +63,10 @@
         "slug": "pro",
         "name": "Pollo AI Pro",
         "billing_cycle": "monthly",
-        "aliases": ["Pollo Pro - Monthly Plan", "Monthly Subscription Pro"],
+        "aliases": [
+          "Pollo Pro - Monthly Plan",
+          "Monthly Subscription Pro"
+        ],
         "sort_order": 30,
         "expected_monthly_usd_min": 12,
         "expected_monthly_usd_max": 55
@@ -68,39 +81,60 @@
       {
         "slug": "go",
         "name": "ChatGPT Go",
-        "aliases": ["chatgpt go", "go"],
+        "aliases": [
+          "chatgpt go",
+          "go"
+        ],
         "sort_order": 10,
-        "expected_monthly_usd_min": 2.0,
-        "expected_monthly_usd_max": 15.0
+        "expected_monthly_usd_min": 2,
+        "expected_monthly_usd_max": 15
       },
       {
         "slug": "plus",
         "name": "ChatGPT Plus",
-        "aliases": ["chatgpt plus", "plus"],
+        "aliases": [
+          "chatgpt plus",
+          "plus"
+        ],
         "sort_order": 20,
-        "expected_monthly_usd_min": 8.0,
-        "expected_monthly_usd_max": 40.0
+        "expected_monthly_usd_min": 8,
+        "expected_monthly_usd_max": 40
       },
       {
         "slug": "pro-5x",
         "name": "ChatGPT Pro 100",
-        "aliases": ["chatgpt pro 5x", "pro 5x", "pro-5x", "chatgpt pro 100", "pro 100"],
+        "aliases": [
+          "chatgpt pro 5x",
+          "pro 5x",
+          "pro-5x",
+          "chatgpt pro 100",
+          "pro 100"
+        ],
         "sort_order": 30,
-        "expected_monthly_usd_min": 40.0,
-        "expected_monthly_usd_max": 160.0
+        "expected_monthly_usd_min": 40,
+        "expected_monthly_usd_max": 160
       },
       {
         "slug": "pro",
         "name": "ChatGPT Pro 200",
-        "aliases": ["chatgpt pro 20x", "pro 20x", "pro-20x", "chatgpt pro 200", "pro 200"],
+        "aliases": [
+          "chatgpt pro 20x",
+          "pro 20x",
+          "pro-20x",
+          "chatgpt pro 200",
+          "pro 200"
+        ],
         "sort_order": 40,
-        "expected_monthly_usd_min": 80.0,
-        "expected_monthly_usd_max": 330.0
+        "expected_monthly_usd_min": 80,
+        "expected_monthly_usd_max": 330
       },
       {
         "slug": "pro-500",
         "name": "ChatGPT Pro 500",
-        "aliases": ["chatgpt pro 500", "pro 500"],
+        "aliases": [
+          "chatgpt pro 500",
+          "pro 500"
+        ],
         "sort_order": 50,
         "billing_cycle": "monthly",
         "review_only": true
@@ -113,26 +147,37 @@
       {
         "slug": "pro",
         "name": "Claude Pro",
-        "aliases": ["claude pro", "pro"],
+        "aliases": [
+          "claude pro",
+          "pro"
+        ],
         "sort_order": 10,
-        "expected_monthly_usd_min": 8.0,
-        "expected_monthly_usd_max": 35.0
+        "expected_monthly_usd_min": 8,
+        "expected_monthly_usd_max": 35
       },
       {
         "slug": "max-5x",
         "name": "Claude Max 5x",
-        "aliases": ["claude max 5x", "max 5x", "max-5x"],
+        "aliases": [
+          "claude max 5x",
+          "max 5x",
+          "max-5x"
+        ],
         "sort_order": 20,
-        "expected_monthly_usd_min": 40.0,
-        "expected_monthly_usd_max": 190.0
+        "expected_monthly_usd_min": 40,
+        "expected_monthly_usd_max": 190
       },
       {
         "slug": "max-20x",
         "name": "Claude Max 20x",
-        "aliases": ["claude max 20x", "max 20x", "max-20x"],
+        "aliases": [
+          "claude max 20x",
+          "max 20x",
+          "max-20x"
+        ],
         "sort_order": 30,
-        "expected_monthly_usd_min": 80.0,
-        "expected_monthly_usd_max": 380.0
+        "expected_monthly_usd_min": 80,
+        "expected_monthly_usd_max": 380
       }
     ]
   },
@@ -143,26 +188,66 @@
       {
         "slug": "plus",
         "name": "Google AI Plus",
-        "aliases": ["google ai plus", "ai plus", "gemini plus", "plus", "google ai plus 400 gb"],
+        "aliases": [
+          "google ai plus",
+          "ai plus",
+          "gemini plus",
+          "plus",
+          "google ai plus 400 gb"
+        ],
         "sort_order": 10,
-        "expected_monthly_usd_min": 2.0,
-        "expected_monthly_usd_max": 12.0
+        "expected_monthly_usd_min": 2,
+        "expected_monthly_usd_max": 12
       },
       {
         "slug": "pro",
         "name": "Google AI Pro",
-        "aliases": ["google ai pro", "ai pro", "gemini pro", "pro", "google ai pro 5 tb"],
+        "aliases": [
+          "google ai pro",
+          "ai pro",
+          "gemini pro",
+          "pro",
+          "google ai pro 5 tb"
+        ],
         "sort_order": 20,
-        "expected_monthly_usd_min": 8.0,
-        "expected_monthly_usd_max": 45.0
+        "expected_monthly_usd_min": 8,
+        "expected_monthly_usd_max": 45
+      },
+      {
+        "slug": "pro-10tb",
+        "name": "Google AI Pro (10 TB)",
+        "aliases": [
+          "google ai pro 10 tb",
+          "google ai pro (10 tb)"
+        ],
+        "sort_order": 22,
+        "expected_monthly_usd_min": 30,
+        "expected_monthly_usd_max": 75
+      },
+      {
+        "slug": "ultra-20tb",
+        "name": "Google AI Ultra (20 TB)",
+        "aliases": [
+          "google ai ultra 20 tb",
+          "google ai ultra (20 tb)"
+        ],
+        "sort_order": 25,
+        "expected_monthly_usd_min": 60,
+        "expected_monthly_usd_max": 140
       },
       {
         "slug": "ultra",
         "name": "Google AI Ultra",
-        "aliases": ["google ai ultra", "ai ultra", "gemini ultra", "ultra", "google ai ultra 30 tb"],
+        "aliases": [
+          "google ai ultra",
+          "ai ultra",
+          "gemini ultra",
+          "ultra",
+          "google ai ultra 30 tb"
+        ],
         "sort_order": 30,
-        "expected_monthly_usd_min": 80.0,
-        "expected_monthly_usd_max": 330.0
+        "expected_monthly_usd_min": 80,
+        "expected_monthly_usd_max": 330
       }
     ]
   },
@@ -173,26 +258,41 @@
       {
         "slug": "super-lite",
         "name": "SuperGrok Lite",
-        "aliases": ["supergrok lite", "super grok lite", "grok lite", "lite"],
+        "aliases": [
+          "supergrok lite",
+          "super grok lite",
+          "grok lite",
+          "lite"
+        ],
         "sort_order": 10,
-        "expected_monthly_usd_min": 3.0,
-        "expected_monthly_usd_max": 45.0
+        "expected_monthly_usd_min": 3,
+        "expected_monthly_usd_max": 45
       },
       {
         "slug": "super",
         "name": "SuperGrok",
-        "aliases": ["supergrok", "super grok", "grok super", "super"],
+        "aliases": [
+          "supergrok",
+          "super grok",
+          "grok super",
+          "super"
+        ],
         "sort_order": 20,
-        "expected_monthly_usd_min": 5.0,
-        "expected_monthly_usd_max": 80.0
+        "expected_monthly_usd_min": 5,
+        "expected_monthly_usd_max": 80
       },
       {
         "slug": "super-heavy",
         "name": "SuperGrok Heavy",
-        "aliases": ["supergrok heavy", "super grok heavy", "grok heavy", "heavy"],
+        "aliases": [
+          "supergrok heavy",
+          "super grok heavy",
+          "grok heavy",
+          "heavy"
+        ],
         "sort_order": 30,
-        "expected_monthly_usd_min": 150.0,
-        "expected_monthly_usd_max": 520.0
+        "expected_monthly_usd_min": 150,
+        "expected_monthly_usd_max": 520
       }
     ]
   },
@@ -203,27 +303,40 @@
       {
         "slug": "basic",
         "name": "Manus Basic",
-        "aliases": ["manus basic", "basic", "manus basic monthly", "manus basic - monthly"],
+        "aliases": [
+          "manus basic",
+          "basic",
+          "manus basic monthly",
+          "manus basic - monthly"
+        ],
         "sort_order": 10,
-        "expected_monthly_usd_min": 8.0,
-        "expected_monthly_usd_max": 35.0
+        "expected_monthly_usd_min": 8,
+        "expected_monthly_usd_max": 35
       },
       {
         "slug": "pro",
         "name": "Manus Pro",
-        "aliases": ["manus pro", "pro"],
+        "aliases": [
+          "manus pro",
+          "pro"
+        ],
         "sort_order": 20,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 12.0,
-        "expected_monthly_usd_max": 140.0
+        "expected_monthly_usd_min": 12,
+        "expected_monthly_usd_max": 140
       },
       {
         "slug": "plus",
         "name": "Manus Plus",
-        "aliases": ["manus plus", "plus", "manus plus monthly", "manus plus - monthly"],
+        "aliases": [
+          "manus plus",
+          "plus",
+          "manus plus monthly",
+          "manus plus - monthly"
+        ],
         "sort_order": 30,
-        "expected_monthly_usd_min": 8.0,
-        "expected_monthly_usd_max": 70.0
+        "expected_monthly_usd_min": 8,
+        "expected_monthly_usd_max": 70
       }
     ]
   },
@@ -232,34 +345,54 @@
     "app_store_id": "545395155",
     "exact_plan_aliases": true,
     "country_scoped_aliases": [
-      { "token": "egypt", "country_codes": ["EG"] },
-      { "token": "lebanon", "country_codes": ["LB"] }
+      {
+        "token": "egypt",
+        "country_codes": [
+          "EG"
+        ]
+      },
+      {
+        "token": "lebanon",
+        "country_codes": [
+          "LB"
+        ]
+      }
     ],
-    "excluded_aliases": ["international pricing", "special offer"],
+    "excluded_aliases": [
+      "international pricing",
+      "special offer"
+    ],
     "plans": [
       {
         "slug": "plus",
         "name": "Anghami Plus",
         "billing_cycle": "monthly",
         "aliases": [
-          "plus", "anghami plus", "anghami+ subscription",
-          "anghami plus - أنغامي بلاس", "anghami plus monthly"
+          "plus",
+          "anghami plus",
+          "anghami+ subscription",
+          "anghami plus - أنغامي بلاس",
+          "anghami plus monthly"
         ],
         "sort_order": 10,
-        "expected_monthly_usd_min": 1.0,
-        "expected_monthly_usd_max": 18.0
+        "expected_monthly_usd_min": 1,
+        "expected_monthly_usd_max": 18
       },
       {
         "slug": "family",
         "name": "Anghami Family",
         "billing_cycle": "monthly",
         "aliases": [
-          "family", "anghami family", "anghami plus monthly family",
-          "anghami plus family par mois", "anghami family plan for egypt", "anghami gold family"
+          "family",
+          "anghami family",
+          "anghami plus monthly family",
+          "anghami plus family par mois",
+          "anghami family plan for egypt",
+          "anghami gold family"
         ],
         "sort_order": 20,
-        "expected_monthly_usd_min": 2.0,
-        "expected_monthly_usd_max": 25.0
+        "expected_monthly_usd_min": 2,
+        "expected_monthly_usd_max": 25
       }
     ]
   },
@@ -284,8 +417,8 @@
         ],
         "sort_order": 10,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 12.0,
-        "expected_monthly_usd_max": 35.0
+        "expected_monthly_usd_min": 12,
+        "expected_monthly_usd_max": 35
       },
       {
         "slug": "allegretto",
@@ -296,8 +429,8 @@
         ],
         "sort_order": 20,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 25.0,
-        "expected_monthly_usd_max": 75.0
+        "expected_monthly_usd_min": 25,
+        "expected_monthly_usd_max": 75
       },
       {
         "slug": "allegro",
@@ -308,8 +441,8 @@
         ],
         "sort_order": 30,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 65.0,
-        "expected_monthly_usd_max": 180.0
+        "expected_monthly_usd_min": 65,
+        "expected_monthly_usd_max": 180
       },
       {
         "slug": "vivace",
@@ -320,8 +453,8 @@
         ],
         "sort_order": 40,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 130.0,
-        "expected_monthly_usd_max": 360.0
+        "expected_monthly_usd_min": 130,
+        "expected_monthly_usd_max": 360
       }
     ]
   },
@@ -332,20 +465,26 @@
       {
         "slug": "pro",
         "name": "Perplexity Pro",
-        "aliases": ["perplexity pro", "pro"],
+        "aliases": [
+          "perplexity pro",
+          "pro"
+        ],
         "sort_order": 10,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 8.0,
-        "expected_monthly_usd_max": 45.0
+        "expected_monthly_usd_min": 8,
+        "expected_monthly_usd_max": 45
       },
       {
         "slug": "max",
         "name": "Perplexity Max",
-        "aliases": ["perplexity max", "max"],
+        "aliases": [
+          "perplexity max",
+          "max"
+        ],
         "sort_order": 20,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 80.0,
-        "expected_monthly_usd_max": 330.0
+        "expected_monthly_usd_min": 80,
+        "expected_monthly_usd_max": 330
       }
     ]
   },
@@ -356,29 +495,44 @@
       {
         "slug": "basic",
         "name": "Suno Basic",
-        "aliases": ["suno basic", "basic", "basic plan", "suno basic plan"],
+        "aliases": [
+          "suno basic",
+          "basic",
+          "basic plan",
+          "suno basic plan"
+        ],
         "sort_order": 10,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 3.0,
-        "expected_monthly_usd_max": 15.0
+        "expected_monthly_usd_min": 3,
+        "expected_monthly_usd_max": 15
       },
       {
         "slug": "pro",
         "name": "Suno Pro",
-        "aliases": ["suno pro", "pro", "pro plan", "suno pro plan"],
+        "aliases": [
+          "suno pro",
+          "pro",
+          "pro plan",
+          "suno pro plan"
+        ],
         "sort_order": 20,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 5.0,
-        "expected_monthly_usd_max": 25.0
+        "expected_monthly_usd_min": 5,
+        "expected_monthly_usd_max": 25
       },
       {
         "slug": "premier-plan",
         "name": "Suno Premier",
-        "aliases": ["suno premier", "premier", "premier plan", "suno premier plan"],
+        "aliases": [
+          "suno premier",
+          "premier",
+          "premier plan",
+          "suno premier plan"
+        ],
         "sort_order": 30,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 20.0,
-        "expected_monthly_usd_max": 60.0
+        "expected_monthly_usd_min": 20,
+        "expected_monthly_usd_max": 60
       }
     ]
   },
@@ -404,8 +558,8 @@
           "含廣告標準方案"
         ],
         "sort_order": 10,
-        "expected_monthly_usd_min": 3.0,
-        "expected_monthly_usd_max": 18.0
+        "expected_monthly_usd_min": 3,
+        "expected_monthly_usd_max": 18
       },
       {
         "slug": "standard",
@@ -422,8 +576,8 @@
           "標準方案"
         ],
         "sort_order": 20,
-        "expected_monthly_usd_min": 5.0,
-        "expected_monthly_usd_max": 25.0
+        "expected_monthly_usd_min": 5,
+        "expected_monthly_usd_max": 25
       },
       {
         "slug": "premium",
@@ -438,8 +592,8 @@
           "高級方案"
         ],
         "sort_order": 30,
-        "expected_monthly_usd_min": 8.0,
-        "expected_monthly_usd_max": 38.0
+        "expected_monthly_usd_min": 8,
+        "expected_monthly_usd_max": 38
       }
     ]
   },
@@ -493,8 +647,8 @@
         ],
         "sort_order": 10,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 3.0,
-        "expected_monthly_usd_max": 18.0
+        "expected_monthly_usd_min": 3,
+        "expected_monthly_usd_max": 18
       },
       {
         "slug": "standard",
@@ -512,8 +666,8 @@
         ],
         "sort_order": 20,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 4.0,
-        "expected_monthly_usd_max": 30.0
+        "expected_monthly_usd_min": 4,
+        "expected_monthly_usd_max": 30
       },
       {
         "slug": "premium",
@@ -534,8 +688,8 @@
         ],
         "sort_order": 30,
         "price_selection_strategy": "lowest_in_expected_range",
-        "expected_monthly_usd_min": 6.0,
-        "expected_monthly_usd_max": 45.0
+        "expected_monthly_usd_min": 6,
+        "expected_monthly_usd_max": 45
       }
     ]
   },
@@ -548,28 +702,28 @@
         "aliases": [
           "netflix basic",
           "basic",
-            "1 screen",
-            "1 screen unlimited streaming",
-            "one screen",
-            "single screen",
-            "basico",
-            "1 pantalla",
-            "1 pantalla transmision ilimitada",
-            "1 tela",
-        "1 tela transmissao ilimitada",
-        "1 gerat gleichzeitig",
-        "1 gerate gleichzeitig",
-        "ベーシック",
-        "1画面",
-        "1 画面視聴プラン",
-        "기본",
-        "동시접속 1명",
-        "基本",
-        "單螢幕"
+          "1 screen",
+          "1 screen unlimited streaming",
+          "one screen",
+          "single screen",
+          "basico",
+          "1 pantalla",
+          "1 pantalla transmision ilimitada",
+          "1 tela",
+          "1 tela transmissao ilimitada",
+          "1 gerat gleichzeitig",
+          "1 gerate gleichzeitig",
+          "ベーシック",
+          "1画面",
+          "1 画面視聴プラン",
+          "기본",
+          "동시접속 1명",
+          "基本",
+          "單螢幕"
         ],
         "sort_order": 10,
         "expected_monthly_usd_min": 1.2,
-        "expected_monthly_usd_max": 18.0
+        "expected_monthly_usd_max": 18
       },
       {
         "slug": "standard",
@@ -581,29 +735,29 @@
           "2 screens unlimited streaming",
           "two screens",
           "standard 2 screens",
-            "estandar",
-            "2 pantallas",
-            "2 pantallas transmision limitada",
-            "2 pantallas transmision limitada 1mes",
-            "2 telas",
-            "2 telas transmissao ilimitada",
-            "2 telas transmissao online limitada",
-            "2 gerate",
-        "2 gerate gleichzeitig",
-        "2 ecrans",
-        "2 schermi",
-        "2 schermen",
-        "スタンダード",
-        "2画面",
-        "2 画面視聴プラン",
-        "스탠다드",
-        "동시접속 2명",
-        "標準",
-        "雙螢幕"
+          "estandar",
+          "2 pantallas",
+          "2 pantallas transmision limitada",
+          "2 pantallas transmision limitada 1mes",
+          "2 telas",
+          "2 telas transmissao ilimitada",
+          "2 telas transmissao online limitada",
+          "2 gerate",
+          "2 gerate gleichzeitig",
+          "2 ecrans",
+          "2 schermi",
+          "2 schermen",
+          "スタンダード",
+          "2画面",
+          "2 画面視聴プラン",
+          "스탠다드",
+          "동시접속 2명",
+          "標準",
+          "雙螢幕"
         ],
         "sort_order": 20,
         "expected_monthly_usd_min": 2.4,
-        "expected_monthly_usd_max": 28.0
+        "expected_monthly_usd_max": 28
       },
       {
         "slug": "premium",
@@ -614,30 +768,30 @@
           "4 screens",
           "4 screens unlimited streaming",
           "four screens",
-            "premium 4 screens",
-            "4 pantallas",
-            "4 pantallas transmision limitada",
-            "4 pantallas transmision limitada 1mes",
-            "4 telas",
-            "4 telas transmissao ilimitada",
-            "4 telas transmissao online limitada",
-            "4 gerate",
-        "4 gerate gleichzeitig",
-        "4 ecrans",
-        "4 schermi",
-        "4 schermen",
-        "プレミアム",
-        "4画面",
-        "4 画面視聴プラン",
-        "프리미엄",
-        "동시접속 4명",
-        "高级",
-        "高級",
-        "四螢幕"
+          "premium 4 screens",
+          "4 pantallas",
+          "4 pantallas transmision limitada",
+          "4 pantallas transmision limitada 1mes",
+          "4 telas",
+          "4 telas transmissao ilimitada",
+          "4 telas transmissao online limitada",
+          "4 gerate",
+          "4 gerate gleichzeitig",
+          "4 ecrans",
+          "4 schermi",
+          "4 schermen",
+          "プレミアム",
+          "4画面",
+          "4 画面視聴プラン",
+          "프리미엄",
+          "동시접속 4명",
+          "高级",
+          "高級",
+          "四螢幕"
         ],
         "sort_order": 30,
         "expected_monthly_usd_min": 3.4,
-        "expected_monthly_usd_max": 38.0
+        "expected_monthly_usd_max": 38
       }
     ]
   },
