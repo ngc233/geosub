@@ -28507,6 +28507,65 @@
       ],
       "reason": "GeoSub 2.38.0 primary unified locales (zh-tw, ja, ko, es) rollout alongside zh and en onto shared Canvas components. ProductCanvasOverview preserves exact <main data-content-version> serving marker and OverviewEditorialSections / FaqSection slots for overview:en:chatgpt, overview:zh:claude, and overview:en:claude; database schema and managed-content store/facts contracts are unchanged.",
       "evidence": "ai-price-site/scripts/v4-content-compatibility.test.mts; ai-price-site/scripts/v5-content-compatibility.test.mts; ai-price-site/lib/content-readback.test.mts"
+    },
+    {
+      "format": 2,
+      "from": "dc8332ffa00cb52c4638769a32958332b0eb5587a2aceb900c9001775ca17fac",
+      "to": "d231c0eac0231f35cc39f58e3ee46a429a55eca216b6f0ec0b40bb9d362bb5e2",
+      "retainedCommit": "e26e7363badbdeadad8f1df4c492e5946a1c8fd5",
+      "toFiles": [
+        "VERSION",
+        "ai-price-site/lib/managed-content.ts",
+        "ai-price-site/lib/managed-content-store.ts",
+        "ai-price-site/lib/content-readback.ts",
+        "ai-price-site/lib/content-distribution.ts",
+        "ai-price-site/components/PricingDetailPage.tsx",
+        "ai-price-site/components/OverviewEditorialSections.tsx",
+        "ai-price-site/prisma/schema.prisma",
+        "ai-price-site/scripts/content-deploy-fence.cjs",
+        "ai-price-site/lib/content-target-registry.ts",
+        "ai-price-site/lib/content-effects.ts",
+        "ai-price-site/lib/content-effects-store.ts",
+        "ai-price-site/lib/content-recovery.ts",
+        "ai-price-site/lib/content-recovery-auth.ts",
+        "ai-price-site/app/api/internal/content/recover/route.ts",
+        "ai-price-site/scripts/recover-content-local.cjs",
+        "ai-price-site/lib/content-fact-tokens.ts",
+        "ai-price-site/lib/managed-content-facts.ts",
+        "ai-price-site/lib/managed-content-fact-view.ts",
+        "ai-price-site/lib/pricing-product-store.ts",
+        "ai-price-site/lib/public-pricing-model.ts",
+        "ai-price-site/lib/pricing-detail-adapter.ts",
+        "geosub-backend/deploy/linux-arm64/content-release-contract.cjs",
+        "geosub-backend/deploy/linux-arm64/content-release-fence.cjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release.mjs",
+        "geosub-backend/deploy/linux-arm64/rolling-release-lib.mjs",
+        "geosub-backend/sql/schema/059_audit_actor_compatibility.sql",
+        "ai-price-site/prisma/migrations/20261026090000_audit_actor_compatibility/migration.sql",
+        "ai-price-site/components/ProductCanvasOverview.tsx",
+        "ai-price-site/components/ProductCanvasPricing.tsx",
+        "ai-price-site/lib/product-canvas.ts",
+        "ai-price-site/lib/product-canvas-order.ts",
+        "ai-price-site/components/PlanCanvasPage.tsx",
+        "ai-price-site/components/PlanCanvasPricing.tsx",
+        "ai-price-site/lib/plan-canvas.ts"
+      ],
+      "targets": [
+        {
+          "id": "overview:en:chatgpt",
+          "facts": true
+        },
+        {
+          "id": "overview:zh:claude",
+          "facts": true
+        },
+        {
+          "id": "overview:en:claude",
+          "facts": true
+        }
+      ],
+      "reason": "2.39.0 candidate preserves reviewed reader and target scope for rollback to deployed 2.38.0 (e26e7363).",
+      "evidence": "Retained-file comparison between 22548c4e (2.37.0) and e26e7363 (2.38.0): managed-content readers, store, registry, and fact tokens unchanged."
     }
   ]
 }
