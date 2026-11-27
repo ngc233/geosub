@@ -53,6 +53,22 @@ export function getProductOverviewRegionCount(product: SubscriptionProduct) {
   return new Set(getProductOverviewDecisionPlans(product).flatMap((plan) => plan.regions.map((region) => region.code))).size;
 }
 
+export function getChatGptOverviewSearchDescription(
+  locale: SiteLocale,
+  productSlug: string,
+  plans: SubscriptionProduct["plans"],
+) {
+  if (locale !== "zh" || productSlug !== "chatgpt") return;
+  const advertised = ["go", "plus", "pro-5x", "pro"];
+  if (plans.length !== advertised.length) return;
+  const covered = advertised.every(slug => plans.some(plan =>
+    plan.slug === slug && plan.billing === "monthly" &&
+    plan.regions.every(row => row.billingPlatform === "ios") &&
+    plan.regions.some(row => row.code === "US"),
+  ));
+  if (covered) return "查看 ChatGPT Go、Plus、Pro 100 和 Pro 200 的 App Store 月费，对比各套餐的美国基准价、最低价地区和人民币折算价格。";
+}
+
 export function getProductOverviewChannel(product: SubscriptionProduct) {
   const regions = getProductOverviewDecisionPlans(product).flatMap(plan => plan.regions);
   return regions.length > 0 && regions.every(region => region.billingPlatform === 'web') ? 'Web' : 'App Store';
