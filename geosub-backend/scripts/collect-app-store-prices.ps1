@@ -2249,20 +2249,22 @@ foreach ($countryCode in $CountryCodes) {
 
     if ($null -ne $productPlanSpec -and $null -eq $planSpec) {
       Write-Host "Ignoring unmatched App Store item for known product spec: $code $($item.Name)"
-      $unmatchedKey = Normalize-PlanMatchText -Value $item.Name
-      if (![string]::IsNullOrWhiteSpace($unmatchedKey)) {
-        if (!$summary.unmatchedItems.ContainsKey($unmatchedKey)) {
-          $summary.unmatchedItems[$unmatchedKey] = @{
-            name = [string]$item.Name
-            countries = @()
-            sample_price = [string]$item.PriceText
-            count = 0
+      if ($null -ne $summary -and $null -ne $summary.unmatchedItems) {
+        $unmatchedKey = Normalize-PlanMatchText -Value $item.Name
+        if (![string]::IsNullOrWhiteSpace($unmatchedKey)) {
+          if (!$summary.unmatchedItems.ContainsKey($unmatchedKey)) {
+            $summary.unmatchedItems[$unmatchedKey] = @{
+              name = [string]$item.Name
+              countries = @()
+              sample_price = [string]$item.PriceText
+              count = 0
+            }
           }
-        }
-        $uEntry = $summary.unmatchedItems[$unmatchedKey]
-        $uEntry.count = [int]$uEntry.count + 1
-        if ($uEntry.countries -notcontains $code) {
-          $uEntry.countries += $code
+          $uEntry = $summary.unmatchedItems[$unmatchedKey]
+          $uEntry.count = [int]$uEntry.count + 1
+          if ($uEntry.countries -notcontains $code) {
+            $uEntry.countries += $code
+          }
         }
       }
       $ignoredItemCount += 1
