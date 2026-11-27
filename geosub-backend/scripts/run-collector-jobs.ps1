@@ -1011,7 +1011,8 @@ function Complete-JobRun {
     [object]$Job,
     [object]$Result,
     [datetime]$StartedAt,
-    [AllowNull()][string]$RunId
+    [AllowNull()][string]$RunId,
+    [int]$ColdStartWaitingGroups = 0
   )
 
   if ($DryRun) {
@@ -1024,6 +1025,17 @@ function Complete-JobRun {
   $status = [string]$Result.Status
   $errorMessage = if ($Result.Error) { [string]$Result.Error } else { $null }
   $nextRunSql = Get-NextRunSql -Job $Job -Status $status
+  if (
+    $status -eq "succeeded" -and
+    $ColdStartWaitingGroups -gt 0 -and
+    ([string]$Job.schedule -in @("daily_light", "daily"))
+  ) {
+    $nextRunSql = "NOW() + INTERVAL '4 hours'"
+    if ($Result.RawPayload -is [hashtable]) {
+      $Result.RawPayload["cold_start_accelerated"] = $true
+      $Result.RawPayload["cold_start_waiting_groups"] = $ColdStartWaitingGroups
+    }
+  }
   $jobStatusSql = "'active'"
   $jobConfigSql = "job_config"
   $errorCountSql = "error_count"
@@ -1784,11 +1796,15 @@ SELECT refresh_inferred_app_store_tax_profiles() AS inserted_tax_profiles;
         -Job $completion.Job `
         -Result $completion.Result `
         -StartedAt $completion.StartedAt
+      $waitingGroups = @($reviewResults | Where-Object {
+        $_.product_slug -eq $completion.Job.product_slug -and $_.reason_code -eq "waiting_for_more_app_store_samples"
+      }).Count
       Complete-JobRun `
         -Job $completion.Job `
         -Result $completedResult `
         -StartedAt $completion.StartedAt `
-        -RunId $completion.RunId
+        -RunId $completion.RunId `
+        -ColdStartWaitingGroups $waitingGroups
     } catch {
       $reviewError = $_.Exception.Message
       $summary.succeeded -= 1

@@ -1618,9 +1618,22 @@ function Get-AppStoreObservationAnomaly {
     $runnerUpPenalty = if ($null -ne $PriceSelection.runnerUpExpectedFitPenalty) { [decimal]$PriceSelection.runnerUpExpectedFitPenalty } else { [decimal]0 }
     $selectionStrategy = Get-AppStorePriceSelectionStrategy -PlanSpec $PlanSpec
     $hasExplicitTierStrategy = $selectionStrategy -eq "lowest_in_expected_range" -and $selectedPenalty -eq 0
+    $selectedRawPrice = if ($null -ne $PriceSelection.selectedRawPrice) { [decimal]$PriceSelection.selectedRawPrice } else { [decimal]0 }
+    $runnerUpRawPrice = if ($PriceSelection.variants -and $PriceSelection.variants.Count -gt 1 -and $null -ne $PriceSelection.variants[1].rawPrice) {
+      [decimal]$PriceSelection.variants[1].rawPrice
+    } else {
+      [decimal]0
+    }
+    $runnerUpIsDistinctCycle = (
+      $selectedPenalty -eq 0 -and
+      $selectedRawPrice -gt 0 -and
+      $runnerUpRawPrice -gt 0 -and
+      ($runnerUpRawPrice -ge ($selectedRawPrice * 6) -or $runnerUpRawPrice -le ($selectedRawPrice * 0.35))
+    )
 
     if (
       !$hasExplicitTierStrategy -and
+      !$runnerUpIsDistinctCycle -and
       $variantCount -gt 1 -and
       $selectedCount -le $runnerUpCount -and
       ($null -eq $PlanSpec -or $selectedPenalty -ge $runnerUpPenalty)
@@ -1776,7 +1789,18 @@ WHERE parser_version IS NOT DISTINCT FROM $(Quote-SqlString $ParserVersion)
     observed_at = $observedAtSql
     OR (
       id = (SELECT id FROM latest)
-      AND observed_at > $observedAtSql - INTERVAL '12 hours'
+      AND observed_at > $observedAtSql - CASE
+        WHEN EXISTS (
+          SELECT 1
+          FROM region_prices rp
+          WHERE rp.product_id = $(Quote-SqlString $ProductId)::uuid
+            AND rp.plan_id = $(Quote-SqlString $PlanId)::uuid
+            AND rp.country_id = $(Quote-SqlString $CountryId)::uuid
+            AND rp.billing_platform = 'ios'
+            AND rp.status = 'published'
+        ) THEN INTERVAL '12 hours'
+        ELSE INTERVAL '3 hours'
+      END
     )
   );
 "@
@@ -2114,6 +2138,7 @@ $summary = @{
   confirmedStorefronts = 0
   transientFailures = 0
   transientCountryCodes = @()
+  unmatchedItems = @{}
 }
 
 foreach ($countryCode in $CountryCodes) {
@@ -2224,6 +2249,22 @@ foreach ($countryCode in $CountryCodes) {
 
     if ($null -ne $productPlanSpec -and $null -eq $planSpec) {
       Write-Host "Ignoring unmatched App Store item for known product spec: $code $($item.Name)"
+      $unmatchedKey = Normalize-PlanMatchText -Value $item.Name
+      if (![string]::IsNullOrWhiteSpace($unmatchedKey)) {
+        if (!$summary.unmatchedItems.ContainsKey($unmatchedKey)) {
+          $summary.unmatchedItems[$unmatchedKey] = @{
+            name = [string]$item.Name
+            countries = @()
+            sample_price = [string]$item.PriceText
+            count = 0
+          }
+        }
+        $uEntry = $summary.unmatchedItems[$unmatchedKey]
+        $uEntry.count = [int]$uEntry.count + 1
+        if ($uEntry.countries -notcontains $code) {
+          $uEntry.countries += $code
+        }
+      }
       $ignoredItemCount += 1
       continue
     }
@@ -2491,6 +2532,20 @@ $collectionOutcome = if ($summary.transientFailures -eq 0) {
 } else {
   "transient_failure"
 }
+$unmatchedPlanCandidates = @(
+  $summary.unmatchedItems.Values |
+    Sort-Object -Property @{ Expression = { @($_.countries).Count }; Descending = $true }, @{ Expression = { [int]$_.count }; Descending = $true }, @{ Expression = { [string]$_.name }; Ascending = $true } |
+    Select-Object -First 25 |
+    ForEach-Object {
+      [ordered]@{
+        name = [string]$_.name
+        countries = @($_.countries | Sort-Object)
+        country_count = @($_.countries).Count
+        sample_price = [string]$_.sample_price
+        count = [int]$_.count
+      }
+    }
+)
 $machineSummary = @{
   collection_outcome = $collectionOutcome
   requested_country_codes = @($CountryCodes | ForEach-Object { $_.ToUpperInvariant() })
@@ -2501,6 +2556,7 @@ $machineSummary = @{
   missing = [int]$summary.missing
   confirmed_storefronts = [int]$summary.confirmedStorefronts
   transient_failures = [int]$summary.transientFailures
+  unmatched_plan_candidates = $unmatchedPlanCandidates
 }
 $machineSummaryJson = $machineSummary | ConvertTo-Json -Depth 8 -Compress
 Write-Host "GEOSUB_COLLECTION_RESULT=$machineSummaryJson"
