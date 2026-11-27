@@ -4,6 +4,20 @@ export function hasClaudeOverviewDecision(locale: SiteLocale, productSlug: strin
   return locale === "en" && productSlug === "claude";
 }
 
+// Subscription guidance only; this is not a product, price record or plan benefit.
+export function getClaudeDuetOverviewNotice(locale: SiteLocale, productSlug: string) {
+  if (locale !== "zh" || productSlug !== "claude") return null;
+
+  return {
+    title: "Claude Duet：订阅 Pro、Max 不等于立即可用",
+    description: "Anthropic 于 2026 年 10 月 21 日宣布 Claude Duet 研究预览，首批面向美国 Pro、Max 订阅用户，需加入候补名单。预览期间，它包含在现有套餐内，但与其他 Claude 功能共享使用额度，后台检查和持续任务也会消耗额度。因此，购买订阅不代表立即获得 Duet，也不会额外得到一份独立额度；购买前应确认地区资格及开放状态。",
+    sources: [
+      { label: "Claude Duet 官方说明", href: "https://claude.com/resources/articles/claude-duet" },
+      { label: "Claude 官方发布说明", href: "https://support.claude.com/en/articles/12138966-release-notes" },
+    ],
+  } as const;
+}
+
 // Official benefit guidance has a separate date from the canonical price records.
 export const claudeOverviewEvidence = {
   checkedAt: "2026-10-23",
