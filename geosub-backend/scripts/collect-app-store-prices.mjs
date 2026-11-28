@@ -378,8 +378,38 @@ async function loadFxRates(client, currencies) {
   return { rates, rateDate };
 }
 
+const CONSUMABLE_IAP_RE = /\b(coins?|credits?|tokens?|gems?|diamonds?|top[- ]?up|pack|bundle\s*\d+|points?|stars?|hearts?|energy|boosts?)\b/i;
+
+export function recordUnmatchedPlanCandidate(unmatchedMap, { name, country, priceText }) {
+  const trimmedName = String(name || "").trim();
+  if (!trimmedName || CONSUMABLE_IAP_RE.test(trimmedName)) return;
+  const key = normalizePlanMatchText(trimmedName);
+  if (!key) return;
+  let entry = unmatchedMap.get(key);
+  if (!entry) {
+    entry = { name: trimmedName, countries: new Set(), sample_price: String(priceText || "").trim(), count: 0 };
+    unmatchedMap.set(key, entry);
+  }
+  entry.count += 1;
+  if (country) entry.countries.add(String(country).toUpperCase());
+}
+
+export function summarizeUnmatchedPlanCandidates(unmatchedMap, limit = 25) {
+  return [...unmatchedMap.values()]
+    .sort((a, b) => b.countries.size - a.countries.size || b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit)
+    .map((entry) => ({
+      name: entry.name,
+      countries: [...entry.countries].sort(),
+      country_count: entry.countries.size,
+      sample_price: entry.sample_price,
+      count: entry.count,
+    }));
+}
+
 function selectBestItemPerPlan(items, productSpec, countryCurrency) {
   const buckets = new Map();
+  const unmatchedItems = [];
   let matchedCount = 0;
   let ignoredCount = 0;
 
@@ -387,6 +417,7 @@ function selectBestItemPerPlan(items, productSpec, countryCurrency) {
     const planSpec = resolvePlanSpec(productSpec, item.name);
     if (!planSpec) {
       ignoredCount += 1;
+      unmatchedItems.push(item);
       continue;
     }
     const rawPrice = parsePriceNumber(item.priceText);
@@ -416,7 +447,7 @@ function selectBestItemPerPlan(items, productSpec, countryCurrency) {
     });
     selected.set(planSlug, candidates[0]);
   }
-  return { selected, matchedCount, ignoredCount };
+  return { selected, matchedCount, ignoredCount, unmatchedItems };
 }
 
 async function main() {
@@ -535,6 +566,7 @@ async function main() {
       transient_failures: 0,
       transient_country_codes: [],
     };
+    const unmatchedCandidates = new Map();
 
     const cacheDir = process.env.GEOSUB_APP_STORE_CACHE_DIR || path.join(os.tmpdir(), "geosub-app-store-cache");
     mkdirSync(cacheDir, { recursive: true });
@@ -568,7 +600,10 @@ async function main() {
       }
 
       summary.confirmed_storefronts += 1;
-      const { selected, matchedCount, ignoredCount } = selectBestItemPerPlan(page.items, productSpec, countryCurrency);
+      const { selected, matchedCount, ignoredCount, unmatchedItems } = selectBestItemPerPlan(page.items, productSpec, countryCurrency);
+      for (const item of unmatchedItems) {
+        recordUnmatchedPlanCandidate(unmatchedCandidates, { name: item.name, country: code, priceText: item.priceText });
+      }
       const availabilityStatus =
         page.items.length === 0
           ? "available_no_iap"
@@ -633,7 +668,15 @@ async function main() {
                AND billing_platform = 'ios'::billing_platform
                AND price_type = 'list_price'::price_type
                AND source_id = $4 AND raw_price = $5 AND currency = $6
-               AND observed_at > NOW() - INTERVAL '12 hours'`,
+               AND observed_at > NOW() - CASE
+                 WHEN EXISTS (
+                   SELECT 1 FROM region_prices rp
+                   WHERE rp.product_id = $1 AND rp.plan_id = $2 AND rp.country_id = $3
+                     AND rp.billing_platform = 'ios'::billing_platform
+                     AND rp.status = 'published'
+                 ) THEN INTERVAL '12 hours'
+                 ELSE INTERVAL '3 hours'
+               END`,
             [contextData.product.id, planRow.id, countryRow.id, sourceId, entry.rawPrice, entry.currency],
           );
           if (dupRes.rows[0].cnt > 0) {
@@ -696,6 +739,7 @@ async function main() {
       requested_country_codes: countryCodes,
       transient_country_codes: [...new Set(summary.transient_country_codes)],
       ...summary,
+      unmatched_plan_candidates: summarizeUnmatchedPlanCandidates(unmatchedCandidates),
     };
 
     console.log(`GEOSUB_COLLECTION_RESULT=${JSON.stringify(machineSummary)}`);
